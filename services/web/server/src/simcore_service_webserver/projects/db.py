@@ -15,6 +15,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
@@ -332,7 +333,7 @@ class ProjectDBAPI(BaseProjectDB):
         limit: int | None = None,
         search: str | None = None,
         order_by: OrderBy = OrderBy(
-            field="last_change_date", direction=OrderDirection.DESC
+            field=IDStr("last_change_date"), direction=OrderDirection.DESC
         ),
         folder_id: FolderID | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:

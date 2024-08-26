@@ -125,6 +125,8 @@ qx.Class.define("osparc.file.FilePicker", {
       const outLabel = osparc.file.FilePicker.getOutputLabel(outputs);
       if (outLabel && node.getLabel().includes("File Picker")) {
         node.setLabel(outputValue.label);
+      } else {
+        node.setLabel("File Picker");
       }
       node.getStatus().setProgress(outputValue ? 100 : 0);
     },

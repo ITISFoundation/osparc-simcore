@@ -445,7 +445,7 @@ async def test_deferred_manager_code_times_out(
 
     await _assert_mock_call(mocks, key=MockKeys.ON_FINISHED_WITH_ERROR, count=1)
     for entry in mocks[MockKeys.ON_FINISHED_WITH_ERROR].call_args_list:
-        assert "asyncio.exceptions.TimeoutError" in entry.args[0].error
+        assert "builtins.TimeoutError" in entry.args[0].error
 
     await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED, count=0)
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_RESULT, count=0)

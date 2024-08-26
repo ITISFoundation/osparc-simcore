@@ -381,11 +381,12 @@ async def test_get_and_update_service_meta_data(
     assert got.key == service_key
     assert got.version == service_version
 
-    updated = await services_repo.update_service(
+    await services_repo.update_service(
         ServiceMetaDataAtDB.construct(
             key=service_key, version=service_version, name="foo"
-        )
+        ),
     )
+    updated = await services_repo.get_service(service_key, service_version)
 
     assert got.copy(update={"name": "foo"}) == updated
 

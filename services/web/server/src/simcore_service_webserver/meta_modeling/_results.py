@@ -112,5 +112,5 @@ def extract_project_results(workbench: dict[str, Any]) -> ExtractedResults:
             values = node["outputs"]
             results[noid], labels[noid] = values, label
 
-    res = ExtractedResults(progress=progress, labels=labels, values=results)
+    res = ExtractedResults(progress=progress, labels=labels, values=results)  # type: ignore[arg-type]
     return res

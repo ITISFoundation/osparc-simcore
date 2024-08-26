@@ -28,6 +28,7 @@ from simcore_service_webserver.resource_manager.user_sessions import (
     UserSessionID,
     managed_resource,
 )
+from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 
 @pytest.fixture
@@ -188,10 +189,18 @@ async def test_redis_registry_key_will_always_expire(
     await redis_registry.set_key_alive(first_key, 0)
     await redis_registry.set_key_alive(second_key, -3000)
 
-    time.sleep(1)  # minimum amount of sleep
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(5),
+        reraise=True,
+    ):
 
-    assert await redis_registry.is_key_alive(second_key) is False
-    assert await redis_registry.is_key_alive(first_key) is False
+        with attempt:
+            print(
+                f"checking redis registry for keys alive, [attempt {attempt.retry_state.attempt_number}]..."
+            )
+            assert await redis_registry.is_key_alive(second_key) is False
+            assert await redis_registry.is_key_alive(first_key) is False
 
     alive_keys, dead_keys = await redis_registry.get_all_resource_keys()
     assert len(alive_keys) == 0

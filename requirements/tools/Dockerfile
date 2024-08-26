@@ -8,7 +8,7 @@
 #   - Can be installed with pyenv (SEE pyenv install --list )
 #
 #
-ARG PYTHON_VERSION="3.10.14"
+ARG PYTHON_VERSION="3.11.9"
 FROM python:${PYTHON_VERSION}-slim-bookworm as base
 
 ENV VIRTUAL_ENV=/home/scu/.venv

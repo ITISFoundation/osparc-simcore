@@ -66,8 +66,8 @@ routes = web.RouteTableDef()
 
 
 class FoldersRequestContext(RequestParams):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 class FoldersPathParams(StrictRequestParams):
@@ -76,7 +76,7 @@ class FoldersPathParams(StrictRequestParams):
 
 class FolderListWithJsonStrQueryParams(PageQueryParameters):
     # pylint: disable=unsubscriptable-object
-    order_by: Json[OrderBy] = Field(  # type: ignore[type-arg]
+    order_by: Json[OrderBy] = Field(
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
         description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "name", "direction": "desc"}',

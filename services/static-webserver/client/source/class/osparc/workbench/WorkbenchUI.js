@@ -234,7 +234,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       deleteItemButton.addListener("execute", () => {
         if (this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
-          this.__selectedItemChanged(null);
+          this.resetSelection();
         }
       }, this);
 
@@ -493,7 +493,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __addNodeListeners: function(nodeUI) {
       nodeUI.addListener("updateNodeDecorator", () => this.__updateNodeUIPos(nodeUI), this);
 
-      nodeUI.addListener("nodeMovingStart", () => this.__itemStartedMoving(), this);
+      nodeUI.addListener("nodeMovingStart", () => {
+        this.__selectNode(nodeUI);
+        this.__itemStartedMoving();
+      }, this);
+
       nodeUI.addListener("nodeMoving", () => {
         this.__updateNodeUIPos(nodeUI);
         if ("initPos" in nodeUI) {
@@ -506,7 +510,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       nodeUI.addListener("nodeMovingStop", () => this.__itemStoppedMoving(nodeUI), this);
 
       nodeUI.addListener("tap", e => {
-        this.__activeNodeChanged(nodeUI, e.isCtrlPressed());
+        this.__selectNode(nodeUI, e.isCtrlPressed());
         e.stopPropagation();
       }, this);
 
@@ -521,9 +525,10 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __addAnnotationListeners: function(annotation) {
       annotation.addListener("annotationStartedMoving", () => {
-        this.__annotationClicked(annotation);
+        this.__selectAnnotation(annotation);
         this.__itemStartedMoving();
       }, this);
+
       annotation.addListener("annotationMoving", () => {
         if ("initPos" in annotation) {
           const reprPos = annotation.getRepresentationPosition();
@@ -532,9 +537,10 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           this.__itemMoving(annotation.getId(), xDiff, yDiff);
         }
       }, this);
+
       annotation.addListener("annotationStoppedMoving", () => this.__itemStoppedMoving(), this);
 
-      annotation.addListener("annotationClicked", e => this.__annotationClicked(annotation, e.getData()), this);
+      annotation.addListener("annotationClicked", e => this.__selectAnnotation(annotation, e.getData()), this);
     },
 
     getCurrentModel: function() {
@@ -560,7 +566,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     resetSelection: function() {
       this.__setSelectedNodes([]);
       this.__setSelectedAnnotations([]);
-      this.__selectedItemChanged(null);
+      this.__setSelectedItem(null);
     },
 
     __setSelectedNodes: function(selectedNodeUIs) {
@@ -585,7 +591,27 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__selectedAnnotations = selectedAnnotations;
     },
 
-    __annotationClicked: function(annotation, isControlPressed = false) {
+    __selectNode: function(activeNodeUI, isControlPressed = false) {
+      if (isControlPressed) {
+        const index = this.getSelectedNodeUIs().indexOf(activeNodeUI);
+        if (index > -1) {
+          activeNodeUI.removeState("selected");
+          this.getSelectedNodeUIs().splice(index, 1);
+        } else {
+          activeNodeUI.addState("selected");
+          this.getSelectedNodeUIs().push(activeNodeUI);
+          this.__setSelectedItem(activeNodeUI.getNodeId());
+        }
+      } else {
+        this.__setSelectedNodes([activeNodeUI]);
+        this.__setSelectedAnnotations([]);
+        this.__setSelectedItem(activeNodeUI.getNodeId());
+      }
+
+      qx.event.message.Bus.dispatchByName("changeNodeSelection", this.getSelectedNodes());
+    },
+
+    __selectAnnotation: function(annotation, isControlPressed = false) {
       if (isControlPressed) {
         const index = this.getSelectedAnnotations().indexOf(annotation);
         if (index > -1) {
@@ -595,39 +621,21 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           annotation.setSelected(true);
           this.getSelectedAnnotations().push(annotation);
           if (this.__selectedItemId === null) {
-            this.__selectedItemChanged(annotation.getId());
+            this.__setSelectedItem(annotation.getId());
           }
         }
       } else {
+        this.__setSelectedNodes([]);
         this.__setSelectedAnnotations([annotation]);
-        this.__selectedItemChanged(annotation.getId());
+        this.__setSelectedItem(annotation.getId());
       }
     },
 
     nodeSelected: function(nodeId) {
       const nodeUI = this.getNodeUI(nodeId);
       if (nodeUI && nodeUI.classname.includes("NodeUI")) {
-        this.__activeNodeChanged(nodeUI);
+        this.__selectNode(nodeUI);
       }
-    },
-
-    __activeNodeChanged: function(activeNodeUI, isControlPressed = false) {
-      if (isControlPressed) {
-        const index = this.__selectedNodeUIs.indexOf(activeNodeUI);
-        if (index > -1) {
-          activeNodeUI.removeState("selected");
-          this.__selectedNodeUIs.splice(index, 1);
-        } else {
-          activeNodeUI.addState("selected");
-          this.__selectedNodeUIs.push(activeNodeUI);
-          this.__selectedItemChanged(activeNodeUI.getNodeId());
-        }
-      } else {
-        this.__setSelectedNodes([activeNodeUI]);
-        this.__selectedItemChanged(activeNodeUI.getNodeId());
-      }
-
-      qx.event.message.Bus.dispatchByName("changeNodeSelection", this.getSelectedNodes());
     },
 
     _createNodeUI: function(nodeId) {
@@ -635,7 +643,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
       const nodeUI = new osparc.workbench.NodeUI(node);
       this.bind("scale", nodeUI, "scale");
-      node.addListener("keyChanged", () => this.__activeNodeChanged(nodeUI), this);
+      node.addListener("keyChanged", () => this.__selectNode(nodeUI), this);
       nodeUI.populateNodeLayout(this.__svgLayer);
       nodeUI.addListener("renameNode", e => this.__openNodeRenamer(e.getData()), this);
       nodeUI.addListener("markerClicked", e => this.__openMarkerEditor(e.getData()), this);
@@ -791,7 +799,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         ].forEach(svgEl => {
           svgEl.addEventListener("click", e => {
             // this is needed to get out of the context of svg
-            that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
+            that.__setSelectedItem(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
             e.stopPropagation();
           }, this);
 
@@ -1166,7 +1174,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }
     },
 
-    __selectedItemChanged: function(newID) {
+    __setSelectedItem: function(newID) {
       const oldId = this.__selectedItemId;
       if (oldId) {
         if (this.__isSelectedItemAnEdge()) {
@@ -1190,8 +1198,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         annotationEditor.makeItModal();
         annotationEditor.addListener("deleteAnnotation", () => {
           annotationEditor.exclude();
-          this.__selectedItemChanged(null);
           this.__removeAnnotation(annotation.getId());
+          this.resetSelection();
         }, this);
         annotation.addListener("changeColor", e => this.__annotationLastColor = e.getData());
       } else {
@@ -1703,7 +1711,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               this.fireDataEvent("removeNodes", selectedNodeIDs);
             } else if (this.__isSelectedItemAnEdge()) {
               this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
-              this.__selectedItemChanged(null);
+              this.resetSelection();
             }
             break;
           case "Escape":
@@ -1903,7 +1911,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }
       if (type === "note") {
         const noteEditor = new osparc.editor.AnnotationNoteCreator();
-        const win = osparc.editor.AnnotationNoteCreator.popUpInWindow(noteEditor, true);
+        const win = osparc.editor.AnnotationNoteCreator.popUpInWindow(noteEditor);
         noteEditor.addListener("addNote", () => {
           const gid = noteEditor.getRecipientGid();
           osparc.store.Store.getInstance().getGroup(gid)
@@ -1917,6 +1925,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
             })
             .finally(() => win.close());
         }, this);
+        noteEditor.addListener("cancel", () => win.close());
       } else if (type === "rect") {
         this.__addAnnotation(serializeData);
       } else if (type === "text") {

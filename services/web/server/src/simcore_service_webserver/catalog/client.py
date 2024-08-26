@@ -114,9 +114,9 @@ async def get_service(
     product_name: str,
 ) -> dict[str, Any]:
     settings: CatalogSettings = get_plugin_settings(app)
-    url = (
-        URL(settings.api_base_url)
-        / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}"
+    url = URL(
+        f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}",
+        encoded=True,
     ).with_query({"user_id": user_id})
 
     with _handle_client_exceptions(app) as session:
@@ -136,8 +136,10 @@ async def get_service_resources(
 ) -> ServiceResourcesDict:
     settings: CatalogSettings = get_plugin_settings(app)
     url = (
-        URL(settings.api_base_url)
-        / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}/resources"
+        URL(
+            f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}/resources",
+            encoded=True,
+        )
     ).with_query({"user_id": user_id})
 
     with _handle_client_exceptions(app) as session:
@@ -155,9 +157,9 @@ async def get_service_access_rights(
     product_name: str,
 ) -> ServiceAccessRightsGet:
     settings: CatalogSettings = get_plugin_settings(app)
-    url = (
-        URL(settings.api_base_url)
-        / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}/accessRights"
+    url = URL(
+        f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}/accessRights",
+        encoded=True,
     ).with_query({"user_id": user_id})
 
     with _handle_client_exceptions(app) as session:
@@ -179,9 +181,9 @@ async def update_service(
 ) -> dict[str, Any]:
     settings: CatalogSettings = get_plugin_settings(app)
 
-    url = (
-        URL(settings.api_base_url)
-        / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}"
+    url = URL(
+        f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}",
+        encoded=True,
     ).with_query({"user_id": user_id})
 
     with _handle_client_exceptions(app) as session:
