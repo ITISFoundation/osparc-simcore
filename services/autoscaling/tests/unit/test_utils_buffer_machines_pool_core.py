@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 import pytest
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
+from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from pydantic import parse_obj_as
@@ -169,3 +170,7 @@ def test_dump_load_pre_pulled_images_as_tags(
 ):
     assert dump_pre_pulled_images_as_tags(images) == expected_tags
     assert load_pre_pulled_images_from_tags(expected_tags) == images
+
+
+def test_load_pre_pulled_images_as_tags_no_tag_present_returns_empty_list(faker: Faker):
+    assert load_pre_pulled_images_from_tags(faker.pydict(allowed_types=(str,))) == []

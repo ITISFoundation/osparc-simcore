@@ -79,5 +79,6 @@ def load_pre_pulled_images_from_tags(tags: EC2Tags) -> list[DockerGenericTag]:
             ),
         )
     )
-
-    return parse_raw_as(list[DockerGenericTag], assembled_json)
+    if assembled_json:
+        return parse_raw_as(list[DockerGenericTag], assembled_json)
+    return []
