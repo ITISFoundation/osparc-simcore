@@ -256,6 +256,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
         showCellFocusIndicator: false,
         forceLineHeight: false
       });
+      // alwaysUpdateCells
       osparc.utils.Utils.setIdToWidget(table, "logsViewer");
       const colModel = table.getTableColumnModel();
       colModel.setDataCellRenderer(this.self().POS.TIMESTAMP, new osparc.ui.table.cellrenderer.Html().set({
@@ -269,15 +270,24 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       resizeBehavior.setWidth(this.self().POS.TIMESTAMP, 80);
       resizeBehavior.setWidth(this.self().POS.ORIGIN, 100);
 
-      const logCellEvent = e => {
+      const cellTapped = e => {
         console.log("logCellEvent", e);
-        table.setRowHeight(60);
         // check message's height
         // set height of the entire row and its children
         const growRow = e.getRow();
-        console.log(growRow);
+        const scroller = table.getPaneScroller(0);
+        const pane = scroller.getTablePane();
+        const paneDom = pane.getContentElement().getDomElement();
+        if (paneDom.children.length > 0) {
+          const rows = paneDom.children[0].children; // HTMLCollection
+          if (growRow < rows.length) {
+            const rowDom = rows.item(growRow);
+            console.log(rowDom);
+            rowDom.style.height = "50px";
+          }
+        }
       }
-      table.addListener("cellTap", logCellEvent, this);
+      table.addListener("cellTap", cellTapped, this);
 
       this.__applyFilters();
 
