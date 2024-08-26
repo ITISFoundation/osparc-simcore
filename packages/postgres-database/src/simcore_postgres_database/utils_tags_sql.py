@@ -168,7 +168,7 @@ def delete_tag_stmt(*, user_id: int, tag_id: int):
 
 def get_tags_for_project_stmt(*, project_index: int):
     return sa.select(projects_tags.c.tag_id).where(
-        projects_tags.c.study_id == project_index
+        projects_tags.c.project_id == project_index
     )
 
 
@@ -176,7 +176,7 @@ def add_tag_to_project_stmt(*, project_index: int, tag_id: int):
     return (
         pg_insert(projects_tags)
         .values(
-            study_id=project_index,
+            project_id=project_index,
             tag_id=tag_id,
         )
         .on_conflict_do_nothing()
