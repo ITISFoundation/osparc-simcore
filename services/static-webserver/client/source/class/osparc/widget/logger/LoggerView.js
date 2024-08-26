@@ -270,24 +270,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       resizeBehavior.setWidth(this.self().POS.TIMESTAMP, 80);
       resizeBehavior.setWidth(this.self().POS.ORIGIN, 100);
 
-      const cellTapped = e => {
-        console.log("logCellEvent", e);
-        // check message's height
-        // set height of the entire row and its children
-        const growRow = e.getRow();
-        const scroller = table.getPaneScroller(0);
-        const pane = scroller.getTablePane();
-        const paneDom = pane.getContentElement().getDomElement();
-        if (paneDom.children.length > 0) {
-          const rows = paneDom.children[0].children; // HTMLCollection
-          if (growRow < rows.length) {
-            const rowDom = rows.item(growRow);
-            console.log(rowDom);
-            rowDom.style.height = "50px";
-          }
-        }
-      }
-      table.addListener("cellTap", cellTapped, this);
+      table.setDataRowRenderer(new osparc.ui.table.rowrenderer.ExtendSelection(table));
 
       this.__applyFilters();
 
