@@ -462,7 +462,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _getOpenMenuButton: function(resourceData) {
       const openButton = new qx.ui.menu.Button(this.tr("Open"));
-      openButton.openResource = true;
+      openButton["openResourceButton"] = true;
       openButton.addListener("execute", () => {
         switch (resourceData["resourceType"]) {
           case "study": {

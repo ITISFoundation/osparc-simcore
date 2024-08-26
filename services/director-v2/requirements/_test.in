@@ -20,7 +20,11 @@ docker
 Faker
 flaky
 pytest
-pytest-asyncio
+# ----
+# Overcomes "Known issues" in https://github.com/pytest-dev/pytest-asyncio/releases/tag/v0.23.8
+# IMPORTANT: This constraint can be removed when `test_pytest_asyncio_known_issue` passes with the new update of pytest-asyncio
+pytest-asyncio<0.23
+# ----
 pytest-cov
 pytest-docker
 pytest-icdiff
@@ -32,18 +36,3 @@ sqlalchemy[mypy] # adds Mypy / Pep-484 Support for ORM Mappings SEE https://docs
 types-networkx
 types-psycopg2
 types-PyYAML
-# NOTE: What test client to use for fastapi-based apps?
-#
-# fastapi comes with a default test client: fatapi.testclient.TestClient (SEE https://fastapi.tiangolo.com/tutorial/testing/)
-# which is essentially an indirection to starlette.testclient (SEE https://www.starlette.io/testclient/)
-#
-# the limitation of that client is that it is fd synchronous.
-#
-# There are two options in place:
-# a) fastapi recommends to use httpx and create your own AsyncTestClient: https://fastapi.tiangolo.com/advanced/async-tests/
-#   PROS: can use respx to mock responses, used to httpx API
-#   CONS: do it yourself, does not include app member out-of-the-box
-# b) use generic Async ASGI TestClient library:  https://github.com/vinissimus/async-asgi-testclient
-#   PROS: generic closed solution, has 'app' member , requests-like API (i.e. equivalent to starletter TESTClient)
-#   CONS: basically does not have the PROS from a), adds extra deps to 'requests' lib.
-#

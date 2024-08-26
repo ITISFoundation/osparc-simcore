@@ -1008,6 +1008,7 @@ async def test_set_node_availability(
 def test_get_new_node_docker_tags(
     disabled_rabbitmq: None,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     enabled_dynamic_mode: EnvVarsDict,
     disable_dynamic_service_background_task: None,
@@ -1152,6 +1153,7 @@ def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Fake
 async def test_set_node_osparc_ready(
     disabled_rabbitmq: None,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     enabled_dynamic_mode: EnvVarsDict,
     disable_dynamic_service_background_task: None,
@@ -1194,6 +1196,7 @@ async def test_set_node_osparc_ready(
 async def test_set_node_found_empty(
     disabled_rabbitmq: None,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     enabled_dynamic_mode: EnvVarsDict,
     disable_dynamic_service_background_task: None,
@@ -1237,6 +1240,7 @@ async def test_set_node_found_empty(
 async def test_set_node_begin_termination_process(
     disabled_rabbitmq: None,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     enabled_dynamic_mode: EnvVarsDict,
     disable_dynamic_service_background_task: None,
@@ -1269,6 +1273,7 @@ async def test_set_node_begin_termination_process(
 async def test_attach_node(
     disabled_rabbitmq: None,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     enabled_dynamic_mode: EnvVarsDict,
     disable_dynamic_service_background_task: None,

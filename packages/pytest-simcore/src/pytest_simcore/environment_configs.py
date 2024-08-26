@@ -46,6 +46,12 @@ def external_envfile_dict(request: pytest.FixtureRequest) -> EnvVarsDict:
 
 
 @pytest.fixture(scope="session")
+def skip_if_external_envfile_dict(external_envfile_dict: EnvVarsDict) -> None:
+    if not external_envfile_dict:
+        pytest.skip(reason="Skipping test since external-envfile is not set")
+
+
+@pytest.fixture(scope="session")
 def env_devel_dict(env_devel_file: Path) -> EnvVarsDict:
     assert env_devel_file.exists()
     assert env_devel_file.name == ".env-devel"

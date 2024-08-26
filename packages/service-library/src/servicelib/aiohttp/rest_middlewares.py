@@ -194,4 +194,4 @@ def append_rest_middlewares(
 ):
     """Helper that appends rest-middlewares in the correct order"""
     app.middlewares.append(error_middleware_factory(api_version))
-    app.middlewares.append(envelope_middleware_factory(api_version))
+    app.middlewares.append(envelope_middleware_factory(api_version))  # type: ignore[arg-type]

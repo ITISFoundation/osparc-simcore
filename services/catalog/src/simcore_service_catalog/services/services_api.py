@@ -172,6 +172,7 @@ async def get_service(
         version=service_version,
     )
     if not service:
+        # no service found provided `access_rights`
         raise CatalogForbiddenError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
@@ -216,9 +217,11 @@ async def update_service(
             product_name=product_name,
         )
 
-    if not await repo.get_service_access_rights(
+    access_rights = await repo.get_service_access_rights(
         key=service_key, version=service_version, product_name=product_name
-    ):
+    )
+
+    if not access_rights:
         raise CatalogItemNotFoundError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
@@ -227,13 +230,11 @@ async def update_service(
             product_name=product_name,
         )
 
-    # Updates service_meta_data
-    if not await repo.update_service(
-        ServiceMetaDataAtDB(
-            key=service_key,
-            version=service_version,
-            **update.dict(exclude_unset=True),
-        )
+    if not await repo.can_update_service(
+        product_name=product_name,
+        user_id=user_id,
+        key=service_key,
+        version=service_version,
     ):
         raise CatalogForbiddenError(
             name=f"{service_key}:{service_version}",
@@ -243,14 +244,20 @@ async def update_service(
             product_name=product_name,
         )
 
+    # Updates service_meta_data
+    await repo.update_service(
+        ServiceMetaDataAtDB(
+            key=service_key,
+            version=service_version,
+            **update.dict(exclude_unset=True),
+        )
+    )
+
     # Updates service_access_rights (they can be added/removed/modified)
     if update.access_rights:
 
         # before
-        current_access_rights = await repo.get_service_access_rights(
-            service_key, service_version, product_name=product_name
-        )
-        before_gids = [r.gid for r in current_access_rights]
+        previous_gids = [r.gid for r in access_rights]
 
         # new
         new_access_rights = [
@@ -267,17 +274,17 @@ async def update_service(
         await repo.upsert_service_access_rights(new_access_rights)
 
         # then delete the ones that were removed
-        remove_gids = [gid for gid in before_gids if gid not in update.access_rights]
-        delete_access_rights = [
+        removed_access_rights = [
             ServiceAccessRightsAtDB(
                 key=service_key,
                 version=service_version,
                 gid=gid,
                 product_name=product_name,
             )
-            for gid in remove_gids
+            for gid in previous_gids
+            if gid not in update.access_rights
         ]
-        await repo.delete_service_access_rights(delete_access_rights)
+        await repo.delete_service_access_rights(removed_access_rights)
 
     return await get_service(
         repo=repo,

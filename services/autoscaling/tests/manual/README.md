@@ -106,5 +106,19 @@ make up-devel # this will deploy the autoscaling stack
 4. start some docker services to trigger autoscaling
 ```bash
 # run on EC2 instance
-docker service create --name=test-service --reserve-cpu=4 --reserve-memory=1GiB --constraint=node.labels.testing.monitored-node==true --label=testing.monitored-service=true redis # will create a redis service reserving 4 CPUs and 1GiB of RAM
+docker service create \
+--name=test-service \
+--reserve-cpu=1 \
+--reserve-memory=1GiB \
+--constraint=node.labels.testing.monitored-node==true \
+--label=testing.monitored-service=true \
+--container-label=io.simcore.runtime.user-id=99 \
+--container-label=io.simcore.runtime.project-id='5054a589-3ba4-46c3-829d-2e3d1a6a043f' \
+--container-label=io.simcore.runtime.node-id='a054a589-3ba4-46c3-829d-2e3d1a6a043a' \
+--container-label=io.simcore.runtime.product-name=theproduct \
+--container-label=io.simcore.runtime.simcore-user-agent=theagent \
+--container-label=io.simcore.runtime.swarm-stack-name=thestack \
+--container-label=io.simcore.runtime.memory-limit=1GB \
+--container-label=io.simcore.runtime.cpu-limit=1 \
+redis # will create a redis service reserving 4 CPUs and 1GiB of RAM
 ```

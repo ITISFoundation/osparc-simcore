@@ -100,7 +100,7 @@ class ProductRepository(BaseRepository):
                 return Product(
                     **dict(row.items()),
                     is_payment_enabled=payments.enabled,
-                    credits_per_usd=payments.credits_per_usd,
+                    credits_per_usd=payments.credits_per_usd,  # type: ignore[arg-type]
                 )
             return None
 

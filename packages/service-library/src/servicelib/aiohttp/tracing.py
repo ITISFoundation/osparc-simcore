@@ -2,7 +2,7 @@
 
 """
 import logging
-from typing import Iterable, Optional, Union
+from typing import Iterable
 
 import aiozipkin as az
 from aiohttp import web
@@ -23,8 +23,8 @@ def setup_tracing(
     service_name: str,
     host: str,
     port: int,
-    jaeger_base_url: Union[URL, str],
-    skip_routes: Optional[Iterable[AbstractRoute]] = None,
+    jaeger_base_url: URL | str,
+    skip_routes: Iterable[AbstractRoute] | None = None,
 ) -> bool:
     """
     Sets up this service for a distributed tracing system
@@ -65,7 +65,9 @@ def setup_tracing(
         tracer_key=APP_AIOZIPKIN_KEY,
         request_key=REQUEST_AIOZIPKIN_KEY,
     )
-    app.middlewares.append(m)
+    # NOTE: mypy: tracing library uses helpers aiozipkin.aiohttp_helpers that are not
+    # exactly as defined with latest aiohttp.typedefs. They are compatible but mypy fails.
+    app.middlewares.append(m)  # type: ignore[arg-type]
 
     # # WARNING: adds a middleware that should be the outermost since
     # # it expects stream responses while we allow data returns from a handler
