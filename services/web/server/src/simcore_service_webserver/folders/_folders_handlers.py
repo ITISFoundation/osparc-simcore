@@ -27,6 +27,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_postgres_database.utils_folders import FoldersError
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
@@ -51,6 +52,9 @@ def handle_folders_exceptions(handler: Handler):
         except FolderAccessForbiddenError as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
+        except FoldersError as exc:
+            raise web.HTTPBadRequest(reason=f"{exc}") from exc
+
     return wrapper
 
 
@@ -62,8 +66,8 @@ routes = web.RouteTableDef()
 
 
 class FoldersRequestContext(RequestParams):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 class FoldersPathParams(StrictRequestParams):
@@ -72,7 +76,7 @@ class FoldersPathParams(StrictRequestParams):
 
 class FolderListWithJsonStrQueryParams(PageQueryParameters):
     # pylint: disable=unsubscriptable-object
-    order_by: Json[OrderBy] = Field(  # type: ignore[type-arg]
+    order_by: Json[OrderBy] = Field(
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
         description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "name", "direction": "desc"}',

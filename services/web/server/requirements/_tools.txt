@@ -1,6 +1,6 @@
 astroid==3.2.4
     # via pylint
-black==24.4.2
+black==24.8.0
     # via -r requirements/../../../../requirements/devenv.txt
 build==1.2.1
     # via pip-tools
@@ -51,7 +51,7 @@ packaging==23.1
     #   build
 pathspec==0.12.1
     # via black
-pip==24.1.2
+pip==24.2
     # via pip-tools
 pip-tools==7.4.1
     # via -r requirements/../../../../requirements/devenv.txt
@@ -60,7 +60,7 @@ platformdirs==4.2.2
     #   black
     #   pylint
     #   virtualenv
-pre-commit==3.7.1
+pre-commit==3.8.0
     # via -r requirements/../../../../requirements/devenv.txt
 pylint==3.2.6
     # via -r requirements/../../../../requirements/devenv.txt
@@ -74,7 +74,7 @@ pyyaml==6.0.1
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   pre-commit
-ruff==0.5.5
+ruff==0.6.1
     # via -r requirements/../../../../requirements/devenv.txt
 setuptools==69.1.1
     # via
@@ -89,18 +89,16 @@ tomli==2.0.1
     #   mypy
     #   pip-tools
     #   pylint
-tomlkit==0.13.0
+tomlkit==0.13.2
     # via pylint
-types-cachetools==5.4.0.20240717
+types-cachetools==5.5.0.20240820
     # via -r requirements/_tools.in
 typing-extensions==4.12.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
-    #   astroid
-    #   black
     #   mypy
 virtualenv==20.26.3
     # via pre-commit
-wheel==0.43.0
+wheel==0.44.0
     # via pip-tools

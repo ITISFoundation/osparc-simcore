@@ -9,11 +9,10 @@
 
 """
 
-import json
+import logging
 import os
 import re
 import shutil
-import sys
 from collections.abc import Iterator
 from copy import deepcopy
 from pathlib import Path
@@ -27,10 +26,11 @@ from .helpers import (
     FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
     FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
 )
-from .helpers.constants import HEADER_STR
 from .helpers.docker import run_docker_compose_config, save_docker_infos
 from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
+
+_logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
@@ -231,10 +231,10 @@ def core_docker_compose_file(
         core_services_selection, simcore_docker_compose, docker_compose_path
     )
 
-    print(
-        HEADER_STR.format(f"{docker_compose_path}"),
-        json.dumps(docker_compose_path.read_text()),
-        HEADER_STR.format("-"),
+    _logger.info(
+        "Content of '%s':\n%s",
+        docker_compose_path,
+        docker_compose_path.read_text(),
     )
     return docker_compose_path
 
@@ -259,8 +259,9 @@ def ops_docker_compose_file(
     # these services are useless when running in the CI
     ops_view_only_services = ["adminer", "redis-commander", "portainer"]
     if "CI" in os.environ:
-        print(
-            f"WARNING: Services such as {ops_view_only_services!r} are removed from the stack when running in the CI"
+        _logger.info(
+            "Note that services such as '%s' are removed from the stack when running in the CI",
+            ops_view_only_services,
         )
         ops_services_selection = list(
             filter(
@@ -272,10 +273,10 @@ def ops_docker_compose_file(
         ops_services_selection, ops_docker_compose, docker_compose_path
     )
 
-    print(
-        HEADER_STR.format(f"{docker_compose_path}"),
-        json.dumps(docker_compose_path.read_text()),
-        HEADER_STR.format("-"),
+    _logger.info(
+        "Content of '%s':\n%s",
+        docker_compose_path,
+        docker_compose_path.read_text(),
     )
     return docker_compose_path
 
@@ -350,14 +351,6 @@ def _filter_services_and_dump(
 
     # updates current docker-compose (also versioned ... do not change by hand)
     with docker_compose_path.open("wt") as fh:
-        if "TRAVIS" in os.environ:
-            # in travis we do not have access to file
-            print(f"{docker_compose_path!s:-^100}")
-            yaml.dump(content, sys.stdout, default_flow_style=False)
-            print("-" * 100)
-        else:
-            # locally we have access to file
-            print(f"Saving config to '{docker_compose_path}'")
         yaml.dump(content, fh, default_flow_style=False)
 
     docker_compose_path.write_text(_escape_cpus(docker_compose_path.read_text()))

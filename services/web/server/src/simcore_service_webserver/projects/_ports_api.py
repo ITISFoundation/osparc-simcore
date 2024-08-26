@@ -212,7 +212,7 @@ def _get_outputs_in_workbench(workbench: dict[NodeID, Node]) -> dict[NodeID, Any
 async def _get_computation_tasks_outputs(
     app: web.Application, *, project_id: ProjectID, nodes_ids: set[NodeID]
 ) -> dict[NodeID, dict[OutputName, Any]]:
-    selection = TasksSelection(nodes_ids=nodes_ids)
+    selection = TasksSelection(nodes_ids=list(nodes_ids))
     batch: TasksOutputs = await get_batch_tasks_outputs(
         app, project_id=project_id, selection=selection
     )

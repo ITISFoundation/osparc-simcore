@@ -47,7 +47,7 @@ def _is_docker_swarm_init(docker_client: docker.client.DockerClient) -> bool:
 @retry(
     wait=wait_fixed(1),
     stop=stop_after_delay(8 * MINUTE),
-    before_sleep=before_sleep_log(log, logging.WARNING),
+    before_sleep=before_sleep_log(log, logging.INFO),
     reraise=True,
 )
 def assert_service_is_running(service) -> None:
@@ -372,7 +372,7 @@ def docker_stack(
             for attempt in Retrying(
                 wait=wait_fixed(2),
                 stop=stop_after_delay(3 * MINUTE),
-                before_sleep=before_sleep_log(log, logging.WARNING),
+                before_sleep=before_sleep_log(log, logging.INFO),
                 reraise=True,
             ):
                 with attempt:

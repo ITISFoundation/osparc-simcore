@@ -5,7 +5,6 @@ from models_library.api_schemas_api_server.pricing_plans import ServicePricingPl
 from models_library.api_schemas_webserver.catalog import (
     CatalogServiceGet,
     CatalogServiceUpdate,
-    ServiceGet,
     ServiceInputGet,
     ServiceInputKey,
     ServiceOutputGet,
@@ -38,43 +37,16 @@ router = APIRouter(
 
 
 @router.get(
-    "/dev/catalog/services/-/latest",
+    "/catalog/services/-/latest",
     response_model=Page[CatalogServiceGet],
 )
-def dev_list_services_latest(_query_params: Annotated[ListServiceParams, Depends()]):
-    pass
-
-
-@router.get(
-    "/dev/catalog/services/{service_key}/{service_version}",
-    response_model=Envelope[CatalogServiceGet],
-)
-def dev_get_service(_path_params: Annotated[ServicePathParams, Depends()]):
-    ...
-
-
-@router.patch(
-    "/dev/catalog/services/{service_key}/{service_version}",
-    response_model=Envelope[CatalogServiceGet],
-)
-def dev_update_service(
-    _path_params: Annotated[ServicePathParams, Depends()],
-    _update: CatalogServiceUpdate,
-):
-    ...
-
-
-@router.get(
-    "/catalog/services",
-    response_model=Envelope[list[ServiceGet]],
-)
-def list_services():
+def list_services_latest(_query_params: Annotated[ListServiceParams, Depends()]):
     pass
 
 
 @router.get(
     "/catalog/services/{service_key}/{service_version}",
-    response_model=Envelope[ServiceGet],
+    response_model=Envelope[CatalogServiceGet],
 )
 def get_service(_path_params: Annotated[ServicePathParams, Depends()]):
     ...
@@ -82,7 +54,7 @@ def get_service(_path_params: Annotated[ServicePathParams, Depends()]):
 
 @router.patch(
     "/catalog/services/{service_key}/{service_version}",
-    response_model=Envelope[ServiceGet],
+    response_model=Envelope[CatalogServiceGet],
 )
 def update_service(
     _path_params: Annotated[ServicePathParams, Depends()],

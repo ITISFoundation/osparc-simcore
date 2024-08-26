@@ -10,20 +10,22 @@ from typing import Any, ClassVar, Final, TypeAlias, cast
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from psycopg2.errors import ForeignKeyViolation
 from pydantic import (
     BaseModel,
     ConstrainedStr,
     Field,
     NonNegativeInt,
     PositiveInt,
+    ValidationError,
     parse_obj_as,
 )
 from pydantic.errors import PydanticErrorMixin
 from simcore_postgres_database.utils_ordering import OrderByDict
+from sqlalchemy import Column, func
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.sql.elements import ColumnElement
-from sqlalchemy.sql.selectable import ScalarSelect
+from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
+from sqlalchemy.sql.elements import ColumnElement, Label
+from sqlalchemy.sql.selectable import CTE
 
 from .models.folders import folders, folders_access_rights, folders_to_projects
 from .models.groups import GroupType, groups
@@ -47,11 +49,13 @@ FoldersError
         * FolderNotFoundError
         * FolderNotSharedWithGidError
         * InsufficientPermissionsError
+        * NoAccessForGroupsFoundError
     * BaseCreateFolderError
         * FolderAlreadyExistsError
         * ParentFolderIsNotWritableError
         * CouldNotCreateFolderError
         * GroupIdDoesNotExistError
+        * RootFolderRequiresAtLeastOnePrimaryGroupError
     * BaseMoveFolderError
         * CannotMoveFolderSharedViaNonPrimaryGroupError
     * BaseAddProjectError
@@ -72,15 +76,19 @@ class FolderAccessError(FoldersError):
 
 
 class FolderNotFoundError(FolderAccessError):
-    msg_template = "no entry found for folder_id={folder_id}, gid={gid} and product_name={product_name}"
+    msg_template = "no entry found for folder_id={folder_id}, gids={gids} and product_name={product_name}"
 
 
 class FolderNotSharedWithGidError(FolderAccessError):
-    msg_template = "folder_id={folder_id} was not shared with gid={gid}"
+    msg_template = "folder_id={folder_id} was not shared with gids={gids}"
 
 
 class InsufficientPermissionsError(FolderAccessError):
-    msg_template = "could not find a parent for folder_id={folder_id} and gid={gid}, with permissions={permissions}"
+    msg_template = "could not find a parent for folder_id={folder_id} and gids={gids}, with permissions={permissions}"
+
+
+class NoAccessForGroupsFoundError(FolderAccessError):
+    msg_template = "No parent found for folder_id={folder_id} and gids={gids}, with permissions={permissions}"
 
 
 class BaseCreateFolderError(FoldersError):
@@ -88,7 +96,7 @@ class BaseCreateFolderError(FoldersError):
 
 
 class FolderAlreadyExistsError(BaseCreateFolderError):
-    msg_template = "A folder='{folder}' with parent='{parent}' for group='{gid}' in product_name={product_name} already exists"
+    msg_template = "A folder='{folder}' with parent='{parent}' in product_name={product_name} already exists"
 
 
 class ParentFolderIsNotWritableError(BaseCreateFolderError):
@@ -99,8 +107,15 @@ class CouldNotCreateFolderError(BaseCreateFolderError):
     msg_template = "Could not create folder='{folder}' and parent='{parent}'"
 
 
-class GroupIdDoesNotExistError(BaseCreateFolderError):
-    msg_template = "Provided group id '{gid}' does not exist "
+class NoGroupIDFoundError(BaseCreateFolderError):
+    msg_template = "None of the provided gids='{gids}' was found"
+
+
+class RootFolderRequiresAtLeastOnePrimaryGroupError(BaseCreateFolderError):
+    msg_template = (
+        "No parent={parent} defined and groupIDs={gids} did not contain a PRIMARY group. "
+        "Cannot create a folder isnide the 'root' wihtout using the user's group."
+    )
 
 
 class BaseMoveFolderError(FoldersError):
@@ -259,8 +274,8 @@ def _requires(*permissions: _FolderPermissions) -> _FolderPermissions:
     return _or_dicts_list(permissions)
 
 
-def _get_and_calsue_with_only_true_entries(
-    permissions: _FolderPermissions, table
+def _get_filter_for_enabled_permissions(
+    permissions: _FolderPermissions, table: sa.Table | CTE
 ) -> ColumnElement | bool:
     clauses: list[ColumnElement] = []
 
@@ -299,12 +314,6 @@ class FolderEntry(BaseModel):
     my_access_rights: _FolderPermissions
     access_rights: dict[_GroupID, _FolderPermissions]
 
-    access_via_gid: _GroupID = Field(
-        ...,
-        description="used to compute my_access_rights, should be used by the fronted",
-    )
-    gid: _GroupID = Field(..., description="actual gid of this entry")
-
     class Config:
         orm_mode = True
 
@@ -329,30 +338,11 @@ async def _get_resolved_access_rights(
     gid: _GroupID,
     *,
     permissions: _FolderPermissions | None,
-    enforece_all_permissions: bool,
 ) -> _ResolvedAccessRights | None:
 
     # Define the anchor CTE
     access_rights_cte = (
         sa.select(
-            [
-                folders_access_rights.c.folder_id,
-                folders_access_rights.c.gid,
-                folders_access_rights.c.traversal_parent_id,
-                folders_access_rights.c.original_parent_id,
-                folders_access_rights.c.read,
-                folders_access_rights.c.write,
-                folders_access_rights.c.delete,
-                sa.literal_column("0").label("level"),
-            ]
-        )
-        .where(folders_access_rights.c.folder_id == sa.bindparam("start_folder_id"))
-        .cte(name="access_rights_cte", recursive=True)
-    )
-
-    # Define the recursive part of the CTE
-    recursive = sa.select(
-        [
             folders_access_rights.c.folder_id,
             folders_access_rights.c.gid,
             folders_access_rights.c.traversal_parent_id,
@@ -360,8 +350,22 @@ async def _get_resolved_access_rights(
             folders_access_rights.c.read,
             folders_access_rights.c.write,
             folders_access_rights.c.delete,
-            sa.literal_column("access_rights_cte.level + 1").label("level"),
-        ]
+            sa.literal_column("0").label("level"),
+        )
+        .where(folders_access_rights.c.folder_id == sa.bindparam("start_folder_id"))
+        .cte(name="access_rights_cte", recursive=True)
+    )
+
+    # Define the recursive part of the CTE
+    recursive = sa.select(
+        folders_access_rights.c.folder_id,
+        folders_access_rights.c.gid,
+        folders_access_rights.c.traversal_parent_id,
+        folders_access_rights.c.original_parent_id,
+        folders_access_rights.c.read,
+        folders_access_rights.c.write,
+        folders_access_rights.c.delete,
+        sa.literal_column("access_rights_cte.level + 1").label("level"),
     ).select_from(
         folders_access_rights.join(
             access_rights_cte,
@@ -370,36 +374,25 @@ async def _get_resolved_access_rights(
     )
 
     # Combine anchor and recursive CTE
-    folder_hierarchy = access_rights_cte.union_all(recursive)
-
-    def _get_permissions_where_clause() -> ColumnElement | bool:
-        if not permissions:
-            return True
-        return (
-            sa.and_(
-                folder_hierarchy.c.read.is_(permissions.read),
-                folder_hierarchy.c.write.is_(permissions.write),
-                folder_hierarchy.c.delete.is_(permissions.delete),
-            )
-            if enforece_all_permissions
-            else _get_and_calsue_with_only_true_entries(permissions, folder_hierarchy)
-        )
+    folder_hierarchy: CTE = access_rights_cte.union_all(recursive)
 
     # Final query to filter and order results
     query = (
         sa.select(
-            [
-                folder_hierarchy.c.folder_id,
-                folder_hierarchy.c.gid,
-                folder_hierarchy.c.traversal_parent_id,
-                folder_hierarchy.c.original_parent_id,
-                folder_hierarchy.c.read,
-                folder_hierarchy.c.write,
-                folder_hierarchy.c.delete,
-                folder_hierarchy.c.level,
-            ]
+            folder_hierarchy.c.folder_id,
+            folder_hierarchy.c.gid,
+            folder_hierarchy.c.traversal_parent_id,
+            folder_hierarchy.c.original_parent_id,
+            folder_hierarchy.c.read,
+            folder_hierarchy.c.write,
+            folder_hierarchy.c.delete,
+            folder_hierarchy.c.level,
         )
-        .where(_get_permissions_where_clause())
+        .where(
+            True
+            if not permissions
+            else _get_filter_for_enabled_permissions(permissions, folder_hierarchy)
+        )
         .where(folder_hierarchy.c.original_parent_id.is_(None))
         .where(folder_hierarchy.c.gid == gid)
         .order_by(folder_hierarchy.c.level.asc())
@@ -414,14 +407,14 @@ async def _get_resolved_access_rights(
     )
 
 
-async def _check_folder_and_access(
+async def _check_and_get_folder_access_by_group(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
     gid: _GroupID,
     *,
+    error_reporting_gids: set[_GroupID],
     permissions: _FolderPermissions,
-    enforece_all_permissions: bool,
 ) -> _ResolvedAccessRights:
     """
     Raises:
@@ -430,13 +423,13 @@ async def _check_folder_and_access(
         InsufficientPermissionsError
     """
     folder_entry: int | None = await connection.scalar(
-        sa.select([folders.c.id])
+        sa.select(folders.c.id)
         .where(folders.c.id == folder_id)
         .where(folders.c.product_name == product_name)
     )
     if not folder_entry:
         raise FolderNotFoundError(
-            folder_id=folder_id, gid=gid, product_name=product_name
+            folder_id=folder_id, gids=error_reporting_gids, product_name=product_name
         )
 
     # check if folder was shared
@@ -445,10 +438,11 @@ async def _check_folder_and_access(
         folder_id,
         gid,
         permissions=None,
-        enforece_all_permissions=False,
     )
     if not resolved_access_rights_without_permissions:
-        raise FolderNotSharedWithGidError(folder_id=folder_id, gid=gid)
+        raise FolderNotSharedWithGidError(
+            folder_id=folder_id, gids=error_reporting_gids
+        )
 
     # check if there are permissions
     resolved_access_rights = await _get_resolved_access_rights(
@@ -456,16 +450,55 @@ async def _check_folder_and_access(
         folder_id,
         gid,
         permissions=permissions,
-        enforece_all_permissions=enforece_all_permissions,
     )
     if resolved_access_rights is None:
         raise InsufficientPermissionsError(
             folder_id=folder_id,
-            gid=gid,
+            gids=error_reporting_gids,
             permissions=_only_true_permissions(permissions),
         )
 
     return resolved_access_rights
+
+
+async def _check_and_get_folder_access(
+    connection: SAConnection,
+    product_name: _ProductName,
+    folder_id: _FolderID,
+    gids: set[_GroupID],
+    *,
+    permissions: _FolderPermissions,
+) -> _ResolvedAccessRights:
+    """
+    Raises:
+        FolderNotFoundError
+        FolderNotSharedWithGidError
+        InsufficientPermissionsError
+        NoAccessForGroupsFoundError
+    """
+    folder_access_error = None
+
+    for gid in gids:
+        try:
+            return await _check_and_get_folder_access_by_group(
+                connection,
+                product_name,
+                folder_id,
+                gid,
+                error_reporting_gids=gids,
+                permissions=permissions,
+            )
+        except FolderAccessError as e:  # noqa: PERF203
+            folder_access_error = e
+
+    if folder_access_error:
+        raise folder_access_error
+
+    raise NoAccessForGroupsFoundError(
+        folder_id=folder_id,
+        gids=gids,
+        permissions=_only_true_permissions(permissions),
+    )
 
 
 ###
@@ -477,8 +510,7 @@ async def folder_create(
     connection: SAConnection,
     product_name: _ProductName,
     name: str,
-    gid: _GroupID,
-    *,
+    gids: set[_GroupID],
     description: str = "",
     parent: _FolderID | None = None,
     _required_permissions: _FolderPermissions = _requires(  # noqa: B008
@@ -490,15 +522,20 @@ async def folder_create(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        NoAccessForGroupsFoundError
         FolderAlreadyExistsError
         CouldNotCreateFolderError
         GroupIdDoesNotExistError
+        RootFolderRequiresAtLeastOnePrimaryGroupError
     """
-    parse_obj_as(FolderName, name)
+    try:
+        parse_obj_as(FolderName, name)
+    except ValidationError as exc:
+        raise InvalidFolderNameError(name=name, reason=f"{exc}") from exc
 
     async with connection.begin():
         entry_exists: int | None = await connection.scalar(
-            sa.select([folders.c.id])
+            sa.select(folders.c.id)
             .select_from(
                 folders.join(
                     folders_access_rights,
@@ -511,47 +548,68 @@ async def folder_create(
         )
         if entry_exists:
             raise FolderAlreadyExistsError(
-                product_name=product_name, folder=name, parent=parent, gid=gid
+                product_name=product_name, folder=name, parent=parent
             )
 
+        # `permissions_gid` is computed as follows:
+        # - `folder has a parent?` taken from the resolved access rights of the parent folder
+        # - `is root folder, a.k.a. no parent?` taken from the user's primary group
+        permissions_gid = None
         if parent:
-            # check if parent has permissions
-            await _check_folder_and_access(
+            resolved_access_rights = await _check_and_get_folder_access(
                 connection,
                 product_name,
                 folder_id=parent,
-                gid=gid,
+                gids=gids,
                 permissions=_required_permissions,
-                enforece_all_permissions=False,
             )
+            permissions_gid = resolved_access_rights.gid
+
+        if permissions_gid is None:
+            groups_results: list[RowProxy] | None = await (
+                await connection.execute(
+                    sa.select(groups.c.gid, groups.c.type).where(groups.c.gid.in_(gids))
+                )
+            ).fetchall()
+
+            if not groups_results:
+                raise NoGroupIDFoundError(gids=gids)
+
+            primary_gid = None
+            for group in groups_results:
+                if group["type"] == GroupType.PRIMARY:
+                    primary_gid = group["gid"]
+            if primary_gid is None:
+                raise RootFolderRequiresAtLeastOnePrimaryGroupError(
+                    parent=parent, gids=gids
+                )
+
+            permissions_gid = primary_gid
 
         # folder entry can now be inserted
-        try:
-            folder_id = await connection.scalar(
-                sa.insert(folders)
-                .values(
-                    name=name,
-                    description=description,
-                    created_by=gid,
-                    product_name=product_name,
-                )
-                .returning(folders.c.id)
+        folder_id = await connection.scalar(
+            sa.insert(folders)
+            .values(
+                name=name,
+                description=description,
+                created_by=permissions_gid,
+                product_name=product_name,
             )
+            .returning(folders.c.id)
+        )
 
-            if not folder_id:
-                raise CouldNotCreateFolderError(folder=name, parent=parent)
+        if not folder_id:
+            raise CouldNotCreateFolderError(folder=name, parent=parent)
 
-            await connection.execute(
-                sa.insert(folders_access_rights).values(
-                    folder_id=folder_id,
-                    gid=gid,
-                    traversal_parent_id=parent,
-                    original_parent_id=parent,
-                    **OWNER_PERMISSIONS.to_dict(),
-                )
+        await connection.execute(
+            sa.insert(folders_access_rights).values(
+                folder_id=folder_id,
+                gid=permissions_gid,
+                traversal_parent_id=parent,
+                original_parent_id=parent,
+                **OWNER_PERMISSIONS.to_dict(),
             )
-        except ForeignKeyViolation as e:
-            raise GroupIdDoesNotExistError(gid=gid) from e
+        )
 
         return _FolderID(folder_id)
 
@@ -560,7 +618,7 @@ async def folder_share_or_update_permissions(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    sharing_gid: _GroupID,
+    sharing_gids: set[_GroupID],
     *,
     recipient_gid: _GroupID,
     recipient_role: FolderAccessRole,
@@ -573,16 +631,16 @@ async def folder_share_or_update_permissions(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        NoAccessForGroupsFoundError
     """
     # NOTE: if the `sharing_gid`` has permissions to share it can share it with any `FolderAccessRole`
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=folder_id,
-            gid=sharing_gid,
+            gids=sharing_gids,
             permissions=required_permissions,
-            enforece_all_permissions=False,
         )
 
         # update or create permissions entry
@@ -611,7 +669,7 @@ async def folder_update(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,
+    gids: set[_GroupID],
     *,
     name: str | None = None,
     description: str | None = None,
@@ -624,15 +682,15 @@ async def folder_update(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        NoAccessForGroupsFoundError
     """
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=folder_id,
-            gid=gid,
+            gids=gids,
             permissions=_required_permissions,
-            enforece_all_permissions=False,
         )
 
         # do not update if nothing changed
@@ -655,7 +713,7 @@ async def folder_delete(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,
+    gids: set[_GroupID],
     *,
     _required_permissions: _FolderPermissions = _requires(  # noqa: B008
         _BasePermissions.DELETE_FOLDER
@@ -666,17 +724,17 @@ async def folder_delete(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        NoAccessForGroupsFoundError
     """
     childern_folder_ids: list[_FolderID] = []
 
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=folder_id,
-            gid=gid,
+            gids=gids,
             permissions=_required_permissions,
-            enforece_all_permissions=False,
         )
 
         # list all children then delete
@@ -692,7 +750,7 @@ async def folder_delete(
 
     # first remove all childeren
     for child_folder_id in childern_folder_ids:
-        await folder_delete(connection, product_name, child_folder_id, gid)
+        await folder_delete(connection, product_name, child_folder_id, gids)
 
     # as a last step remove the folder per se
     async with connection.begin():
@@ -703,7 +761,7 @@ async def folder_move(
     connection: SAConnection,
     product_name: _ProductName,
     source_folder_id: _FolderID,
-    gid: _GroupID,
+    gids: set[_GroupID],
     *,
     destination_folder_id: _FolderID | None,
     required_permissions_source: _FolderPermissions = _requires(  # noqa: B008
@@ -718,34 +776,34 @@ async def folder_move(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        NoAccessForGroupsFoundError
         CannotMoveFolderSharedViaNonPrimaryGroupError:
     """
     async with connection.begin():
-        source_access_entry = await _check_folder_and_access(
+        source_access_entry = await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=source_folder_id,
-            gid=gid,
+            gids=gids,
             permissions=required_permissions_source,
-            enforece_all_permissions=False,
         )
 
         source_access_gid = source_access_entry.gid
         group_type: GroupType | None = await connection.scalar(
-            sa.select([groups.c.type]).where(groups.c.gid == source_access_gid)
+            sa.select(groups.c.type).where(groups.c.gid == source_access_gid)
         )
+        # Might drop primary check
         if group_type is None or group_type != GroupType.PRIMARY:
             raise CannotMoveFolderSharedViaNonPrimaryGroupError(
                 group_type=group_type, gid=source_access_gid
             )
         if destination_folder_id:
-            await _check_folder_and_access(
+            await _check_and_get_folder_access(
                 connection,
                 product_name,
                 folder_id=destination_folder_id,
-                gid=gid,
+                gids=gids,
                 permissions=required_permissions_destination,
-                enforece_all_permissions=False,
             )
 
         # set new traversa_parent_id on the source_folder_id which is equal to destination_folder_id
@@ -754,7 +812,7 @@ async def folder_move(
             .where(
                 sa.and_(
                     folders_access_rights.c.folder_id == source_folder_id,
-                    folders_access_rights.c.gid == gid,
+                    folders_access_rights.c.gid.in_(gids),
                 )
             )
             .values(traversal_parent_id=destination_folder_id)
@@ -765,7 +823,7 @@ async def folder_add_project(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,
+    gids: set[_GroupID],
     *,
     project_uuid: _ProjectID,
     required_permissions=_requires(  # noqa: B008
@@ -777,16 +835,16 @@ async def folder_add_project(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        NoAccessForGroupsFoundError
         ProjectAlreadyExistsInFolderError
     """
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=folder_id,
-            gid=gid,
+            gids=gids,
             permissions=required_permissions,
-            enforece_all_permissions=False,
         )
 
         # check if already added in folder
@@ -814,7 +872,7 @@ async def folder_move_project(
     connection: SAConnection,
     product_name: _ProductName,
     source_folder_id: _FolderID,
-    gid: _GroupID,
+    gids: set[_GroupID],
     *,
     project_uuid: _ProjectID,
     destination_folder_id: _FolderID | None,
@@ -833,13 +891,12 @@ async def folder_move_project(
         CannotMoveFolderSharedViaNonPrimaryGroupError:
     """
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=source_folder_id,
-            gid=gid,
+            gids=gids,
             permissions=_required_permissions_source,
-            enforece_all_permissions=False,
         )
 
     if destination_folder_id is None:
@@ -848,19 +905,18 @@ async def folder_move_project(
             connection,
             product_name,
             folder_id=source_folder_id,
-            gid=gid,
+            gids=gids,
             project_uuid=project_uuid,
         )
         return
 
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=destination_folder_id,
-            gid=gid,
+            gids=gids,
             permissions=_required_permissions_destination,
-            enforece_all_permissions=False,
         )
 
         await connection.execute(
@@ -905,7 +961,7 @@ async def folder_remove_project(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,
+    gids: set[_GroupID],
     *,
     project_uuid: _ProjectID,
     required_permissions=_requires(  # noqa: B008
@@ -917,15 +973,15 @@ async def folder_remove_project(
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        NoAccessForGroupsFoundError
     """
     async with connection.begin():
-        await _check_folder_and_access(
+        await _check_and_get_folder_access(
             connection,
             product_name,
             folder_id=folder_id,
-            gid=gid,
+            gids=gids,
             permissions=required_permissions,
-            enforece_all_permissions=False,
         )
 
         await connection.execute(
@@ -935,48 +991,47 @@ async def folder_remove_project(
         )
 
 
-def _get_subquery_my_access_rights(
-    access_via_gid: _GroupID, access_via_folder_id: _FolderID | None
-) -> ScalarSelect:
-    return (
+_LIST_GROUP_BY_FIELDS: Final[tuple[Column, ...]] = (
+    folders.c.id,
+    folders.c.name,
+    folders.c.description,
+    folders.c.created_by,
+    folders_access_rights.c.traversal_parent_id,
+)
+_LIST_SELECT_FIELDS: Final[tuple[Label | Column, ...]] = (
+    *_LIST_GROUP_BY_FIELDS,
+    # access_rights
+    (
         sa.select(
-            sa.func.jsonb_build_object(
-                "read",
-                folders_access_rights.c.read,
-                "write",
-                folders_access_rights.c.write,
-                "delete",
-                folders_access_rights.c.delete,
-            ).label("my_access_rights"),
+            sa.func.jsonb_object_agg(
+                folders_access_rights.c.gid,
+                sa.func.jsonb_build_object(
+                    "read",
+                    folders_access_rights.c.read,
+                    "write",
+                    folders_access_rights.c.write,
+                    "delete",
+                    folders_access_rights.c.delete,
+                ),
+            ).label("access_rights"),
         )
-        .where(
-            folders_access_rights.c.folder_id == access_via_folder_id
-            if access_via_gid and access_via_folder_id
-            else folders_access_rights.c.folder_id == folders.c.id
-        )
-        .where(folders_access_rights.c.gid == access_via_gid)
+        .where(folders_access_rights.c.folder_id == folders.c.id)
         .correlate(folders)
         .scalar_subquery()
-    )
-
-
-_SUBQUERY_ACCESS_RIGHTS: Final[ScalarSelect] = (
-    sa.select(
-        sa.func.jsonb_object_agg(
-            folders_access_rights.c.gid,
-            sa.func.jsonb_build_object(
-                "read",
-                folders_access_rights.c.read,
-                "write",
-                folders_access_rights.c.write,
-                "delete",
-                folders_access_rights.c.delete,
-            ),
-        ).label("access_rights"),
-    )
-    .where(folders_access_rights.c.folder_id == folders.c.id)
-    .correlate(folders)
-    .scalar_subquery()
+    ).label("access_rights"),
+    # my_access_rights
+    func.json_build_object(
+        "read",
+        func.max(folders_access_rights.c.read.cast(INTEGER)).cast(BOOLEAN),
+        "write",
+        func.max(folders_access_rights.c.write.cast(INTEGER)).cast(BOOLEAN),
+        "delete",
+        func.max(folders_access_rights.c.delete.cast(INTEGER)).cast(BOOLEAN),
+    ).label("my_access_rights"),
+    # access_created
+    func.max(folders_access_rights.c.created).label("access_created"),
+    # access_modified
+    func.max(folders_access_rights.c.modified).label("access_modified"),
 )
 
 
@@ -984,96 +1039,70 @@ async def folder_list(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID | None,
-    gid: _GroupID,
+    gids: set[_GroupID],
     *,
     offset: NonNegativeInt,
     limit: NonNegativeInt,
-    order_by: OrderByDict = OrderByDict(
+    order_by: OrderByDict = OrderByDict(  # noqa: B008
         field="modified", direction=OrderDirection.DESC
     ),
-    _required_permissions=_requires(_BasePermissions.LIST_FOLDERS),  # noqa: B008
+    required_permissions: _FolderPermissions = _requires(  # noqa: B008
+        _BasePermissions.LIST_FOLDERS
+    ),
 ) -> tuple[int, list[FolderEntry]]:
     """
     Raises:
         FolderNotFoundError
         FolderNotSharedWithGidError
         InsufficientPermissionsError
+        NoAccessForGroupsFoundError
     """
-    # NOTE: when `folder_id is None` list the root folder of `gid`
+    # NOTE: when `folder_id is None` list the root folder of the `gids`
+
+    if folder_id is not None:
+        await _check_and_get_folder_access(
+            connection,
+            product_name,
+            folder_id=folder_id,
+            gids=gids,
+            permissions=required_permissions,
+        )
 
     results: list[FolderEntry] = []
 
-    async with connection.begin():
-        access_via_gid: _GroupID = gid
-        access_via_folder_id: _FolderID | None = None
-
-        if folder_id:
-            # this one provides the set of access rights
-            resolved_access_rights = await _check_folder_and_access(
-                connection,
-                product_name,
-                folder_id=folder_id,
-                gid=gid,
-                permissions=_required_permissions,
-                enforece_all_permissions=False,
-            )
-            access_via_gid = resolved_access_rights.gid
-            access_via_folder_id = resolved_access_rights.folder_id
-
-        base_query = (
-            sa.select(
-                folders,
-                folders_access_rights,
-                folders_access_rights.c.created.label("access_created"),
-                folders_access_rights.c.modified.label("access_modified"),
-                sa.literal_column(f"{access_via_gid}").label("access_via_gid"),
-                _get_subquery_my_access_rights(
-                    access_via_gid, access_via_folder_id
-                ).label("my_access_rights"),
-                _SUBQUERY_ACCESS_RIGHTS.label("access_rights"),
-            )
-            .join(
-                folders_access_rights, folders.c.id == folders_access_rights.c.folder_id
-            )
-            .where(
-                folders_access_rights.c.traversal_parent_id.is_(None)
-                if folder_id is None
-                else folders_access_rights.c.traversal_parent_id == folder_id
-            )
-            .where(
-                folders_access_rights.c.gid.in_([access_via_gid])
-                if folder_id is None
-                else True
-            )
-            .where(
-                _get_and_calsue_with_only_true_entries(
-                    _required_permissions, folders_access_rights
-                )
-                if folder_id is None
-                else True
-            )
-            .where(folders.c.product_name == product_name)
+    base_query = (
+        sa.select(*_LIST_SELECT_FIELDS)
+        .join(folders_access_rights, folders.c.id == folders_access_rights.c.folder_id)
+        .where(folders.c.product_name == product_name)
+        .where(
+            folders_access_rights.c.traversal_parent_id.is_(None)
+            if folder_id is None
+            else folders_access_rights.c.traversal_parent_id == folder_id
         )
-
-        # Select total count from base_query
-        subquery = base_query.subquery()
-        count_query = sa.select(sa.func.count()).select_from(subquery)
-        count_result = await connection.execute(count_query)
-        total_count = await count_result.scalar()
-
-        # Ordering and pagination
-        if order_by["direction"] == OrderDirection.ASC:
-            list_query = base_query.order_by(
-                sa.asc(getattr(folders.c, order_by["field"]))
+        .where(folders_access_rights.c.gid.in_(gids))
+        .where(
+            _get_filter_for_enabled_permissions(
+                required_permissions, folders_access_rights
             )
-        else:
-            list_query = base_query.order_by(
-                sa.desc(getattr(folders.c, order_by["field"]))
-            )
-        list_query = list_query.offset(offset).limit(limit)
+        )
+        .group_by(*_LIST_GROUP_BY_FIELDS)
+    )
 
-        async for entry in connection.execute(list_query):
-            results.append(FolderEntry.from_orm(entry))  # noqa: PERF401s
+    # Select total count from base_query
+    subquery = base_query.subquery()
+    count_query = sa.select(sa.func.count()).select_from(subquery)
+    count_result = await connection.execute(count_query)
+    total_count = await count_result.scalar()
+
+    # Ordering and pagination
+    if order_by["direction"] == OrderDirection.ASC:
+        list_query = base_query.order_by(sa.asc(getattr(folders.c, order_by["field"])))
+    else:
+        list_query = base_query.order_by(sa.desc(getattr(folders.c, order_by["field"])))
+    list_query = list_query.offset(offset).limit(limit)
+
+    async for entry in connection.execute(list_query):
+        results.append(FolderEntry.from_orm(entry))  # noqa: PERF401s
 
     return cast(int, total_count), results
 
@@ -1082,56 +1111,42 @@ async def folder_get(
     connection: SAConnection,
     product_name: _ProductName,
     folder_id: _FolderID,
-    gid: _GroupID,
+    gids: set[_GroupID],
     *,
-    required_permissions=_requires(_BasePermissions.GET_FOLDER),  # noqa: B008
+    required_permissions: _FolderPermissions = _requires(  # noqa: B008
+        _BasePermissions.GET_FOLDER
+    ),
 ) -> FolderEntry:
-    async with connection.begin():
-        resolved_access_rights: _ResolvedAccessRights = await _check_folder_and_access(
-            connection,
-            product_name,
-            folder_id=folder_id,
-            gid=gid,
-            permissions=required_permissions,
-            enforece_all_permissions=False,
-        )
-        access_via_gid = resolved_access_rights.gid
-        access_via_folder_id = resolved_access_rights.folder_id
+    resolved_access_rights: _ResolvedAccessRights = await _check_and_get_folder_access(
+        connection,
+        product_name,
+        folder_id=folder_id,
+        gids=gids,
+        permissions=required_permissions,
+    )
+    permissions_gid: _GroupID = resolved_access_rights.gid
 
-        query = (
-            sa.select(
-                folders,
-                folders_access_rights,
-                folders_access_rights.c.created.label("access_created"),
-                folders_access_rights.c.modified.label("access_modified"),
-                sa.literal_column(f"{access_via_gid}").label("access_via_gid"),
-                _get_subquery_my_access_rights(
-                    access_via_gid, access_via_folder_id
-                ).label("my_access_rights"),
-                _SUBQUERY_ACCESS_RIGHTS.label("access_rights"),
+    query = (
+        sa.select(*_LIST_SELECT_FIELDS)
+        .join(folders_access_rights, folders.c.id == folders_access_rights.c.folder_id)
+        .where(folders_access_rights.c.folder_id == folder_id)
+        .where(folders_access_rights.c.gid == permissions_gid)
+        .where(
+            _get_filter_for_enabled_permissions(
+                required_permissions, folders_access_rights
             )
-            .join(
-                folders_access_rights, folders.c.id == folders_access_rights.c.folder_id
-            )
-            .where(folders_access_rights.c.folder_id == folder_id)
-            .where(folders_access_rights.c.gid.in_([access_via_gid]))
-            .where(
-                _get_and_calsue_with_only_true_entries(
-                    required_permissions, folders_access_rights
-                )
-                if folder_id is None
-                else True
-            )
-            .where(folders.c.product_name == product_name)
+            if folder_id is None
+            else True
         )
+        .where(folders.c.product_name == product_name)
+        .group_by(*_LIST_GROUP_BY_FIELDS)
+    )
 
-        query_result: RowProxy | None = await (
-            await connection.execute(query.params(start_folder_id=folder_id))
-        ).fetchone()
+    query_result: RowProxy | None = await (await connection.execute(query)).fetchone()
 
     if query_result is None:
         raise FolderNotFoundError(
-            folder_id=folder_id, gid=gid, product_name=product_name
+            folder_id=folder_id, gids=gids, product_name=product_name
         )
 
     return FolderEntry.from_orm(query_result)
