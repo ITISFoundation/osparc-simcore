@@ -96,12 +96,14 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       createAccountBtn.addListener("execute", () => {
         createAccountBtn.setEnabled(false);
         if (osparc.utils.Utils.isDevelopmentPlatform()) {
+          // Allow registering in Development Platform
           this.fireEvent("toRegister");
         } else if (config["invitation_required"]) {
           if (config["invitation_form"]) {
+            // If invitation_required (login_settings) and invitation_form (vendor)
             this.fireEvent("toRequestAccount");
           } else {
-            // OM: "osparc" would still fall here
+            // do not show request account form, pop up a dialog with instructions instead
             osparc.store.Support.openInvitationRequiredDialog();
           }
         } else {
