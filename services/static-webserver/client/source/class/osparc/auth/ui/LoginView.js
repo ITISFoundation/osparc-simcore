@@ -89,20 +89,18 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const createAccountBtn = new osparc.ui.form.LinkButton(this.tr("Create Account"));
-      const config = osparc.store.Store.getInstance().get("config");
-      if (config["invitation_required"]) {
+      const createAccountAction = osparc.product.Utils.getCreateAccountAction();
+      if (["REQUEST_ACCOUNT_FORM", "REQUEST_ACCOUNT_INSTRUCTIONS"].includes(createAccountAction)) {
         createAccountBtn.setLabel(this.tr("Request Account"));
       }
       createAccountBtn.addListener("execute", () => {
         createAccountBtn.setEnabled(false);
-        if (config["invitation_required"]) {
-          if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-            this.fireEvent("toRequestAccount");
-          } else {
-            osparc.store.Support.openInvitationRequiredDialog();
-          }
-        } else {
+        if (createAccountAction === "REGISTER") {
           this.fireEvent("toRegister");
+        } else if (createAccountAction === "REQUEST_ACCOUNT_FORM") {
+          this.fireEvent("toRequestAccount");
+        } else if (createAccountAction === "REQUEST_ACCOUNT_FORM") {
+          osparc.store.Support.openInvitationRequiredDialog();
         }
         createAccountBtn.setEnabled(true);
       }, this);
