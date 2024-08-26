@@ -123,7 +123,7 @@ async def get_user_profile(
         last_name=user_profile["last_name"],
         login=user_profile["login"],
         role=user_profile["role"],
-        groups={
+        groups={  # type: ignore[arg-type]
             "me": user_primary_group,
             "organizations": user_standard_groups,
             "all": all_group,

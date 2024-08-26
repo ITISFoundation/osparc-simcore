@@ -9,6 +9,7 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGetPermissions,
     WalletGetWithAvailableCredits,
 )
+from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
@@ -65,7 +66,7 @@ async def list_wallets_with_available_credits_for_user(
         wallets_api.append(
             WalletGetWithAvailableCredits(
                 wallet_id=wallet.wallet_id,
-                name=wallet.name,
+                name=IDStr(wallet.name),
                 description=wallet.description,
                 owner=wallet.owner,
                 thumbnail=wallet.thumbnail,
@@ -96,7 +97,7 @@ async def get_wallet_with_available_credits_by_user_and_wallet(
 
     return WalletGetWithAvailableCredits(
         wallet_id=user_wallet_db.wallet_id,
-        name=user_wallet_db.name,
+        name=IDStr(user_wallet_db.name),
         description=user_wallet_db.description,
         owner=user_wallet_db.owner,
         thumbnail=user_wallet_db.thumbnail,
@@ -223,7 +224,7 @@ async def get_wallet_by_user(
 
     wallet_api: WalletGet = WalletGet(
         wallet_id=wallet.wallet_id,
-        name=wallet.name,
+        name=IDStr(wallet.name),
         description=wallet.description,
         owner=wallet.owner,
         thumbnail=wallet.thumbnail,

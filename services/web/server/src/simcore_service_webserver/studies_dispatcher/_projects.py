@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from aiohttp import web
-from models_library.projects import Project, ProjectID
+from models_library.projects import DateTimeStr, Project, ProjectID
 from models_library.projects_access import AccessRights
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
@@ -69,7 +69,7 @@ def _create_file_picker(download_link: str, output_label: str | None):
         label="File Picker",
         inputs={},
         inputNodes=[],
-        outputs={output_id: output},
+        outputs={output_id: output},  # type: ignore[dict-item]
         progress=0,
     )
     return node, output_id
@@ -94,13 +94,13 @@ def _create_project(
         uuid=project_id,
         name=name,
         description=description,
-        thumbnail=thumbnail,
+        thumbnail=thumbnail,  # type: ignore[arg-type]
         prjOwner=owner.email,
-        accessRights={owner.primary_gid: access_rights},
-        creationDate=now_str(),
-        lastChangeDate=now_str(),
-        workbench=workbench,
-        ui=StudyUI(workbench=workbench_ui),
+        accessRights={owner.primary_gid: access_rights},  # type: ignore[dict-item]
+        creationDate=DateTimeStr(now_str()),
+        lastChangeDate=DateTimeStr(now_str()),
+        workbench=workbench,  # type: ignore[arg-type]
+        ui=StudyUI(workbench=workbench_ui),  # type: ignore[arg-type]
     )
 
     return project
@@ -153,7 +153,7 @@ def _create_project_with_filepicker_and_service(
         version=viewer_info.version,
         label=viewer_info.label,
         inputs={
-            viewer_info.input_port_key: PortLink(
+            viewer_info.input_port_key: PortLink(  # type: ignore[dict-item]
                 nodeUuid=file_picker_id,
                 output=file_picker_output_id,
             )

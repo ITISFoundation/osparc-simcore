@@ -87,7 +87,8 @@ async def get_default_service_pricing_plan(
 ) -> PricingPlanGet:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
     url = URL(
-        f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}/pricing-plan"
+        f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}/pricing-plan",
+        encoded=True,
     ).with_query(
         {
             "product_name": product_name,
