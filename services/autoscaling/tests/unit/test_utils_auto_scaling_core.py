@@ -142,6 +142,7 @@ def minimal_configuration(
     docker_swarm: None,
     disabled_rabbitmq: None,
     disabled_ec2: None,
+    disabled_ssm: None,
     disable_dynamic_service_background_task: None,
     mocked_redis_server: None,
 ) -> None:

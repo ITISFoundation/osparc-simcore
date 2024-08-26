@@ -24,6 +24,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 async def test_ec2_does_not_initialize_if_deactivated(
     disabled_rabbitmq: None,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):
@@ -86,6 +87,7 @@ def _assert_metrics(
 
 async def test_ec2_with_instrumentation_enabled(
     disabled_rabbitmq: None,
+    disabled_ssm: None,
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_redis_server: None,
     initialized_app: FastAPI,

@@ -14,12 +14,15 @@ from types_aiobotocore_ssm import SSMClient
 from types_aiobotocore_ssm.literals import CommandStatusType
 
 from ._error_handler import ssm_exception_handler
-from ._errors import SSMCommandExecutionError
+from ._errors import SSMCommandExecutionResultError, SSMCommandExecutionTimeoutError
 
 _logger = logging.getLogger(__name__)
 
 _AWS_WAIT_MAX_DELAY: Final[int] = 5
 _AWS_WAIT_NUM_RETRIES: Final[int] = 3
+
+_CLOUD_INIT_STATUS_COMMAND: Final[str] = "cloud-init status"
+_CLOUD_INIT_STATUS_COMMAND_NAME: Final[str] = _CLOUD_INIT_STATUS_COMMAND
 
 
 @dataclass(frozen=True)
@@ -123,8 +126,9 @@ class SimcoreSSMAPI:
                 }
             ],
         )
-        assert response["InstanceInformationList"]  # nosec
-        if response["InstanceInformationList"]:
+        if response.get(
+            "InstanceInformationList"
+        ):  # NOTE: the key is actually NOT REQUIRED!
             assert len(response["InstanceInformationList"]) == 1  # nosec
             assert "PingStatus" in response["InstanceInformationList"][0]  # nosec
             return bool(
@@ -139,8 +143,8 @@ class SimcoreSSMAPI:
     ) -> bool:
         cloud_init_status_command = await self.send_command(
             (instance_id,),
-            command="cloud-init status",
-            command_name="cloud-init status",
+            command=_CLOUD_INIT_STATUS_COMMAND,
+            command_name=_CLOUD_INIT_STATUS_COMMAND_NAME,
         )
         # wait for command to complete
         waiter = self._client.get_waiter(  # pylint: disable=assignment-from-no-return
@@ -157,11 +161,15 @@ class SimcoreSSMAPI:
             )
         except botocore.exceptions.WaiterError as exc:
             msg = f"Timed-out waiting for {instance_id} to complete cloud-init"
-            raise SSMCommandExecutionError(details=msg) from exc
+            raise SSMCommandExecutionTimeoutError(details=msg) from exc
         response = await self._client.get_command_invocation(
             CommandId=cloud_init_status_command.command_id, InstanceId=instance_id
         )
         if response["Status"] != "Success":
-            raise SSMCommandExecutionError(details=response["StatusDetails"])
+            raise SSMCommandExecutionResultError(
+                id=response["CommandId"],
+                name=_CLOUD_INIT_STATUS_COMMAND_NAME,
+                details=response["StatusDetails"],
+            )
         # check if cloud-init is done
         return bool("status: done" in response["StandardOutputContent"])
