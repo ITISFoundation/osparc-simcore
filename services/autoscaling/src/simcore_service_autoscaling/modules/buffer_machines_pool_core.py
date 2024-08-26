@@ -16,10 +16,9 @@ Open features:
 
 import logging
 from collections import defaultdict
-from typing import Final, TypeAlias, cast
+from typing import TypeAlias, cast
 
 from aws_library.ec2 import (
-    AWSTagKey,
     AWSTagValue,
     EC2InstanceConfig,
     EC2InstanceData,
@@ -32,10 +31,17 @@ from aws_library.ssm import (
 )
 from fastapi import FastAPI
 from models_library.utils.json_serialization import json_dumps, json_loads
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
+from ..constants import (
+    BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
+    DOCKER_PULL_COMMAND,
+    PRE_PULLED_IMAGES_EC2_TAG_KEY,
+    PREPULL_COMMAND_NAME,
+)
 from ..core.settings import get_application_settings
 from ..models import BufferPool, BufferPoolManager
 from ..utils.auto_scaling_core import ec2_buffer_startup_script
@@ -43,18 +49,6 @@ from ..utils.buffer_machines_pool_core import get_deactivated_buffer_ec2_tags
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
 from .ssm import get_ssm_client
-
-_BUFFER_MACHINE_PULLING_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
-    AWSTagKey, "pulling"
-)
-_BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
-    AWSTagKey, "ssm-command-id"
-)
-_PREPULL_COMMAND_NAME: Final[str] = "docker images pulling"
-_PRE_PULLED_IMAGES_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
-    AWSTagKey, "io.simcore.autoscaling.pre_pulled_images"
-)
-
 
 _logger = logging.getLogger(__name__)
 
@@ -64,7 +58,7 @@ async def _analyze_running_instance_state(
 ):
     ssm_client = get_ssm_client(app)
 
-    if _BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
+    if BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
         buffer_pool.pulling_instances.add(instance)
     elif await ssm_client.is_instance_connected_to_ssm_server(instance.id):
         app_settings = get_application_settings(app)
@@ -177,7 +171,7 @@ async def _terminate_instances_with_invalid_pre_pulled_images(
         for instance in all_pre_pulled_instances:
             if (
                 pre_pulled_images := json_loads(
-                    instance.tags.get(_PRE_PULLED_IMAGES_EC2_TAG_KEY, "[]")
+                    instance.tags.get(PRE_PULLED_IMAGES_EC2_TAG_KEY, "[]")
                 )
             ) and pre_pulled_images != ec2_boot_config.pre_pull_images:
                 _logger.info(
@@ -269,9 +263,6 @@ async def _add_remove_buffer_instances(
 
 InstancesToStop: TypeAlias = set[EC2InstanceData]
 InstancesToTerminate: TypeAlias = set[EC2InstanceData]
-_DOCKER_PULL_COMMAND: Final[
-    str
-] = "docker compose -f /docker-pull.compose.yml -p buffering pull"
 
 
 async def _handle_pool_image_pulling(
@@ -283,14 +274,14 @@ async def _handle_pool_image_pulling(
         # trigger the image pulling
         ssm_command = await ssm_client.send_command(
             [instance.id for instance in pool.waiting_to_pull_instances],
-            command=_DOCKER_PULL_COMMAND,
-            command_name=_PREPULL_COMMAND_NAME,
+            command=DOCKER_PULL_COMMAND,
+            command_name=PREPULL_COMMAND_NAME,
         )
         await ec2_client.set_instances_tags(
             tuple(pool.waiting_to_pull_instances),
             tags={
-                _BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true"),
-                _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: AWSTagValue(
+                BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true"),
+                BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: AWSTagValue(
                     ssm_command.command_id
                 ),
             },
@@ -301,7 +292,7 @@ async def _handle_pool_image_pulling(
     # wait for the image pulling to complete
     for instance in pool.pulling_instances:
         if ssm_command_id := instance.tags.get(
-            _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY
+            BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY
         ):
             ssm_command = await ssm_client.get_command(
                 instance.id, command_id=ssm_command_id
@@ -324,7 +315,7 @@ async def _handle_pool_image_pulling(
         await ec2_client.set_instances_tags(
             tuple(instances_to_stop),
             tags={
-                _PRE_PULLED_IMAGES_EC2_TAG_KEY: AWSTagValue(
+                PRE_PULLED_IMAGES_EC2_TAG_KEY: AWSTagValue(
                     json_dumps(
                         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
                             instance_type
@@ -357,8 +348,8 @@ async def _handle_image_pre_pulling(
             "pending buffer instances completed pulling of images, stopping them",
         ):
             tag_keys_to_remove = (
-                _BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
-                _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
+                BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
             )
             await ec2_client.remove_instances_tags(
                 tuple(instances_to_stop),
