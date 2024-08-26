@@ -30,7 +30,6 @@ from aws_library.ssm import (
     SSMCommandExecutionTimeoutError,
 )
 from fastapi import FastAPI
-from models_library.utils.json_serialization import json_dumps, json_loads
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
@@ -39,13 +38,16 @@ from ..constants import (
     BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
     BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
     DOCKER_PULL_COMMAND,
-    PRE_PULLED_IMAGES_EC2_TAG_KEY,
     PREPULL_COMMAND_NAME,
 )
 from ..core.settings import get_application_settings
 from ..models import BufferPool, BufferPoolManager
 from ..utils.auto_scaling_core import ec2_buffer_startup_script
-from ..utils.buffer_machines_pool_core import get_deactivated_buffer_ec2_tags
+from ..utils.buffer_machines_pool_core import (
+    dump_pre_pulled_images_as_tags,
+    get_deactivated_buffer_ec2_tags,
+    load_pre_pulled_images_from_tags,
+)
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
 from .ssm import get_ssm_client
@@ -170,9 +172,7 @@ async def _terminate_instances_with_invalid_pre_pulled_images(
 
         for instance in all_pre_pulled_instances:
             if (
-                pre_pulled_images := json_loads(
-                    instance.tags.get(PRE_PULLED_IMAGES_EC2_TAG_KEY, "[]")
-                )
+                pre_pulled_images := load_pre_pulled_images_from_tags(instance.tags)
             ) and pre_pulled_images != ec2_boot_config.pre_pull_images:
                 _logger.info(
                     "%s",
@@ -314,15 +314,11 @@ async def _handle_pool_image_pulling(
         assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
         await ec2_client.set_instances_tags(
             tuple(instances_to_stop),
-            tags={
-                PRE_PULLED_IMAGES_EC2_TAG_KEY: AWSTagValue(
-                    json_dumps(
-                        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                            instance_type
-                        ].pre_pull_images
-                    )
-                )
-            },
+            tags=dump_pre_pulled_images_as_tags(
+                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                    instance_type
+                ].pre_pull_images
+            ),
         )
     return instances_to_stop, broken_instances_to_terminate
 
