@@ -7,7 +7,7 @@ from typing import TypedDict
 
 from aiopg.sa.connection import SAConnection
 
-from .tags_sql import (
+from .utils_tags_sql import (
     count_users_with_access_rights_stmt,
     create_tag_stmt,
     delete_tag_stmt,
