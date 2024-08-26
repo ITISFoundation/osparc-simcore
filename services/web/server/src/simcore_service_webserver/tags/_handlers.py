@@ -5,7 +5,7 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.users import UserID
-from pydantic import BaseModel, ConstrainedStr, Extra, Field, PositiveInt
+from pydantic import BaseModel, ConstrainedStr, Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -49,13 +49,6 @@ def _handle_tags_exceptions(handler: Handler):
 
 class _RequestContext(BaseModel):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-
-
-class _InputSchema(BaseModel):
-    class Config:
-        allow_population_by_field_name = False
-        extra = Extra.forbid
-        allow_mutations = False
 
 
 class ColorStr(ConstrainedStr):
