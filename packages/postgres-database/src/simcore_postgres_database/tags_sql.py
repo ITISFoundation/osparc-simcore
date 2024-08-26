@@ -172,7 +172,7 @@ def get_tags_for_project_stmt(*, project_index: int):
     )
 
 
-def add_tag_to_project_stmt(*, project_index: int, tag_id: int) -> None:
+def add_tag_to_project_stmt(*, project_index: int, tag_id: int):
     return (
         pg_insert(projects_tags)
         .values(
@@ -190,7 +190,7 @@ def get_tags_for_services_stmt(*, key: str, version: str):
     )
 
 
-def add_tag_to_services_stmt(*, key: str, version: str, tag_id: int) -> None:
+def add_tag_to_services_stmt(*, key: str, version: str, tag_id: int):
     return (
         pg_insert(services_tags)
         .values(
