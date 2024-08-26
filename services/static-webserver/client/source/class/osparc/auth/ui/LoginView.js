@@ -95,10 +95,10 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       }
       createAccountBtn.addListener("execute", () => {
         createAccountBtn.setEnabled(false);
-        if (config["invitation_required"]) {
-          if (osparc.utils.Utils.isDevelopmentPlatform()) {
-            this.fireEvent("toRegister");
-          } else if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        if (osparc.utils.Utils.isDevelopmentPlatform()) {
+          this.fireEvent("toRegister");
+        } else if (config["invitation_required"]) {
+          if (config["invitation_form"]) {
             this.fireEvent("toRequestAccount");
           } else {
             // OM: "osparc" would still fall here
