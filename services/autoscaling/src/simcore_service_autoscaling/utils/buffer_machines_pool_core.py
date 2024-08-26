@@ -4,7 +4,7 @@ from operator import itemgetter
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
-from models_library.utils.json_serialization import json_dumps, json_loads
+from models_library.utils.json_serialization import json_dumps
 from pydantic import parse_obj_as, parse_raw_as
 
 from ..constants import (
@@ -64,7 +64,7 @@ def load_pre_pulled_images_from_tags(tags: EC2Tags) -> list[DockerGenericTag]:
     # AWS Tag values are limited to 256 characters so we chunk the images
     if PRE_PULLED_IMAGES_EC2_TAG_KEY in tags:
         # read directly
-        return json_loads(tags[PRE_PULLED_IMAGES_EC2_TAG_KEY])
+        return parse_raw_as(list[DockerGenericTag], tags[PRE_PULLED_IMAGES_EC2_TAG_KEY])
 
     assembled_json = "".join(
         map(
