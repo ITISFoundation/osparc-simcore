@@ -205,8 +205,8 @@ qx.Class.define("osparc.product.Utils", {
       }
 
       const config = osparc.store.Store.getInstance().get("config");
-      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
       if (config["invitation_required"]) {
+        const vendor = osparc.store.VendorInfo.getInstance().getVendor();
         if (vendor["invitation_form"]) {
           // If invitation_required (login_settings) and invitation_form (vendor)
           return "REQUEST_ACCOUNT_FORM";
