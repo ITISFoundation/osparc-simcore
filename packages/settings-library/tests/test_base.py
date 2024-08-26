@@ -4,7 +4,6 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=protected-access
 
-import inspect
 import json
 from collections.abc import Callable
 from typing import Any
@@ -310,7 +309,6 @@ def test_issubclass_type_error_with_pydantic_models():
     # TypeError: issubclass() arg 1 must be a class
     #
 
-    assert inspect.isclass(dict[str, str])
     assert not issubclass(dict, BaseSettings)
 
     # NOTE: this should be fixed by pydantic at some point. When this happens, this test will fail

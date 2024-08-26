@@ -632,7 +632,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         tagManager.addListener("updateTags", e => {
           const updatedData = e.getData();
           tagManager.setStudyData(updatedData);
-          this.fireDataEvent("updateStudy", updatedData);
+          if (osparc.utils.Resources.isStudy(resourceData)) {
+            this.fireDataEvent("updateStudy", updatedData);
+          } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+            this.fireDataEvent("updateTemplate", updatedData);
+          }
         }, this);
         page.addToContent(tagManager);
       }

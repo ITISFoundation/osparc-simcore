@@ -27,8 +27,8 @@ _logger = logging.getLogger(__name__)
 
 
 class _ProductsRequestContext(RequestParams):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 @routes.post(f"/{VTAG}/invitation:generate", name="generate_invitation")
@@ -60,11 +60,11 @@ async def generate_invitation(request: web.Request):
 
     invitation = InvitationGenerated(
         product_name=generated.product,
-        issuer=generated.issuer,
-        guest=generated.guest,
+        issuer=generated.issuer,  # type: ignore[arg-type]
+        guest=generated.guest,  # type: ignore[arg-type]
         trial_account_days=generated.trial_account_days,
         extra_credits_in_usd=generated.extra_credits_in_usd,
         created=generated.created,
-        invitation_link=f"{invitation_link}",
+        invitation_link=f"{invitation_link}",  # type: ignore[arg-type]
     )
     return envelope_json_response(invitation.dict(exclude_none=True))

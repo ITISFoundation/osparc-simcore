@@ -8,6 +8,7 @@ from typing import Any, ClassVar
 from aiohttp import web
 from aiohttp.web import Request
 from models_library.services import ServiceKey
+from models_library.services_types import ServiceVersion
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as, validator
 from pydantic.networks import HttpUrl
 
@@ -43,7 +44,8 @@ def _compose_service_only_dispatcher_prefix_url(
     request: web.Request, service_key: str, service_version: str
 ) -> HttpUrl:
     params = ViewerQueryParams(
-        viewer_key=service_key, viewer_version=service_version
+        viewer_key=ServiceKey(service_key),
+        viewer_version=ServiceVersion(service_version),
     ).dict(exclude_none=True, exclude_unset=True)
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)

@@ -21,7 +21,7 @@ from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
 
 
 def _get_backend_type_options() -> set[str]:
-    return {x for x in dir(S3Provider) if not x.startswith("_")}
+    return {x for x in S3Provider if not x.startswith("_")}
 
 
 def test_supported_backends_did_not_change() -> None:

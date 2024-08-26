@@ -72,11 +72,13 @@ def minimal_configuration(
     with_labelize_drain_nodes: EnvVarsDict,
     docker_swarm: None,
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     enabled_computational_mode: EnvVarsDict,
     local_dask_scheduler_server_envs: EnvVarsDict,
     mocked_ec2_instances_envs: EnvVarsDict,
     disabled_rabbitmq: None,
     disable_dynamic_service_background_task: None,
+    disable_buffers_pool_background_task: None,
     mocked_redis_server: None,
 ) -> None:
     ...
@@ -180,6 +182,32 @@ def ec2_instance_custom_tags(
 
 async def test_cluster_scaling_with_no_tasks_does_nothing(
     minimal_configuration: None,
+    app_settings: ApplicationSettings,
+    initialized_app: FastAPI,
+    mock_launch_instances: mock.Mock,
+    mock_terminate_instances: mock.Mock,
+    mock_rabbitmq_post_message: mock.Mock,
+    dask_spec_local_cluster: distributed.SpecCluster,
+):
+    await auto_scale_cluster(
+        app=initialized_app, auto_scaling_mode=ComputationalAutoscaling()
+    )
+    mock_launch_instances.assert_not_called()
+    mock_terminate_instances.assert_not_called()
+    _assert_rabbit_autoscaling_message_sent(
+        mock_rabbitmq_post_message,
+        app_settings,
+        initialized_app,
+        dask_spec_local_cluster.scheduler_address,
+    )
+
+
+@pytest.mark.acceptance_test(
+    "Ensure this does not happen https://github.com/ITISFoundation/osparc-simcore/issues/6227"
+)
+async def test_cluster_scaling_with_disabled_ssm_does_not_block_autoscaling(
+    minimal_configuration: None,
+    disabled_ssm: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     mock_launch_instances: mock.Mock,
