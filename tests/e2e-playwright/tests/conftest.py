@@ -245,7 +245,7 @@ def template_id(request: pytest.FixtureRequest) -> str:
     if key := request.config.getoption("--template-id"):
         assert isinstance(key, str)
         return key
-    return os.environ["TEMPLATE_ID"]
+    return None
 
 
 @pytest.fixture(scope="session")
