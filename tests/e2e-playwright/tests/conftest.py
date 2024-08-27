@@ -397,7 +397,7 @@ def create_new_project_and_delete(
     def _(
         expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
         press_open: bool = True,
-        template_id: str = None,
+        template_id: str | None = None,
     ) -> dict[str, Any]:
         assert (
             len(created_project_uuids) == 0
