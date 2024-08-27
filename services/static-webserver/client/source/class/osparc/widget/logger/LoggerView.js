@@ -102,6 +102,10 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       50: "ERROR" // CRITICAL
     },
 
+    printRow: function(rowData) {
+      return `${rowData.timeStamp} ${this.self().logLevel2Str(rowData.logLevel)} ${rowData.nodeId} ${rowData.label}: ${rowData.msg}`;
+    },
+
     logLevel2Str: function(logLevel) {
       const pairFound = Object.entries(this.LOG_LEVELS).find(pair => pair[1] === logLevel);
       if (pairFound && pairFound.length) {
@@ -316,8 +320,8 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
 
     __getLogsString: function() {
       let logs = "";
-      this.__loggerModel.getRows().forEach(row => {
-        logs += `${row.timeStamp} ${this.self().logLevel2Str(row.logLevel)} ${row.nodeId} ${row.label}: ${row.msg} \n`;
+      this.__loggerModel.getRows().forEach(rowData => {
+        logs += this.self().printRow(rowData) + "\n";
       });
       return logs;
     },
@@ -327,7 +331,11 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
     },
 
     __copySelectedLogToClipboard: function() {
-      osparc.utils.Utils.copyTextToClipboard(this.__getLogsString());
+      const sel = this.__loggerTable.getSelectionModel().getAnchorSelectionIndex();
+      if (sel > -1) {
+        const rowData = this.__loggerModel.getRowData(sel);
+        osparc.utils.Utils.copyTextToClipboard(this.self().printRow(rowData));
+      }
     },
 
     downloadLogs: function() {
