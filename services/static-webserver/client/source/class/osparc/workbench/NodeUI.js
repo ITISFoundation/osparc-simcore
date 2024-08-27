@@ -148,18 +148,18 @@ qx.Class.define("osparc.workbench.NodeUI", {
           const nodeStatus = new osparc.ui.basic.NodeStatusUI(this.getNode());
           control.add(nodeStatus);
           const statusLabel = nodeStatus.getChildControl("label");
-          const requestOpenLogger = () => {
-            this.fireEvent("requestOpenLogger");
-          };
+          const requestOpenLogger = () => this.fireEvent("requestOpenLogger");
           const evaluateLabel = () => {
             const failed = statusLabel.getValue() === "Failed";
             statusLabel.setCursor(failed ? "pointer" : "auto");
+            if (nodeStatus.hasListener("tap")) {
+              nodeStatus.removeListener("tap", requestOpenLogger);
+            }
             if (failed) {
-              statusLabel.addListener("tap", requestOpenLogger);
-            } else {
-              statusLabel.removeListener("tap", requestOpenLogger);
+              nodeStatus.addListener("tap", requestOpenLogger);
             }
           };
+          evaluateLabel();
           statusLabel.addListener("changeValue", evaluateLabel);
           this.add(control, {
             row: 0,
