@@ -62,8 +62,8 @@ def _handle_resource_usage_exceptions(handler: Handler):
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 ORDER_BY_DESCRIPTION = "Order by field (wallet_id|wallet_name|user_id|project_id|project_name|node_id|node_name|service_key|service_version|service_type|started_at|stopped_at|service_run_status|credit_cost|transaction_status) and direction (asc|desc). The default sorting order is ascending."
@@ -71,12 +71,12 @@ ORDER_BY_DESCRIPTION = "Order by field (wallet_id|wallet_name|user_id|project_id
 
 class _ListServicesResourceUsagesQueryParams(BaseModel):
     wallet_id: WalletID | None = Field(default=None)
-    order_by: Json[OrderBy] = Field(  # type: ignore[type-arg] # need to update pydantic # pylint: disable=unsubscriptable-object
+    order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
         default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
         description=ORDER_BY_DESCRIPTION,
         example='{"field": "started_at", "direction": "desc"}',
     )
-    filters: (  # type: ignore[type-arg] # need to update pydantic
+    filters: (
         Json[ServiceResourceUsagesFilters]  # pylint: disable=unsubscriptable-object
         | None
     ) = Field(

@@ -227,13 +227,21 @@ qx.Class.define("osparc.info.StudyUtils", {
       return tagsContainer;
     },
 
-    __titleWithEditLayout: function(data) {
+    __titleWithEditLayout: function(data, titleWidth = 75) {
       const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const title = new qx.ui.basic.Label(data.label);
-      titleLayout.add(title);
-      if (data.action) {
-        titleLayout.add(data.action.button);
-        data.action.button.addListener("execute", () => {
+      const hasButton = Boolean(data.action && data.action.button);
+      // use the width for aligning the buttons
+      const title = new qx.ui.basic.Label(data.label).set({
+        allowGrowX: true,
+        maxWidth: hasButton ? titleWidth : titleWidth + 35 // spacer for the button
+      });
+      titleLayout.add(title, {
+        flex: 1
+      });
+      if (hasButton) {
+        const button = data.action.button;
+        titleLayout.add(button);
+        button.addListener("execute", () => {
           const cb = data.action.callback;
           if (typeof cb === "string") {
             data.action.ctx.fireEvent(cb);

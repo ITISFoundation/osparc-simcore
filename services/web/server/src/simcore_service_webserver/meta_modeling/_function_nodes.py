@@ -15,6 +15,7 @@ from copy import deepcopy
 
 from models_library.function_services_catalog import catalog, is_iterator_service
 from models_library.projects_nodes import Node
+from models_library.services_types import ServiceKey, ServiceVersion
 
 # META-FUNCTIONS ---------------------------------------------------
 assert catalog  # nosec
@@ -31,12 +32,12 @@ def create_param_node_from_iterator_with_outputs(iterator_node: Node) -> Node:
     assert iterator_node.version == "1.0.0"  # nosec
 
     return Node(
-        key="simcore/services/frontend/parameter/integer",
-        version="1.0.0",
+        key=ServiceKey("simcore/services/frontend/parameter/integer"),
+        version=ServiceVersion("1.0.0"),
         label=iterator_node.label,
         inputs={},
         inputNodes=[],
-        thumbnail="",  # NOTE: hack due to issue in projects json-schema
+        thumbnail="",  # type: ignore[arg-type] # NOTE: hack due to issue in projects json-schema
         outputs=deepcopy(iterator_node.outputs),
     )
 

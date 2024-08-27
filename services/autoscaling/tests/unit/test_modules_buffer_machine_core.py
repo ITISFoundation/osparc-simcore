@@ -28,12 +28,12 @@ from pytest_simcore.helpers.aws_ec2 import (
 )
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from simcore_service_autoscaling.constants import PRE_PULLED_IMAGES_EC2_TAG_KEY
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
     DynamicAutoscaling,
 )
 from simcore_service_autoscaling.modules.buffer_machines_pool_core import (
-    _PRE_PULLED_IMAGES_EC2_TAG_KEY,
     monitor_buffer_machines,
 )
 from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
@@ -311,7 +311,7 @@ async def _test_monitor_buffer_machines(
                 expected_instance_type=next(iter(ec2_instances_allowed_types)),
                 expected_instance_state="stopped",
                 expected_additional_tag_keys=[
-                    _PRE_PULLED_IMAGES_EC2_TAG_KEY,
+                    PRE_PULLED_IMAGES_EC2_TAG_KEY,
                     *list(ec2_instance_custom_tags),
                 ],
                 expected_pre_pulled_images=pre_pulled_images,
@@ -376,7 +376,7 @@ async def create_buffer_machines(
         if pre_pull_images is not None and instance_state_name == "stopped":
             resource_tags.append(
                 {
-                    "Key": _PRE_PULLED_IMAGES_EC2_TAG_KEY,
+                    "Key": PRE_PULLED_IMAGES_EC2_TAG_KEY,
                     "Value": f"{json_dumps(pre_pull_images)}",
                 }
             )

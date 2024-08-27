@@ -90,7 +90,7 @@ async def load_products_on_startup(app: web.Application):
                 app_products[name] = Product(
                     **dict(row.items()),
                     is_payment_enabled=payments.enabled,
-                    credits_per_usd=payments.credits_per_usd,
+                    credits_per_usd=payments.credits_per_usd,  # type: ignore[arg-type]
                 )
 
                 assert name in FRONTEND_APPS_AVAILABLE  # nosec

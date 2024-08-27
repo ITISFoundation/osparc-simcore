@@ -11,12 +11,24 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from pytest_simcore.helpers.postgres_tags import create_tag, create_tag_access
-from simcore_postgres_database.models.tags import tags_to_groups
+from simcore_postgres_database.models.tags_access_rights import tags_access_rights
 from simcore_postgres_database.models.users import UserRole, UserStatus
+from simcore_postgres_database.utils import as_postgres_sql_query_str
 from simcore_postgres_database.utils_tags import (
     TagNotFoundError,
     TagOperationNotAllowedError,
     TagsRepo,
+)
+from simcore_postgres_database.utils_tags_sql import (
+    add_tag_to_project_stmt,
+    add_tag_to_services_stmt,
+    create_tag_stmt,
+    delete_tag_stmt,
+    get_tag_stmt,
+    get_tags_for_project_stmt,
+    get_tags_for_services_stmt,
+    set_tag_access_rights_stmt,
+    update_tag_stmt,
 )
 
 
@@ -510,9 +522,85 @@ async def test_tags_repo_create(
     # assigned primary group
     assert (
         await conn.scalar(
-            sa.select(tags_to_groups.c.group_id).where(
-                tags_to_groups.c.tag_id == tag_1["id"]
+            sa.select(tags_access_rights.c.group_id).where(
+                tags_access_rights.c.tag_id == tag_1["id"]
             )
         )
         == user.primary_gid
+    )
+
+
+def test_building_tags_sql_statements():
+    def _check(func_smt, **kwargs):
+        print(f"{func_smt.__name__:*^100}")
+        stmt = func_smt(**kwargs)
+        print()
+        print(as_postgres_sql_query_str(stmt))
+        print()
+
+    # some data
+    product_name = "osparc"
+    user_id = 425  # 4
+    tag_id = 4
+    project_index = 1
+    service_key = "simcore/services/comp/isolve"
+    service_version = "2.0.85"
+
+    _check(
+        get_tag_stmt,
+        user_id=user_id,
+        tag_id=tag_id,
+    )
+
+    _check(
+        create_tag_stmt,
+        name="foo",
+        description="description",
+    )
+
+    _check(
+        set_tag_access_rights_stmt,
+        tag_id=tag_id,
+        user_id=user_id,
+        read=True,
+        write=True,
+        delete=True,
+    )
+
+    _check(
+        update_tag_stmt,
+        user_id=user_id,
+        tag_id=tag_id,
+        # updates
+        name="foo",
+    )
+
+    _check(
+        delete_tag_stmt,
+        user_id=user_id,
+        tag_id=tag_id,
+    )
+
+    _check(
+        get_tags_for_project_stmt,
+        project_index=project_index,
+    )
+
+    _check(
+        get_tags_for_services_stmt,
+        key=service_key,
+        version=service_version,
+    )
+
+    _check(
+        add_tag_to_project_stmt,
+        project_index=project_index,
+        tag_id=tag_id,
+    )
+
+    _check(
+        add_tag_to_services_stmt,
+        key=service_key,
+        version=service_version,
+        tag_id=tag_id,
     )

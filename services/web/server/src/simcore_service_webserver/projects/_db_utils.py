@@ -22,7 +22,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import select
 from sqlalchemy.sql.selectable import Select
 
-from ..db.models import GroupType, groups, study_tags, user_to_groups, users
+from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
 from .exceptions import (
@@ -238,8 +238,8 @@ class BaseProjectDB:
 
     @staticmethod
     async def _get_tags_by_project(conn: SAConnection, project_id: str) -> list:
-        query = sa.select(study_tags.c.tag_id).where(
-            study_tags.c.study_id == project_id
+        query = sa.select(projects_tags.c.tag_id).where(
+            projects_tags.c.project_id == project_id
         )
         return [row.tag_id async for row in conn.execute(query)]
 
@@ -249,9 +249,9 @@ class BaseProjectDB:
     ) -> None:
         for tag_id in project_tags:
             await conn.execute(
-                pg_insert(study_tags)
+                pg_insert(projects_tags)
                 .values(
-                    study_id=project_index_id,
+                    project_id=project_index_id,
                     tag_id=tag_id,
                 )
                 .on_conflict_do_nothing()

@@ -233,7 +233,7 @@ async def get_node_screenshots(
             file_url = await get_download_link(app, user_id, filelink)
             screenshots.append(
                 NodeScreenshot(
-                    thumbnail_url=f"https://placehold.co/170x120?text={text}",
+                    thumbnail_url=f"https://placehold.co/170x120?text={text}",  # type: ignore[arg-type]
                     file_url=file_url,
                 )
             )
