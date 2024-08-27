@@ -9,12 +9,12 @@ import asyncio
 import functools
 import logging
 from asyncio import iscoroutinefunction
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, Iterator, TypeAlias, TypedDict, TypeVar
+from typing import Any, TypeAlias, TypedDict, TypeVar
 
 from .utils_secrets import mask_sensitive_data
 
@@ -141,7 +141,57 @@ def test_logger_propagation(logger: logging.Logger) -> None:
     logger.debug(msg, "debug")
 
 
-def _log_arguments(
+class LogExceptionsKwargsDict(TypedDict, total=True):
+    logger: logging.Logger
+    level: int
+    msg_prefix: str
+    exc_info: bool
+    stack_info: bool
+
+
+@contextmanager
+def log_exceptions(
+    logger: logging.Logger,
+    level: int,
+    msg_prefix: str = "",
+    *,
+    exc_info: bool = False,
+    stack_info: bool = False,
+) -> Iterator[None]:
+    """If an exception is raised, it gets logged with level.
+
+    NOTE that this does NOT suppress exceptions
+
+    Example: logging exceptions raised a "section of code" for debugging purposes
+
+    # raises
+    with log_exceptions(logger, logging.DEBUG):
+        # ...
+        resp.raise_for_status()
+
+    # does NOT raises  (NOTE: use composition of context managers)
+    with suppress(Exception), log_exceptions(logger, logging.DEBUG):
+        # ...
+        resp.raise_for_status()
+    """
+    try:
+        yield
+    except asyncio.CancelledError:
+        msg = f"{msg_prefix} call cancelled ".strip()
+        logger.log(level, msg)
+        raise
+    except Exception as exc:  # pylint: disable=broad-except
+        msg = f"{msg_prefix} raised {type(exc).__name__}: {exc}".strip()
+        logger.log(
+            level,
+            msg,
+            exc_info=exc_info,
+            stack_info=stack_info,
+        )
+        raise
+
+
+def _log_before_call(
     logger_obj: logging.Logger, level: int, func: Callable, *args, **kwargs
 ) -> dict[str, str]:
     # NOTE: We should avoid logging arguments but in the meantime, we are trying to
@@ -178,7 +228,7 @@ def _log_arguments(
     return extra_args
 
 
-def _log_return_value(
+def _log_after_call(
     logger_obj: logging.Logger,
     level: int,
     func: Callable,
@@ -199,34 +249,60 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 def log_decorator(
-    logger: logging.Logger | None, level: int = logging.DEBUG
+    logger: logging.Logger | None,
+    level: int = logging.DEBUG,
+    *,
+    # NOTE: default defined by legacy: ANE defined full stack tracebacks
+    # on exceptions
+    exc_info: bool = True,
+    exc_stack_info: bool = True,
 ) -> Callable[[F], F]:
-    the_logger = logger or _logger
+    """Logs the decorated function:
+    - *before* its called
+        - input parameters
+    - *after* its called
+        - returned values *after* the decorated function is executed *or*
+        - raised exception (w/ or w/o traceback)
+    """
+    logger_obj = logger or _logger
 
-    def decorator(func: F) -> F:
-        if iscoroutinefunction(func):
+    def _decorator(func_or_coro: F) -> F:
 
-            @functools.wraps(func)
-            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-                extra_args = _log_arguments(the_logger, level, func, *args, **kwargs)
-                with log_catch(the_logger, reraise=True):
-                    result = await func(*args, **kwargs)
-                _log_return_value(the_logger, level, func, result, extra_args)
+        _log_exc_kwargs = LogExceptionsKwargsDict(
+            logger=logger_obj,
+            level=level,
+            msg_prefix=f"{func_or_coro.__name__}",
+            exc_info=exc_info,
+            stack_info=exc_stack_info,
+        )
+
+        if iscoroutinefunction(func_or_coro):
+
+            @functools.wraps(func_or_coro)
+            async def _async_wrapper(*args: Any, **kwargs: Any) -> Any:
+                extra_args = _log_before_call(
+                    logger_obj, level, func_or_coro, *args, **kwargs
+                )
+                with log_exceptions(**_log_exc_kwargs):
+                    result = await func_or_coro(*args, **kwargs)
+                _log_after_call(logger_obj, level, func_or_coro, result, extra_args)
                 return result
 
-            return async_wrapper  # type: ignore[return-value] # decorators typing is hard
+            return _async_wrapper  # type: ignore[return-value] # decorators typing is hard
 
-        @functools.wraps(func)
-        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
-            extra_args = _log_arguments(the_logger, level, func, *args, **kwargs)
-            with log_catch(the_logger, reraise=True):
-                result = func(*args, **kwargs)
-            _log_return_value(the_logger, level, func, result, extra_args)
+        @functools.wraps(func_or_coro)
+        def _sync_wrapper(*args: Any, **kwargs: Any) -> Any:
+            extra_args = _log_before_call(
+                logger_obj, level, func_or_coro, *args, **kwargs
+            )
+            with log_exceptions(**_log_exc_kwargs):
+                result = func_or_coro(*args, **kwargs)
+            _log_after_call(logger_obj, level, func_or_coro, result, extra_args)
             return result
 
-        return sync_wrapper  # type: ignore[return-value] # decorators typing is hard
+        return _sync_wrapper  # type: ignore[return-value] # decorators typing is hard
 
-    return decorator
+    return _decorator
 
 
 @contextmanager

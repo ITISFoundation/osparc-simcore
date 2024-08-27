@@ -44,7 +44,7 @@ class Checkpoint(BaseModel):
             checksum=commit.snapshot_checksum,
             tags=tuple(tag.name for tag in tags),
             message=commit.message,
-            parents_ids=(commit.parent_commit_id,) if commit.parent_commit_id else None,
+            parents_ids=(commit.parent_commit_id,) if commit.parent_commit_id else None,  # type: ignore[arg-type]
             created_at=commit.created,
         )
 

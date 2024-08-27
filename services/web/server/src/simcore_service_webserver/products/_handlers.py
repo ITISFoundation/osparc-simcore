@@ -28,8 +28,8 @@ _logger = logging.getLogger(__name__)
 
 
 class _ProductsRequestContext(RequestParams):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 @routes.get(f"/{VTAG}/credits-price", name="get_current_product_price")
@@ -41,8 +41,8 @@ async def _get_current_product_price(request: web.Request):
 
     credit_price = GetCreditPrice(
         product_name=req_ctx.product_name,
-        usd_per_credit=price_info.usd_per_credit if price_info else None,
-        min_payment_amount_usd=price_info.min_payment_amount_usd
+        usd_per_credit=price_info.usd_per_credit if price_info else None,  # type: ignore[arg-type]
+        min_payment_amount_usd=price_info.min_payment_amount_usd  # type: ignore[arg-type]
         if price_info
         else None,
     )

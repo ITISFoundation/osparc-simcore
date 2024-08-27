@@ -1337,7 +1337,7 @@ async def _get_project_lock_state(
             )
             return ProjectLocked(
                 value=False,
-                owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
+                owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),  # type: ignore[arg-type]
                 status=ProjectStatus.OPENED,
             )
     # the project is opened in another tab or browser, or by another user, both case resolves to the project being locked, and opened
@@ -1348,7 +1348,7 @@ async def _get_project_lock_state(
     )
     return ProjectLocked(
         value=True,
-        owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
+        owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),  # type: ignore[arg-type]
         status=ProjectStatus.OPENED,
     )
 

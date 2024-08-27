@@ -15,6 +15,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
@@ -58,7 +59,7 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
 from ..application_settings import ApplicationSettings
-from ..db.models import projects_to_wallet, study_tags
+from ..db.models import projects_tags, projects_to_wallet
 from ..utils import now_str
 from ._comments_db import (
     create_project_comment,
@@ -332,7 +333,7 @@ class ProjectDBAPI(BaseProjectDB):
         limit: int | None = None,
         search: str | None = None,
         order_by: OrderBy = OrderBy(
-            field="last_change_date", direction=OrderDirection.DESC
+            field=IDStr("last_change_date"), direction=OrderDirection.DESC
         ),
         folder_id: FolderID | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
@@ -1034,8 +1035,8 @@ class ProjectDBAPI(BaseProjectDB):
             # pylint: disable=no-value-for-parameter
             if tag_id not in project_tags:
                 await conn.execute(
-                    study_tags.insert().values(
-                        study_id=project["id"],
+                    projects_tags.insert().values(
+                        project_id=project["id"],
                         tag_id=tag_id,
                     )
                 )
@@ -1050,10 +1051,10 @@ class ProjectDBAPI(BaseProjectDB):
             project = await self._get_project(conn, user_id, project_uuid)
             user_email = await self._get_user_email(conn, user_id)
             # pylint: disable=no-value-for-parameter
-            query = study_tags.delete().where(
+            query = projects_tags.delete().where(
                 and_(
-                    study_tags.c.study_id == project["id"],
-                    study_tags.c.tag_id == tag_id,
+                    projects_tags.c.project_id == project["id"],
+                    projects_tags.c.tag_id == tag_id,
                 )
             )
             async with conn.execute(query):

@@ -5,7 +5,8 @@
 
 
 from aiopg.sa.connection import SAConnection
-from simcore_postgres_database.models.tags import tags, tags_to_groups
+from simcore_postgres_database.models.tags import tags
+from simcore_postgres_database.models.tags_access_rights import tags_access_rights
 
 
 async def create_tag_access(
@@ -18,7 +19,7 @@ async def create_tag_access(
     delete,
 ) -> int:
     await conn.execute(
-        tags_to_groups.insert().values(
+        tags_access_rights.insert().values(
             tag_id=tag_id, group_id=group_id, read=read, write=write, delete=delete
         )
     )

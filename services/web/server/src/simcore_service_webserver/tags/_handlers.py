@@ -3,8 +3,9 @@ import re
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
+from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.users import UserID
-from pydantic import BaseModel, ConstrainedStr, Extra, Field, PositiveInt
+from pydantic import BaseModel, ConstrainedStr, Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -47,51 +48,37 @@ def _handle_tags_exceptions(handler: Handler):
 
 
 class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-
-
-class _InputSchema(BaseModel):
-    class Config:
-        allow_population_by_field_name = False
-        extra = Extra.forbid
-        allow_mutations = False
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
 
 
 class ColorStr(ConstrainedStr):
     regex = re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
 
 
-class TagPathParams(_InputSchema):
+class TagPathParams(BaseModel):
     tag_id: PositiveInt
 
 
-class TagUpdate(_InputSchema):
+class TagUpdate(InputSchema):
     name: str | None = None
     description: str | None = None
     color: ColorStr | None = None
 
 
-class TagCreate(_InputSchema):
+class TagCreate(InputSchema):
     name: str
     description: str | None = None
     color: ColorStr
 
 
-class _OutputSchema(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.ignore
-        allow_mutations = False
-
-
-class TagAccessRights(_OutputSchema):
+class TagAccessRights(OutputSchema):
     # NOTE: analogous to GroupAccessRights
     read: bool
     write: bool
     delete: bool
 
 
-class TagGet(_OutputSchema):
+class TagGet(OutputSchema):
     id: PositiveInt
     name: str
     description: str | None = None
@@ -108,7 +95,7 @@ class TagGet(_OutputSchema):
             name=tag["name"],
             description=tag["description"],
             color=tag["color"],
-            access_rights=TagAccessRights(
+            access_rights=TagAccessRights(  # type: ignore[call-arg]
                 read=tag["read"],
                 write=tag["write"],
                 delete=tag["delete"],
@@ -130,7 +117,7 @@ routes = web.RouteTableDef()
 async def create_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
     req_ctx = _RequestContext.parse_obj(request)
-    tag_data = await parse_request_body_as(TagCreate, request)
+    new_tag = await parse_request_body_as(TagCreate, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
     async with engine.acquire() as conn:
@@ -139,7 +126,7 @@ async def create_tag(request: web.Request):
             read=True,
             write=True,
             delete=True,
-            **tag_data.dict(exclude_unset=True),
+            **new_tag.dict(exclude_unset=True),
         )
         model = TagGet.from_db(tag)
         return envelope_json_response(model)
@@ -168,13 +155,13 @@ async def list_tags(request: web.Request):
 async def update_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_path_parameters_as(TagPathParams, request)
-    tag_data = await parse_request_body_as(TagUpdate, request)
+    path_params = parse_request_path_parameters_as(TagPathParams, request)
+    tag_updates = await parse_request_body_as(TagUpdate, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
     async with engine.acquire() as conn:
         tag = await repo.update(
-            conn, query_params.tag_id, **tag_data.dict(exclude_unset=True)
+            conn, path_params.tag_id, **tag_updates.dict(exclude_unset=True)
         )
         model = TagGet.from_db(tag)
         return envelope_json_response(model)
@@ -187,10 +174,10 @@ async def update_tag(request: web.Request):
 async def delete_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
     req_ctx = _RequestContext.parse_obj(request)
-    query_params = parse_request_path_parameters_as(TagPathParams, request)
+    path_params = parse_request_path_parameters_as(TagPathParams, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
     async with engine.acquire() as conn:
-        await repo.delete(conn, tag_id=query_params.tag_id)
+        await repo.delete(conn, tag_id=path_params.tag_id)
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

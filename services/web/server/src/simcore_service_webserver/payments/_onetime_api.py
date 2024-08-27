@@ -11,6 +11,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletPaymentInitiated,
 )
+from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -99,7 +100,7 @@ async def _fake_init_payment(
             initiated_at=arrow.utcnow().datetime,
         )
     return WalletPaymentInitiated(
-        payment_id=payment_id, payment_form_url=f"{external_form_link}"
+        payment_id=IDStr(payment_id), payment_form_url=f"{external_form_link}"  # type: ignore[arg-type]
     )
 
 

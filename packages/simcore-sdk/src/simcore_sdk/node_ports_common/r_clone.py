@@ -90,7 +90,9 @@ async def _async_r_clone_command(
     )
 
     assert proc.stdout  # nosec
-    await asyncio.wait([_read_stream(proc.stdout, [*r_clone_log_parsers])])
+    await asyncio.wait(
+        [asyncio.create_task(_read_stream(proc.stdout, [*r_clone_log_parsers]))]
+    )
 
     # NOTE: ANE not sure why you do this call here. The above one already reads out the stream.
     _stdout, _stderr = await proc.communicate()

@@ -97,39 +97,23 @@ qx.Class.define("osparc.info.StudyLarge", {
       });
     },
 
-    __createViewWithEdit: function(view, cb) {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-        alignY: "middle"
-      }));
-      layout.add(view);
-      if (this.__canIWrite()) {
-        const editBtn = osparc.utils.Utils.getEditButton();
-        if (cb) {
-          editBtn.addListener("execute", () => cb.call(this), this);
-        }
-        layout.add(editBtn);
-      }
-
-      return layout;
-    },
-
     __extraInfo: function() {
       const extraInfo = {
-        "THUMBNAIL": {
-          label: this.tr("Thumbnail:"),
-          view: this.__createThumbnail(),
-          action: {
-            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
-            callback: this.__canIWrite() ? this.__openThumbnailEditor : null,
-            ctx: this
-          }
-        },
         "TITLE": {
           label: this.tr("Title:"),
           view: osparc.info.StudyUtils.createTitle(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
             callback: this.__canIWrite() ? this.__openTitleEditor : null,
+            ctx: this
+          }
+        },
+        "THUMBNAIL": {
+          label: this.tr("Thumbnail:"),
+          view: this.__createThumbnail(),
+          action: {
+            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
+            callback: this.__canIWrite() ? this.__openThumbnailEditor : null,
             ctx: this
           }
         },
@@ -151,7 +135,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("Access:"),
           view: osparc.info.StudyUtils.createAccessRights(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
+            button: osparc.utils.Utils.getLinkButton(this.__canIWrite()),
             callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
             ctx: this
           }
@@ -170,7 +154,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("Tags:"),
           view: osparc.info.StudyUtils.createTags(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
+            button: osparc.utils.Utils.getLinkButton(this.__canIWrite()),
             callback: this.isOpenOptions() ? this.__openTagsEditor : "openTags",
             ctx: this
           }
@@ -186,7 +170,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("Quality:"),
           view: osparc.info.StudyUtils.createQuality(this.getStudy()),
           action: {
-            button: osparc.utils.Utils.getEditButton(),
+            button: osparc.utils.Utils.getLinkButton(),
             callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
             ctx: this
           }
@@ -198,7 +182,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           label: this.tr("Classifiers:"),
           view: osparc.info.StudyUtils.createClassifiers(this.getStudy()),
           action: (this.getStudy().getClassifiers().length || this.__canIWrite()) ? {
-            button: osparc.utils.Utils.getEditButton(),
+            button: osparc.utils.Utils.getLinkButton(),
             callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
             ctx: this
           } : null

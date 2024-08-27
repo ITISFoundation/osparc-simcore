@@ -128,36 +128,37 @@ body:
         - [ ] Draft [release changelog](https://github.com/ITISFoundation/osparc-simcore/releases)
         - [ ] Announce maintenance ( ** ANNOUNCE AT LEAST 24 HOURS BEFORE ** )
         - redis add an entry in db `scheduled_maintenance` with key `maintenance` ``{"start": "2023-03-06T13:00:00.000Z", "end": "2023-03-06T15:00:00.000Z", "reason": "Release <vX.X.0>"}``. Note the time is in UTC, please adjust accordingly
-            - [ ] aws
-            - [ ] dalco
-            - [ ] tip
+            - [ ] sim4life.io
+            - [ ] osparc.speag.com
+            - [ ] osparc.io
+            - [ ] tip.science
         - status page (https://manage.statuspage.io/)
-            - [ ] osparc
-            - [ ] s4l
+            - [ ] sim4life.io
+            - [ ] s4l-lite.io
+            - [ ] osparc.io
+            - [ ] tip.science
         - mattermost channels
             - [ ] maintenance
             - [ ] power users
+        - [ ] Publish draft [draft](https://github.com/ITISFoundation/osparc-simcore/releases)
+        - [ ] Check release CI
   - type: textarea
     attributes:
       label: Releasing 🚀
       value: |
-        - [ ] Maintenance page up.
-        ```cmd
-        cd /deployment/production/osparc-ops-environments
-        make up-maintenance
-        make down-maintenance
-        ```
-        - [ ] Release by publishing [draft](https://github.com/ITISFoundation/osparc-simcore/releases)
-        - [ ] Check release CI
+        - [ ] Maintenance page up (https://git.speag.com/oSparc/osparc-ops-deployment-configuration/-/pipeline_schedules)
         - [ ] Check hanging sidecars. Helper command to run in director-v2 CLI `simcore-service-director-v2 close-and-save-service <uuid>`
+        - [ ] Remove redis key
         - [ ] Check deployed
-          - [ ] aws deploy
-          - [ ] dalco deploy
-          - [ ] tip deploy
+          - [ ] sim4life.io
+          - [ ] osparc.speag.com
+          - [ ] osparc.io
+          - [ ] tip.science
         - [ ] Check testing endpoint ex. `https://testing.osparc.speag.com/`
-        - [ ] Delete announcement
+        - [ ] Update status page
+        - [ ] Update Release notes if hotfix (https://github.com/ITISFoundation/osparc-issues/blob/master/scripts/run_after_hotfix_to_prod.py)
         - [ ] Check e2e runs
-        - [ ] Announce
+        - [ ] Announce in mattermost
         ``` md
         :tada: https://github.com/ITISFoundation/osparc-simcore/releases/tag/v<M.m.0>
         ```
