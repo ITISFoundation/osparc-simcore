@@ -86,6 +86,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
+from simcore_service_webserver.projects._db_utils import PermissionStr
 
 from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
@@ -133,6 +134,7 @@ from .exceptions import (
     ProjectNodeConnectionsMissingError,
     ProjectNodeOutputPortMissingValueError,
     ProjectNodeRequiredInputsNotSetError,
+    ProjectNotFoundError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
@@ -560,10 +562,8 @@ async def _start_dynamic_service(
     save_state = False
     user_role: UserRole = await get_user_role(request.app, user_id)
     if user_role > UserRole.GUEST:
-        save_state = await ProjectDBAPI.get_from_app_context(
-            request.app
-        ).has_permission(
-            user_id=user_id, project_uuid=f"{project_uuid}", permission="write"
+        save_state = await has_user_project_access_rights(
+            request.app, project_id=project_uuid, user_id=user_id, permission="write"
         )
 
     lock_key = _nodes_api.get_service_start_lock_key(user_id, project_uuid)
@@ -1430,6 +1430,63 @@ async def add_project_states_for_user(
 
 
 #
+#  CHECK PROJECT ACCESS -------------------------------------------------------------------
+#
+
+
+async def get_user_project_access_rights(
+    app: web.Application,
+    project_id: ProjectID,
+    user_id: UserID,
+    product_name: ProductName,
+) -> UserProjectAccessRights:
+    """
+    NOTE: MD Write proper note explaining
+    """
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+
+    project_db = await db.get_project_db(project_id)
+    if project_db.workspace_id:
+        workspace = await get_workspace(
+            app,
+            user_id=user_id,
+            workspace_id=project_db.workspace_id,
+            product_name=product_name,
+        )
+        _user_project_access_rights = UserProjectAccessRights(
+            uid=user_id,
+            read=workspace.my_access_rights.read,
+            write=workspace.my_access_rights.write,
+            delete=workspace.my_access_rights.delete,
+        )
+    else:
+        _user_project_access_rights = await db.get_project_access_rights_for_user(
+            user_id, project_id
+        )
+    return _user_project_access_rights
+
+
+# NOTE: MD: this was done for back compatibility
+async def has_user_project_access_rights(
+    app: web.Application,
+    *,
+    project_id: ProjectID,
+    user_id: UserID,
+    permission: PermissionStr,
+) -> bool:
+    try:
+        db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        product_name = await db.get_project_product(project_uuid=project_id)
+
+        prj_access_rights = await get_user_project_access_rights(
+            app, project_id=project_id, user_id=user_id, product_name=product_name
+        )
+        return getattr(prj_access_rights, permission, False) is not False
+    except (ProjectInvalidRightsError, ProjectNotFoundError):
+        return False
+
+
+#
 # SERVICE DEPRECATION ----------------------------
 #
 async def is_service_deprecated(
@@ -1640,8 +1697,8 @@ async def remove_project_dynamic_services(
     except UserNotFoundError:
         user_role = None
 
-    save_state = await ProjectDBAPI.get_from_app_context(app).has_permission(
-        user_id=user_id, project_uuid=project_uuid, permission="write"
+    save_state = await has_user_project_access_rights(
+        app, project_id=ProjectID(project_uuid), user_id=user_id, permission="write"
     )
     if user_role is None or user_role <= UserRole.GUEST:
         save_state = False

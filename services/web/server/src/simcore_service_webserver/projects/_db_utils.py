@@ -51,6 +51,7 @@ class ProjectAccessRights(Enum):
     VIEWER = {"read": True, "write": False, "delete": False}
 
 
+# NOTE: MD check
 def check_project_permissions(
     project: ProjectProxy | ProjectDict,
     user_id: int,
@@ -257,7 +258,7 @@ class BaseProjectDB:
                 .on_conflict_do_nothing()
             )
 
-    async def _execute_with_permission_check(
+    async def _execute_with_permission_check(  # NOTE: MD rename this function without permissions
         self,
         conn: SAConnection,
         *,
@@ -272,7 +273,7 @@ class BaseProjectDB:
         async for row in conn.execute(select_projects_query):
             assert isinstance(row, RowProxy)  # nosec
             try:
-                check_project_permissions(row, user_id, user_groups, "read")
+                # check_project_permissions(row, user_id, user_groups, "read")  # NOTE: MD: I think this is not necessary here
 
                 await asyncio.get_event_loop().run_in_executor(
                     None, ProjectAtDB.from_orm, row
@@ -328,7 +329,7 @@ class BaseProjectDB:
         for_update: bool = False,
         only_templates: bool = False,
         only_published: bool = False,
-        check_permissions: PermissionStr = "read",
+        # check_permissions: PermissionStr = "read",
     ) -> dict:
         """
         raises ProjectNotFoundError if project does not exists
@@ -394,11 +395,11 @@ class BaseProjectDB:
                 search_context=f"{user_id=}, {only_templates=}, {only_published=}, {check_permissions=}",
             )
 
-        # check the access rights
-        if user_id:
-            check_project_permissions(
-                project_row, user_id, user_groups, check_permissions
-            )
+        # # check the access rights
+        # if user_id:
+        #     check_project_permissions(
+        #         project_row, user_id, user_groups, check_permissions
+        #     )
 
         project: dict[str, Any] = dict(project_row.items())
 

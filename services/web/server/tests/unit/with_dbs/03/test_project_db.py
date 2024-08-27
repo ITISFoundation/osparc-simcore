@@ -771,6 +771,7 @@ async def test_replace_user_project(
     ) == copy_from_dict_ex(replaced_project, PROJECT_DICT_IGNORE_FIELDS)
 
 
+# NOTE: MD fix this test
 @pytest.mark.parametrize("user_role", [UserRole.ANONYMOUS])  # worst case
 @pytest.mark.parametrize("access_rights", [x.value for x in ProjectAccessRights])
 async def test_has_permission(

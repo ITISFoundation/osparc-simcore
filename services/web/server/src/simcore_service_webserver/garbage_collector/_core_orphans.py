@@ -15,8 +15,8 @@ from simcore_postgres_database.models.users import UserRole
 
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
-from ..projects.db import ProjectDBAPI
 from ..projects.projects_api import (
+    has_user_project_access_rights,
     is_node_id_present_in_any_project_workbench,
     list_node_ids_in_project,
 )
@@ -41,9 +41,12 @@ async def _remove_service(
             if await get_user_role(app, service.user_id) <= UserRole.GUEST:
                 save_service_state = False
             else:
-                save_service_state = await ProjectDBAPI.get_from_app_context(
-                    app
-                ).has_permission(service.user_id, f"{service.project_id}", "write")
+                save_service_state = await has_user_project_access_rights(
+                    app,
+                    project_id=service.project_id,
+                    user_id=service.user_id,
+                    permission="write",
+                )
         except (UserNotFoundError, ValueError):
             save_service_state = False
 

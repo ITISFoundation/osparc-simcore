@@ -2,7 +2,7 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.folders import (
+from models_library.api_schemas_webserver.folders_v2 import (
     CreateFolderBodyParams,
     FolderGet,
     FolderGetPage,

@@ -66,6 +66,7 @@ from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..groups.api import get_group_from_gid, list_all_user_groups
 from ..groups.exceptions import GroupNotFoundError
 from ..login.decorators import login_required
+from ..projects.projects_api import has_user_project_access_rights
 from ..security.decorators import permission_required
 from ..users.api import get_user_id_from_gid, get_user_role
 from ..users.exceptions import UserDefaultWalletNotFoundError
@@ -74,7 +75,6 @@ from ..wallets.errors import WalletNotEnoughCreditsError
 from . import nodes_utils, projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, get_node_screenshots
-from .db import ProjectDBAPI
 from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
@@ -365,9 +365,10 @@ async def stop_node(request: web.Request) -> web.Response:
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
-    save_state = await ProjectDBAPI.get_from_app_context(request.app).has_permission(
+    save_state = await has_user_project_access_rights(
+        request.app,
+        project_id=path_params.project_id,
         user_id=req_ctx.user_id,
-        project_uuid=f"{path_params.project_id}",
         permission="write",
     )
 

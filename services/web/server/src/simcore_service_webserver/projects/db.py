@@ -17,6 +17,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
+from models_library.products import ProductName
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
@@ -467,7 +468,7 @@ class ProjectDBAPI(BaseProjectDB):
         *,
         only_published: bool = False,
         only_templates: bool = False,
-        check_permissions: PermissionStr = "read",
+        check_permissions: PermissionStr = "read",  # NOTE: MD check where this is used?
     ) -> tuple[ProjectDict, ProjectType]:
         """Returns all projects *owned* by the user
 
@@ -479,13 +480,14 @@ class ProjectDBAPI(BaseProjectDB):
         raises ProjectInvalidRightsError: if user has no access rights to do check_permissions
         """
         async with self.engine.acquire() as conn:
+            self.get_project_db()
+
             project = await self._get_project(
                 conn,
                 user_id,
                 project_uuid,
                 only_published=only_published,
                 only_templates=only_templates,
-                check_permissions=check_permissions,
             )
             # pylint: disable=no-value-for-parameter
             user_email = await self._get_user_email(conn, project["prj_owner"])
@@ -670,6 +672,18 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return ProjectDB.from_orm(row)
 
+    async def get_project_product(self, project_uuid: ProjectID) -> ProductName:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                projects_to_products.select(projects_to_products.c.product_name).where(
+                    projects.c.uuid == f"{project_uuid}"
+                )
+            )
+            row = await result.fetchone()
+            if row is None:
+                raise ProjectNotFoundError(project_uuid=project_uuid)
+            return row[0]
+
     async def update_project_owner_without_checking_permissions(
         self,
         project_uuid: ProjectIDStr,
@@ -820,7 +834,9 @@ class ProjectDBAPI(BaseProjectDB):
             user_groups: list[RowProxy] = await self._list_user_groups(
                 db_connection, user_id
             )
-            check_project_permissions(current_project, user_id, user_groups, "write")
+            check_project_permissions(
+                current_project, user_id, user_groups, "write"
+            )  # NOTE: MD check
 
             new_project_data, changed_entries = patch_workbench(
                 current_project,
@@ -905,7 +921,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             return await project_nodes_repo.get(conn, node_id=node_id)
 
-    async def update_project_node(
+    async def update_project_node(  # NOTE: MD check
         self,
         user_id: UserID,
         project_id: ProjectID,
@@ -993,7 +1009,7 @@ class ProjectDBAPI(BaseProjectDB):
     #
     # Project ACCESS RIGHTS/PERMISSIONS
     #
-
+    # NOTE: MD TODO
     async def has_permission(
         self, user_id: UserID, project_uuid: str, permission: PermissionStr
     ) -> bool:

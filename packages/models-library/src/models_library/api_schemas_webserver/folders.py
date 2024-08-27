@@ -30,7 +30,7 @@ class FolderGetPage(NamedTuple):
 
 class CreateFolderBodyParams(InputSchema):
     name: IDStr
-    description: str | None
+    description: str
     parent_folder_id: FolderID | None = None
 
     class Config:
