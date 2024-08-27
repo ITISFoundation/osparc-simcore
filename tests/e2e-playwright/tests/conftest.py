@@ -449,7 +449,10 @@ def create_new_project_and_delete(
                                     copying_logger.logger.info("project created")
                                     return response.status == 201
                                 return False
-                            page.expect_response(wait_for_done, timeout=timeout)
+                            with page.expect_response(wait_for_done, timeout=timeout):
+                                # if the above calls go to fast, this test could fail
+                                # not expected in the sim4life context though
+                                ...
                     else:
                         open_button.click()
                 if product_billable:
