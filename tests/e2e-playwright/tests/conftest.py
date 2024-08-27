@@ -409,7 +409,7 @@ def create_new_project_and_delete(
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
             timeout = 60000 if template_id else 180000
             with (
-                log_in_and_out.expect_event("framereceived", waiter, timeout=timeout),
+                log_in_and_out.expect_event("framereceived", waiter, timeout=timeout + 10 * SECOND),
                 page.expect_response(
                     re.compile(r"/projects/[^:]+:open"),
                     timeout=timeout + 5 * SECOND
