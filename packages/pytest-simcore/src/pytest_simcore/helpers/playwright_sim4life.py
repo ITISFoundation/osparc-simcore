@@ -2,23 +2,33 @@ import datetime
 import logging
 import re
 from dataclasses import dataclass
-from typing import Final
+from typing import Dict, Final, Union
 
 import arrow
-from playwright.sync_api import Page, WebSocket, expect
+from playwright.sync_api import FrameLocator, Page, WebSocket, expect
 
 from .logging_tools import log_context
 from .playwright import (
     SECOND,
+    MINUTE,
     SOCKETIO_MESSAGE_PREFIX,
     SocketIOEvent,
     decode_socketio_42_message,
+    wait_for_service_running,
 )
+
 
 _S4L_STREAMING_ESTABLISHMENT_MAX_TIME: Final[int] = 15 * SECOND
 _S4L_SOCKETIO_REGEX: Final[re.Pattern] = re.compile(
     r"^(?P<protocol>[^:]+)://(?P<node_id>[^\.]+)\.services\.(?P<hostname>[^\/]+)\/socket\.io\/.+$"
 )
+_EC2_STARTUP_MAX_WAIT_TIME: Final[int] = 1 * MINUTE
+_S4L_MAX_STARTUP_TIME: Final[int] = 1 * MINUTE
+_S4L_DOCKER_PULLING_MAX_TIME: Final[int] = 10 * MINUTE
+_S4L_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
+    _EC2_STARTUP_MAX_WAIT_TIME + _S4L_DOCKER_PULLING_MAX_TIME + _S4L_MAX_STARTUP_TIME
+)
+_S4L_STARTUP_SCREEN_MAX_TIME: Final[int] = 45 * SECOND
 
 
 @dataclass(kw_only=True)
@@ -75,7 +85,47 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
         return False
 
 
-def check_video_streaming(page: Page, s4l_iframe, s4l_websocket: WebSocket) -> None:
+def launch_S4L(page: Page, node_id, log_in_and_out: WebSocket, autoscaled: bool) -> Dict[str, Union[WebSocket, FrameLocator]]:
+    with log_context(logging.INFO, "launch S4L") as ctx:
+        predicate = S4LWaitForWebsocket(logger=ctx.logger)
+        with page.expect_websocket(
+            predicate,
+            timeout=_S4L_STARTUP_SCREEN_MAX_TIME
+            + (
+                _S4L_AUTOSCALED_MAX_STARTUP_TIME
+                if autoscaled
+                else _S4L_MAX_STARTUP_TIME
+            )
+            + 10 * SECOND,
+        ) as ws_info:
+            s4l_iframe = wait_for_service_running(
+                page=page,
+                node_id=node_id,
+                websocket=log_in_and_out,
+                timeout=(
+                    _S4L_AUTOSCALED_MAX_STARTUP_TIME
+                    if autoscaled
+                    else _S4L_MAX_STARTUP_TIME
+                ),
+                press_start_button=False,
+            )
+        s4l_websocket = ws_info.value
+        ctx.logger.info("acquired S4L websocket!")
+        return {
+            "websocket": s4l_websocket,
+            "iframe" : s4l_iframe,
+        }
+
+
+def interact_with_S4L(page: Page, s4l_iframe: FrameLocator) -> None:
+    # Wait until grid is shown
+    # NOTE: the startup screen should disappear very fast after the websocket was acquired
+    with log_context(logging.INFO, "Interact with S4l"):
+        s4l_iframe.get_by_test_id("tree-item-Grid").nth(0).click()
+    page.wait_for_timeout(3000)
+
+
+def check_video_streaming(page: Page, s4l_iframe: FrameLocator, s4l_websocket: WebSocket) -> None:
     with log_context(logging.INFO, "Check videostreaming works") as ctx:
         waiter = _S4LSocketIOCheckBitRateIncreasesMessagePrinter(
             observation_time=datetime.timedelta(
