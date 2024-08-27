@@ -177,7 +177,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
           });
           control.bind("value", this, "lockLogs");
           control.bind("value", control, "icon", {
-            converter: val => val ? "@FontAwesome5Solid/lock/14" : "@FontAwesome5Solid/lock-open/14"
+            converter: val => val ? "@FontAwesome5Solid/lock-open/14" : "@FontAwesome5Solid/lock/14"
           });
           const toolbar = this.getChildControl("toolbar");
           toolbar.add(control);
