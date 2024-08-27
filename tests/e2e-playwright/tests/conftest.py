@@ -96,6 +96,13 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Service Key",
     )
     group.addoption(
+        "--template-id",
+        action="store",
+        type=str,
+        default=None,
+        help="Template uuid",
+    )
+    group.addoption(
         "--user-agent",
         action="store",
         type=str,
@@ -231,6 +238,14 @@ def service_key(request: pytest.FixtureRequest) -> str:
         assert isinstance(key, str)
         return key
     return os.environ["SERVICE_KEY"]
+
+
+@pytest.fixture(scope="session")
+def template_id(request: pytest.FixtureRequest) -> str:
+    if key := request.config.getoption("--template-id"):
+        assert isinstance(key, str)
+        return key
+    return os.environ["TEMPLATE_ID"]
 
 
 @pytest.fixture(scope="session")
