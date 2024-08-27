@@ -234,6 +234,7 @@ def random_product(
             url=fake.url(),
             license_url=fake.url(),
             invitation_url=fake.url(),
+            invitation_form=fake.boolean(),
             has_landing_page=fake.boolean(),
             address=fake.address().replace("\n", ". "),
         ),

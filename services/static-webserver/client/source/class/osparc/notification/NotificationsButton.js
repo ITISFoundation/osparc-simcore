@@ -46,7 +46,6 @@ qx.Class.define("osparc.notification.NotificationsButton", {
 
   members: {
     __notificationsContainer: null,
-    __tappedOut: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -100,46 +99,60 @@ qx.Class.define("osparc.notification.NotificationsButton", {
     },
 
     __buttonTapped: function() {
-      if (this.__tappedOut) {
-        this.__tappedOut = false;
-        return;
+      if (this.__notificationsContainer && this.__notificationsContainer.isVisible()) {
+        this.__hideNotificationsContainer();
+      } else {
+        this.__showNotificationsContainer();
       }
-      this.__showNotifications();
     },
 
-    __showNotifications: function() {
-      const tapListener = event => {
-        // In case a notification was tapped propagate the event so it can be handled by the NotificationUI
-        if (osparc.utils.Utils.isMouseOnElement(this.__notificationsContainer, event)) {
-          return;
-        }
-        // I somehow can't stop the propagation of the event so workaround:
-        // If the user tapped on the bell we don't want to show it again
-        if (osparc.utils.Utils.isMouseOnElement(this, event)) {
-          this.__tappedOut = true;
-        }
-        this.__hideNotifications();
-        document.removeEventListener("mousedown", tapListener, this);
-      };
+    __showNotificationsContainer: function() {
+      if (!this.__notificationsContainer) {
+        this.__notificationsContainer = new osparc.notification.NotificationsContainer();
+        this.__notificationsContainer.exclude();
+      }
 
+      this.__positionNotificationsContainer();
+
+      // Show the container
+      this.__notificationsContainer.show();
+
+      // Add listener for taps outside the container to hide it
+      document.addEventListener("mousedown", this.__onTapOutside.bind(this), true);
+    },
+
+    __positionNotificationsContainer: function() {
       const bounds = this.getBounds();
       const cel = this.getContentElement();
       if (cel) {
-        const domeEle = cel.getDomElement();
-        if (domeEle) {
-          const rect = domeEle.getBoundingClientRect();
+        const domEle = cel.getDomElement();
+        if (domEle) {
+          const rect = domEle.getBoundingClientRect();
           bounds.left = parseInt(rect.x);
           bounds.top = parseInt(rect.y);
         }
       }
-      this.__notificationsContainer.setPosition(bounds.left+bounds.width-2, bounds.top+bounds.height-2);
-      this.__notificationsContainer.show();
-
-      document.addEventListener("mousedown", tapListener, this);
+      const bottom = bounds.top + bounds.height;
+      const right = bounds.left + bounds.width;
+      this.__notificationsContainer.setPosition(right, bottom);
     },
 
-    __hideNotifications: function() {
-      this.__notificationsContainer.exclude();
+    __onTapOutside: function(event) {
+      if (
+        !osparc.utils.Utils.isMouseOnElement(this.__notificationsContainer, event) &&
+        !osparc.utils.Utils.isMouseOnElement(this, event)
+      ) {
+        this.__hideNotificationsContainer();
+      }
+    },
+
+    __hideNotificationsContainer: function() {
+      if (this.__notificationsContainer) {
+        this.__notificationsContainer.exclude();
+      }
+
+      // Remove listener for outside clicks/taps
+      document.removeEventListener("mousedown", this.__onTapOutside.bind(this), true);
     }
   }
 });

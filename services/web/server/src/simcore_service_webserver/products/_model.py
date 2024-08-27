@@ -180,6 +180,7 @@ class Product(BaseModel):
                     "vendor": {
                         "url": "https://acme.com",
                         "license_url": "https://acme.com/license",
+                        "invitation_form": True,
                         "name": "ACME",
                         "copyright": "© ACME correcaminos",
                         "has_landing_page": False,
