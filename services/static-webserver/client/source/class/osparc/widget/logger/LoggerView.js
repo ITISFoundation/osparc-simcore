@@ -194,6 +194,16 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
           toolbar.add(control);
           break;
         }
+        case "copy-selected-to-clipboard": {
+          const toolbar = this.getChildControl("toolbar");
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/copy/14",
+            toolTipText: this.tr("Copy Selected log to clipboard"),
+            appearance: "toolbar-button"
+          });
+          toolbar.add(control);
+          break;
+        }
         case "download-logs-button": {
           const toolbar = this.getChildControl("toolbar");
           control = new qx.ui.form.Button().set({
@@ -232,6 +242,10 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       const copyToClipboardButton = this.getChildControl("copy-to-clipboard");
       copyToClipboardButton.addListener("execute", () => this.__copyLogsToClipboard(), this);
       toolbar.add(copyToClipboardButton);
+
+      const copySelectedToClipboardButton = this.getChildControl("copy-selected-to-clipboard");
+      copySelectedToClipboardButton.addListener("execute", () => this.__copySelectedLogToClipboard(), this);
+      toolbar.add(copySelectedToClipboardButton);
 
       const downloadButton = this.getChildControl("download-logs-button");
       downloadButton.addListener("execute", () => this.downloadLogs(), this);
@@ -309,6 +323,10 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
     },
 
     __copyLogsToClipboard: function() {
+      osparc.utils.Utils.copyTextToClipboard(this.__getLogsString());
+    },
+
+    __copySelectedLogToClipboard: function() {
       osparc.utils.Utils.copyTextToClipboard(this.__getLogsString());
     },
 
