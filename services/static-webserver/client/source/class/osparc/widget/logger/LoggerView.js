@@ -201,7 +201,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
         case "copy-selected-to-clipboard": {
           const toolbar = this.getChildControl("toolbar");
           control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/copy/14",
+            icon: "@FontAwesome5Solid/file/14",
             toolTipText: this.tr("Copy Selected log to clipboard"),
             appearance: "toolbar-button"
           });
