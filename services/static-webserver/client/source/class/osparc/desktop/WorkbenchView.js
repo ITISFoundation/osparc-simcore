@@ -592,7 +592,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }, this);
         workbenchUI.addListener("requestOpenLogger", e => {
           const nodeId = e.getData();
-          this.__loggerView.setCurrentNodeId(nodeId);
+          this.__loggerView.filterByNode(nodeId);
         }, this);
       }
 

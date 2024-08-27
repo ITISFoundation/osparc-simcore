@@ -227,9 +227,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       const toolbar = this.getChildControl("toolbar");
 
       const pinNode = this.getChildControl("pin-node");
-      pinNode.addListener("changeValue", e => {
-        this.__currentNodeClicked(e.getData());
-      }, this);
+      pinNode.addListener("changeValue", e => this.__pinChanged(e.getData()), this);
 
       const textFilterField = this.__textFilterField = this.getChildControl("filter-text");
       textFilterField.addListener("changeValue", this.__applyFilters, this);
@@ -300,11 +298,16 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       return table;
     },
 
+    filterByNode: function(nodeId) {
+      this.setCurrentNodeId(nodeId);
+      this.getChildControl("pin-node").setValue(true);
+    },
+
     __currentNodeIdChanged: function() {
       this.getChildControl("pin-node").setValue(false);
     },
 
-    __currentNodeClicked: function(checked) {
+    __pinChanged: function(checked) {
       if (checked) {
         const currentNodeId = this.getCurrentNodeId();
         this.__nodeSelected(currentNodeId);
