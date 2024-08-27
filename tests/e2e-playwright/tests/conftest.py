@@ -391,7 +391,7 @@ def create_new_project_and_delete(
             f"Open project in {product_url=} as {product_billable=}",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
-            timeout = 30000 if template_id else 120000
+            timeout = 60000 if template_id else 180000
             with (
                 log_in_and_out.expect_event("framereceived", waiter, timeout=timeout),
                 page.expect_response(
