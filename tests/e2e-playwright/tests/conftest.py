@@ -11,6 +11,7 @@ import logging
 import os
 import random
 import re
+import urllib.parse
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
 from typing import Any, Final
@@ -414,17 +415,22 @@ def create_new_project_and_delete(
                             logging.INFO,
                             f"Copying template data",
                         ) as my_logger:
+                            # For the long running tasks, only the path is relevant
+                            def url_to_path(url):
+                                return urllib.parse.urlparse(url).path
                             def wait_for_done(response):
-                                resp = response.json()
-                                if response.url == lrt_data["status_href"]:
+                                if url_to_path(response.url) == url_to_path(lrt_data["status_href"]):
                                     resp_data = response.json()
+                                    resp_data = resp_data["data"]
                                     assert "task_progress" in resp_data
+                                    task_progress = resp_data["task_progress"]
                                     my_logger.logger.info(
-                                        "task progress: %s",
-                                        resp_data["task_progress"],
+                                        "task progress: %s %s",
+                                        task_progress["percent"],
+                                        task_progress["message"],
                                     )
                                     return False
-                                if response.url == lrt_data["result_href"]:
+                                if url_to_path(response.url) == url_to_path(lrt_data["result_href"]):
                                     my_logger.logger.info("project created")
                                     return response.status == 201
                                 return False
