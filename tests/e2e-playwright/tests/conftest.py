@@ -241,7 +241,7 @@ def service_key(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture(scope="session")
-def template_id(request: pytest.FixtureRequest) -> str:
+def template_id(request: pytest.FixtureRequest) -> str | None:
     if key := request.config.getoption("--template-id"):
         assert isinstance(key, str)
         return key
