@@ -37,7 +37,7 @@ from pytest_simcore.helpers.playwright import (
 )
 
 _PROJECT_CLOSING_TIMEOUT: Final[int] = 10 * MINUTE
-_OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME: Final[int] = 30 * SECOND # or 60 as you set it but I think the default is 30
+_OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME: Final[int] = 30 * SECOND
 _OPENING_TUTORIAL_MAX_WAIT_TIME: Final[int] = 3 * MINUTE
 
 
