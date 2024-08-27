@@ -26,7 +26,6 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     AutoRegisteredUser,
-    LongRunningTaskWaiter,
     RunningState,
     ServiceType,
     SocketIOEvent,
@@ -392,10 +391,12 @@ def create_new_project_and_delete(
             f"Open project in {product_url=} as {product_billable=}",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
+            timeout = 30000 if template_id else 120000
             with (
-                log_in_and_out.expect_event("framereceived", waiter),
+                log_in_and_out.expect_event("framereceived", waiter, timeout=timeout),
                 page.expect_response(
-                    re.compile(r"/projects/[^:]+:open")
+                    re.compile(r"/projects/[^:]+:open"),
+                    timeout=timeout
                 ) as response_info,
             ):
                 # Project detail view pop-ups shows
@@ -406,12 +407,25 @@ def create_new_project_and_delete(
                             re.compile(rf"/projects\?from_study\={template_id}")
                         ) as long_running_task:
                             open_button.click()
-                        # wait until the template data is copied, and log times
-                        waiterOM = LongRunningTaskWaiter(
-                            page=page,
-                            long_running_task_data=long_running_task,
-                            logger=ctx.logger,
-                        )
+                        with log_context(
+                            logging.INFO,
+                            f"Copying template data",
+                        ) as my_logger:
+                            def wait_for_done(response):
+                                if response.url == long_running_task["status_href"]:
+                                    assert "done" in response["status_info"]
+                                    data = response["data"]
+                                    my_logger.logger.info(
+                                        "task progress: %s",
+                                        data["task_progress"],
+                                    )
+                                    return False
+                                if response.url == long_running_task["result_href"]:
+                                    assert "done" in response["status_info"]
+                                    my_logger.logger.info("project created")
+                                    return True
+                                return False
+                            page.expect_response(wait_for_done, timeout=timeout)
                     else:
                         open_button.click()
                 if product_billable:
