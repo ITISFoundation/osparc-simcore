@@ -418,7 +418,7 @@ def create_new_project_and_delete(
                 # Project detail view pop-ups shows
                 if press_open:
                     open_button = page.get_by_test_id("openResource")
-                    if template_id:
+                    if template_id is not None:
                         # it returns a Long Running Task
                         with page.expect_response(
                             re.compile(rf"/projects\?from_study\={template_id}")
