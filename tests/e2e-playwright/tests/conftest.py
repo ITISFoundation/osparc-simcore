@@ -428,7 +428,7 @@ def create_new_project_and_delete(
                         lrt_data = lrt_data["data"]
                         with log_context(
                             logging.INFO,
-                            f"Copying template data",
+                            "Copying template data",
                         ) as copying_logger:
                             # From the long running tasks response's urls, only their path is relevant
                             def url_to_path(url):
