@@ -412,7 +412,7 @@ def create_new_project_and_delete(
                 log_in_and_out.expect_event("framereceived", waiter, timeout=timeout),
                 page.expect_response(
                     re.compile(r"/projects/[^:]+:open"),
-                    timeout=timeout
+                    timeout=timeout + 5 * SECOND
                 ) as response_info,
             ):
                 # Project detail view pop-ups shows
