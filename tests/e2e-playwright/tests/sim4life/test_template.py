@@ -11,7 +11,6 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page, WebSocket
-from pytest_simcore.helpers.playwright import ServiceType
 from pytest_simcore.helpers.playwright_sim4life import (
     launch_S4L,
     interact_with_S4L,
@@ -19,24 +18,15 @@ from pytest_simcore.helpers.playwright_sim4life import (
 )
 
 
-def test_sim4life(
+def test_template(
     page: Page,
-    create_project_from_service_dashboard: Callable[
-        [ServiceType, str, str | None], dict[str, Any]
-    ],
-    create_project_from_new_button: Callable[[str], dict[str, Any]],
+    create_project_from_template_dashboard: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
-    service_key: str,
-    use_plus_button: bool,
+    template_id: str,
     autoscaled: bool,
     check_videostreaming: bool,
 ):
-    if use_plus_button:
-        project_data = create_project_from_new_button(service_key)
-    else:
-        project_data = create_project_from_service_dashboard(
-            ServiceType.DYNAMIC, service_key, None
-        )
+    project_data = create_project_from_template_dashboard(template_id)
 
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(
