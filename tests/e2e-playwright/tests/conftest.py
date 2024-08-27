@@ -403,27 +403,30 @@ def create_new_project_and_delete(
                 if press_open:
                     open_button = page.get_by_test_id("openResource")
                     if template_id:
+                        # it returns a Long Running Task
                         with page.expect_response(
                             re.compile(rf"/projects\?from_study\={template_id}")
-                        ) as long_running_task:
+                        ) as lrt:
                             open_button.click()
+                        lrt_data = lrt.value.json()
+                        lrt_data = lrt_data["data"]
                         with log_context(
                             logging.INFO,
                             f"Copying template data",
                         ) as my_logger:
                             def wait_for_done(response):
-                                if response.url == long_running_task["status_href"]:
-                                    assert "done" in response["status_info"]
-                                    data = response["data"]
+                                resp = response.json()
+                                if response.url == lrt_data["status_href"]:
+                                    resp_data = response.json()
+                                    assert "task_progress" in resp_data
                                     my_logger.logger.info(
                                         "task progress: %s",
-                                        data["task_progress"],
+                                        resp_data["task_progress"],
                                     )
                                     return False
-                                if response.url == long_running_task["result_href"]:
-                                    assert "done" in response["status_info"]
+                                if response.url == lrt_data["result_href"]:
                                     my_logger.logger.info("project created")
-                                    return True
+                                    return response.status == 201
                                 return False
                             page.expect_response(wait_for_done, timeout=timeout)
                     else:
