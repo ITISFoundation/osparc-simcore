@@ -146,6 +146,17 @@ qx.Class.define("osparc.workbench.NodeUI", {
           }
           const nodeStatus = new osparc.ui.basic.NodeStatusUI(this.getNode());
           control.add(nodeStatus);
+          const statusLabel = nodeStatus.getChildControl("label");
+          const evaluateLabel = () => {
+            const failed = statusLabel.getValue() === "Failed";
+            statusLabel.setCursor(failed ? "pointer" : "auto");
+            if (failed) {
+
+            } else {
+              
+            }
+          };
+          statusLabel.addListener("changeValue", evaluateLabel);
           this.add(control, {
             row: 0,
             column: 1
