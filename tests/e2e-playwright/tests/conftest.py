@@ -415,7 +415,7 @@ def create_new_project_and_delete(
                             logging.INFO,
                             f"Copying template data",
                         ) as my_logger:
-                            # For the long running tasks, only the path is relevant
+                            # From the long running tasks response's urls, only their path is relevant
                             def url_to_path(url):
                                 return urllib.parse.urlparse(url).path
                             def wait_for_done(response):
