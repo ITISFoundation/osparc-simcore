@@ -94,7 +94,8 @@ qx.Class.define("osparc.info.StudyMedium", {
         width: 25,
         height: 25,
         icon: "@FontAwesome5Solid/ellipsis-v/14",
-        focusable: false
+        focusable: false,
+        allowGrowY: false
       });
 
       const moreInfoButton = this.__getMoreInfoMenuButton();
