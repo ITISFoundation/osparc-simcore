@@ -429,7 +429,7 @@ def create_new_project_and_delete(
                         with log_context(
                             logging.INFO,
                             f"Copying template data",
-                        ) as my_logger:
+                        ) as copying_logger:
                             # From the long running tasks response's urls, only their path is relevant
                             def url_to_path(url):
                                 return urllib.parse.urlparse(url).path
@@ -439,14 +439,14 @@ def create_new_project_and_delete(
                                     resp_data = resp_data["data"]
                                     assert "task_progress" in resp_data
                                     task_progress = resp_data["task_progress"]
-                                    my_logger.logger.info(
+                                    copying_logger.logger.info(
                                         "task progress: %s %s",
                                         task_progress["percent"],
                                         task_progress["message"],
                                     )
                                     return False
                                 if url_to_path(response.url) == url_to_path(lrt_data["result_href"]):
-                                    my_logger.logger.info("project created")
+                                    copying_logger.logger.info("project created")
                                     return response.status == 201
                                 return False
                             page.expect_response(wait_for_done, timeout=timeout)
