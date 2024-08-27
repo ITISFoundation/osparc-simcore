@@ -7,19 +7,14 @@
 # pylint: disable=unused-variable
 
 
-import re
 from collections.abc import Callable
-from typing import Any, Final
+from typing import Any
 
 from playwright.sync_api import Page, WebSocket
 from pytest_simcore.helpers.playwright_sim4life import (
     launch_S4L,
     interact_with_S4L,
     check_video_streaming,
-)
-
-projects_uuid_pattern: Final[re.Pattern] = re.compile(
-    r"/projects/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
 )
 
 
