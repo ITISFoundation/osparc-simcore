@@ -51,6 +51,7 @@ from .tracing import setup_app_tracing
 from .users.plugin import setup_users
 from .version_control.plugin import setup_version_control
 from .wallets.plugin import setup_wallets
+from .workspaces.plugin import setup_workspaces
 
 _logger = logging.getLogger(__name__)
 
@@ -134,6 +135,9 @@ def create_application() -> web.Application:
 
     # folders
     setup_folders(app)
+
+    # workspaces
+    setup_workspaces(app)
 
     # tagging
     setup_scicrunch(app)

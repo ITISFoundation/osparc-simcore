@@ -11,7 +11,6 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .._meta import api_version_prefix as VTAG
-from ..application_settings import get_application_settings
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from . import _folders_api, projects_api
@@ -62,10 +61,6 @@ class _ProjectsFoldersPathParams(BaseModel):
 async def replace_project_folder(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ProjectsFoldersPathParams, request)
-
-    settings = get_application_settings(request.app)
-    if not settings.WEBSERVER_FOLDERS:
-        raise RuntimeError("Webserver folders plugin disabled")
 
     # ensure the project exists
     await projects_api.get_project_for_user(

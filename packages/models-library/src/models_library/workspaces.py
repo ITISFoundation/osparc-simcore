@@ -1,10 +1,9 @@
 from datetime import datetime
 from typing import TypeAlias
 
-from models_library.users import GroupID
 from pydantic import BaseModel, Field, PositiveInt
 
-FolderID: TypeAlias = PositiveInt
+WorkspaceID: TypeAlias = PositiveInt
 
 
 #
@@ -12,14 +11,15 @@ FolderID: TypeAlias = PositiveInt
 #
 
 
-class FolderDB(BaseModel):
-    folder_id: FolderID
+class WorkspaceDB(BaseModel):
+    workspace_id: WorkspaceID
     name: str
-    parent_folder_id: FolderID | None
-    created_by_gid: GroupID = Field(
+    description: str | None
+    owner_primary_gid: PositiveInt = Field(
         ...,
         description="GID of the group that owns this wallet",
     )
+    thumbnail: str | None
     created: datetime = Field(
         ...,
         description="Timestamp on creation",
@@ -28,3 +28,15 @@ class FolderDB(BaseModel):
         ...,
         description="Timestamp of last modification",
     )
+
+    class Config:
+        orm_mode = True
+
+
+class UserWorkspaceDB(WorkspaceDB):
+    read: bool
+    write: bool
+    delete: bool
+
+    class Config:
+        orm_mode = True

@@ -30,15 +30,16 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletDB, WalletID
+from models_library.workspaces import WorkspaceID
 from pydantic import parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
-from simcore_postgres_database.models.folders import folders_to_projects
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
+from simcore_postgres_database.models.projects_to_folders import projects_to_folders
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_postgres_database.utils_groups_extra_properties import (
@@ -58,7 +59,6 @@ from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
-from ..application_settings import ApplicationSettings
 from ..db.models import projects_to_wallet, study_tags
 from ..utils import now_str
 from ._comments_db import (
@@ -233,6 +233,7 @@ class ProjectDBAPI(BaseProjectDB):
         force_as_template: bool = False,
         hidden: bool = False,
         project_nodes: dict[NodeID, ProjectNodeCreate] | None,
+        workspace_id: WorkspaceID | None,
     ) -> dict[str, Any]:
         """Inserts a new project in the database
 
@@ -280,6 +281,9 @@ class ProjectDBAPI(BaseProjectDB):
         insert_values.setdefault("name", "New Study")
         insert_values.setdefault("workbench", {})
 
+        # workspace_id
+        insert_values.setdefault("workspace_id", workspace_id)
+
         # must be valid uuid
         try:
             ProjectID(str(insert_values.get("uuid")))
@@ -324,7 +328,6 @@ class ProjectDBAPI(BaseProjectDB):
         user_id: PositiveInt,
         *,
         product_name: str,
-        settings: ApplicationSettings,
         filter_by_project_type: ProjectType | None = None,
         filter_by_services: list[dict] | None = None,
         only_published: bool | None = False,
@@ -336,6 +339,7 @@ class ProjectDBAPI(BaseProjectDB):
             field=IDStr("last_change_date"), direction=OrderDirection.DESC
         ),
         folder_id: FolderID | None = None,
+        workspace_id: WorkspaceID | None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
         assert (
             order_by.field in projects.columns
@@ -361,11 +365,11 @@ class ProjectDBAPI(BaseProjectDB):
                 ).group_by(project_to_groups.c.project_uuid)
             ).subquery("access_rights_subquery")
 
-            _join_query = projects.join(projects_to_products, isouter=True).join(
-                access_rights_subquery, isouter=True
+            _join_query = (
+                projects.join(projects_to_products, isouter=True)
+                .join(access_rights_subquery, isouter=True)
+                .join(projects_to_folders, isouter=True)
             )
-            if settings.WEBSERVER_FOLDERS:
-                _join_query = _join_query.join(folders_to_projects, isouter=True)
 
             query = (
                 sa.select(
@@ -401,14 +405,18 @@ class ProjectDBAPI(BaseProjectDB):
                         # This was added for backward compatibility, including old projects not in the projects_to_products table.
                         | (projects_to_products.c.product_name.is_(None))
                     )
+                    & (
+                        projects_to_folders.c.folder_id == folder_id
+                        if folder_id
+                        else projects_to_folders.c.folder_id.is_(None)
+                    )
+                    & (
+                        projects.c.workspace_id == workspace_id
+                        if workspace_id
+                        else projects.c.workspace_id.is_(None)
+                    )
                 )
             )
-            if settings.WEBSERVER_FOLDERS:
-                query = query.where(
-                    folders_to_projects.c.folder_id == f"{folder_id}"
-                    if folder_id
-                    else folders_to_projects.c.folder_id.is_(None)
-                )
 
             if search:
                 query = query.join(users, isouter=True)
@@ -500,13 +508,14 @@ class ProjectDBAPI(BaseProjectDB):
         projects.c.prj_owner,
         projects.c.creation_date,
         projects.c.last_change_date,
-        projects.c.access_rights,
+        # projects.c.access_rights,
         projects.c.ui,
         projects.c.classifiers,
         projects.c.dev,
         projects.c.quality,
         projects.c.published,
         projects.c.hidden,
+        projects.c.workspace_id,
     ]
 
     async def get_project_db(self, project_uuid: ProjectID) -> ProjectDB:

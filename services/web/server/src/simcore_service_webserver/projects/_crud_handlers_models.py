@@ -13,6 +13,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
+from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, Extra, Field, Json, root_validator, validator
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -97,6 +98,10 @@ class ProjectListParams(PageQueryParameters):
     folder_id: FolderID | None = Field(
         default=None,
         description="Filter projects in specific folder. Default filtering is a root directory.",
+    )
+    workspace_id: WorkspaceID | None = Field(
+        default=None,
+        description="Filter projects in specific workspace. Default filtering is a personal workspace.",
     )
 
     @validator("search", pre=True)

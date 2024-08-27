@@ -108,12 +108,27 @@ async def replace_project_group(
     product_name: ProductName,  # pylint: disable=unused-argument
 ) -> ProjectGroupGet:
     project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    project = await project_db.get_project_db(project_id)
 
-    project_access_rights: UserProjectAccessRights = (
-        await project_db.get_project_access_rights_for_user(
-            user_id=user_id, project_uuid=project_id
+    if project.workspace_id:
+        workspace = await get_workspace(
+            app,
+            user_id=user_id,
+            workspace_id=project.workspace_id,
+            product_name=product_name,
         )
-    )
+        project_access_rights = UserProjectAccessRights(
+            uid=user_id,
+            read=workspace.my_access_rights.read,
+            write=workspace.my_access_rights.write,
+            delete=workspace.my_access_rights.delete,
+        )
+    else:
+        project_access_rights: UserProjectAccessRights = (
+            await project_db.get_project_access_rights_for_user(
+                user_id=user_id, project_uuid=project_id
+            )
+        )
     if project_access_rights.write is False:
         raise ProjectInvalidRightsError(
             user_id=user_id,
@@ -121,7 +136,6 @@ async def replace_project_group(
             reason=f"User does not have write access to project {project_id}",
         )
 
-    project = await project_db.get_project_db(project_id)
     project_owner_user: dict = await users_api.get_user(app, project.prj_owner)
     if project_owner_user["primary_gid"] == group_id:
         user: dict = await users_api.get_user(app, user_id)

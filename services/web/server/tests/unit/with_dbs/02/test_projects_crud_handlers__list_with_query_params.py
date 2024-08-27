@@ -25,7 +25,10 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
 )
 from pytest_simcore.helpers.webserver_projects import create_project
-from simcore_postgres_database.models.folders import folders, folders_to_projects
+from simcore_postgres_database.models.folders_never_used import (
+    folders_never_used,
+    folders_never_used_to_projects,
+)
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -375,27 +378,27 @@ def setup_folders_db(
     with postgres_db.connect() as con:
         output = []
         result = con.execute(
-            folders.insert()
+            folders_never_used.insert()
             .values(
                 name="My Folder 1",
                 description="My Folder Decription",
                 product_name="osparc",
                 created_by=logged_user["primary_gid"],
             )
-            .returning(folders.c.id)
+            .returning(folders_never_used.c.id)
         )
         _folder_id = result.fetchone()[0]
 
         con.execute(
-            folders_to_projects.insert().values(
+            folders_never_used_to_projects.insert().values(
                 folder_id=_folder_id, project_uuid=user_project["uuid"]
             )
         )
 
         yield FolderID(_folder_id)
 
-        con.execute(folders_to_projects.delete())
-        con.execute(folders.delete())
+        con.execute(folders_never_used_to_projects.delete())
+        con.execute(folders_never_used.delete())
 
 
 @pytest.mark.parametrize(*standard_user_role())
