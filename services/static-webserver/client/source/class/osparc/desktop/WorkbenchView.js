@@ -590,6 +590,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const edgeId = e.getData();
           this.__removeEdge(edgeId);
         }, this);
+        workbenchUI.addListener("requestOpenLogger", e => {
+          const nodeId = e.getData();
+          this.__loggerView.setCurrentNodeId(nodeId);
+        }, this);
       }
 
       const workbench = this.getStudy().getWorkbench();
