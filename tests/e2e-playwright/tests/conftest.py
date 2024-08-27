@@ -532,8 +532,7 @@ def find_and_click_template_in_dashboard(
             _textbox = page.get_by_test_id("searchBarFilter-textField-template")
             _textbox.fill(template_id)
             _textbox.press("Enter")
-            # OM: use this: test_id = "templateBrowserListItem_" + template_id
-            test_id = "studyBrowserListItem_" + template_id
+            test_id = "templateBrowserListItem_" + template_id
             page.get_by_test_id(test_id).click()
 
     return _
