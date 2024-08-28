@@ -156,7 +156,6 @@ async def list_jobs(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/page",
     response_model=Page[Job],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     responses=JOBS_STATUS_CODES,
 )
 async def get_jobs_page(
@@ -169,7 +168,10 @@ async def get_jobs_page(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """List of jobs on a specific released solver (includes pagination)"""
+    """List of jobs on a specific released solver (includes pagination)
+
+    New in *version 0.7*
+    """
 
     # NOTE: Different entry to keep backwards compatibility with list_jobs.
     # Eventually use a header with agent version to switch to new interface
