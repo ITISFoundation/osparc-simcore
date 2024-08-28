@@ -12,10 +12,6 @@ jsonschema
 openapi-core
 opentelemetry-instrumentation-aiohttp-client
 opentelemetry-instrumentation-aiohttp-server
-opentelemetry-exporter-otlp
-opentelemetry-sdk
-opentelemetry-api
 opentelemetry-instrumentation-aiopg
-opentelemetry-instrumentation-requests
 prometheus_client
 werkzeug

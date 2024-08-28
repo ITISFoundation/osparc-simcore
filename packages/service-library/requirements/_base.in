@@ -14,6 +14,10 @@ aiodocker
 aiofiles
 arrow # date/time
 faststream
+opentelemetry-api
+opentelemetry-exporter-otlp
+opentelemetry-instrumentation-requests
+opentelemetry-sdk
 pydantic
 pyinstrument
 pyyaml
