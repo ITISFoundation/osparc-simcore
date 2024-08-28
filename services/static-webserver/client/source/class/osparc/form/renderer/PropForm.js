@@ -842,7 +842,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
         if (portId in this.__linkUnlinkStackMap) {
           const stack = this.__linkUnlinkStackMap[portId];
-          stack.setSelection([stack.getSelectables()[1]]);
+          if (stack.getSelectables().length > 1) {
+            stack.setSelection([stack.getSelectables()[1]]);
+          }
         }
 
         const linkFieldModified = {
@@ -859,7 +861,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       if (this.__resetCtrlField(portId)) {
         if (portId in this.__linkUnlinkStackMap) {
           const stack = this.__linkUnlinkStackMap[portId];
-          stack.setSelection([stack.getSelectables()[0]]);
+          if (stack.getSelectables() > 0) {
+            stack.setSelection([stack.getSelectables()[0]]);
+          }
         }
 
         const linkFieldModified = {
