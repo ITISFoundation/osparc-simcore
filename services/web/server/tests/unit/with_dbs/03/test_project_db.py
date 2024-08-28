@@ -40,6 +40,7 @@ from simcore_service_webserver.projects.exceptions import (
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_api import (
     _check_project_node_has_all_required_inputs,
+    has_user_project_access_rights,
 )
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
@@ -189,6 +190,7 @@ async def insert_project_in_db(
             "user_id": None,
             "product_name": osparc_product_name,
             "project_nodes": None,
+            "workspace_id": None,
         }
         default_config.update(**overrides)
         new_project = await db_api.insert_project(**default_config)
@@ -771,7 +773,6 @@ async def test_replace_user_project(
     ) == copy_from_dict_ex(replaced_project, PROJECT_DICT_IGNORE_FIELDS)
 
 
-# NOTE: MD fix this test
 @pytest.mark.parametrize("user_role", [UserRole.ANONYMOUS])  # worst case
 @pytest.mark.parametrize("access_rights", [x.value for x in ProjectAccessRights])
 async def test_has_permission(
@@ -808,14 +809,33 @@ async def test_has_permission(
         assert permission in access_rights
 
         # owner always is allowed to do everything
-        assert await db_api.has_permission(owner_id, project_id, permission) is True
+        # assert await db_api.has_permission(owner_id, project_id, permission) is True
+        assert (
+            await has_user_project_access_rights(
+                client.app,
+                project_id=project_id,
+                user_id=owner_id,
+                permission=permission,
+            )
+            is True
+        )
 
         # user does not exits
-        assert await db_api.has_permission(-1, project_id, permission) is False
+        assert (
+            await has_user_project_access_rights(
+                client.app, project_id=project_id, user_id=-1, permission=permission
+            )
+            is False
+        )
 
         # other user
         assert (
-            await db_api.has_permission(second_user["id"], project_id, permission)
+            await has_user_project_access_rights(
+                client.app,
+                project_id=project_id,
+                user_id=second_user["id"],
+                permission=permission,
+            )
             is access_rights[permission]
         ), f"Found unexpected {permission=} for {access_rights=} of {user_role=} and {project_id=}"
 

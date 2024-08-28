@@ -143,7 +143,7 @@ projects = sa.Table(
     ),
     sa.Column(
         "workspace_id",
-        sa.String,
+        sa.BigInteger,
         sa.ForeignKey(
             "workspaces.workspace_id",
             onupdate="CASCADE",

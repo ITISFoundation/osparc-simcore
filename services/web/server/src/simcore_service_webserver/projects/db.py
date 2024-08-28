@@ -675,7 +675,7 @@ class ProjectDBAPI(BaseProjectDB):
     async def get_project_product(self, project_uuid: ProjectID) -> ProductName:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
-                projects_to_products.select(projects_to_products.c.product_name).where(
+                sa.select(projects_to_products.c.product_name).where(
                     projects.c.uuid == f"{project_uuid}"
                 )
             )
@@ -1009,25 +1009,6 @@ class ProjectDBAPI(BaseProjectDB):
     #
     # Project ACCESS RIGHTS/PERMISSIONS
     #
-    # NOTE: MD TODO
-    async def has_permission(
-        self, user_id: UserID, project_uuid: str, permission: PermissionStr
-    ) -> bool:
-        """
-        NOTE: this function should never raise
-        NOTE: if user_id does not exist it is not an issue
-        """
-
-        async with self.engine.acquire() as conn:
-            try:
-                project = await self._get_project(conn, user_id, project_uuid)
-                user_groups: list[RowProxy] = await self._list_user_groups(
-                    conn, user_id
-                )
-                check_project_permissions(project, user_id, user_groups, permission)
-                return True
-            except (ProjectInvalidRightsError, ProjectNotFoundError):
-                return False
 
     async def check_delete_project_permission(self, user_id: int, project_uuid: str):
         """

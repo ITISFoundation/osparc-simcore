@@ -84,6 +84,7 @@ async def create_project(
             )
             for node_id in project_data.get("workbench", {})
         },
+        workspace_id=None,
     )
 
     if params_override and (

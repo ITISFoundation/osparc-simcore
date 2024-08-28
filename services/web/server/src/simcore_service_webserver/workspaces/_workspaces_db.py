@@ -29,10 +29,10 @@ _logger = logging.getLogger(__name__)
 
 
 _SELECTION_ARGS = (
-    workspaces.c.wallet_id,
+    workspaces.c.workspace_id,
     workspaces.c.name,
     workspaces.c.description,
-    workspaces.c.owner,
+    workspaces.c.owner_primary_gid,
     workspaces.c.thumbnail,
     workspaces.c.created,
     workspaces.c.modified,

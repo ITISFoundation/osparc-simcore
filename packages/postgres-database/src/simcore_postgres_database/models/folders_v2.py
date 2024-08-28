@@ -47,7 +47,7 @@ folders_v2 = sa.Table(
     ),
     sa.Column(
         "user_id",
-        sa.String,
+        sa.BigInteger,
         sa.ForeignKey(
             "users.id",
             onupdate="CASCADE",
@@ -58,7 +58,7 @@ folders_v2 = sa.Table(
     ),
     sa.Column(
         "workspace_id",
-        sa.String,
+        sa.BigInteger,
         sa.ForeignKey(
             workspaces.c.workspace_id,
             onupdate="CASCADE",

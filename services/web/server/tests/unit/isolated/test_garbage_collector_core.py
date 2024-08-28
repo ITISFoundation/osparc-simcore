@@ -134,22 +134,33 @@ def has_write_permission(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
+# @pytest.fixture
+# async def mock_has_write_permission(
+#     mocker: MockerFixture, has_write_permission: bool
+# ) -> mock.AsyncMock:
+#     mocked_project_db_api = mocker.patch(
+#         f"{MODULE_GC_CORE_ORPHANS}.ProjectDBAPI", autospec=True
+#     )
+
+#     async def _mocked_has_permission(*args, **kwargs) -> bool:
+#         assert "write" in args
+#         return has_write_permission
+
+#     mocked_project_db_api.get_from_app_context.return_value.has_user_project_access_rights.side_effect = (
+#         _mocked_has_permission
+#     )
+#     return mocked_project_db_api.get_from_app_context.return_value.has_user_project_access_rights
+
+
 @pytest.fixture
 async def mock_has_write_permission(
     mocker: MockerFixture, has_write_permission: bool
 ) -> mock.AsyncMock:
-    mocked_project_db_api = mocker.patch(
-        f"{MODULE_GC_CORE_ORPHANS}.ProjectDBAPI", autospec=True
+    return mocker.patch(
+        f"{MODULE_GC_CORE_ORPHANS}.has_user_project_access_rights",
+        autospec=True,
+        return_value=has_write_permission,
     )
-
-    async def _mocked_has_permission(*args, **kwargs) -> bool:
-        assert "write" in args
-        return has_write_permission
-
-    mocked_project_db_api.get_from_app_context.return_value.has_permission.side_effect = (
-        _mocked_has_permission
-    )
-    return mocked_project_db_api.get_from_app_context.return_value.has_permission
 
 
 @pytest.fixture(params=list(UserRole), ids=str)
@@ -196,7 +207,10 @@ async def test_remove_orphaned_services(
     if node_exists and user_role > UserRole.GUEST:
         mock_get_user_role.assert_called_once()
         mock_has_write_permission.assert_called_once_with(
-            fake_running_service.user_id, f"{fake_running_service.project_id}", "write"
+            mock.ANY,
+            project_id=fake_running_service.project_id,
+            user_id=fake_running_service.user_id,
+            permission="write",
         )
     elif node_exists:
         mock_get_user_role.assert_called_once()

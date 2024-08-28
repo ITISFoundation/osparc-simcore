@@ -1466,7 +1466,6 @@ async def get_user_project_access_rights(
     return _user_project_access_rights
 
 
-# NOTE: MD: this was done for back compatibility
 async def has_user_project_access_rights(
     app: web.Application,
     *,
