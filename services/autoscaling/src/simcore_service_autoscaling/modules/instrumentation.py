@@ -137,17 +137,13 @@ class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attribut
 
 
 @dataclass(slots=True, kw_only=True)
-class AutoscalingInstrumentation(MetricsBase):
-    registry: CollectorRegistry
-
-    _cluster_metrics: ClusterMetrics = field(init=False)
+class EC2ClientMetrics(MetricsBase):
     _launched_instances: Counter = field(init=False)
     _started_instances: Counter = field(init=False)
     _stopped_instances: Counter = field(init=False)
     _terminated_instances: Counter = field(init=False)
 
     def __post_init__(self) -> None:
-        self._cluster_metrics = ClusterMetrics(subsystem=self.subsystem)
         self._launched_instances = Counter(
             "launched_instances_total",
             "Number of EC2 instances that were launched",
@@ -177,9 +173,6 @@ class AutoscalingInstrumentation(MetricsBase):
             subsystem=self.subsystem,
         )
 
-    def update_from_cluster(self, cluster: Cluster) -> None:
-        self._cluster_metrics.update_from_cluster(cluster)
-
     def instance_started(self, instance_type: str) -> None:
         self._started_instances.labels(instance_type=instance_type).inc()
 
@@ -191,6 +184,34 @@ class AutoscalingInstrumentation(MetricsBase):
 
     def instance_terminated(self, instance_type: str) -> None:
         self._terminated_instances.labels(instance_type=instance_type).inc()
+
+
+@dataclass(slots=True, kw_only=True)
+class BufferPoolsMetrics(MetricsBase):
+    def __post_init__(self) -> None:
+        buffer_pools_subsystem = f"{self.subsystem}_buffer_machines_pools"
+
+
+@dataclass(slots=True, kw_only=True)
+class ScalingMetrics(MetricsBase):
+    def __post_init__(self) -> None:
+        scaling_subsystem = f"{self.subsystem}_scaling"
+
+
+@dataclass(slots=True, kw_only=True)
+class AutoscalingInstrumentation(MetricsBase):
+    registry: CollectorRegistry
+
+    cluster_metrics: ClusterMetrics = field(init=False)
+    ec2_client_metrics: EC2ClientMetrics = field(init=False)
+    buffer_machines_pools_metrics: BufferPoolsMetrics = field(init=False)
+    scaling_metrics: ScalingMetrics = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.cluster_metrics = ClusterMetrics(subsystem=self.subsystem)
+        self.ec2_client_metrics = EC2ClientMetrics(subsystem=self.subsystem)
+        buffer_machines_pools_metrics = BufferPoolsMetrics(subsystem=self.subsystem)
+        scaling_metrics = ScalingMetrics(subsystem=self.subsystem)
 
 
 P = ParamSpec("P")
@@ -240,19 +261,25 @@ def instrument_ec2_client_methods(
     methods_to_instrument = [
         (
             "launch_instances",
-            autoscaling_instrumentation.instance_launched,
+            autoscaling_instrumentation.ec2_client_metrics.instance_launched,
             None,
             _instance_type_from_instance_datas,
         ),
         (
+            "start_instances",
+            autoscaling_instrumentation.ec2_client_metrics.instance_started,
+            _instance_type_from_instance_datas,
+            None,
+        ),
+        (
             "stop_instances",
-            autoscaling_instrumentation.instance_stopped,
+            autoscaling_instrumentation.ec2_client_metrics.instance_stopped,
             _instance_type_from_instance_datas,
             None,
         ),
         (
             "terminate_instances",
-            autoscaling_instrumentation.instance_terminated,
+            autoscaling_instrumentation.ec2_client_metrics.instance_terminated,
             _instance_type_from_instance_datas,
             None,
         ),

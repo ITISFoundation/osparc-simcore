@@ -1147,7 +1147,7 @@ async def _notify_autoscaling_status(
         )
         # prometheus instrumentation
         if has_instrumentation(app):
-            get_instrumentation(app).update_from_cluster(cluster)
+            get_instrumentation(app).cluster_metrics.update_from_cluster(cluster)
 
 
 async def auto_scale_cluster(
