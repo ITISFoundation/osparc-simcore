@@ -5,6 +5,7 @@
 
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from pathlib import Path
 
 import aiopg.sa
 import aiopg.sa.exc
@@ -47,7 +48,7 @@ pytest_plugins = [
 def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
     """Deploys postgres and service is responsive"""
     # container environment
-    with open(docker_compose_file) as fh:
+    with Path.open(docker_compose_file) as fh:
         config = yaml.safe_load(fh)
     environ = config["services"]["postgres"]["environment"]
 

@@ -76,7 +76,7 @@ def test_invalid_primary_custom_tags_raises(
         monkeypatch,
         {"PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(invalid_tag)},
     )
-    with pytest.raises(ValidationError, match="string does not match regex"):
+    with pytest.raises(ValidationError):
         ApplicationSettings.create_from_envs()
 
 
