@@ -166,12 +166,6 @@ qx.Class.define("osparc.data.model.Node", {
       apply: "__applyPropsForm"
     },
 
-    propsFormEditor: {
-      check: "osparc.form.renderer.PropFormEditor",
-      init: null,
-      nullable: true
-    },
-
     marker: {
       check: "qx.core.Object",
       init: null,
