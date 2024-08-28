@@ -180,17 +180,11 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
 
       const canIWriteStudy = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
 
-      const updatableServices = [];
       let i = 0;
       const workbench = this._studyData["workbench"];
-      let anyUpdatable = false;
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-        const isUpdatable = osparc.service.Utils.isUpdatable(node);
-        if (isUpdatable) {
-          updatableServices.push(nodeId);
-        }
         const metadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
         const currentVersionLabel = new qx.ui.basic.Label(osparc.service.Utils.extractVersionDisplay(metadata)).set({
           font: "text-14"
@@ -227,6 +221,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           column: this.self().GRID_POS.COMPATIBLE_VERSION
         });
 
+        const isUpdatable = osparc.service.Utils.isUpdatable(node);
         if (latestCompatible && canIWriteStudy) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
@@ -248,12 +243,11 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
             row: i,
             column: this.self().GRID_POS.UPDATE_BUTTON
           });
-
-          anyUpdatable |= isUpdatable;
         }
       }
 
-      if (canIWriteStudy && anyUpdatable) {
+      const updatableServices = osparc.metadata.ServicesInStudyUpdate.updatableNodeIds(workbench);
+      if (updatableServices.length && canIWriteStudy) {
         const updateAllButton = this.__updateAllButton;
         updateAllButton.show();
         updateAllButton.addListener("execute", () => this.__updateAllServices(updatableServices, updateAllButton), this);
