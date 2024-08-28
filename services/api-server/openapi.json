@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io web API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.6.0"
+    "version": "0.7.0"
   },
   "paths": {
     "/v0/meta": {
@@ -2614,6 +2614,158 @@
         ]
       }
     },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/page": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Jobs Page",
+        "description": "List of jobs on a specific released solver (includes pagination)\n\nNew in *version 0.7*",
+        "operationId": "get_jobs_page",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Solver Key"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "default": 50
+            },
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "title": "Offset",
+              "default": 0
+            },
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Job_"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job/wallet/pricing details not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}": {
       "get": {
         "tags": [
@@ -3090,7 +3242,6 @@
           "409": {
             "description": "Conflict: Logs are already being streamed",
             "content": {
-              "application/json": {},
               "application/x-ndjson": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorGet"
@@ -4729,6 +4880,41 @@
           "links"
         ],
         "title": "Page[File]"
+      },
+      "Page_Job_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Job"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "links"
+        ],
+        "title": "Page[Job]"
       },
       "Page_Study_": {
         "properties": {
