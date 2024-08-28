@@ -1275,7 +1275,7 @@ qx.Class.define("osparc.data.Resources", {
           // If a 401 is received, make a call to the /me endpoint and if the backend also responds with a 401
           // assume that the backend logged the user out for some reason
           if (status === 401) {
-            this.fetch("profile")
+            this.fetch("profile", "getOne")
               .catch(err => {
                 if ("status" in err && err.status === 401) {
                   qx.core.Init.getApplication().logout(this.tr("You were logged out"));
