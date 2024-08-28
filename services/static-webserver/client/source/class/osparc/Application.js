@@ -630,6 +630,11 @@ qx.Class.define("osparc.Application", {
      * Resets session and restarts
     */
     logout: function(forcedReason) {
+      let isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
+      if (!isLoggedIn) {
+        return;
+      }
+
       if (forcedReason) {
         osparc.FlashMessenger.getInstance().logAs(forcedReason, "WARNING", 0);
       } else {
