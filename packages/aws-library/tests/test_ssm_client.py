@@ -112,6 +112,8 @@ async def test_send_command(
     assert dataclasses.asdict(got) == {
         **dataclasses.asdict(sent_command),
         "message": "Success",
+        "start_time": got.start_time,
+        "finish_time": got.finish_time,
     }
     with pytest.raises(SSMInvalidCommandError):
         await simcore_ssm_api.get_command(
