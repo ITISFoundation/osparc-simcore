@@ -1,3 +1,4 @@
+import collections
 import functools
 from collections.abc import Callable, Coroutine, Iterable
 from dataclasses import dataclass, field
@@ -24,9 +25,12 @@ def _update_gauge(
     nodes: list[AssociatedInstance] | list[NonAssociatedInstance],
 ) -> None:
     gauge.clear()
+    # Create a Counter to count nodes by instance type
+    instance_type_counts = collections.Counter(node.ec2_instance.type for node in nodes)
 
-    for node in nodes:
-        gauge.labels(instance_type=node.ec2_instance.type).inc()
+    # Set the gauge for each instance type to the count
+    for instance_type, count in instance_type_counts.items():
+        gauge.labels(instance_type=instance_type).set(count)
 
 
 @dataclass(slots=True, kw_only=True)
