@@ -892,12 +892,12 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       return links;
     },
 
-    addPortLink: function(toPortId, fromNodeId, fromPortId, forceConnection = false) {
+    addPortLink: function(toPortId, fromNodeId, fromPortId) {
       const study = this.getStudy();
       if (!study) {
         return null;
       }
-      if (!forceConnection && !this.__isPortAvailable(toPortId)) {
+      if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
       const ctrlLink = this.getControlLink(toPortId);
@@ -931,10 +931,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     setInputLinks: function(inputLinks) {
-      const forceConnection = false;
       for (let key in inputLinks) {
         if (osparc.utils.Ports.isDataALink(inputLinks[key])) {
-          this.addPortLink(key, inputLinks[key].nodeUuid, inputLinks[key].output, forceConnection);
+          this.addPortLink(key, inputLinks[key].nodeUuid, inputLinks[key].output);
         }
       }
     },
