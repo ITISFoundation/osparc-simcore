@@ -1278,7 +1278,7 @@ qx.Class.define("osparc.data.Resources", {
             this.fetch("profile")
               .catch(err => {
                 if ("status" in err && err.status === 401) {
-                  qx.core.Init.getApplication().logout("You were logged out");
+                  qx.core.Init.getApplication().logout(this.tr("You were logged out"));
                 }
               });
           }
