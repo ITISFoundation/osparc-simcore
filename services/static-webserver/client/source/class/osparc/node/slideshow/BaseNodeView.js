@@ -309,13 +309,6 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       return;
     },
 
-    /**
-      * @abstract
-      */
-    _openEditAccessLevel: function() {
-      throw new Error("Abstract method called!");
-    },
-
     __areInputsReady: function() {
       const wb = this.getNode().getStudy().getWorkbench();
       const upstreamNodeIds = wb.getUpstreamCompNodes(this.getNode(), false);
