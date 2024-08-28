@@ -33,6 +33,10 @@ from aws_library.ssm import (
 from fastapi import FastAPI
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
+from simcore_service_autoscaling.modules.instrumentation import (
+    get_instrumentation,
+    has_instrumentation,
+)
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..constants import (
@@ -409,3 +413,9 @@ async def monitor_buffer_machines(
 
     # 4. pull docker images if needed
     await _handle_image_pre_pulling(app, buffers_manager)
+
+    # 5. instrumentation
+    if has_instrumentation(app):
+        get_instrumentation(
+            app
+        ).buffer_machines_pools_metrics.update_from_buffer_pool_manager(buffers_manager)

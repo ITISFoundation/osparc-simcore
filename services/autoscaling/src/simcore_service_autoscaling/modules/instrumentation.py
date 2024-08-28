@@ -14,7 +14,12 @@ from servicelib.fastapi.prometheus_instrumentation import (
 from .._meta import APP_NAME
 from ..core.errors import ConfigurationError
 from ..core.settings import get_application_settings
-from ..models import AssociatedInstance, Cluster, NonAssociatedInstance
+from ..models import (
+    AssociatedInstance,
+    BufferPoolManager,
+    Cluster,
+    NonAssociatedInstance,
+)
 
 METRICS_NAMESPACE: Final[str] = APP_NAME.replace("-", "_")
 EC2_INSTANCE_LABELS: Final[tuple[str]] = ("instance_type",)
@@ -69,7 +74,7 @@ _CLUSTER_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str]]]] = {
     ),
     "disconnected_nodes": (
         "Number of docker nodes not backed by a running EC2 instance",
-        [],
+        (),
     ),
     "terminating_nodes": (
         "Number of EC2-backed docker nodes that started the termination process",
@@ -178,6 +183,38 @@ class EC2ClientMetrics(MetricsBase):
         self._terminated_instances.labels(instance_type=instance_type).inc()
 
 
+_BUFFER_POOLS_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str]]]] = {
+    "ready_instances": (
+        "Number of EC2 buffer instances that are ready for use",
+        EC2_INSTANCE_LABELS,
+    ),
+    "pending_instances": (
+        "Number of EC2 buffer instances that are pending/starting",
+        EC2_INSTANCE_LABELS,
+    ),
+    "waiting_to_pull_instances": (
+        "Number of EC2 buffer instances that are waiting to pull docker images",
+        EC2_INSTANCE_LABELS,
+    ),
+    "waiting_to_stop_instances": (
+        "Number of EC2 buffer instances that are waiting to be stopped",
+        EC2_INSTANCE_LABELS,
+    ),
+    "pulling_instances": (
+        "Number of EC2 buffer instances that are actively pulling docker images",
+        EC2_INSTANCE_LABELS,
+    ),
+    "stopping_instances": (
+        "Number of EC2 buffer instances that are stopping",
+        EC2_INSTANCE_LABELS,
+    ),
+    "broken_instances": (
+        "Number of EC2 buffer instances that are deemed as broken",
+        EC2_INSTANCE_LABELS,
+    ),
+}
+
+
 @dataclass(slots=True, kw_only=True)
 class BufferPoolsMetrics(MetricsBase):
     _ready_instances: Gauge = field(init=False)
@@ -190,6 +227,63 @@ class BufferPoolsMetrics(MetricsBase):
 
     def __post_init__(self) -> None:
         buffer_pools_subsystem = f"{self.subsystem}_buffer_machines_pools"
+        for field_name, definition in _BUFFER_POOLS_METRICS_DEFINITIONS.items():
+            gauge = _create_gauge(field_name, definition, buffer_pools_subsystem)
+            setattr(self, f"_{field_name}", gauge)
+
+    def update_from_buffer_pool_manager(
+        self, buffer_pool_manager: BufferPoolManager
+    ) -> None:
+        for buffer_pool in buffer_pool_manager.values():
+            _update_gauge(
+                self._ready_instances,
+                [
+                    NonAssociatedInstance(ec2_instance=i)
+                    for i in buffer_pool.ready_instances
+                ],
+            )
+            _update_gauge(
+                self._pending_instances,
+                [
+                    NonAssociatedInstance(ec2_instance=i)
+                    for i in buffer_pool.pending_instances
+                ],
+            )
+            _update_gauge(
+                self._waiting_to_pull_instances,
+                [
+                    NonAssociatedInstance(ec2_instance=i)
+                    for i in buffer_pool.waiting_to_pull_instances
+                ],
+            )
+            _update_gauge(
+                self._waiting_to_stop_instances,
+                [
+                    NonAssociatedInstance(ec2_instance=i)
+                    for i in buffer_pool.waiting_to_stop_instances
+                ],
+            )
+            _update_gauge(
+                self._pulling_instances,
+                [
+                    NonAssociatedInstance(ec2_instance=i)
+                    for i in buffer_pool.pulling_instances
+                ],
+            )
+            _update_gauge(
+                self._stopping_instances,
+                [
+                    NonAssociatedInstance(ec2_instance=i)
+                    for i in buffer_pool.stopping_instances
+                ],
+            )
+            _update_gauge(
+                self._broken_instances,
+                [
+                    NonAssociatedInstance(ec2_instance=i)
+                    for i in buffer_pool.broken_instances
+                ],
+            )
 
 
 @dataclass(slots=True, kw_only=True)
