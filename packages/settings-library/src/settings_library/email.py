@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import root_validator
+from pydantic import model_validator
 from pydantic.fields import Field
 from pydantic.types import SecretStr
 
@@ -31,7 +31,7 @@ class SMTPSettings(BaseCustomSettings):
     SMTP_USERNAME: str | None = Field(None, min_length=1)
     SMTP_PASSWORD: SecretStr | None = Field(None, min_length=1)
 
-    @root_validator
+    @model_validator(mode="before")
     @classmethod
     def _both_credentials_must_be_set(cls, values):
         username = values.get("SMTP_USERNAME")
@@ -43,7 +43,7 @@ class SMTPSettings(BaseCustomSettings):
 
         return values
 
-    @root_validator
+    @model_validator(mode="before")
     @classmethod
     def _enabled_tls_required_authentication(cls, values):
         smtp_protocol = values.get("SMTP_PROTOCOL")
