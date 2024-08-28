@@ -85,39 +85,32 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
     __updateAllButton: null,
 
     _populateIntroText: async function() {
+      const labels = [];
+      if (this.self().anyServiceInaccessible(this._studyData)) {
+        const inaccessibleText = this.tr("Some services' information is not accessible. Please contact service owner:");
+        const inaccessibleLabel = new qx.ui.basic.Label(inaccessibleText);
+        labels.push(inaccessibleLabel);
+      }
       if (this.self().anyServiceDeprecated(this._studyData)) {
         const deprecatedText = this.tr("Services marked in yellow are deprecated, they will be retired soon. They can be updated by pressing the Update button.");
-        const deprecatedLabel = new qx.ui.basic.Label(deprecatedText).set({
-          font: "text-14",
-          rich: true
-        });
-        this._introText.add(deprecatedLabel);
+        const deprecatedLabel = new qx.ui.basic.Label(deprecatedText);
+        labels.push(deprecatedLabel);
       }
       if (this.self().anyServiceRetired(this._studyData)) {
         let retiredText = this.tr("Services marked in red are retired: you cannot use them anymore.<br>If the Update button is disabled, they might require manual intervention to be updated:");
         retiredText += this.tr("<br>- Open the study");
         retiredText += this.tr("<br>- Click on the retired service, download the data");
         retiredText += this.tr("<br>- Upload the data to an updated version");
-        const retiredLabel = new qx.ui.basic.Label(retiredText).set({
+        const retiredLabel = new qx.ui.basic.Label(retiredText);
+        labels.push(retiredLabel);
+      }
+      labels.forEach(label => {
+        label.set({
           font: "text-14",
           rich: true
         });
-        this._introText.add(retiredLabel);
-      }
-      if (this.self().anyServiceInaccessible(this._studyData)) {
-        let inaccessibleText = this.tr("Some services' information is not accessible. Please contact service owner:");
-        const retiredLabel = new qx.ui.basic.Label(inaccessibleText).set({
-          font: "text-14",
-          rich: true
-        });
-        this._introText.add(retiredLabel);
-      }
-      if (this._introText.getChildren().length === 0) {
-        const upToDateLabel = new qx.ui.basic.Label(this.tr("All services are up to date to their latest compatible version.")).set({
-          font: "text-14"
-        });
-        this._introText.add(upToDateLabel);
-      }
+        this._introText.add(label);
+      });
     },
 
     __updateService: async function(nodeId, key, version, button) {
