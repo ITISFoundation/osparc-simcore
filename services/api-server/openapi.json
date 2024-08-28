@@ -2175,7 +2175,7 @@
           "solvers"
         ],
         "summary": "Start Job",
-        "description": "Starts job job_id created with the solver solver_key:version\n\nNew in *version 0.4.3*: cluster_id\nNew in *version 0.6.0*: This endpoint responds with a 202 when successfully starting a computation",
+        "description": "Starts job job_id created with the solver solver_key:version\n\nAdded in *version 0.4.3*: query parameter `cluster_id`\nAdded in *version 0.6*: responds with a 202 when successfully starting a computation",
         "operationId": "start_job",
         "parameters": [
           {
@@ -3049,7 +3049,7 @@
           "solvers"
         ],
         "summary": "Get Job Output Logfile",
-        "description": "Special extra output with persistent logs file for the solver run.\n\nNOTE: this is not a log stream but a predefined output that is only\navailable after the job is done.\n\nNew in *version 0.4.0*",
+        "description": "Special extra output with persistent logs file for the solver run.\n\n**NOTE**: this is not a log stream but a predefined output that is only\navailable after the job is done.\n\nNew in *version 0.4.0*",
         "operationId": "get_job_output_logfile",
         "parameters": [
           {
@@ -3732,7 +3732,7 @@
           "studies"
         ],
         "summary": "Start Study Job",
-        "description": "New in *version 0.6.0*: This endpoint responds with a 202 when successfully starting a computation",
+        "description": "Changed in in *version 0.6.0*: Now responds with a 202 when successfully starting a computation",
         "operationId": "start_study_job",
         "parameters": [
           {
