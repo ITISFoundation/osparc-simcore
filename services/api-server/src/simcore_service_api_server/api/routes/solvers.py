@@ -20,6 +20,7 @@ from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
+from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
 
 _logger = logging.getLogger(__name__)
 
@@ -241,6 +242,8 @@ async def get_solver_release(
     "/{solver_key:path}/releases/{version}/ports",
     response_model=OnePage[SolverPort],
     responses=_SOLVER_STATUS_CODES,
+    description="Lists inputs and outputs of a given solver\n\n"
+    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0"),
 )
 async def list_solver_ports(
     solver_key: SolverKeyId,
@@ -249,10 +252,6 @@ async def list_solver_ports(
     catalog_client: Annotated[CatalogApi, Depends(get_api_client(CatalogApi))],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """Lists inputs and outputs of a given solver
-
-    New in *version 0.5.0*
-    """
     ports = await catalog_client.get_service_ports(
         user_id=user_id,
         name=solver_key,

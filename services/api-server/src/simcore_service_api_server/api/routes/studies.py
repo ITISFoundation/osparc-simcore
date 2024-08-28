@@ -6,6 +6,9 @@ from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from simcore_service_api_server.api.routes._constants import (
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+)
 
 from ...models.pagination import OnePage, Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -37,15 +40,12 @@ def _create_study_from_project(project: ProjectGet) -> Study:
 @router.get(
     "",
     response_model=Page[Study],
+    description=FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0"),
 )
 async def list_studies(
     page_params: Annotated[PaginationParams, Depends()],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    """
-
-    New in *version 0.5.0*
-    """
     projects_page = await webserver_api.get_projects_page(
         limit=page_params.limit, offset=page_params.offset
     )
@@ -65,15 +65,12 @@ async def list_studies(
     "/{study_id:uuid}",
     response_model=Study,
     responses={**_COMMON_ERROR_RESPONSES},
+    description=FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0"),
 )
 async def get_study(
     study_id: StudyID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    """
-
-    New in *version 0.5.0*
-    """
     project: ProjectGet = await webserver_api.get_project(project_id=study_id)
     return _create_study_from_project(project)
 
@@ -103,15 +100,13 @@ async def clone_study(
     "/{study_id:uuid}/ports",
     response_model=OnePage[StudyPort],
     responses={**_COMMON_ERROR_RESPONSES},
+    description="Lists metadata on ports of a given study\n\n"
+    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5.0"),
 )
 async def list_study_ports(
     study_id: StudyID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    """Lists metadata on ports of a given study
-
-    New in *version 0.5.0*
-    """
     project_ports: list[StudyPort] = await webserver_api.get_project_metadata_ports(
         project_id=study_id
     )
