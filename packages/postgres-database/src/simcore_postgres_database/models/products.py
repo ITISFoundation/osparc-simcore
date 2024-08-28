@@ -32,12 +32,17 @@ class Vendor(TypedDict, total=False):
     """
 
     name: str  # e.g. IT'IS Foundation
-    copyright: str
-    url: str
-    license_url: str  # Which are the license terms? (if applies)
-    invitation_url: str  # How to request a trial invitation? (if applies)
-    has_landing_page: bool  # Landing page enabled
     address: str  # e.g. Zeughausstrasse 43, 8004 Zurich, Switzerland
+    copyright: str  # copyright message
+
+    url: str  # vendor website
+    license_url: str  # Which are the license terms? (if applies)
+
+    invitation_url: str  # How to request a trial invitation? (if applies)
+    invitation_form: bool  # If True, it takes precendence over invitation_url and asks the FE to show the form (if defined)
+
+    has_landing_page: bool  # Is Landing page enabled
+
     release_notes_url_template: str  # a template url where `{vtag}` will be replaced, eg: "http://example.com/{vtag}.md"
 
 

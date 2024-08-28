@@ -44,7 +44,7 @@ from ._services_sql import (
 _logger = logging.getLogger(__name__)
 
 
-def is_newer(
+def _is_newer(
     old: ServiceSpecificationsAtDB | None,
     new: ServiceSpecificationsAtDB,
 ) -> bool:
@@ -54,7 +54,7 @@ def is_newer(
     )
 
 
-def merge_specs(
+def _merge_specs(
     everyone_spec: ServiceSpecificationsAtDB | None,
     team_specs: dict[GroupID, ServiceSpecificationsAtDB],
     user_spec: ServiceSpecificationsAtDB | None,
@@ -176,6 +176,7 @@ class ServicesRepository(BaseRepository):
         write_access: bool | None = None,
         product_name: str | None = None,
     ) -> ServiceMetaDataAtDB | None:
+
         query = sa.select(services_meta_data).where(
             (services_meta_data.c.key == key)
             & (services_meta_data.c.version == version)
@@ -242,9 +243,7 @@ class ServicesRepository(BaseRepository):
                 await conn.execute(insert_stmt)
         return created_service
 
-    async def update_service(
-        self, patched_service: ServiceMetaDataAtDB
-    ) -> ServiceMetaDataAtDB:
+    async def update_service(self, patched_service: ServiceMetaDataAtDB) -> None:
 
         stmt_update = (
             services_meta_data.update()
@@ -259,14 +258,9 @@ class ServicesRepository(BaseRepository):
                     exclude={"key", "version"},
                 )
             )
-            .returning(literal_column("*"))
         )
-
         async with self.db_engine.begin() as conn:
-            result = await conn.execute(stmt_update)
-            row = result.first()
-            assert row  # nosec
-        return ServiceMetaDataAtDB.from_orm(row)
+            await conn.execute(stmt_update)
 
     async def can_get_service(
         self,
@@ -284,6 +278,27 @@ class ServicesRepository(BaseRepository):
                     product_name=product_name,
                     user_id=user_id,
                     access_rights=AccessRightsClauses.can_read,
+                    service_key=key,
+                    service_version=version,
+                )
+            )
+            return bool(result.scalar())
+
+    async def can_update_service(
+        self,
+        # access-rights
+        product_name: ProductName,
+        user_id: UserID,
+        # get args
+        key: ServiceKey,
+        version: ServiceVersion,
+    ) -> bool:
+        async with self.db_engine.begin() as conn:
+            result = await conn.execute(
+                can_get_service_stmt(
+                    product_name=product_name,
+                    user_id=user_id,
+                    access_rights=AccessRightsClauses.can_edit,
                     service_key=key,
                     service_version=version,
                 )
@@ -576,16 +591,16 @@ class ServicesRepository(BaseRepository):
                         continue
                     # filter by group type
                     group = gid_to_group_map[row.gid]
-                    if (group.group_type == GroupTypeInModel.STANDARD) and is_newer(
+                    if (group.group_type == GroupTypeInModel.STANDARD) and _is_newer(
                         teams_specs.get(db_service_spec.gid),
                         db_service_spec,
                     ):
                         teams_specs[db_service_spec.gid] = db_service_spec
-                    elif (group.group_type == GroupTypeInModel.EVERYONE) and is_newer(
+                    elif (group.group_type == GroupTypeInModel.EVERYONE) and _is_newer(
                         everyone_specs, db_service_spec
                     ):
                         everyone_specs = db_service_spec
-                    elif (group.group_type == GroupTypeInModel.PRIMARY) and is_newer(
+                    elif (group.group_type == GroupTypeInModel.PRIMARY) and _is_newer(
                         primary_specs, db_service_spec
                     ):
                         primary_specs = db_service_spec
@@ -597,7 +612,7 @@ class ServicesRepository(BaseRepository):
                         f"{exc}",
                     )
 
-        if merged_specifications := merge_specs(
+        if merged_specifications := _merge_specs(
             everyone_specs, teams_specs, primary_specs
         ):
             return ServiceSpecifications.parse_obj(merged_specifications)

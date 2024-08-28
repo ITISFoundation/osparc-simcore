@@ -131,14 +131,13 @@ qx.Class.define("osparc.product.Utils", {
       });
     },
 
-    getFaviconUrl: function() {
-      const pngUrl = "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/favicon-"+this.getProductName()+".png";
-      const fallbackIcon = "/resource/osparc/favicon-"+this.getProductName()+".png";
-      return new Promise(resolve => {
-        this.__linkExists(pngUrl)
-          .then(() => resolve(pngUrl))
-          .catch(() => resolve(fallbackIcon))
-      });
+    getManifestIconUrl: function(icon) {
+      const productName = this.isS4LProduct() || this.isProduct("s4llite") ? "s4l" : osparc.product.Utils.getProductName();
+      const iconPath = `https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/${productName}/icons/${icon}`;
+      const fallbackIcon = `/resource/osparc/${productName}/favicon-96x96.png`;
+      return this.__linkExists(iconPath)
+        .then(() => iconPath)
+        .catch(() => fallbackIcon);
     },
 
     getLogoPath: function(longLogo = true) {
@@ -193,6 +192,28 @@ qx.Class.define("osparc.product.Utils", {
         return credits === 0;
       }
       return false;
+    },
+
+    /**
+     * @returns {String} ["REGISTER", "REQUEST_ACCOUNT_FORM", "REQUEST_ACCOUNT_INSTRUCTIONS"]
+     */
+    getCreateAccountAction: function() {
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        // Allow registering in Development Platform
+        return "REGISTER";
+      }
+
+      const config = osparc.store.Store.getInstance().get("config");
+      if (config["invitation_required"]) {
+        const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+        if (vendor["invitation_form"]) {
+          // If invitation_required (login_settings) and invitation_form (vendor)
+          return "REQUEST_ACCOUNT_FORM";
+        }
+        // do not show request account form, pop up a dialog with instructions instead
+        return "REQUEST_ACCOUNT_INSTRUCTIONS";
+      }
+      return "REGISTER";
     },
 
     // All products except oSPARC

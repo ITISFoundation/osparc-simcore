@@ -200,14 +200,13 @@ async def _make_pending_buffer_ec2s_join_cluster(
     app: FastAPI,
     cluster: Cluster,
 ) -> Cluster:
-    # started buffer instance shall be asked to join the cluster once they are running
-    ssm_client = get_ssm_client(app)
-
     if buffer_ec2s_pending := [
         i.ec2_instance
         for i in cluster.pending_ec2s
         if is_buffer_machine(i.ec2_instance.tags)
     ]:
+        # started buffer instance shall be asked to join the cluster once they are running
+        ssm_client = get_ssm_client(app)
         buffer_ec2_connection_state = await limited_gather(
             *[
                 ssm_client.is_instance_connected_to_ssm_server(i.id)

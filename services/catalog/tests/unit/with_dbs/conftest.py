@@ -368,8 +368,8 @@ async def create_fake_service_data(
         fake_service, *fake_access_rights = create_fake_service_data(
                 "simcore/services/dynamic/jupyterlab",
                 "0.0.1",
-                team_access=None,
-                everyone_access=None,
+                team_access="xw",
+                everyone_access="x",
                 product=target_product,
             ),
 

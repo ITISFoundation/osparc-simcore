@@ -11,6 +11,7 @@ import logging
 import os
 import random
 import re
+import urllib.parse
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
 from typing import Any, Final
@@ -24,6 +25,7 @@ from pydantic import AnyUrl, TypeAdapter
 from pytest import Item
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
+    SECOND,
     MINUTE,
     AutoRegisteredUser,
     RunningState,
@@ -35,6 +37,8 @@ from pytest_simcore.helpers.playwright import (
 )
 
 _PROJECT_CLOSING_TIMEOUT: Final[int] = 10 * MINUTE
+_OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME: Final[int] = 30 * SECOND
+_OPENING_TUTORIAL_MAX_WAIT_TIME: Final[int] = 3 * MINUTE
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -93,6 +97,13 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         type=str,
         default=None,
         help="Service Key",
+    )
+    group.addoption(
+        "--template-id",
+        action="store",
+        type=str,
+        default=None,
+        help="Template uuid",
     )
     group.addoption(
         "--user-agent",
@@ -230,6 +241,14 @@ def service_key(request: pytest.FixtureRequest) -> str:
         assert isinstance(key, str)
         return key
     return os.environ["SERVICE_KEY"]
+
+
+@pytest.fixture(scope="session")
+def template_id(request: pytest.FixtureRequest) -> str | None:
+    if key := request.config.getoption("--template-id"):
+        assert isinstance(key, str)
+        return key
+    return None
 
 
 @pytest.fixture(scope="session")
@@ -381,6 +400,7 @@ def create_new_project_and_delete(
     def _(
         expected_states: tuple[RunningState] = (RunningState.NOT_STARTED,),
         press_open: bool = True,
+        template_id: str | None = None,
     ) -> dict[str, Any]:
         assert (
             len(created_project_uuids) == 0
@@ -390,15 +410,54 @@ def create_new_project_and_delete(
             f"Open project in {product_url=} as {product_billable=}",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
+            timeout = _OPENING_TUTORIAL_MAX_WAIT_TIME if template_id is not None else _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME
             with (
-                log_in_and_out.expect_event("framereceived", waiter),
+                log_in_and_out.expect_event("framereceived", waiter, timeout=timeout + 10 * SECOND),
                 page.expect_response(
-                    re.compile(r"/projects/[^:]+:open")
+                    re.compile(r"/projects/[^:]+:open"),
+                    timeout=timeout + 5 * SECOND
                 ) as response_info,
             ):
                 # Project detail view pop-ups shows
                 if press_open:
-                    page.get_by_test_id("openResource").click()
+                    open_button = page.get_by_test_id("openResource")
+                    if template_id is not None:
+                        # it returns a Long Running Task
+                        with page.expect_response(
+                            re.compile(rf"/projects\?from_study\={template_id}")
+                        ) as lrt:
+                            open_button.click()
+                        lrt_data = lrt.value.json()
+                        lrt_data = lrt_data["data"]
+                        with log_context(
+                            logging.INFO,
+                            "Copying template data",
+                        ) as copying_logger:
+                            # From the long running tasks response's urls, only their path is relevant
+                            def url_to_path(url):
+                                return urllib.parse.urlparse(url).path
+                            def wait_for_done(response):
+                                if url_to_path(response.url) == url_to_path(lrt_data["status_href"]):
+                                    resp_data = response.json()
+                                    resp_data = resp_data["data"]
+                                    assert "task_progress" in resp_data
+                                    task_progress = resp_data["task_progress"]
+                                    copying_logger.logger.info(
+                                        "task progress: %s %s",
+                                        task_progress["percent"],
+                                        task_progress["message"],
+                                    )
+                                    return False
+                                if url_to_path(response.url) == url_to_path(lrt_data["result_href"]):
+                                    copying_logger.logger.info("project created")
+                                    return response.status == 201
+                                return False
+                            with page.expect_response(wait_for_done, timeout=timeout):
+                                # if the above calls go to fast, this test could fail
+                                # not expected in the sim4life context though
+                                ...
+                    else:
+                        open_button.click()
                 if product_billable:
                     # Open project with default resources
                     page.get_by_test_id("openWithResources").click()
@@ -467,6 +526,22 @@ def start_study_from_plus_button(
 
 
 @pytest.fixture
+def find_and_click_template_in_dashboard(
+    page: Page,
+) -> Callable[[str], None]:
+    def _(template_id: str) -> None:
+        with log_context(logging.INFO, f"Finding {template_id=} in dashboard"):
+            page.get_by_test_id("templatesTabBtn").click()
+            _textbox = page.get_by_test_id("searchBarFilter-textField-template")
+            _textbox.fill(template_id)
+            _textbox.press("Enter")
+            test_id = "templateBrowserListItem_" + template_id
+            page.get_by_test_id(test_id).click()
+
+    return _
+
+
+@pytest.fixture
 def find_and_start_service_in_dashboard(
     page: Page,
 ) -> Callable[[ServiceType, str, str | None], None]:
@@ -478,7 +553,7 @@ def find_and_start_service_in_dashboard(
             _textbox = page.get_by_test_id("searchBarFilter-textField-service")
             _textbox.fill(service_name)
             _textbox.press("Enter")
-            test_id = f"studyBrowserListItem_simcore/services/{'dynamic' if service_type is ServiceType.DYNAMIC else 'comp'}"
+            test_id = f"serviceBrowserListItem_simcore/services/{'dynamic' if service_type is ServiceType.DYNAMIC else 'comp'}"
             if service_key_prefix:
                 test_id = f"{test_id}/{service_key_prefix}"
             test_id = f"{test_id}/{service_name}"
@@ -503,6 +578,19 @@ def create_project_from_new_button(
 
 
 @pytest.fixture
+def create_project_from_template_dashboard(
+    find_and_click_template_in_dashboard: Callable[[str], None],
+    create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
+) -> Callable[[ServiceType, str, str | None], dict[str, Any]]:
+    def _(template_id: str) -> dict[str, Any]:
+        find_and_click_template_in_dashboard(template_id)
+        expected_states = (RunningState.UNKNOWN,)
+        return create_new_project_and_delete(expected_states, True, template_id)
+
+    return _
+
+
+@pytest.fixture
 def create_project_from_service_dashboard(
     find_and_start_service_in_dashboard: Callable[[ServiceType, str, str | None], None],
     create_new_project_and_delete: Callable[[tuple[RunningState]], dict[str, Any]],
@@ -516,7 +604,7 @@ def create_project_from_service_dashboard(
         expected_states = (RunningState.UNKNOWN,)
         if service_type is ServiceType.COMPUTATIONAL:
             expected_states = (RunningState.NOT_STARTED,)
-        return create_new_project_and_delete(expected_states)
+        return create_new_project_and_delete(expected_states, True)
 
     return _
 
