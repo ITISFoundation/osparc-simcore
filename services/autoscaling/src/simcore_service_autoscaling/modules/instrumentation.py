@@ -38,6 +38,63 @@ class MetricsBase:
     subsystem: str
 
 
+_CLUSTER_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str]]]] = {
+    "active_nodes": (
+        "Number of EC2-backed docker nodes which are active and ready to run tasks",
+        EC2_INSTANCE_LABELS,
+    ),
+    "pending_nodes": (
+        "Number of EC2-backed docker nodes which are active and NOT ready to run tasks",
+        EC2_INSTANCE_LABELS,
+    ),
+    "drained_nodes": (
+        "Number of EC2-backed docker nodes which are drained",
+        EC2_INSTANCE_LABELS,
+    ),
+    "buffer_drained_nodes": (
+        "Number of EC2-backed docker nodes which are drained and in buffer/reserve",
+        EC2_INSTANCE_LABELS,
+    ),
+    "pending_ec2s": (
+        "Number of EC2 instances not yet part of the cluster",
+        EC2_INSTANCE_LABELS,
+    ),
+    "broken_ec2s": (
+        "Number of EC2 instances that failed joining the cluster",
+        EC2_INSTANCE_LABELS,
+    ),
+    "buffer_ec2s": (
+        "Number of buffer EC2 instances prepared, stopped, and ready to be activated",
+        EC2_INSTANCE_LABELS,
+    ),
+    "disconnected_nodes": (
+        "Number of docker nodes not backed by a running EC2 instance",
+        [],
+    ),
+    "terminating_nodes": (
+        "Number of EC2-backed docker nodes that started the termination process",
+        EC2_INSTANCE_LABELS,
+    ),
+    "terminated_instances": (
+        "Number of EC2 instances that were terminated (they are typically visible 1 hour)",
+        EC2_INSTANCE_LABELS,
+    ),
+}
+
+
+def _create_gauge(
+    field_name: str, definition: tuple[str, tuple[str]], subsystem: str
+) -> Gauge:
+    description, labelnames = definition
+    return Gauge(
+        name=field_name,
+        documentation=description,
+        labelnames=labelnames,
+        namespace=METRICS_NAMESPACE,
+        subsystem=subsystem,
+    )
+
+
 @dataclass(slots=True, kw_only=True)
 class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attributes
     _active_nodes: Gauge = field(init=False)
@@ -53,75 +110,10 @@ class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attribut
 
     def __post_init__(self) -> None:
         cluster_subsystem = f"{self.subsystem}_cluster"
-        self._active_nodes = Gauge(
-            "active_nodes",
-            "Number of EC2-backed docker nodes which are active and ready to run tasks",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=cluster_subsystem,
-        )
-        self._pending_nodes = Gauge(
-            "pending_nodes",
-            "Number of EC2-backed docker nodes which are active and NOT ready to run tasks",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=cluster_subsystem,
-        )
-        self._drained_nodes = Gauge(
-            "drained_nodes",
-            "Number of EC2-backed docker nodes which are drained",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=cluster_subsystem,
-        )
-        self._reserve_drained_nodes = Gauge(
-            "buffer_drained_nodes",
-            "Number of EC2-backed docker nodes which are drained and in buffer/reserve",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=cluster_subsystem,
-        )
-        self._pending_ec2s = Gauge(
-            "pending_ec2s",
-            "Number of EC2 instance not yet part of the cluster",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=cluster_subsystem,
-        )
-        self._broken_ec2s = Gauge(
-            "broken_ec2s",
-            "Number of EC2 instance that failed joining the cluster",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=cluster_subsystem,
-        )
-        self._buffer_ec2s = Gauge(
-            "buffer_ec2s",
-            "Number of buffer EC2 instance prepared, stopped and ready to to be activated",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=cluster_subsystem,
-        )
-        self._disconnected_nodes = Gauge(
-            "disconnected_nodes",
-            "Number of docker node not backed by a running EC2 instance",
-            namespace=METRICS_NAMESPACE,
-            subsystem=cluster_subsystem,
-        )
-        self._terminating_nodes = Gauge(
-            "terminating_nodes",
-            "Number of EC2-backed docker nodes that started the termination process",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=cluster_subsystem,
-        )
-        self._terminated_instances = Gauge(
-            "terminated_instances",
-            "Number of EC2 instances that were terminated (they are typically visible 1 hour)",
-            labelnames=EC2_INSTANCE_LABELS,
-            namespace=METRICS_NAMESPACE,
-            subsystem=cluster_subsystem,
-        )
+        # Creating and assigning gauges using the field names and the metric definitions
+        for field_name, definition in _CLUSTER_METRICS_DEFINITIONS.items():
+            gauge = _create_gauge(field_name, definition, cluster_subsystem)
+            setattr(self, f"_{field_name}", gauge)
 
     def update_from_cluster(self, cluster: Cluster) -> None:
         _update_gauge(self._active_nodes, cluster.active_nodes)
@@ -188,6 +180,14 @@ class EC2ClientMetrics(MetricsBase):
 
 @dataclass(slots=True, kw_only=True)
 class BufferPoolsMetrics(MetricsBase):
+    _ready_instances: Gauge = field(init=False)
+    _pending_instances: Gauge = field(init=False)
+    _waiting_to_pull_instances: Gauge = field(init=False)
+    _waiting_to_stop_instances: Gauge = field(init=False)
+    _pulling_instances: Gauge = field(init=False)
+    _stopping_instances: Gauge = field(init=False)
+    _broken_instances: Gauge = field(init=False)
+
     def __post_init__(self) -> None:
         buffer_pools_subsystem = f"{self.subsystem}_buffer_machines_pools"
 
@@ -210,8 +210,10 @@ class AutoscalingInstrumentation(MetricsBase):
     def __post_init__(self) -> None:
         self.cluster_metrics = ClusterMetrics(subsystem=self.subsystem)
         self.ec2_client_metrics = EC2ClientMetrics(subsystem=self.subsystem)
-        buffer_machines_pools_metrics = BufferPoolsMetrics(subsystem=self.subsystem)
-        scaling_metrics = ScalingMetrics(subsystem=self.subsystem)
+        self.buffer_machines_pools_metrics = BufferPoolsMetrics(
+            subsystem=self.subsystem
+        )
+        self.scaling_metrics = ScalingMetrics(subsystem=self.subsystem)
 
 
 P = ParamSpec("P")
