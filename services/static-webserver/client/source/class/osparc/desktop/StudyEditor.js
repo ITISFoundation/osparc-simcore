@@ -266,22 +266,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
       workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
-
-      // OM remove this
-      let i = null;
-      for (i=0; i<50; i++) {
-        this.getStudyLogger().info(null, "Short log " + i);
-      }
-      this.getStudyLogger().info(null, "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.");
-      for (i=51; i<70; i++) {
-        this.getStudyLogger().info(null, "Short log " + i);
-      }
-      /*
-      setInterval(() => {
-        this.getStudyLogger().info(null, "Short" + i);
-        i++;
-      }, 10000);
-      */
     },
 
     __setStudyDataInBackend: function(studyData) {
