@@ -57,7 +57,6 @@
 
 qx.Class.define("osparc.data.Resources", {
   extend: qx.core.Object,
-
   type: "singleton",
 
   defer: function(statics) {
@@ -1272,6 +1271,18 @@ qx.Class.define("osparc.data.Resources", {
             status = req.getStatus();
           }
           res.dispose();
+
+          // If a 401 is received, make a call to the /me endpoint and if the backend also responds with a 401
+          // assume that the backend logged the user out for some reason
+          if (status === 401) {
+            this.fetch("profile")
+              .catch(err => {
+                if ("status" in err && err.status === 401) {
+                  qx.core.Init.getApplication().logout("You were logged out");
+                }
+              });
+          }
+
           if ([404, 503].includes(status)) {
             message += "<br>Please try again later and/or contact support";
           }
