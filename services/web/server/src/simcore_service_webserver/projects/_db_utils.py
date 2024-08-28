@@ -51,7 +51,7 @@ class ProjectAccessRights(Enum):
     VIEWER = {"read": True, "write": False, "delete": False}
 
 
-# NOTE: MD check
+# NOTE: MD check -> Remove this function
 def check_project_permissions(
     project: ProjectProxy | ProjectDict,
     user_id: int,
@@ -320,7 +320,7 @@ class BaseProjectDB:
 
         return (api_projects, project_types)
 
-    async def _get_project(
+    async def _get_project(  # NOTE: MD check
         self,
         connection: SAConnection,
         user_id: UserID,
@@ -338,7 +338,7 @@ class BaseProjectDB:
         exclude_foreign = exclude_foreign or []
 
         # this retrieves the projects where user is owner
-        user_groups: list[RowProxy] = await self._list_user_groups(connection, user_id)
+        # user_groups: list[RowProxy] = await self._list_user_groups(connection, user_id)
 
         access_rights_subquery = (
             select(

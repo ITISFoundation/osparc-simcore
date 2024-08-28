@@ -66,7 +66,7 @@ from ..dynamic_scheduler import api as dynamic_scheduler_api
 from ..groups.api import get_group_from_gid, list_all_user_groups
 from ..groups.exceptions import GroupNotFoundError
 from ..login.decorators import login_required
-from ..projects.projects_api import has_user_project_access_rights
+from ..projects.api import has_user_project_access_rights
 from ..security.decorators import permission_required
 from ..users.api import get_user_id_from_gid, get_user_role
 from ..users.exceptions import UserDefaultWalletNotFoundError
@@ -257,6 +257,7 @@ async def delete_node(request: web.Request) -> web.Response:
         path_params.project_id,
         req_ctx.user_id,
         NodeIDStr(path_params.node_id),
+        req_ctx.product_name,
     )
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

@@ -1,10 +1,15 @@
 from aiohttp import web
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from simcore_service_webserver.projects._db_utils import PermissionStr
 
 from ..db.plugin import get_database_engine
+from ..workspaces.api import get_workspace
 from ._access_rights_db import get_project_owner
-from .exceptions import ProjectInvalidRightsError
+from .db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .models import UserProjectAccessRights
 
 
 async def validate_project_ownership(
@@ -19,3 +24,54 @@ async def validate_project_ownership(
         != user_id
     ):
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
+
+
+async def get_user_project_access_rights(
+    app: web.Application,
+    project_id: ProjectID,
+    user_id: UserID,
+    product_name: ProductName,
+) -> UserProjectAccessRights:
+    """
+    NOTE: MD Write proper note explaining
+    """
+    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+
+    project_db = await db.get_project_db(project_id)
+    if project_db.workspace_id:
+        workspace = await get_workspace(
+            app,
+            user_id=user_id,
+            workspace_id=project_db.workspace_id,
+            product_name=product_name,
+        )
+        _user_project_access_rights = UserProjectAccessRights(
+            uid=user_id,
+            read=workspace.my_access_rights.read,
+            write=workspace.my_access_rights.write,
+            delete=workspace.my_access_rights.delete,
+        )
+    else:
+        _user_project_access_rights = await db.get_project_access_rights_for_user(
+            user_id, project_id
+        )
+    return _user_project_access_rights
+
+
+async def has_user_project_access_rights(
+    app: web.Application,
+    *,
+    project_id: ProjectID,
+    user_id: UserID,
+    permission: PermissionStr,
+) -> bool:
+    try:
+        db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        product_name = await db.get_project_product(project_uuid=project_id)
+
+        prj_access_rights = await get_user_project_access_rights(
+            app, project_id=project_id, user_id=user_id, product_name=product_name
+        )
+        return getattr(prj_access_rights, permission, False) is not False
+    except (ProjectInvalidRightsError, ProjectNotFoundError):
+        return False

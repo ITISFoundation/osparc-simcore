@@ -17,6 +17,7 @@ from ..director_v2 import api
 from ..storage.api import delete_data_folders_of_project
 from ..users.api import FullNameDict
 from ..users.exceptions import UserNotFoundError
+from ._access_rights_api import get_user_project_access_rights
 from .db import ProjectDBAPI
 from .exceptions import (
     ProjectDeleteError,
@@ -56,7 +57,12 @@ async def mark_project_as_deleted(
     """
     # NOTE: https://github.com/ITISFoundation/osparc-issues/issues/468
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
-    await db.check_delete_project_permission(user_id, f"{project_uuid}")
+    product_name = await db.get_project_product(project_uuid=project_uuid)
+    prj_access_rights = await get_user_project_access_rights(
+        app, project_id=project_uuid, user_id=user_id, product_name=product_name
+    )
+    if prj_access_rights.delete is False:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 
     await db.check_project_has_only_one_product(project_uuid)
 
@@ -88,6 +94,7 @@ async def delete_project(
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     try:
+        # NOTE: Project access rights are checked inside this function
         await mark_project_as_deleted(app, project_uuid, user_id)
 
         # stops dynamic services
@@ -115,7 +122,7 @@ async def delete_project(
             project_uuid=project_uuid, reason=f"Project currently in use {err}"
         ) from err
 
-    except (ProjectNotFoundError, UserNotFoundError) as err:
+    except (ProjectInvalidRightsError, ProjectNotFoundError, UserNotFoundError) as err:
         raise ProjectDeleteError(
             project_uuid=project_uuid, reason=f"Invalid project state {err}"
         ) from err

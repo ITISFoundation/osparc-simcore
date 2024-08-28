@@ -76,7 +76,6 @@ from ._db_utils import (
     PermissionStr,
     ProjectAccessRights,
     assemble_array_groups,
-    check_project_permissions,
     convert_to_db_names,
     convert_to_schema_names,
     create_project_access_rights,
@@ -480,8 +479,6 @@ class ProjectDBAPI(BaseProjectDB):
         raises ProjectInvalidRightsError: if user has no access rights to do check_permissions
         """
         async with self.engine.acquire() as conn:
-            self.get_project_db()
-
             project = await self._get_project(
                 conn,
                 user_id,
@@ -614,8 +611,7 @@ class ProjectDBAPI(BaseProjectDB):
                 exclude_foreign=["tags"],
                 for_update=True,
             )
-            user_groups = await self._list_user_groups(db_connection, user_id)
-            check_project_permissions(current_project, user_id, user_groups, "write")
+
             # uuid can ONLY be set upon creation
             if current_project["uuid"] != new_project_data["uuid"]:
                 raise ProjectInvalidRightsError(
@@ -726,12 +722,6 @@ class ProjectDBAPI(BaseProjectDB):
         )
 
         async with self.engine.acquire() as conn, conn.begin():
-            project = await self._get_project(
-                conn, user_id, project_uuid, for_update=True
-            )
-            # if we have delete access we delete the project
-            user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
-            check_project_permissions(project, user_id, user_groups, "delete")
             await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 projects.delete().where(projects.c.uuid == project_uuid)
@@ -831,12 +821,6 @@ class ProjectDBAPI(BaseProjectDB):
                 exclude_foreign=["tags"],
                 for_update=True,
             )
-            user_groups: list[RowProxy] = await self._list_user_groups(
-                db_connection, user_id
-            )
-            check_project_permissions(
-                current_project, user_id, user_groups, "write"
-            )  # NOTE: MD check
 
             new_project_data, changed_entries = patch_workbench(
                 current_project,
@@ -1005,22 +989,6 @@ class ProjectDBAPI(BaseProjectDB):
                 pricing_plan_id=pricing_plan_id,
                 pricing_unit_id=pricing_unit_id,
             )
-
-    #
-    # Project ACCESS RIGHTS/PERMISSIONS
-    #
-
-    async def check_delete_project_permission(self, user_id: int, project_uuid: str):
-        """
-        raises ProjectInvalidRightsError
-        """
-        async with self.engine.acquire() as conn, conn.begin():
-            project = await self._get_project(
-                conn, user_id, project_uuid, for_update=True
-            )
-            # if we have delete access we delete the project
-            user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
-            check_project_permissions(project, user_id, user_groups, "delete")
 
     #
     # Project TAGS

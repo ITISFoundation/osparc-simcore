@@ -134,24 +134,6 @@ def has_write_permission(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
-# @pytest.fixture
-# async def mock_has_write_permission(
-#     mocker: MockerFixture, has_write_permission: bool
-# ) -> mock.AsyncMock:
-#     mocked_project_db_api = mocker.patch(
-#         f"{MODULE_GC_CORE_ORPHANS}.ProjectDBAPI", autospec=True
-#     )
-
-#     async def _mocked_has_permission(*args, **kwargs) -> bool:
-#         assert "write" in args
-#         return has_write_permission
-
-#     mocked_project_db_api.get_from_app_context.return_value.has_user_project_access_rights.side_effect = (
-#         _mocked_has_permission
-#     )
-#     return mocked_project_db_api.get_from_app_context.return_value.has_user_project_access_rights
-
-
 @pytest.fixture
 async def mock_has_write_permission(
     mocker: MockerFixture, has_write_permission: bool

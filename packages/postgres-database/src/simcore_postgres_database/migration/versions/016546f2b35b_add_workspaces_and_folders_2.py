@@ -1,16 +1,16 @@
 """add_workspaces_and_folders_2
 
-Revision ID: d4b42ca83a80
-Revises: 617e0ecaf602
-Create Date: 2024-08-28 12:18:18.440070+00:00
+Revision ID: 016546f2b35b
+Revises: feca36c8e18f
+Create Date: 2024-08-28 14:55:55.540580+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "d4b42ca83a80"
-down_revision = "617e0ecaf602"
+revision = "016546f2b35b"
+down_revision = "feca36c8e18f"
 branch_labels = None
 depends_on = None
 

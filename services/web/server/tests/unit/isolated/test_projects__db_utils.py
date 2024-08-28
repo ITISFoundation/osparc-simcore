@@ -25,7 +25,6 @@ from simcore_service_webserver.projects.db import (
     ANY_USER,
     ProjectAccessRights,
     assemble_array_groups,
-    check_project_permissions,
     convert_to_db_names,
     convert_to_schema_names,
     create_project_access_rights,

@@ -31,6 +31,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_webserver.projects._db_utils import PermissionStr
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
+from simcore_service_webserver.projects.api import has_user_project_access_rights
 from simcore_service_webserver.projects.db import ProjectAccessRights, ProjectDBAPI
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
@@ -40,7 +41,6 @@ from simcore_service_webserver.projects.exceptions import (
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.projects_api import (
     _check_project_node_has_all_required_inputs,
-    has_user_project_access_rights,
 )
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime

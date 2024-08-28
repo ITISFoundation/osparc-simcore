@@ -86,7 +86,6 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
-from simcore_service_webserver.projects._db_utils import PermissionStr
 
 from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
@@ -120,6 +119,10 @@ from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces.api import get_workspace
 from . import _crud_api_delete, _nodes_api
+from ._access_rights_api import (
+    get_user_project_access_rights,
+    has_user_project_access_rights,
+)
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from ._wallets_api import connect_wallet_to_project, get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
@@ -134,7 +137,6 @@ from .exceptions import (
     ProjectNodeConnectionsMissingError,
     ProjectNodeOutputPortMissingValueError,
     ProjectNodeRequiredInputsNotSetError,
-    ProjectNotFoundError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
@@ -744,6 +746,16 @@ async def add_project_node(
         user_id,
         extra=get_log_record_extra(user_id=user_id),
     )
+
+    prj_access_rights = await get_user_project_access_rights(
+        request.app,
+        project_id=project["uuid"],
+        user_id=user_id,
+        product_name=product_name,
+    )
+    if prj_access_rights.write is False:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project["uuid"])
+
     node_uuid = NodeID(service_id if service_id else f"{uuid4()}")
     default_resources = await catalog_client.get_service_resources(
         request.app, user_id, service_key, service_version
@@ -844,11 +856,21 @@ async def _remove_service_and_its_data_folders(
 
 
 async def delete_project_node(
-    request: web.Request, project_uuid: ProjectID, user_id: UserID, node_uuid: NodeIDStr
+    request: web.Request,
+    project_uuid: ProjectID,
+    user_id: UserID,
+    node_uuid: NodeIDStr,
+    product_name: ProductName,
 ) -> None:
     log.debug(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
+
+    prj_access_rights = await get_user_project_access_rights(
+        request.app, project_id=project_uuid, user_id=user_id, product_name=product_name
+    )
+    if prj_access_rights.write is False:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 
     list_running_dynamic_services = await director_v2_api.list_dynamic_services(
         request.app, project_id=f"{project_uuid}", user_id=user_id
@@ -908,6 +930,13 @@ async def update_project_node_state(
     )
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    product_name = await db.get_project_product(project_id)
+    prj_access_rights = await get_user_project_access_rights(
+        app, project_id=project_id, user_id=user_id, product_name=product_name
+    )
+    if prj_access_rights.write is False:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
+
     updated_project, _ = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
@@ -940,8 +969,8 @@ async def patch_project_node(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # 1. Check user permissions
-    _user_project_access_rights = await db.get_project_access_rights_for_user(
-        user_id, project_id
+    _user_project_access_rights = await get_user_project_access_rights(
+        app, project_id=project_id, user_id=user_id, product_name=product_name
     )
     if not _user_project_access_rights.write:
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
@@ -1011,6 +1040,13 @@ async def update_project_node_outputs(
     new_outputs = new_outputs or {}
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    product_name = await db.get_project_product(project_id)
+    prj_access_rights = await get_user_project_access_rights(
+        app, project_id=project_id, user_id=user_id, product_name=product_name
+    )
+    if prj_access_rights.write is False:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
+
     updated_project, changed_entries = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
@@ -1427,62 +1463,6 @@ async def add_project_states_for_user(
         locked=lock_state, state=ProjectRunningState(value=running_state)
     ).dict(by_alias=True, exclude_unset=True)
     return project
-
-
-#
-#  CHECK PROJECT ACCESS -------------------------------------------------------------------
-#
-
-
-async def get_user_project_access_rights(
-    app: web.Application,
-    project_id: ProjectID,
-    user_id: UserID,
-    product_name: ProductName,
-) -> UserProjectAccessRights:
-    """
-    NOTE: MD Write proper note explaining
-    """
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-
-    project_db = await db.get_project_db(project_id)
-    if project_db.workspace_id:
-        workspace = await get_workspace(
-            app,
-            user_id=user_id,
-            workspace_id=project_db.workspace_id,
-            product_name=product_name,
-        )
-        _user_project_access_rights = UserProjectAccessRights(
-            uid=user_id,
-            read=workspace.my_access_rights.read,
-            write=workspace.my_access_rights.write,
-            delete=workspace.my_access_rights.delete,
-        )
-    else:
-        _user_project_access_rights = await db.get_project_access_rights_for_user(
-            user_id, project_id
-        )
-    return _user_project_access_rights
-
-
-async def has_user_project_access_rights(
-    app: web.Application,
-    *,
-    project_id: ProjectID,
-    user_id: UserID,
-    permission: PermissionStr,
-) -> bool:
-    try:
-        db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-        product_name = await db.get_project_product(project_uuid=project_id)
-
-        prj_access_rights = await get_user_project_access_rights(
-            app, project_id=project_id, user_id=user_id, product_name=product_name
-        )
-        return getattr(prj_access_rights, permission, False) is not False
-    except (ProjectInvalidRightsError, ProjectNotFoundError):
-        return False
 
 
 #

@@ -15,8 +15,8 @@ from simcore_postgres_database.models.users import UserRole
 
 from ..director_v2 import api as director_v2_api
 from ..dynamic_scheduler import api as dynamic_scheduler_api
+from ..projects.api import has_user_project_access_rights
 from ..projects.projects_api import (
-    has_user_project_access_rights,
     is_node_id_present_in_any_project_workbench,
     list_node_ids_in_project,
 )
