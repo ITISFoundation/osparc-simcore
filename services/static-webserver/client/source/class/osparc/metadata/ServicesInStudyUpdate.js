@@ -128,9 +128,13 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         const upToDateLabel = new qx.ui.basic.Label(upToDateText);
         labels.push(upToDateLabel);
       } else if (canIWrite) {
-        const upToDateText = this.tr("Use the Update buttons to bring the services to their latest compatible version.");
-        const upToDateLabel = new qx.ui.basic.Label(upToDateText);
-        labels.push(upToDateLabel);
+        const useUpdateButtonText = this.tr("Use the Update buttons to bring the services to their latest compatible version.");
+        const useUpdateButtonLabel = new qx.ui.basic.Label(useUpdateButtonText);
+        labels.push(useUpdateButtonLabel);
+      } else {
+        const notUpToDateText = this.tr("Some services are not up to date.");
+        const notUpToDateLabel = new qx.ui.basic.Label(notUpToDateText);
+        labels.push(notUpToDateLabel);
       }
 
       labels.forEach(label => {
