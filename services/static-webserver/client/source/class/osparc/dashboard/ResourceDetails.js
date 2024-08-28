@@ -163,7 +163,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               updatableServices.push(nodeId);
             }
           }
-          if (anyUpdatable) {
+          if (anyUpdatable && osparc.data.model.Study.canIWrite(updatedStudyData["accessRights"])) {
             this.__confirmUpdate();
           } else {
             this.__openResource();
