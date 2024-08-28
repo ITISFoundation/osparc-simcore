@@ -684,7 +684,7 @@ qx.Class.define("osparc.data.model.Node", {
             inputData[key] = inputsCopy[key];
           }
         }
-        this.getPropsForm().addPortLinks(inputLinks);
+        this.getPropsForm().setInputLinks(inputLinks);
         this.__settingsForm.setData(inputData);
       }
     },
