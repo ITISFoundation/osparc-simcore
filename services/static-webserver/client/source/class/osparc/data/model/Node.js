@@ -549,7 +549,8 @@ qx.Class.define("osparc.data.model.Node", {
         this.getPropsForm().setEnabled(!isPipelineRunning);
       };
       this.getStudy().addListener("changeState", () => checkIsPipelineRunning(), this);
-      checkIsPipelineRunning();
+      // potentially disabling the inputs form might have side effects while deserializing
+      setTimeout(() => checkIsPipelineRunning(), 1000);
     },
 
     /**
