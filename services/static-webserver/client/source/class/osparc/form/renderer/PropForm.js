@@ -931,7 +931,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     setInputLinks: function(inputLinks) {
-      const forceConnection = true;
+      const forceConnection = false;
       for (let key in inputLinks) {
         if (osparc.utils.Ports.isDataALink(inputLinks[key])) {
           this.addPortLink(key, inputLinks[key].nodeUuid, inputLinks[key].output, forceConnection);
