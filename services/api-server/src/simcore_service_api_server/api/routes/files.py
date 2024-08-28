@@ -314,8 +314,8 @@ async def search_files_page(
         )
     return create_page(
         [to_file_api_model(fmd) for fmd in stored_files],
-        len(stored_files),
-        page_params,
+        total=len(stored_files),
+        params=page_params,
     )
 
 

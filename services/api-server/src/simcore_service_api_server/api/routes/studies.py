@@ -56,8 +56,8 @@ async def list_studies(
 
     return create_page(
         studies,
-        projects_page.meta.total,
-        page_params,
+        total=projects_page.meta.total,
+        params=page_params,
     )
 
 
