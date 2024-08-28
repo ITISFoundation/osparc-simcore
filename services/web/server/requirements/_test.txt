@@ -18,6 +18,7 @@ async-timeout==4.0.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+    #   redis
 asyncpg==0.27.0
     # via
     #   -c requirements/_base.txt
@@ -190,7 +191,7 @@ requests==2.32.2
     # via
     #   -c requirements/_base.txt
     #   docker
-setuptools==73.0.1
+setuptools==69.1.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -216,6 +217,8 @@ tenacity==8.5.0
     #   -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar
+tomli==2.0.1
+    # via coverage
 types-aiofiles==24.1.0.20240626
     # via -r requirements/_test.in
 types-jsonschema==4.23.0.20240813

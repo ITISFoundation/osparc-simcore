@@ -58,6 +58,10 @@ cryptography==43.0.0
     #   moto
 docker==7.1.0
     # via moto
+exceptiongroup==1.2.2
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 faker==27.0.0
     # via -r requirements/_test.in
 flask==3.0.3
@@ -242,6 +246,10 @@ sympy==1.13.2
     # via cfn-lint
 termcolor==2.4.0
     # via pytest-sugar
+tomli==2.0.1
+    # via
+    #   coverage
+    #   pytest
 types-aioboto3==13.1.1
     # via -r requirements/_test.in
 types-aiobotocore==2.13.2

@@ -81,6 +81,8 @@ ecdsa==0.19.0
     #   moto
     #   python-jose
     #   sshpubkeys
+exceptiongroup==1.2.2
+    # via pytest
 faker==27.0.0
     # via -r requirements/_test.in
 flask==3.0.3
@@ -223,7 +225,6 @@ regex==2024.7.24
     # via cfn-lint
 requests==2.32.3
     # via
-    #   -c requirements/_base.txt
     #   docker
     #   moto
     #   responses
@@ -235,7 +236,7 @@ rsa==4.9
     #   python-jose
 s3transfer==0.10.2
     # via boto3
-setuptools==73.0.1
+setuptools==69.2.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -256,6 +257,10 @@ sshpubkeys==3.3.1
     # via moto
 sympy==1.13.2
     # via cfn-lint
+tomli==2.0.1
+    # via
+    #   coverage
+    #   pytest
 typing-extensions==4.4.0
     # via
     #   -c requirements/_base.txt
@@ -265,7 +270,6 @@ typing-extensions==4.4.0
 urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
     #   botocore
     #   docker
     #   requests
@@ -276,7 +280,6 @@ werkzeug==3.0.3
     #   moto
 wrapt==1.16.0
     # via
-    #   -c requirements/_base.txt
     #   aiobotocore
     #   aws-xray-sdk
 xmltodict==0.13.0

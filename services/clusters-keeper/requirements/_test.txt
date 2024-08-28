@@ -19,6 +19,11 @@ anyio==4.3.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
+async-timeout==4.0.3
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+    #   redis
 attrs==23.2.0
     # via
     #   -c requirements/_base.txt
@@ -55,9 +60,7 @@ cffi==1.17.0
 cfn-lint==1.10.3
     # via moto
 charset-normalizer==3.3.2
-    # via
-    #   -c requirements/_base.txt
-    #   requests
+    # via requests
 click==8.1.7
     # via
     #   -c requirements/_base.txt
@@ -79,6 +82,11 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
+exceptiongroup==1.2.1
+    # via
+    #   -c requirements/_base.txt
+    #   anyio
+    #   pytest
 faker==27.0.0
     # via -r requirements/_test.in
 fakeredis==2.23.5
@@ -256,7 +264,6 @@ regex==2024.7.24
     # via cfn-lint
 requests==2.32.3
     # via
-    #   -c requirements/_base.txt
     #   docker
     #   jsonschema-path
     #   moto
@@ -277,9 +284,7 @@ s3transfer==0.10.1
     #   -c requirements/_base.txt
     #   boto3
 setuptools==73.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   moto
+    # via moto
 six==1.16.0
     # via
     #   -c requirements/_base.txt
@@ -297,14 +302,20 @@ sortedcontainers==2.4.0
     #   fakeredis
 sympy==1.13.2
     # via cfn-lint
+tomli==2.0.1
+    # via
+    #   coverage
+    #   pytest
 types-pyyaml==6.0.12.20240808
     # via -r requirements/_test.in
 typing-extensions==4.11.0
     # via
     #   -c requirements/_base.txt
     #   aiodocker
+    #   anyio
     #   aws-sam-translator
     #   cfn-lint
+    #   fakeredis
     #   pydantic
 urllib3==2.2.1
     # via

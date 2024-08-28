@@ -21,6 +21,11 @@ anyio==4.4.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
+async-timeout==4.0.3
+    # via
+    #   -c requirements/_aiohttp.txt
+    #   -c requirements/_base.txt
+    #   aiohttp
 attrs==24.2.0
     # via
     #   -c requirements/_aiohttp.txt
@@ -40,7 +45,6 @@ certifi==2024.7.4
 charset-normalizer==3.3.2
     # via
     #   -c requirements/_aiohttp.txt
-    #   -c requirements/_fastapi.txt
     #   requests
 coverage==7.6.1
     # via
@@ -48,9 +52,15 @@ coverage==7.6.1
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
+exceptiongroup==1.2.2
+    # via
+    #   -c requirements/_base.txt
+    #   -c requirements/_fastapi.txt
+    #   anyio
+    #   pytest
 execnet==2.1.1
     # via pytest-xdist
-faker==28.0.0
+faker==27.0.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -72,14 +82,14 @@ httpcore==1.0.5
     # via
     #   -c requirements/_fastapi.txt
     #   httpx
-httpx==0.27.2
+httpx==0.27.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_fastapi.txt
     #   respx
 icdiff==2.0.7
     # via pytest-icdiff
-idna==3.8
+idna==3.7
     # via
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
@@ -116,7 +126,7 @@ multidict==6.0.5
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.11.2
+mypy==1.11.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -204,7 +214,6 @@ referencing==0.29.3
 requests==2.32.3
     # via
     #   -c requirements/_aiohttp.txt
-    #   -c requirements/_fastapi.txt
     #   docker
     #   jsonschema-path
 respx==0.21.1
@@ -241,6 +250,11 @@ sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
 termcolor==2.4.0
     # via pytest-sugar
+tomli==2.0.1
+    # via
+    #   coverage
+    #   mypy
+    #   pytest
 types-aiofiles==24.1.0.20240626
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20240819
@@ -249,16 +263,15 @@ types-tqdm==4.66.0.20240417
     # via -r requirements/_test.in
 typing-extensions==4.12.2
     # via
-    #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
+    #   anyio
     #   mypy
     #   sqlalchemy2-stubs
 urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
-    #   -c requirements/_fastapi.txt
     #   docker
     #   requests
 yarl==1.9.4
