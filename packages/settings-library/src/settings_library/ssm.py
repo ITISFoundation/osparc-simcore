@@ -1,6 +1,4 @@
-from typing import Any, ClassVar
-
-from pydantic import AnyHttpUrl, Field, SecretStr
+from pydantic import AnyHttpUrl, ConfigDict, Field, SecretStr
 
 from .base import BaseCustomSettings
 
@@ -13,10 +11,8 @@ class SSMSettings(BaseCustomSettings):
     SSM_REGION_NAME: str = "us-east-1"
     SSM_SECRET_ACCESS_KEY: SecretStr
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(BaseCustomSettings.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "SSM_ACCESS_KEY_ID": "my_access_key_id",
@@ -26,3 +22,4 @@ class SSMSettings(BaseCustomSettings):
                 }
             ],
         }
+    )

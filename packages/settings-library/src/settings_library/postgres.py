@@ -1,8 +1,14 @@
 import urllib.parse
 from functools import cached_property
-from typing import Any, ClassVar
 
-from pydantic import Field, PostgresDsn, SecretStr, validator
+from pydantic import (
+    AliasChoices,
+    ConfigDict,
+    Field,
+    PostgresDsn,
+    SecretStr,
+    field_validator,
+)
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt
@@ -31,17 +37,30 @@ class PostgresSettings(BaseCustomSettings):
     POSTGRES_CLIENT_NAME: str | None = Field(
         default=None,
         description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
-        validation_alias=[
+        validation_alias=AliasChoices(
             "POSTGRES_CLIENT_NAME",
             # This is useful when running inside a docker container, then the hostname is set each client gets a different name
             "HOST",
             "HOSTNAME",
-        ],
+        ),
     )
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("POSTGRES_MAXSIZE")
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                # minimal required
+                {
+                    "POSTGRES_HOST": "localhost",
+                    "POSTGRES_PORT": "5432",
+                    "POSTGRES_USER": "usr",
+                    "POSTGRES_PASSWORD": "secret",
+                    "POSTGRES_DB": "db",
+                }
+            ],
+        }
+    )
+
+    @field_validator("POSTGRES_MAXSIZE")
     @classmethod
     def _check_size(cls, v, values):
         if not (values["POSTGRES_MINSIZE"] <= v):
@@ -82,19 +101,3 @@ class PostgresSettings(BaseCustomSettings):
                 {"application_name": self.POSTGRES_CLIENT_NAME}
             )
         return dsn
-
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(BaseCustomSettings.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
-            "examples": [
-                # minimal required
-                {
-                    "POSTGRES_HOST": "localhost",
-                    "POSTGRES_PORT": "5432",
-                    "POSTGRES_USER": "usr",
-                    "POSTGRES_PASSWORD": "secret",
-                    "POSTGRES_DB": "db",
-                }
-            ],
-        }

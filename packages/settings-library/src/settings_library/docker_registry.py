@@ -1,7 +1,7 @@
 from functools import cached_property
-from typing import Any, ClassVar
+from typing import Any
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import ConfigDict, Field, SecretStr, field_validator
 
 from .base import BaseCustomSettings
 
@@ -23,6 +23,20 @@ class RegistrySettings(BaseCustomSettings):
     )
     REGISTRY_SSL: bool = Field(..., description="access to registry through ssl")
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "REGISTRY_AUTH": "True",
+                    "REGISTRY_USER": "theregistryuser",
+                    "REGISTRY_PW": "some_secret_value",
+                    "REGISTRY_SSL": "True",
+                    "REGISTRY_URL": "registry.osparc-master.speag.com",
+                }
+            ],
+        }
+    )
+
     @field_validator("REGISTRY_PATH", mode="before")
     @classmethod
     def _escape_none_string(cls, v) -> Any | None:
@@ -35,18 +49,3 @@ class RegistrySettings(BaseCustomSettings):
     @cached_property
     def api_url(self) -> str:
         return f"{self.REGISTRY_URL}/v2"
-
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(BaseCustomSettings.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
-            "examples": [
-                {
-                    "REGISTRY_AUTH": "True",
-                    "REGISTRY_USER": "theregistryuser",
-                    "REGISTRY_PW": "some_secret_value",
-                    "REGISTRY_SSL": "True",
-                    "REGISTRY_URL": "registry.osparc-master.speag.com",
-                }
-            ],
-        }

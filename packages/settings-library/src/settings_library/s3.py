@@ -1,6 +1,4 @@
-from typing import Any, ClassVar
-
-from pydantic import AnyHttpUrl, Field
+from pydantic import AnyHttpUrl, ConfigDict, Field
 
 from .base import BaseCustomSettings
 from .basic_types import IDStr
@@ -15,10 +13,8 @@ class S3Settings(BaseCustomSettings):
     S3_REGION: IDStr
     S3_SECRET_KEY: IDStr
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(BaseCustomSettings.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     # non AWS use-case
@@ -37,3 +33,4 @@ class S3Settings(BaseCustomSettings):
                 },
             ],
         }
+    )
