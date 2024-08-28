@@ -98,6 +98,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
     __updateAllButton: null,
 
     _populateIntroText: async function() {
+      const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
       const labels = [];
       if (this.self().anyServiceInaccessible(this._studyData)) {
         const inaccessibleText = this.tr("Some services' information is not accessible. Please contact service owner:");
@@ -105,18 +106,35 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         labels.push(inaccessibleLabel);
       }
       if (this.self().anyServiceDeprecated(this._studyData)) {
-        const deprecatedText = this.tr("Services marked in yellow are deprecated, they will be retired soon. They can be updated by pressing the Update button.");
+        let deprecatedText = this.tr("Services marked in yellow are deprecated, they will be retired soon.");
+        if (canIWrite) {
+          deprecatedText += " " + this.tr("They can be updated by pressing the Update button.");
+        }
         const deprecatedLabel = new qx.ui.basic.Label(deprecatedText);
         labels.push(deprecatedLabel);
       }
       if (this.self().anyServiceRetired(this._studyData)) {
-        let retiredText = this.tr("Services marked in red are retired: you cannot use them anymore.<br>If the Update button is disabled, they might require manual intervention to be updated:");
-        retiredText += this.tr("<br>- Open the study");
-        retiredText += this.tr("<br>- Click on the retired service, download the data");
-        retiredText += this.tr("<br>- Upload the data to an updated version");
+        let retiredText = this.tr("Services marked in red are retired: you cannot use them anymore.");
+        if (canIWrite) {
+          retiredText += "<br>" + this.tr("If the Update button is disabled, they might require manual intervention to be updated:");
+          retiredText += "<br>- " + this.tr("Open the study");
+          retiredText += "<br>- " + this.tr("Click on the retired service, download the data");
+          retiredText += "<br>- " + this.tr("Upload the data to an updated version");
+        }
         const retiredLabel = new qx.ui.basic.Label(retiredText);
         labels.push(retiredLabel);
       }
+      const updatableServices = this.self().updatableNodeIds(this._studyData["workbench"]);
+      if (updatableServices.length === 0) {
+        const upToDateText = this.tr("All services are up to date to their latest compatible version.");
+        const upToDateLabel = new qx.ui.basic.Label(upToDateText);
+        labels.push(upToDateLabel);
+      } else if (canIWrite) {
+        const upToDateText = this.tr("Use the Update buttons to bring the services to their latest compatible version.");
+        const upToDateLabel = new qx.ui.basic.Label(upToDateText);
+        labels.push(upToDateLabel);
+      }
+
       labels.forEach(label => {
         label.set({
           font: "text-14",
@@ -178,7 +196,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
     _populateRows: function() {
       this.base(arguments);
 
-      const canIWriteStudy = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
+      const canIWrite = osparc.data.model.Study.canIWrite(this._studyData["accessRights"]);
 
       let i = 0;
       const workbench = this._studyData["workbench"];
@@ -222,7 +240,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         });
 
         const isUpdatable = osparc.service.Utils.isUpdatable(node);
-        if (latestCompatible && canIWriteStudy) {
+        if (latestCompatible && canIWrite) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
             enabled: isUpdatable
@@ -247,7 +265,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       }
 
       const updatableServices = osparc.metadata.ServicesInStudyUpdate.updatableNodeIds(workbench);
-      if (updatableServices.length && canIWriteStudy) {
+      if (updatableServices.length && canIWrite) {
         const updateAllButton = this.__updateAllButton;
         updateAllButton.show();
         updateAllButton.addListener("execute", () => this.__updateAllServices(updatableServices, updateAllButton), this);
