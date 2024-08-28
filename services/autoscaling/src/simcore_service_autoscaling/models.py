@@ -128,7 +128,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             return f"[{','.join(n.ec2_instance.id for n in instances)}]"
 
         return (
-            f"active-nodes: count={len(self.active_nodes)} {_get_instance_ids(self.active_nodes)}, "
+            f"Cluster(active-nodes: count={len(self.active_nodes)} {_get_instance_ids(self.active_nodes)}, "
             f"pending-nodes: count={len(self.pending_nodes)} {_get_instance_ids(self.pending_nodes)}, "
             f"drained-nodes: count={len(self.drained_nodes)} {_get_instance_ids(self.drained_nodes)}, "
             f"reserve-drained-nodes: count={len(self.reserve_drained_nodes)} {_get_instance_ids(self.reserve_drained_nodes)}, "
@@ -137,7 +137,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             f"buffer-ec2s: count={len(self.buffer_ec2s)} {_get_instance_ids(self.buffer_ec2s)}, "
             f"disconnected-nodes: count={len(self.disconnected_nodes)}, "
             f"terminating-nodes: count={len(self.terminating_nodes)} {_get_instance_ids(self.terminating_nodes)}, "
-            f"terminated-ec2s: count={len(self.terminated_instances)} {_get_instance_ids(self.terminated_instances)}, "
+            f"terminated-ec2s: count={len(self.terminated_instances)} {_get_instance_ids(self.terminated_instances)})"
         )
 
 
@@ -167,7 +167,7 @@ class BufferPool:
             f"waiting-to-pull-count={len(self.waiting_to_pull_instances)}, "
             f"waiting-to-stop-count={len(self.waiting_to_stop_instances)}, "
             f"pulling-count={len(self.pulling_instances)}, "
-            f"stopping-count={len(self.stopping_instances)})"
+            f"stopping-count={len(self.stopping_instances)}, "
             f"broken-count={len(self.broken_instances)})"
         )
 
