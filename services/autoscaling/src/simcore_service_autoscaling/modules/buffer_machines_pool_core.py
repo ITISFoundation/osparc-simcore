@@ -84,6 +84,9 @@ async def _analyze_running_instance_state(
                 "The machine will be terminated. TIP: check the initialization phase for errors."
             )
             buffer_pool.broken_instances.add(instance)
+    else:
+        # TODO: this can go for a long while
+        buffer_pool.pending_instances.add(instance)
 
 
 async def _analyse_current_state(
@@ -98,7 +101,6 @@ async def _analyse_current_state(
         tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
         state_names=["stopped", "pending", "running", "stopping"],
     )
-
     buffers_manager = BufferPoolManager()
     for instance in all_buffer_instances:
         match instance.state:
@@ -214,6 +216,7 @@ async def _add_remove_buffer_instances(
     # let's find what is missing and what is not needed
     missing_instances: dict[InstanceTypeType, NonNegativeInt] = defaultdict(int)
     unneeded_instances: set[EC2InstanceData] = set()
+
     for (
         ec2_type,
         ec2_boot_config,
