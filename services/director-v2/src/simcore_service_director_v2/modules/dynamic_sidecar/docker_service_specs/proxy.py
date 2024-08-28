@@ -92,7 +92,7 @@ def get_dynamic_proxy_spec(
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.entrypoints": "http",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.priority": "10",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": f"hostregexp(`{scheduler_data.node_uuid}.services.{{host:.+}}`)",
-            f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}_gzip@docker, {scheduler_data.proxy_service_name}-security-headers",
+            f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}_gzip@swarm, {scheduler_data.proxy_service_name}-security-headers",
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
         }
         | StandardSimcoreDockerLabels(
