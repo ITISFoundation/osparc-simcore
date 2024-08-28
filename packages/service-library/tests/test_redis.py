@@ -227,7 +227,7 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
     faker: Faker,
 ):
     INCREASE_OPERATIONS: Final[int] = 250
-    INCREASE_BY: Final[int] = 10
+    INCREASE_BY: Final[int] = 8
 
     class RaceConditionCounter:
         def __init__(self):
