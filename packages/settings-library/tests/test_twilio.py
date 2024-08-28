@@ -20,7 +20,7 @@ def test_twilio_settings_within_envdevel(
             },
         )
         settings = TwilioSettings.create_from_envs()
-        print(settings.json(indent=2))
+        print(settings.model_dump_json(indent=2))
         assert settings
 
 

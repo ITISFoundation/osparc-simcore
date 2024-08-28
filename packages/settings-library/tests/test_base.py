@@ -39,7 +39,7 @@ def _get_attrs_tree(obj: Any) -> dict[str, Any]:
 
 
 def _print_defaults(model_cls: type[BaseModel]):
-    for field in model_cls.__fields__.values():
+    for field in model_cls.model_fields.values():
         print(field.name, ":", end="")
         try:
             default = field.get_default()
@@ -49,7 +49,9 @@ def _print_defaults(model_cls: type[BaseModel]):
 
 
 def _dumps_model_class(model_cls: type[BaseModel]):
-    d = {field.name: _get_attrs_tree(field) for field in model_cls.__fields__.values()}
+    d = {
+        field.name: _get_attrs_tree(field) for field in model_cls.model_fields.values()
+    }
     return json.dumps(d, indent=1)
 
 

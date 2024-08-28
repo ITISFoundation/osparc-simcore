@@ -67,7 +67,7 @@ def all_env_devel_undefined(
     ],
 )
 def test_smtp_configuration_ok(cfg: dict[str, Any], all_env_devel_undefined: None):
-    assert SMTPSettings.parse_obj(cfg)
+    assert SMTPSettings.model_validate(cfg)
 
 
 @pytest.mark.parametrize(
