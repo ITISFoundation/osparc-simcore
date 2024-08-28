@@ -49,6 +49,19 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       return false;
     },
 
+    updatableNodeIds: function(studyData) {
+      const nodeIds = [];
+      if ("workbench" in studyData) {
+        for (const nodeId in studyData["workbench"]) {
+          const node = studyData["workbench"][nodeId];
+          if (osparc.service.Utils.isUpdatable(node)) {
+            nodeIds.push(nodeId);
+          }
+        }
+      }
+      return nodeIds;
+    },
+
     getLatestVersion: function(studyData, nodeId) {
       if (nodeId in studyData["workbench"]) {
         const node = studyData["workbench"][nodeId];
