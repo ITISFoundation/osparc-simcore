@@ -18,6 +18,7 @@ import logging
 from collections import defaultdict
 from typing import TypeAlias, cast
 
+import arrow
 from aws_library.ec2 import (
     AWSTagValue,
     EC2InstanceConfig,
@@ -59,12 +60,12 @@ async def _analyze_running_instance_state(
     app: FastAPI, *, buffer_pool: BufferPool, instance: EC2InstanceData
 ):
     ssm_client = get_ssm_client(app)
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
     if BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
         buffer_pool.pulling_instances.add(instance)
     elif await ssm_client.is_instance_connected_to_ssm_server(instance.id):
-        app_settings = get_application_settings(app)
-        assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
         try:
             if await ssm_client.wait_for_has_instance_completed_cloud_init(instance.id):
                 if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
@@ -84,6 +85,20 @@ async def _analyze_running_instance_state(
                 "The machine will be terminated. TIP: check the initialization phase for errors."
             )
             buffer_pool.broken_instances.add(instance)
+    else:
+        is_broken = bool(
+            (arrow.utcnow().datetime - instance.launch_time)
+            > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+        )
+
+        if is_broken:
+            _logger.error(
+                "The machine does not connect to the SSM server after %s. It will be terminated. TIP: check the initialization phase for errors.",
+                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME,
+            )
+            buffer_pool.broken_instances.add(instance)
+        else:
+            buffer_pool.pending_instances.add(instance)
 
 
 async def _analyse_current_state(
@@ -98,7 +113,6 @@ async def _analyse_current_state(
         tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
         state_names=["stopped", "pending", "running", "stopping"],
     )
-
     buffers_manager = BufferPoolManager()
     for instance in all_buffer_instances:
         match instance.state:
@@ -214,6 +228,7 @@ async def _add_remove_buffer_instances(
     # let's find what is missing and what is not needed
     missing_instances: dict[InstanceTypeType, NonNegativeInt] = defaultdict(int)
     unneeded_instances: set[EC2InstanceData] = set()
+
     for (
         ec2_type,
         ec2_boot_config,

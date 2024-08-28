@@ -113,6 +113,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __workbenchUI: null,
     __workbenchUIConnected: null,
     __iframePage: null,
+    __loggerPage: null,
     __loggerView: null,
     __currentNodeId: null,
     __startAppButton: null,
@@ -440,9 +441,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       tabViewMain.add(iframePage);
 
       const loggerView = this.__loggerView = new osparc.widget.logger.LoggerView();
-      const logsPage = this.__logsPage = this.__createTabPage("@FontAwesome5Solid/file-alt", this.tr("Logger"), loggerView);
-      osparc.utils.Utils.setIdToWidget(logsPage.getChildControl("button"), "loggerTabButton");
-      tabViewMain.add(logsPage);
+      const loggerPage = this.__loggerPage = this.__createTabPage("@FontAwesome5Solid/file-alt", this.tr("Logger"), loggerView);
+      osparc.utils.Utils.setIdToWidget(loggerPage.getChildControl("button"), "loggerTabButton");
+      tabViewMain.add(loggerPage);
 
       this.__addTopBarSpacer(topBar);
 
@@ -590,6 +591,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const edgeId = e.getData();
           this.__removeEdge(edgeId);
         }, this);
+        workbenchUI.addListener("requestOpenLogger", e => {
+          const nodeId = e.getData();
+          this.__loggerView.filterByNode(nodeId);
+          this.__openLoggerTab();
+        }, this);
       }
 
       const workbench = this.getStudy().getWorkbench();
@@ -705,6 +711,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       } else {
         tabViewMain.setSelection([this.__workbenchPanelPage]);
       }
+    },
+
+    __openLoggerTab: function() {
+      const tabViewMain = this.getChildControl("main-panel-tabs");
+      tabViewMain.setSelection([this.__loggerPage]);
     },
 
     __applyMaximized: function(maximized) {
