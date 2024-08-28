@@ -6,7 +6,7 @@ from aiopg.sa import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.groups import GroupAtDB
 from models_library.users import GroupID, UserID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from simcore_postgres_database.utils_products import get_or_create_product_group
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert

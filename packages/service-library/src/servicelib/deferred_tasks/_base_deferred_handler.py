@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import Any, ClassVar, Generic, TypeAlias, TypeVar
 
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 
 from ._models import ClassUniqueReference, TaskResultError, TaskUID
 

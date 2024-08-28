@@ -15,7 +15,7 @@ from models_library.user_preferences import (
     _AutoRegisterMeta,
     _BaseUserPreferenceModel,
 )
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 _SERVICE_KEY_AND_VERSION_SAMPLES: list[tuple[ServiceKey, ServiceVersion]] = [
     (

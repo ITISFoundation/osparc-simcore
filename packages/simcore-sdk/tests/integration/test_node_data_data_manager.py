@@ -17,7 +17,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from servicelib.progress_bar import ProgressBarData
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings

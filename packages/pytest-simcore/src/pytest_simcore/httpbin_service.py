@@ -14,7 +14,7 @@ import pytest
 import requests
 import requests.exceptions
 from docker.errors import APIError
-from pydantic import HttpUrl, parse_obj_as
+from pydantic.v1 import HttpUrl, parse_obj_as
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.retry import retry_if_exception_type

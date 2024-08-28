@@ -38,7 +38,7 @@ import httpx
 import pytest
 import respx
 import yaml
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.docker import get_service_published_port
 from pytest_simcore.helpers.host import get_localhost_ip

@@ -3,7 +3,7 @@
 # since this service is frozen and MUST NOT ADD ANY MORE DEPENDENCIES
 #
 #
-from pydantic import BaseSettings, Field, PositiveInt
+from pydantic.v1 import BaseSettings, Field, PositiveInt
 
 _BASE_TIMEOUT_FOR_STOPPING_SERVICES = 60 * 60
 

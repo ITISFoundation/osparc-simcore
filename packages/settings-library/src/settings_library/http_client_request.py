@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic.v1 import Field
 
 from .base import BaseCustomSettings
 

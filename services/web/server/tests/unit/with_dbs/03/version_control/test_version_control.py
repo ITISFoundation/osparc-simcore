@@ -4,7 +4,7 @@
 
 
 from models_library.projects import NodesDict
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.version_control.db import compute_workbench_checksum
 

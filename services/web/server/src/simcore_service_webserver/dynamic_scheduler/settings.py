@@ -1,7 +1,7 @@
 from typing import Final
 
 from aiohttp import web
-from pydantic import Field, NonNegativeInt
+from pydantic.v1 import Field, NonNegativeInt
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings
 

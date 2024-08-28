@@ -1,7 +1,7 @@
 from models_library.services import ServiceKey
 from models_library.user_preferences import UserServiceUserPreference
 from models_library.utils.change_case import snake_to_upper_camel
-from pydantic import create_model
+from pydantic.v1 import create_model
 
 
 def get_model_class(service_key: ServiceKey) -> type[UserServiceUserPreference]:

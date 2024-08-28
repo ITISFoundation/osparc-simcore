@@ -4,7 +4,7 @@ from typing import TypeAlias
 
 from models_library.api_schemas_storage import ETag
 from models_library.basic_types import SHA256Str
-from pydantic import AnyUrl, BaseModel, ByteSize
+from pydantic.v1 import AnyUrl, BaseModel, ByteSize
 from types_aiobotocore_s3.type_defs import HeadObjectOutputTypeDef, ObjectTypeDef
 
 S3ObjectKey: TypeAlias = str

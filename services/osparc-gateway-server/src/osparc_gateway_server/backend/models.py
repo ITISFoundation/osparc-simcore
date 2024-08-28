@@ -1,7 +1,7 @@
 from ipaddress import IPv4Address
 from typing import Any, Mapping, Union
 
-from pydantic import BaseModel, ByteSize, Field, PositiveFloat, parse_obj_as
+from pydantic.v1 import BaseModel, ByteSize, Field, PositiveFloat, parse_obj_as
 
 Hostname = str
 ResourceName = str

@@ -10,7 +10,7 @@ from models_library.clusters import (
     DEFAULT_CLUSTER_ID,
     Cluster,
 )
-from pydantic import BaseModel, ValidationError
+from pydantic.v1 import BaseModel, ValidationError
 
 
 @pytest.mark.parametrize(

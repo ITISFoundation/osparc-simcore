@@ -6,7 +6,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
-from pydantic import HttpUrl, parse_obj_as
+from pydantic.v1 import HttpUrl, parse_obj_as
 from servicelib.aiohttp.typing_extension import CleanupContextFunc
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState

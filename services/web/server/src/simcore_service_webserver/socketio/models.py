@@ -12,7 +12,7 @@ from models_library.rabbitmq_messages import (
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 
 class WebSocketMessageBase(BaseModel):

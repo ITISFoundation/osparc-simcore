@@ -1,7 +1,7 @@
 from functools import partial
 
-from pydantic import BaseModel, SecretStr
-from pydantic.json import custom_pydantic_encoder
+from pydantic.v1 import BaseModel, SecretStr
+from pydantic.v1.json import custom_pydantic_encoder
 
 
 def create_json_encoder_wo_secrets(model_cls: type[BaseModel]):

@@ -1,7 +1,7 @@
 import http
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from ..basic_types import IDStr
 from ..utils.pydantic_tools_extension import NOT_REQUIRED

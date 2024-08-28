@@ -13,7 +13,7 @@ import jinja2
 import respx
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
-from pydantic import HttpUrl
+from pydantic.v1 import HttpUrl
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 
 

@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.clusters import (
     ClusterPing,
 )
 from models_library.users import UserID
-from pydantic import BaseModel, Field, parse_obj_as
+from pydantic.v1 import BaseModel, Field, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,

@@ -2,7 +2,7 @@ import logging
 from typing import Annotated, Final, cast
 
 from fastapi import Depends, FastAPI
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 from servicelib.aiohttp.application_setup import ApplicationSetupError
 from servicelib.fastapi.dependencies import get_app
 from servicelib.rabbitmq import RabbitMQClient

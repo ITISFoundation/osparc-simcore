@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from models_library.groups import GroupAtDB
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceVersion
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import ServiceAccessRightsAtDB
 from simcore_service_catalog.services.access_rights import (

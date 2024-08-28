@@ -6,7 +6,7 @@ from typing import Any, Awaitable, Callable, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
-from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, PositiveFloat, parse_obj_as
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type

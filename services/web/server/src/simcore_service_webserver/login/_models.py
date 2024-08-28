@@ -1,6 +1,6 @@
 from typing import Any, Callable
 
-from pydantic import BaseModel, Extra, SecretStr
+from pydantic.v1 import BaseModel, Extra, SecretStr
 
 from ._constants import MSG_PASSWORD_MISMATCH
 

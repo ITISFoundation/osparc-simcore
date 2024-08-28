@@ -15,7 +15,7 @@ from models_library.resource_tracker import (
     PricingUnitWithCostCreate,
     PricingUnitWithCostUpdate,
 )
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic.v1 import NonNegativeInt, parse_obj_as
 
 from ....logging_utils import log_decorator
 from ....rabbitmq import RabbitMQRPCClient

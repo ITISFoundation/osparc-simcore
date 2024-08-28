@@ -4,7 +4,7 @@ from decimal import Decimal
 from enum import IntEnum, auto
 from typing import Any, ClassVar, NamedTuple, TypeAlias
 
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     ByteSize,
     Extra,

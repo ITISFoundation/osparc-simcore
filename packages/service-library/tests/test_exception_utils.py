@@ -3,7 +3,7 @@ from time import sleep
 from typing import Final
 
 import pytest
-from pydantic import PositiveFloat, PositiveInt
+from pydantic.v1 import PositiveFloat, PositiveInt
 from servicelib.exception_utils import DelayedExceptionHandler
 
 TOLERANCE: Final[PositiveFloat] = 0.1

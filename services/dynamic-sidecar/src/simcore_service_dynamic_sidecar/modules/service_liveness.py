@@ -4,7 +4,7 @@ from collections.abc import Awaitable, Callable
 from datetime import timedelta
 from typing import Final
 
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1.errors import PydanticErrorMixin
 from tenacity import AsyncRetrying, RetryCallState, TryAgain
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

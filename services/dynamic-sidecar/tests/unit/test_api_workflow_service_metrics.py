@@ -28,7 +28,7 @@ from models_library.rabbitmq_messages import (
     SimcorePlatformStatus,
 )
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (

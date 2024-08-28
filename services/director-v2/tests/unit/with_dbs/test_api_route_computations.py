@@ -48,7 +48,7 @@ from models_library.services_resources import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
-from pydantic import AnyHttpUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings

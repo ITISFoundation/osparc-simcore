@@ -10,7 +10,7 @@ import pytest
 from faker import Faker
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from servicelib.utils import limited_gather
 from simcore_service_storage.models import FileMetaData, S3BucketName
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager

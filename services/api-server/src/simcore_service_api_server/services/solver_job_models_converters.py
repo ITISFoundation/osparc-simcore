@@ -13,7 +13,7 @@ import arrow
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.basic_types import KeyIDStr
 from models_library.projects_nodes import InputID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 from ..models.basic_types import VersionStr
 from ..models.domain.projects import InputTypes, Node, SimCoreFileLink, StudyUI

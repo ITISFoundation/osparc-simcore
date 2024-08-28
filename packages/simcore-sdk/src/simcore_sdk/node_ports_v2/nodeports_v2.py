@@ -9,8 +9,8 @@ from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
-from pydantic import BaseModel, Field, ValidationError
-from pydantic.error_wrappers import flatten_errors
+from pydantic.v1 import BaseModel, Field, ValidationError
+from pydantic.v1.error_wrappers import flatten_errors
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.aws_s3_cli import AwsS3CliSettings

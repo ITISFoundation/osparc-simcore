@@ -12,7 +12,7 @@ import distributed.scheduler
 from aws_library.ec2 import EC2InstanceData, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
 from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic.v1 import AnyUrl, ByteSize, parse_obj_as
 
 from ..core.errors import (
     DaskNoWorkersError,

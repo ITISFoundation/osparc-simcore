@@ -10,7 +10,7 @@ from models_library.docker import (
     DockerLabelKey,
 )
 from models_library.generated_models.docker_rest_api import Node
-from pydantic import AnyUrl, ByteSize
+from pydantic.v1 import AnyUrl, ByteSize
 from servicelib.logging_utils import LogLevelInt
 from servicelib.utils import logged_gather
 from types_aiobotocore_ec2.literals import InstanceTypeType

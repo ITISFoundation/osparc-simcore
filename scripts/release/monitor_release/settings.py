@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Final
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field, HttpUrl, TypeAdapter, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic.v1 import BaseModel, Field, HttpUrl, TypeAdapter, model_validator
+from pydantic.v1_settings import BaseSettings, SettingsConfigDict
 
 from .models import Deployment
 

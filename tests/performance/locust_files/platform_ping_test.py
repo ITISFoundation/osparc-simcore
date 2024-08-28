@@ -7,8 +7,8 @@ import logging
 import locust_plugins
 from locust import task
 from locust.contrib.fasthttp import FastHttpUser
-from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic.v1 import Field
+from pydantic.v1_settings import BaseSettings
 
 logging.basicConfig(level=logging.INFO)
 

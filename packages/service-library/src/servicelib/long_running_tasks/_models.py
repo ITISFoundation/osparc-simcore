@@ -15,7 +15,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskResult,
     TaskStatus,
 )
-from pydantic import BaseModel, Field, PositiveFloat
+from pydantic.v1 import BaseModel, Field, PositiveFloat
 
 TaskName: TypeAlias = str
 

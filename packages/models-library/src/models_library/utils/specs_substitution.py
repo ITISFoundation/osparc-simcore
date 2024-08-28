@@ -1,7 +1,7 @@
 from typing import Any, NamedTuple, TypeAlias, cast
 
-from pydantic import StrictBool, StrictFloat, StrictInt
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1 import StrictBool, StrictFloat, StrictInt
+from pydantic.v1.errors import PydanticErrorMixin
 
 from .json_serialization import json_dumps, json_loads
 from .string_substitution import (

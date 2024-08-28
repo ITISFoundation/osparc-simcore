@@ -13,7 +13,7 @@ from aiohttp import web
 from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     Field,
     Json,

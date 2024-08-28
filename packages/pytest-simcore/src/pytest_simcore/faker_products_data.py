@@ -14,7 +14,7 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
-from pydantic import EmailStr, parse_obj_as
+from pydantic.v1 import EmailStr, parse_obj_as
 
 from .helpers.faker_factories import random_product
 

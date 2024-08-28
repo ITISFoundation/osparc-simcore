@@ -23,7 +23,7 @@ from models_library.projects_nodes import Node
 from models_library.projects_state import ProjectState
 from models_library.services import ServiceKey
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (

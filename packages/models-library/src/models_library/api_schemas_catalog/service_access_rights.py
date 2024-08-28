@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from ..services import ServiceKey, ServiceVersion
 from ..users import GroupID

@@ -14,7 +14,7 @@ from aiodocker.volumes import DockerVolume
 from models_library.basic_types import BootModeEnum
 from models_library.services import RunID
 from moto.server import ThreadedMotoServer
-from pydantic import HttpUrl, parse_obj_as
+from pydantic.v1 import HttpUrl, parse_obj_as
 from settings_library.r_clone import S3Provider
 from simcore_service_agent.core.settings import ApplicationSettings
 

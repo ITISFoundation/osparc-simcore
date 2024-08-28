@@ -10,8 +10,8 @@ from models_library.clusters import (
     ExternalClusterAuthentication,
 )
 from models_library.users import GroupID
-from pydantic import AnyHttpUrl, BaseModel, Field, validator
-from pydantic.networks import AnyUrl, HttpUrl
+from pydantic.v1 import AnyHttpUrl, BaseModel, Field, validator
+from pydantic.v1.networks import AnyUrl, HttpUrl
 from simcore_postgres_database.models.clusters import ClusterType
 
 

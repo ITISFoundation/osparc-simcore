@@ -19,7 +19,7 @@ from models_library.clusters import (
     ClusterTypeInModel,
     NoAuthentication,
 )
-from pydantic import AnyHttpUrl, AnyUrl, Field, NonNegativeInt, validator
+from pydantic.v1 import AnyHttpUrl, AnyUrl, Field, NonNegativeInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings

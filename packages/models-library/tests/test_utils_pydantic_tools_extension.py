@@ -2,7 +2,7 @@ from models_library.utils.pydantic_tools_extension import (
     FieldNotRequired,
     parse_obj_or_none,
 )
-from pydantic import BaseModel, Field, StrictInt
+from pydantic.v1 import BaseModel, Field, StrictInt
 
 
 class MyModel(BaseModel):

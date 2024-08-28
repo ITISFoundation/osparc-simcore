@@ -9,7 +9,7 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, HttpUrl, PositiveInt, parse_obj_as
+from pydantic.v1 import BaseModel, HttpUrl, PositiveInt, parse_obj_as
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
     payments_transactions,

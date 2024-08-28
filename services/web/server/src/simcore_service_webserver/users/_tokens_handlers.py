@@ -2,7 +2,7 @@ import functools
 import logging
 
 from aiohttp import web
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 
 class InputsState(BaseModel):

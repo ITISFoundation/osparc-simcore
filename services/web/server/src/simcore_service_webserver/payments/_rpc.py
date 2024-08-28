@@ -21,7 +21,7 @@ from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, HttpUrl, parse_obj_as
+from pydantic.v1 import EmailStr, HttpUrl, parse_obj_as
 from servicelib.logging_utils import log_decorator
 
 from ..rabbitmq import get_rabbitmq_rpc_client

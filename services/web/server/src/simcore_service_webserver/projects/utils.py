@@ -7,7 +7,7 @@ from uuid import UUID, uuid1, uuid5
 
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services import ServiceKey
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from servicelib.decorators import safe_return
 from yarl import URL
 

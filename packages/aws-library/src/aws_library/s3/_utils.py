@@ -1,6 +1,6 @@
 from typing import Final
 
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 
 _MULTIPART_MAX_NUMBER_OF_PARTS: Final[int] = 10000
 

@@ -4,7 +4,7 @@ from typing import Final, NamedTuple
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from pydantic import AnyUrl, parse_obj_as
+from pydantic.v1 import AnyUrl, parse_obj_as
 from servicelib.logging_utils import log_context
 from settings_library.node_ports import StorageAuthSettings
 

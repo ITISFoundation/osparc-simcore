@@ -18,7 +18,7 @@ from faststream.rabbit import (
     RabbitRouter,
     TestRabbitBroker,
 )
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 from servicelib.deferred_tasks._utils import stop_retry_for_unintended_errors
 from settings_library.rabbit import RabbitSettings
 from tenacity.asyncio import AsyncRetrying

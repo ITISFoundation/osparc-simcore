@@ -14,7 +14,7 @@ from models_library.basic_types import NonNegativeDecimal
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, Extra, Field, PositiveInt, validator
+from pydantic.v1 import BaseModel, Extra, Field, PositiveInt, validator
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,

@@ -11,7 +11,7 @@ import pytest
 from models_library.projects import NodesDict, ProjectID
 from models_library.projects_networks import NetworksWithAliases
 from models_library.projects_nodes import Node
-from pydantic import BaseModel, PositiveInt
+from pydantic.v1 import BaseModel, PositiveInt
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.modules.projects_networks import (
     _get_networks_with_aliases_for_default_network,

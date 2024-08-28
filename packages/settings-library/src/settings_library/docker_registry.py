@@ -1,7 +1,7 @@
 from functools import cached_property
 from typing import Any, ClassVar
 
-from pydantic import Field, SecretStr, validator
+from pydantic.v1 import Field, SecretStr, validator
 
 from .base import BaseCustomSettings
 

@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 from models_library.basic_types import LogLevel
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.r_clone import S3Provider
 from simcore_service_director_v2.core.dynamic_services_settings.egress_proxy import (

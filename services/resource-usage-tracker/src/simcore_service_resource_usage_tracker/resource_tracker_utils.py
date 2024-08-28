@@ -17,7 +17,7 @@ from models_library.rabbitmq_messages import (
 from models_library.resource_tracker import ServiceRunId, ServiceRunStatus
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from servicelib.rabbitmq import RabbitMQClient
 
 from .modules.db.repositories.resource_tracker import ResourceTrackerRepository

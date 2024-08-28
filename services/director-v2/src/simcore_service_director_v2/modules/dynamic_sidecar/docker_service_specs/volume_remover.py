@@ -14,7 +14,7 @@ from models_library.services_resources import (
     MEMORY_250MB,
 )
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 from ....constants import DYNAMIC_VOLUME_REMOVER_PREFIX
 

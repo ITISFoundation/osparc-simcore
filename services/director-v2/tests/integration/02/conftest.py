@@ -14,7 +14,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 
 

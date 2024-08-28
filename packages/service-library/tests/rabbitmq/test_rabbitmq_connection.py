@@ -13,7 +13,7 @@ import docker
 import pytest
 import requests
 from faker import Faker
-from pydantic import HttpUrl
+from pydantic.v1 import HttpUrl
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
 from tenacity import retry, retry_if_exception_type

@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.generics import DictModel, Envelope
-from pydantic import BaseModel, ValidationError
+from pydantic.v1 import BaseModel, ValidationError
 
 
 def test_dict_base_model():

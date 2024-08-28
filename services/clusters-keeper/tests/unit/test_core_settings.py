@@ -8,7 +8,7 @@ import random
 
 import pytest
 from aws_library.ec2 import EC2InstanceBootSpecific
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType

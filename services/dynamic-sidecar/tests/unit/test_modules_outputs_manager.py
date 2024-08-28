@@ -15,7 +15,7 @@ from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import FastAPI
 from models_library.services import RunID
-from pydantic import PositiveFloat
+from pydantic.v1 import PositiveFloat
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_sdk.node_ports_common.exceptions import S3TransferError

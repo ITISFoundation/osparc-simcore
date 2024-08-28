@@ -1,7 +1,7 @@
 from typing import Any, Literal, TypeAlias
 
 from models_library.basic_types import IDStr
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 TaskUID: TypeAlias = IDStr  # Unique identifier provided by the TaskTracker
 ClassUniqueReference: TypeAlias = str

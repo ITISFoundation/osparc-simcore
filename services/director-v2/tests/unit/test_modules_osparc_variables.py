@@ -21,7 +21,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.specs_substitution import SubstitutionValue
 from models_library.utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_compose_specs import generate_fake_docker_compose
 from simcore_postgres_database.models.services_environments import VENDOR_SECRET_PREFIX

@@ -12,7 +12,7 @@ import pytest
 from models_library.products import ProductName
 from notifications_library._models import ProductData, UserData
 from notifications_library.payments import PaymentData
-from pydantic import EmailStr
+from pydantic.v1 import EmailStr
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.products import Vendor
 

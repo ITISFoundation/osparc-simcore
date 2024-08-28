@@ -5,7 +5,7 @@
 from unittest.mock import Mock
 
 import httpx
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from simcore_service_datcore_adapter.models.domains.files import FileDownloadOut
 from starlette import status
 

@@ -7,7 +7,7 @@ from typing import AsyncIterator, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
-from pydantic import ByteSize, NonNegativeFloat, NonNegativeInt, parse_obj_as
+from pydantic.v1 import ByteSize, NonNegativeFloat, NonNegativeInt, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._event_filter import (

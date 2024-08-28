@@ -10,7 +10,7 @@ from fastapi import UploadFile
 from models_library.api_schemas_storage import ETag
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
-from pydantic import (
+from pydantic.v1 import (
     AnyUrl,
     BaseModel,
     ByteSize,

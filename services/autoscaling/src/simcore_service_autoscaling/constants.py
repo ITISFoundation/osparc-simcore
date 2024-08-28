@@ -2,7 +2,7 @@ import re
 from typing import Final
 
 from aws_library.ec2._models import AWSTagKey, AWSTagValue, EC2Tags
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 BUFFER_MACHINE_PULLING_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
     AWSTagKey, "pulling"

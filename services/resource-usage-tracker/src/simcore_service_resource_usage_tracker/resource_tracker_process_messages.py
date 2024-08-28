@@ -20,7 +20,7 @@ from models_library.resource_tracker import (
     ServiceRunStatus,
 )
 from models_library.services import ServiceType
-from pydantic import parse_raw_as
+from pydantic.v1 import parse_raw_as
 
 from .models.resource_tracker_credit_transactions import (
     CreditTransactionCreate,

@@ -4,7 +4,7 @@ from contextlib import suppress
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from models_library.projects import ProjectAtDB, ProjectID
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from simcore_postgres_database.storage_models import projects
 
 

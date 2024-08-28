@@ -7,7 +7,7 @@ from typing import Final, TypedDict
 
 from aiohttp import web
 from aiohttp_session import Session
-from pydantic import PositiveInt, validate_arguments
+from pydantic.v1 import PositiveInt, validate_arguments
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 

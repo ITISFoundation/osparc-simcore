@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, ClassVar, TypeAlias
 
 from models_library.rpc_pagination import PageRpc
-from pydantic import BaseModel, Extra, Field, HttpUrl, NonNegativeInt
+from pydantic.v1 import BaseModel, Extra, Field, HttpUrl, NonNegativeInt
 
 from ..boot_options import BootOptions
 from ..emails import LowerCaseEmailStr

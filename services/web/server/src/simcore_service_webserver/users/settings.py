@@ -1,5 +1,5 @@
 from aiohttp import web
-from pydantic import Field, StrictBool, StrictFloat, StrictInt, StrictStr
+from pydantic.v1 import Field, StrictBool, StrictFloat, StrictInt, StrictStr
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings
 

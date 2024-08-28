@@ -10,7 +10,7 @@ from models_library.api_schemas_invitations.invitations import (
     ApiInvitationInputs,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, parse_obj_as
 from yarl import URL
 
 from .._constants import APP_SETTINGS_KEY

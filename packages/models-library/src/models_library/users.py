@@ -1,6 +1,6 @@
 from typing import TypeAlias
 
-from pydantic import BaseModel, ConstrainedStr, Field, PositiveInt
+from pydantic.v1 import BaseModel, ConstrainedStr, Field, PositiveInt
 
 UserID: TypeAlias = PositiveInt
 GroupID: TypeAlias = PositiveInt

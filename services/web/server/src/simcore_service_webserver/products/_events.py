@@ -7,7 +7,7 @@ from typing import cast
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from servicelib.exceptions import InvalidConfig
 from simcore_postgres_database.utils_products import (
     get_default_product_name,

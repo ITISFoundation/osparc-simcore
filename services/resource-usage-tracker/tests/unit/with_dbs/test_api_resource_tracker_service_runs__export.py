@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 import sqlalchemy as sa
 from moto.server import ThreadedMotoServer
-from pydantic import AnyUrl, parse_obj_as
+from pydantic.v1 import AnyUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient

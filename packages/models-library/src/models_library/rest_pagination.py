@@ -1,6 +1,6 @@
 from typing import Any, ClassVar, Final, Generic, TypeVar
 
-from pydantic import (
+from pydantic.v1 import (
     AnyHttpUrl,
     BaseModel,
     ConstrainedInt,
@@ -11,7 +11,7 @@ from pydantic import (
     parse_obj_as,
     validator,
 )
-from pydantic.generics import GenericModel
+from pydantic.v1.generics import GenericModel
 
 from .utils.common_validators import none_to_empty_list_pre_validator
 

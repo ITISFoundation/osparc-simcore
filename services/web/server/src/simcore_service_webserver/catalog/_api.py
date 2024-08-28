@@ -23,7 +23,7 @@ from models_library.services import (
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pint import UnitRegistry
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY

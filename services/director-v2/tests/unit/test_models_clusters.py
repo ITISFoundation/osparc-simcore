@@ -13,7 +13,7 @@ from models_library.api_schemas_directorv2.clusters import (
     WorkerMetrics,
 )
 from models_library.clusters import ClusterTypeInModel
-from pydantic import BaseModel, parse_obj_as
+from pydantic.v1 import BaseModel, parse_obj_as
 from simcore_postgres_database.models.clusters import ClusterType
 
 

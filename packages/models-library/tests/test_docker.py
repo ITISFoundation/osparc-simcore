@@ -13,7 +13,7 @@ from models_library.docker import (
     DockerLabelKey,
     StandardSimcoreDockerLabels,
 )
-from pydantic import ValidationError, parse_obj_as
+from pydantic.v1 import ValidationError, parse_obj_as
 
 _faker = Faker()
 

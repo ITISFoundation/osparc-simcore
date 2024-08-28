@@ -1,10 +1,10 @@
 from typing import Final
 
 from aiohttp import web
-from pydantic import PositiveInt
-from pydantic.class_validators import validator
-from pydantic.fields import Field
-from pydantic.types import SecretStr
+from pydantic.v1 import PositiveInt
+from pydantic.v1.class_validators import validator
+from pydantic.v1.fields import Field
+from pydantic.v1.types import SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_session import MixinSessionSettings
 

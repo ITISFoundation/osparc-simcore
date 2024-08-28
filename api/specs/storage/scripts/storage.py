@@ -26,7 +26,7 @@ from models_library.generics import Envelope
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize
+from pydantic.v1 import AnyUrl, ByteSize
 from servicelib.long_running_tasks._models import TaskGet, TaskId, TaskStatus
 from settings_library.s3 import S3Settings
 from simcore_service_storage._meta import API_VTAG

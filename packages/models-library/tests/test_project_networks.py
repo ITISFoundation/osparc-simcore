@@ -7,7 +7,7 @@ from models_library.projects_networks import (
     DockerNetworkName,
     NetworksWithAliases,
 )
-from pydantic import ValidationError, parse_obj_as
+from pydantic.v1 import ValidationError, parse_obj_as
 
 
 @pytest.mark.parametrize(

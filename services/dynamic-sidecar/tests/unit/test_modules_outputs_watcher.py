@@ -17,7 +17,7 @@ import pytest
 from aiofiles import os
 from faker import Faker
 from models_library.services import RunID
-from pydantic import (
+from pydantic.v1 import (
     ByteSize,
     NonNegativeFloat,
     NonNegativeInt,

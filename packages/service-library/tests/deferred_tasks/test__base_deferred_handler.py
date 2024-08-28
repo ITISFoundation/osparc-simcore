@@ -11,7 +11,7 @@ from unittest.mock import Mock
 
 import pytest
 from models_library.utils.enums import StrAutoEnum
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 from servicelib.deferred_tasks._base_deferred_handler import (
     BaseDeferredHandler,
     DeferredContext,

@@ -2,7 +2,7 @@ from datetime import datetime
 
 from models_library.resource_tracker import PricingPlanClassification, PricingPlanId
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 ## DB Models
 

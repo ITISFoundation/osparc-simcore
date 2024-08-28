@@ -6,7 +6,7 @@ from importlib.metadata import distribution
 
 from models_library.basic_types import VersionStr
 from packaging.version import Version
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 
 class PackageInfo:

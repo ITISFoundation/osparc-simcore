@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, SecretStr
+from pydantic.v1 import BaseModel, Field, SecretStr
 
 
 class ApiKey(BaseModel):

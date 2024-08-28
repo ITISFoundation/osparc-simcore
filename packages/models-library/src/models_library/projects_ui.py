@@ -4,8 +4,8 @@
 
 from typing import Any, ClassVar, Literal, TypedDict
 
-from pydantic import BaseModel, Extra, Field, validator
-from pydantic.color import Color
+from pydantic.v1 import BaseModel, Extra, Field, validator
+from pydantic.v1.color import Color
 
 from .projects_nodes_io import NodeID, NodeIDStr
 from .projects_nodes_ui import Marker, Position

@@ -4,9 +4,9 @@
 """
 from enum import Enum, auto
 
-from pydantic import parse_obj_as
-from pydantic.networks import AnyUrl
-from pydantic.types import SecretStr
+from pydantic.v1 import parse_obj_as
+from pydantic.v1.networks import AnyUrl
+from pydantic.v1.types import SecretStr
 
 from .basic_types import PortInt
 

@@ -41,7 +41,7 @@ from models_library.basic_types import EnvVarKey
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import BootMode
 from packaging import version
-from pydantic import AnyUrl, SecretStr, parse_obj_as
+from pydantic.v1 import AnyUrl, SecretStr, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings

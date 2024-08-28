@@ -13,7 +13,7 @@ from models_library.basic_types import (
 )
 from models_library.clusters import InternalClusterAuthentication
 from models_library.docker import DockerLabelKey
-from pydantic import (
+from pydantic.v1 import (
     AnyUrl,
     Field,
     NonNegativeInt,

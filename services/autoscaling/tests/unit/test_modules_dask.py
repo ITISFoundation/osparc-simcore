@@ -17,7 +17,7 @@ from models_library.clusters import (
     NoAuthentication,
     TLSAuthentication,
 )
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic.v1 import AnyUrl, ByteSize, parse_obj_as
 from pytest_simcore.helpers.host import get_localhost_ip
 from simcore_service_autoscaling.core.errors import (
     DaskNoWorkersError,

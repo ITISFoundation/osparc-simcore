@@ -13,7 +13,7 @@ from models_library.api_schemas_long_running_tasks.base import (
     ProgressPercent,
     TaskProgress,
 )
-from pydantic import PositiveFloat
+from pydantic.v1 import PositiveFloat
 
 from ._errors import (
     TaskAlreadyRunningError,

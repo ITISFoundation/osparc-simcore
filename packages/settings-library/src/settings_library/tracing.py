@@ -1,4 +1,4 @@
-from pydantic import AnyUrl, Field, parse_obj_as
+from pydantic.v1 import AnyUrl, Field, parse_obj_as
 
 from .base import BaseCustomSettings
 

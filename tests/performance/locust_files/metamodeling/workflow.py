@@ -5,8 +5,8 @@ from typing import Final
 from uuid import UUID
 
 from locust import HttpUser, task
-from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic.v1 import Field
+from pydantic.v1_settings import BaseSettings
 from requests.auth import HTTPBasicAuth
 from tenacity import (
     Retrying,

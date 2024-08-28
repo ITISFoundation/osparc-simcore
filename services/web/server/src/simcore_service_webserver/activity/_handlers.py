@@ -4,7 +4,7 @@ from collections import defaultdict
 import aiohttp
 import aiohttp.web
 from models_library.api_schemas_webserver.activity import ActivityStatusDict
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY

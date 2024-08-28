@@ -2,7 +2,7 @@ from enum import Enum, StrEnum, unique
 
 import pytest
 from models_library.utils.enums import are_equivalent_enums, enum_to_dict
-from pydantic import BaseModel, ValidationError, parse_obj_as
+from pydantic.v1 import BaseModel, ValidationError, parse_obj_as
 
 
 #

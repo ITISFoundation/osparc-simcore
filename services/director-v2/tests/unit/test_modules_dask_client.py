@@ -54,8 +54,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, SecretStr
-from pydantic.tools import parse_obj_as
+from pydantic.v1 import AnyUrl, ByteSize, SecretStr
+from pydantic.v1.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.background_task import periodic_task

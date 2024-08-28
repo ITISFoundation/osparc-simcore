@@ -2,7 +2,7 @@ import secrets
 import string
 from typing import Final
 
-from pydantic import StrictInt, validate_arguments
+from pydantic.v1 import StrictInt, validate_arguments
 
 MIN_PASSWORD_LENGTH = 30
 _SAFE_SYMBOLS = "!$%*+,-.:=?@^_~"  # avoid issues with parsing, espapes etc

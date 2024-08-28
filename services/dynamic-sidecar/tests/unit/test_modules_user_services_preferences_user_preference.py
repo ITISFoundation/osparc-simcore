@@ -3,7 +3,7 @@
 
 import pytest
 from models_library.services import ServiceKey
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from simcore_service_dynamic_sidecar.modules.user_services_preferences._user_preference import (
     get_model_class,
 )

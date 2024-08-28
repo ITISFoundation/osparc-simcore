@@ -6,7 +6,7 @@ from typing import cast
 
 from aiohttp import ClientSession, ClientTimeout, web
 from models_library.basic_types import VersionTag
-from pydantic import Field, PositiveInt
+from pydantic.v1 import Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_CLIENT_SESSION_KEY
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt

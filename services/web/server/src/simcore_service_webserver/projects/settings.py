@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from aiohttp import web
-from pydantic import ByteSize, Field, NonNegativeInt, parse_obj_as
+from pydantic.v1 import ByteSize, Field, NonNegativeInt, parse_obj_as
 from settings_library.base import BaseCustomSettings
 
 from .._constants import APP_SETTINGS_KEY

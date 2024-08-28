@@ -9,7 +9,7 @@ from typing import Any, TypeAlias
 import parse
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_ec2.service_resource import Instance
-from pydantic import BaseModel, ByteSize, PostgresDsn
+from pydantic.v1 import BaseModel, ByteSize, PostgresDsn
 
 
 @dataclass(kw_only=True)

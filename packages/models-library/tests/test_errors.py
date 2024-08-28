@@ -5,7 +5,7 @@
 
 import pytest
 from models_library.errors import ErrorDict
-from pydantic import BaseModel, ValidationError, conint
+from pydantic.v1 import BaseModel, ValidationError, conint
 
 
 def test_pydantic_error_dict():

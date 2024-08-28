@@ -2,7 +2,7 @@ from typing import Final
 from uuid import uuid4
 
 from models_library.basic_types import IDStr
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 
 from ..redis import RedisClientSDK
 from ..utils import logged_gather

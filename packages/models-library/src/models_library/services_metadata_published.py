@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, ClassVar, Final, TypeAlias
 
-from pydantic import Extra, Field, NonNegativeInt
+from pydantic.v1 import Extra, Field, NonNegativeInt
 
 from .basic_types import SemanticVersionStr
 from .boot_options import BootOption, BootOptions

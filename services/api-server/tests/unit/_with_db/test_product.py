@@ -18,7 +18,7 @@ from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableC
 from models_library.generics import Envelope
 from models_library.users import UserID
 from models_library.wallets import WalletStatus
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from simcore_service_api_server._meta import API_VTAG
 
 

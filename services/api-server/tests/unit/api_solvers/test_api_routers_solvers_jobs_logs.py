@@ -17,7 +17,7 @@ from attr import dataclass
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_webserver.projects import ProjectGet
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from pytest_mock import MockFixture
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from respx import MockRouter

@@ -21,8 +21,8 @@ from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
-from pydantic import ByteSize
-from pydantic.networks import AnyUrl
+from pydantic.v1 import ByteSize
+from pydantic.v1.networks import AnyUrl
 from servicelib.aiohttp import status
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying

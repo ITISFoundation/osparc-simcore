@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Final
 
 from fastapi import FastAPI
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 from settings_library.docker_registry import RegistrySettings
 
 from ..modules.service_liveness import wait_for_service_liveness

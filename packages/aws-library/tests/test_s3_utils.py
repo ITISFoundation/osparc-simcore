@@ -10,7 +10,7 @@ from aws_library.s3._utils import (
     _MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE,
     compute_num_file_chunks,
 )
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 
 

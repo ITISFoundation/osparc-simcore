@@ -18,7 +18,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceMetaDataPublished
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, HttpUrl, parse_obj_as
+from pydantic.v1 import AnyUrl, HttpUrl, parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.core.settings import ApplicationSettings

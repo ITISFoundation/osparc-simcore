@@ -1,4 +1,4 @@
-from pydantic import EmailStr
+from pydantic.v1 import EmailStr
 
 
 class LowerCaseEmailStr(EmailStr):

@@ -3,7 +3,7 @@ import logging
 
 import asyncpg
 from aiohttp import web
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings

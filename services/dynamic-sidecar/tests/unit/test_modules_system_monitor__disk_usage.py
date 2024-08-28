@@ -13,7 +13,7 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from psutil._common import sdiskusage
-from pydantic import ByteSize
+from pydantic.v1 import ByteSize
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
     DiskUsageMonitor,

@@ -13,7 +13,7 @@ from http import HTTPStatus
 
 import pytest
 from playwright.sync_api import APIRequestContext
-from pydantic import AnyUrl
+from pydantic.v1 import AnyUrl
 from pytest_simcore.helpers.logging_tools import test_logger
 from tenacity import Retrying
 from tenacity.retry import retry_if_exception_type

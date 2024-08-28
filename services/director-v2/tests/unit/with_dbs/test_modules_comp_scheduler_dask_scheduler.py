@@ -41,7 +41,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingStoppedMessage,
 )
 from models_library.users import UserID
-from pydantic import parse_obj_as, parse_raw_as
+from pydantic.v1 import parse_obj_as, parse_raw_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQClient

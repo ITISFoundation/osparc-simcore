@@ -2,7 +2,7 @@
 from math import ceil
 from typing import Any, ClassVar, Generic
 
-from pydantic import Extra, Field
+from pydantic.v1 import Extra, Field
 
 from .rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,

@@ -8,7 +8,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
-from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, PositiveFloat, parse_obj_as
 from servicelib.fastapi.long_running_tasks._context_manager import _ProgressManager
 from servicelib.fastapi.long_running_tasks.client import (
     Client,

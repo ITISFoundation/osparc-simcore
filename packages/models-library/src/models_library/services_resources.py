@@ -2,7 +2,7 @@ import logging
 from enum import auto
 from typing import Any, ClassVar, Final, TypeAlias
 
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     ByteSize,
     Field,

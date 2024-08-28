@@ -2,7 +2,7 @@ import re
 from typing import Final
 
 import parse
-from pydantic import ByteSize
+from pydantic.v1 import ByteSize
 
 DEFAULT_COMPUTATIONAL_EC2_FORMAT: Final[
     str

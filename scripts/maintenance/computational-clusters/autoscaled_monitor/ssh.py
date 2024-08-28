@@ -14,7 +14,7 @@ import rich
 import typer
 from mypy_boto3_ec2.service_resource import Instance
 from paramiko import Ed25519Key
-from pydantic import ByteSize
+from pydantic.v1 import ByteSize
 from sshtunnel import SSHTunnelForwarder
 
 from .constants import DYN_SERVICES_NAMING_CONVENTION

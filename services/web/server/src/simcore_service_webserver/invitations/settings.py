@@ -8,7 +8,7 @@ from functools import cached_property
 from typing import Final
 
 from aiohttp import web
-from pydantic import Field, SecretStr, parse_obj_as
+from pydantic.v1 import Field, SecretStr, parse_obj_as
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (

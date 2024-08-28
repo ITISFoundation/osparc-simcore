@@ -13,7 +13,7 @@ from faker import Faker
 from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import EmailStr
+from pydantic.v1 import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict

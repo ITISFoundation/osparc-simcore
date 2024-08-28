@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 import simcore_service_api_server.models
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from pytest_simcore.pydantic_models import walk_model_examples_in_package
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_api_server.models.schemas.profiles import UserRoleEnum

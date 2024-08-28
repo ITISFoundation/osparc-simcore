@@ -14,7 +14,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.projects_nodes_io import LocationID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, BaseModel, ByteSize, parse_obj_as
+from pydantic.v1 import AnyUrl, BaseModel, ByteSize, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,

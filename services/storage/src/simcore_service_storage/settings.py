@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import Field, PositiveInt, root_validator, validator
+from pydantic.v1 import Field, PositiveInt, root_validator, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.postgres import PostgresSettings

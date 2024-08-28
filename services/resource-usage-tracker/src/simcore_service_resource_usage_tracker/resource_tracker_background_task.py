@@ -9,7 +9,7 @@ from models_library.resource_tracker import (
     ServiceRunId,
     ServiceRunStatus,
 )
-from pydantic import NonNegativeInt, PositiveInt
+from pydantic.v1 import NonNegativeInt, PositiveInt
 
 from .core.settings import ApplicationSettings
 from .models.resource_tracker_credit_transactions import (

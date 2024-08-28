@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any, Final, Literal, TypeVar, cast, overload
 
 import toolz  # type: ignore[import-untyped]
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 
 _logger = logging.getLogger(__name__)
 

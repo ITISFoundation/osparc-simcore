@@ -23,7 +23,7 @@ from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import AnyUrl, parse_obj_as
+from pydantic.v1 import AnyUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_project
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict

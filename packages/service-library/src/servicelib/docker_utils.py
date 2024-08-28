@@ -11,7 +11,7 @@ import arrow
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, ByteSize, ValidationError, parse_obj_as
+from pydantic.v1 import BaseModel, ByteSize, ValidationError, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 

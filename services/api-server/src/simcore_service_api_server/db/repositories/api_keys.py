@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 import sqlalchemy as sa
 from models_library.products import ProductName
-from pydantic.types import PositiveInt
+from pydantic.v1.types import PositiveInt
 from simcore_postgres_database.errors import DatabaseError
 
 from .. import tables as tbl

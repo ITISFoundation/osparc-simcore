@@ -10,7 +10,7 @@ from aiopg.sa.result import RowProxy
 from models_library.basic_types import SHA1Str
 from models_library.projects import ProjectIDStr
 from models_library.utils.json_serialization import json_dumps
-from pydantic.types import NonNegativeInt, PositiveInt
+from pydantic.v1.types import NonNegativeInt, PositiveInt
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_version_control import (
     projects_vc_branches,

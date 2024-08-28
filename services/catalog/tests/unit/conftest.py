@@ -22,7 +22,7 @@ from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 from packaging.version import Version
-from pydantic import EmailStr
+from pydantic.v1 import EmailStr
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict

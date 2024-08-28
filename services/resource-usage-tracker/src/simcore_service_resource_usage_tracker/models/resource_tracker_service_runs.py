@@ -16,7 +16,7 @@ from models_library.resource_tracker import (
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, NonNegativeInt
+from pydantic.v1 import BaseModel, NonNegativeInt
 
 
 class ServiceRunCreate(BaseModel):

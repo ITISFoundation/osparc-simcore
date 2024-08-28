@@ -27,7 +27,7 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
 )

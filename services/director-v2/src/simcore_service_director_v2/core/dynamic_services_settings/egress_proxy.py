@@ -2,7 +2,7 @@ from enum import auto
 
 from models_library.docker import DockerGenericTag
 from models_library.utils.enums import StrAutoEnum
-from pydantic import Field
+from pydantic.v1 import Field
 from settings_library.base import BaseCustomSettings
 
 

@@ -1,8 +1,8 @@
 import enum
 from typing import Any, ClassVar, Final
 
-from pydantic import BaseModel, Field, validator
-from pydantic.types import PositiveInt
+from pydantic.v1 import BaseModel, Field, validator
+from pydantic.v1.types import PositiveInt
 
 from .utils.common_validators import create_enums_pre_validator
 

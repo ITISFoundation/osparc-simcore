@@ -5,7 +5,7 @@ from urllib.parse import unquote
 
 import httpx
 import jsonref
-from pydantic import ValidationError, parse_obj_as
+from pydantic.v1 import ValidationError, parse_obj_as
 from settings_library.catalog import CatalogSettings
 from settings_library.director_v2 import DirectorV2Settings
 from settings_library.storage import StorageSettings

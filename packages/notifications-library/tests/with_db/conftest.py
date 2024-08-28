@@ -14,7 +14,7 @@ from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from notifications_library._templates import get_default_named_templates
-from pydantic import validate_arguments
+from pydantic.v1 import validate_arguments
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products

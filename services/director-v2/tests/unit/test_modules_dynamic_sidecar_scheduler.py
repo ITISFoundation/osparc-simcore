@@ -21,7 +21,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services_enums import ServiceState
 from models_library.wallets import WalletID
-from pydantic import NonNegativeFloat
+from pydantic.v1 import NonNegativeFloat
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter

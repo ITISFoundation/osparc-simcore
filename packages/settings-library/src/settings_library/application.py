@@ -1,4 +1,4 @@
-from pydantic import Field, PositiveInt
+from pydantic.v1 import Field, PositiveInt
 
 from .base import BaseCustomSettings
 from .basic_types import BuildTargetEnum

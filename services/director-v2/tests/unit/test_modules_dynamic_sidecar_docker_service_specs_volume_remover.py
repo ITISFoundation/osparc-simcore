@@ -9,7 +9,7 @@ from aiodocker import Docker, DockerError
 from aiodocker.volumes import DockerVolume
 from faker import Faker
 from models_library.services import RunID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
     SH_SCRIPT_REMOVE_VOLUMES,
     DockerVersion,

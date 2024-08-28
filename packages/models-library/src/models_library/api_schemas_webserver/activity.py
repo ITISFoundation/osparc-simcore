@@ -1,6 +1,6 @@
 from typing import TypeAlias
 
-from pydantic import BaseModel, Field, PositiveFloat
+from pydantic.v1 import BaseModel, Field, PositiveFloat
 
 from ..projects_nodes_io import NodeID
 

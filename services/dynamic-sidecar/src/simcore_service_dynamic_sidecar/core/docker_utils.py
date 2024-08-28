@@ -11,7 +11,7 @@ from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
 from models_library.services import RunID
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from servicelib.utils import logged_gather
 from starlette import status as http_status
 

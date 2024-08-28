@@ -27,7 +27,7 @@ from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, HttpUrl, PositiveInt
+from pydantic.v1 import EmailStr, HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,

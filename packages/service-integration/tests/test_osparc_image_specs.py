@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from service_integration.compose_spec_model import BuildItem, Service
 from service_integration.osparc_config import (
     DockerComposeOverwriteConfig,

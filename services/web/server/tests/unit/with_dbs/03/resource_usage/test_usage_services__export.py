@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.resource_tracker import ServiceResourceUsagesFilters
 from models_library.rest_ordering import OrderBy
-from pydantic import AnyUrl, parse_obj_as
+from pydantic.v1 import AnyUrl, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status

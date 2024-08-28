@@ -22,7 +22,7 @@ from models_library.rest_pagination import (
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     Extra,
     Field,

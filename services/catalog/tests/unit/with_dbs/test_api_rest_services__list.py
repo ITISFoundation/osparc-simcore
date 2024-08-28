@@ -13,7 +13,7 @@ from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from respx.router import MockRouter
 from starlette import status
 from starlette.testclient import TestClient

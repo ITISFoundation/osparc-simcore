@@ -27,7 +27,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import LoggerRabbitMessage, RabbitMessageBase
 from models_library.users import UserID
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from pytest_mock import MockerFixture, MockFixture
 from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,

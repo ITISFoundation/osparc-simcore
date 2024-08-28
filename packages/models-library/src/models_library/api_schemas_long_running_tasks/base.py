@@ -1,7 +1,13 @@
 import logging
 from typing import TypeAlias
 
-from pydantic import BaseModel, ConstrainedFloat, Field, validate_arguments, validator
+from pydantic.v1 import (
+    BaseModel,
+    ConstrainedFloat,
+    Field,
+    validate_arguments,
+    validator,
+)
 
 _logger = logging.getLogger(__name__)
 

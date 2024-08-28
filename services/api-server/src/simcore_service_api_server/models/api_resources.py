@@ -2,8 +2,8 @@ import re
 import urllib.parse
 from typing import Any
 
-from pydantic import BaseModel, Field
-from pydantic.types import ConstrainedStr
+from pydantic.v1 import BaseModel, Field
+from pydantic.v1.types import ConstrainedStr
 
 # RESOURCE NAMES https://cloud.google.com/apis/design/resource_names
 #

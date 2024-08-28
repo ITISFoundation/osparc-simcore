@@ -9,7 +9,7 @@ import logging
 
 from aiohttp import web
 from models_library.projects_state import ProjectState
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,

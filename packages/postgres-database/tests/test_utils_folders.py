@@ -12,7 +12,7 @@ import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from pydantic import BaseModel, Field, NonNegativeInt
+from pydantic.v1 import BaseModel, Field, NonNegativeInt
 from pytest_simcore.helpers.faker_factories import random_product
 from simcore_postgres_database.models.folders import (
     folders,

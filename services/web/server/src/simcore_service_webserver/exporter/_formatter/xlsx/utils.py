@@ -2,7 +2,7 @@ from collections.abc import Iterable
 from typing import TypeVar
 
 from openpyxl.utils import get_column_letter
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 T = TypeVar("T")
 

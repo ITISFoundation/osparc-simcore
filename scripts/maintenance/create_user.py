@@ -4,8 +4,8 @@ import asyncio
 
 import typer
 from httpx import URL, AsyncClient
-from pydantic.networks import EmailStr
-from pydantic.types import SecretStr
+from pydantic.v1.networks import EmailStr
+from pydantic.v1.types import SecretStr
 
 
 async def logout_current_user(client: AsyncClient):

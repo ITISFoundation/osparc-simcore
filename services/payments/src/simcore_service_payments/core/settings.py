@@ -1,7 +1,7 @@
 from functools import cached_property
 
 from models_library.basic_types import NonNegativeDecimal
-from pydantic import (
+from pydantic.v1 import (
     EmailStr,
     Field,
     HttpUrl,

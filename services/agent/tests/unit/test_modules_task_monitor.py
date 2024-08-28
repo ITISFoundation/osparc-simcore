@@ -4,7 +4,7 @@ import asyncio
 from typing import Final
 
 import pytest
-from pydantic import PositiveFloat
+from pydantic.v1 import PositiveFloat
 from simcore_service_agent.modules.task_monitor import TaskMonitor
 
 REPEAT_TASK_INTERVAL_S: Final[PositiveFloat] = 0.05

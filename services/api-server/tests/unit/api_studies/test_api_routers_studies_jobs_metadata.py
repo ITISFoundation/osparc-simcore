@@ -12,7 +12,7 @@ from typing import TypedDict
 import httpx
 import pytest
 from fastapi.encoders import jsonable_encoder
-from pydantic import parse_file_as
+from pydantic.v1 import parse_file_as
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.httpx_calls_capture_parameters import PathDescription
 from respx import MockRouter

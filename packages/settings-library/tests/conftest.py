@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 import settings_library
 from dotenv import dotenv_values
-from pydantic.fields import Field
+from pydantic.v1.fields import Field
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt

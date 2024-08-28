@@ -2,7 +2,7 @@ import mimetypes
 from copy import deepcopy
 from typing import Any, Literal
 
-from pydantic import schema_of
+from pydantic.v1 import schema_of
 
 from ..services import ServiceInput, ServiceOutput
 from ..services_regex import PROPERTY_TYPE_TO_PYTHON_TYPE_MAP

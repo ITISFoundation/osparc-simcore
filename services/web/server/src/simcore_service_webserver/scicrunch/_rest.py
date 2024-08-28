@@ -18,7 +18,7 @@ import logging
 from typing import Any
 
 from aiohttp import ClientSession
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 from yarl import URL
 
 from .models import ResourceHit

@@ -3,7 +3,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from ...long_running_tasks._errors import TaskNotCompletedError, TaskNotFoundError
 from ...long_running_tasks._models import TaskGet, TaskId, TaskStatus

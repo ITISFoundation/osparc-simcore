@@ -9,7 +9,7 @@ from models_library.api_schemas_catalog.services_specifications import (
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_resources import ResourcesDict
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from servicelib.fastapi.dependencies import get_app
 
 from ...core.settings import ApplicationSettings

@@ -12,8 +12,8 @@ from typing import Any, Final, TypedDict, cast
 import aiofiles
 import aiofiles.tempfile
 import fsspec  # type: ignore[import-untyped]
-from pydantic import ByteSize, FileUrl, parse_obj_as
-from pydantic.networks import AnyUrl
+from pydantic.v1 import ByteSize, FileUrl, parse_obj_as
+from pydantic.v1.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
 from yarl import URL

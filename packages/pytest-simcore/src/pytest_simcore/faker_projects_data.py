@@ -13,7 +13,7 @@ import pytest
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 _MESSAGE = (
     "If set, it overrides the fake value of `{}` fixture."

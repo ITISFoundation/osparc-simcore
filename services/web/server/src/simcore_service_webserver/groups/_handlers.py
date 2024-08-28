@@ -12,7 +12,7 @@ from models_library.api_schemas_webserver.groups import (
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import GroupID, UserID
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Extra, Field, parse_obj_as
+from pydantic.v1 import BaseModel, Extra, Field, parse_obj_as
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,

@@ -10,7 +10,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from packaging import version
 from packaging.version import Version
-from pydantic import EmailStr, parse_obj_as
+from pydantic.v1 import EmailStr, parse_obj_as
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,

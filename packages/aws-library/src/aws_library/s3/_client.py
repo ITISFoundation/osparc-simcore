@@ -14,7 +14,7 @@ from botocore import exceptions as botocore_exc
 from botocore.client import Config
 from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic.v1 import AnyUrl, ByteSize, parse_obj_as
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings

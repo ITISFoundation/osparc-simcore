@@ -10,8 +10,8 @@ from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
-from pydantic import BaseModel, Extra
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1 import BaseModel, Extra
+from pydantic.v1.errors import PydanticErrorMixin
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 

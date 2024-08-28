@@ -6,8 +6,8 @@ from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
 from models_library.services_metadata_editable import ServiceMetaDataEditable
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Field
-from pydantic.types import PositiveInt
+from pydantic.v1 import BaseModel, Field
+from pydantic.v1.types import PositiveInt
 from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
 
 

@@ -18,8 +18,8 @@ from models_library.rest_pagination import (
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
 )
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
-from pydantic import Field, NonNegativeInt, validator
-from pydantic.generics import GenericModel
+from pydantic.v1 import Field, NonNegativeInt, validator
+from pydantic.v1.generics import GenericModel
 
 T = TypeVar("T")
 

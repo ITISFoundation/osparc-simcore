@@ -10,8 +10,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from models_library.api_schemas_catalog.services import ServiceGet, ServiceUpdate
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_metadata_published import ServiceMetaDataPublished
-from pydantic import ValidationError
-from pydantic.types import PositiveInt
+from pydantic.v1 import ValidationError
+from pydantic.v1.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from starlette.requests import Request
 

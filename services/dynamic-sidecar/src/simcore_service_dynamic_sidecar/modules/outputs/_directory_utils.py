@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 
 
 def get_directory_total_size(path: Path) -> ByteSize:

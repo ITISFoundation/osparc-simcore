@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import NamedTuple
 
-from pydantic import BaseModel, PositiveInt
+from pydantic.v1 import BaseModel, PositiveInt
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID

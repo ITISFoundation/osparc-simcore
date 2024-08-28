@@ -6,7 +6,7 @@ from uuid import uuid4
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
-from pydantic import BaseModel, NonNegativeInt, validator
+from pydantic.v1 import BaseModel, NonNegativeInt, validator
 
 MAX_NOTIFICATIONS_FOR_USER_TO_SHOW: Final[NonNegativeInt] = 10
 MAX_NOTIFICATIONS_FOR_USER_TO_KEEP: Final[NonNegativeInt] = 100

@@ -9,8 +9,8 @@ from aiohttp import web
 from aiohttp.web import Request
 from models_library.services import ServiceKey
 from models_library.services_types import ServiceVersion
-from pydantic import BaseModel, Field, ValidationError, parse_obj_as, validator
-from pydantic.networks import HttpUrl
+from pydantic.v1 import BaseModel, Field, ValidationError, parse_obj_as, validator
+from pydantic.v1.networks import HttpUrl
 
 from .._meta import API_VTAG
 from ..products.api import get_product_name

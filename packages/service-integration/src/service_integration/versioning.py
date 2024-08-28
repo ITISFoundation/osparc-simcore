@@ -5,7 +5,7 @@ from typing import Any, ClassVar
 
 from models_library.basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
 from packaging.version import Version
-from pydantic import BaseModel, ConstrainedStr, Field
+from pydantic.v1 import BaseModel, ConstrainedStr, Field
 
 
 class SemanticVersionStr(ConstrainedStr):

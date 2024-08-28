@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Final
 
 from fastapi import FastAPI
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 
 from .settings import ApplicationSettings
 

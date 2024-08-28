@@ -3,8 +3,8 @@ from typing import cast
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import GroupAtDB
-from pydantic import parse_obj_as
-from pydantic.types import PositiveInt
+from pydantic.v1 import parse_obj_as
+from pydantic.v1.types import PositiveInt
 
 from ...exceptions.errors import UninitializedGroupError
 from ..tables import GroupType, groups, user_to_groups, users

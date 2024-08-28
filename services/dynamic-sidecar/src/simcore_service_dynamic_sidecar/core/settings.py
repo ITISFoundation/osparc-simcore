@@ -11,7 +11,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import DynamicServiceKey, RunID, ServiceVersion
 from models_library.users import UserID
-from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
+from pydantic.v1 import ByteSize, Field, PositiveInt, parse_obj_as, validator
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings

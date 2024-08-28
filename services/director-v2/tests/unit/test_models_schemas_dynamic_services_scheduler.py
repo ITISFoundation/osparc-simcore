@@ -5,7 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import pytest
-from pydantic import parse_file_as
+from pydantic.v1 import parse_file_as
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 
 

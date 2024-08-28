@@ -12,9 +12,9 @@ from typing import Any
 import pytest
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import validator
-from pydantic.main import BaseModel
-from pydantic.networks import HttpUrl
+from pydantic.v1 import validator
+from pydantic.v1.main import BaseModel
+from pydantic.v1.networks import HttpUrl
 from pytest_simcore.helpers.webserver_fake_services_data import list_fake_file_consumers
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,

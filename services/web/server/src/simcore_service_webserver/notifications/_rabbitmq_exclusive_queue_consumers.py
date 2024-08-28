@@ -13,7 +13,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID
-from pydantic import parse_raw_as
+from pydantic.v1 import parse_raw_as
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather

@@ -9,9 +9,9 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import BaseModel, ValidationError, validator
-from pydantic.fields import Field
-from pydantic.networks import HttpUrl
+from pydantic.v1 import BaseModel, ValidationError, validator
+from pydantic.v1.fields import Field
+from pydantic.v1.networks import HttpUrl
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG

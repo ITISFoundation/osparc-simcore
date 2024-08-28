@@ -4,7 +4,7 @@ from typing import Final
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 from .._meta import VERSION
 from ..core.settings import ApplicationSettings

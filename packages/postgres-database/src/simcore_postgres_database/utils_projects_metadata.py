@@ -5,8 +5,8 @@ from typing import Any
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
-from pydantic import BaseModel
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1 import BaseModel
+from pydantic.v1.errors import PydanticErrorMixin
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .errors import ForeignKeyViolation

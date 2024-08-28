@@ -17,7 +17,7 @@ from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
-from pydantic import ValidationError, parse_obj_as
+from pydantic.v1 import ValidationError, parse_obj_as
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 

@@ -9,8 +9,8 @@ from models_library.basic_types import (
     UUIDStr,
     VersionTag,
 )
-from pydantic import ConstrainedStr, ValidationError
-from pydantic.tools import parse_obj_as
+from pydantic.v1 import ConstrainedStr, ValidationError
+from pydantic.v1.tools import parse_obj_as
 
 
 class _Example(NamedTuple):

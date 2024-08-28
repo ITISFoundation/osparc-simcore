@@ -6,7 +6,7 @@
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_mock import MockFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict

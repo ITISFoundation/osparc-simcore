@@ -6,7 +6,7 @@ from typing import Any, ClassVar, TypeAlias, Union
 from models_library.basic_regex import MIME_TYPE_RE
 from models_library.generics import DictModel
 from models_library.services_types import ServicePortKey
-from pydantic import (
+from pydantic.v1 import (
     AnyUrl,
     BaseModel,
     Extra,

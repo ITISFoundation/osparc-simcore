@@ -6,7 +6,7 @@ from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
 from models_library.payments import UserInvoiceAddress
 from models_library.users import UserBillingDetails, UserID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from simcore_postgres_database.models.users import UserStatus
 
 from ..db.plugin import get_database_engine

@@ -11,7 +11,7 @@ from models_library.products import ProductName
 from models_library.projects_access import AccessRights
 from models_library.rest_ordering import OrderBy
 from models_library.users import GroupID, UserID
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic.v1 import NonNegativeInt, parse_obj_as
 from simcore_postgres_database import utils_folders as folders_db
 
 from .._constants import APP_DB_ENGINE_KEY

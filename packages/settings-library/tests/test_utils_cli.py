@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 import typer
 from dotenv import dotenv_values
-from pydantic import Field, SecretStr
+from pydantic.v1 import Field, SecretStr
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_envfile
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.base import BaseCustomSettings

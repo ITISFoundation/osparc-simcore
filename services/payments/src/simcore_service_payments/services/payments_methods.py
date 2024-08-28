@@ -27,7 +27,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.basic_types import IDStr
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, HttpUrl
+from pydantic.v1 import EmailStr, HttpUrl
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 
 from ..db.payments_methods_repo import PaymentsMethodsRepo

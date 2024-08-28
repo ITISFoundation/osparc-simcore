@@ -17,7 +17,7 @@ from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import NonNegativeFloat
+from pydantic.v1 import NonNegativeFloat
 from servicelib.logging_utils import LogLevelInt
 from servicelib.rabbitmq import RabbitMQClient
 

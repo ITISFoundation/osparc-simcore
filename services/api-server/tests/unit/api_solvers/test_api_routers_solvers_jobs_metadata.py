@@ -10,7 +10,7 @@ import httpx
 import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
-from pydantic import parse_file_as
+from pydantic.v1 import parse_file_as
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG

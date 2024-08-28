@@ -9,7 +9,7 @@ from typing import Final
 
 from models_library.basic_types import VersionStr, VersionTag
 from packaging.version import Version
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 _current_distribution = distribution("simcore-service-efs-guardian")
 __version__: str = version("simcore-service-efs-guardian")

@@ -16,7 +16,7 @@ from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, SimcoreS3FileID
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 

@@ -20,7 +20,7 @@ from aiohttp import (
 from aiohttp.typedefs import LooseHeaders
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
 from models_library.basic_types import IDStr, SHA256Str
-from pydantic import AnyUrl, NonNegativeInt
+from pydantic.v1 import AnyUrl, NonNegativeInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData

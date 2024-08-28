@@ -3,7 +3,7 @@ import logging
 
 from aiohttp import web
 from models_library.users import UserID
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_query_parameters_as,

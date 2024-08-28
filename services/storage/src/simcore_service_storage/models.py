@@ -27,7 +27,7 @@ from models_library.rest_pagination import (
 )
 from models_library.users import UserID
 from models_library.utils.common_validators import empty_str_to_none_pre_validator
-from pydantic import (
+from pydantic.v1 import (
     AnyUrl,
     BaseModel,
     ByteSize,

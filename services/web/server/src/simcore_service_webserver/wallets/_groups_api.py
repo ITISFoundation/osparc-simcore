@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from models_library.wallets import UserWalletDB, WalletID
-from pydantic import BaseModel, parse_obj_as
+from pydantic.v1 import BaseModel, parse_obj_as
 
 from ..users import api as users_api
 from . import _db as wallets_db

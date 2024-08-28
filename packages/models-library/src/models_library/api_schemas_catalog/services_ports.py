@@ -1,6 +1,6 @@
 from typing import Any, ClassVar, Literal
 
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from ..basic_regex import PUBLIC_VARIABLE_NAME_RE
 from ..services import ServiceInput, ServiceOutput

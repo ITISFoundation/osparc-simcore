@@ -10,7 +10,7 @@ from uuid import uuid4
 import pytest
 from faker import Faker
 from models_library.utils.fastapi_encoders import servicelib_jsonable_encoder
-from pydantic.json import pydantic_encoder
+from pydantic.v1.json import pydantic_encoder
 
 
 def servicelib__json_serialization__json_dumps(obj: Any, **kwargs):

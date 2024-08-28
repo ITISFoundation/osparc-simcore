@@ -1,6 +1,6 @@
 from typing import Any, TypeAlias
 
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from ..user_preferences import PreferenceIdentifier
 from ._base import InputSchema, OutputSchema

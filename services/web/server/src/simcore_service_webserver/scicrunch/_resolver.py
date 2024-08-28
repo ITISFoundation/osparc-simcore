@@ -9,9 +9,9 @@ from datetime import datetime
 from typing import Any
 
 from aiohttp import ClientSession
-from pydantic import Field, ValidationError
-from pydantic.main import BaseModel
-from pydantic.types import NonNegativeInt
+from pydantic.v1 import Field, ValidationError
+from pydantic.v1.main import BaseModel
+from pydantic.v1.types import NonNegativeInt
 
 from .settings import SciCrunchSettings
 

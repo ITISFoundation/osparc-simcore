@@ -6,7 +6,7 @@
 import pytest
 from aws_library.ec2 import EC2InstanceType, Resources
 from faker import Faker
-from pydantic import ByteSize
+from pydantic.v1 import ByteSize
 from simcore_service_autoscaling.core.errors import (
     ConfigurationError,
     TaskBestFittingInstanceNotFoundError,

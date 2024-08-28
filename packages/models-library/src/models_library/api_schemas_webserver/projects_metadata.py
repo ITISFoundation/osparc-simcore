@@ -1,6 +1,6 @@
 from typing import TypeAlias
 
-from pydantic import Field, StrictBool, StrictFloat, StrictInt
+from pydantic.v1 import Field, StrictBool, StrictFloat, StrictInt
 
 from ..projects import ProjectID
 from ._base import InputSchema, OutputSchema

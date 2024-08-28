@@ -48,8 +48,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
 from models_library.users import UserID
-from pydantic import ValidationError, parse_obj_as
-from pydantic.networks import AnyUrl
+from pydantic.v1 import ValidationError, parse_obj_as
+from pydantic.v1.networks import AnyUrl
 from servicelib.logging_utils import log_catch
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_common.exceptions import NodeportsException

@@ -15,7 +15,7 @@ from models_library.clusters import (
     ClusterID,
 )
 from models_library.users import UserID
-from pydantic.types import PositiveInt
+from pydantic.v1.types import PositiveInt
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups

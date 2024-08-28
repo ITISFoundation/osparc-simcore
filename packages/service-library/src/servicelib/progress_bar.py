@@ -10,7 +10,7 @@ from models_library.progress_bar import (
     ProgressStructuredMessage,
     ProgressUnit,
 )
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 from .logging_utils import log_catch
 

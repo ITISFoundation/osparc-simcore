@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic.v1 import AnyUrl, BaseModel, Field
 
 
 class AppStatusCheck(BaseModel):

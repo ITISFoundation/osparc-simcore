@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, ClassVar, TypeAlias
 
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from .services_types import ServiceKey, ServiceVersion
 from .utils.change_case import snake_to_camel

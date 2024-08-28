@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.projects import ProjectCreateNew, Proj
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic.types import PositiveInt
+from pydantic.v1.types import PositiveInt
 from simcore_service_api_server.exceptions.backend_errors import (
     ProjectAlreadyStartedError,
 )

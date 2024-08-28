@@ -10,7 +10,7 @@ from uuid import UUID
 import pytest
 from aiohttp import web
 from faker import Faker
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
 
 

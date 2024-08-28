@@ -1,7 +1,7 @@
 from functools import cached_property
 
 from models_library.basic_types import PortInt, VersionTag
-from pydantic import AnyHttpUrl, Field
+from pydantic.v1 import AnyHttpUrl, Field
 from settings_library.base import BaseCustomSettings
 
 

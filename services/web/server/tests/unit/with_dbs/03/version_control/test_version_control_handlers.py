@@ -12,7 +12,7 @@ from aiohttp.test_utils import TestClient
 from models_library.projects import Project, ProjectID
 from models_library.rest_pagination import Page
 from models_library.users import UserID
-from pydantic.main import BaseModel
+from pydantic.v1.main import BaseModel
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from simcore_service_webserver._meta import API_VTAG as VX

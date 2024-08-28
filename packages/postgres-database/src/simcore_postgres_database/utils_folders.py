@@ -10,7 +10,7 @@ from typing import Any, ClassVar, Final, TypeAlias, cast
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     ConstrainedStr,
     Field,
@@ -19,7 +19,7 @@ from pydantic import (
     ValidationError,
     parse_obj_as,
 )
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1.errors import PydanticErrorMixin
 from simcore_postgres_database.utils_ordering import OrderByDict
 from sqlalchemy import Column, func
 from sqlalchemy.dialects import postgresql

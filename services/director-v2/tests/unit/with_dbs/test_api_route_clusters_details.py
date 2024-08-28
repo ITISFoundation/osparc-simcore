@@ -17,7 +17,7 @@ from faker import Faker
 from models_library.api_schemas_directorv2.clusters import ClusterDetailsGet
 from models_library.clusters import Cluster, ClusterID, SimpleAuthentication
 from models_library.users import UserID
-from pydantic import SecretStr
+from pydantic.v1 import SecretStr
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from starlette import status
 from tenacity.asyncio import AsyncRetrying

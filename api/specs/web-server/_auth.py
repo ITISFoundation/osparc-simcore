@@ -15,7 +15,7 @@ from models_library.api_schemas_webserver.auth import (
     UnregisterCheck,
 )
 from models_library.generics import Envelope
-from pydantic import BaseModel, Field, confloat
+from pydantic.v1 import BaseModel, Field, confloat
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.login._2fa_handlers import Resend2faBody
 from simcore_service_webserver.login._auth_handlers import (

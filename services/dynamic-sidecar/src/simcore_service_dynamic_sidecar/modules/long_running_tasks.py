@@ -13,7 +13,7 @@ from models_library.api_schemas_long_running_tasks.base import (
 from models_library.basic_types import IDStr
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from servicelib.file_utils import log_directory_changes
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData

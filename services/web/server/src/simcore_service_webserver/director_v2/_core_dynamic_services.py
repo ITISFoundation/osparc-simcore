@@ -10,8 +10,8 @@ from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
 from models_library.services import ServicePortKey
-from pydantic import BaseModel, NonNegativeInt, parse_obj_as
-from pydantic.types import PositiveInt
+from pydantic.v1 import BaseModel, NonNegativeInt, parse_obj_as
+from pydantic.v1.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from yarl import URL
 

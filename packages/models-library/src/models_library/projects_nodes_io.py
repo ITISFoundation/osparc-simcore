@@ -12,7 +12,7 @@ from typing import Any, ClassVar, TypeAlias
 from uuid import UUID
 
 from models_library.basic_types import KeyIDStr
-from pydantic import (
+from pydantic.v1 import (
     AnyUrl,
     BaseModel,
     ConstrainedStr,

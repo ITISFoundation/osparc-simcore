@@ -1,8 +1,8 @@
 from enum import Enum
 
-from pydantic import root_validator
-from pydantic.fields import Field
-from pydantic.types import SecretStr
+from pydantic.v1 import root_validator
+from pydantic.v1.fields import Field
+from pydantic.v1.types import SecretStr
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt

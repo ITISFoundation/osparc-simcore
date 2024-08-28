@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import Final
 
-from pydantic import BaseModel, Field, NonNegativeFloat, PrivateAttr
+from pydantic.v1 import BaseModel, Field, NonNegativeFloat, PrivateAttr
 
 _logger = logging.getLogger(__name__)
 

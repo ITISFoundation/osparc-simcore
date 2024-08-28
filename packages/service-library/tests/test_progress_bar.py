@@ -10,7 +10,7 @@ from unittest import mock
 import pytest
 from faker import Faker
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from pytest_mock import MockerFixture
 from servicelib.progress_bar import (
     _INITIAL_VALUE,

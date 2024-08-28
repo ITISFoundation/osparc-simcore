@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 
 
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.application import create_base_app
 from simcore_service_dynamic_sidecar.core.reserved_space import (

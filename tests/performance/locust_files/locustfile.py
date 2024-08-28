@@ -7,8 +7,8 @@ from uuid import UUID
 
 import faker
 from locust import HttpUser, between, task
-from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic.v1 import Field
+from pydantic.v1_settings import BaseSettings
 
 logging.basicConfig(level=logging.INFO)
 

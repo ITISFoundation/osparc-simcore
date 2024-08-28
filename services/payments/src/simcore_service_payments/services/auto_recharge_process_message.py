@@ -14,7 +14,7 @@ from models_library.payments import InvoiceDataGet
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as, parse_raw_as
+from pydantic.v1 import parse_obj_as, parse_raw_as
 from simcore_service_payments.db.auto_recharge_repo import AutoRechargeRepo
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from simcore_service_payments.db.payments_transactions_repo import (

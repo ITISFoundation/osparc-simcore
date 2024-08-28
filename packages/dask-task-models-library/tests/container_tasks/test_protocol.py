@@ -4,7 +4,7 @@ from dask_task_models_library.container_tasks.protocol import (
     TaskOwner,
 )
 from faker import Faker
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 
 
 @pytest.mark.parametrize("model_cls", [TaskOwner, ContainerTaskParameters])

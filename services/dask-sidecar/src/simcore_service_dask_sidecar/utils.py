@@ -6,7 +6,7 @@ from typing import Any, cast
 
 import aiodocker
 from aiodocker.containers import DockerContainer
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 
 logger = logging.getLogger(__name__)
 

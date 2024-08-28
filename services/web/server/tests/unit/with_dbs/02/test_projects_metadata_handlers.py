@@ -18,7 +18,7 @@ from models_library.api_schemas_webserver.projects_metadata import (
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (

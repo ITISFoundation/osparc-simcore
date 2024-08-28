@@ -17,7 +17,7 @@ from fastapi.encoders import jsonable_encoder
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
-from pydantic import Extra, parse_obj_as
+from pydantic.v1 import Extra, parse_obj_as
 from pytest_simcore.helpers.faker_factories import (
     random_service_access_rights,
     random_service_meta_data,

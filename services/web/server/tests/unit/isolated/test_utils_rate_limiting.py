@@ -10,7 +10,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aiohttp.web_exceptions import HTTPOk, HTTPTooManyRequests
-from pydantic import ValidationError, conint, parse_obj_as
+from pydantic.v1 import ValidationError, conint, parse_obj_as
 from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
 
 TOTAL_TEST_TIME = 1  # secs

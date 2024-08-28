@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from simcore_service_webserver.products._db import Product
 
 

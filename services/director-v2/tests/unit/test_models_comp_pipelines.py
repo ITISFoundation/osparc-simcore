@@ -10,7 +10,7 @@ from uuid import UUID
 import networkx as nx
 import pytest
 from models_library.projects_state import RunningState
-from pydantic.main import BaseModel
+from pydantic.v1.main import BaseModel
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 
 

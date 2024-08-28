@@ -10,7 +10,7 @@ import pytest
 import tenacity
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import AnyUrl, parse_obj_as
+from pydantic.v1 import AnyUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL

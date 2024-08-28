@@ -16,8 +16,8 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from httpx import URL, HTTPStatusError
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
-from pydantic import ValidationError, parse_raw_as
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1 import ValidationError, parse_raw_as
+from pydantic.v1.errors import PydanticErrorMixin
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import (
     AttachLifespanMixin,

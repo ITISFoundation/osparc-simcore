@@ -6,7 +6,7 @@ from typing import Final
 
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient

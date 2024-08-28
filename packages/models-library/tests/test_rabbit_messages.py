@@ -8,7 +8,7 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageProject,
     ProgressType,
 )
-from pydantic import parse_raw_as
+from pydantic.v1 import parse_raw_as
 
 faker = Faker()
 

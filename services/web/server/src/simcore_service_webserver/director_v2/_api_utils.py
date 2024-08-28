@@ -2,7 +2,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from models_library.wallets import WalletID, WalletInfo
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 from ..application_settings import get_application_settings
 from ..products.api import Product

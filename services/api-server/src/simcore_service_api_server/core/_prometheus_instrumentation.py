@@ -5,7 +5,7 @@ from typing import Final, cast
 
 from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Gauge
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation as setup_rest_instrumentation,

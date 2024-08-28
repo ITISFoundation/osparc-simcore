@@ -16,8 +16,8 @@ from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableC
 from models_library.projects_nodes_io import BaseFileLink
 from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS
-from pydantic import NonNegativeInt
-from pydantic.types import PositiveInt
+from pydantic.v1 import NonNegativeInt
+from pydantic.v1.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_context
 

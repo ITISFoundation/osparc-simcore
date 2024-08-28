@@ -13,8 +13,8 @@ would still have these invariants.
 """
 
 
-from pydantic import BaseSettings, validator
-from pydantic.fields import ModelField, Undefined
+from pydantic.v1 import BaseSettings, validator
+from pydantic.v1.fields import ModelField, Undefined
 
 
 def assert_field_specs(

@@ -1,6 +1,6 @@
 from typing import Any, ClassVar, TypeAlias
 
-from pydantic import BaseModel, NonNegativeFloat
+from pydantic.v1 import BaseModel, NonNegativeFloat
 
 
 class ActivityInfo(BaseModel):

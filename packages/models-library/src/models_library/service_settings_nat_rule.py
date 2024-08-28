@@ -1,7 +1,7 @@
 from collections.abc import Generator
 from typing import Any, ClassVar, Final
 
-from pydantic import BaseModel, Extra, Field, parse_obj_as, validator
+from pydantic.v1 import BaseModel, Extra, Field, parse_obj_as, validator
 
 from .basic_types import PortInt
 from .osparc_variable_identifier import OsparcVariableIdentifier, raise_if_unresolved

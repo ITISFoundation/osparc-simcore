@@ -4,7 +4,7 @@ from typing import Any, ClassVar, cast
 import networkx as nx
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
-from pydantic import BaseModel, validator
+from pydantic.v1 import BaseModel, validator
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ..utils.db import DB_TO_RUNNING_STATE

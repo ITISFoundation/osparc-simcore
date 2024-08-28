@@ -2,7 +2,7 @@ import datetime
 from functools import cached_property
 
 from models_library.basic_types import BootModeEnum
-from pydantic import Field, PositiveInt, validator
+from pydantic.v1 import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.postgres import PostgresSettings

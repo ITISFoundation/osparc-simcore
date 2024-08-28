@@ -12,7 +12,7 @@ from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
 from models_library.services import ServiceKey, ServiceKeyVersion
-from pydantic import HttpUrl, PositiveInt
+from pydantic.v1 import HttpUrl, PositiveInt
 
 router = APIRouter(
     prefix="",  # NOTE: no API vtag!

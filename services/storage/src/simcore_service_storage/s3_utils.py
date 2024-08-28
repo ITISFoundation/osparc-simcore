@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     ProgressMessage,
     ProgressPercent,

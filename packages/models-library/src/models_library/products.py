@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Any, ClassVar, TypeAlias
 
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 ProductName: TypeAlias = str
 StripePriceID: TypeAlias = str

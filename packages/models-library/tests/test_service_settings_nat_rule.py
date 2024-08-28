@@ -9,7 +9,7 @@ from models_library.osparc_variable_identifier import (
     replace_osparc_variable_identifier,
 )
 from models_library.service_settings_nat_rule import NATRule
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 SUPPORTED_TEMPLATES: set[str] = {
     "$OSPARC_VARIABLE_%s",

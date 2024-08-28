@@ -1,7 +1,7 @@
 from aws_library.ec2 import EC2InstanceData
 from fastapi import FastAPI
 from models_library.clusters import InternalClusterAuthentication
-from pydantic import AnyUrl, parse_obj_as
+from pydantic.v1 import AnyUrl, parse_obj_as
 
 from ..core.settings import get_application_settings
 

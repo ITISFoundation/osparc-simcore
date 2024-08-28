@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic.v1 import BaseModel, Field, root_validator, validator
 
 from .httpx_calls_capture_errors import OpenApiSpecError
 

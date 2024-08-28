@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, validator
+from pydantic.v1 import BaseModel, validator
 
 from ..products import ProductName
 from ..resource_tracker import CreditTransactionId

@@ -6,7 +6,7 @@ from importlib.metadata import distribution, version
 from typing import Final
 
 from models_library.basic_types import VersionStr
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 current_distribution = distribution("simcore_service_datcore_adapter")
 __version__ = version("simcore_service_datcore_adapter")

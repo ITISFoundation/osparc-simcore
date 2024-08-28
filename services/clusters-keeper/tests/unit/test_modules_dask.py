@@ -12,7 +12,7 @@ from models_library.clusters import (
     NoAuthentication,
     TLSAuthentication,
 )
-from pydantic import AnyUrl, parse_obj_as
+from pydantic.v1 import AnyUrl, parse_obj_as
 from simcore_service_clusters_keeper.modules.dask import (
     is_scheduler_busy,
     ping_scheduler,

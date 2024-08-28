@@ -1,7 +1,7 @@
 from typing import Any, TypeAlias
 
 from models_library.basic_types import IDStr
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, validator
+from pydantic.v1 import AnyHttpUrl, AnyUrl, BaseModel, Field, validator
 
 from ..clusters import ClusterID
 from ..projects import ProjectID

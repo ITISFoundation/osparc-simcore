@@ -6,7 +6,7 @@ from models_library.callbacks_mapping import (
     TIMEOUT_MIN,
     CallbacksMapping,
 )
-from pydantic import ValidationError, parse_obj_as
+from pydantic.v1 import ValidationError, parse_obj_as
 
 
 def _format_with_timeout(timeout: float) -> dict[str, Any]:

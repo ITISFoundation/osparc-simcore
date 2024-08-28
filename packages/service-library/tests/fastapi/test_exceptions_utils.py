@@ -10,7 +10,7 @@ import pytest
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient
 from models_library.api_schemas__common.errors import DefaultApiError
-from pydantic import parse_raw_as
+from pydantic.v1 import parse_raw_as
 from servicelib.fastapi.exceptions_utils import (
     handle_errors_as_500,
     http_exception_as_json_response,

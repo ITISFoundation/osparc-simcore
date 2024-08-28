@@ -1,8 +1,8 @@
 from enum import auto
 from typing import Annotated, Any, ClassVar, TypeAlias
 
-from pydantic import BaseModel, Field
-from pydantic.main import ModelMetaclass
+from pydantic.v1 import BaseModel, Field
+from pydantic.v1.main import ModelMetaclass
 
 from .services import ServiceKey, ServiceVersion
 from .utils.enums import StrAutoEnum

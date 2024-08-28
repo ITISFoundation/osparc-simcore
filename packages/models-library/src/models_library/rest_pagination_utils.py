@@ -1,7 +1,7 @@
 from math import ceil
 from typing import Any, Protocol, TypedDict, Union, runtime_checkable
 
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, parse_obj_as
 
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 

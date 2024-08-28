@@ -11,7 +11,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.clusters import InternalClusterAuthentication
-from pydantic import (
+from pydantic.v1 import (
     Field,
     NonNegativeFloat,
     NonNegativeInt,

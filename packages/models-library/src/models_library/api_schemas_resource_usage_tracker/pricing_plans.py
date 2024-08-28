@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, ClassVar
 
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from ..resource_tracker import (
     HardwareInfo,

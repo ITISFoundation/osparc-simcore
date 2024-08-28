@@ -38,7 +38,7 @@ from fastapi import (
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.routing import APIRoute
-from pydantic import HttpUrl, SecretStr
+from pydantic.v1 import HttpUrl, SecretStr
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from settings_library.base import BaseCustomSettings
 from simcore_service_payments.models.payments_gateway import (

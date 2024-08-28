@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, ClassVar, TypeAlias
 
 from models_library.api_schemas_storage import TableSynchronisation
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 # NOTE: storage generates URLs that contain double encoded
 # slashes, and when applying validation via `StorageFileID`

@@ -4,7 +4,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.api_schemas_webserver.auth import ApiKeyCreate
 from models_library.users import UserID
-from pydantic import Field
+from pydantic.v1 import Field
 from servicelib.aiohttp.requests_validation import RequestParams, parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import DatabaseError

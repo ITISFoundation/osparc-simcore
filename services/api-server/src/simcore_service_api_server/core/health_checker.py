@@ -8,7 +8,7 @@ from uuid import uuid4
 from fastapi import Depends, FastAPI
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
-from pydantic import NonNegativeInt, PositiveFloat, PositiveInt
+from pydantic.v1 import NonNegativeInt, PositiveFloat, PositiveInt
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.fastapi.dependencies import get_app
 from servicelib.logging_utils import log_catch

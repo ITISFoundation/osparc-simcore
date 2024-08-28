@@ -3,7 +3,7 @@ from asyncio.log import logger
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Final
 
-from pydantic import PositiveFloat
+from pydantic.v1 import PositiveFloat
 
 from ...long_running_tasks._errors import TaskClientTimeoutError
 from ...long_running_tasks._models import (

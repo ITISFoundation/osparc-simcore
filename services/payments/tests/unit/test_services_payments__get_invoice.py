@@ -17,7 +17,7 @@ from models_library.api_schemas_webserver.wallets import PaymentID
 from models_library.payments import StripeInvoiceID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import HttpUrl
+from pydantic.v1 import HttpUrl
 from pytest_simcore.helpers.faker_factories import random_payment_transaction
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict

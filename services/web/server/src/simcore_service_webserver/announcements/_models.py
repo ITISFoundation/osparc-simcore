@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, ClassVar, Literal
 
 import arrow
-from pydantic import BaseModel, validator
+from pydantic.v1 import BaseModel, validator
 
 
 # NOTE: this model is used for BOTH

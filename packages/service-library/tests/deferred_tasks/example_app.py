@@ -7,7 +7,7 @@ from datetime import timedelta
 from typing import Any
 from uuid import uuid4
 
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 from servicelib.deferred_tasks import (
     BaseDeferredHandler,
     DeferredContext,

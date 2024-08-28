@@ -13,7 +13,7 @@ from re import Pattern
 from typing import Any, ClassVar, TypeAlias
 from uuid import UUID
 
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     ByteSize,
     ConstrainedStr,
@@ -23,7 +23,7 @@ from pydantic import (
     root_validator,
     validator,
 )
-from pydantic.networks import AnyUrl
+from pydantic.v1.networks import AnyUrl
 
 from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
 from .basic_types import SHA256Str

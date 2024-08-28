@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Extra
+from pydantic.v1 import BaseModel, Extra
 
 from ..api_schemas_directorv2 import clusters as directorv2_clusters
 from ..clusters import ClusterID

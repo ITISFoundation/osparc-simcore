@@ -19,7 +19,7 @@ from models_library.api_schemas_storage import (
     UploadedPart,
 )
 from moto.server import ThreadedMotoServer
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic.v1 import AnyUrl, ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from servicelib.aiohttp import status
 from servicelib.progress_bar import ProgressBarData

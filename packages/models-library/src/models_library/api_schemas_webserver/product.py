@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, ClassVar
 
-from pydantic import ConstrainedInt, Field, HttpUrl, NonNegativeInt, PositiveInt
+from pydantic.v1 import ConstrainedInt, Field, HttpUrl, NonNegativeInt, PositiveInt
 
 from ..basic_types import IDStr, NonNegativeDecimal
 from ..emails import LowerCaseEmailStr

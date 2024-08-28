@@ -11,7 +11,7 @@ from aiohttp.test_utils import unused_port
 from faker import Faker
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
-from pydantic import AnyHttpUrl, SecretStr, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, SecretStr, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from settings_library.basic_types import IDStr
 from settings_library.ec2 import EC2Settings

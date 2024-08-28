@@ -4,7 +4,7 @@ from typing import Any, ClassVar
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import FirstNameStr, LastNameStr, UserID
 from models_library.utils.enums import StrAutoEnum
-from pydantic import BaseModel, Field, validator
+from pydantic.v1 import BaseModel, Field, validator
 
 from ..domain.groups import Groups
 

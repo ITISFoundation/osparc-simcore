@@ -5,7 +5,7 @@ from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from models_library.utils.json_serialization import json_dumps
-from pydantic import parse_obj_as, parse_raw_as
+from pydantic.v1 import parse_obj_as, parse_raw_as
 
 from ..constants import (
     ACTIVATED_BUFFER_MACHINE_EC2_TAGS,

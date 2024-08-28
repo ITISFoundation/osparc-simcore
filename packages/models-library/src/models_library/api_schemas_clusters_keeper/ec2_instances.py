@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from pydantic import ByteSize, NonNegativeFloat
+from pydantic.v1 import ByteSize, NonNegativeFloat
 
 
 @dataclass(frozen=True)

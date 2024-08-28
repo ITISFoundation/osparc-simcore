@@ -7,7 +7,7 @@ from typing import Any, Concatenate, NamedTuple, ParamSpec, TypeAlias, TypeVar
 
 import httpx
 from fastapi import HTTPException, status
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 
 from ..models.schemas.errors import ErrorGet

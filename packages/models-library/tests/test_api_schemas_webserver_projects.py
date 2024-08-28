@@ -14,7 +14,7 @@ from models_library.api_schemas_webserver.projects import (
 )
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_simcore.simcore_webserver_projects_rest_api import (
     CREATE_FROM_SERVICE,
     CREATE_FROM_TEMPLATE,

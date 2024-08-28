@@ -1,7 +1,7 @@
 from typing import Final
 
 from fastapi import APIRouter, FastAPI
-from pydantic import PositiveFloat
+from pydantic.v1 import PositiveFloat
 
 from ...long_running_tasks._errors import BaseLongRunningError
 from ...long_running_tasks._task import TasksManager

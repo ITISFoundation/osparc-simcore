@@ -2,7 +2,7 @@ from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.constants import REF_PREFIX
 from fastapi.openapi.utils import validation_error_response_definition
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from starlette.responses import JSONResponse
 
 from ._utils import create_error_json_response

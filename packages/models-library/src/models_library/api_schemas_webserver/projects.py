@@ -7,7 +7,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 from typing import Any, Literal, TypeAlias
 
-from pydantic import Field, validator
+from pydantic.v1 import Field, validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import (

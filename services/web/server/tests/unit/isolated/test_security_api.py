@@ -17,7 +17,7 @@ from aiohttp.web import RouteTableDef
 from aiohttp_session import get_session
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status

@@ -17,7 +17,7 @@ from models_library.api_schemas_storage import FileUploadSchema
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_simcore.helpers.faker_factories import random_project, random_user
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings, S3Provider

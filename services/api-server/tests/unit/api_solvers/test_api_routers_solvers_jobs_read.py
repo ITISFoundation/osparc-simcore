@@ -7,7 +7,7 @@ from typing import NamedTuple
 
 import httpx
 import pytest
-from pydantic import parse_file_as, parse_obj_as
+from pydantic.v1 import parse_file_as, parse_obj_as
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG

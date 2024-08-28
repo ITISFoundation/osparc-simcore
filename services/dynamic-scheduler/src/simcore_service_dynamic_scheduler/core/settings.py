@@ -1,7 +1,7 @@
 import datetime
 from functools import cached_property
 
-from pydantic import Field, parse_obj_as, validator
+from pydantic.v1 import Field, parse_obj_as, validator
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
 from settings_library.director_v2 import DirectorV2Settings

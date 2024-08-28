@@ -24,7 +24,7 @@ from models_library.rest_ordering import OrderBy
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import AnyUrl
+from pydantic.v1 import AnyUrl
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,

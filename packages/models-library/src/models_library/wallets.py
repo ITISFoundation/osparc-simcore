@@ -3,7 +3,7 @@ from decimal import Decimal
 from enum import auto
 from typing import Any, ClassVar, TypeAlias
 
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic.v1 import BaseModel, Field, PositiveInt
 
 from .utils.enums import StrAutoEnum
 

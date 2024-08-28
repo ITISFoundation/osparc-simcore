@@ -10,7 +10,7 @@ from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize
+from pydantic.v1 import AnyUrl, ByteSize
 
 from .constants import DATCORE_ID, DATCORE_STR
 from .datcore_adapter import datcore_adapter

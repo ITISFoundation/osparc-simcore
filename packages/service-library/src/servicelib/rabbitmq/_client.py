@@ -5,7 +5,7 @@ from functools import partial
 from typing import Final
 
 import aio_pika
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 
 from ..logging_utils import log_catch, log_context
 from ._client_base import RabbitMQClientBase

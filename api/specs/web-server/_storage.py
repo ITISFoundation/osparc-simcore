@@ -19,7 +19,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
-from pydantic import AnyUrl, ByteSize
+from pydantic.v1 import AnyUrl, ByteSize
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.storage.schemas import DatasetMetaData, FileMetaData
 

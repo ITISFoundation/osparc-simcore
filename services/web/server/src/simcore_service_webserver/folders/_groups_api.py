@@ -7,7 +7,7 @@ from aiohttp import web
 from models_library.folders import FolderID
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 log = logging.getLogger(__name__)
 

@@ -10,7 +10,7 @@ import aiodocker
 import pytest
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Service, Task
-from pydantic import ValidationError, parse_obj_as
+from pydantic.v1 import ValidationError, parse_obj_as
 
 
 async def test_get_simcore_service_docker_labels_from_task_with_missing_labels_raises(

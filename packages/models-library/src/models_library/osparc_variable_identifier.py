@@ -1,8 +1,8 @@
 from copy import deepcopy
 from typing import Any, TypeVar
 
-from pydantic import BaseModel, Field
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1 import BaseModel, Field
+from pydantic.v1.errors import PydanticErrorMixin
 
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
 

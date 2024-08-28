@@ -5,7 +5,7 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Extra
+from pydantic.v1 import BaseModel, Extra
 
 from ..utils.change_case import snake_to_camel
 

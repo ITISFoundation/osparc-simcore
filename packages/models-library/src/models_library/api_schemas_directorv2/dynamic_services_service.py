@@ -2,7 +2,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from ..basic_types import PortInt
 from ..projects import ProjectID

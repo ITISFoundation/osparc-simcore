@@ -2,8 +2,8 @@ from datetime import timedelta
 from typing import Any, ClassVar
 
 from aiohttp import web
-from pydantic import ByteSize, HttpUrl, parse_obj_as, validator
-from pydantic.fields import Field
+from pydantic.v1 import ByteSize, HttpUrl, parse_obj_as, validator
+from pydantic.v1.fields import Field
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
 

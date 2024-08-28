@@ -12,7 +12,7 @@ from models_library.api_schemas_storage import FileUploadSchema
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from simcore_service_storage import db_file_meta_data
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.s3 import get_s3_client

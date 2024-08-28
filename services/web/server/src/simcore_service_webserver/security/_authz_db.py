@@ -7,7 +7,7 @@ from aiopg.sa.result import ResultProxy
 from models_library.basic_types import IdInt
 from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole

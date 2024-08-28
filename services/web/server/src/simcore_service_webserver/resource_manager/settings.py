@@ -1,5 +1,5 @@
 from aiohttp import web
-from pydantic import Field, PositiveInt
+from pydantic.v1 import Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
 

@@ -4,7 +4,7 @@ from aiohttp import web
 from aiohttp.typedefs import Handler
 from aiohttp.web_request import Request
 from aws_library.s3 import S3AccessError, S3KeyNotFoundError
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from servicelib.aiohttp.aiopg_utils import DBAPIError
 
 from .datcore_adapter.datcore_adapter_exceptions import DatcoreAdapterTimeoutError

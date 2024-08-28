@@ -31,8 +31,8 @@ from models_library.service_settings_nat_rule import (
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.utils.string_substitution import TextTemplate
-from pydantic import BaseModel, ValidationError, parse_obj_as, parse_raw_as
-from pydantic.json import pydantic_encoder
+from pydantic.v1 import BaseModel, ValidationError, parse_obj_as, parse_raw_as
+from pydantic.v1.json import pydantic_encoder
 
 
 class _Parametrization(NamedTuple):

@@ -1,7 +1,7 @@
 from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 
 from models_library.services_types import ServicePortKey
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from ..node_ports_common.exceptions import UnboundPortError
 from .port import Port

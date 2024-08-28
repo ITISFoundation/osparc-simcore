@@ -4,12 +4,11 @@ import asyncio
 import os
 from contextlib import suppress
 from pathlib import Path
-from typing import Optional
 
 import typer
 from httpx import URL, AsyncClient, HTTPStatusError
-from pydantic.networks import EmailStr
-from pydantic.types import SecretStr
+from pydantic.v1.networks import EmailStr
+from pydantic.v1.types import SecretStr
 
 EVERYONE_GROUP_ID = 1
 
@@ -143,7 +142,7 @@ def main(
     endpoint: str,
     username: str,
     project_file: Path,
-    project_name: Optional[str] = None,
+    project_name: str | None = None,
     share_with_gid: int = EVERYONE_GROUP_ID,
     password: str = typer.Option(
         ..., prompt=True, confirmation_prompt=True, hide_input=True

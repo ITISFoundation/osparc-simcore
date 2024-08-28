@@ -13,7 +13,7 @@ from models_library.resource_tracker import (
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import AnyUrl, NonNegativeInt
+from pydantic.v1 import AnyUrl, NonNegativeInt
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import service_runs
 
 from ..rabbitmq import get_rabbitmq_rpc_client

@@ -5,7 +5,7 @@ from typing import Final
 import httpx
 from models_library.basic_types import IDStr
 from models_library.docker import DockerGenericTag
-from pydantic import ByteSize, ValidationError, parse_obj_as
+from pydantic.v1 import ByteSize, ValidationError, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 

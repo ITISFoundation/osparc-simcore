@@ -5,7 +5,7 @@ from typing import Final
 import rich
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
-from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, PositiveFloat, parse_obj_as
 from rich.progress import (
     BarColumn,
     Progress,

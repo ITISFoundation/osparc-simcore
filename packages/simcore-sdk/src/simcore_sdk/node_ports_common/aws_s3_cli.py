@@ -8,8 +8,8 @@ from pathlib import Path
 
 from aiocache import cached  # type: ignore[import-untyped]
 from models_library.basic_types import IDStr
-from pydantic import AnyUrl, ByteSize
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1 import AnyUrl, ByteSize
+from pydantic.v1.errors import PydanticErrorMixin
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.aws_s3_cli import AwsS3CliSettings

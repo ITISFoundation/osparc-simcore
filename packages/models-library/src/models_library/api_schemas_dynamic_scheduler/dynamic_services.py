@@ -7,7 +7,7 @@ from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.services_resources import ServiceResourcesDictHelpers
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 class DynamicServiceStart(DynamicServiceCreate):

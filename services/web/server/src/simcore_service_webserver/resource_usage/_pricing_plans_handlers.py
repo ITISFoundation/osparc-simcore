@@ -4,7 +4,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
-from pydantic import BaseModel, Extra, Field
+from pydantic.v1 import BaseModel, Extra, Field
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.request_keys import RQT_USERID_KEY

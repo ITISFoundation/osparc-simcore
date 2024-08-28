@@ -8,7 +8,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
-from pydantic import BaseModel, parse_obj_as
+from pydantic.v1 import BaseModel, parse_obj_as
 from servicelib.aiohttp import status
 
 from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY

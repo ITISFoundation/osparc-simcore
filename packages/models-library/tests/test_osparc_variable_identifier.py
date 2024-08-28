@@ -10,7 +10,7 @@ from models_library.osparc_variable_identifier import (
     raise_if_unresolved_osparc_variable_identifier_found,
     replace_osparc_variable_identifier,
 )
-from pydantic import BaseModel, ValidationError, parse_obj_as
+from pydantic.v1 import BaseModel, ValidationError, parse_obj_as
 
 VALID_IDENTIFIERS: list[str] = [
     "$OSPARC_VARIABLE_One121_",

@@ -3,7 +3,7 @@ from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.projects_nodes_io import NodeID
-from pydantic import BaseModel, PositiveInt
+from pydantic.v1 import BaseModel, PositiveInt
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressMessage,
     ProgressPercent,

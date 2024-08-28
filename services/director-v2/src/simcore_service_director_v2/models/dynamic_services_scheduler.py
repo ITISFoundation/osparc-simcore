@@ -25,7 +25,7 @@ from models_library.service_settings_labels import (
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
 from models_library.wallets import WalletInfo
-from pydantic import (
+from pydantic.v1 import (
     AnyHttpUrl,
     BaseModel,
     ConstrainedStr,

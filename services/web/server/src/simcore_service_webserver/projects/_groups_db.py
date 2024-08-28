@@ -9,7 +9,7 @@ from datetime import datetime
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import GroupID
-from pydantic import BaseModel, parse_obj_as
+from pydantic.v1 import BaseModel, parse_obj_as
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from sqlalchemy import func, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert

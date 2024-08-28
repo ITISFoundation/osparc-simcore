@@ -18,7 +18,7 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
 from models_library.projects_ui import StudyUI
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import AnyUrl, HttpUrl, parse_obj_as
+from pydantic.v1 import AnyUrl, HttpUrl, parse_obj_as
 from servicelib.logging_utils import log_decorator
 
 from ..projects.db import ProjectDBAPI

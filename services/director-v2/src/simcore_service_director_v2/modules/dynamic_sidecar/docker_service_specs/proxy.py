@@ -7,7 +7,7 @@ from models_library.services_resources import (
     MEMORY_50MB,
     MEMORY_250MB,
 )
-from pydantic import ByteSize
+from pydantic.v1 import ByteSize
 from servicelib.common_headers import X_SIMCORE_USER_AGENT
 
 from ....core.dynamic_services_settings import DynamicServicesSettings

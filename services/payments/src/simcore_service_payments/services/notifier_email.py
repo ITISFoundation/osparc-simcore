@@ -16,7 +16,7 @@ from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import EmailStr
+from pydantic.v1 import EmailStr
 from settings_library.email import EmailProtocol, SMTPSettings
 from tenacity import (
     retry,

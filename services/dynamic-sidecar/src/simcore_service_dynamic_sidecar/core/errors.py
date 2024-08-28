@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import status
 from models_library.services import RunID
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1.errors import PydanticErrorMixin
 
 
 class BaseDynamicSidecarError(Exception):

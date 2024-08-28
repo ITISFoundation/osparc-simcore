@@ -7,7 +7,7 @@ from models_library.api_schemas_webserver.auth import (
     UnregisterCheck,
 )
 from models_library.users import UserID
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import get_log_record_extra, log_context

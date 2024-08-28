@@ -14,7 +14,7 @@ from typing import Final
 import aioprocessing  # type: ignore[import-untyped]
 from aioprocessing.process import AioProcess  # type: ignore[import-untyped]
 from aioprocessing.queues import AioQueue  # type: ignore[import-untyped]
-from pydantic import ByteSize, PositiveFloat
+from pydantic.v1 import ByteSize, PositiveFloat
 from servicelib.logging_utils import log_context
 from watchdog.events import FileSystemEvent
 

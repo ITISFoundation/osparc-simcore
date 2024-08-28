@@ -9,7 +9,7 @@ from models_library.api_schemas_invitations.invitations import (
     ApiInvitationInputs,
 )
 from models_library.emails import LowerCaseEmailStr
-from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, ValidationError, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.error_codes import create_error_code
 

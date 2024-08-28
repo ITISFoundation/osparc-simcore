@@ -38,7 +38,7 @@ from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.products import ProductName
 from models_library.services_enums import ServiceState
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.typing_env import EnvVarsDict

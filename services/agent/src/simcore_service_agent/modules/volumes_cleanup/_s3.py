@@ -5,7 +5,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import Final
 
-from pydantic import AnyHttpUrl
+from pydantic.v1 import AnyHttpUrl
 from settings_library.r_clone import S3Provider
 from settings_library.utils_r_clone import resolve_provider
 

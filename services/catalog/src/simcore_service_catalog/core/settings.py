@@ -7,7 +7,7 @@ from models_library.api_schemas_catalog.services_specifications import (
 )
 from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from models_library.services_resources import ResourcesDict
-from pydantic import ByteSize, Field, PositiveInt, parse_obj_as
+from pydantic.v1 import ByteSize, Field, PositiveInt, parse_obj_as
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings

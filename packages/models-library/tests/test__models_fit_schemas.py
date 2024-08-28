@@ -8,7 +8,7 @@ from collections.abc import Callable
 import pytest
 from models_library.projects import Project
 from models_library.services import ServiceMetaDataPublished
-from pydantic.main import BaseModel
+from pydantic.v1.main import BaseModel
 
 
 @pytest.mark.skip(reason="waiting for PC PR")

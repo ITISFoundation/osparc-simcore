@@ -1,7 +1,7 @@
 from typing import Any, ClassVar, TypeAlias
 
-from pydantic import Extra, Field
-from pydantic.main import BaseModel
+from pydantic.v1 import Extra, Field
+from pydantic.v1.main import BaseModel
 
 from ..api_schemas_catalog import services as api_schemas_catalog_services
 from ..services_io import ServiceInput, ServiceOutput

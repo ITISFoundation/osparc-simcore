@@ -13,7 +13,7 @@ import pytest
 from aiobotocore.session import ClientCreatorContext
 from aws_library.ec2 import EC2InstanceData, Resources
 from faker import Faker
-from pydantic import ByteSize
+from pydantic.v1 import ByteSize
 from settings_library.ec2 import EC2Settings
 from types_aiobotocore_ec2.client import EC2Client
 

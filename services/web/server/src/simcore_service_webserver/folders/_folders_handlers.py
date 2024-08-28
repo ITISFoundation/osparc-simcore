@@ -15,7 +15,7 @@ from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
-from pydantic import Extra, Field, Json, parse_obj_as, validator
+from pydantic.v1 import Extra, Field, Json, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
     StrictRequestParams,

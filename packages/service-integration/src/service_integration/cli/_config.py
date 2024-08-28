@@ -5,7 +5,7 @@ from typing import Annotated, Final
 import rich
 import typer
 import yaml
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from ..compose_spec_model import ComposeSpecification
 from ..errors import InvalidLabelsError

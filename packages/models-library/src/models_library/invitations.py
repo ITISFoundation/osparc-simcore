@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Final
 
-from pydantic import BaseModel, EmailStr, Field, PositiveInt, validator
+from pydantic.v1 import BaseModel, EmailStr, Field, PositiveInt, validator
 
 from .products import ProductName
 

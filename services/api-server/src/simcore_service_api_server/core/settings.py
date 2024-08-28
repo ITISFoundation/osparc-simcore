@@ -1,8 +1,8 @@
 from functools import cached_property
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr
-from pydantic.class_validators import validator
+from pydantic.v1 import Field, NonNegativeInt, PositiveInt, SecretStr
+from pydantic.v1.class_validators import validator
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.director_v2 import DirectorV2Settings

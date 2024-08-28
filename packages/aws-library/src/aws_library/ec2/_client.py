@@ -8,7 +8,7 @@ import aioboto3
 import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
 from aiocache import cached  # type: ignore[import-untyped]
-from pydantic import ByteSize, PositiveInt
+from pydantic.v1 import ByteSize, PositiveInt
 from servicelib.logging_utils import log_context
 from settings_library.ec2 import EC2Settings
 from types_aiobotocore_ec2 import EC2Client

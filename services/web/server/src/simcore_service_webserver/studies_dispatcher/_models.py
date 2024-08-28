@@ -1,6 +1,6 @@
 from aiopg.sa.result import RowProxy
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Field, HttpUrl, PositiveInt, parse_obj_as
+from pydantic.v1 import BaseModel, Field, HttpUrl, PositiveInt, parse_obj_as
 
 
 class ServiceInfo(BaseModel):

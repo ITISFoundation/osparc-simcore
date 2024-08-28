@@ -1,6 +1,6 @@
 from typing import Final
 
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1.errors import PydanticErrorMixin
 
 _ERROR_PREFIX: Final[str] = "rabbitmq_error"
 

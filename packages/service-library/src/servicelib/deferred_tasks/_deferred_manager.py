@@ -9,7 +9,7 @@ from typing import Any, Final
 import arrow
 from faststream.exceptions import NackMessage, RejectMessage
 from faststream.rabbit import ExchangeType, RabbitBroker, RabbitExchange, RabbitRouter
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings

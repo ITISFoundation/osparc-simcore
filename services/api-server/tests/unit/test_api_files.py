@@ -24,7 +24,7 @@ from models_library.api_schemas_storage import (
     UploadedPart,
 )
 from models_library.basic_types import SHA256Str
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,

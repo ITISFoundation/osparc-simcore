@@ -7,7 +7,7 @@
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConstrainedInt, Extra, Field, conint, constr
+from pydantic.v1 import BaseModel, ConstrainedInt, Extra, Field, conint, constr
 
 #  MODIFICATIONS -------------------------------------------------------------------------
 #

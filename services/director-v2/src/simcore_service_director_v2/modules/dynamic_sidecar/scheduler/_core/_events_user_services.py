@@ -7,7 +7,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion, ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from servicelib.fastapi.long_running_tasks.client import TaskId
 from tenacity import RetryError
 from tenacity.asyncio import AsyncRetrying

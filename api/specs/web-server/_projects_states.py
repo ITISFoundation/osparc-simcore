@@ -10,7 +10,7 @@ from fastapi import APIRouter, Body, Depends
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.generics import Envelope
 from models_library.projects_state import ProjectState
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from servicelib.aiohttp import status
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.director_v2.exceptions import DirectorServiceError

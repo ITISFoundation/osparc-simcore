@@ -11,8 +11,8 @@ from typing import Union, get_args, get_origin
 import pytest
 from models_library.projects_nodes import InputTypes, OutputTypes
 from models_library.projects_nodes_io import SimCoreFileLink
-from pydantic import BaseModel, ValidationError, schema_json_of
-from pydantic.types import Json
+from pydantic.v1 import BaseModel, ValidationError, schema_json_of
+from pydantic.v1.types import Json
 
 # NOTE: pydantic at a glance (just a few key features):
 #

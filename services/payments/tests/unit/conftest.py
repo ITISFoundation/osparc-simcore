@@ -23,7 +23,7 @@ from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.payments import StripeInvoiceID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_payment_method_view
 from pytest_simcore.helpers.typing_env import EnvVarsDict

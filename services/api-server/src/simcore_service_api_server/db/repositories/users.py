@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 from ..tables import UserStatus, users
 from ._base import BaseRepository

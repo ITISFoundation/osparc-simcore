@@ -12,7 +12,7 @@ import pytest
 from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.progress_bar import ProgressReport
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from servicelib import progress_bar
 from servicelib.docker_utils import pull_image

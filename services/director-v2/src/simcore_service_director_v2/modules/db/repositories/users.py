@@ -1,5 +1,5 @@
 from models_library.users import UserID
-from pydantic import EmailStr, parse_obj_as
+from pydantic.v1 import EmailStr, parse_obj_as
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_users import UsersRepo
 

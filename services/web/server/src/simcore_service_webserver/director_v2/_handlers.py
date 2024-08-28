@@ -8,8 +8,8 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Field, ValidationError, parse_obj_as
-from pydantic.types import NonNegativeInt
+from pydantic.v1 import BaseModel, Field, ValidationError, parse_obj_as
+from pydantic.v1.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import (
     create_http_error,
     exception_to_response,

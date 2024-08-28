@@ -5,7 +5,7 @@ from fastapi import FastAPI, status
 from httpx import Response, Timeout
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
-from pydantic import AnyHttpUrl
+from pydantic.v1 import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,

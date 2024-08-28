@@ -2,7 +2,7 @@ import contextlib
 import re
 from typing import Any, ClassVar, Final
 
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     ByteSize,
     ConstrainedStr,

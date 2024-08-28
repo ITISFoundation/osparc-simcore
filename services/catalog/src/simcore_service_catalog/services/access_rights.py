@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
-from pydantic.types import PositiveInt
+from pydantic.v1.types import PositiveInt
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api.dependencies.director import get_director_api

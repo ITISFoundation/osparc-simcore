@@ -3,7 +3,7 @@ from enum import Enum, unique
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 class DatasetMetaData(BaseModel):

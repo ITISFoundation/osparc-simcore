@@ -7,7 +7,7 @@ from typing import Any
 
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1.errors import PydanticErrorMixin
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log

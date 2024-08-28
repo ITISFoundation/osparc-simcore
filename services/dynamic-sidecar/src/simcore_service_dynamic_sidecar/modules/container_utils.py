@@ -6,7 +6,7 @@ from typing import Any
 from aiodocker import Docker, DockerError
 from aiodocker.execs import Exec
 from aiodocker.stream import Stream
-from pydantic import NonNegativeFloat
+from pydantic.v1 import NonNegativeFloat
 from starlette import status
 
 from ..core.errors import (

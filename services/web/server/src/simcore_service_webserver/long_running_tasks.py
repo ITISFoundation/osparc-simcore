@@ -3,7 +3,7 @@ from functools import wraps
 from aiohttp import web
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import Field
+from pydantic.v1 import Field
 from servicelib.aiohttp.long_running_tasks._constants import (
     RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
 )

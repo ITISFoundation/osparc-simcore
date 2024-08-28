@@ -2,7 +2,7 @@ import urllib.parse
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, validator
+from pydantic.v1 import BaseModel, validator
 
 from .base import TaskId, TaskProgress
 

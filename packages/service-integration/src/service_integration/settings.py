@@ -1,4 +1,4 @@
-from pydantic import BaseModel, BaseSettings, Field, SecretStr
+from pydantic.v1 import BaseModel, BaseSettings, Field, SecretStr
 
 
 class Registry(BaseModel):

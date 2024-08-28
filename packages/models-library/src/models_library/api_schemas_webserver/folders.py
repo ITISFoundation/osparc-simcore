@@ -6,7 +6,7 @@ from models_library.folders import FolderID
 from models_library.projects_access import AccessRights
 from models_library.users import GroupID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
-from pydantic import Extra, PositiveInt, validator
+from pydantic.v1 import Extra, PositiveInt, validator
 
 from ._base import InputSchema, OutputSchema
 

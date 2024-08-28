@@ -2,9 +2,9 @@ from datetime import timedelta
 from typing import Final, Literal
 
 from aiohttp import web
-from pydantic import BaseModel, validator
-from pydantic.fields import Field
-from pydantic.types import PositiveFloat, PositiveInt, SecretStr
+from pydantic.v1 import BaseModel, validator
+from pydantic.v1.fields import Field
+from pydantic.v1.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.email import EmailProtocol
 from settings_library.twilio import TwilioSettings

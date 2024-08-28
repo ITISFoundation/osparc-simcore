@@ -4,7 +4,7 @@
 
 import json
 
-from pydantic import AnyHttpUrl, BaseModel, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, BaseModel, parse_obj_as
 from simcore_service_webserver.statics.settings import (
     _THIRD_PARTY_REFERENCES,
     FrontEndAppSettings,

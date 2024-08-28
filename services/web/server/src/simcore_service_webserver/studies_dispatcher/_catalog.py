@@ -9,7 +9,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import HttpUrl, PositiveInt, ValidationError, parse_obj_as
+from pydantic.v1 import HttpUrl, PositiveInt, ValidationError, parse_obj_as
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services import (
     services_access_rights,

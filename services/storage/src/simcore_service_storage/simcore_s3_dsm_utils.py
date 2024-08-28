@@ -10,7 +10,7 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
     StorageFileID,
 )
-from pydantic import ByteSize, NonNegativeInt, parse_obj_as
+from pydantic.v1 import ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.utils import ensure_ends_with
 
 from . import db_file_meta_data

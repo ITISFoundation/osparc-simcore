@@ -11,7 +11,7 @@ from urllib.parse import parse_qs
 import pytest
 from aiohttp.test_utils import make_mocked_request
 from models_library.utils.pydantic_tools_extension import parse_obj_or_none
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from simcore_service_webserver.studies_dispatcher._models import (
     FileParams,

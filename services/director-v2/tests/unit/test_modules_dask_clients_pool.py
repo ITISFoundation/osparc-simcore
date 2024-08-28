@@ -21,7 +21,7 @@ from models_library.clusters import (
     NoAuthentication,
     SimpleAuthentication,
 )
-from pydantic import SecretStr
+from pydantic.v1 import SecretStr
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.utils_encoders import create_json_encoder_wo_secrets

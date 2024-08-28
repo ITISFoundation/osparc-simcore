@@ -8,7 +8,7 @@ from pathlib import Path
 import aioboto3
 import pytest
 from aiodocker.volumes import DockerVolume
-from pydantic import HttpUrl
+from pydantic.v1 import HttpUrl
 from pytest import LogCaptureFixture
 from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.modules.volumes_cleanup._s3 import (

@@ -1,5 +1,5 @@
-from pydantic import ByteSize, NonNegativeInt, validator
-from pydantic.tools import parse_raw_as
+from pydantic.v1 import ByteSize, NonNegativeInt, validator
+from pydantic.v1.tools import parse_raw_as
 from settings_library.base import BaseCustomSettings
 
 from ._constants import GB

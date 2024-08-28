@@ -5,7 +5,7 @@ from typing import Any, Final
 import distributed
 import rich
 from mypy_boto3_ec2.service_resource import Instance
-from pydantic import AnyUrl
+from pydantic.v1 import AnyUrl
 
 from .constants import SSH_USER_NAME, TASK_CANCEL_EVENT_NAME_TEMPLATE
 from .ec2 import get_bastion_instance_from_remote_instance

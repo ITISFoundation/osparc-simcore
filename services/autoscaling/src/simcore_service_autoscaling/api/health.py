@@ -9,7 +9,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from ..modules.docker import get_docker_client
 from ..modules.ec2 import get_ec2_client

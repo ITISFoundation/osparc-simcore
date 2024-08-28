@@ -9,7 +9,7 @@ from unittest.mock import Mock
 import aioprocessing
 import pytest
 from aioprocessing.queues import AioQueue
-from pydantic import PositiveFloat
+from pydantic.v1 import PositiveFloat
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._event_handler import (
     EventHandlerObserver,

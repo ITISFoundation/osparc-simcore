@@ -9,7 +9,7 @@ from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import HttpUrl, NonNegativeInt, parse_obj_as
+from pydantic.v1 import HttpUrl, NonNegativeInt, parse_obj_as
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,

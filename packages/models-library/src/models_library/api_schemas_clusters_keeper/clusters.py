@@ -1,7 +1,7 @@
 import datetime
 from enum import auto
 
-from pydantic import AnyUrl, BaseModel
+from pydantic.v1 import AnyUrl, BaseModel
 
 from ..clusters import ClusterAuthentication
 from ..users import UserID

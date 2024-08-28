@@ -4,7 +4,7 @@ import pytest
 from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID, StorageFileID
-from pydantic import ValidationError, parse_obj_as
+from pydantic.v1 import ValidationError, parse_obj_as
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 

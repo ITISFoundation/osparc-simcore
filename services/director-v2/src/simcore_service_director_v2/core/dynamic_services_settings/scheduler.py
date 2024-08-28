@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Final
 
 from models_library.projects_networks import DockerNetworkName
-from pydantic import Field, NonNegativeInt, PositiveFloat
+from pydantic.v1 import Field, NonNegativeInt, PositiveFloat
 from settings_library.base import BaseCustomSettings
 
 _MINUTE: Final[NonNegativeInt] = 60

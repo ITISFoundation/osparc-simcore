@@ -1,7 +1,7 @@
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, validator
-from pydantic.types import ByteSize, NonNegativeInt
+from pydantic.v1 import BaseModel, Field, validator
+from pydantic.v1.types import ByteSize, NonNegativeInt
 
 from ..service_settings_labels import ContainerSpec
 

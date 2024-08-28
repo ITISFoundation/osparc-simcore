@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from functools import cached_property
 from typing import Final, get_args, get_origin
 
-from pydantic import (
+from pydantic.v1 import (
     BaseConfig,
     BaseSettings,
     ConfigError,
@@ -11,9 +11,9 @@ from pydantic import (
     ValidationError,
     validator,
 )
-from pydantic.error_wrappers import ErrorList, ErrorWrapper
-from pydantic.fields import ModelField, Undefined
-from pydantic.typing import is_literal_type
+from pydantic.v1.error_wrappers import ErrorList, ErrorWrapper
+from pydantic.v1.fields import ModelField, Undefined
+from pydantic.v1.typing import is_literal_type
 
 _logger = logging.getLogger(__name__)
 

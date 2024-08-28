@@ -5,7 +5,7 @@
 from copy import deepcopy
 from typing import Any, ClassVar, TypeAlias, Union
 
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     ConstrainedStr,
     Extra,

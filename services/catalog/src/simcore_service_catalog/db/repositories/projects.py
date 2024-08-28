@@ -2,7 +2,7 @@ import logging
 
 import sqlalchemy as sa
 from models_library.services import ServiceKeyVersion
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 
 from ..tables import ProjectType, projects
 from ._base import BaseRepository

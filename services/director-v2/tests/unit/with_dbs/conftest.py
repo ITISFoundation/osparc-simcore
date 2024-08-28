@@ -18,7 +18,7 @@ from faker import Faker
 from models_library.clusters import Cluster
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
-from pydantic.main import BaseModel
+from pydantic.v1.main import BaseModel
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline

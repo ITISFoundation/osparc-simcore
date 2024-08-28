@@ -9,8 +9,8 @@ from models_library.projects import ProjectAtDB
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pydantic import PositiveInt
-from pydantic.networks import AnyHttpUrl
+from pydantic.v1 import PositiveInt
+from pydantic.v1.networks import AnyHttpUrl
 from pytest_simcore.helpers.constants import MINUTE
 from starlette import status
 from tenacity.asyncio import AsyncRetrying

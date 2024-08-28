@@ -18,7 +18,7 @@ import pytest
 import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
 from models_library.products import ProductName
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import UserInfoDict

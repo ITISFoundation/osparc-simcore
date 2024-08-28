@@ -2,7 +2,7 @@ import logging
 
 import aiohttp
 from models_library.docker import DockerGenericTag
-from pydantic import ValidationError, parse_obj_as
+from pydantic.v1 import ValidationError, parse_obj_as
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 

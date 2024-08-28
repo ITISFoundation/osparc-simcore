@@ -9,7 +9,7 @@ from typing import Final
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from pydantic import PositiveFloat, PositiveInt
+from pydantic.v1 import PositiveFloat, PositiveInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict

@@ -38,7 +38,7 @@ from models_library.service_settings_labels import RestartPolicy, SimcoreService
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import AnyHttpUrl, NonNegativeFloat
+from pydantic.v1 import AnyHttpUrl, NonNegativeFloat
 from servicelib.background_task import (
     cancel_task,
     start_periodic_task,

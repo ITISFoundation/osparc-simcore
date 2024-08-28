@@ -4,7 +4,7 @@ from typing import Any, cast
 import pytest
 from models_library.clusters import BaseCluster, Cluster
 from models_library.projects_state import RunningState
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_service_director_v2.utils.db import (
     DB_TO_RUNNING_STATE,

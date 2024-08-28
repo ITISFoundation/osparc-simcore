@@ -4,7 +4,7 @@ from aiohttp import web
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from servicelib.aiohttp.observer import register_observer, setup_observer_registry
 
 from ..products.api import get_product

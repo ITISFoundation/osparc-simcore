@@ -16,7 +16,7 @@ from typing import Any, Protocol
 import psutil
 import pytest
 from aiohttp.test_utils import unused_port
-from pydantic import NonNegativeFloat, NonNegativeInt
+from pydantic.v1 import NonNegativeFloat, NonNegativeInt
 from pytest_mock import MockerFixture
 from servicelib import redis as servicelib_redis
 from servicelib.rabbitmq import RabbitMQClient

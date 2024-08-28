@@ -29,7 +29,7 @@ from models_library.generated_models.docker_rest_api import (
     Task,
     TaskState,
 )
-from pydantic import ByteSize, ValidationError, parse_obj_as
+from pydantic.v1 import ByteSize, ValidationError, parse_obj_as
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather

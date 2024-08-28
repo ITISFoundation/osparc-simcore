@@ -20,7 +20,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
-from pydantic import parse_obj_as, parse_raw_as
+from pydantic.v1 import parse_obj_as, parse_raw_as
 
 from ..._constants import RESPONSE_MODEL_POLICY, SIMCORE_SERVICE_SETTINGS_LABELS
 from ...db.repositories.services import ServicesRepository

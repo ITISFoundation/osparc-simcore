@@ -23,7 +23,7 @@ from models_library.clusters import (
     SimpleAuthentication,
     TLSAuthentication,
 )
-from pydantic import AnyUrl
+from pydantic.v1 import AnyUrl
 
 from ..core.errors import (
     ConfigurationError,

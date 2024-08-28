@@ -34,7 +34,7 @@ from models_library.generated_models.docker_rest_api import (
     Task,
 )
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_dynamic_ec2_instances

@@ -17,7 +17,7 @@ from datetime import datetime
 import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, parse_obj_as
+from pydantic.v1 import BaseModel, parse_obj_as
 from redis.exceptions import LockNotOwnedError
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator

@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 
 import arrow
-from pydantic import BaseModel, Field, NonNegativeInt
+from pydantic.v1 import BaseModel, Field, NonNegativeInt
 
 from ._base_deferred_handler import StartContext
 from ._models import ClassUniqueReference, TaskExecutionResult

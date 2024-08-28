@@ -3,7 +3,7 @@ from typing import Any
 
 import models_library
 import pytest
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from pytest_simcore.pydantic_models import walk_model_examples_in_package
 
 

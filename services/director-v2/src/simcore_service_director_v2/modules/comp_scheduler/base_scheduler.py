@@ -27,7 +27,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.users import UserID
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.utils import logged_gather

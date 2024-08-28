@@ -5,7 +5,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from simcore_service_webserver.projects._nodes_utils import (
     validate_new_service_resources,
 )

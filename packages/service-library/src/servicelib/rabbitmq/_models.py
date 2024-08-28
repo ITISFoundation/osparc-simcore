@@ -7,7 +7,7 @@ from models_library.rabbitmq_basic_types import (
     RPCMethodName,
     RPCNamespace,
 )
-from pydantic import ConstrainedStr, parse_obj_as
+from pydantic.v1 import ConstrainedStr, parse_obj_as
 
 MessageHandler = Callable[[Any], Awaitable[bool]]
 

@@ -8,7 +8,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from typing import Final, TypeAlias
 
-from pydantic import (
+from pydantic.v1 import (
     ByteSize,
     NonNegativeFloat,
     NonNegativeInt,

@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from pydantic import Field, NonNegativeInt
+from pydantic.v1 import Field, NonNegativeInt
 
 from .base import BaseCustomSettings
 from .s3 import S3Settings

@@ -11,7 +11,7 @@ from aiodocker.containers import DockerContainer
 from faker import Faker
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.services import RunID
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from simcore_service_dynamic_sidecar.core.docker_utils import (
     _get_containers_inspect_from_names,
     get_container_states,

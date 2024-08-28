@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Final
 
-from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, root_validator
+from pydantic.v1 import Field, NonNegativeInt, PositiveInt, SecretStr, root_validator
 
 from .base import BaseCustomSettings
 from .postgres import PostgresSettings

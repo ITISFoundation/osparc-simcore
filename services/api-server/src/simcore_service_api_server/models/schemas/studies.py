@@ -2,7 +2,7 @@ from typing import TypeAlias
 
 from models_library import projects, projects_nodes_io
 from models_library.utils import pydantic_tools_extension
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic.v1 import AnyUrl, BaseModel, Field
 
 from .. import api_resources
 from . import solvers

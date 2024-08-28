@@ -14,7 +14,7 @@ from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
 from models_library.products import ProductName
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from respx.router import MockRouter
 from starlette.testclient import TestClient
 from yarl import URL

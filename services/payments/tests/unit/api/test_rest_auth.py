@@ -8,7 +8,7 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
-from pydantic import HttpUrl
+from pydantic.v1 import HttpUrl
 from simcore_service_payments.core.settings import ApplicationSettings
 from simcore_service_payments.models.schemas.auth import Token
 

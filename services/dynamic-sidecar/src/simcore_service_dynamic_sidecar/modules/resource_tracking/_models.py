@@ -1,6 +1,6 @@
 from asyncio import Task
 
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 class ResourceTrackingState(BaseModel):

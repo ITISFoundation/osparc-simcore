@@ -2,7 +2,7 @@ from enum import auto
 from pathlib import Path
 from typing import Any, ClassVar, Final, Literal, TypeAlias
 
-from pydantic import (
+from pydantic.v1 import (
     AnyUrl,
     BaseModel,
     Extra,
@@ -12,7 +12,7 @@ from pydantic import (
     root_validator,
     validator,
 )
-from pydantic.types import NonNegativeInt
+from pydantic.v1.types import NonNegativeInt
 
 from .users import GroupID
 from .utils.common_validators import create_enums_pre_validator

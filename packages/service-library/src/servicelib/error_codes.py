@@ -11,8 +11,8 @@ SEE test_error_codes for some use cases
 import re
 from typing import TYPE_CHECKING
 
-from pydantic.tools import parse_obj_as
-from pydantic.types import constr
+from pydantic.v1.tools import parse_obj_as
+from pydantic.v1.types import constr
 
 _LABEL = "OEC:{}"
 _PATTERN = r"OEC:\d+"

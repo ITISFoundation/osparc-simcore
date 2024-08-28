@@ -5,8 +5,8 @@
 from functools import cached_property
 
 import pytest
-from pydantic import AnyHttpUrl, parse_obj_as
-from pydantic.types import SecretStr
+from pydantic.v1 import AnyHttpUrl, parse_obj_as
+from pydantic.v1.types import SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.catalog import CatalogSettings

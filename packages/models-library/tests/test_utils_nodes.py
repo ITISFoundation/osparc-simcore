@@ -14,7 +14,7 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
 )
 from models_library.utils.nodes import compute_node_hash
-from pydantic import AnyUrl, parse_obj_as
+from pydantic.v1 import AnyUrl, parse_obj_as
 
 
 @pytest.fixture()

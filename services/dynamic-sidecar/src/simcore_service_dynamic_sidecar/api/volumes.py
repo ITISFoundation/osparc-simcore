@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from fastapi import Path as PathParam
 from fastapi import status
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from ..models.shared_store import SharedStore
 from ._dependencies import get_shared_store

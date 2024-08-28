@@ -1,5 +1,5 @@
 from typing import TypeAlias
 
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 
 FolderID: TypeAlias = PositiveInt

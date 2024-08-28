@@ -4,8 +4,8 @@ from pathlib import Path
 
 import typer
 from models_library.projects import ProjectAtDB
-from pydantic import Json, ValidationError, validator
-from pydantic.main import Extra
+from pydantic.v1 import Json, ValidationError, validator
+from pydantic.v1.main import Extra
 
 
 class ProjectFromCsv(ProjectAtDB):

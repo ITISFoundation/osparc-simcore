@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 from models_library.api_schemas_storage import FileMetaDataGet
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from simcore_service_webserver.projects._nodes_api import (
     _SUPPORTED_PREVIEW_FILE_EXTENSIONS,
     _FileWithThumbnail,

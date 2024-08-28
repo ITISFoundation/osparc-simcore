@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Any, ClassVar, Final, cast
 
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Field, StrictStr
+from pydantic.v1 import BaseModel, Field, StrictStr
 
 from .core.styling_components import TB, Backgrounds, Borders, Comment, Link, T
 from .core.xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet

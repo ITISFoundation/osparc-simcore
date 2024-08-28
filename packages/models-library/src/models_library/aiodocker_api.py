@@ -1,4 +1,4 @@
-from pydantic import Field, validator
+from pydantic.v1 import Field, validator
 
 from .generated_models.docker_rest_api import (
     ContainerSpec,

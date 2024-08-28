@@ -10,7 +10,7 @@ import distributed
 import pytest
 from distributed import Client
 from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
-from pydantic import AnyUrl
+from pydantic.v1 import AnyUrl
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip

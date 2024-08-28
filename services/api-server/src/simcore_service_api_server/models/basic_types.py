@@ -2,7 +2,7 @@ import re
 
 from fastapi.responses import StreamingResponse
 from models_library.basic_regex import SIMPLE_VERSION_RE
-from pydantic import ConstrainedStr
+from pydantic.v1 import ConstrainedStr
 
 
 class VersionStr(ConstrainedStr):

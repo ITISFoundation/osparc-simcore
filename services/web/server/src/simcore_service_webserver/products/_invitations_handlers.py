@@ -7,7 +7,7 @@ from models_library.api_schemas_webserver.product import (
     InvitationGenerated,
 )
 from models_library.users import UserID
-from pydantic import Field
+from pydantic.v1 import Field
 from servicelib.aiohttp.requests_validation import RequestParams, parse_request_body_as
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_service_webserver.utils_aiohttp import envelope_json_response

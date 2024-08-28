@@ -31,7 +31,7 @@ from aws_library.ssm import (
     SSMCommandExecutionTimeoutError,
 )
 from fastapi import FastAPI
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
 

@@ -1,6 +1,6 @@
 from typing import Final
 
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 
 BIND_TO_ALL_TOPICS: Final[str] = "#"
 RPC_REQUEST_DEFAULT_TIMEOUT_S: Final[PositiveInt] = PositiveInt(5)

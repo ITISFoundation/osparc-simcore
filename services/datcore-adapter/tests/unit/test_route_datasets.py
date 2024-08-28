@@ -3,12 +3,10 @@
 # pylint:disable=redefined-outer-name
 
 
-from typing import Optional
-
 import httpx
 import respx
 from fastapi_pagination import Page
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from simcore_service_datcore_adapter.models.schemas.datasets import (
     DatasetMetaData,
     FileMetaData,
@@ -18,7 +16,7 @@ from starlette import status
 
 async def test_list_datasets_entrypoint(
     async_client: httpx.AsyncClient,
-    pennsieve_subsystem_mock: Optional[respx.MockRouter],
+    pennsieve_subsystem_mock: respx.MockRouter | None,
     pennsieve_api_headers: dict[str, str],
 ):
     response = await async_client.get(

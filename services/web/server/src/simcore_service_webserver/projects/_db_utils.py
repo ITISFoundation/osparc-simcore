@@ -14,7 +14,7 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects

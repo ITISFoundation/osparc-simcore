@@ -13,7 +13,7 @@ from models_library.function_services_catalog.services import file_picker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import NodeID
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from servicelib.logging_utils import log_context
 from simcore_service_api_server.api.routes.solvers_jobs import JOBS_STATUS_CODES
 from simcore_service_api_server.exceptions.backend_errors import (

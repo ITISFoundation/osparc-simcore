@@ -15,7 +15,7 @@ from models_library.rest_pagination import (
     Page,
 )
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import BaseModel, Extra, Field, NonNegativeInt
+from pydantic.v1 import BaseModel, Extra, Field, NonNegativeInt
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,

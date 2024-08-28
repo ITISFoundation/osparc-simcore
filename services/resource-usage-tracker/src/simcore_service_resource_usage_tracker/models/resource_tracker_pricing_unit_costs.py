@@ -6,7 +6,7 @@ from models_library.resource_tracker import (
     PricingUnitCostId,
     PricingUnitId,
 )
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 class PricingUnitCostsDB(BaseModel):

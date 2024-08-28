@@ -7,8 +7,8 @@ from collections.abc import Callable
 from typing import Any, Final, NamedTuple
 
 import orjson
-from pydantic.json import ENCODERS_BY_TYPE, pydantic_encoder
-from pydantic.types import ConstrainedFloat
+from pydantic.v1.json import ENCODERS_BY_TYPE, pydantic_encoder
+from pydantic.v1.types import ConstrainedFloat
 
 
 class SeparatorTuple(NamedTuple):

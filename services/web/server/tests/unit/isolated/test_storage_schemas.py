@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 import simcore_service_webserver.storage.schemas
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
 
 

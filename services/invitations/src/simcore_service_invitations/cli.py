@@ -5,7 +5,7 @@ import typer
 from cryptography.fernet import Fernet
 from models_library.emails import LowerCaseEmailStr
 from models_library.invitations import InvitationContent, InvitationInputs
-from pydantic import EmailStr, HttpUrl, ValidationError, parse_obj_as
+from pydantic.v1 import EmailStr, HttpUrl, ValidationError, parse_obj_as
 from rich.console import Console
 from servicelib.utils_secrets import generate_password
 from settings_library.utils_cli import (

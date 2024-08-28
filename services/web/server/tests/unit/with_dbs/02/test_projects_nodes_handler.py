@@ -33,7 +33,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
+from pydantic.v1 import NonNegativeFloat, NonNegativeInt, parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.webserver_parametrizations import (

@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceType
 from models_library.services_enums import ServiceBootType, ServiceState
-from pydantic import AnyHttpUrl, BaseModel, PositiveInt, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, BaseModel, PositiveInt, parse_obj_as
 from rich.live import Live
 from rich.table import Table
 from servicelib.services_utils import get_service_from_key

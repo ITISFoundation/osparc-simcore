@@ -1,8 +1,8 @@
 from functools import cached_property
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, parse_obj_as, validator
-from pydantic.networks import AnyUrl
+from pydantic.v1 import Field, parse_obj_as, validator
+from pydantic.v1.networks import AnyUrl
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_logging import MixinLoggingSettings
 

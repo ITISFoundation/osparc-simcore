@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from models_library.api_schemas__common.meta import BaseMeta
 from models_library.basic_types import VersionStr
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 from ..._meta import API_VERSION, API_VTAG
 

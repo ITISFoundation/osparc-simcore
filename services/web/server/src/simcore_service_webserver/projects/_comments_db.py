@@ -9,8 +9,8 @@ from aiopg.sa.result import ResultProxy
 from models_library.projects import ProjectID
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.users import UserID
-from pydantic import parse_obj_as
-from pydantic.types import PositiveInt
+from pydantic.v1 import parse_obj_as
+from pydantic.v1.types import PositiveInt
 from simcore_postgres_database.models.projects_comments import projects_comments
 from sqlalchemy import func, literal_column
 from sqlalchemy.sql import select

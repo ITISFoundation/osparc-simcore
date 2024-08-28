@@ -7,7 +7,7 @@ import json
 
 import pytest
 from faker import Faker
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.settings import (
     ApplicationSettings,

@@ -3,7 +3,7 @@ from collections.abc import Generator, Iterable
 from typing import TypeVar
 
 import toolz  # type: ignore[import-untyped]
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 
 T = TypeVar("T")
 

@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     ConstrainedInt,
     Extra,

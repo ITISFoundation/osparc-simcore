@@ -8,8 +8,8 @@ from models_library.api_schemas_storage import FileUploadSchema, LinkType
 from models_library.basic_types import IDStr, SHA256Str
 from models_library.services_types import FileName, ServicePortKey
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize
-from pydantic.tools import parse_obj_as
+from pydantic.v1 import AnyUrl, ByteSize
+from pydantic.v1.tools import parse_obj_as
 from servicelib.progress_bar import ProgressBarData
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings

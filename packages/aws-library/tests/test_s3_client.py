@@ -32,7 +32,7 @@ from faker import Faker
 from models_library.api_schemas_storage import S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from moto.server import ThreadedMotoServer
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic.v1 import AnyUrl, ByteSize, parse_obj_as
 from pytest_benchmark.plugin import BenchmarkFixture
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.parametrizations import (

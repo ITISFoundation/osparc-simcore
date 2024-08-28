@@ -1,6 +1,6 @@
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic.v1 import BaseModel, Field, HttpUrl
 
 from ..invitations import InvitationContent, InvitationInputs
 from ..products import ProductName

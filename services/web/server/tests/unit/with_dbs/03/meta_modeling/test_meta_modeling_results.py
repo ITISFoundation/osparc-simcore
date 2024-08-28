@@ -7,7 +7,7 @@ import json
 from typing import Any
 
 import pytest
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from simcore_service_webserver.meta_modeling._results import (
     ExtractedResults,
     extract_project_results,

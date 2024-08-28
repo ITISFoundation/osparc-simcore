@@ -19,7 +19,7 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
 )
 from models_library.users import UserID
-from pydantic import BaseModel, ByteSize, parse_obj_as
+from pydantic.v1 import BaseModel, ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from servicelib.progress_bar import ProgressBarData

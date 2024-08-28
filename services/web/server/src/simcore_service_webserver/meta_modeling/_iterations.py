@@ -17,9 +17,9 @@ from models_library.projects_nodes import Node, OutputID, OutputTypes
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceMetaDataPublished
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, ValidationError
-from pydantic.fields import Field
-from pydantic.types import PositiveInt
+from pydantic.v1 import BaseModel, ValidationError
+from pydantic.v1.fields import Field
+from pydantic.v1.types import PositiveInt
 
 from ..projects.models import ProjectDict
 from ..utils import compute_sha1_on_small_dataset, now_str

@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 import simcore_service_invitations
 import simcore_service_invitations.api._invitations
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 from pytest_simcore.pydantic_models import iter_model_examples_in_module
 
 

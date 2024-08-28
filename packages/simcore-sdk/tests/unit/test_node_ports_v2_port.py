@@ -23,8 +23,8 @@ from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet
 from models_library.projects_nodes_io import LocationID
-from pydantic import parse_obj_as
-from pydantic.error_wrappers import ValidationError
+from pydantic.v1 import parse_obj_as
+from pydantic.v1.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB

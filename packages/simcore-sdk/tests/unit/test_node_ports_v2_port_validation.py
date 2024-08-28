@@ -13,8 +13,8 @@ from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
-from pydantic import BaseModel, conint, schema_of
-from pydantic.error_wrappers import ValidationError
+from pydantic.v1 import BaseModel, conint, schema_of
+from pydantic.v1.error_wrappers import ValidationError
 from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.port_validation import (
     PortUnitError,

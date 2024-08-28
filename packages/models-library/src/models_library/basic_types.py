@@ -2,8 +2,7 @@ import re
 from enum import StrEnum
 from typing import Final, TypeAlias
 
-
-from pydantic import (
+from pydantic.v1 import (
     ConstrainedDecimal,
     ConstrainedInt,
     ConstrainedStr,

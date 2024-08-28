@@ -9,7 +9,7 @@ from models_library.utils.common_validators import (
     ensure_unique_dict_values_validator,
     ensure_unique_list_values_validator,
 )
-from pydantic import Field, PositiveInt, validator
+from pydantic.v1 import Field, PositiveInt, validator
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings

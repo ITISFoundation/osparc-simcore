@@ -6,7 +6,7 @@ from typing import Final
 
 from models_library.basic_types import VersionStr
 from packaging.version import Version
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from servicelib.utils_meta import PackageInfo
 from settings_library.basic_types import VersionTag
 

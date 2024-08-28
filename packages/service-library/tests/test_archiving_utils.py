@@ -18,7 +18,7 @@ from typing import Callable, Iterable, Iterator
 
 import pytest
 from faker import Faker
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from pytest_benchmark.plugin import BenchmarkFixture
 from servicelib import archiving_utils
 from servicelib.archiving_utils import ArchiveError, archive_dir, unarchive_dir

@@ -13,7 +13,7 @@ from models_library.api_schemas_storage import S3BucketName
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize
+from pydantic.v1 import ByteSize
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager

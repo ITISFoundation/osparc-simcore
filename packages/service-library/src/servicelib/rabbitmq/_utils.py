@@ -4,7 +4,7 @@ from typing import Any, Final
 
 import aio_pika
 from aiormq.exceptions import ChannelPreconditionFailed
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay

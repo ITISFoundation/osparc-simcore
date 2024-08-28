@@ -8,7 +8,7 @@ import orjson
 from aiohttp import ClientSession
 from aws_library.s3 import MultiPartUploadLinks
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic.v1 import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.utils import limited_as_completed, logged_gather
 from types_aiobotocore_s3 import S3Client

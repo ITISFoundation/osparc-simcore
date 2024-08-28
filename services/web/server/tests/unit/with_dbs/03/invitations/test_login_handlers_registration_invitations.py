@@ -11,7 +11,7 @@ from models_library.api_schemas_invitations.invitations import (
     ApiInvitationInputs,
 )
 from models_library.products import ProductName
-from pydantic import HttpUrl
+from pydantic.v1 import HttpUrl
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status

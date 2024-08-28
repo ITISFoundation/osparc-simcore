@@ -5,7 +5,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, ClassVar, Literal, TypeAlias
 
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     ByteSize,
     Extra,

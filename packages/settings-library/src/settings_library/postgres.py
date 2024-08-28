@@ -2,7 +2,7 @@ import urllib.parse
 from functools import cached_property
 from typing import Any, ClassVar
 
-from pydantic import Field, PostgresDsn, SecretStr, validator
+from pydantic.v1 import Field, PostgresDsn, SecretStr, validator
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt

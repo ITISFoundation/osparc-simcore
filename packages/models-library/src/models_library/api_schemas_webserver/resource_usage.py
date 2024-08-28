@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID

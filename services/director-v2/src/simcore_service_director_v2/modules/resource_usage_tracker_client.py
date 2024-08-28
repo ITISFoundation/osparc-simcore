@@ -23,7 +23,7 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 from ..core.errors import PricingPlanUnitNotFoundError
 from ..core.settings import AppSettings

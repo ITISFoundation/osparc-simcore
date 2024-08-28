@@ -6,7 +6,7 @@
 import re
 from enum import Enum
 
-from pydantic import ConstrainedInt, ConstrainedStr
+from pydantic.v1 import ConstrainedInt, ConstrainedStr
 
 
 # port number range

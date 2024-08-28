@@ -1,7 +1,7 @@
 import re
 from typing import Any, ClassVar
 
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     ConstrainedStr,
     Extra,

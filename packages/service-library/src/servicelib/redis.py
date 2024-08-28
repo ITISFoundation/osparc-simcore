@@ -10,8 +10,8 @@ from uuid import uuid4
 
 import redis.asyncio as aioredis
 import redis.exceptions
-from pydantic import NonNegativeFloat, NonNegativeInt
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1 import NonNegativeFloat, NonNegativeInt
+from pydantic.v1.errors import PydanticErrorMixin
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff

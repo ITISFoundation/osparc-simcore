@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 
 from .._meta import API_VTAG

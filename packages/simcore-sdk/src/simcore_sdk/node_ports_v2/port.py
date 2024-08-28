@@ -10,8 +10,8 @@ from models_library.api_schemas_storage import LinkType
 from models_library.basic_types import IDStr
 from models_library.services_io import BaseServiceIOModel
 from models_library.services_types import ServicePortKey
-from pydantic import AnyUrl, Field, PrivateAttr, ValidationError, validator
-from pydantic.tools import parse_obj_as
+from pydantic.v1 import AnyUrl, Field, PrivateAttr, ValidationError, validator
+from pydantic.v1.tools import parse_obj_as
 from servicelib.progress_bar import ProgressBarData
 
 from ..node_ports_common.exceptions import (

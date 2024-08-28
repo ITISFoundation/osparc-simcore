@@ -16,7 +16,7 @@ from aiopg.sa.result import RowProxy
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
-from pydantic import EmailStr, ValidationError, parse_obj_as
+from pydantic.v1 import EmailStr, ValidationError, parse_obj_as
 from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import GroupType, groups, user_to_groups, users

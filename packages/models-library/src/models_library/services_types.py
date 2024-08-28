@@ -2,7 +2,7 @@ import re
 from uuid import uuid4
 
 import arrow
-from pydantic import ConstrainedStr
+from pydantic.v1 import ConstrainedStr
 
 from .basic_regex import PROPERTY_KEY_RE, SIMPLE_VERSION_RE
 from .services_regex import (

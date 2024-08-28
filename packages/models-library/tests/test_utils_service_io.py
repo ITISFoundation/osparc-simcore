@@ -17,7 +17,7 @@ from models_library.basic_regex import SIMPLE_VERSION_RE
 from models_library.services import ServiceInput, ServiceOutput, ServicePortKey
 from models_library.utils.json_schema import jsonschema_validate_schema
 from models_library.utils.services_io import get_service_io_json_schema
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 example_inputs_labels = [
     e for e in ServiceInput.Config.schema_extra["examples"] if e["label"]

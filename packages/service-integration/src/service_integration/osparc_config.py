@@ -36,11 +36,11 @@ from models_library.utils.labels_annotations import (
     from_labels,
     to_labels,
 )
-from pydantic import NonNegativeInt, ValidationError
-from pydantic.class_validators import root_validator, validator
-from pydantic.config import Extra
-from pydantic.fields import Field
-from pydantic.main import BaseModel
+from pydantic.v1 import NonNegativeInt, ValidationError
+from pydantic.v1.class_validators import root_validator, validator
+from pydantic.v1.config import Extra
+from pydantic.v1.fields import Field
+from pydantic.v1.main import BaseModel
 
 from .compose_spec_model import ComposeSpecification
 from .settings import AppSettings

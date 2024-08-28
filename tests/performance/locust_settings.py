@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Final
 
 from parse import Result, parse
-from pydantic import (
+from pydantic.v1 import (
     AnyHttpUrl,
     Field,
     NonNegativeInt,
@@ -18,7 +18,7 @@ from pydantic import (
     field_serializer,
     field_validator,
 )
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic.v1_settings import BaseSettings, SettingsConfigDict
 
 _TEST_DIR: Final[Path] = Path(__file__).parent.resolve()
 _LOCUST_FILES_DIR: Final[Path] = _TEST_DIR / "locust_files"

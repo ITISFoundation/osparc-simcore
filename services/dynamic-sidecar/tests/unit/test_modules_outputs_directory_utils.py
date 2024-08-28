@@ -6,7 +6,7 @@ from random import randbytes
 from uuid import uuid4
 
 import pytest
-from pydantic import NonNegativeInt, PositiveInt
+from pydantic.v1 import NonNegativeInt, PositiveInt
 from simcore_service_dynamic_sidecar.modules.outputs._directory_utils import (
     get_directory_total_size,
 )

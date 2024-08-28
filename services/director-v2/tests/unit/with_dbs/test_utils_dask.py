@@ -36,9 +36,9 @@ from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize
-from pydantic.networks import AnyUrl
-from pydantic.tools import parse_obj_as
+from pydantic.v1 import ByteSize
+from pydantic.v1.networks import AnyUrl
+from pydantic.v1.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_v2 import FileLinkType

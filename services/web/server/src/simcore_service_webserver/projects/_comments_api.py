@@ -8,7 +8,7 @@ from models_library.projects_comments import (
     ProjectsCommentsDB,
 )
 from models_library.users import UserID
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 

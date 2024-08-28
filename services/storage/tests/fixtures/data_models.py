@@ -18,7 +18,7 @@ from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from pytest_simcore.helpers.faker_factories import random_project, random_user
 from servicelib.utils import limited_gather
 from simcore_postgres_database.models.project_to_groups import project_to_groups

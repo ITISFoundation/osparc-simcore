@@ -5,7 +5,7 @@ from typing import Final, TypeAlias
 import aiofiles
 from fastapi import FastAPI
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic.v1 import BaseModel, Field, PrivateAttr
 
 from ..core.settings import ApplicationSettings
 

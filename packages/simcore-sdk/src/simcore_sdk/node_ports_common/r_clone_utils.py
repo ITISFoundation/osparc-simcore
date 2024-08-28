@@ -3,7 +3,7 @@ import logging
 from typing import Union
 
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, ByteSize, Field, parse_raw_as
+from pydantic.v1 import BaseModel, ByteSize, Field, parse_raw_as
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 

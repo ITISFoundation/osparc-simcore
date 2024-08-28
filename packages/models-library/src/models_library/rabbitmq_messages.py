@@ -6,7 +6,7 @@ from enum import Enum, IntEnum, auto
 from typing import Any, Literal, TypeAlias
 
 import arrow
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from .products import ProductName
 from .progress_bar import ProgressReport

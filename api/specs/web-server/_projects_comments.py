@@ -15,7 +15,7 @@ from fastapi import APIRouter
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.projects_comments import CommentID, ProjectsCommentsAPI
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._comments_handlers import (
     _ProjectCommentsBodyParams,

@@ -20,7 +20,7 @@ from models_library.api_schemas_payments.socketio import (
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.api_schemas_webserver.wallets import PaymentTransaction
 from models_library.users import GroupID, UserID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_payment_transaction
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict

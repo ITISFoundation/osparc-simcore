@@ -6,7 +6,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import BootMode
 from models_library.users import UserID
-from pydantic import AnyUrl, BaseModel, root_validator
+from pydantic.v1 import AnyUrl, BaseModel, root_validator
 from settings_library.s3 import S3Settings
 
 from .docker import DockerBasicAuth

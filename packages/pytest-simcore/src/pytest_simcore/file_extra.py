@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
-from pydantic import ByteSize
+from pydantic.v1 import ByteSize
 from pytest_simcore.helpers.logging_tools import log_context
 
 

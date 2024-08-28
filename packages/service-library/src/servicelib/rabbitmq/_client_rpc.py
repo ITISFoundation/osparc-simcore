@@ -7,7 +7,7 @@ from typing import Any
 
 import aio_pika
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from settings_library.rabbit import RabbitSettings
 
 from ..logging_utils import log_context

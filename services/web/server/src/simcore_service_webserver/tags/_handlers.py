@@ -5,7 +5,7 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.users import UserID
-from pydantic import BaseModel, ConstrainedStr, Field, PositiveInt
+from pydantic.v1 import BaseModel, ConstrainedStr, Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,

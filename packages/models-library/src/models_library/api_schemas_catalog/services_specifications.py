@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from ..generated_models.docker_rest_api import ServiceSpec as DockerServiceSpec
 

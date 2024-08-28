@@ -21,7 +21,7 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.docker import DockerGenericTag
 from models_library.utils.json_serialization import json_dumps
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import (
     assert_autoscaled_dynamic_warm_pools_ec2_instances,

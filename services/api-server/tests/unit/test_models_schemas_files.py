@@ -14,7 +14,7 @@ from fastapi import UploadFile
 from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
-from pydantic import ValidationError, parse_obj_as
+from pydantic.v1 import ValidationError, parse_obj_as
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.services.storage import to_file_api_model
 

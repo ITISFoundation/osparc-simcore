@@ -7,7 +7,7 @@ from typing import TypeAlias
 
 from fastapi import FastAPI
 from models_library.clusters import BaseCluster, ClusterTypeInModel
-from pydantic import AnyUrl
+from pydantic.v1 import AnyUrl
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,

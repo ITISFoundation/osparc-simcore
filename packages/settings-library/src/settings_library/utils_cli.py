@@ -6,8 +6,8 @@ from typing import Any
 
 import rich
 import typer
-from pydantic import ValidationError
-from pydantic.env_settings import BaseSettings
+from pydantic.v1 import ValidationError
+from pydantic.v1.env_settings import BaseSettings
 
 from ._constants import HEADER_STR
 from .base import BaseCustomSettings

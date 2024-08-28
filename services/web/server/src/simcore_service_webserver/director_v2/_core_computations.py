@@ -26,8 +26,8 @@ from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import parse_obj_as
-from pydantic.types import PositiveInt
+from pydantic.v1 import parse_obj_as
+from pydantic.v1.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_decorator
 from settings_library.utils_encoders import create_json_encoder_wo_secrets

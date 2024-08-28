@@ -1,6 +1,6 @@
 from typing import Any, ClassVar, TypeAlias
 
-from pydantic import BaseModel, ByteSize, Field
+from pydantic.v1 import BaseModel, ByteSize, Field
 
 from ..resource_tracker import HardwareInfo, PricingInfo
 from ..services import ServicePortKey

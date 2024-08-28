@@ -12,7 +12,7 @@ from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 

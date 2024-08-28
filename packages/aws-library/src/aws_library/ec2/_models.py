@@ -6,7 +6,7 @@ from typing import Any, ClassVar, TypeAlias
 
 import sh  # type: ignore[import-untyped]
 from models_library.docker import DockerGenericTag
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     ByteSize,
     ConstrainedStr,

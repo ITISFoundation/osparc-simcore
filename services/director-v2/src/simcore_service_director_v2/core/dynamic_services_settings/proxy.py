@@ -1,5 +1,5 @@
 from models_library.basic_types import PortInt
-from pydantic import Field
+from pydantic.v1 import Field
 from servicelib.utils_secrets import secure_randint
 from settings_library.base import BaseCustomSettings
 

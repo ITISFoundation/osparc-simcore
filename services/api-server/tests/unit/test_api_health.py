@@ -10,7 +10,7 @@ from pathlib import Path
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.app_diagnostics import AppStatusCheck
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 

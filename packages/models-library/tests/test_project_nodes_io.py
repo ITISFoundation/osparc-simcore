@@ -12,7 +12,7 @@ from models_library.projects_nodes_io import (
     SimCoreFileLink,
     SimcoreS3DirectoryID,
 )
-from pydantic import ValidationError, parse_obj_as
+from pydantic.v1 import ValidationError, parse_obj_as
 
 
 @pytest.fixture()

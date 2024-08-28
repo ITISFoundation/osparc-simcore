@@ -1,6 +1,6 @@
 from typing import Any, ClassVar
 
-from pydantic import AnyHttpUrl, Field, SecretStr
+from pydantic.v1 import AnyHttpUrl, Field, SecretStr
 
 from .base import BaseCustomSettings
 

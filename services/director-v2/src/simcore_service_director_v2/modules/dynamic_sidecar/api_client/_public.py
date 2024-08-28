@@ -17,7 +17,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.services_types import ServicePortKey
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
-from pydantic import AnyHttpUrl, PositiveFloat
+from pydantic.v1 import AnyHttpUrl, PositiveFloat
 from servicelib.fastapi.http_client_thin import (
     BaseHttpClientError,
     UnexpectedStatusError,

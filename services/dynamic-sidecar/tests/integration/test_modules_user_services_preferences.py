@@ -14,7 +14,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from simcore_service_dynamic_sidecar.core.application import create_app

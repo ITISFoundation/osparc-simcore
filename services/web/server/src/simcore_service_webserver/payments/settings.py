@@ -3,7 +3,7 @@ from functools import cached_property
 
 from aiohttp import web
 from models_library.basic_types import NonNegativeDecimal
-from pydantic import Field, HttpUrl, PositiveInt, SecretStr, parse_obj_as, validator
+from pydantic.v1 import Field, HttpUrl, PositiveInt, SecretStr, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (

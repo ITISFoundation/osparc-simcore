@@ -16,7 +16,7 @@ from models_library.rpc_pagination import (
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, parse_obj_as, validate_arguments
+from pydantic.v1 import NonNegativeInt, parse_obj_as, validate_arguments
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 

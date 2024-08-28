@@ -15,7 +15,7 @@ from httpx import (
     TransportError,
     codes,
 )
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic.v1 import AnyHttpUrl, parse_obj_as
 from respx import MockRouter
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,

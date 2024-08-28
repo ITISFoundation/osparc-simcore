@@ -6,7 +6,7 @@
 # pylint: disable=no-name-in-module
 
 import pytest
-from pydantic import TypeAdapter
+from pydantic.v1 import TypeAdapter
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

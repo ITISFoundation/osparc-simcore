@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Final
 
 import aiofiles
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from servicelib.archiving_utils import archive_dir, unarchive_dir
 from servicelib.file_utils import remove_directory
 

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, FastAPI
 from fastapi import Path as PathParam
 from fastapi import Request, Response, status
 from models_library.services import ServiceOutput
-from pydantic.main import BaseModel
+from pydantic.v1.main import BaseModel
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_utils import docker_client

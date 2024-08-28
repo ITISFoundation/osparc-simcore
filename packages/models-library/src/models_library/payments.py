@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Any, ClassVar, TypeAlias
 
-from pydantic import BaseModel, Field, validator
+from pydantic.v1 import BaseModel, Field, validator
 
 from .emails import LowerCaseEmailStr
 from .products import StripePriceID, StripeTaxRateID

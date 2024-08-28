@@ -8,7 +8,7 @@ from enum import Enum
 from typing import Any, Final, TypeAlias
 from uuid import UUID
 
-from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
+from pydantic.v1 import BaseModel, ConstrainedStr, Extra, Field, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .basic_types import HttpUrlWithCustomMinLength

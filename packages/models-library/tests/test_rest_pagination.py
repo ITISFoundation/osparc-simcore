@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pytest
 from models_library.rest_pagination import Page, PageMetaInfoLimitOffset
-from pydantic.main import BaseModel
+from pydantic.v1.main import BaseModel
 
 
 @pytest.mark.parametrize("cls_model", [Page[str], PageMetaInfoLimitOffset])

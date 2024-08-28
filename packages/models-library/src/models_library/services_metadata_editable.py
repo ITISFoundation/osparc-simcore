@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Any, ClassVar
 
-from pydantic import Field, HttpUrl
+from pydantic.v1 import Field, HttpUrl
 
 from .services_base import ServiceBaseDisplay
 from .services_constants import LATEST_INTEGRATION_VERSION

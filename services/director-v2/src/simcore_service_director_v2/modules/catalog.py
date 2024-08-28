@@ -8,7 +8,7 @@ from fastapi import FastAPI, HTTPException, status
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from settings_library.catalog import CatalogSettings
 
 from ..utils.client_decorators import handle_errors, handle_retry

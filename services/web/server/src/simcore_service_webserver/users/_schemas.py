@@ -12,7 +12,7 @@ import pycountry
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from pydantic import Field, root_validator, validator
+from pydantic.v1 import Field, root_validator, validator
 from simcore_postgres_database.models.users import UserStatus
 
 

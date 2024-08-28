@@ -10,7 +10,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 
 from ..models.comp_tasks import CompTaskAtDB
 

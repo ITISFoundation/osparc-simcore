@@ -13,7 +13,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
 from models_library.users import UserID
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     Field,
     HttpUrl,

@@ -34,7 +34,7 @@ from models_library.resource_tracker import (
 )
 from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.wallets import WalletID
-from pydantic import Json, NonNegativeInt
+from pydantic.v1 import Json, NonNegativeInt
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.resource_usage._pricing_plans_admin_handlers import (
     _GetPricingPlanPathParams,

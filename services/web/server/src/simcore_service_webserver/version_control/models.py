@@ -5,8 +5,15 @@ from aiopg.sa.result import RowProxy
 from models_library.basic_types import SHA1Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
-from pydantic import BaseModel, Field, PositiveInt, StrictBool, StrictFloat, StrictInt
-from pydantic.networks import HttpUrl
+from pydantic.v1 import (
+    BaseModel,
+    Field,
+    PositiveInt,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+)
+from pydantic.v1.networks import HttpUrl
 
 BuiltinTypes: TypeAlias = Union[StrictBool, StrictInt, StrictFloat, str]
 

@@ -11,7 +11,7 @@ import pytest
 from fastapi import APIRouter, FastAPI
 from fastapi.params import Query
 from httpx import AsyncClient
-from pydantic.types import PositiveFloat
+from pydantic.v1.types import PositiveFloat
 
 
 @pytest.fixture

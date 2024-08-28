@@ -13,7 +13,7 @@ from models_library.user_preferences import (
     PreferenceName,
 )
 from models_library.users import UserID
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic.v1 import NonNegativeInt, parse_obj_as
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,

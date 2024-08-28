@@ -10,7 +10,7 @@ from models_library.user_preferences import (
     PreferenceIdentifier,
     PreferenceName,
 )
-from pydantic import Field, NonNegativeInt
+from pydantic.v1 import Field, NonNegativeInt
 
 from .settings import UsersSettings, get_plugin_settings
 

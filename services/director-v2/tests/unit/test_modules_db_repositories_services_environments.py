@@ -1,5 +1,5 @@
 from models_library.osparc_variable_identifier import OsparcVariableIdentifier
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from simcore_postgres_database.models.services_environments import VENDOR_SECRET_PREFIX
 
 

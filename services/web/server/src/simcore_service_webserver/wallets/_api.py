@@ -13,7 +13,7 @@ from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 from ..resource_usage.api import get_wallet_total_available_credits
 from ..users import api as users_api

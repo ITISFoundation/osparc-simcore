@@ -4,7 +4,7 @@ from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.authentification import TwoFactorAuthentificationMethod
 from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, Field, PositiveInt, SecretStr, parse_obj_as
+from pydantic.v1 import BaseModel, Field, PositiveInt, SecretStr, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import get_log_record_extra, log_context

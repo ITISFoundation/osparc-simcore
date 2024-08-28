@@ -17,7 +17,7 @@ from models_library.api_schemas_webserver.folders import (
 )
 from models_library.generics import Envelope
 from models_library.rest_pagination import PageQueryParameters
-from pydantic import Json
+from pydantic.v1 import Json
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.folders._folders_handlers import FoldersPathParams
 from simcore_service_webserver.folders._groups_api import FolderGroupGet

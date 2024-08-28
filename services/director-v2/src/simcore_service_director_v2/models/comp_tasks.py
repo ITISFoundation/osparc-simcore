@@ -14,7 +14,7 @@ from models_library.resource_tracker import HardwareInfo
 from models_library.services import ServiceInputsDict, ServiceOutput, ServicePortKey
 from models_library.services_regex import SERVICE_KEY_RE
 from models_library.services_resources import BootMode
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     ByteSize,
     Extra,

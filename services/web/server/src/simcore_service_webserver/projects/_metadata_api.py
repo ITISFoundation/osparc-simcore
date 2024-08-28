@@ -6,7 +6,7 @@ from models_library.api_schemas_webserver.projects_metadata import MetadataDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 from ..db.plugin import get_database_engine
 from . import _metadata_db

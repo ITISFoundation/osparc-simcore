@@ -6,7 +6,7 @@ from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.constants import (
     ACTIVATED_BUFFER_MACHINE_EC2_TAGS,

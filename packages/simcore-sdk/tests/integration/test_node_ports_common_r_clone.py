@@ -16,7 +16,7 @@ import aiofiles
 import pytest
 from faker import Faker
 from models_library.progress_bar import ProgressReport
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic.v1 import AnyUrl, ByteSize, parse_obj_as
 from servicelib.file_utils import remove_directory
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather

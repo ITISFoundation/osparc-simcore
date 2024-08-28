@@ -1,7 +1,7 @@
 import re
 from typing import Any, ClassVar, Final
 
-from pydantic import BaseModel, ConstrainedStr, Field
+from pydantic.v1 import BaseModel, ConstrainedStr, Field
 
 from .generics import DictModel
 from .projects import ProjectID

@@ -4,7 +4,7 @@ from typing import Any, Final
 
 import distributed
 from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
-from pydantic import AnyUrl
+from pydantic.v1 import AnyUrl
 
 _logger = logging.getLogger(__name__)
 

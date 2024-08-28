@@ -22,7 +22,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic.v1 import NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from yarl import URL

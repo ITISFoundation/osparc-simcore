@@ -1,6 +1,6 @@
 import logging
 
-from pydantic import Field, validator
+from pydantic.v1 import Field, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BootMode
 from settings_library.utils_logging import MixinLoggingSettings

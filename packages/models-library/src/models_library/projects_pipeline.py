@@ -3,7 +3,7 @@ from typing import Any, ClassVar
 from uuid import UUID
 
 import arrow
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic.v1 import BaseModel, Field, PositiveInt
 
 from .clusters import ClusterID
 from .projects_nodes import NodeState

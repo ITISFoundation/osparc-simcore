@@ -6,7 +6,7 @@ from aiopg.sa.engine import Engine
 from models_library.api_schemas_webserver.projects_metadata import MetadataDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from simcore_postgres_database import utils_projects_metadata
 from simcore_postgres_database.utils_projects_metadata import (
     DBProjectInvalidAncestorsError,

@@ -1,6 +1,6 @@
 from models_library.projects_nodes_io import NodeID
 from models_library.wallets import WalletID
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 class ServiceNoMoreCredits(BaseModel):

@@ -12,7 +12,7 @@ from models_library.payments import StripeInvoiceID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import HttpUrl, PositiveInt, parse_obj_as
+from pydantic.v1 import HttpUrl, PositiveInt, parse_obj_as
 from simcore_postgres_database import errors as pg_errors
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,

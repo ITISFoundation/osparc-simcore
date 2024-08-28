@@ -10,7 +10,7 @@ from typing import Final
 from uuid import UUID, uuid4
 
 import pytest
-from pydantic import BaseModel, NonNegativeInt, StrBytes
+from pydantic.v1 import BaseModel, NonNegativeInt, StrBytes
 from pytest_mock import MockerFixture
 from servicelib.redis import RedisClientSDK
 from servicelib.utils import logged_gather

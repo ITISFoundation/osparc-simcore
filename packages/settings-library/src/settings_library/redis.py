@@ -1,8 +1,8 @@
 from enum import Enum
 
-from pydantic import parse_obj_as
-from pydantic.networks import RedisDsn
-from pydantic.types import SecretStr
+from pydantic.v1 import parse_obj_as
+from pydantic.v1.networks import RedisDsn
+from pydantic.v1.types import SecretStr
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt

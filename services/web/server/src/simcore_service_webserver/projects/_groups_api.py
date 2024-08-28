@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import GroupID, UserID
-from pydantic import BaseModel, parse_obj_as
+from pydantic.v1 import BaseModel, parse_obj_as
 from simcore_service_webserver.projects.models import UserProjectAccessRights
 
 from ..users import api as users_api

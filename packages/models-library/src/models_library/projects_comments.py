@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TypeAlias
 
-from pydantic import BaseModel, Extra, Field, PositiveInt
+from pydantic.v1 import BaseModel, Extra, Field, PositiveInt
 
 from .projects import ProjectID
 from .users import UserID

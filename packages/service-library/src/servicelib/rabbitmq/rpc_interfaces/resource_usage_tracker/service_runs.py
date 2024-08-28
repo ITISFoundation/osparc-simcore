@@ -18,7 +18,7 @@ from models_library.resource_tracker import (
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import AnyUrl, NonNegativeInt, parse_obj_as
+from pydantic.v1 import AnyUrl, NonNegativeInt, parse_obj_as
 
 from ....logging_utils import log_decorator
 from ....rabbitmq import RabbitMQRPCClient

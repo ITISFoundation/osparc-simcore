@@ -5,7 +5,7 @@ from typing import Any
 
 import rich
 import sqlalchemy as sa
-from pydantic import PostgresDsn, TypeAdapter
+from pydantic.v1 import PostgresDsn, TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from .models import AppState, ComputationalTask, PostgresDB

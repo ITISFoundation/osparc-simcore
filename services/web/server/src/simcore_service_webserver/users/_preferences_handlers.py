@@ -7,7 +7,7 @@ from models_library.api_schemas_webserver.users_preferences import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,

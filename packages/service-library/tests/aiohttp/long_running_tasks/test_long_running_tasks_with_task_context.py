@@ -18,7 +18,7 @@ from typing import Optional
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from pydantic import create_model, parse_obj_as
+from pydantic.v1 import create_model, parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks._server import (

@@ -12,7 +12,7 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.payments import InvoiceDataGet
 from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict

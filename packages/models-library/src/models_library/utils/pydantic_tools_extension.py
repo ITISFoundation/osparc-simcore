@@ -1,8 +1,8 @@
 import functools
 from typing import Final, TypeVar
 
-from pydantic import Field, ValidationError
-from pydantic.tools import parse_obj_as
+from pydantic.v1 import Field, ValidationError
+from pydantic.v1.tools import parse_obj_as
 
 T = TypeVar("T")
 

@@ -1,6 +1,6 @@
 from typing import Any, ClassVar, Literal, TypeAlias
 
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from .basic_types import IDStr
 

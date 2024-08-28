@@ -10,8 +10,8 @@ from typing import Any, ClassVar, NamedTuple
 import yaml
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel
-from pydantic import BaseModel, Field
-from pydantic.fields import FieldInfo
+from pydantic.v1 import BaseModel, Field
+from pydantic.v1.fields import FieldInfo
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent

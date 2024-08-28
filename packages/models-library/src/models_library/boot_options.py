@@ -1,6 +1,6 @@
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, validator
+from pydantic.v1 import BaseModel, validator
 from typing_extensions import TypedDict
 
 from .basic_types import EnvVarKey

@@ -5,7 +5,7 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Final
 
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1.errors import PydanticErrorMixin
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt

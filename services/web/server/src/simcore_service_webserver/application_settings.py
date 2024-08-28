@@ -11,9 +11,9 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.utils.change_case import snake_to_camel
-from pydantic import AnyHttpUrl, parse_obj_as, root_validator, validator
-from pydantic.fields import Field, ModelField
-from pydantic.types import PositiveInt
+from pydantic.v1 import AnyHttpUrl, parse_obj_as, root_validator, validator
+from pydantic.v1.fields import Field, ModelField
+from pydantic.v1.types import PositiveInt
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings

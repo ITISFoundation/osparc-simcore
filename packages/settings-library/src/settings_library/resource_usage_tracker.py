@@ -1,7 +1,7 @@
 from datetime import timedelta
 from functools import cached_property
 
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (

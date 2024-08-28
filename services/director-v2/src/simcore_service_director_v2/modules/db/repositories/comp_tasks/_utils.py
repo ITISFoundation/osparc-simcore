@@ -36,7 +36,7 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS, WalletInfo
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,

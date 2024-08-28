@@ -15,7 +15,7 @@ from typing import Any, Final, Literal
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from pydantic import (
+from pydantic.v1 import (
     BaseModel,
     ConstrainedStr,
     Field,

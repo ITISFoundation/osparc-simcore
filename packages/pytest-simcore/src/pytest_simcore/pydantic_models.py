@@ -9,7 +9,7 @@ from types import ModuleType
 from typing import Any, NamedTuple
 
 import pytest
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 def is_strict_inner(outer_cls: type, inner_cls: type) -> bool:

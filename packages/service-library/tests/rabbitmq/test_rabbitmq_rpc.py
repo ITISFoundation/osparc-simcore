@@ -7,7 +7,7 @@ from typing import Any, Final
 
 import pytest
 from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import NonNegativeInt, ValidationError
+from pydantic.v1 import NonNegativeInt, ValidationError
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,

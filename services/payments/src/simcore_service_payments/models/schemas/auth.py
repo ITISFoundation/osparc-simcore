@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 class Token(BaseModel):

@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, Request, status
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.clusters import ClusterID
-from pydantic import HttpUrl, PositiveInt
+from pydantic.v1 import HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
 
 from ..api.dependencies.authentication import get_current_user_id

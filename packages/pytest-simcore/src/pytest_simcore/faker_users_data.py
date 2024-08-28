@@ -14,7 +14,7 @@ import pytest
 from faker import Faker
 from models_library.basic_types import IDStr
 from models_library.users import UserID
-from pydantic import EmailStr, parse_obj_as
+from pydantic.v1 import EmailStr, parse_obj_as
 
 from .helpers.faker_factories import DEFAULT_TEST_PASSWORD, random_user
 

@@ -12,7 +12,7 @@ from models_library.utils.specs_substitution import (
     SpecsSubstitutionsResolver,
     SubstitutionValue,
 )
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 
 @pytest.fixture()

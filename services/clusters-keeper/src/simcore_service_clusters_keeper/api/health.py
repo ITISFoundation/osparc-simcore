@@ -9,7 +9,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from ..modules.rabbitmq import get_rabbitmq_client, is_rabbitmq_enabled
 from ..modules.redis import get_redis_client

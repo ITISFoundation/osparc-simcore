@@ -5,8 +5,8 @@
 from enum import Enum
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Extra, Field
-from pydantic.types import PositiveInt
+from pydantic.v1 import BaseModel, Extra, Field
+from pydantic.v1.types import PositiveInt
 
 from .basic_types import IDStr
 from .users import FirstNameStr, LastNameStr

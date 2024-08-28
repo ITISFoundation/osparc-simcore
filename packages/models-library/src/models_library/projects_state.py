@@ -5,7 +5,7 @@
 from enum import Enum, unique
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic.v1 import BaseModel, Extra, Field, validator
 
 from .projects_access import Owner
 

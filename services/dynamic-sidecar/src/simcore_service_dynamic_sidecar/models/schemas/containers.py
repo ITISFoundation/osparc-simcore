@@ -1,5 +1,5 @@
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 class ContainersCreate(BaseModel):

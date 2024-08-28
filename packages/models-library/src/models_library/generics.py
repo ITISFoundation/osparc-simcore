@@ -1,7 +1,7 @@
 from collections.abc import ItemsView, Iterable, Iterator, KeysView, ValuesView
 from typing import Any, Generic, TypeVar
 
-from pydantic.generics import GenericModel
+from pydantic.v1.generics import GenericModel
 
 DictKey = TypeVar("DictKey")
 DictValue = TypeVar("DictValue")

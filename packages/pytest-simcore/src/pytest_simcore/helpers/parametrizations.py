@@ -1,6 +1,6 @@
 import pytest
 from _pytest.mark.structures import ParameterSet
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 
 
 def byte_size_ids(val) -> str | None:

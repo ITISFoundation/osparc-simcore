@@ -28,7 +28,7 @@ from models_library.generics import Envelope
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic.v1 import AnyUrl, ByteSize, parse_obj_as
 from servicelib.aiohttp import status
 from yarl import URL
 

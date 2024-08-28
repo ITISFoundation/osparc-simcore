@@ -1,6 +1,6 @@
 from typing import Any, ClassVar, TypeAlias
 
-from pydantic import (
+from pydantic.v1 import (
     AnyHttpUrl,
     BaseModel,
     Field,
@@ -9,8 +9,8 @@ from pydantic import (
     root_validator,
     validator,
 )
-from pydantic.networks import AnyUrl
-from pydantic.types import ByteSize, PositiveFloat
+from pydantic.v1.networks import AnyUrl
+from pydantic.v1.types import ByteSize, PositiveFloat
 
 from ..clusters import (
     CLUSTER_ADMIN_RIGHTS,

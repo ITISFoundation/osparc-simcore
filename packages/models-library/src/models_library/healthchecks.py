@@ -8,7 +8,7 @@
 from datetime import timedelta
 from typing import TypeAlias
 
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 class IsResponsive(BaseModel):

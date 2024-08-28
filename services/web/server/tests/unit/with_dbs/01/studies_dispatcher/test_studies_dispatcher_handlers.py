@@ -18,7 +18,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, ByteSize, parse_obj_as
+from pydantic.v1 import BaseModel, ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole

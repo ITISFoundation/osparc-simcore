@@ -10,7 +10,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from pydantic.types import SecretStr
+from pydantic.v1.types import SecretStr
 from servicelib.aiohttp.typing_extension import Handler
 
 from ._constants import MSG_UNDER_DEVELOPMENT

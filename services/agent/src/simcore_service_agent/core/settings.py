@@ -1,7 +1,7 @@
 from typing import Final
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import AnyHttpUrl, Field, NonNegativeInt, validator
+from pydantic.v1 import AnyHttpUrl, Field, NonNegativeInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.utils_logging import MixinLoggingSettings

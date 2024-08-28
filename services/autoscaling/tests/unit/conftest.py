@@ -44,7 +44,7 @@ from models_library.generated_models.docker_rest_api import (
     ResourceObject,
     Service,
 )
-from pydantic import ByteSize, PositiveInt, parse_obj_as
+from pydantic.v1 import ByteSize, PositiveInt, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.logging_tools import log_context

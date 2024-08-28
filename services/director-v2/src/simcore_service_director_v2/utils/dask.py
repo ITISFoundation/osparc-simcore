@@ -30,7 +30,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
-from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
+from pydantic.v1 import AnyUrl, ByteSize, ValidationError, parse_obj_as
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (

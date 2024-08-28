@@ -16,7 +16,7 @@ from aiohttp import ClientSession
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import ByteSize, HttpUrl, parse_obj_as
+from pydantic.v1 import ByteSize, HttpUrl, parse_obj_as
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.models import ETag, FileMetaData, S3BucketName, UploadID
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager

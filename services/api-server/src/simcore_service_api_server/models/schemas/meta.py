@@ -1,7 +1,7 @@
 from typing import ClassVar
 
 from models_library.api_schemas__common.meta import BaseMeta
-from pydantic import AnyHttpUrl
+from pydantic.v1 import AnyHttpUrl
 
 
 class Meta(BaseMeta):

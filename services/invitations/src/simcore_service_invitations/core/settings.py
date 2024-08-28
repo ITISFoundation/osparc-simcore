@@ -1,7 +1,7 @@
 from functools import cached_property
 
 from models_library.products import ProductName
-from pydantic import Field, HttpUrl, PositiveInt, SecretStr, validator
+from pydantic.v1 import Field, HttpUrl, PositiveInt, SecretStr, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.utils_logging import MixinLoggingSettings

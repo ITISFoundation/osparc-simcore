@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseSettings, Field, NonNegativeInt, PositiveInt
+from pydantic.v1 import BaseSettings, Field, NonNegativeInt, PositiveInt
 
 
 class BootModeEnum(str, Enum):

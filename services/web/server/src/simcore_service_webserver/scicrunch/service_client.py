@@ -8,7 +8,7 @@ import asyncio
 import logging
 
 from aiohttp import ClientSession, client_exceptions, web
-from pydantic import HttpUrl, ValidationError, parse_obj_as
+from pydantic.v1 import HttpUrl, ValidationError, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from yarl import URL
 

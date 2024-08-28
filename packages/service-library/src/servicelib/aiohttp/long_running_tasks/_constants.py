@@ -1,6 +1,6 @@
 from typing import Final
 
-from pydantic import PositiveFloat
+from pydantic.v1 import PositiveFloat
 
 MINUTE: Final[PositiveFloat] = 60
 APP_LONG_RUNNING_TASKS_MANAGER_KEY: Final[

@@ -1,4 +1,4 @@
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1.errors import PydanticErrorMixin
 
 
 class ComputationalSidecarRuntimeError(PydanticErrorMixin, RuntimeError):

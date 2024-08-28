@@ -11,7 +11,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.services import ServiceType
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from pydantic import NonNegativeFloat
+from pydantic.v1 import NonNegativeFloat
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
 

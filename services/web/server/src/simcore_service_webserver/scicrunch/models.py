@@ -6,7 +6,7 @@ import logging
 import re
 from datetime import datetime
 
-from pydantic import BaseModel, Field, validator
+from pydantic.v1 import BaseModel, Field, validator
 
 logger = logging.getLogger(__name__)
 

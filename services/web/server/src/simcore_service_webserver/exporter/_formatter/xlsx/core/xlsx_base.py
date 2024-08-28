@@ -7,7 +7,7 @@ from openpyxl import Workbook
 from openpyxl.cell import Cell
 from openpyxl.styles import Alignment, Border
 from openpyxl.worksheet.worksheet import Worksheet
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 BORDER_ATTRIBUTES: set[str] = {
     "left",

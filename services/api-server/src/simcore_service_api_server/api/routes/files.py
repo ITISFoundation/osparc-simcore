@@ -14,7 +14,7 @@ from fastapi.responses import HTMLResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_storage import ETag, FileUploadCompletionBody, LinkType
 from models_library.basic_types import SHA256Str
-from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
+from pydantic.v1 import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.file_io_utils import UploadableFileObject

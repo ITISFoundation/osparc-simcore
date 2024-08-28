@@ -5,7 +5,7 @@ from collections.abc import Callable, Coroutine
 from copy import deepcopy
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from ..projects import Project
 from ..projects_nodes_io import NodeID, PortLink, UUIDStr

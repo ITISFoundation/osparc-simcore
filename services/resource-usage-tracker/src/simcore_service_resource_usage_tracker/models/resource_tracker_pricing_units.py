@@ -9,7 +9,7 @@ from models_library.resource_tracker import (
     PricingUnitId,
     UnitExtraInfo,
 )
-from pydantic import BaseModel, validator
+from pydantic.v1 import BaseModel, validator
 
 
 class PricingUnitsDB(BaseModel):

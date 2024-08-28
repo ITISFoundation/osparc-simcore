@@ -9,7 +9,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.projects import ProjectID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, Extra
+from pydantic.v1 import BaseModel, Extra
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from simcore_service_webserver.utils_aiohttp import envelope_json_response

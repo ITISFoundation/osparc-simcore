@@ -1,5 +1,5 @@
 from fastapi import Header
-from pydantic.types import PositiveInt
+from pydantic.v1.types import PositiveInt
 
 #
 # Based on discussion https://github.com/tiangolo/fastapi/issues/362#issuecomment-584104025

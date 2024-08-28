@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from aiohttp import web
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from servicelib.pools import non_blocking_process_pool_executor
 
 from ...catalog.client import get_service

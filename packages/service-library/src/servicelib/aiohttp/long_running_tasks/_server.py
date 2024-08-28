@@ -6,7 +6,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
-from pydantic import AnyHttpUrl, PositiveFloat
+from pydantic.v1 import AnyHttpUrl, PositiveFloat
 
 from ...aiohttp import status
 from ...long_running_tasks._models import TaskGet

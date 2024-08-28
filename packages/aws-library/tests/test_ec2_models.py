@@ -6,7 +6,7 @@
 import pytest
 from aws_library.ec2._models import AWSTagKey, AWSTagValue, EC2InstanceData, Resources
 from faker import Faker
-from pydantic import ByteSize, ValidationError, parse_obj_as
+from pydantic.v1 import ByteSize, ValidationError, parse_obj_as
 
 
 @pytest.mark.parametrize(

@@ -1,6 +1,6 @@
 import pytest
 from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 @pytest.mark.parametrize(

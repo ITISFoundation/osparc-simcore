@@ -1,6 +1,6 @@
 import pytest
 from models_library.resource_tracker import HardwareInfo
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 
 
 @pytest.mark.parametrize(

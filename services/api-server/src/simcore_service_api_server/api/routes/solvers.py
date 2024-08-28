@@ -6,8 +6,8 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from httpx import HTTPStatusError
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
-from pydantic import ValidationError
-from pydantic.errors import PydanticValueError
+from pydantic.v1 import ValidationError
+from pydantic.v1.errors import PydanticValueError
 
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr

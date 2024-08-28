@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 from models_library.errors_classes import OsparcErrorMixin
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1.errors import PydanticErrorMixin
 
 
 def test_get_full_class_name():

@@ -4,7 +4,7 @@ from collections.abc import Coroutine
 from datetime import timedelta
 from typing import Any
 
-from pydantic import NonNegativeInt
+from pydantic.v1 import NonNegativeInt
 
 from ._base_deferred_handler import BaseDeferredHandler, DeferredContext
 from ._models import (

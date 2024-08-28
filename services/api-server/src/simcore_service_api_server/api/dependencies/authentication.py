@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from pydantic import BaseModel, PositiveInt
+from pydantic.v1 import BaseModel, PositiveInt
 
 from ...db.repositories.api_keys import ApiKeysRepository, UserAndProductTuple
 from ...db.repositories.users import UsersRepository

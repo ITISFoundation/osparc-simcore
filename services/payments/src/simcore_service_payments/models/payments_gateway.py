@@ -7,7 +7,7 @@ from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMetho
 from models_library.basic_types import AmountDecimal, IDStr
 from models_library.payments import UserInvoiceAddress
 from models_library.products import StripePriceID, StripeTaxRateID
-from pydantic import BaseModel, EmailStr, Extra, Field
+from pydantic.v1 import BaseModel, EmailStr, Extra, Field
 
 COUNTRIES_WITH_VAT = ["CH", "LI"]
 

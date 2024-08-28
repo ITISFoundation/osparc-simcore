@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Any, ClassVar, Final
 
-from pydantic import BaseModel, Extra, Field, NonNegativeFloat, validator
+from pydantic.v1 import BaseModel, Extra, Field, NonNegativeFloat, validator
 
 INACTIVITY_TIMEOUT_CAP: Final[NonNegativeFloat] = 5
 TIMEOUT_MIN: Final[NonNegativeFloat] = 1

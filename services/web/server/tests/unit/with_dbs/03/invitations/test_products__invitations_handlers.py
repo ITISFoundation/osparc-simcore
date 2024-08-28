@@ -15,7 +15,7 @@ from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
     InvitationGenerated,
 )
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD

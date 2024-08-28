@@ -1,6 +1,6 @@
 from typing import Any, ClassVar
 
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 from .services import ServiceKey, ServiceVersion
 from .services_resources import ServiceResourcesDict

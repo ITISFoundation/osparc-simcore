@@ -16,7 +16,7 @@ import redis.asyncio as aioredis
 import simcore_service_webserver.announcements._models
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from pydantic import BaseModel, ValidationError
+from pydantic.v1 import BaseModel, ValidationError
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict

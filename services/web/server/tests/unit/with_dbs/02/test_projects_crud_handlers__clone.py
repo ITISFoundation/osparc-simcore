@@ -14,7 +14,7 @@ from aiohttp.web_exceptions import HTTPNotFound
 from faker import Faker
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request

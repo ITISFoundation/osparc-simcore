@@ -6,7 +6,7 @@ from typing import Awaitable, Final
 
 import redis.asyncio as aioredis
 from aiohttp import web
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 
 from ..redis import get_redis_announcements_client
 from ._models import Announcement

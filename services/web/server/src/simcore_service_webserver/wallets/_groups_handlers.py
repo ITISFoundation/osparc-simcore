@@ -8,7 +8,7 @@ import logging
 from aiohttp import web
 from models_library.users import GroupID, UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, Extra, Field
+from pydantic.v1 import BaseModel, Extra, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,

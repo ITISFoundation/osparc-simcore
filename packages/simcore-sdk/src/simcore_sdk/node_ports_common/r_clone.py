@@ -11,8 +11,8 @@ from typing import Final
 from aiocache import cached  # type: ignore[import-untyped]
 from aiofiles import tempfile
 from models_library.basic_types import IDStr
-from pydantic import AnyUrl, BaseModel, ByteSize
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1 import AnyUrl, BaseModel, ByteSize
+from pydantic.v1.errors import PydanticErrorMixin
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings

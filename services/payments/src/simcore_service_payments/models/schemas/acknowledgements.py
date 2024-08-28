@@ -3,7 +3,7 @@ from typing import Any, ClassVar
 
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from models_library.basic_types import IDStr
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic.v1 import BaseModel, Field, HttpUrl, validator
 
 
 class _BaseAck(BaseModel):

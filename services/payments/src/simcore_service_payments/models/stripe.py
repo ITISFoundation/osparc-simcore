@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic.v1 import BaseModel, HttpUrl
 
 
 class InvoiceData(BaseModel):

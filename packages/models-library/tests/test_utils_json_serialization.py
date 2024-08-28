@@ -18,7 +18,7 @@ from models_library.utils.json_serialization import (
     json_dumps,
     json_loads,
 )
-from pydantic.json import pydantic_encoder
+from pydantic.v1.json import pydantic_encoder
 
 
 def _expected_json_dumps(obj: Any, default=pydantic_encoder, **json_dumps_kwargs):

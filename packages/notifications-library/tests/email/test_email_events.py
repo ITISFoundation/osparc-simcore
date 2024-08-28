@@ -44,8 +44,8 @@ from notifications_library._email_render import (
 from notifications_library._models import ProductData, UserData
 from notifications_library._render import create_render_env_from_package
 from notifications_library.payments import PaymentData
-from pydantic import EmailStr
-from pydantic.json import pydantic_encoder
+from pydantic.v1 import EmailStr
+from pydantic.v1.json import pydantic_encoder
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.email import SMTPSettings
 

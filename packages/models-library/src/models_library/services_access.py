@@ -2,7 +2,7 @@
 
 """
 
-from pydantic import BaseModel, Extra, Field
+from pydantic.v1 import BaseModel, Extra, Field
 
 from .users import GroupID
 from .utils.change_case import snake_to_camel

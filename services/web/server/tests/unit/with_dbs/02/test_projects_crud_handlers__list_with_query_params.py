@@ -17,7 +17,7 @@ from aiohttp.test_utils import TestClient
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import BaseModel, PositiveInt
+from pydantic.v1 import BaseModel, PositiveInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (

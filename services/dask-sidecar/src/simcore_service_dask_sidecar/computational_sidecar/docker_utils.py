@@ -26,7 +26,7 @@ from dask_task_models_library.container_tasks.protocol import (
 from models_library.services_resources import BootMode
 from models_library.utils.labels_annotations import OSPARC_LABEL_PREFIXES, from_labels
 from packaging import version
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from servicelib.logging_utils import (
     LogLevelInt,
     LogMessageStr,

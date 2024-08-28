@@ -1,6 +1,6 @@
 import pytest
 from faker import Faker
-from pydantic import ByteSize, ValidationError
+from pydantic.v1 import ByteSize, ValidationError
 from simcore_service_dask_sidecar.computational_sidecar.models import (
     ContainerHostConfig,
 )

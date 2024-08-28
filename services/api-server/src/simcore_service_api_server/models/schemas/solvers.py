@@ -6,7 +6,7 @@ from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_regex import COMPUTATIONAL_SERVICE_KEY_RE
 from packaging.version import Version
-from pydantic import BaseModel, ConstrainedStr, Extra, Field, HttpUrl
+from pydantic.v1 import BaseModel, ConstrainedStr, Extra, Field, HttpUrl
 
 from ..api_resources import compose_resource_name
 from ..basic_types import VersionStr

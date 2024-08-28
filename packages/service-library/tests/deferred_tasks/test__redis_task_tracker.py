@@ -5,7 +5,7 @@
 from datetime import timedelta
 
 import pytest
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from servicelib.deferred_tasks._models import TaskUID
 from servicelib.deferred_tasks._redis_task_tracker import RedisTaskTracker
 from servicelib.deferred_tasks._task_schedule import TaskScheduleModel, TaskState

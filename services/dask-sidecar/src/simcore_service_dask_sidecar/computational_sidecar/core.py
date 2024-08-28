@@ -19,8 +19,8 @@ from dask_task_models_library.container_tasks.protocol import ContainerTaskParam
 from models_library.basic_types import IDStr
 from models_library.progress_bar import ProgressReport
 from packaging import version
-from pydantic import ValidationError
-from pydantic.networks import AnyUrl
+from pydantic.v1 import ValidationError
+from pydantic.v1.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from servicelib.progress_bar import ProgressBarData
 from settings_library.s3 import S3Settings

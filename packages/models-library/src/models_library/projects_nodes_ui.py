@@ -2,8 +2,8 @@
     Models node UI (legacy model, use instead projects.ui.py)
 """
 
-from pydantic import BaseModel, Extra, Field
-from pydantic.color import Color
+from pydantic.v1 import BaseModel, Extra, Field
+from pydantic.v1.color import Color
 
 
 class Position(BaseModel):

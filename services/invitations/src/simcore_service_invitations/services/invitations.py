@@ -7,7 +7,7 @@ from urllib import parse
 from cryptography.fernet import Fernet, InvalidToken
 from models_library.invitations import InvitationContent, InvitationInputs
 from models_library.products import ProductName
-from pydantic import HttpUrl, ValidationError, parse_obj_as
+from pydantic.v1 import HttpUrl, ValidationError, parse_obj_as
 from starlette.datastructures import URL
 
 _logger = logging.getLogger(__name__)

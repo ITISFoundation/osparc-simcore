@@ -8,7 +8,7 @@ from aws_library.ec2 import AWSTagKey, EC2InstanceData
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 from servicelib.logging_utils import log_catch
 
 from ..core.settings import get_application_settings

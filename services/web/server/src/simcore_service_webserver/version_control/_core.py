@@ -12,7 +12,7 @@ import logging
 from uuid import UUID
 
 from aiopg.sa.result import RowProxy
-from pydantic import NonNegativeInt, PositiveInt, validate_arguments
+from pydantic.v1 import NonNegativeInt, PositiveInt, validate_arguments
 
 from .db import VersionControlRepository
 from .errors import CleanRequiredError

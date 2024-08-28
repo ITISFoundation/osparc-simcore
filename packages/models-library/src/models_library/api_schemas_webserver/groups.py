@@ -1,7 +1,14 @@
 from contextlib import suppress
 from typing import Any, ClassVar
 
-from pydantic import AnyUrl, BaseModel, Field, ValidationError, parse_obj_as, validator
+from pydantic.v1 import (
+    AnyUrl,
+    BaseModel,
+    Field,
+    ValidationError,
+    parse_obj_as,
+    validator,
+)
 
 from ..emails import LowerCaseEmailStr
 

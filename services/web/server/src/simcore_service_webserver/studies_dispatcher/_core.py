@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from models_library.services import ServiceVersion
 from models_library.utils.pydantic_tools_extension import parse_obj_or_none
-from pydantic import ByteSize, ValidationError, parse_obj_as
+from pydantic.v1 import ByteSize, ValidationError, parse_obj_as
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,

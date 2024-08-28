@@ -42,7 +42,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import Page
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import PositiveInt
+from pydantic.v1 import PositiveInt
 from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,

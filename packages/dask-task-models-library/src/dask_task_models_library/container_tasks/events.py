@@ -4,7 +4,7 @@ from typing import Any, ClassVar, TypeAlias
 
 import dask.typing
 from distributed.worker import get_worker
-from pydantic import BaseModel, Extra, validator
+from pydantic.v1 import BaseModel, Extra, validator
 
 from .protocol import TaskOwner
 

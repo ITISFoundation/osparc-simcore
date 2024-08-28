@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic.v1 import BaseModel, Field, SecretStr
 
 from ..emails import LowerCaseEmailStr
 from ._base import InputSchema

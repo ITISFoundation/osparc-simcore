@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 from models_library.projects_state import RunningState
-from pydantic.main import BaseModel
+from pydantic.v1.main import BaseModel
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
 
 

@@ -12,7 +12,7 @@ import rich
 import typer
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from mypy_boto3_ec2.type_defs import TagTypeDef
-from pydantic import ByteSize, TypeAdapter, ValidationError
+from pydantic.v1 import ByteSize, TypeAdapter, ValidationError
 from rich.progress import track
 from rich.style import Style
 from rich.table import Column, Table

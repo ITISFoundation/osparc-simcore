@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from pydantic import AnyUrl, SecretStr
+from pydantic.v1 import AnyUrl, SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings
 

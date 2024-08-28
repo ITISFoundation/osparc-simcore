@@ -13,7 +13,7 @@ from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMet
 from models_library.api_schemas_storage import FileUploadSchema, PresignedLink
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
-from pydantic import AnyUrl, PositiveInt
+from pydantic.v1 import AnyUrl, PositiveInt
 from starlette.datastructures import URL
 
 from ..core.settings import StorageSettings

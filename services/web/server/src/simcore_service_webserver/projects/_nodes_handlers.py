@@ -32,7 +32,7 @@ from models_library.services_resources import ServiceResourcesDict
 from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Field, parse_obj_as
+from pydantic.v1 import BaseModel, Field, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
     start_long_running_task,

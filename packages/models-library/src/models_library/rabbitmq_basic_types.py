@@ -1,7 +1,7 @@
 import re
 from typing import Final
 
-from pydantic import ConstrainedStr, parse_obj_as
+from pydantic.v1 import ConstrainedStr, parse_obj_as
 
 REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS: Final[str] = r"^[\w\-\.]*$"
 

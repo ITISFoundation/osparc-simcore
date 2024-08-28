@@ -10,7 +10,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import Field
+from pydantic.v1 import Field
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
     StrictRequestParams,

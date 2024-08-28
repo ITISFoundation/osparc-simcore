@@ -3,7 +3,7 @@ import re
 from models_library.basic_regex import SIMPLE_VERSION_RE
 from models_library.services import ServiceMetaDataPublished
 from packaging import version
-from pydantic import BaseModel, ByteSize, Extra, Field, validator
+from pydantic.v1 import BaseModel, ByteSize, Extra, Field, validator
 
 LEGACY_INTEGRATION_VERSION = version.Version("0")
 PROGRESS_REGEXP: re.Pattern[str] = re.compile(

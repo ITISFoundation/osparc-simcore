@@ -6,7 +6,7 @@ from typing import Any, Literal, Protocol
 import httpx
 import respx
 from fastapi import status
-from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 
 from .httpx_calls_capture_openapi import enhance_path_description_from_openapi_spec
 from .httpx_calls_capture_parameters import PathDescription

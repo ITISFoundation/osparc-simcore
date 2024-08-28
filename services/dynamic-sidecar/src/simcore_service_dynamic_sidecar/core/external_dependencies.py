@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1.errors import PydanticErrorMixin
 from servicelib.utils import logged_gather
 
 from .postgres import wait_for_postgres_liveness

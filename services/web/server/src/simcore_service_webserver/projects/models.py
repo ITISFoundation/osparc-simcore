@@ -12,7 +12,7 @@ from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
 )
-from pydantic import BaseModel, validator
+from pydantic.v1 import BaseModel, validator
 from simcore_postgres_database.models.projects import ProjectType, projects
 
 ProjectDict: TypeAlias = dict[str, Any]

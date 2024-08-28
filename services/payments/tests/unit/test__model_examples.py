@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 import simcore_service_payments.models
-from pydantic import BaseModel, ValidationError
+from pydantic.v1 import BaseModel, ValidationError
 from pytest_simcore.pydantic_models import walk_model_examples_in_package
 
 

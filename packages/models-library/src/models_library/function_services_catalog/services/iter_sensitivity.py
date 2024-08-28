@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from copy import deepcopy
 from typing import Any
 
-from pydantic import schema_of
+from pydantic.v1 import schema_of
 
 from ...projects_nodes import OutputID, OutputsDict
 from ...services import ServiceMetaDataPublished, ServiceType

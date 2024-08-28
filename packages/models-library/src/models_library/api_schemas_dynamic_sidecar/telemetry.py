@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Protocol
 
 from models_library.projects_nodes_io import NodeID
-from pydantic import BaseModel, ByteSize, Field
+from pydantic.v1 import BaseModel, ByteSize, Field
 
 
 class SDiskUsageProtocol(Protocol):

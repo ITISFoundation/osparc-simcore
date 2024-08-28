@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
-from pydantic import BaseModel, Extra, validator
+from pydantic.v1 import BaseModel, Extra, validator
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON

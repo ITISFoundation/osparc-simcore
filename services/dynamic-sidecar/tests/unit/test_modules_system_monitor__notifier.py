@@ -21,7 +21,7 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import (
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import ByteSize, NonNegativeInt, parse_obj_as
+from pydantic.v1 import ByteSize, NonNegativeInt, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.utils import logged_gather

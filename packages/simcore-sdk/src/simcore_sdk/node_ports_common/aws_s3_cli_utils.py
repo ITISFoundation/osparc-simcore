@@ -1,7 +1,7 @@
 import logging
 import re
 
-from pydantic import ByteSize, parse_obj_as
+from pydantic.v1 import ByteSize, parse_obj_as
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 

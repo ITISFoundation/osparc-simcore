@@ -8,7 +8,7 @@
 from uuid import uuid4
 
 import pytest
-from pydantic import ValidationError
+from pydantic.v1 import ValidationError
 from servicelib.utils_secrets import (
     _MIN_SECRET_NUM_BYTES,
     _PLACEHOLDER,

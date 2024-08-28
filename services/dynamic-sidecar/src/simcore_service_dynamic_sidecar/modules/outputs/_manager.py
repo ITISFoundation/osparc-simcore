@@ -9,8 +9,8 @@ from functools import partial
 from fastapi import FastAPI
 from models_library.basic_types import IDStr
 from models_library.rabbitmq_messages import ProgressType
-from pydantic import PositiveFloat
-from pydantic.errors import PydanticErrorMixin
+from pydantic.v1 import PositiveFloat
+from pydantic.v1.errors import PydanticErrorMixin
 from servicelib import progress_bar
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_catch, log_context

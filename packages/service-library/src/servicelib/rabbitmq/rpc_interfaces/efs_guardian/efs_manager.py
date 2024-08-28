@@ -6,7 +6,7 @@ from models_library.api_schemas_efs_guardian import EFS_GUARDIAN_RPC_NAMESPACE
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic.v1 import NonNegativeInt, parse_obj_as
 
 from ....logging_utils import log_decorator
 from ....rabbitmq import RabbitMQRPCClient

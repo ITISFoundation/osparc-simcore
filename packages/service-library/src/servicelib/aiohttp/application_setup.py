@@ -8,7 +8,7 @@ from typing import Any, Protocol, TypedDict
 
 import arrow
 from aiohttp import web
-from pydantic import parse_obj_as
+from pydantic.v1 import parse_obj_as
 
 from .application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 
