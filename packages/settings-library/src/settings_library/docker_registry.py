@@ -1,7 +1,7 @@
 from functools import cached_property
 from typing import Any, ClassVar
 
-from pydantic import Field, SecretStr, validator
+from pydantic import Field, SecretStr, field_validator
 
 from .base import BaseCustomSettings
 
@@ -23,7 +23,7 @@ class RegistrySettings(BaseCustomSettings):
     )
     REGISTRY_SSL: bool = Field(..., description="access to registry through ssl")
 
-    @validator("REGISTRY_PATH", pre=True)
+    @field_validator("REGISTRY_PATH", mode="before")
     @classmethod
     def _escape_none_string(cls, v) -> Any | None:
         return None if v == "None" else v
@@ -36,6 +36,8 @@ class RegistrySettings(BaseCustomSettings):
     def api_url(self) -> str:
         return f"{self.REGISTRY_URL}/v2"
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseCustomSettings.Config):
         schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
             "examples": [
