@@ -13,15 +13,14 @@ would still have these invariants.
 """
 
 
-from pydantic import validator
-from pydantic.fields import ModelField, Undefined
+from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings
 
 
 def assert_field_specs(
     model_cls, name, is_required, is_nullable, explicit_default, defaults
 ):
-    field: ModelField = model_cls.__fields__[name]
+    field = model_cls.__fields__[name]
     print(field, field.field_info)
 
     assert field.required == is_required
@@ -47,13 +46,12 @@ class Settings(BaseSettings):
     # Other ways to write down "required" is using ...
     VALUE_ALSO_REQUIRED: int = ...  # type: ignore
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("*", pre=True)
+
+    @field_validator("*", mode="before")
     @classmethod
-    def parse_none(cls, v, values, field: ModelField):
+    def parse_none(cls, v, info: ValidationInfo):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
-        if field.allow_none:
+        if info.allow_none:
             if isinstance(v, str) and v.lower() in ("null", "none"):
                 return None
         return v
@@ -137,7 +135,7 @@ def test_construct(monkeypatch):
     settings_from_init = Settings(
         VALUE=1, VALUE_ALSO_REQUIRED=10, VALUE_NULLABLE_REQUIRED=None
     )
-    print(settings_from_init.json(exclude_unset=True, indent=1))
+    print(settings_from_init.model_dump_json(exclude_unset=True, indent=1))
 
     # from env vars
     monkeypatch.setenv("VALUE", "1")
@@ -147,13 +145,13 @@ def test_construct(monkeypatch):
     )  # WARNING: set this env to None would not work w/o ``parse_none`` validator! bug???
 
     settings_from_env = Settings()
-    print(settings_from_env.json(exclude_unset=True, indent=1))
+    print(settings_from_env.model_dump_json(exclude_unset=True, indent=1))
 
     assert settings_from_init == settings_from_env
 
     # mixed
     settings_from_both = Settings(VALUE_NULLABLE_REQUIRED=3)
-    print(settings_from_both.json(exclude_unset=True, indent=1))
+    print(settings_from_both.model_dump_json(exclude_unset=True, indent=1))
 
     assert settings_from_both == settings_from_init.copy(
         update={"VALUE_NULLABLE_REQUIRED": 3}

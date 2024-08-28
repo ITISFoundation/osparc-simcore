@@ -104,14 +104,14 @@ def test_create_settings_class(
 
     # DEV: Path("M1.ignore.json").write_text(dumps_model_class(M))
 
-    assert M.__fields__["VALUE_NULLABLE_DEFAULT_ENV"].default_factory
+    assert M.model_fields["VALUE_NULLABLE_DEFAULT_ENV"].default_factory
 
-    assert M.__fields__["VALUE_NULLABLE_DEFAULT_ENV"].get_default() is None
+    assert M.model_fields["VALUE_NULLABLE_DEFAULT_ENV"].get_default() is None
 
-    assert M.__fields__["VALUE_DEFAULT_ENV"].default_factory
+    assert M.model_fields["VALUE_DEFAULT_ENV"].default_factory
 
     with pytest.raises(DefaultFromEnvFactoryError):
-        M.__fields__["VALUE_DEFAULT_ENV"].get_default()
+        M.model_fields["VALUE_DEFAULT_ENV"].get_default()
 
 
 def test_create_settings_class_with_environment(
@@ -139,15 +139,15 @@ def test_create_settings_class_with_environment(
 
         instance = SettingsClass()
 
-        print(instance.json(indent=2))
+        print(instance.model_dump_json(indent=2))
 
         # checks
-        assert instance.dict(exclude_unset=True) == {
+        assert instance.model_dump(exclude_unset=True) == {
             "VALUE": {"S_VALUE": 2},
             "VALUE_NULLABLE_REQUIRED": {"S_VALUE": 3},
         }
 
-        assert instance.dict() == {
+        assert instance.model_dump() == {
             "VALUE": {"S_VALUE": 2},
             "VALUE_DEFAULT": {"S_VALUE": 42},
             "VALUE_CONFUSING": None,

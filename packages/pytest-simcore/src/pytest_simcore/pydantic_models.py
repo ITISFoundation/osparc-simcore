@@ -82,21 +82,19 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
     for model_name, model_cls in inspect.getmembers(module, _is_model_cls):
         assert model_name  # nosec
         if (
-            (config_cls := model_cls.Config)
-            and inspect.isclass(config_cls)
-            and is_strict_inner(model_cls, config_cls)
-            and (schema_extra := getattr(config_cls, "schema_extra", {}))
-            and isinstance(schema_extra, dict)
+            (config_dict := model_cls.model_config)
+            and (json_schema_extra := config_dict.get("json_schema_extra", {}))
+            and isinstance(json_schema_extra, dict)
         ):
-            if "example" in schema_extra:
+            if "example" in json_schema_extra:
                 yield ModelExample(
                     model_cls=model_cls,
                     example_name="example",
-                    example_data=schema_extra["example"],
+                    example_data=json_schema_extra["example"],
                 )
 
-            elif "examples" in schema_extra:
-                for index, example in enumerate(schema_extra["examples"]):
+            elif "examples" in json_schema_extra:
+                for index, example in enumerate(json_schema_extra["examples"]):
                     yield ModelExample(
                         model_cls=model_cls,
                         example_name=f"examples_{index}",

@@ -1,7 +1,7 @@
 from datetime import timedelta
 from functools import cached_property
 
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (
@@ -16,7 +16,7 @@ DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL: timedelta = timedelta(seconds=60)
 class ResourceUsageTrackerSettings(BaseCustomSettings, MixinServiceSettings):
     RESOURCE_USAGE_TRACKER_HOST: str = "resource-usage-tracker"
     RESOURCE_USAGE_TRACKER_PORT: PortInt = DEFAULT_FASTAPI_PORT
-    RESOURCE_USAGE_TRACKER_VTAG: VersionTag = parse_obj_as(VersionTag, "v1")
+    RESOURCE_USAGE_TRACKER_VTAG: VersionTag = TypeAdapter(VersionTag).validate_strings("v1")
 
     @cached_property
     def api_base_url(self) -> str:

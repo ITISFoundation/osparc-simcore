@@ -1,12 +1,12 @@
+from functools import cached_property
 import logging
 from collections.abc import Sequence
-from functools import cached_property
-from typing import Final, get_args, get_origin
+#from functools import cached_property
+from typing import Final
 
-from pydantic import BaseConfig, ConfigError, Extra, ValidationError, validator
-from pydantic.error_wrappers import ErrorList, ErrorWrapper
-from pydantic.fields import ModelField, Undefined
-from pydantic.typing import is_literal_type
+from pydantic import ConfigDict, ValidationError, ValidationInfo, field_validator
+#from pydantic.error_wrappers import ErrorList, ErrorWrapper
+#from pydantic.typing import is_literal_type
 from pydantic_settings import BaseSettings
 
 _logger = logging.getLogger(__name__)
@@ -16,11 +16,11 @@ _DEFAULTS_TO_NONE_MSG: Final[
 ] = "%s auto_default_from_env unresolved, defaulting to None"
 
 
-class DefaultFromEnvFactoryError(ValidationError):
+class DefaultFromEnvFactoryError(ValueError):
     ...
 
 
-def create_settings_from_env(field: ModelField):
+def create_settings_from_env(field):
     # NOTE: Cannot pass only field.type_ because @prepare_field (when this function is called)
     #  this value is still not resolved (field.type_ at that moment has a weak_ref).
     #  Therefore we keep the entire 'field' but MUST be treated here as read-only
@@ -40,9 +40,9 @@ def create_settings_from_env(field: ModelField):
                 )
                 return None
 
-            def _prepend_field_name(ee: ErrorList):
-                if isinstance(ee, ErrorWrapper):
-                    return ErrorWrapper(ee.exc, (field.name, *ee.loc_tuple()))
+            def _prepend_field_name(ee):
+                if isinstance(ee):
+                    return ValidationError(ee.exc, (field.name, *ee.loc_tuple()))
                 assert isinstance(ee, Sequence)  # nosec
                 return [_prepend_field_name(e) for e in ee]
 
@@ -64,70 +64,72 @@ class BaseCustomSettings(BaseSettings):
     SEE tests for details.
     """
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("*", pre=True)
+    model_config = ConfigDict(
+        case_sensitive = True,  # All must be capitalized
+        extra = "forbid",
+        allow_mutation = False,
+        frozen = True,
+        validate_all = True,
+        keep_untouched = (cached_property,)
+    )
+
+    @field_validator("*", mode="before")
     @classmethod
-    def parse_none(cls, v, field: ModelField):
+    def parse_none(cls, v):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
-        if field.allow_none and isinstance(v, str) and v.lower() in ("null", "none"):
+        if isinstance(v, str) and v.lower() in ("null", "none"):
             return None
         return v
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(BaseConfig):
-        case_sensitive = True  # All must be capitalized
-        extra = Extra.forbid
-        allow_mutation = False
-        frozen = True
-        validate_all = True
-        keep_untouched = (cached_property,)
+    # # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    # class Config(BaseConfig):
 
-        @classmethod
-        def prepare_field(cls, field: ModelField) -> None:
-            super().prepare_field(field)
 
-            auto_default_from_env = field.field_info.extra.get(
-                "auto_default_from_env", False
-            )
+    #     @classmethod
+    #     def prepare_field(cls, field: ModelField) -> None:
+    #         super().prepare_field(field)
 
-            field_type = field.type_
-            if args := get_args(field_type):
-                field_type = next(a for a in args if a != type(None))
+    #         auto_default_from_env = field.field_info.extra.get(
+    #             "auto_default_from_env", False
+    #         )
 
-            # Avoids issubclass raising TypeError. SEE test_issubclass_type_error_with_pydantic_models
-            is_not_composed = (
-                get_origin(field_type) is None
-            )  # is not composed as dict[str, Any] or Generic[Base]
-            # avoid literals raising TypeError
-            is_not_literal = is_literal_type(field.type_) is False
+    #         field_type = field.type_
+    #         if args := get_args(field_type):
+    #             field_type = next(a for a in args if a != type(None))
 
-            if (
-                is_not_literal
-                and is_not_composed
-                and issubclass(field_type, BaseCustomSettings)
-            ):
-                if auto_default_from_env:
-                    assert field.field_info.default is Undefined
-                    assert field.field_info.default_factory is None
+    #         # Avoids issubclass raising TypeError. SEE test_issubclass_type_error_with_pydantic_models
+    #         is_not_composed = (
+    #             get_origin(field_type) is None
+    #         )  # is not composed as dict[str, Any] or Generic[Base]
+    #         # avoid literals raising TypeError
+    #         is_not_literal = is_literal_type(field.type_) is False
 
-                    # Transform it into something like `Field(default_factory=create_settings_from_env(field))`
-                    field.default_factory = create_settings_from_env(field)
-                    field.default = None
-                    field.required = False  # has a default now
+    #         if (
+    #             is_not_literal
+    #             and is_not_composed
+    #             and issubclass(field_type, BaseCustomSettings)
+    #         ):
+    #             if auto_default_from_env:
+    #                 assert field.field_info.default is Undefined
+    #                 assert field.field_info.default_factory is None
 
-            elif (
-                is_not_literal
-                and is_not_composed
-                and issubclass(field_type, BaseSettings)
-            ):
-                msg = f"{cls}.{field.name} of type {field_type} must inherit from BaseCustomSettings"
-                raise ConfigError(msg)
+    #                 # Transform it into something like `Field(default_factory=create_settings_from_env(field))`
+    #                 field.default_factory = create_settings_from_env(field)
+    #                 field.default = None
+    #                 field.required = False  # has a default now
 
-            elif auto_default_from_env:
-                msg = f"auto_default_from_env=True can only be used in BaseCustomSettings subclassesbut field {cls}.{field.name} is {field_type} "
-                raise ConfigError(msg)
+    #         elif (
+    #             is_not_literal
+    #             and is_not_composed
+    #             and issubclass(field_type, BaseSettings)
+    #         ):
+    #             msg = f"{cls}.{field.name} of type {field_type} must inherit from BaseCustomSettings"
+    #             raise ConfigError(msg)
+
+    #         elif auto_default_from_env:
+    #             msg = f"auto_default_from_env=True can only be used in BaseCustomSettings subclassesbut field {cls}.{field.name} is {field_type} "
+    #             raise ConfigError(msg)
 
     @classmethod
     def create_from_envs(cls, **overrides):

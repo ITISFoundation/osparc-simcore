@@ -4,14 +4,14 @@
 """
 from enum import Enum, auto
 
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
 
 from .basic_types import PortInt
 
-DEFAULT_AIOHTTP_PORT: PortInt = parse_obj_as(PortInt, 8080)
-DEFAULT_FASTAPI_PORT: PortInt = parse_obj_as(PortInt, 8000)
+DEFAULT_AIOHTTP_PORT: PortInt = TypeAdapter(PortInt).validate_python(8080)
+DEFAULT_FASTAPI_PORT: PortInt = TypeAdapter(PortInt).validate_python(8000)
 
 
 class URLPart(Enum):

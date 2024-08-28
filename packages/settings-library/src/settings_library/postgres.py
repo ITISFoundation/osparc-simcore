@@ -1,3 +1,4 @@
+from typing import Self
 import urllib.parse
 from functools import cached_property
 
@@ -7,7 +8,7 @@ from pydantic import (
     Field,
     PostgresDsn,
     SecretStr,
-    field_validator,
+    model_validator,
 )
 
 from .base import BaseCustomSettings
@@ -60,13 +61,12 @@ class PostgresSettings(BaseCustomSettings):
         }
     )
 
-    @field_validator("POSTGRES_MAXSIZE")
-    @classmethod
-    def _check_size(cls, v, values):
-        if not (values["POSTGRES_MINSIZE"] <= v):
-            msg = f"assert POSTGRES_MINSIZE={values['POSTGRES_MINSIZE']} <= POSTGRES_MAXSIZE={v}"
+    @model_validator(mode='after')
+    def _check_size(self) -> Self:
+        if not (self.POSTGRES_MINSIZE <= self.POSTGRES_MAXSIZE):
+            msg = f"assert POSTGRES_MINSIZE={self.POSTGRES_MINSIZE} <= POSTGRES_MAXSIZE={self.POSTGRES_MAXSIZE}"
             raise ValueError(msg)
-        return v
+        return self
 
     @cached_property
     def dsn(self) -> str:
