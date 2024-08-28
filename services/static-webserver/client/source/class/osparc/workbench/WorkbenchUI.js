@@ -91,7 +91,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     "removeNode": "qx.event.type.Data",
     "removeNodes": "qx.event.type.Data",
     "removeEdge": "qx.event.type.Data",
-    "changeSelectedNode": "qx.event.type.Data"
+    "changeSelectedNode": "qx.event.type.Data",
+    "requestOpenLogger": "qx.event.type.Data",
   },
 
   properties: {
@@ -492,6 +493,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __addNodeListeners: function(nodeUI) {
       nodeUI.addListener("updateNodeDecorator", () => this.__updateNodeUIPos(nodeUI), this);
+      nodeUI.addListener("requestOpenLogger", () => this.fireDataEvent("requestOpenLogger", nodeUI.getNodeId()), this);
 
       nodeUI.addListener("nodeMovingStart", () => {
         this.__selectNode(nodeUI);
