@@ -214,7 +214,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           column: this.self().GRID_POS.COMPATIBLE_VERSION
         });
 
-        if (latestCompatible && osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy) {
+        if (latestCompatible && canIWriteStudy) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
             enabled: isUpdatable
@@ -240,7 +240,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         }
       }
 
-      if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWriteStudy && anyUpdatable) {
+      if (canIWriteStudy && anyUpdatable) {
         const updateAllButton = this.__updateAllButton;
         updateAllButton.show();
         updateAllButton.addListener("execute", () => this.__updateAllServices(updatableServices, updateAllButton), this);
