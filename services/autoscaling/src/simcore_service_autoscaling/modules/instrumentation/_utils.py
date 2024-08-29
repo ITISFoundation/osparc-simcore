@@ -15,7 +15,7 @@ class TrackedGauge:
 
     def update_from_instances(self, instances: Iterable[EC2InstanceData]) -> None:
         # Create a Counter to count nodes by instance type
-        instance_type_counts = collections.Counter(i.type for i in instances)
+        instance_type_counts = collections.Counter(f"{i.type}" for i in instances)
         current_instance_types = set(instance_type_counts.keys())
         self._tracked_labels.update(current_instance_types)
         # update the gauge
