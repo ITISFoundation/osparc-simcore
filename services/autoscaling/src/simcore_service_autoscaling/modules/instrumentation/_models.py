@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Final
 
-from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
+from prometheus_client import CollectorRegistry, Counter, Histogram
 
 from ...models import BufferPoolManager, Cluster
 from ._constants import (
@@ -10,7 +10,7 @@ from ._constants import (
     EC2_INSTANCE_LABELS,
     METRICS_NAMESPACE,
 )
-from ._utils import create_gauge, update_gauge
+from ._utils import TrackedGauge, create_gauge
 
 
 @dataclass(slots=True, kw_only=True)
@@ -20,16 +20,16 @@ class MetricsBase:
 
 @dataclass(slots=True, kw_only=True)
 class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attributes
-    active_nodes: Gauge = field(init=False)
-    pending_nodes: Gauge = field(init=False)
-    drained_nodes: Gauge = field(init=False)
-    buffer_drained_nodes: Gauge = field(init=False)
-    pending_ec2s: Gauge = field(init=False)
-    broken_ec2s: Gauge = field(init=False)
-    buffer_ec2s: Gauge = field(init=False)
-    disconnected_nodes: Gauge = field(init=False)
-    terminating_nodes: Gauge = field(init=False)
-    terminated_instances: Gauge = field(init=False)
+    active_nodes: TrackedGauge = field(init=False)
+    pending_nodes: TrackedGauge = field(init=False)
+    drained_nodes: TrackedGauge = field(init=False)
+    buffer_drained_nodes: TrackedGauge = field(init=False)
+    pending_ec2s: TrackedGauge = field(init=False)
+    broken_ec2s: TrackedGauge = field(init=False)
+    buffer_ec2s: TrackedGauge = field(init=False)
+    disconnected_nodes: TrackedGauge = field(init=False)
+    terminating_nodes: TrackedGauge = field(init=False)
+    terminated_instances: TrackedGauge = field(init=False)
 
     def __post_init__(self) -> None:
         cluster_subsystem = f"{self.subsystem}_cluster"
@@ -41,12 +41,13 @@ class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attribut
     def update_from_cluster(self, cluster: Cluster) -> None:
         for field_name in CLUSTER_METRICS_DEFINITIONS:
             if field_name != "disconnected_nodes":
-                update_gauge(
-                    getattr(self, field_name),
-                    (i.ec2_instance for i in getattr(cluster, field_name)),
-                )
+                tracked_gauge = getattr(self, field_name)
+                assert isinstance(tracked_gauge, TrackedGauge)  # nosec
+                instances = getattr(cluster, field_name)
+                assert isinstance(instances, list)  # nosec
+                tracked_gauge.update_from_instances(i.ec2_instance for i in instances)
             else:
-                self.disconnected_nodes.set(len(cluster.disconnected_nodes))
+                self.disconnected_nodes.gauge.set(len(cluster.disconnected_nodes))
 
 
 @dataclass(slots=True, kw_only=True)
@@ -104,13 +105,13 @@ _MINUTE: Final[int] = 60
 
 @dataclass(slots=True, kw_only=True)
 class BufferPoolsMetrics(MetricsBase):
-    ready_instances: Gauge = field(init=False)
-    pending_instances: Gauge = field(init=False)
-    waiting_to_pull_instances: Gauge = field(init=False)
-    waiting_to_stop_instances: Gauge = field(init=False)
-    pulling_instances: Gauge = field(init=False)
-    stopping_instances: Gauge = field(init=False)
-    broken_instances: Gauge = field(init=False)
+    ready_instances: TrackedGauge = field(init=False)
+    pending_instances: TrackedGauge = field(init=False)
+    waiting_to_pull_instances: TrackedGauge = field(init=False)
+    waiting_to_stop_instances: TrackedGauge = field(init=False)
+    pulling_instances: TrackedGauge = field(init=False)
+    stopping_instances: TrackedGauge = field(init=False)
+    broken_instances: TrackedGauge = field(init=False)
 
     instances_ready_to_pull_seconds: Histogram = field(init=False)
     instances_completed_pulling_seconds: Histogram = field(init=False)
@@ -155,9 +156,11 @@ class BufferPoolsMetrics(MetricsBase):
     ) -> None:
         for buffer_pool in buffer_pool_manager.buffer_pools.values():
             for field_name in BUFFER_POOLS_METRICS_DEFINITIONS:
-                update_gauge(
-                    getattr(self, field_name), getattr(buffer_pool, field_name)
-                )
+                tracked_gauge = getattr(self, field_name)
+                assert isinstance(tracked_gauge, TrackedGauge)  # nosec
+                instances = getattr(buffer_pool, field_name)
+                assert isinstance(instances, set)  # nosec
+                tracked_gauge.update_from_instances(i.ec2_instance for i in instances)
 
 
 @dataclass(slots=True, kw_only=True)
