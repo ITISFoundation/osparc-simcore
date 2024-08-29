@@ -158,6 +158,7 @@ async def list_jobs(
     "/{solver_key:path}/releases/{version}/jobs/page",
     response_model=Page[Job],
     responses=JOBS_STATUS_CODES,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     description=(
         "List of jobs on a specific released solver (includes pagination)\n\n"
         + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")
