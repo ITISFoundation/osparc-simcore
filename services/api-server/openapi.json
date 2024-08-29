@@ -223,7 +223,7 @@
           "files"
         ],
         "summary": "List Files",
-        "description": "Lists all files stored in the system\n\nSEE get_files_page for a paginated version of this function",
+        "description": "Lists all files stored in the system\n\nSEE `get_files_page` for a paginated version of this function",
         "operationId": "list_files",
         "responses": {
           "200": {
@@ -1875,7 +1875,7 @@
           "solvers"
         ],
         "summary": "List Jobs",
-        "description": "List of jobs in a specific released solver (limited to 20 jobs)\n\nSEE get_jobs_page for paginated version of this function",
+        "description": "List of jobs in a specific released solver (limited to 20 jobs)\n\nSEE `get_jobs_page` for paginated version of this function",
         "operationId": "list_jobs",
         "parameters": [
           {

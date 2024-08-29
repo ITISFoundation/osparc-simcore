@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 from models_library.basic_types import BootModeEnum
+from packaging.version import Version
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.logging_utils import config_all_loggers
 
@@ -23,13 +24,17 @@ _logger = logging.getLogger(__name__)
 def _label_title_and_version(settings: ApplicationSettings, title: str, version: str):
     labels = []
     if settings.API_SERVER_DEV_FEATURES_ENABLED:
-        labels.append("dev")
+        # builds public version identifier with pre
+        v = Version(version)
+        # SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#public-version-identifiers
+        # `[N!]N(.N)*[{a|b|rc}N][.postN][.devN]`
+        version = f"{v.base_version}.post0.dev"
 
     if settings.debug:
         labels.append("debug")
 
-    if local_version_label := ".".join(labels):
-        # Appends local version identifier <public version identifier>[+<local version label>]
+    if local_version_label := "-".join(labels):
+        # Appends local version identifier `<public version identifier>[+<local version label>]`
         # SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#local-version-identifiers
         title += f" ({local_version_label})"
         version += f"+{local_version_label}"
