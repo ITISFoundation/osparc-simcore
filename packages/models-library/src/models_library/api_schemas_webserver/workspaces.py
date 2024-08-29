@@ -37,7 +37,8 @@ class CreateWorkspaceBodyParams(InputSchema):
 
 class PutWorkspaceBodyParams(InputSchema):
     name: IDStr
-    description: str
+    description: str | None = None
+    thumbnail: str | None = None
 
     class Config:
         extra = Extra.forbid

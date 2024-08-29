@@ -27,9 +27,9 @@ async def create_folder(
     product_name: ProductName,
     workspace_id: WorkspaceID | None,
 ) -> FolderGet:
-    user = get_user(app, user_id=user_id)
+    user = await get_user(app, user_id=user_id)
 
-    _private_workspace_user_id = user_id
+    _private_workspace_user_id: UserID | None = user_id
     if workspace_id:
         # Check access to workspace
         workspace = await get_workspace(
@@ -66,23 +66,29 @@ async def get_folder(
     user_id: UserID,
     folder_id: FolderID,
     product_name: ProductName,
-    workspace_id: WorkspaceID | None,
 ) -> FolderGet:
-    _private_workspace_user_id = user_id
-    if workspace_id:
+    folder_db = await folders_db.get_folder_db(
+        app, folder_id=folder_id, product_name=product_name
+    )
+
+    _private_workspace_user_id: UserID | None = user_id
+    if folder_db.workspace_id:
         # Check access to workspace
         await get_workspace(
-            app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+            app,
+            user_id=user_id,
+            workspace_id=folder_db.workspace_id,
+            product_name=product_name,
         )
         # Setup folder user id to None, as this is not a private workspace
         _private_workspace_user_id = None
 
-    folder_db = await folders_db.get_folder(
+    folder_db = await folders_db.get_folder_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
         user_id=_private_workspace_user_id,
-        workspace_id=workspace_id,
+        workspace_id=folder_db.workspace_id,
     )
     return FolderGet(
         folder_id=folder_db.folder_id,
@@ -104,7 +110,7 @@ async def list_folders(
     limit: int,
     order_by: OrderBy,
 ) -> FolderGetPage:
-    _private_workspace_user_id = user_id
+    _private_workspace_user_id: UserID | None = user_id
     if workspace_id:
         # Check access to workspace
         await get_workspace(
@@ -143,31 +149,38 @@ async def update_folder(
     app: web.Application,
     user_id: UserID,
     folder_id: FolderID,
+    *,
     name: str,
     parent_folder_id: FolderID | None,
-    workspace_id: WorkspaceID | None,
     product_name: ProductName,
 ) -> FolderGet:
-    _private_workspace_user_id = user_id
-    if workspace_id:
+    folder_db = await folders_db.get_folder_db(
+        app, folder_id=folder_id, product_name=product_name
+    )
+
+    _private_workspace_user_id: UserID | None = user_id
+    if folder_db.workspace_id:
         # Check access to workspace
         workspace = await get_workspace(
-            app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+            app,
+            user_id=user_id,
+            workspace_id=folder_db.workspace_id,
+            product_name=product_name,
         )
         if workspace.my_access_rights.write is False:
             raise WorkspaceAccessForbiddenError(
-                reason=f"User {user_id} does not have write permission on workspace {workspace_id}."
+                reason=f"User {user_id} does not have write permission on workspace {folder_db.workspace_id}."
             )
         # Setup folder user id to None, as this is not a private workspace
         _private_workspace_user_id = None
 
     # Check user has acces to the folder
-    await folders_db.get_folder(
+    await folders_db.get_folder_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
         user_id=_private_workspace_user_id,
-        workspace_id=workspace_id,
+        workspace_id=folder_db.workspace_id,
     )
 
     folder_db = await folders_db.update_folder(
@@ -191,29 +204,35 @@ async def delete_folder(
     app: web.Application,
     user_id: UserID,
     folder_id: FolderID,
-    workspace_id: WorkspaceID | None,
     product_name: ProductName,
 ) -> None:
-    _private_workspace_user_id = user_id
-    if workspace_id:
+    folder_db = await folders_db.get_folder_db(
+        app, folder_id=folder_id, product_name=product_name
+    )
+
+    _private_workspace_user_id: UserID | None = user_id
+    if folder_db.workspace_id:
         # Check access to workspace
         workspace = await get_workspace(
-            app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+            app,
+            user_id=user_id,
+            workspace_id=folder_db.workspace_id,
+            product_name=product_name,
         )
         if workspace.my_access_rights.delete is False:
             raise WorkspaceAccessForbiddenError(
-                reason=f"User {user_id} does not have delete permission on workspace {workspace_id}."
+                reason=f"User {user_id} does not have delete permission on workspace {folder_db.workspace_id}."
             )
         # Setup folder user id to None, as this is not a private workspace
         _private_workspace_user_id = None
 
     # Check user has acces to the folder
-    await folders_db.get_folder(
+    await folders_db.get_folder_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
         user_id=_private_workspace_user_id,
-        workspace_id=workspace_id,
+        workspace_id=folder_db.workspace_id,
     )
 
     await folders_db.delete_folder(app, folder_id=folder_id, product_name=product_name)

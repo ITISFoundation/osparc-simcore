@@ -154,8 +154,7 @@ async def copy_study_to_account(
     )
 
     try:
-        # await get_user_project_access_rights(request.app, project_id=ProjectID(project_uuid), user_id=)
-        product_name = db.get_project_product(template_project["uuid"])
+        product_name = await db.get_project_product(template_project["uuid"])
         prj_access_rights = await get_user_project_access_rights(
             request.app,
             project_id=template_project["uuid"],
@@ -163,7 +162,9 @@ async def copy_study_to_account(
             product_name=product_name,
         )
         if prj_access_rights.read is False:
-            raise
+            raise ProjectInvalidRightsError(
+                user_id=user["id"], project_uuid=template_project["uuid"]
+            )
 
         # Avoids multiple copies of the same template on each account
         await db.get_project(project_uuid)
@@ -195,6 +196,7 @@ async def copy_study_to_account(
             product_name=product_name,
             force_project_uuid=True,
             project_nodes=None,
+            workspace_id=None,
         )
         async for lr_task in copy_data_folders_from_project(
             request.app,

@@ -107,9 +107,9 @@ async def list_workspaces_for_user(
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
-        list_query = base_query.order_by(asc(getattr(workspaces.c, order_by["field"])))
+        list_query = base_query.order_by(asc(getattr(workspaces.c, order_by.field)))
     else:
-        list_query = base_query.order_by(desc(getattr(workspaces.c, order_by["field"])))
+        list_query = base_query.order_by(desc(getattr(workspaces.c, order_by.field)))
     list_query = list_query.offset(offset).limit(limit)
 
     async with get_database_engine(app).acquire() as conn:

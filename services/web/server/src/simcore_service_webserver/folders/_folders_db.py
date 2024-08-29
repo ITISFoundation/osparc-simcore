@@ -31,6 +31,8 @@ _SELECTION_ARGS = (
     folders_v2.c.created_by_gid,
     folders_v2.c.created,
     folders_v2.c.modified,
+    folders_v2.c.user_id,
+    folders_v2.c.workspace_id,
 )
 
 
@@ -106,9 +108,9 @@ async def list_folders(
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
-        list_query = base_query.order_by(asc(getattr(folders_v2.c, order_by["field"])))
+        list_query = base_query.order_by(asc(getattr(folders_v2.c, order_by.field)))
     else:
-        list_query = base_query.order_by(desc(getattr(folders_v2.c, order_by["field"])))
+        list_query = base_query.order_by(desc(getattr(folders_v2.c, order_by.field)))
     list_query = list_query.offset(offset).limit(limit)
 
     async with get_database_engine(app).acquire() as conn:
@@ -121,7 +123,31 @@ async def list_folders(
         return cast(int, total_count), results
 
 
-async def get_folder(
+async def get_folder_db(
+    app: web.Application,
+    folder_id: FolderID,
+    product_name: ProductName,
+) -> FolderDB:
+    query = (
+        select(*_SELECTION_ARGS)
+        .select_from(folders_v2)
+        .where(
+            (folders_v2.c.product_name == product_name)
+            & (folders_v2.c.folder_id == folder_id)
+        )
+    )
+
+    async with get_database_engine(app).acquire() as conn:
+        result = await conn.execute(query)
+        row = await result.first()
+        if row is None:
+            raise FolderAccessForbiddenError(
+                reason=f"Folder {folder_id} does not exist.",
+            )
+        return parse_obj_as(FolderDB, row)
+
+
+async def get_folder_for_user_or_workspace(
     app: web.Application,
     folder_id: FolderID,
     product_name: ProductName,

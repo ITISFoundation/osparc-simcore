@@ -203,6 +203,7 @@ async def _add_new_project(
         product_name=product_name,
         force_as_template=False,
         project_nodes=None,
+        workspace_id=None,
     )
     assert _project_db["uuid"] == str(project.uuid)  # nosec
 

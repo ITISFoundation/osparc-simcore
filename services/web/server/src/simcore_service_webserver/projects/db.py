@@ -459,7 +459,7 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             ]
 
-    async def get_project(  # NOTE: MD: permissions are not checked
+    async def get_project(
         self,
         project_uuid: str,
         *,
@@ -672,7 +672,7 @@ class ProjectDBAPI(BaseProjectDB):
             row = await result.fetchone()
             if row is None:
                 raise ProjectNotFoundError(project_uuid=project_uuid)
-            return row[0]
+            return cast(str, row[0])
 
     async def update_project_owner_without_checking_permissions(
         self,

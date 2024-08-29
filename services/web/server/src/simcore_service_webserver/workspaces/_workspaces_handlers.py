@@ -187,6 +187,7 @@ async def replace_workspace(request: web.Request):
         name=body_params.name,
         description=body_params.description,
         product_name=req_ctx.product_name,
+        thumbnail=body_params.thumbnail,
     )
     return envelope_json_response(workspace)
 

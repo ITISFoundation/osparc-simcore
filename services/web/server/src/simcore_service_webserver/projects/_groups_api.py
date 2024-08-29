@@ -10,6 +10,7 @@ from simcore_service_webserver.projects.models import UserProjectAccessRights
 
 from ..users import api as users_api
 from . import _groups_db as projects_groups_db
+from ._access_rights_api import get_user_project_access_rights
 from ._groups_db import ProjectGroupGetDB
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
@@ -105,30 +106,13 @@ async def replace_project_group(
     read: bool,
     write: bool,
     delete: bool,
-    product_name: ProductName,  # pylint: disable=unused-argument
+    product_name: ProductName,
 ) -> ProjectGroupGet:
-    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    project = await project_db.get_project_db(project_id)
-
-    if project.workspace_id:
-        workspace = await get_workspace(
-            app,
-            user_id=user_id,
-            workspace_id=project.workspace_id,
-            product_name=product_name,
+    project_access_rights: UserProjectAccessRights = (
+        await get_user_project_access_rights(
+            app, project_id=project_id, user_id=user_id, product_name=product_name
         )
-        project_access_rights = UserProjectAccessRights(
-            uid=user_id,
-            read=workspace.my_access_rights.read,
-            write=workspace.my_access_rights.write,
-            delete=workspace.my_access_rights.delete,
-        )
-    else:
-        project_access_rights: UserProjectAccessRights = (
-            await project_db.get_project_access_rights_for_user(
-                user_id=user_id, project_uuid=project_id
-            )
-        )
+    )
     if project_access_rights.write is False:
         raise ProjectInvalidRightsError(
             user_id=user_id,
@@ -136,6 +120,8 @@ async def replace_project_group(
             reason=f"User does not have write access to project {project_id}",
         )
 
+    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    project = await project_db.get_project_db(project_id)
     project_owner_user: dict = await users_api.get_user(app, project.prj_owner)
     if project_owner_user["primary_gid"] == group_id:
         user: dict = await users_api.get_user(app, user_id)
