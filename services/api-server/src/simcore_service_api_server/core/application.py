@@ -20,7 +20,7 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def _label_info_with_state(settings: ApplicationSettings, title: str, version: str):
+def _label_title_and_version(settings: ApplicationSettings, title: str, version: str):
     labels = []
     if settings.API_SERVER_DEV_FEATURES_ENABLED:
         labels.append("dev")
@@ -28,9 +28,11 @@ def _label_info_with_state(settings: ApplicationSettings, title: str, version: s
     if settings.debug:
         labels.append("debug")
 
-    if suffix_label := "+".join(labels):
-        title += f" ({suffix_label})"
-        version += f"-{suffix_label}"
+    if local_version_label := ".".join(labels):
+        # Appends local version identifier <public version identifier>[+<local version label>]
+        # SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#local-version-identifiers
+        title += f" ({local_version_label})"
+        version += f"+{local_version_label}"
 
     return title, version
 
@@ -48,10 +50,12 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     _logger.debug("App settings:\n%s", settings.json(indent=2))
 
     # Labeling
-    title = "osparc.io web API"
-    version = API_VERSION
+    title = "osparc.io public API"
+    version = API_VERSION  # public version identifier
     description = "osparc-simcore public API specifications"
-    title, version = _label_info_with_state(settings, title, version)
+
+    # Appends local version identifier if setup: version=<public version identifier>[+<local version label>]
+    title, version = _label_title_and_version(settings, title, version)
 
     # creates app instance
     app = FastAPI(
