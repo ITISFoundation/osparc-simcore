@@ -795,7 +795,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     fake_attached_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
     fake_attached_node.Spec.Labels[
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
-    ] = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
+    ] = datetime.datetime.now(tz=datetime.UTC).isoformat()
 
     # the node will not be terminated before the timeout triggers
     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -823,7 +823,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
 
     # now changing the last update timepoint will trigger the node removal process
     fake_attached_node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
-        datetime.datetime.now(tz=datetime.timezone.utc)
+        datetime.datetime.now(tz=datetime.UTC)
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         - datetime.timedelta(seconds=1)
     ).isoformat()
