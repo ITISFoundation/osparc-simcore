@@ -224,9 +224,10 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         alignY: "middle",
         margin: 10
       });
+      sequenceLoadingPage.add(progressTitle);
+
       const nTasks = 6;
       const overallPBar = this.__overallProgressBar = osparc.widget.ProgressSequence.createProgressBar(nTasks);
-      sequenceLoadingPage.add(progressTitle);
       sequenceLoadingPage.add(overallPBar);
 
       const scalingLayout = this.__clusterUpScalingLayout = osparc.widget.ProgressSequence.createTaskLayout(qx.locale.Manager.tr("Increasing system capacity ..."));
