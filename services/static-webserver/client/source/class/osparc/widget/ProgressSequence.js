@@ -150,9 +150,6 @@ qx.Class.define("osparc.widget.ProgressSequence", {
         margin: 10
       });
       this._add(progressTitle);
-
-      const overallPBar = this.__overallProgressBar = osparc.widget.ProgressSequence.createProgressBar();
-      this._add(overallPBar);
     },
 
     __applyOverallProgress: function(value) {
@@ -168,6 +165,12 @@ qx.Class.define("osparc.widget.ProgressSequence", {
 
     getTasks: function() {
       return this.__tasks;
+    },
+
+    addOverallProgressBar: function(nTasks = 1) {
+      const overallPBar = this.__overallProgressBar = osparc.widget.ProgressSequence.createProgressBar(nTasks);
+      this._add(overallPBar);
+      return overallPBar;
     },
 
     addNewTask: function(text) {

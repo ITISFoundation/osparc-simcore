@@ -208,6 +208,7 @@ qx.Class.define("osparc.study.Utils", {
           .then(task => {
             const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
             const progressSequence = new osparc.widget.ProgressSequence(title);
+            progressSequence.addOverallProgressBar();
             loadingPage.addWidgetToMessages(progressSequence);
             task.addListener("updateReceived", e => {
               const updateData = e.getData();

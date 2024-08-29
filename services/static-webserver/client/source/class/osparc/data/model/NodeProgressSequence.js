@@ -214,8 +214,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
       const sequenceLoadingPage = new osparc.widget.ProgressSequence(qx.locale.Manager.tr("LOADING ..."));
       const nTasks = 6;
-      const overallPBar = this.__overallProgressBar = osparc.widget.ProgressSequence.createProgressBar(nTasks);
-      sequenceLoadingPage.add(overallPBar);
+      this.__overallProgressBar = sequenceLoadingPage.addOverallProgressBar(nTasks);
       this.__clusterUpScalingLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Increasing system capacity ..."));
       this.__pullingSidecarLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Setting up key components ..."));
       this.__pullingOutputsLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Retrieving your output data ..."));
