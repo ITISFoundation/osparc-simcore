@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Final
 
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
 
@@ -98,6 +99,9 @@ class EC2ClientMetrics(MetricsBase):
         self.terminated_instances.labels(instance_type=instance_type).inc()
 
 
+_MINUTE: Final[int] = 60
+
+
 @dataclass(slots=True, kw_only=True)
 class BufferPoolsMetrics(MetricsBase):
     ready_instances: Gauge = field(init=False)
@@ -120,18 +124,30 @@ class BufferPoolsMetrics(MetricsBase):
                 create_gauge(field_name, definition, buffer_pools_subsystem),
             )
         self.instances_ready_to_pull_seconds = Histogram(
-            "instances_ready_to_pull_seconds",
+            "instances_ready_to_pull_duration_seconds",
             "Time taken for instances to be ready to pull",
             labelnames=EC2_INSTANCE_LABELS,
             namespace=METRICS_NAMESPACE,
             subsystem=buffer_pools_subsystem,
+            buckets=(10, 20, 30, 40, 50, 60, 120),
         )
         self.instances_completed_pulling_seconds = Histogram(
-            "instances_completed_pulling_seconds",
+            "instances_completed_pulling_duration_seconds",
             "Time taken for instances to complete docker images pre-pulling",
             labelnames=EC2_INSTANCE_LABELS,
             namespace=METRICS_NAMESPACE,
             subsystem=buffer_pools_subsystem,
+            buckets=(
+                30,
+                1 * _MINUTE,
+                2 * _MINUTE,
+                3 * _MINUTE,
+                5 * _MINUTE,
+                10 * _MINUTE,
+                20 * _MINUTE,
+                30 * _MINUTE,
+                40 * _MINUTE,
+            ),
         )
 
     def update_from_buffer_pool_manager(
