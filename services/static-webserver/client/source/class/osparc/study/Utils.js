@@ -208,14 +208,22 @@ qx.Class.define("osparc.study.Utils", {
           .then(task => {
             task.addListener("updateReceived", e => {
               const updateData = e.getData();
+              const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
+              const progressSequence = new osparc.widget.ProgressSequence(title);
+              loadingPage.addWidgetToMessages(progressSequence);
               if ("task_progress" in updateData && loadingPage) {
                 const progress = updateData["task_progress"];
-                loadingPage.setMessages([progress["message"]]);
-                const pBar = new qx.ui.indicator.ProgressBar(progress["percent"], 1).set({
+                const message = progress["message"];
+                const percent = progress["percent"];
+                console.log("task_progress", progress, message, percent);
+                /*
+                loadingPage.setMessages([message]);
+                const pBar = new qx.ui.indicator.ProgressBar(percent, 1).set({
                   width: osparc.ui.message.Loading.LOGO_WIDTH,
                   maxWidth: osparc.ui.message.Loading.LOGO_WIDTH
                 });
                 loadingPage.addWidgetToMessages(pBar);
+                */
               }
             }, this);
             task.addListener("resultReceived", e => {
