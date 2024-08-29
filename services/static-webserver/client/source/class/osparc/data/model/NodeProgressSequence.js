@@ -212,46 +212,19 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __initLayout: function() {
       this.__mainLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
 
-
-      const sequenceLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(9)).set({
-        backgroundColor: "window-popup-background",
-        paddingBottom: 8
-      });
-
-      const progressTitle = new qx.ui.basic.Label(qx.locale.Manager.tr("LOADING ...")).set({
-        font: "text-12",
-        alignX: "center",
-        alignY: "middle",
-        margin: 10
-      });
-      sequenceLoadingPage.add(progressTitle);
-
+      const sequenceLoadingPage = new osparc.widget.ProgressSequence(qx.locale.Manager.tr("LOADING ..."));
       const nTasks = 6;
       const overallPBar = this.__overallProgressBar = osparc.widget.ProgressSequence.createProgressBar(nTasks);
       sequenceLoadingPage.add(overallPBar);
-
-      const scalingLayout = this.__clusterUpScalingLayout = osparc.widget.ProgressSequence.createTaskLayout(qx.locale.Manager.tr("Increasing system capacity ..."));
-      sequenceLoadingPage.add(scalingLayout);
-
-      const pullingSidecarLayout = this.__pullingSidecarLayout = osparc.widget.ProgressSequence.createTaskLayout(qx.locale.Manager.tr("Setting up key components ..."));
-      sequenceLoadingPage.add(pullingSidecarLayout);
-
-      const pullingOutputsLayout = this.__pullingOutputsLayout = osparc.widget.ProgressSequence.createTaskLayout(qx.locale.Manager.tr("Retrieving your output data ..."));
-      sequenceLoadingPage.add(pullingOutputsLayout);
-
-      const pullingStateLayout = this.__pullingStateLayout = osparc.widget.ProgressSequence.createTaskLayout(qx.locale.Manager.tr("Retrieving your work ..."));
-      sequenceLoadingPage.add(pullingStateLayout);
-
-      const pullingImagesLayout = this.__pullingImagesLayout = osparc.widget.ProgressSequence.createTaskLayout(qx.locale.Manager.tr("Installing software ..."));
-      sequenceLoadingPage.add(pullingImagesLayout);
-
-      const pullingInputsLayout = this.__pullingInputsLayout = osparc.widget.ProgressSequence.createTaskLayout(qx.locale.Manager.tr("Retrieving your input data ..."));
-      sequenceLoadingPage.add(pullingInputsLayout);
-
+      this.__clusterUpScalingLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Increasing system capacity ..."));
+      this.__pullingSidecarLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Setting up key components ..."));
+      this.__pullingOutputsLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Retrieving your output data ..."));
+      this.__pullingStateLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Retrieving your work ..."));
+      this.__pullingImagesLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Installing software ..."));
+      this.__pullingInputsLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Retrieving your input data ..."));
       this.__mainLoadingPage.addAt(sequenceLoadingPage, 0, {
         flex: 1
       });
-
 
       const disclaimerText = this.__disclaimerText = this.self().createDisclaimerText();
       disclaimerText.exclude();
