@@ -177,10 +177,18 @@ async def get_project_for_user(
     """
     db = ProjectDBAPI.get_from_app_context(app)
 
+    product_name = await db.get_project_product(ProjectID(project_uuid))
+    prj_access_rights = await get_user_project_access_rights(
+        app,
+        project_id=ProjectID(project_uuid),
+        user_id=user_id,
+        product_name=product_name,
+    )
+    if getattr(prj_access_rights, check_permissions, False) is False:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
+
     project, project_type = await db.get_project(
-        user_id,
         project_uuid,
-        check_permissions=check_permissions,  # type: ignore[arg-type]
     )
 
     # adds state if it is not a template
@@ -191,6 +199,17 @@ async def get_project_for_user(
 
     Project.parse_obj(project)  # NOTE: only validates
     return project
+
+
+# async def get_project_legacy(app: web.Application, user_id: UserID, project_uuid: ProjectID) -> tuple[ProjectDict, ProjectType]:
+#     db = ProjectDBAPI.get_from_app_context(app)
+
+#     project, project_type = await db.(
+#         user_id,
+#         f"{project_uuid}",
+#     )
+
+#     return project, project_type
 
 
 async def get_project_type(
@@ -479,10 +498,21 @@ async def update_project_node_resources_from_hardware_info(
 
 
 async def _check_project_node_has_all_required_inputs(
-    db: ProjectDBAPI, user_id: UserID, project_uuid: ProjectID, node_id: NodeID
+    app: web.Application,
+    db: ProjectDBAPI,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    node_id: NodeID,
 ) -> None:
 
-    project_dict, _ = await db.get_project(user_id, f"{project_uuid}")
+    product_name = await db.get_project_product(project_uuid)
+    prj_access_rights = await get_user_project_access_rights(
+        app, project_id=project_uuid, user_id=user_id, product_name=product_name
+    )
+    if prj_access_rights.read is False:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
+
+    project_dict, _ = await db.get_project(f"{project_uuid}")
 
     nodes_map: dict[NodeID, Node] = {
         NodeID(k): Node(**v) for k, v in project_dict["workbench"].items()
@@ -549,7 +579,7 @@ async def _start_dynamic_service(
 
     try:
         await _check_project_node_has_all_required_inputs(
-            db, user_id, project_uuid, node_uuid
+            request.app, db, user_id, project_uuid, node_uuid
         )
     except ProjectNodeRequiredInputsNotSetError as e:
         if graceful_start:
@@ -934,7 +964,9 @@ async def update_project_node_state(
     prj_access_rights = await get_user_project_access_rights(
         app, project_id=project_id, user_id=user_id, product_name=product_name
     )
-    if prj_access_rights.write is False:
+    if (
+        prj_access_rights.write is False
+    ):  # NOTE: MD: before only read was sufficient, double check this
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
 
     updated_project, _ = await db.update_project_node_data(
@@ -977,9 +1009,7 @@ async def patch_project_node(
 
     # 2. If patching service key or version make sure it's valid
     if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
-        _project, _ = await db.get_project(
-            user_id=user_id, project_uuid=f"{project_id}"
-        )
+        _project, _ = await db.get_project(project_uuid=f"{project_id}")
         _project_node_data = _project["workbench"][f"{node_id}"]
 
         _service_key = _node_patch_exclude_unset.get("key", _project_node_data["key"])
@@ -1044,7 +1074,9 @@ async def update_project_node_outputs(
     prj_access_rights = await get_user_project_access_rights(
         app, project_id=project_id, user_id=user_id, product_name=product_name
     )
-    if prj_access_rights.write is False:
+    if (
+        prj_access_rights.write is False
+    ):  # NOTE: MD: before only read was sufficient, double check this
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
 
     updated_project, changed_entries = await db.update_project_node_data(

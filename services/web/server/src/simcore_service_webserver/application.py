@@ -127,17 +127,17 @@ def create_application() -> web.Application:
     setup_resource_manager(app)
     setup_garbage_collector(app)
 
+    # workspaces
+    setup_workspaces(app)
+
+    # folders
+    setup_folders(app)
+
     # projects
     setup_projects(app)
     # project add-ons
     setup_version_control(app)
     setup_meta_modeling(app)
-
-    # folders
-    setup_folders(app)
-
-    # workspaces
-    setup_workspaces(app)
 
     # tagging
     setup_scicrunch(app)

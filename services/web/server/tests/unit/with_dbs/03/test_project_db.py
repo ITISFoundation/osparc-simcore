@@ -912,6 +912,7 @@ async def inserted_project(
 )
 @pytest.mark.parametrize("user_role", [(UserRole.USER)])
 async def test_check_project_node_has_all_required_inputs_raises(
+    client: TestClient,
     logged_user: dict[str, Any],
     db_api: ProjectDBAPI,
     inserted_project: dict,
@@ -920,6 +921,7 @@ async def test_check_project_node_has_all_required_inputs_raises(
 
     with pytest.raises(ProjectNodeRequiredInputsNotSetError) as exc:
         await _check_project_node_has_all_required_inputs(
+            client.app,
             db_api,
             user_id=logged_user["id"],
             project_uuid=UUID(inserted_project["uuid"]),
@@ -941,11 +943,13 @@ async def test_check_project_node_has_all_required_inputs_raises(
 )
 @pytest.mark.parametrize("user_role", [(UserRole.USER)])
 async def test_check_project_node_has_all_required_inputs_ok(
+    client: TestClient,
     logged_user: dict[str, Any],
     db_api: ProjectDBAPI,
     inserted_project: dict,
 ):
     await _check_project_node_has_all_required_inputs(
+        client.app,
         db_api,
         user_id=logged_user["id"],
         project_uuid=UUID(inserted_project["uuid"]),

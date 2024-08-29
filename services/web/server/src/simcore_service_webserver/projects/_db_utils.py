@@ -12,7 +12,6 @@ from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
-from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
@@ -320,25 +319,20 @@ class BaseProjectDB:
 
         return (api_projects, project_types)
 
-    async def _get_project(  # NOTE: MD check
+    async def _get_project(
         self,
         connection: SAConnection,
-        user_id: UserID,
         project_uuid: str,
+        *,
         exclude_foreign: list[str] | None = None,
         for_update: bool = False,
         only_templates: bool = False,
         only_published: bool = False,
-        # check_permissions: PermissionStr = "read",
     ) -> dict:
         """
         raises ProjectNotFoundError if project does not exists
-        raises ProjectInvalidRightsError if user_id does not have at 'check_permissions' access rights
         """
         exclude_foreign = exclude_foreign or []
-
-        # this retrieves the projects where user is owner
-        # user_groups: list[RowProxy] = await self._list_user_groups(connection, user_id)
 
         access_rights_subquery = (
             select(
@@ -392,14 +386,8 @@ class BaseProjectDB:
         if not project_row:
             raise ProjectNotFoundError(
                 project_uuid=project_uuid,
-                search_context=f"{user_id=}, {only_templates=}, {only_published=}, {check_permissions=}",
+                search_context=f"{only_templates=}, {only_published=}",
             )
-
-        # # check the access rights
-        # if user_id:
-        #     check_project_permissions(
-        #         project_row, user_id, user_groups, check_permissions
-        #     )
 
         project: dict[str, Any] = dict(project_row.items())
 

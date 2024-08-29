@@ -73,7 +73,6 @@ from ._comments_db import (
 from ._db_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,
-    PermissionStr,
     ProjectAccessRights,
     assemble_array_groups,
     convert_to_db_names,
@@ -460,14 +459,12 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             ]
 
-    async def get_project(
+    async def get_project(  # NOTE: MD: permissions are not checked
         self,
-        user_id: UserID,
         project_uuid: str,
         *,
         only_published: bool = False,
         only_templates: bool = False,
-        check_permissions: PermissionStr = "read",  # NOTE: MD check where this is used?
     ) -> tuple[ProjectDict, ProjectType]:
         """Returns all projects *owned* by the user
 
@@ -476,12 +473,10 @@ class ProjectDBAPI(BaseProjectDB):
             - Notice that a user can have access to a project where he/she has read access
 
         :raises ProjectNotFoundError: project is not assigned to user
-        raises ProjectInvalidRightsError: if user has no access rights to do check_permissions
         """
         async with self.engine.acquire() as conn:
             project = await self._get_project(
                 conn,
-                user_id,
                 project_uuid,
                 only_published=only_published,
                 only_templates=only_templates,
@@ -606,7 +601,6 @@ class ProjectDBAPI(BaseProjectDB):
 
             current_project: dict = await self._get_project(
                 db_connection,
-                user_id,
                 project_uuid,
                 exclude_foreign=["tags"],
                 for_update=True,
@@ -816,7 +810,6 @@ class ProjectDBAPI(BaseProjectDB):
 
             current_project: dict = await self._get_project(
                 db_connection,
-                user_id,
                 project_uuid,
                 exclude_foreign=["tags"],
                 for_update=True,
@@ -1000,7 +993,7 @@ class ProjectDBAPI(BaseProjectDB):
         """Creates a tag and associates it to this project"""
         async with self.engine.acquire() as conn:
             project = await self._get_project(
-                conn, user_id=user_id, project_uuid=project_uuid, exclude_foreign=None
+                conn, project_uuid=project_uuid, exclude_foreign=None
             )
             user_email = await self._get_user_email(conn, user_id)
 
@@ -1022,7 +1015,7 @@ class ProjectDBAPI(BaseProjectDB):
         self, user_id: int, project_uuid: str, tag_id: int
     ) -> ProjectDict:
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
+            project = await self._get_project(conn, project_uuid)
             user_email = await self._get_user_email(conn, user_id)
             # pylint: disable=no-value-for-parameter
             query = projects_tags.delete().where(

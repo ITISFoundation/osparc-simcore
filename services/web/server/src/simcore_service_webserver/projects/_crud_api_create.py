@@ -290,7 +290,7 @@ async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, P
                 predefined_project=predefined_project,
             )
 
-        # Check workspace
+        # If user wants to create project in specific workspace
         if workspace_id:
             # Verify user access to the specified workspace; raise an error if access is denied
             workspace = await get_workspace(
@@ -344,9 +344,7 @@ async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, P
             request.app, user_id, new_project["uuid"], product_name
         )
         # get the latest state of the project (lastChangeDate for instance)
-        new_project, _ = await db.get_project(
-            user_id=user_id, project_uuid=new_project["uuid"]
-        )
+        new_project, _ = await db.get_project(project_uuid=new_project["uuid"])
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,

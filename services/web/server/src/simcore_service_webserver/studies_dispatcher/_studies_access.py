@@ -31,8 +31,14 @@ from ..director_v2._core_dynamic_services import (
     update_dynamic_service_networks_in_project,
 )
 from ..products.api import get_current_product, get_product_name
-from ..projects.db import ANY_USER, ProjectDBAPI
-from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from ..projects._groups_db import get_project_group
+from ..projects.api import get_user_project_access_rights
+from ..projects.db import ProjectDBAPI
+from ..projects.exceptions import (
+    ProjectGroupNotFoundError,
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 from ..projects.models import ProjectDict
 from ..security.api import is_anonymous, remember_identity
 from ..storage.api import copy_data_folders_from_project
@@ -84,17 +90,27 @@ async def _get_published_template_project(
             only_templates=True,
             # 2. If user is unauthenticated, then MUST be public
             only_published=only_public_projects,
-            # 3. MUST be shared with EVERYONE=1 in read mode, i.e.
-            user_id=ANY_USER,  # any user
-            check_permissions="read",  # any user has read access
         )
+        # 3. MUST be shared with EVERYONE=1 in read mode, i.e.
+        project_group_get = await get_project_group(
+            request.app, project_id=ProjectID(project_uuid), group_id=1
+        )
+        if project_group_get.read is False:
+            raise ProjectGroupNotFoundError(
+                reason=f"Project {project_uuid} group 1 not read access"
+            )
+
         if not prj:
             # Not sure this happens but this condition was checked before so better be safe
             raise ProjectNotFoundError(project_uuid)
 
         return prj
 
-    except (ProjectNotFoundError, ProjectInvalidRightsError) as err:
+    except (
+        ProjectGroupNotFoundError,
+        ProjectNotFoundError,
+        ProjectInvalidRightsError,
+    ) as err:
         _logger.debug(
             "Project with %s %s was not found. Reason: %s",
             f"{project_uuid=}",
@@ -138,8 +154,19 @@ async def copy_study_to_account(
     )
 
     try:
+        # await get_user_project_access_rights(request.app, project_id=ProjectID(project_uuid), user_id=)
+        product_name = db.get_project_product(template_project["uuid"])
+        prj_access_rights = await get_user_project_access_rights(
+            request.app,
+            project_id=template_project["uuid"],
+            user_id=user["id"],
+            product_name=product_name,
+        )
+        if prj_access_rights.read is False:
+            raise
+
         # Avoids multiple copies of the same template on each account
-        await db.get_project(user["id"], project_uuid)
+        await db.get_project(project_uuid)
 
     except ProjectNotFoundError:
         # New project cloned from template

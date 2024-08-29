@@ -164,6 +164,7 @@ async def create_project(request: web.Request):
         predefined_project=predefined_project,
         parent_project_uuid=header_params.parent_project_uuid,
         parent_node_id=header_params.parent_node_id,
+        workspace_id=query_params.workspace_id,
     )
 
 
@@ -616,6 +617,9 @@ async def clone_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
+    project_db = await db.get_project_db(path_params.project_id)
+
     return await start_long_running_task(
         request,
         _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
@@ -635,4 +639,5 @@ async def clone_project(request: web.Request):
         predefined_project=None,
         parent_project_uuid=None,
         parent_node_id=None,
+        workspace_id=project_db.workspace_id,
     )
