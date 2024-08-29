@@ -72,6 +72,14 @@ async def _analyze_running_instance_state(
     elif await ssm_client.is_instance_connected_to_ssm_server(instance.id):
         try:
             if await ssm_client.wait_for_has_instance_completed_cloud_init(instance.id):
+                if has_instrumentation(app):
+                    get_instrumentation(
+                        app
+                    ).buffer_machines_pools_metrics.instances_ready_to_pull_seconds.labels(
+                        instance_type=instance.type
+                    ).observe(
+                        (arrow.utcnow().datetime - instance.launch_time).total_seconds()
+                    )
                 if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
                     instance.type
                 ].pre_pull_images:
@@ -318,6 +326,18 @@ async def _handle_pool_image_pulling(
             )
             match ssm_command.status:
                 case "Success":
+                    if has_instrumentation(app):
+                        assert ssm_command.start_time is not None  # nosec
+                        assert ssm_command.finish_time is not None  # nosec
+                        get_instrumentation(
+                            app
+                        ).buffer_machines_pools_metrics.instances_completed_pulling_seconds.labels(
+                            instance_type=instance.type
+                        ).observe(
+                            (
+                                ssm_command.finish_time - ssm_command.start_time
+                            ).total_seconds()
+                        )
                     instances_to_stop.add(instance)
                 case "InProgress" | "Pending":
                     # do nothing we pass

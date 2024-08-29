@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from prometheus_client import CollectorRegistry, Counter, Gauge
+from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
 
 from ...models import BufferPoolManager, Cluster
 from ._constants import (
@@ -108,6 +108,9 @@ class BufferPoolsMetrics(MetricsBase):
     stopping_instances: Gauge = field(init=False)
     broken_instances: Gauge = field(init=False)
 
+    instances_ready_to_pull_seconds: Histogram = field(init=False)
+    instances_completed_pulling_seconds: Histogram = field(init=False)
+
     def __post_init__(self) -> None:
         buffer_pools_subsystem = f"{self.subsystem}_buffer_machines_pools"
         for field_name, definition in BUFFER_POOLS_METRICS_DEFINITIONS.items():
@@ -116,6 +119,20 @@ class BufferPoolsMetrics(MetricsBase):
                 field_name,
                 create_gauge(field_name, definition, buffer_pools_subsystem),
             )
+        self.instances_ready_to_pull_seconds = Histogram(
+            "instances_ready_to_pull_seconds",
+            "Time taken for instances to be ready to pull",
+            labelnames=EC2_INSTANCE_LABELS,
+            namespace=METRICS_NAMESPACE,
+            subsystem=buffer_pools_subsystem,
+        )
+        self.instances_completed_pulling_seconds = Histogram(
+            "instances_completed_pulling_seconds",
+            "Time taken for instances to complete docker images pre-pulling",
+            labelnames=EC2_INSTANCE_LABELS,
+            namespace=METRICS_NAMESPACE,
+            subsystem=buffer_pools_subsystem,
+        )
 
     def update_from_buffer_pool_manager(
         self, buffer_pool_manager: BufferPoolManager
