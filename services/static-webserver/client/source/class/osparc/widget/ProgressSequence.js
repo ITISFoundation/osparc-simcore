@@ -18,13 +18,13 @@
 qx.Class.define("osparc.widget.ProgressSequence", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(title) {
     this.base(arguments);
 
     // Layout
     this._setLayout(new qx.ui.layout.VBox(8));
 
-    this.__initLayout();
+    this.__initLayout(title);
   },
 
   statics: {
@@ -133,13 +133,14 @@ qx.Class.define("osparc.widget.ProgressSequence", {
   },
 
   members: {
-    __initLayout: function() {
+    __initLayout: function(title) {
+      title = title || qx.locale.Manager.tr("CREATING ...");
       const sequenceLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(9)).set({
         backgroundColor: "window-popup-background",
         paddingBottom: 8
       });
 
-      const progressTitle = new qx.ui.basic.Label(qx.locale.Manager.tr("CREATING ...")).set({
+      const progressTitle = new qx.ui.basic.Label(title).set({
         font: "text-12",
         alignX: "center",
         alignY: "middle",
