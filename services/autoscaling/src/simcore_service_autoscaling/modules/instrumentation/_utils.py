@@ -1,5 +1,5 @@
 import collections
-from typing import Iterable
+from collections.abc import Iterable
 
 from aws_library.ec2._models import EC2InstanceData
 from prometheus_client import Gauge
