@@ -22,7 +22,7 @@ class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attribut
     active_nodes: Gauge = field(init=False)
     pending_nodes: Gauge = field(init=False)
     drained_nodes: Gauge = field(init=False)
-    reserve_drained_nodes: Gauge = field(init=False)
+    buffer_drained_nodes: Gauge = field(init=False)
     pending_ec2s: Gauge = field(init=False)
     broken_ec2s: Gauge = field(init=False)
     buffer_ec2s: Gauge = field(init=False)

@@ -1362,7 +1362,7 @@ async def test__find_terminateable_nodes_with_no_hosts(
             AssociatedInstance(node=host_node, ec2_instance=fake_ec2_instance_data())
         ],
         drained_nodes=[],
-        reserve_drained_nodes=[
+        buffer_drained_nodes=[
             AssociatedInstance(node=host_node, ec2_instance=fake_ec2_instance_data())
         ],
     )
@@ -1384,7 +1384,7 @@ async def test__try_scale_down_cluster_with_no_nodes(
         drained_nodes=[
             create_associated_instance(drained_host_node, False)  # noqa: FBT003
         ],
-        reserve_drained_nodes=[
+        buffer_drained_nodes=[
             create_associated_instance(drained_host_node, True)  # noqa: FBT003
         ],
     )
@@ -1415,7 +1415,7 @@ async def test__activate_drained_nodes_with_no_tasks(
         drained_nodes=[
             create_associated_instance(drained_host_node, True)  # noqa: FBT003
         ],
-        reserve_drained_nodes=[
+        buffer_drained_nodes=[
             create_associated_instance(drained_host_node, True)  # noqa: FBT003
         ],
     )
