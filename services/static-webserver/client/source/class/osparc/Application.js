@@ -96,7 +96,7 @@ qx.Class.define("osparc.Application", {
       });
 
       // Setting up auth manager
-      osparc.auth.Manager.getInstance().addListener("logout", () => this.logout(), this);
+      osparc.auth.Manager.getInstance().addListener("logout", () => this.__loggedOut(), this);
 
       this.__initRouting();
       this.__startupChecks();
@@ -629,19 +629,21 @@ qx.Class.define("osparc.Application", {
      * Resets session and restarts
     */
     logout: function(forcedReason) {
-      const authManager = osparc.auth.Manager.getInstance();
-      const isLoggedIn = authManager.isLoggedIn();
+      const isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLoggedIn) {
         return;
       }
-      authManager.logout();
+      osparc.auth.Manager.getInstance().logout()
+        .then(() => {
+          if (forcedReason) {
+            osparc.FlashMessenger.getInstance().logAs(forcedReason, "WARNING", 0);
+          } else {
+            osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out"), "INFO");
+          }
+        });
+    },
 
-      if (forcedReason) {
-        osparc.FlashMessenger.getInstance().logAs(forcedReason, "WARNING", 0);
-      } else {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out"), "INFO");
-      }
-
+    __loggedOut: function() {
       osparc.data.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.CookieExpirationTracker.getInstance().stopTracker();
