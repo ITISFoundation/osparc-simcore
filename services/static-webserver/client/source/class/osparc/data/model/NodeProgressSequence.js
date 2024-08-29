@@ -108,43 +108,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
   },
 
   statics: {
-    NODE_INDEX: {
-      LABEL: 0,
-      CALC: 1,
-      HALO: 2,
-    },
-
     DISCLAIMER_TIME: 50000,
-
-    updateProgressLabel: function(atom, {value, progressLabel}) {
-      if ([null, undefined].includes(value)) {
-        return;
-      }
-
-      if (atom) {
-        const halo = atom.getChildren()[this.NODE_INDEX.HALO];
-        const icon = halo.getChildren()[0];
-        icon.setVisibility(value === 1 ? "visible" : "excluded");
-        const progressColor = qx.theme.manager.Color.getInstance().resolve("progressbar")
-        osparc.service.StatusUI.getStatusHalo(halo, progressColor, value * 100);
-
-        const label = atom.getChildren()[this.NODE_INDEX.CALC];
-        label.setValue(progressLabel);
-      }
-    },
-
-    progressReceived: function(pBar, value) {
-      if ([null, undefined].includes(value)) {
-        return;
-      }
-
-      if (pBar) {
-        pBar.set({
-          value,
-          visibility: (value >= 0) ? "visible" : "excluded"
-        });
-      }
-    }
   },
 
   members: {
@@ -308,11 +272,11 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         this.__disclaimerText.exclude();
       }
 
-      this.self().progressReceived(this.__overallProgressBar, value);
+      osparc.widget.ProgressSequence.progressUpdate(this.__overallProgressBar, value);
     },
 
     __applyClusterUpScaling: function(value) {
-      this.self().updateProgressLabel(this.__clusterUpScalingLayout, value);
+      osparc.widget.ProgressSequence.updateTaskProgress(this.__clusterUpScalingLayout, value);
 
       this.__computeOverallProgress();
     },
@@ -322,7 +286,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         const defaultEndVals = this.getDefaultEndValues();
         this.setClusterUpScaling(defaultEndVals);
       }
-      this.self().updateProgressLabel(this.__pullingSidecarLayout, value);
+      osparc.widget.ProgressSequence.updateTaskProgress(this.__pullingSidecarLayout, value);
 
       this.__computeOverallProgress();
     },
@@ -332,7 +296,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         const defaultEndVals = this.getDefaultEndValues();
         this.setSidecarPulling(defaultEndVals);
       }
-      this.self().updateProgressLabel(this.__pullingOutputsLayout, value);
+      osparc.widget.ProgressSequence.updateTaskProgress(this.__pullingOutputsLayout, value);
 
       this.__computeOverallProgress();
     },
@@ -342,7 +306,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         const defaultEndVals = this.getDefaultEndValues();
         this.setSidecarPulling(defaultEndVals);
       }
-      this.self().updateProgressLabel(this.__pullingStateLayout, value);
+      osparc.widget.ProgressSequence.updateTaskProgress(this.__pullingStateLayout, value);
 
       this.__computeOverallProgress();
     },
@@ -352,7 +316,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         const defaultEndVals = this.getDefaultEndValues();
         this.setSidecarPulling(defaultEndVals);
       }
-      this.self().updateProgressLabel(this.__pullingImagesLayout, value);
+      osparc.widget.ProgressSequence.updateTaskProgress(this.__pullingImagesLayout, value);
 
       this.__computeOverallProgress();
     },
@@ -362,7 +326,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         const defaultEndVals = this.getDefaultEndValues();
         this.setSidecarPulling(defaultEndVals);
       }
-      this.self().updateProgressLabel(this.__pullingInputsLayout, value);
+      osparc.widget.ProgressSequence.updateTaskProgress(this.__pullingInputsLayout, value);
 
       this.__computeOverallProgress();
     }
