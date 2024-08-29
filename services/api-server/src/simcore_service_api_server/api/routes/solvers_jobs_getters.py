@@ -128,7 +128,7 @@ async def list_jobs(
 ):
     """List of jobs in a specific released solver (limited to 20 jobs)
 
-    SEE get_jobs_page for paginated version of this function
+    SEE `get_jobs_page` for paginated version of this function
     """
 
     solver = await catalog_client.get_service(
@@ -320,7 +320,7 @@ async def get_job_output_logfile(
         len(logs_urls),
         f"{project_id=}",
         f"{user_id=}",
-        list(elm.download_link for elm in logs_urls),
+        [e.download_link for e in logs_urls],
     )
 
     # if more than one node? should rezip all of them??

@@ -104,7 +104,7 @@ async def list_files(
 ):
     """Lists all files stored in the system
 
-    SEE get_files_page for a paginated version of this function
+    SEE `get_files_page` for a paginated version of this function
     """
 
     stored_files: list[StorageFileMetaData] = await storage_client.list_files(
