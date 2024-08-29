@@ -50,10 +50,9 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           break;
         case "permission-icon":
-          control = new qx.ui.basic.Image().set({
+          control = new qx.ui.basic.Image(osparc.dashboard.CardBase.PERM_READ).set({
             minWidth: 50
           });
-          control.exclude();
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.PERMISSION
