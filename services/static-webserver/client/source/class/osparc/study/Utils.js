@@ -206,16 +206,27 @@ qx.Class.define("osparc.study.Utils", {
         const interval = 1000;
         pollTasks.createPollingTask(fetchPromise, interval)
           .then(task => {
+            const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
+            const progressSequence = new osparc.widget.ProgressSequence(title);
+            loadingPage.addWidgetToMessages(progressSequence);
             task.addListener("updateReceived", e => {
               const updateData = e.getData();
-              const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
-              const progressSequence = new osparc.widget.ProgressSequence(title);
-              loadingPage.addWidgetToMessages(progressSequence);
               if ("task_progress" in updateData && loadingPage) {
                 const progress = updateData["task_progress"];
                 const message = progress["message"];
                 const percent = progress["percent"];
                 console.log("task_progress", progress, message, percent);
+                progressSequence.setOverallProgress(percent);
+                const existingTask = progressSequence.getTask(message);
+                if (existingTask) {
+                  osparc.widget.ProgressSequence.updateTaskProgress(existingTask, percent);
+                } else {
+                  // all to 100%
+                  progressSequence.getTasks().forEach(tsk => osparc.widget.ProgressSequence.updateTaskProgress(tsk, 1));
+                  // and move to the next new task
+                  const subTask = progressSequence.addNewTask(message);
+                  osparc.widget.ProgressSequence.updateTaskProgress(subTask, percent);
+                }
                 /*
                 loadingPage.setMessages([message]);
                 const pBar = new qx.ui.indicator.ProgressBar(percent, 1).set({
