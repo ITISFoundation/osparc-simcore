@@ -50,34 +50,34 @@ class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attribut
 
 @dataclass(slots=True, kw_only=True)
 class EC2ClientMetrics(MetricsBase):
-    _launched_instances: Counter = field(init=False)
-    _started_instances: Counter = field(init=False)
-    _stopped_instances: Counter = field(init=False)
-    _terminated_instances: Counter = field(init=False)
+    launched_instances: Counter = field(init=False)
+    started_instances: Counter = field(init=False)
+    stopped_instances: Counter = field(init=False)
+    terminated_instances: Counter = field(init=False)
 
     def __post_init__(self) -> None:
-        self._launched_instances = Counter(
+        self.launched_instances = Counter(
             "launched_instances_total",
             "Number of EC2 instances that were launched",
             labelnames=EC2_INSTANCE_LABELS,
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
         )
-        self._started_instances = Counter(
+        self.started_instances = Counter(
             "started_instances_total",
             "Number of EC2 instances that were started",
             labelnames=EC2_INSTANCE_LABELS,
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
         )
-        self._stopped_instances = Counter(
+        self.stopped_instances = Counter(
             "stopped_instances_total",
             "Number of EC2 instances that were stopped",
             labelnames=EC2_INSTANCE_LABELS,
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
         )
-        self._terminated_instances = Counter(
+        self.terminated_instances = Counter(
             "terminated_instances_total",
             "Number of EC2 instances that were terminated",
             labelnames=EC2_INSTANCE_LABELS,
@@ -86,16 +86,16 @@ class EC2ClientMetrics(MetricsBase):
         )
 
     def instance_started(self, instance_type: str) -> None:
-        self._started_instances.labels(instance_type=instance_type).inc()
+        self.started_instances.labels(instance_type=instance_type).inc()
 
     def instance_launched(self, instance_type: str) -> None:
-        self._launched_instances.labels(instance_type=instance_type).inc()
+        self.launched_instances.labels(instance_type=instance_type).inc()
 
     def instance_stopped(self, instance_type: str) -> None:
-        self._stopped_instances.labels(instance_type=instance_type).inc()
+        self.stopped_instances.labels(instance_type=instance_type).inc()
 
     def instance_terminated(self, instance_type: str) -> None:
-        self._terminated_instances.labels(instance_type=instance_type).inc()
+        self.terminated_instances.labels(instance_type=instance_type).inc()
 
 
 @dataclass(slots=True, kw_only=True)

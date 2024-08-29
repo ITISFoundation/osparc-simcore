@@ -102,7 +102,7 @@ async def test_ec2_with_instrumentation_enabled(
     # check current metrics (should be 0)
     instrumentation = get_instrumentation(initialized_app)
     _assert_metrics(
-        instrumentation._launched_instances,  # noqa: SLF001
+        instrumentation.ec2_client_metrics.launched_instances,
         expected_num_samples=0,
         check_sample_index=None,
         expected_sample=None,
@@ -120,7 +120,7 @@ async def test_ec2_with_instrumentation_enabled(
 
     # now the metrics shall increase
     _assert_metrics(
-        instrumentation._launched_instances,  # noqa: SLF001
+        instrumentation.ec2_client_metrics.launched_instances,
         expected_num_samples=2,
         check_sample_index=0,
         expected_sample={
@@ -141,7 +141,7 @@ async def test_ec2_with_instrumentation_enabled(
     )
     # we should get additional metrics with different labels
     _assert_metrics(
-        instrumentation._launched_instances,  # noqa: SLF001
+        instrumentation.ec2_client_metrics.launched_instances,
         expected_num_samples=4,
         check_sample_index=2,
         expected_sample={
@@ -156,7 +156,7 @@ async def test_ec2_with_instrumentation_enabled(
 
     # we get the stopped metrics increased now
     _assert_metrics(
-        instrumentation._stopped_instances,  # noqa: SLF001
+        instrumentation.ec2_client_metrics.stopped_instances,
         expected_num_samples=2,
         check_sample_index=0,
         expected_sample={
@@ -171,7 +171,7 @@ async def test_ec2_with_instrumentation_enabled(
 
     # we get the terminated metrics increased now
     _assert_metrics(
-        instrumentation._terminated_instances,  # noqa: SLF001
+        instrumentation.ec2_client_metrics.terminated_instances,
         expected_num_samples=2,
         check_sample_index=0,
         expected_sample={
@@ -186,7 +186,7 @@ async def test_ec2_with_instrumentation_enabled(
 
     # we get the terminated metrics increased now
     _assert_metrics(
-        instrumentation._terminated_instances,  # noqa: SLF001
+        instrumentation.ec2_client_metrics.terminated_instances,
         expected_num_samples=4,
         check_sample_index=2,
         expected_sample={
