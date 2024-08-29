@@ -227,6 +227,10 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
     faker: Faker,
 ):
     INCREASE_OPERATIONS: Final[int] = 250
+    # FIXME: DK changes this value from 10-->8 Aug2024
+    # when introducing opentelemetry tracing since this test would
+    # always fail in the github-runners, but not on local machines...
+    # This may need some refactoring/investigation
     INCREASE_BY: Final[int] = 8
 
     class RaceConditionCounter:
