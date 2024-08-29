@@ -36,13 +36,11 @@ async def create_project_group(
     read: bool,
     write: bool,
     delete: bool,
-    product_name: ProductName,  # pylint: disable=unused-argument
+    product_name: ProductName,
 ) -> ProjectGroupGet:
-    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-
     project_access_rights: UserProjectAccessRights = (
-        await project_db.get_project_access_rights_for_user(
-            user_id=user_id, project_uuid=project_id
+        await get_user_project_access_rights(
+            app, project_id=project_id, user_id=user_id, product_name=product_name
         )
     )
     if project_access_rights.write is False:
@@ -70,13 +68,11 @@ async def list_project_groups_by_user_and_project(
     *,
     user_id: UserID,
     project_id: ProjectID,
-    product_name: ProductName,  # pylint: disable=unused-argument
+    product_name: ProductName,
 ) -> list[ProjectGroupGet]:
-    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-
     project_access_rights: UserProjectAccessRights = (
-        await project_db.get_project_access_rights_for_user(
-            user_id=user_id, project_uuid=project_id
+        await get_user_project_access_rights(
+            app, project_id=project_id, user_id=user_id, product_name=product_name
         )
     )
     if project_access_rights.read is False:
@@ -154,13 +150,13 @@ async def delete_project_group(
     user_id: UserID,
     project_id: ProjectID,
     group_id: GroupID,
-    product_name: ProductName,  # pylint: disable=unused-argument
+    product_name: ProductName,
 ) -> None:
     project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     project_access_rights: UserProjectAccessRights = (
-        await project_db.get_project_access_rights_for_user(
-            user_id=user_id, project_uuid=project_id  # add product_name
+        await get_user_project_access_rights(
+            app, project_id=project_id, user_id=user_id, product_name=product_name
         )
     )
     if project_access_rights.delete is False:

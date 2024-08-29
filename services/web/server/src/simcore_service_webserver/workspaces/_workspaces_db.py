@@ -59,7 +59,7 @@ async def create_workspace(
                 modified=func.now(),
                 product_name=product_name,
             )
-            .returning(_SELECTION_ARGS)
+            .returning(*_SELECTION_ARGS)
         )
         row = await result.first()
         return WorkspaceDB.from_orm(row)
@@ -172,7 +172,7 @@ async def update_workspace(
                 (workspaces.c.workspace_id == workspace_id)
                 & (workspaces.c.product_name == product_name)
             )
-            .returning(_SELECTION_ARGS)
+            .returning(*_SELECTION_ARGS)
         )
         row = await result.first()
         if row is None:

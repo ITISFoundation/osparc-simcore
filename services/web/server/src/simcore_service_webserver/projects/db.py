@@ -404,12 +404,6 @@ class ProjectDBAPI(BaseProjectDB):
                         if not include_hidden
                         else sa.text("")
                     )
-                    # & (
-                    #     (projects.c.prj_owner == user_id)
-                    #     | sa.text(
-                    #         f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
-                    #     )
-                    # )
                     & (
                         (projects_to_products.c.product_name == product_name)
                         # This was added for backward compatibility, including old projects not in the projects_to_products table.
@@ -429,21 +423,13 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
             if workspace_id is not None:
-                # If Personal workspace we check to which user has access
+                # If Personal workspace we check to which projects user has access
                 query = query.where(
-                    # (
                     (projects.c.prj_owner == user_id)
                     | sa.text(
                         f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
                     )
-                    # )
                 )
-            # else:
-            #     query = query.where(
-            #         projects_to_folders.c.folder_id == folder_id
-            #         if folder_id
-            #         else projects_to_folders.c.folder_id.is_(None)
-            #     )
 
             if search:
                 query = query.join(users, isouter=True)
@@ -530,7 +516,6 @@ class ProjectDBAPI(BaseProjectDB):
         projects.c.prj_owner,
         projects.c.creation_date,
         projects.c.last_change_date,
-        # projects.c.access_rights,
         projects.c.ui,
         projects.c.classifiers,
         projects.c.dev,
@@ -552,10 +537,13 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return ProjectDB.from_orm(row)
 
-    async def get_project_access_rights_for_user(
+    async def get_pure_project_access_rights_without_workspace(
         self, user_id: UserID, project_uuid: ProjectID
     ) -> UserProjectAccessRights:
         """
+        Be careful what you want. You should use `get_user_project_access_rights` to get access rights on the
+        project. It depends on which context you are in, whether personal or shared workspace.
+
         User project access rights. Aggregated across all his groups.
         """
         _SELECTION_ARGS = (

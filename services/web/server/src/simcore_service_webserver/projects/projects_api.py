@@ -117,7 +117,6 @@ from ..users.preferences_api import (
 )
 from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
-from ..workspaces.api import get_workspace
 from . import _crud_api_delete, _nodes_api
 from ._access_rights_api import (
     get_user_project_access_rights,
@@ -142,7 +141,7 @@ from .exceptions import (
     ProjectTooManyProjectOpenedError,
 )
 from .lock import get_project_locked_state, is_project_locked, lock_project
-from .models import ProjectDict, UserProjectAccessRights
+from .models import ProjectDict
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
@@ -250,23 +249,9 @@ async def patch_project(
     project_db = await db.get_project_db(project_uuid=project_uuid)
 
     # 2. Check user permissions
-    if project_db.workspace_id:
-        workspace = await get_workspace(
-            app,
-            user_id=user_id,
-            workspace_id=project_db.workspace_id,
-            product_name=product_name,
-        )
-        _user_project_access_rights = UserProjectAccessRights(
-            uid=user_id,
-            read=workspace.my_access_rights.read,
-            write=workspace.my_access_rights.write,
-            delete=workspace.my_access_rights.delete,
-        )
-    else:
-        _user_project_access_rights = await db.get_project_access_rights_for_user(
-            user_id, project_uuid
-        )
+    _user_project_access_rights = await get_user_project_access_rights(
+        app, project_id=project_uuid, user_id=user_id, product_name=product_name
+    )
     if not _user_project_access_rights.write:
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 

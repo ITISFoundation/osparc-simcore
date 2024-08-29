@@ -52,8 +52,10 @@ async def get_user_project_access_rights(
             delete=workspace.my_access_rights.delete,
         )
     else:
-        _user_project_access_rights = await db.get_project_access_rights_for_user(
-            user_id, project_id
+        _user_project_access_rights = (
+            await db.get_pure_project_access_rights_without_workspace(
+                user_id, project_id
+            )
         )
     return _user_project_access_rights
 

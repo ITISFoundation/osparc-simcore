@@ -220,3 +220,7 @@ class InvalidInputValue(WebServerBaseError):
 
 class ProjectGroupNotFoundError(BaseProjectError):
     msg_template = "Project group not found. {reason}"
+
+
+class ProjectToFolderNotFoundError(BaseProjectError):
+    msg_template = "Project to folder not found"

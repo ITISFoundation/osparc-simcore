@@ -1,23 +1,22 @@
 import logging
 
 from aiohttp import web
-from aiopg.sa.engine import Engine
 from models_library.folders import FolderID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from simcore_postgres_database import utils_folders as folders_db
-from simcore_service_webserver.projects.models import UserProjectAccessRights
+from simcore_service_webserver.projects._access_rights_api import (
+    get_user_project_access_rights,
+)
 
-from .._constants import APP_DB_ENGINE_KEY
-from ..users.api import get_user
+from . import _folders_db as project_to_folders_db
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
 
 _logger = logging.getLogger(__name__)
 
 
-async def replace_project_folder(
+async def move_project_to_folder(
     app: web.Application,
     *,
     user_id: UserID,
@@ -25,45 +24,48 @@ async def replace_project_folder(
     folder_id: FolderID | None,
     product_name: ProductName,
 ) -> None:
-    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    project_access_rights: UserProjectAccessRights = (
-        await project_db.get_project_access_rights_for_user(
-            user_id=user_id, project_uuid=project_id
+    project_api: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    project_db = await project_api.get_project_db(project_id)
+    _private_workspace_user_id: UserID | None = user_id
+    if project_db.workspace_id is not None:
+        # If not in personal workspace, check whether you have permission to move
+        project_access_rights = await get_user_project_access_rights(
+            app, project_id=project_id, user_id=user_id, product_name=product_name
         )
-    )
-    if project_access_rights.write is False:
-        raise ProjectInvalidRightsError(
-            user_id=user_id,
-            project_uuid=project_id,
-            reason=f"User does not have write access to project {project_id}",
-        )
-
-    user = await get_user(app, user_id=user_id)
-    engine: Engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as connection:
-        _source_folder_id = await folders_db.get_project_folder_without_check(
-            connection,
-            project_uuid=project_id,
-        )
-        if _source_folder_id is None:
-            assert folder_id is not None  # nosec
-            # NOTE: folder permissions are checked inside the function
-            await folders_db.folder_add_project(
-                connection,
-                product_name=product_name,
-                folder_id=folder_id,
-                gids={user["primary_gid"]},
+        if project_access_rights.write is False:
+            raise ProjectInvalidRightsError(
+                user_id=user_id,
                 project_uuid=project_id,
+                reason=f"User does not have write access to project {project_id}",
             )
+        # Setup folder user id to None, as this is not a private workspace
+        _private_workspace_user_id = None
+    # Move
+    prj_to_folder_db = await project_to_folders_db.get_project_to_folder(
+        app, project_id=project_id, user_id=_private_workspace_user_id
+    )
+    if prj_to_folder_db is None:
+        if folder_id is None:
             return
-
-        # NOTE: folder permissions are checked inside the function
-        await folders_db.folder_move_project(
-            connection,
-            product_name=product_name,
-            source_folder_id=_source_folder_id,
-            gids={user["primary_gid"]},
-            project_uuid=project_id,
-            destination_folder_id=folder_id,
+        await project_to_folders_db.insert_project_to_folder(
+            app,
+            project_id=project_id,
+            folder_id=folder_id,
+            user_id=_private_workspace_user_id,
         )
-        return
+    else:
+        # Delete old
+        await project_to_folders_db.delete_project_to_folder(
+            app,
+            project_id=project_id,
+            folder_id=prj_to_folder_db.folder_id,
+            user_id=_private_workspace_user_id,
+        )
+        # Create new
+        if folder_id is not None:
+            await project_to_folders_db.insert_project_to_folder(
+                app,
+                project_id=project_id,
+                folder_id=folder_id,
+                user_id=_private_workspace_user_id,
+            )

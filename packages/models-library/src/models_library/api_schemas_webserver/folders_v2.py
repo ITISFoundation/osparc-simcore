@@ -27,7 +27,6 @@ class FolderGetPage(NamedTuple):
 
 class CreateFolderBodyParams(InputSchema):
     name: IDStr
-    description: str | None
     parent_folder_id: FolderID | None = None
     workspace_id: WorkspaceID | None = None
 
@@ -38,7 +37,7 @@ class CreateFolderBodyParams(InputSchema):
         "parent_folder_id", allow_reuse=True, pre=True
     )(null_or_none_str_to_none_validator)
 
-    _null_or_none_str_to_none_validator = validator(
+    _null_or_none_str_to_none_validator2 = validator(
         "workspace_id", allow_reuse=True, pre=True
     )(null_or_none_str_to_none_validator)
 

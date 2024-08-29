@@ -62,7 +62,7 @@ async def create_folder(
                 created=func.now(),
                 modified=func.now(),
             )
-            .returning(_SELECTION_ARGS)
+            .returning(*_SELECTION_ARGS)
         )
         row = await result.first()
         return parse_obj_as(FolderDB, row)

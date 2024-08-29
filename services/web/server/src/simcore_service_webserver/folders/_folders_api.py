@@ -42,6 +42,8 @@ async def create_folder(
         # Setup folder user id to None, as this is not a private workspace
         _private_workspace_user_id = None
 
+    # NOTE: MD: TODO check user permissions on the parent folder id
+
     folder_db = await folders_db.create_folder(
         app,
         product_name=product_name,

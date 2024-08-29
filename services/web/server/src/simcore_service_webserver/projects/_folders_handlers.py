@@ -13,7 +13,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from . import _folders_api, projects_api
+from . import _folders_api
 from ._common_models import RequestContext
 from .exceptions import ProjectGroupNotFoundError, ProjectNotFoundError
 
@@ -62,15 +62,7 @@ async def replace_project_folder(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_ProjectsFoldersPathParams, request)
 
-    # ensure the project exists
-    await projects_api.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_id}",
-        user_id=req_ctx.user_id,
-        include_state=False,
-    )
-
-    await _folders_api.replace_project_folder(
+    await _folders_api.move_project_to_folder(
         app=request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,

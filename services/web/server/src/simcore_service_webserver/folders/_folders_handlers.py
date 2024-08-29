@@ -114,7 +114,7 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
         "folder_id", allow_reuse=True, pre=True
     )(null_or_none_str_to_none_validator)
 
-    _null_or_none_str_to_none_validator = validator(
+    _null_or_none_str_to_none_validator2 = validator(
         "workspace_id", allow_reuse=True, pre=True
     )(null_or_none_str_to_none_validator)
 
