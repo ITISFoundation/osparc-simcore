@@ -128,19 +128,12 @@ class BufferPoolsMetrics(MetricsBase):
 
 
 @dataclass(slots=True, kw_only=True)
-class ScalingMetrics(MetricsBase):
-    def __post_init__(self) -> None:
-        scaling_subsystem = f"{self.subsystem}_scaling"
-
-
-@dataclass(slots=True, kw_only=True)
 class AutoscalingInstrumentation(MetricsBase):
     registry: CollectorRegistry
 
     cluster_metrics: ClusterMetrics = field(init=False)
     ec2_client_metrics: EC2ClientMetrics = field(init=False)
     buffer_machines_pools_metrics: BufferPoolsMetrics = field(init=False)
-    scaling_metrics: ScalingMetrics = field(init=False)
 
     def __post_init__(self) -> None:
         self.cluster_metrics = ClusterMetrics(subsystem=self.subsystem)
@@ -148,4 +141,3 @@ class AutoscalingInstrumentation(MetricsBase):
         self.buffer_machines_pools_metrics = BufferPoolsMetrics(
             subsystem=self.subsystem
         )
-        self.scaling_metrics = ScalingMetrics(subsystem=self.subsystem)
