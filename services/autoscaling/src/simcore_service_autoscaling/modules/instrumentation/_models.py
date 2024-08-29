@@ -160,7 +160,7 @@ class BufferPoolsMetrics(MetricsBase):
                 assert isinstance(tracked_gauge, TrackedGauge)  # nosec
                 instances = getattr(buffer_pool, field_name)
                 assert isinstance(instances, set)  # nosec
-                tracked_gauge.update_from_instances(i.ec2_instance for i in instances)
+                tracked_gauge.update_from_instances(instances)
 
 
 @dataclass(slots=True, kw_only=True)
