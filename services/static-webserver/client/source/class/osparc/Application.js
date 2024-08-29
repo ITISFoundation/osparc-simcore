@@ -96,7 +96,7 @@ qx.Class.define("osparc.Application", {
       });
 
       // Setting up auth manager
-      osparc.auth.Manager.getInstance().addListener("logout", () => this.__restart(), this);
+      osparc.auth.Manager.getInstance().addListener("logout", () => this.logout(), this);
 
       this.__initRouting();
       this.__startupChecks();
@@ -629,12 +629,13 @@ qx.Class.define("osparc.Application", {
      * Resets session and restarts
     */
     logout: function(forcedReason) {
-      let isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
+      const authManager = osparc.auth.Manager.getInstance();
+      const isLoggedIn = authManager.isLoggedIn();
       if (!isLoggedIn) {
         return;
       }
+      authManager.logout();
 
-      osparc.auth.Manager.getInstance().logout();
       if (forcedReason) {
         osparc.FlashMessenger.getInstance().logAs(forcedReason, "WARNING", 0);
       } else {

@@ -1275,6 +1275,7 @@ qx.Class.define("osparc.data.Resources", {
           // If a 401 is received, make a call to the /me endpoint.
           // If the backend also responds with yet another 401, assume that the backend logged the user out
           if (status === 401 && resource !== "profile" && osparc.auth.Manager.getInstance().isLoggedIn()) {
+            console.warn("Checking in user is logged in");
             this.fetch("profile", "getOne")
               .catch(err => {
                 if ("status" in err && err.status === 401) {
