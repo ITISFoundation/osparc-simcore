@@ -491,7 +491,6 @@ qx.Class.define("osparc.Application", {
 
     __restart: function() {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
-
       if (isLogged) {
         this.__loadMainPage();
       } else {
@@ -635,6 +634,7 @@ qx.Class.define("osparc.Application", {
         return;
       }
 
+      osparc.auth.Manager.getInstance().logout();
       if (forcedReason) {
         osparc.FlashMessenger.getInstance().logAs(forcedReason, "WARNING", 0);
       } else {
@@ -646,7 +646,6 @@ qx.Class.define("osparc.Application", {
       osparc.CookieExpirationTracker.getInstance().stopTracker();
       osparc.NewUITracker.getInstance().stopTracker();
       osparc.announcement.Tracker.getInstance().stopTracker();
-      osparc.auth.Manager.getInstance().logout();
       if ("closeEditor" in this.__mainPage) {
         this.__mainPage.closeEditor();
       }

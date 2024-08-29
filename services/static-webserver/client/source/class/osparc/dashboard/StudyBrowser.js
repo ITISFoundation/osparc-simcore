@@ -140,7 +140,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     reloadResources: function() {
-      if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
+      if (
+        osparc.data.Permissions.getInstance().canDo("studies.user.read") &&
+        osparc.auth.Manager.getInstance().isLoggedIn()
+      ) {
         this.__reloadResources();
       } else {
         this.__resetStudiesList();
