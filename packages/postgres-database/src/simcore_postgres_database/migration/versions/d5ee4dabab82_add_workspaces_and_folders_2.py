@@ -1,15 +1,15 @@
 """add_workspaces_and_folders_2
 
-Revision ID: 016546f2b35b
+Revision ID: d5ee4dabab82
 Revises: feca36c8e18f
-Create Date: 2024-08-28 14:55:55.540580+00:00
+Create Date: 2024-08-29 13:21:53.604727+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "016546f2b35b"
+revision = "d5ee4dabab82"
 down_revision = "feca36c8e18f"
 branch_labels = None
 depends_on = None
@@ -146,6 +146,7 @@ def upgrade():
         "projects_to_folders",
         sa.Column("folder_id", sa.BigInteger(), nullable=True),
         sa.Column("project_uuid", sa.String(), nullable=True),
+        sa.Column("user_id", sa.BigInteger(), nullable=True),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),
@@ -169,6 +170,13 @@ def upgrade():
             ["project_uuid"],
             ["projects.uuid"],
             name="fk_projects_to_folders_to_projects_uuid",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["user_id"],
+            ["users.id"],
+            name="fk_projects_to_folders_to_user_id",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),

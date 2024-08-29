@@ -367,14 +367,25 @@ class ProjectDBAPI(BaseProjectDB):
             _join_query = (
                 projects.join(projects_to_products, isouter=True)
                 .join(access_rights_subquery, isouter=True)
-                .join(projects_to_folders, isouter=True)
+                .join(
+                    projects_to_folders,
+                    (
+                        (projects.c.id == projects_to_folders.c.project_uuid)
+                        & (projects_to_folders.c.user_id == user_id)
+                    ),
+                    isouter=True,
+                )
             )
+
+            # if folder_id:
+            #     _join_query = _join_query.join(projects_to_folders, ((projects.c.id == projects_to_folders.c.project_uuid) & (projects_to_folders.c.user_id == user_id)), isouter=True)#.join(folders_v2, isouter=True)
 
             query = (
                 sa.select(
                     *[col for col in projects.columns if col.name != "access_rights"],
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
+                    # literal_column(str(user_id)).label('user_id')  # Add artificial user_id column
                 )
                 .select_from(_join_query)
                 .where(
@@ -393,12 +404,12 @@ class ProjectDBAPI(BaseProjectDB):
                         if not include_hidden
                         else sa.text("")
                     )
-                    & (
-                        (projects.c.prj_owner == user_id)
-                        | sa.text(
-                            f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
-                        )
-                    )
+                    # & (
+                    #     (projects.c.prj_owner == user_id)
+                    #     | sa.text(
+                    #         f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
+                    #     )
+                    # )
                     & (
                         (projects_to_products.c.product_name == product_name)
                         # This was added for backward compatibility, including old projects not in the projects_to_products table.
@@ -410,12 +421,29 @@ class ProjectDBAPI(BaseProjectDB):
                         else projects_to_folders.c.folder_id.is_(None)
                     )
                     & (
-                        projects.c.workspace_id == workspace_id
+                        projects.c.workspace_id == workspace_id  # <-- Shared workspace
                         if workspace_id
-                        else projects.c.workspace_id.is_(None)
+                        else projects.c.workspace_id.is_(None)  # <-- Personal workspace
                     )
                 )
             )
+
+            if workspace_id is not None:
+                # If Personal workspace we check to which user has access
+                query = query.where(
+                    # (
+                    (projects.c.prj_owner == user_id)
+                    | sa.text(
+                        f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
+                    )
+                    # )
+                )
+            # else:
+            #     query = query.where(
+            #         projects_to_folders.c.folder_id == folder_id
+            #         if folder_id
+            #         else projects_to_folders.c.folder_id.is_(None)
+            #     )
 
             if search:
                 query = query.join(users, isouter=True)

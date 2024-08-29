@@ -31,6 +31,17 @@ projects_to_folders = sa.Table(
             ondelete="CASCADE",
         ),
     ),
+    sa.Column(
+        "user_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            "users.id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+            name="fk_projects_to_folders_to_user_id",
+        ),
+        nullable=True,
+    ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
 )
