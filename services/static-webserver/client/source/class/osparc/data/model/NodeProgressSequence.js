@@ -109,6 +109,22 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
   statics: {
     DISCLAIMER_TIME: 50000,
+
+    createDisclaimerText: function() {
+      const disclaimerText = new qx.ui.basic.Atom().set({
+        label: qx.locale.Manager.tr("Please be patient, this process can take a few minutes ..."),
+        padding: [20, 10],
+        gap: 15,
+        icon: "@FontAwesome5Solid/exclamation-triangle/16",
+        backgroundColor: "disclaimer-bg",
+        textColor: "info",
+        alignX: "center"
+      });
+      disclaimerText.getChildControl("icon").set({
+        textColor: "info"
+      });
+      return disclaimerText;
+    },
   },
 
   members: {
@@ -213,22 +229,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       sequenceLoadingPage.add(progressTitle);
       sequenceLoadingPage.add(overallPBar);
 
-      const disclaimerText = this.__disclaimerText = new qx.ui.basic.Atom().set({
-        label: qx.locale.Manager.tr("Please be patient, this process can take a few minutes ..."),
-        padding: [20, 10],
-        gap: 15,
-        icon: "@FontAwesome5Solid/exclamation-triangle/16",
-        backgroundColor: "disclaimer-bg",
-        textColor: "info",
-        alignX: "center"
-      });
-      const icon = disclaimerText.getChildControl("icon");
-      icon.set({
-        textColor: "info"
-      })
-      disclaimerText.exclude();
-
-
       const scalingLayout = this.__clusterUpScalingLayout = osparc.widget.ProgressSequence.createTaskLayout(qx.locale.Manager.tr("Increasing system capacity ..."));
       sequenceLoadingPage.add(scalingLayout);
 
@@ -250,6 +250,10 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       this.__mainLoadingPage.addAt(sequenceLoadingPage, 0, {
         flex: 1
       });
+
+
+      const disclaimerText = this.__disclaimerText = this.self().createDisclaimerText();
+      disclaimerText.exclude();
       this.__mainLoadingPage.addAt(this.__disclaimerText, 1, {
         flex: 1
       });
