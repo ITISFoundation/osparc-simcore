@@ -24,11 +24,12 @@ _logger = logging.getLogger(__name__)
 def _label_title_and_version(settings: ApplicationSettings, title: str, version: str):
     labels = []
     if settings.API_SERVER_DEV_FEATURES_ENABLED:
-        # builds public version identifier with pre
-        v = Version(version)
+        # builds public version identifier with pre: `[N!]N(.N)*[{a|b|rc}N][.postN][.devN]`
         # SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#public-version-identifiers
-        # `[N!]N(.N)*[{a|b|rc}N][.postN][.devN]`
+        v = Version(version)
         version = f"{v.base_version}.post0.dev"
+        assert Version(version).is_devrelease, version  # nosec
+        _logger.info("Setting up a developmental version: %s -> %s", v, version)
 
     if settings.debug:
         labels.append("debug")
