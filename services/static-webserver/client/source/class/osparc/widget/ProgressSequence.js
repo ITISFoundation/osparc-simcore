@@ -21,10 +21,15 @@ qx.Class.define("osparc.widget.ProgressSequence", {
   construct: function(title) {
     this.base(arguments);
 
-    // Layout
-    this._setLayout(new qx.ui.layout.VBox(8));
+    const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(9)).set({
+      backgroundColor: "window-popup-background",
+      paddingBottom: 8
+    });
+    this._setLayout(layout);
 
     this.__initLayout(title);
+
+    this.__tasks = [];
   },
 
   statics: {
@@ -133,31 +138,45 @@ qx.Class.define("osparc.widget.ProgressSequence", {
   },
 
   members: {
+    __tasks: null,
+
     __initLayout: function(title) {
       title = title || qx.locale.Manager.tr("CREATING ...");
-      const sequenceLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(9)).set({
-        backgroundColor: "window-popup-background",
-        paddingBottom: 8
-      });
-
       const progressTitle = new qx.ui.basic.Label(title).set({
         font: "text-12",
         alignX: "center",
         alignY: "middle",
         margin: 10
       });
-      sequenceLoadingPage.add(progressTitle);
+      this._add(progressTitle);
 
       const overallPBar = this.__overallProgressBar = osparc.widget.ProgressSequence.createProgressBar();
-      sequenceLoadingPage.add(overallPBar);
-
-      this.addAt(sequenceLoadingPage, {
-        flex: 1
-      });
+      this._add(overallPBar);
     },
 
     __applyOverallProgress: function(value) {
       this.self().progressUpdate(this.__overallProgressBar, value);
+    },
+
+    getTask: function(text) {
+      const taskFound = this.__tasks.find(task => {
+        return task.getChildren()[this.POS.LABEL] === text;
+      });
+      return taskFound;
+    },
+
+    getTasks: function() {
+      return this.__tasks;
+    },
+
+    addNewTask: function(text) {
+      const taskFound = this.getTask(text);
+      if (taskFound) {
+        return taskFound;
+      }
+      const newTask = osparc.widget.ProgressSequence.createTaskLayout(text);
+      this._add(newTask);
+      return newTask;
     }
   }
 });
