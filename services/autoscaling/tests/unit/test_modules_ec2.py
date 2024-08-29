@@ -166,6 +166,21 @@ async def test_ec2_with_instrumentation_enabled(
         },
     )
 
+    # now we start it again
+    await ec2_client.start_instances(c5ad_12xlarge_instances)
+
+    # we get the stopped metrics increased now
+    _assert_metrics(
+        instrumentation.ec2_client_metrics.started_instances,
+        expected_num_samples=2,
+        check_sample_index=0,
+        expected_sample={
+            "name": "simcore_service_autoscaling_computational_started_instances_total",
+            "value": num_c5ad_12xlarge,
+            "labels": {"instance_type": "c5ad.12xlarge"},
+        },
+    )
+
     # we terminate them
     await ec2_client.terminate_instances(c5ad_12xlarge_instances)
 
