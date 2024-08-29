@@ -28,13 +28,14 @@ class S3TransferDataCB:
     task_progress_message_prefix: str = ""
     _total_bytes_copied: int = 0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.copy_transfer_cb(0)
 
-    def finalize_transfer(self):
+    def finalize_transfer(self) -> None:
         self.copy_transfer_cb(self.total_bytes_to_transfer - self._total_bytes_copied)
 
-    def copy_transfer_cb(self, copied_bytes: int):
+    def copy_transfer_cb(self, copied_bytes: int) -> None:
+        logger.debug("Copied %s", parse_obj_as(ByteSize, copied_bytes).human_readable())
         self._total_bytes_copied += copied_bytes
         if self.total_bytes_to_transfer != 0:
             update_task_progress(
@@ -43,7 +44,7 @@ class S3TransferDataCB:
                 f"{parse_obj_as(ByteSize,self._total_bytes_copied).human_readable()}"
                 f"/{self.total_bytes_to_transfer.human_readable()}]",
                 ProgressPercent(
-                    max(self._total_bytes_copied, self.total_bytes_to_transfer)
+                    min(self._total_bytes_copied, self.total_bytes_to_transfer)
                     / self.total_bytes_to_transfer
                 ),
             )
