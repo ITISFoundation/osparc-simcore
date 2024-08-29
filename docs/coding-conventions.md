@@ -139,5 +139,5 @@ Have a look at `ESLint`'s configuration files [.eslintrc.json](.eslintrc.json) a
 
 # My first osparc-simcore PR: common pitfalls
 
-- Make sure to run mypy, as the python-linting github-action is required to pass. This is not reflectedin the unit tests.
-- If you include new dependencies in `requirements/*`, make sure to run `make touch && make reqs upgrade=NAME_OF_YOUR_NEW_DEPENDENCY`
+- Make sure to run `make mypy` and `make pyling`, as the associated github-actions are required to pass. This is not reflected in the makefile targets referencing "unit tests".
+- If you include new dependencies in `requirements/*.in`, make sure to run `make touch && make reqs "upgrade=NAME_OF_YOUR_NEW_DEPENDENCY"`. Globbing (using `*` to match multiple packages) does not work. It is best to do this inside a reproducible environment, for this purpose a shell inside a docker container can be used: Go to `osparc-simcore/requirements/tools` and run `make shell`. Inside the new shell the osparc-simcore repo is placed in `~`. Run `make reqs` from inside this shell.
