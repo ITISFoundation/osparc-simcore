@@ -21,11 +21,12 @@ qx.Class.define("osparc.widget.ProgressSequence", {
   construct: function(title) {
     this.base(arguments);
 
-    const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(9)).set({
+    this._setLayout(new qx.ui.layout.VBox(9));
+
+    this.set({
       backgroundColor: "window-popup-background",
       paddingBottom: 8
     });
-    this._setLayout(layout);
 
     this.__initLayout(title);
 
