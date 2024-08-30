@@ -6337,9 +6337,6 @@ components:
           maxLength: 100
           minLength: 1
           type: string
-        description:
-          title: Description
-          type: string
         parentFolderId:
           title: Parentfolderid
           exclusiveMinimum: true
