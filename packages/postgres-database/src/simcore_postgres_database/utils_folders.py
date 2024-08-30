@@ -263,24 +263,9 @@ _ROLE_TO_PERMISSIONS: dict[FolderAccessRole, _FolderPermissions] = {
     FolderAccessRole.OWNER: OWNER_PERMISSIONS,
 }
 
-_PERMISSIONS_TO_ROLES: dict[_FolderPermissions, FolderAccessRole] = {
-    NO_ACCESS_PERMISSIONS: FolderAccessRole.NO_ACCESS,
-    VIEWER_PERMISSIONS: FolderAccessRole.VIEWER,
-    EDITOR_PERMISSIONS: FolderAccessRole.EDITOR,
-    OWNER_PERMISSIONS: FolderAccessRole.OWNER,
-}
-
 
 def _get_permissions_from_role(role: FolderAccessRole) -> _FolderPermissions:
     return _ROLE_TO_PERMISSIONS[role]
-
-
-def get_role_from_permissions(
-    read: bool, write: bool, delete: bool
-) -> FolderAccessRole:
-    return _PERMISSIONS_TO_ROLES[
-        _FolderPermissions(read=read, write=write, delete=delete)
-    ]
 
 
 def _requires(*permissions: _FolderPermissions) -> _FolderPermissions:

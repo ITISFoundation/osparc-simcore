@@ -200,17 +200,6 @@ async def get_project_for_user(
     return project
 
 
-# async def get_project_legacy(app: web.Application, user_id: UserID, project_uuid: ProjectID) -> tuple[ProjectDict, ProjectType]:
-#     db = ProjectDBAPI.get_from_app_context(app)
-
-#     project, project_type = await db.(
-#         user_id,
-#         f"{project_uuid}",
-#     )
-
-#     return project, project_type
-
-
 async def get_project_type(
     app: web.Application, project_uuid: ProjectID
 ) -> ProjectType:

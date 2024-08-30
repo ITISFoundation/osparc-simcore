@@ -174,13 +174,12 @@ class BaseProjectDB:
                 .on_conflict_do_nothing()
             )
 
-    async def _execute_with_permission_check(  # NOTE: MD rename this function without permissions
+    async def _execute_without_permission_check(
         self,
         conn: SAConnection,
         *,
         select_projects_query: Select,
         user_id: int,
-        user_groups: list[RowProxy],
         filter_by_services: list[dict] | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType]]:
         api_projects: list[dict] = []  # API model-compatible projects
@@ -189,8 +188,6 @@ class BaseProjectDB:
         async for row in conn.execute(select_projects_query):
             assert isinstance(row, RowProxy)  # nosec
             try:
-                # check_project_permissions(row, user_id, user_groups, "read")  # NOTE: MD: I think this is not necessary here
-
                 await asyncio.get_event_loop().run_in_executor(
                     None, ProjectAtDB.from_orm, row
                 )

@@ -43,7 +43,6 @@ class ProjectDB(BaseModel):
     prj_owner: UserID
     creation_date: datetime
     last_change_date: datetime
-    # access_rights: dict[GroupIDStr, AccessRights]
     ui: StudyUI | None
     classifiers: list[ClassifierID]
     dev: dict | None

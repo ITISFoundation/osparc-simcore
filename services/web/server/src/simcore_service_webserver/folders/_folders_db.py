@@ -182,42 +182,6 @@ async def get_folder_for_user_or_workspace(
         return parse_obj_as(FolderDB, row)
 
 
-# async def check_user_access_to_folder(
-#     app: web.Application,
-#     folder_id: FolderID,
-#     product_name: ProductName,
-# ) -> bool:
-#     query = (
-#         select(*_SELECTION_ARGS)
-#         .select_from(folders_v2.join(user_to_groups))
-#         .where(
-#             (folders_v2.c.product_name == product_name)
-#             & (folders_v2.c.folder_id == folder_id)
-#         )
-#     )
-
-#     stmt = (
-#         select(*_SELECTION_ARGS_WITH_USER_ACCESS_RIGHTS)
-#         .select_from(_JOIN_TABLES)
-#         .where(
-#             (user_to_groups.c.uid == user_id)
-#             & (user_to_groups.c.access_rights["read"].astext == "true")
-#             & (workspaces.c.workspace_id == workspace_id)
-#             & (workspaces.c.product_name == product_name)
-#         )
-#         .group_by(_SELECTION_ARGS)
-#     )
-
-#     async with get_database_engine(app).acquire() as conn:
-#         result = await conn.execute(query)
-#         row = await result.first()
-#         if row is None:
-#             raise FolderAccessForbiddenError(
-#                 reason=f"User does not have access to the folder {folder_id}. Or folder does not exist.",
-#             )
-#         return parse_obj_as(FolderDB, row)
-
-
 async def update_folder(
     app: web.Application,
     folder_id: FolderID,

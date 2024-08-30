@@ -42,7 +42,30 @@ async def create_folder(
         # Setup folder user id to None, as this is not a private workspace
         _private_workspace_user_id = None
 
-    # NOTE: MD: TODO check user permissions on the parent folder id
+        # Check parent_folder_id lives in the workspace
+        if parent_folder_id:
+            parent_folder_db = await folders_db.get_folder_db(
+                app, folder_id=parent_folder_id, product_name=product_name
+            )
+            if parent_folder_db.workspace_id != workspace_id:
+                raise WorkspaceAccessForbiddenError(
+                    reason=f"Folder {parent_folder_id} does not exists in workspace {workspace_id}."
+                )
+
+    if parent_folder_id:
+        # Check user has access to the parent folder
+        parent_folder_db = await folders_db.get_folder_for_user_or_workspace(
+            app,
+            folder_id=parent_folder_id,
+            product_name=product_name,
+            user_id=_private_workspace_user_id,
+            workspace_id=workspace_id,
+        )
+        if workspace_id and parent_folder_db.workspace_id != workspace_id:
+            # Check parent folder id exists inside the same workspace
+            raise WorkspaceAccessForbiddenError(
+                reason=f"Folder {parent_folder_id} does not exists in workspace {workspace_id}."
+            )
 
     folder_db = await folders_db.create_folder(
         app,

@@ -84,34 +84,6 @@ async def get_project_to_folder(
         return parse_obj_as(ProjectToFolderDB, row)
 
 
-# async def update_project_to_folder(
-#     app: web.Application,
-#     project_id: ProjectID,
-#     folder_id: FolderID,
-#     user_id: UserID | None
-# ) -> None:
-#     async with get_database_engine(app).acquire() as conn:
-#         insert_stmt = pg_insert(project_to_groups).values(
-#             project_uuid=f"{project_id}",
-#             gid=group_id,
-#             read=read,
-#             write=write,
-#             delete=delete,
-#             created=func.now(),
-#             modified=func.now(),
-#         )
-#         on_update_stmt = insert_stmt.on_conflict_do_update(
-#             index_elements=[project_to_groups.c.project_uuid, project_to_groups.c.gid],
-#             set_={
-#                 "read": insert_stmt.excluded.read,
-#                 "write": insert_stmt.excluded.write,
-#                 "delete": insert_stmt.excluded.delete,
-#                 "modified": func.now(),
-#             },
-#         )
-#         await conn.execute(on_update_stmt)
-
-
 async def delete_project_to_folder(
     app: web.Application,
     project_id: ProjectID,

@@ -134,7 +134,6 @@ async def get_workspace_for_user(
         .select_from(_JOIN_TABLES)
         .where(
             (user_to_groups.c.uid == user_id)
-            # & (user_to_groups.c.access_rights["read"].astext == "true")
             & (workspaces.c.workspace_id == workspace_id)
             & (workspaces.c.product_name == product_name)
         )

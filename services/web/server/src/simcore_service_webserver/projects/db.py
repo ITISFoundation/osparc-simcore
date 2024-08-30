@@ -377,9 +377,6 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             )
 
-            # if folder_id:
-            #     _join_query = _join_query.join(projects_to_folders, ((projects.c.id == projects_to_folders.c.project_uuid) & (projects_to_folders.c.user_id == user_id)), isouter=True)#.join(folders_v2, isouter=True)
-
             query = (
                 sa.select(
                     *[
@@ -389,7 +386,6 @@ class ProjectDBAPI(BaseProjectDB):
                     ],
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
-                    # literal_column(str(user_id)).label('user_id')  # Add artificial user_id column
                 )
                 .select_from(_join_query)
                 .where(
@@ -454,11 +450,10 @@ class ProjectDBAPI(BaseProjectDB):
             )
             assert total_number_of_projects is not None  # nosec
 
-            prjs, prj_types = await self._execute_with_permission_check(
+            prjs, prj_types = await self._execute_without_permission_check(
                 conn,
                 select_projects_query=query.offset(offset).limit(limit),
                 user_id=user_id,
-                user_groups=user_groups,
                 filter_by_services=filter_by_services,
             )
 
@@ -918,7 +913,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             return await project_nodes_repo.get(conn, node_id=node_id)
 
-    async def update_project_node(  # NOTE: MD check
+    async def update_project_node(
         self,
         user_id: UserID,
         project_id: ProjectID,
