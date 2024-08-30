@@ -59,7 +59,7 @@ DECLARE
     group_id BIGINT;
 BEGIN
     IF TG_OP = 'INSERT' THEN
-        INSERT INTO "workspace_to_groups" ("gid", "workspace_id", "read", "write", "delete") VALUES (NEW.owner, NEW.id, TRUE, TRUE, TRUE);
+        INSERT INTO "workspaces_access_rights" ("gid", "workspace_id", "read", "write", "delete") VALUES (NEW.owner_primary_gid, NEW.workspace_id, TRUE, TRUE, TRUE);
     END IF;
     RETURN NULL;
 END; $$ LANGUAGE 'plpgsql';

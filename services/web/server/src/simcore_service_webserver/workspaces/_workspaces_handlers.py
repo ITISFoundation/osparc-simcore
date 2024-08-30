@@ -98,7 +98,7 @@ class WorkspacesListWithJsonStrQueryParams(PageQueryParameters):
 
 @routes.post(f"/{VTAG}/workspaces", name="create_workspace")
 @login_required
-@permission_required("workspace.create")
+@permission_required("workspaces.*")
 @handle_workspaces_exceptions
 async def create_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)
@@ -118,7 +118,7 @@ async def create_workspace(request: web.Request):
 
 @routes.get(f"/{VTAG}/workspaces", name="list_workspaces")
 @login_required
-@permission_required("workspace.read")
+@permission_required("workspaces.*")
 @handle_workspaces_exceptions
 async def list_workspaces(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)
@@ -152,7 +152,7 @@ async def list_workspaces(request: web.Request):
 
 @routes.get(f"/{VTAG}/workspaces/{{workspace_id}}", name="get_workspace")
 @login_required
-@permission_required("workspace.read")
+@permission_required("workspaces.*")
 @handle_workspaces_exceptions
 async def get_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)
@@ -173,7 +173,7 @@ async def get_workspace(request: web.Request):
     name="replace_workspace",
 )
 @login_required
-@permission_required("workspace.update")
+@permission_required("workspaces.*")
 @handle_workspaces_exceptions
 async def replace_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)
@@ -197,7 +197,7 @@ async def replace_workspace(request: web.Request):
     name="delete_workspace",
 )
 @login_required
-@permission_required("workspace.delete")
+@permission_required("workspaces.*")
 @handle_workspaces_exceptions
 async def delete_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)

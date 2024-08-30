@@ -370,7 +370,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .join(
                     projects_to_folders,
                     (
-                        (projects.c.id == projects_to_folders.c.project_uuid)
+                        (projects.c.uuid == projects_to_folders.c.project_uuid)
                         & (projects_to_folders.c.user_id == user_id)
                     ),
                     isouter=True,

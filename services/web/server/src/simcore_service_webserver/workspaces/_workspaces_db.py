@@ -66,7 +66,7 @@ async def create_workspace(
 
 
 _SELECTION_ARGS_WITH_USER_ACCESS_RIGHTS = (
-    _SELECTION_ARGS,
+    *_SELECTION_ARGS,
     func.max(workspaces_access_rights.c.read.cast(INTEGER)).cast(BOOLEAN).label("read"),
     func.max(workspaces_access_rights.c.write.cast(INTEGER))
     .cast(BOOLEAN)
@@ -76,9 +76,9 @@ _SELECTION_ARGS_WITH_USER_ACCESS_RIGHTS = (
     .label("delete"),
 )
 
-_JOIN_TABLES = user_to_groups.join(
-    workspaces_access_rights, user_to_groups.c.gid == workspaces_access_rights.c.gid
-).join(workspaces, workspaces_access_rights.c.workspace_id == workspaces.c.workspace_id)
+_JOIN_TABLES = workspaces.join(workspaces_access_rights).join(
+    user_to_groups, user_to_groups.c.gid == workspaces_access_rights.c.gid
+)
 
 
 async def list_workspaces_for_user(
@@ -95,10 +95,10 @@ async def list_workspaces_for_user(
         .select_from(_JOIN_TABLES)
         .where(
             (user_to_groups.c.uid == user_id)
-            & (user_to_groups.c.access_rights["read"].astext == "true")
+            # & (workspaces_access_rights.c.read == True)
             & (workspaces.c.product_name == product_name)
         )
-        .group_by(_SELECTION_ARGS)
+        .group_by(*_SELECTION_ARGS)
     )
 
     # Select total count from base_query
@@ -134,11 +134,11 @@ async def get_workspace_for_user(
         .select_from(_JOIN_TABLES)
         .where(
             (user_to_groups.c.uid == user_id)
-            & (user_to_groups.c.access_rights["read"].astext == "true")
+            # & (user_to_groups.c.access_rights["read"].astext == "true")
             & (workspaces.c.workspace_id == workspace_id)
             & (workspaces.c.product_name == product_name)
         )
-        .group_by(_SELECTION_ARGS)
+        .group_by(*_SELECTION_ARGS)
     )
 
     async with get_database_engine(app).acquire() as conn:

@@ -223,3 +223,52 @@ async def test_project_folder_movement_full_workflow(
     )
     resp = await client.put(url.path)
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+
+# @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+# async def test_project_folder_movement_full_workflow_shared_workspace(
+#     client: TestClient,
+#     logged_user: UserInfoDict,
+#     user_project: ProjectDict,
+#     expected: HTTPStatus,
+# ):
+#     assert client.app
+#     # create a workspace
+
+
+#     # create a new folder
+#     url = client.app.router["create_folder"].url_for()
+#     resp = await client.post(url.path, json={"name": "My first folder", "workspace_id": 1})
+#     root_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+#     # add project to the folder
+#     url = client.app.router["replace_project_folder"].url_for(
+#         folder_id=f"{root_folder['folderId']}", project_id=f"{user_project['uuid']}"
+#     )
+#     resp = await client.put(url.path)
+#     await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+#     # create a sub folder
+#     url = client.app.router["create_folder"].url_for()
+#     resp = await client.post(
+#         url.path,
+#         json={
+#             "name": "My sub folder",
+#             "parentFolderId": root_folder["folderId"],
+#         },
+#     )
+#     sub_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+#     # move project to the sub folder
+#     url = client.app.router["replace_project_folder"].url_for(
+#         folder_id=f"{sub_folder['folderId']}", project_id=f"{user_project['uuid']}"
+#     )
+#     resp = await client.put(url.path)
+#     await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+#     # move project to the root directory
+#     url = client.app.router["replace_project_folder"].url_for(
+#         folder_id="null", project_id=f"{user_project['uuid']}"
+#     )
+#     resp = await client.put(url.path)
+#     await assert_status(resp, status.HTTP_204_NO_CONTENT)
