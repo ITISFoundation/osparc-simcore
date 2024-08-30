@@ -2,17 +2,14 @@ import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 from enum import IntEnum, auto
-from typing import Any, ClassVar, NamedTuple, TypeAlias
+from typing import NamedTuple, TypeAlias
 
 from pydantic import (
-    BaseModel,
+    field_validator, ConfigDict, BaseModel,
     ByteSize,
-    Extra,
     Field,
     NonNegativeInt,
-    PositiveInt,
-    validator,
-)
+    PositiveInt)
 
 from .products import ProductName
 from .rest_filters import Filters
@@ -59,26 +56,28 @@ class PricingInfo(BaseModel):
     pricing_unit_id: PricingUnitId
     pricing_unit_cost_id: PricingUnitCostId
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {"pricing_plan_id": 1, "pricing_unit_id": 1, "pricing_unit_cost_id": 1}
             ]
         }
+    )
 
 
 class HardwareInfo(BaseModel):
     aws_ec2_instances: list[str]
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra = {
             "examples": [
                 {"aws_ec2_instances": ["c6a.4xlarge"]},
                 {"aws_ec2_instances": []},
             ]
         }
+    )
 
-    @validator("aws_ec2_instances")
+    @field_validator("aws_ec2_instances")
     @classmethod
     def warn_if_too_many_instances_are_present(cls, v: list[str]) -> list[str]:
         if len(v) > 1:
@@ -105,11 +104,9 @@ class PricingPlanAndUnitIdsTuple(NamedTuple):
 class StartedAt(BaseModel):
     from_: datetime | None = Field(None, alias="from")
     until: datetime | None = Field(None)
+    model_config = ConfigDict(populate_by_name=True)
 
-    class Config:
-        allow_population_by_field_name = True
-
-    @validator("from_", pre=True)
+    @field_validator("from_", mode="before")
     @classmethod
     def parse_from_filter(cls, v):
         """Parse the filters field."""
@@ -124,7 +121,7 @@ class StartedAt(BaseModel):
             return from_
         return v
 
-    @validator("until", pre=True)
+    @field_validator("until", mode="before")
     @classmethod
     def parse_until_filter(cls, v):
         """Parse the filters field."""
@@ -154,8 +151,8 @@ class PricingPlanCreate(BaseModel):
     classification: PricingPlanClassification
     pricing_plan_key: str
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "product_name": "osparc",
@@ -166,6 +163,7 @@ class PricingPlanCreate(BaseModel):
                 }
             ]
         }
+    )
 
 
 class PricingPlanUpdate(BaseModel):
@@ -174,8 +172,8 @@ class PricingPlanUpdate(BaseModel):
     description: str
     is_active: bool
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "pricing_plan_id": 1,
@@ -185,6 +183,7 @@ class PricingPlanUpdate(BaseModel):
                 }
             ]
         }
+    )
 
 
 ## Pricing Units
@@ -202,10 +201,10 @@ class UnitExtraInfo(BaseModel):
     RAM: ByteSize
     VRAM: ByteSize
 
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.allow
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        populate_by_name = True,
+        extra = "allow",
+        json_schema_extra={
             "examples": [
                 {
                     "CPU": 32,
@@ -216,6 +215,7 @@ class UnitExtraInfo(BaseModel):
                 }
             ]
         }
+    )
 
 
 class PricingUnitWithCostCreate(BaseModel):
@@ -227,8 +227,8 @@ class PricingUnitWithCostCreate(BaseModel):
     cost_per_unit: Decimal
     comment: str
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "pricing_plan_id": 1,
@@ -241,6 +241,7 @@ class PricingUnitWithCostCreate(BaseModel):
                 }
             ]
         }
+    )
 
 
 class PricingUnitCostUpdate(BaseModel):
@@ -257,8 +258,8 @@ class PricingUnitWithCostUpdate(BaseModel):
     specific_info: SpecificInfo
     pricing_unit_cost_update: None | PricingUnitCostUpdate
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "pricing_plan_id": 1,
@@ -283,6 +284,7 @@ class PricingUnitWithCostUpdate(BaseModel):
                 },
             ]
         }
+    )
 
 
 class ServicesAggregatedUsagesType(StrAutoEnum):

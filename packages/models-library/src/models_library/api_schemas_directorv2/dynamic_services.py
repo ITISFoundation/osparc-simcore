@@ -1,6 +1,6 @@
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
-from pydantic import BaseModel, ByteSize, Field
+from pydantic import ConfigDict, BaseModel, ByteSize, Field
 
 from ..resource_tracker import HardwareInfo, PricingInfo
 from ..services import ServicePortKey
@@ -30,10 +30,11 @@ class RetrieveDataOutEnveloped(BaseModel):
     ) -> "RetrieveDataOutEnveloped":
         return cls(data=RetrieveDataOut(size_bytes=ByteSize(transferred_bytes)))
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra = {
             "examples": [{"data": {"size_bytes": 42}}]
         }
+    )
 
 
 class DynamicServiceCreate(ServiceDetails):
@@ -55,9 +56,8 @@ class DynamicServiceCreate(ServiceDetails):
         default=None,
         description="contains harware information (ex. aws_ec2_instances)",
     )
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra = {
             "example": {
                 "key": "simcore/services/dynamic/3dviewer",
                 "version": "2.4.5",
@@ -75,6 +75,7 @@ class DynamicServiceCreate(ServiceDetails):
                 "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
             }
         }
+    )
 
 
 DynamicServiceGet: TypeAlias = RunningDynamicServiceDetails

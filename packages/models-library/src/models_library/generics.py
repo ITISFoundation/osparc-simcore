@@ -1,13 +1,12 @@
 from collections.abc import ItemsView, Iterable, Iterator, KeysView, ValuesView
 from typing import Any, Generic, TypeVar
-
-from pydantic.generics import GenericModel
+from pydantic import BaseModel
 
 DictKey = TypeVar("DictKey")
 DictValue = TypeVar("DictValue")
 
 
-class DictModel(GenericModel, Generic[DictKey, DictValue]):
+class DictModel(BaseModel, Generic[DictKey, DictValue]):
     __root__: dict[DictKey, DictValue]
 
     def __getitem__(self, k: DictKey) -> DictValue:
@@ -44,7 +43,7 @@ class DictModel(GenericModel, Generic[DictKey, DictValue]):
 DataT = TypeVar("DataT")
 
 
-class ListModel(GenericModel, Generic[DataT]):
+class ListModel(BaseModel, Generic[DataT]):
     __root__: list[DataT]
 
     def __iter__(self):
@@ -57,10 +56,10 @@ class ListModel(GenericModel, Generic[DataT]):
         return len(self.__root__)
 
 
-class Envelope(GenericModel, Generic[DataT]):
+class Envelope(BaseModel, Generic[DataT]):
     data: DataT | None = None
     error: Any | None = None
 
     @classmethod
     def from_data(cls, obj: Any) -> "Envelope":
-        return cls.parse_obj({"data": obj})
+        return cls.model_validate({"data": obj})

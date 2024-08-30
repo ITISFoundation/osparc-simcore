@@ -1,6 +1,6 @@
-from typing import Any, ClassVar, Literal, TypeAlias
+from typing import Literal, TypeAlias
 
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 
 from .basic_types import IDStr
 
@@ -15,8 +15,8 @@ class ProgressStructuredMessage(BaseModel):
     unit: str | None
     sub: "ProgressStructuredMessage | None"
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra = {
             "examples": [
                 {
                     "description": "some description",
@@ -42,6 +42,7 @@ class ProgressStructuredMessage(BaseModel):
                 },
             ]
         }
+    )
 
 
 UNITLESS = None
@@ -77,9 +78,9 @@ class ProgressReport(BaseModel):
 
         return msg
 
-    class Config:
-        frozen = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        frozen = True,
+        json_schema_extra = {
             "examples": [
                 # typical percent progress (no units)
                 {
@@ -102,3 +103,4 @@ class ProgressReport(BaseModel):
                 },
             ]
         }
+    )

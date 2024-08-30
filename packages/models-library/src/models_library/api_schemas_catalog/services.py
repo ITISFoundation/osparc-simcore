@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Any, ClassVar, TypeAlias
+from typing import Any, TypeAlias
 
 from models_library.rpc_pagination import PageRpc
-from pydantic import BaseModel, Extra, Field, HttpUrl, NonNegativeInt
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, NonNegativeInt
 
 from ..boot_options import BootOptions
 from ..emails import LowerCaseEmailStr
@@ -23,8 +23,8 @@ from ..utils.change_case import snake_to_camel
 
 
 class ServiceUpdate(ServiceMetaDataEditable, ServiceAccessRights):
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 # ServiceAccessRights
                 "accessRights": {
@@ -72,6 +72,7 @@ class ServiceUpdate(ServiceMetaDataEditable, ServiceAccessRights):
                 },
             }
         }
+    )
 
 
 _EXAMPLE_FILEPICKER: dict[str, Any] = {
@@ -205,12 +206,11 @@ class ServiceGet(
 ):  # pylint: disable=too-many-ancestors
     owner: LowerCaseEmailStr | None
 
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.ignore
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]
-        }
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="ignore",
+        json_schema_extra={"examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]},
+    )
 
 
 class ServiceGetV2(BaseModel):
@@ -226,7 +226,7 @@ class ServiceGetV2(BaseModel):
     service_type: ServiceType = Field(default=..., alias="type")
 
     contact: LowerCaseEmailStr | None
-    authors: list[Author] = Field(..., min_items=1)
+    authors: list[Author] = Field(..., min_length=1)
     owner: LowerCaseEmailStr | None
 
     inputs: ServiceInputsDict
@@ -246,11 +246,11 @@ class ServiceGetV2(BaseModel):
         " It includes current release.",
     )
 
-    class Config:
-        extra = Extra.forbid
-        alias_generator = snake_to_camel
-        allow_population_by_field_name = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        json_schema_extra={
             "examples": [
                 {
                     **_EXAMPLE_SLEEPER,  # v2.2.1  (latest)
@@ -301,7 +301,8 @@ class ServiceGetV2(BaseModel):
                     ],
                 },
             ]
-        }
+        },
+    )
 
 
 PageRpcServicesGetV2: TypeAlias = PageRpc[
@@ -325,13 +326,11 @@ class ServiceUpdateV2(BaseModel):
     quality: dict[str, Any] = {}
 
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None = None
-
-    class Config:
-        extra = Extra.forbid
-        alias_generator = snake_to_camel
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        extra="forbid", alias_generator=snake_to_camel, populate_by_name=True
+    )
 
 
-assert set(ServiceUpdateV2.__fields__.keys()) - set(  # nosec
-    ServiceGetV2.__fields__.keys()
+assert set(ServiceUpdateV2.model_fields.keys()) - set(  # nosec
+    ServiceGetV2.model_fields.keys()
 ) == {"deprecated"}

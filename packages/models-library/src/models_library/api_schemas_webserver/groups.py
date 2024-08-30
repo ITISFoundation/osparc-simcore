@@ -1,7 +1,14 @@
 from contextlib import suppress
-from typing import Any, ClassVar
 
-from pydantic import AnyUrl, BaseModel, Field, ValidationError, parse_obj_as, validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    TypeAdapter,
+    ValidationError,
+    field_validator,
+)
 
 from ..emails import LowerCaseEmailStr
 
@@ -19,14 +26,15 @@ class GroupAccessRights(BaseModel):
     write: bool
     delete: bool
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {"read": True, "write": False, "delete": False},
                 {"read": True, "write": True, "delete": False},
                 {"read": True, "write": True, "delete": True},
             ]
         }
+    )
 
 
 class UsersGroup(BaseModel):
@@ -43,17 +51,17 @@ class UsersGroup(BaseModel):
         alias="inclusionRules",
     )
 
-    @validator("thumbnail", pre=True)
+    @field_validator("thumbnail", mode="before")
     @classmethod
     def sanitize_legacy_data(cls, v):
         if v:
             # Enforces null if thumbnail is not valid URL or empty
             with suppress(ValidationError):
-                return parse_obj_as(AnyUrl, v)
+                return TypeAdapter(AnyUrl).validate_python(v)
         return None
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "gid": "27",
@@ -84,6 +92,7 @@ class UsersGroup(BaseModel):
                 },
             ]
         }
+    )
 
 
 class AllUsersGroups(BaseModel):
@@ -92,8 +101,8 @@ class AllUsersGroups(BaseModel):
     all: UsersGroup | None = None
     product: UsersGroup | None = None
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "me": {
                     "gid": "27",
@@ -131,6 +140,7 @@ class AllUsersGroups(BaseModel):
                 },
             }
         }
+    )
 
 
 class GroupUserGet(BaseModel):
@@ -142,8 +152,8 @@ class GroupUserGet(BaseModel):
     gid: str | None = Field(None, description="the user primary gid")
     access_rights: GroupAccessRights = Field(..., alias="accessRights")
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "1",
                 "login": "mr.smith@matrix.com",
@@ -158,3 +168,4 @@ class GroupUserGet(BaseModel):
                 },
             }
         }
+    )

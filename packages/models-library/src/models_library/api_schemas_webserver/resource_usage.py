@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
@@ -94,20 +94,14 @@ class CreatePricingPlanBodyParams(InputSchema):
     description: str
     classification: PricingPlanClassification
     pricing_plan_key: str
-
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 
 
 class UpdatePricingPlanBodyParams(InputSchema):
     display_name: str
     description: str
     is_active: bool
-
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 
 
 class CreatePricingUnitBodyParams(InputSchema):
@@ -117,10 +111,7 @@ class CreatePricingUnitBodyParams(InputSchema):
     specific_info: SpecificInfo
     cost_per_unit: Decimal
     comment: str
-
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 
 
 class UpdatePricingUnitBodyParams(InputSchema):
@@ -129,16 +120,10 @@ class UpdatePricingUnitBodyParams(InputSchema):
     default: bool
     specific_info: SpecificInfo
     pricing_unit_cost_update: PricingUnitCostUpdate | None
-
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 
 
 class ConnectServiceToPricingPlanBodyParams(InputSchema):
     service_key: ServiceKey
     service_version: ServiceVersion
-
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)

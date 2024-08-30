@@ -1,8 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, ClassVar
 
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 
 from ..resource_tracker import (
     HardwareInfo,
@@ -24,8 +23,8 @@ class PricingUnitGet(BaseModel):
     default: bool
     specific_info: HardwareInfo
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra = {
             "examples": [
                 {
                     "pricing_unit_id": 1,
@@ -39,6 +38,7 @@ class PricingUnitGet(BaseModel):
                 for hw_config_example in HardwareInfo.Config.schema_extra["examples"]
             ]
         }
+    )
 
 
 class PricingPlanGet(BaseModel):
@@ -51,8 +51,8 @@ class PricingPlanGet(BaseModel):
     pricing_units: list[PricingUnitGet] | None
     is_active: bool
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra = {
             "examples": [
                 {
                     "pricing_plan_id": 1,
@@ -69,6 +69,7 @@ class PricingPlanGet(BaseModel):
                 ]
             ]
         }
+    )
 
 
 class PricingPlanToServiceGet(BaseModel):
@@ -77,8 +78,8 @@ class PricingPlanToServiceGet(BaseModel):
     service_version: ServiceVersion
     created: datetime
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra = {
             "examples": [
                 {
                     "pricing_plan_id": 1,
@@ -88,3 +89,4 @@ class PricingPlanToServiceGet(BaseModel):
                 }
             ]
         }
+    )

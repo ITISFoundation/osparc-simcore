@@ -1,5 +1,3 @@
-from typing import Any, ClassVar
-
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -7,7 +5,7 @@ from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.services_resources import ServiceResourcesDictHelpers
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class DynamicServiceStart(DynamicServiceCreate):
@@ -15,8 +13,8 @@ class DynamicServiceStart(DynamicServiceCreate):
     request_scheme: str
     simcore_user_agent: str
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "product_name": "osparc",
                 "can_save": True,
@@ -36,6 +34,7 @@ class DynamicServiceStart(DynamicServiceCreate):
                 "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
             }
         }
+    )
 
 
 class DynamicServiceStop(BaseModel):
@@ -45,8 +44,8 @@ class DynamicServiceStop(BaseModel):
     simcore_user_agent: str
     save_state: bool
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "user_id": 234,
                 "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
@@ -55,3 +54,4 @@ class DynamicServiceStop(BaseModel):
                 "save_state": True,
             }
         }
+    )

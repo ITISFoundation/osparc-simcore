@@ -1,7 +1,7 @@
 from collections.abc import Sequence
-from typing import Any, ClassVar, Final
+from typing import Final
 
-from pydantic import BaseModel, Extra, Field, NonNegativeFloat, validator
+from pydantic import field_validator, ConfigDict, BaseModel, Field, NonNegativeFloat
 
 INACTIVITY_TIMEOUT_CAP: Final[NonNegativeFloat] = 5
 TIMEOUT_MIN: Final[NonNegativeFloat] = 1
@@ -16,14 +16,16 @@ class UserServiceCommand(BaseModel):
         ..., description="after this interval the command will be timed-out"
     )
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra = "forbid",
+        json_schema_extra = {
             "examples": [
                 {"service": "rt-web", "command": "ls", "timeout": 1},
                 {"service": "s4l-core", "command": ["ls", "-lah"], "timeout": 1},
             ]
         }
+    )
+        
 
 
 class CallbacksMapping(BaseModel):
@@ -47,7 +49,7 @@ class CallbacksMapping(BaseModel):
         ),
     )
 
-    @validator("inactivity")
+    @field_validator("inactivity")
     @classmethod
     def ensure_inactivity_timeout_is_capped(
         cls, v: UserServiceCommand
@@ -62,9 +64,9 @@ class CallbacksMapping(BaseModel):
             raise ValueError(msg)
         return v
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra = "forbid",
+        json_schema_extra = {
             "examples": [
                 {
                     # empty validates
@@ -91,3 +93,4 @@ class CallbacksMapping(BaseModel):
                 },
             ]
         }
+    )
