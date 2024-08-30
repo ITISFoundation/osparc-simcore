@@ -432,7 +432,9 @@ class ProjectDBAPI(BaseProjectDB):
                 )
 
             if search:
-                query = query.join(users, isouter=True)
+                query = query.join(
+                    users, users.c.id == projects.c.prj_owner, isouter=True
+                )
                 query = query.where(
                     (projects.c.name.ilike(f"%{search}%"))
                     | (projects.c.description.ilike(f"%{search}%"))
