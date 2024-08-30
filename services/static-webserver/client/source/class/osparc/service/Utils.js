@@ -180,6 +180,14 @@ qx.Class.define("osparc.service.Utils", {
       return null;
     },
 
+    isCompatibleToDifferentKey: function(key, version) {
+      const latestCompatible = this.getLatestCompatible(key, version);
+      if (latestCompatible && key !== latestCompatible["key"]) {
+        return true;
+      }
+      return false;
+    },
+
     getVersionDisplay: function(key, version) {
       const services = osparc.service.Store.servicesCached;
       if (key in services && version in services[key]) {
@@ -338,8 +346,7 @@ qx.Class.define("osparc.service.Utils", {
       // Remove the services that can be upgraded to a different key
       for (let i=mergedList.length-1; i>=0; i--) {
         const service = mergedList[i];
-        const latestCompatible = this.getLatestCompatible(service["key"], service["version"]);
-        if (latestCompatible && latestCompatible["key"] !== service["key"]) {
+        if (this.isCompatibleToDifferentKey(service["key"], service["version"])) {
           mergedList.splice(i, 1);
         }
       }

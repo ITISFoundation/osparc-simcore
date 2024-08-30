@@ -223,8 +223,8 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
           // updatable
           osparc.service.Store.getService(latestCompatible["key"], latestCompatible["version"])
             .then(latestMetadata => {
-              let label = osparc.service.Utils.extractVersionDisplay(latestMetadata)
-              if (node["key"] !== latestMetadata["key"]) {
+              let label = osparc.service.Utils.extractVersionDisplay(latestMetadata);
+              if (osparc.service.Utils.isCompatibleToDifferentKey(node["key"], node["version"])) {
                 label = latestMetadata["name"] + ":" + label;
               }
               compatibleVersionLabel.setValue(label);
