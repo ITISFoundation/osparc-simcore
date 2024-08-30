@@ -347,7 +347,7 @@ qx.Class.define("osparc.service.Utils", {
             historyEntry["compatibility"]["canUpdateTo"]["key"] &&
             historyEntry["compatibility"]["canUpdateTo"]["key"] !== service["key"]
           ) {
-            delete service["history"][i];
+            service["history"].splice(i, 1);
           }
         }
       });
