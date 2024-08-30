@@ -3,9 +3,7 @@
 #
 --constraint ../../../requirements/constraints.txt
 
-pydantic>=1.9
-
-
-# extra
+pydantic
+pydantic_settings
 rich
 typer

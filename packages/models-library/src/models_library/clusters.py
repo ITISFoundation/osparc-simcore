@@ -133,6 +133,7 @@ class BaseCluster(BaseModel):
         default=None,
         description="url to the image describing this cluster",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
+        validate_default=True,
     )
     endpoint: AnyUrl
     authentication: ClusterAuthentication = Field(

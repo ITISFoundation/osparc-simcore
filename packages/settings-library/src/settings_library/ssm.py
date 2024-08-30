@@ -13,6 +13,8 @@ class SSMSettings(BaseCustomSettings):
     SSM_REGION_NAME: str = "us-east-1"
     SSM_SECRET_ACCESS_KEY: SecretStr
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseCustomSettings.Config):
         schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
             "examples": [
