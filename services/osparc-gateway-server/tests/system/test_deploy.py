@@ -97,6 +97,9 @@ async def dask_gateway_stack_deployed_services(
     print("<-- osparc-dask-gateway stack stopped.")
 
 
+@pytest.mark.skip(
+    reason="Skipping in the hotfix branch who doesn't have yet python 3.11"
+)
 async def test_deployment(
     dask_gateway_stack_deployed_services,
     dask_gateway_entrypoint: str,
