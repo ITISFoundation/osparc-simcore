@@ -3580,7 +3580,7 @@
           "studies"
         ],
         "summary": "Start Study Job",
-        "description": "Changed in in *version 0.6.0*: Now responds with a 202 when successfully starting a computation",
+        "description": "Changed in *version 0.6.0*: Now responds with a 202 when successfully starting a computation",
         "operationId": "start_study_job",
         "parameters": [
           {
