@@ -27,7 +27,7 @@ def _label_title_and_version(settings: ApplicationSettings, title: str, version:
         # builds public version identifier with pre: `[N!]N(.N)*[{a|b|rc}N][.postN][.devN]`
         # SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#public-version-identifiers
         v = Version(version)
-        version = f"{v.base_version}.post0.dev"
+        version = f"{v.base_version}.post0.dev0"
         assert Version(version).is_devrelease, version  # nosec
         _logger.info("Setting up a developmental version: %s -> %s", v, version)
 

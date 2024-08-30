@@ -16,9 +16,7 @@ FMSG_CHANGELOG_NEW_IN_VERSION: Final[str] = "New in *version {}*\n"
 FMSG_CHANGELOG_ADDED_IN_VERSION: Final[str] = "Added in *version {}*: {}\n"
 
 # changes on inputs/outputs in routes
-FMSG_CHANGELOG_CHANGED_IN_VERSION: Final[str] = "Changed in in *version {}*: {}\n"
+FMSG_CHANGELOG_CHANGED_IN_VERSION: Final[str] = "Changed in *version {}*: {}\n"
 
 # removed on inputs/outputs in routes
-FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT: Final[
-    str
-] = "Removed in in *version {}*: {}\n"
+FMSG_CHANGELOG_REMOVED_IN_VERSION_FORMAT: Final[str] = "Removed in *version {}*: {}\n"
