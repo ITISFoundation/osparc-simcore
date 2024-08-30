@@ -25,7 +25,6 @@ class RegistrySettings(BaseCustomSettings):
 
     @field_validator("REGISTRY_PATH", mode="before")
     @classmethod
-    @classmethod
     def _escape_none_string(cls, v) -> Any | None:
         return None if v == "None" else v
 
