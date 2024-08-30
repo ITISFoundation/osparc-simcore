@@ -1,4 +1,4 @@
-from pydantic import ConfigDict, field_validator, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from .generated_models.docker_rest_api import (
     ContainerSpec,
@@ -37,9 +37,7 @@ class AioDockerResources1(Resources1):
         None, description="Define resources reservation.", alias="Reservations"
     )
 
-    model_config = ConfigDict(
-        populate_by_name = True
-    )
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class AioDockerTaskSpec(TaskSpec):
@@ -56,7 +54,4 @@ class AioDockerTaskSpec(TaskSpec):
 class AioDockerServiceSpec(ServiceSpec):
     TaskTemplate: AioDockerTaskSpec | None = None
 
-    model_config = ConfigDict(
-        alias_generator = camel_to_snake,
-        populate_by_name = True
-    )
+    model_config = ConfigDict(alias_generator=camel_to_snake, populate_by_name=True)

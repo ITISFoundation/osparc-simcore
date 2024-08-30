@@ -1,13 +1,14 @@
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
+    ConfigDict,
     Field,
     HttpUrl,
     NonNegativeFloat,
-    root_validator,
-    validator,
+    field_validator,
+    model_validator,
 )
 from pydantic.networks import AnyUrl
 from pydantic.types import ByteSize, PositiveFloat
@@ -44,7 +45,7 @@ AvailableResources: TypeAlias = DictModel[str, PositiveFloat]
 
 
 class UsedResources(DictModel[str, NonNegativeFloat]):
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def ensure_negative_value_is_zero(cls, values):
         # dasks adds/remove resource values and sometimes
@@ -70,9 +71,9 @@ WorkersDict: TypeAlias = dict[AnyUrl, Worker]
 
 class Scheduler(BaseModel):
     status: str = Field(..., description="The running status of the scheduler")
-    workers: WorkersDict | None = Field(default_factory=dict)
+    workers: WorkersDict | None = Field(default_factory=dict, validate_default=True)
 
-    @validator("workers", pre=True, always=True)
+    @field_validator("workers", mode="before")
     @classmethod
     def ensure_workers_is_empty_dict(cls, v):
         if v is None:
@@ -95,10 +96,9 @@ class ClusterGet(Cluster):
         alias="accessRights", default_factory=dict
     )
 
-    class Config(Cluster.Config):
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by__name=True)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def ensure_access_rights_converted(cls, values):
         if "access_rights" in values:
@@ -118,7 +118,7 @@ class ClusterCreate(BaseCluster):
         alias="accessRights", default_factory=dict
     )
 
-    @validator("thumbnail", always=True, pre=True)
+    @field_validator("thumbnail", mode="before")
     @classmethod
     def set_default_thumbnail_if_empty(cls, v, values):
         if v is None:
@@ -131,8 +131,8 @@ class ClusterCreate(BaseCluster):
             return default_thumbnails[cluster_type]
         return v
 
-    class Config(BaseCluster.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "name": "My awesome cluster",
@@ -163,6 +163,7 @@ class ClusterCreate(BaseCluster):
                 },
             ]
         }
+    )
 
 
 class ClusterPatch(BaseCluster):
@@ -177,8 +178,8 @@ class ClusterPatch(BaseCluster):
         alias="accessRights"
     )
 
-    class Config(BaseCluster.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "name": "Changing the name of my cluster",
@@ -195,6 +196,7 @@ class ClusterPatch(BaseCluster):
                 },
             ]
         }
+    )
 
 
 class ClusterPing(BaseModel):

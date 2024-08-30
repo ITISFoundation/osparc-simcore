@@ -3,7 +3,7 @@ from decimal import Decimal
 from enum import auto
 from typing import TypeAlias
 
-from pydantic import ConfigDict, BaseModel, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 from .utils.enums import StrAutoEnum
 
@@ -21,7 +21,7 @@ class WalletInfo(BaseModel):
     wallet_credit_amount: Decimal
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "examples": [
                 {
                     "wallet_id": 1,

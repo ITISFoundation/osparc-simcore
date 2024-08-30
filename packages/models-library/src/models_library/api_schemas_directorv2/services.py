@@ -1,6 +1,4 @@
-from typing import Any, ClassVar
-
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.types import ByteSize, NonNegativeInt
 
 from ..service_settings_labels import ContainerSpec
@@ -23,6 +21,7 @@ class NodeRequirements(BaseModel):
         None,
         description="defines the required (maximum) GPU for running the services",
         alias="GPU",
+        validate_default=True,
     )
     ram: ByteSize = Field(
         ...,
@@ -33,17 +32,18 @@ class NodeRequirements(BaseModel):
         default=None,
         description="defines the required (maximum) amount of VRAM for running the services",
         alias="VRAM",
+        validate_default=True,
     )
 
-    @validator("vram", "gpu", always=True, pre=True)
+    @field_validator("vram", "gpu", mode="before")
     @classmethod
     def check_0_is_none(cls, v):
         if v == 0:
             v = None
         return v
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {"CPU": 1.0, "RAM": 4194304},
                 {"CPU": 1.0, "GPU": 1, "RAM": 4194304},
@@ -53,15 +53,15 @@ class NodeRequirements(BaseModel):
                 },
             ]
         }
+    )
 
 
 class ServiceExtras(BaseModel):
     node_requirements: NodeRequirements
     service_build_details: ServiceBuildDetails | None = None
     container_spec: ContainerSpec | None = None
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {"node_requirements": node_example}
                 for node_example in NodeRequirements.Config.schema_extra["examples"]
@@ -90,3 +90,4 @@ class ServiceExtras(BaseModel):
                 for node_example in NodeRequirements.Config.schema_extra["examples"]
             ]
         }
+    )
