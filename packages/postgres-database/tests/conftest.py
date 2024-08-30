@@ -37,6 +37,7 @@ from simcore_postgres_database.webserver_models import (
     user_to_groups,
     users,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 pytest_plugins = [
     "pytest_simcore.pytest_global_environs",
@@ -79,6 +80,29 @@ def make_engine(
         return aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
 
     return _make
+
+
+@pytest.fixture
+def make_asyncio_engine(postgres_service: str) -> Callable[[bool], AsyncEngine]:
+    dsn = postgres_service.replace("postgresql://", "postgresql+asyncpg://")
+    minsize = 1
+    maxsize = 50
+
+    def _(echo: bool):
+        engine: AsyncEngine = create_async_engine(
+            dsn,
+            pool_size=minsize,
+            max_overflow=maxsize - minsize,
+            connect_args={
+                "server_settings": {"application_name": "postgres_database_tests"}
+            },
+            pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
+            future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
+            echo=echo,
+        )
+        return engine
+
+    return _
 
 
 def is_postgres_responsive(dsn) -> bool:
