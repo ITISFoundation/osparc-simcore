@@ -263,11 +263,11 @@ class _ProgressCallback:
     logger: logging.Logger
     _total_bytes_transfered: int = 0
 
-    def __call__(self, bytes_transferred: int) -> None:
+    def __call__(self, bytes_transferred: int, file_name: str) -> None:
         self._total_bytes_transfered += bytes_transferred
         self.logger.debug(
             "progress: %s",
-            f"{self.action} {self._total_bytes_transfered} / {self.file_size} bytes",
+            f"{self.action} {file_name=} {self._total_bytes_transfered} / {self.file_size} bytes",
         )
 
 

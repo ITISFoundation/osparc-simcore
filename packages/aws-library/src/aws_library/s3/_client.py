@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import functools
 import logging
 import urllib.parse
 from collections.abc import AsyncGenerator, Callable, Sequence
@@ -372,7 +373,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bucket: S3BucketName,
         file: Path,
         object_key: S3ObjectKey,
-        bytes_transfered_cb: Callable[[int], None] | None,
+        bytes_transfered_cb: Callable[[int, str], None] | None,
     ) -> None:
         """upload a file using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
         upload_options: dict[str, Any] = {
@@ -381,7 +382,11 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             "Config": TransferConfig(max_concurrency=self.transfer_max_concurrency),
         }
         if bytes_transfered_cb:
-            upload_options |= {"Callback": bytes_transfered_cb}
+            upload_options |= {
+                "Callback": functools.partial(
+                    bytes_transfered_cb, file_name=f"{object_key}"
+                )
+            }
         await self._client.upload_file(f"{file}", **upload_options)
 
     @s3_exception_handler(_logger)
@@ -391,7 +396,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bucket: S3BucketName,
         src_object_key: S3ObjectKey,
         dst_object_key: S3ObjectKey,
-        bytes_transfered_cb: Callable[[int], None] | None,
+        bytes_transfered_cb: Callable[[int, str], None] | None,
     ) -> None:
         """copy a file in S3 using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
         copy_options: dict[str, Any] = {
@@ -404,7 +409,11 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             ),
         }
         if bytes_transfered_cb:
-            copy_options |= {"Callback": bytes_transfered_cb}
+            copy_options |= {
+                "Callback": functools.partial(
+                    bytes_transfered_cb, file_name=f"{dst_object_key}"
+                )
+            }
         await self._client.copy(**copy_options)
 
     @s3_exception_handler(_logger)
@@ -414,7 +423,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bucket: S3BucketName,
         src_prefix: str,
         dst_prefix: str,
-        bytes_transfered_cb: Callable[[int], None] | None,
+        bytes_transfered_cb: Callable[[int, str], None] | None,
     ) -> None:
         """copy from 1 location in S3 to another recreating the same structure"""
         dst_metadata = await self.get_directory_metadata(

@@ -1,6 +1,5 @@
 import contextlib
 import datetime
-import functools
 import logging
 import tempfile
 import urllib.parse
@@ -651,12 +650,7 @@ class SimcoreS3DataManager(BaseDataManager):
                             dst_file_id=SimcoreS3FileID(
                                 f"{dst_project_uuid}/{new_node_id}/{src_fmd.object_name.split('/', maxsplit=2)[-1]}"
                             ),
-                            bytes_transfered_cb=functools.partial(
-                                s3_transfered_data_cb.copy_transfer_cb,
-                                file_name=src_fmd.object_name.split("/", maxsplit=2)[
-                                    -1
-                                ],
-                            ),
+                            bytes_transfered_cb=s3_transfered_data_cb.copy_transfer_cb,
                         )
                     )
         with log_context(
@@ -674,10 +668,7 @@ class SimcoreS3DataManager(BaseDataManager):
                             dest_project_id=dst_project_uuid,
                             dest_node_id=NodeID(node_id),
                             file_storage_link=output,
-                            bytes_transfered_cb=functools.partial(
-                                s3_transfered_data_cb.copy_transfer_cb,
-                                file_name="datcore",
-                            ),
+                            bytes_transfered_cb=s3_transfered_data_cb.upload_transfer_cb,
                         )
                         for output in node.get("outputs", {}).values()
                         if isinstance(output, dict)
@@ -962,7 +953,7 @@ class SimcoreS3DataManager(BaseDataManager):
         dest_project_id: ProjectID,
         dest_node_id: NodeID,
         file_storage_link: dict[str, Any],
-        bytes_transfered_cb: Callable[[int], None],
+        bytes_transfered_cb: Callable[[int, str], None],
     ) -> FileMetaData:
         session = get_client_session(self.app)
         # 2 steps: Get download link for local copy, then upload to S3
@@ -1013,7 +1004,7 @@ class SimcoreS3DataManager(BaseDataManager):
         *,
         src_fmd: FileMetaDataAtDB,
         dst_file_id: SimcoreS3FileID,
-        bytes_transfered_cb: Callable[[int], None],
+        bytes_transfered_cb: Callable[[int, str], None],
     ) -> FileMetaData:
         with log_context(
             _logger,

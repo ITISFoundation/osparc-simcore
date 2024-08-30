@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from dataclasses import dataclass, field
 
 from pydantic import ByteSize, parse_obj_as
@@ -27,7 +28,9 @@ class S3TransferDataCB:
     total_bytes_to_transfer: ByteSize
     task_progress_message_prefix: str = ""
     _total_bytes_copied: int = 0
-    _file_total_bytes_copied: dict[str, int] = field(default_factory=dict)
+    _file_total_bytes_copied: dict[str, int] = field(
+        default_factory=lambda: defaultdict(int)
+    )
 
     def __post_init__(self) -> None:
         self._update()
@@ -50,13 +53,19 @@ class S3TransferDataCB:
         )
         self._update()
 
-    def copy_transfer_cb(self, file_total_bytes: int, *, file_name: str) -> None:
+    def copy_transfer_cb(self, file_total_bytes: int, file_name: str) -> None:
         logger.debug(
             "Copied %s of %s",
             parse_obj_as(ByteSize, file_total_bytes).human_readable(),
             file_name,
         )
         self._file_total_bytes_copied[file_name] = file_total_bytes
+        self._total_bytes_copied = sum(self._file_total_bytes_copied.values())
+        if self.total_bytes_to_transfer != 0:
+            self._update()
+
+    def upload_transfer_cb(self, file_increment_bytes: int, file_name: str) -> None:
+        self._file_total_bytes_copied[file_name] += file_increment_bytes
         self._total_bytes_copied = sum(self._file_total_bytes_copied.values())
         if self.total_bytes_to_transfer != 0:
             self._update()
