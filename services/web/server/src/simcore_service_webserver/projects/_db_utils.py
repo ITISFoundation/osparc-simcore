@@ -35,7 +35,7 @@ from .utils import find_changed_node_keys, project_uses_available_services
 
 logger = logging.getLogger(__name__)
 
-DB_EXCLUSIVE_COLUMNS = ["type", "id", "published", "hidden"]
+DB_EXCLUSIVE_COLUMNS = ["type", "id", "published", "hidden", "workspace_id"]
 SCHEMA_NON_NULL_KEYS = ["thumbnail"]
 
 PermissionStr = Literal["read", "write", "delete"]
@@ -272,7 +272,11 @@ class BaseProjectDB:
 
         query = (
             sa.select(
-                *[col for col in projects.columns if col.name != "access_rights"],
+                *[
+                    col
+                    for col in projects.columns
+                    if col.name not in ["access_rights", "workspace_id"]
+                ],
                 access_rights_subquery.c.access_rights,
             )
             .select_from(projects.join(access_rights_subquery, isouter=True))

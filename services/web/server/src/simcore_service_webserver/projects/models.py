@@ -65,7 +65,7 @@ class ProjectDB(BaseModel):
 
 
 assert set(ProjectDB.__fields__.keys()).issubset(  # nosec
-    {c.name for c in projects.columns if c.name != "access_rights"}
+    {c.name for c in projects.columns if c.name not in ["access_rights"]}
 )
 
 

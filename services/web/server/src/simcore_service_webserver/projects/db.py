@@ -382,7 +382,11 @@ class ProjectDBAPI(BaseProjectDB):
 
             query = (
                 sa.select(
-                    *[col for col in projects.columns if col.name != "access_rights"],
+                    *[
+                        col
+                        for col in projects.columns
+                        if col.name not in ["access_rights", "workspace_id"]
+                    ],
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     # literal_column(str(user_id)).label('user_id')  # Add artificial user_id column
