@@ -1,6 +1,5 @@
-from typing import Any, ClassVar
-
 from pydantic import Field
+from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
 
@@ -13,10 +12,9 @@ class EC2Settings(BaseCustomSettings):
     EC2_REGION_NAME: str = "us-east-1"
     EC2_SECRET_ACCESS_KEY: str
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(BaseCustomSettings.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+    model_config = SettingsConfigDict(
+        **BaseCustomSettings.model_config,
+        json_schema_extra={
             "examples": [
                 {
                     "EC2_ACCESS_KEY_ID": "my_access_key_id",
@@ -24,5 +22,6 @@ class EC2Settings(BaseCustomSettings):
                     "EC2_REGION_NAME": "us-east-1",
                     "EC2_SECRET_ACCESS_KEY": "my_secret_access_key",
                 }
-            ],
+            ]
         }
+    )

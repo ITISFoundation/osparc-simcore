@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Final
 
-from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, root_validator
+from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, model_validator
 
 from .base import BaseCustomSettings
 from .postgres import PostgresSettings
@@ -21,14 +21,15 @@ class StorageAuthSettings(StorageSettings):
         # for details see https://github.com/ITISFoundation/osparc-issues/issues/1264
         return self.STORAGE_USERNAME is not None and self.STORAGE_PASSWORD is not None
 
-    @root_validator
+    @model_validator(mode="before")
     @classmethod
     def _validate_auth_fields(cls, values):
-        username = values["STORAGE_USERNAME"]
-        password = values["STORAGE_PASSWORD"]
-        if (username is None) != (password is None):
-            msg = f"Both {username=} and {password=} must be either set or unset!"
-            raise ValueError(msg)
+        if isinstance(values, dict):
+            username = values["STORAGE_USERNAME"]
+            password = values["STORAGE_PASSWORD"]
+            if (username is None) != (password is None):
+                msg = f"Both {username=} and {password=} must be either set or unset!"
+                raise ValueError(msg)
         return values
 
 
