@@ -43,11 +43,6 @@ qx.Class.define("osparc.node.slideshow.FilePickerView", {
     },
 
     // overridden
-    _openEditAccessLevel: function() {
-      return;
-    },
-
-    // overridden
     _applyNode: function(node) {
       if (!node.isFilePicker()) {
         console.error("Only file picker nodes are supported");

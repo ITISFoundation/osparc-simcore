@@ -106,6 +106,10 @@ qx.Class.define("osparc.widget.logger.LoggerModel", {
       return this.__rawData;
     },
 
+    getFilteredRows: function() {
+      return this.__filteredData;
+    },
+
     addRows: function(newRows) {
       newRows.forEach(newRow => {
         const levelColor = this.self().getLevelColor(newRow.logLevel);

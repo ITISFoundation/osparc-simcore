@@ -8,6 +8,7 @@
 
 aioboto3
 aiocache
+arrow
 pydantic[email]
 types-aiobotocore[ec2,s3,ssm]
 sh

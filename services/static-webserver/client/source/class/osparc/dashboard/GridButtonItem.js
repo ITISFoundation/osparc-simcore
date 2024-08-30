@@ -56,7 +56,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             padding: [0, 5]
           });
           layout = this.getChildControl("footer");
-          layout.add(control, osparc.dashboard.GridButtonBase.FPOS.VIEWER_MODE);
+          layout.add(control, osparc.dashboard.GridButtonBase.FPOS.UI_MODE);
           break;
         case "empty-workbench": {
           control = this._getEmptyWorkbenchIcon();
@@ -163,12 +163,13 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           break;
         case "permission-icon":
-          control = new qx.ui.basic.Image();
-          control.exclude();
-          this._add(control, {
-            bottom: 2,
-            right: 12
+          control = new qx.ui.basic.Image(osparc.dashboard.CardBase.PERM_READ).set({
+            alignY: "middle",
+            padding: [0, 5],
+            toolTipText: this.tr("Viewer only")
           });
+          layout = this.getChildControl("footer");
+          layout.add(control, osparc.dashboard.GridButtonBase.FPOS.PERMISSION);
           break;
       }
 

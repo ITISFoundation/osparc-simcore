@@ -129,9 +129,9 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.secure=false
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.service=${SWARM_STACK_NAME}_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.rule=hostregexp(`{host:.+}`) && PathPrefix(`/dev/`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.rule=PathPrefix(`/dev/`)
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.priority=3
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker, ${SWARM_STACK_NAME}_webserver_retry
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
 
   wb-api-server:
     environment:
@@ -233,7 +233,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.service=api@internal
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.entrypoints=traefik_monitor
-        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.middlewares=${SWARM_STACK_NAME}_gzip@docker
+        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.middlewares=${SWARM_STACK_NAME}_gzip@swarm
         - traefik.http.services.${SWARM_STACK_NAME}_api_internal.loadbalancer.server.port=8080
 
   whoami:
@@ -247,4 +247,4 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_whoami.loadbalancer.server.port=80
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.rule=PathPrefix(`/whoami`)
         - traefik.http.routers.${SWARM_STACK_NAME}_whoami.entrypoints=traefik_monitor
-        - traefik.http.routers.${SWARM_STACK_NAME}_whoami.middlewares=${SWARM_STACK_NAME}_gzip@docker
+        - traefik.http.routers.${SWARM_STACK_NAME}_whoami.middlewares=${SWARM_STACK_NAME}_gzip@swarm
