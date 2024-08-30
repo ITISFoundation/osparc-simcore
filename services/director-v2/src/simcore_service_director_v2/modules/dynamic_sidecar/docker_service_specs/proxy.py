@@ -91,7 +91,7 @@ def get_dynamic_proxy_spec(
             f"traefik.http.services.{scheduler_data.proxy_service_name}.loadbalancer.server.port": "80",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.entrypoints": "http",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.priority": "10",
-            f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": rf"HostRegexp(`{scheduler_data.node_uuid}.services.{{host:.+}}`)",
+            f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": rf"HostRegexp(`{scheduler_data.node_uuid}\.services\.(?<host>.+)`)",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}_gzip@swarm, {scheduler_data.proxy_service_name}-security-headers",
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
         }
