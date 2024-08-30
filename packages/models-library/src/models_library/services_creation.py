@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from .services import ServiceKey, ServiceVersion
 from .services_resources import ServiceResourcesDict

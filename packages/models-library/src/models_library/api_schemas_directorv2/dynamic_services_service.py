@@ -1,7 +1,7 @@
 from functools import cached_property
 from pathlib import Path
 
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..basic_types import PortInt
 from ..projects import ProjectID
@@ -40,7 +40,7 @@ class ServiceDetails(CommonServiceDetails):
     )
     model_config = ConfigDict(
         populate_by_name=True,
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "key": "simcore/services/dynamic/3dviewer",
                 "version": "2.4.5",
@@ -49,7 +49,7 @@ class ServiceDetails(CommonServiceDetails):
                 "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
             }
-        }
+        },
     )
 
 
@@ -93,8 +93,8 @@ class RunningDynamicServiceDetails(ServiceDetails):
         return f"http://{self.host}:{self.internal_port}{self.basepath}"  # NOSONAR
 
     model_config = ConfigDict(
-        ignored_types = (cached_property,),
-        json_schema_extra = {
+        ignored_types=(cached_property,),
+        json_schema_extra={
             "examples": [
                 {
                     "boot_type": "V0",
@@ -124,5 +124,5 @@ class RunningDynamicServiceDetails(ServiceDetails):
                     "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 },
             ]
-        }
+        },
     )

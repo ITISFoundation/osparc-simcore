@@ -3,19 +3,19 @@
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 from pydantic import (
     BaseModel,
     ByteSize,
-    Extra,
+    ConfigDict,
     Field,
     Json,
     PrivateAttr,
+    TypeAdapter,
     ValidationError,
-    parse_obj_as,
-    root_validator,
-    validator,
+    field_validator,
+    model_validator,
 )
 
 from .callbacks_mapping import CallbacksMapping
@@ -24,11 +24,9 @@ from .service_settings_nat_rule import NATRule
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from .utils.json_serialization import json_dumps
 
-
-class _BaseConfig:
-    arbitrary_types_allowed = True
-    extra = Extra.forbid
-    keep_untouched = (cached_property,)
+_base_model_config = ConfigDict(
+    arbitrary_types_allowed=True, extra="forbid", ignored_types=(cached_property,)
+)
 
 
 class ContainerSpec(BaseModel):
@@ -40,18 +38,19 @@ class ContainerSpec(BaseModel):
         alias="Command",
         description="Used to override the container's command",
         # NOTE: currently constraint to our use cases. Might mitigate some security issues.
-        min_items=1,
-        max_items=2,
+        min_length=1,
+        max_length=2,
     )
 
-    class Config(_BaseConfig):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = _base_model_config | ConfigDict(
+        json_schema_extra={
             "examples": [
                 {"Command": ["executable"]},
                 {"Command": ["executable", "subcommand"]},
                 {"Command": ["ofs", "linear-regression"]},
             ]
         }
+    )
 
 
 class SimcoreServiceSettingLabelEntry(BaseModel):
@@ -93,7 +92,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
         # as fields
         return self._destination_containers
 
-    @validator("setting_type", pre=True)
+    @field_validator("setting_type", mode="before")
     @classmethod
     def ensure_backwards_compatible_setting_type(cls, v):
         if v == "resources":
@@ -101,9 +100,9 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
             return "Resources"
         return v
 
-    class Config(_BaseConfig):
-        allow_population_by_field_name = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = _base_model_config | ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
             "examples": [
                 # constraints
                 {
@@ -157,7 +156,8 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                     },
                 },
             ]
-        }
+        },
+    )
 
 
 SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
@@ -191,7 +191,7 @@ class PathMappingsLabel(BaseModel):
         ),
     )
 
-    @validator("volume_size_limits")
+    @field_validator("volume_size_limits")
     @classmethod
     def validate_volume_limits(cls, v, values) -> str | None:
         if v is None:
@@ -200,7 +200,7 @@ class PathMappingsLabel(BaseModel):
         for path_str, size_str in v.items():
             # checks that format is correct
             try:
-                parse_obj_as(ByteSize, size_str)
+                TypeAdapter(ByteSize).validate_strings(size_str)
             except ValidationError as e:
                 msg = f"Provided size='{size_str}' contains invalid charactes: {e!s}"
                 raise ValueError(msg) from e
@@ -218,8 +218,8 @@ class PathMappingsLabel(BaseModel):
         output: str | None = v
         return output
 
-    class Config(_BaseConfig):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = _base_model_config | ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "outputs_path": "/tmp/outputs",  # noqa: S108 nosec
@@ -250,6 +250,7 @@ class PathMappingsLabel(BaseModel):
                 },
             ]
         }
+    )
 
 
 ComposeSpecLabelDict: TypeAlias = dict[str, Any]
@@ -351,7 +352,7 @@ class DynamicSidecarServiceLabels(BaseModel):
             raise ValueError(msg)
         return f"{v}" if v else v
 
-    @validator("containers_allowed_outgoing_permit_list")
+    @field_validator("containers_allowed_outgoing_permit_list")
     @classmethod
     def _containers_allowed_outgoing_permit_list_in_compose_spec(cls, v, values):
         if v is None:
@@ -372,7 +373,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
         return v
 
-    @validator("containers_allowed_outgoing_internet")
+    @field_validator("containers_allowed_outgoing_internet")
     @classmethod
     def _containers_allowed_outgoing_internet_in_compose_spec(cls, v, values):
         if v is None:
@@ -393,7 +394,7 @@ class DynamicSidecarServiceLabels(BaseModel):
                     raise ValueError(err_msg)
         return v
 
-    @validator("callbacks_mapping")
+    @field_validator("callbacks_mapping")
     @classmethod
     def _ensure_callbacks_mapping_container_names_defined_in_compose_spec(
         cls, v: CallbacksMapping, values
@@ -421,12 +422,12 @@ class DynamicSidecarServiceLabels(BaseModel):
                     raise ValueError(err_msg)
         return v
 
-    @validator("user_preferences_path", pre=True)
+    @field_validator("user_preferences_path", mode="before")
     @classmethod
     def _deserialize_from_json(cls, v):
         return f"{v}".removeprefix('"').removesuffix('"')
 
-    @validator("user_preferences_path")
+    @field_validator("user_preferences_path")
     @classmethod
     def _user_preferences_path_no_included_in_other_volumes(
         cls, v: CallbacksMapping, values
@@ -445,7 +446,7 @@ class DynamicSidecarServiceLabels(BaseModel):
                 raise ValueError(msg)
         return v
 
-    @root_validator
+    @model_validator
     @classmethod
     def _not_allowed_in_both_specs(cls, values):
         match_keys = {
@@ -483,8 +484,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
         return values
 
-    class Config(_BaseConfig):
-        ...
+    model_config = _base_model_config
 
 
 class SimcoreServiceLabels(DynamicSidecarServiceLabels):
@@ -513,9 +513,9 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
         ),
     )
 
-    class Config(_BaseConfig):
-        extra = Extra.allow
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = _base_model_config | ConfigDict(
+        extra="allow",
+        json_schema_extra={
             "examples": [
                 # WARNING: do not change order. Used in tests!
                 # legacy service
@@ -584,4 +584,5 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     ),
                 },
             ]
-        }
+        },
+    )

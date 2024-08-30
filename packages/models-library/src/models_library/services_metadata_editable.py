@@ -1,8 +1,8 @@
 # mypy: disable-error-code=truthy-function
 from datetime import datetime
-from typing import Any, ClassVar
+from typing import Any
 
-from pydantic import Field, HttpUrl
+from pydantic import ConfigDict, Field, HttpUrl
 
 from .services_base import ServiceBaseDisplay
 from .services_constants import LATEST_INTEGRATION_VERSION
@@ -34,8 +34,8 @@ class ServiceMetaDataEditable(ServiceBaseDisplay):
     classifiers: list[str] | None
     quality: dict[str, Any] = {}
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "key": "simcore/services/dynamic/sim4life",
                 "version": "1.0.9",
@@ -61,3 +61,4 @@ class ServiceMetaDataEditable(ServiceBaseDisplay):
                 },
             }
         }
+    )

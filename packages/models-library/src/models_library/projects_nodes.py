@@ -3,10 +3,11 @@
 """
 
 from copy import deepcopy
-from typing import Any, ClassVar, TypeAlias, Union
+from typing import Any, TypeAlias, Union
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     ConstrainedStr,
     Extra,
     Field,
@@ -14,7 +15,7 @@ from pydantic import (
     StrictBool,
     StrictFloat,
     StrictInt,
-    validator,
+    field_validator,
 )
 
 from .basic_types import EnvVarKey, HttpUrlWithCustomMinLength, KeyIDStr
@@ -85,10 +86,9 @@ class NodeState(BaseModel):
         le=1.0,
         description="current progress of the task if available (None if not started or not a computational task)",
     )
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 {
                     "modified": True,
@@ -106,7 +106,8 @@ class NodeState(BaseModel):
                     "currentStatus": "SUCCESS",
                 },
             ]
-        }
+        },
+    )
 
 
 class Node(BaseModel):
@@ -208,7 +209,7 @@ class Node(BaseModel):
         ),
     )
 
-    @validator("thumbnail", pre=True)
+    @field_validator("thumbnail", mode="before")
     @classmethod
     def convert_empty_str_to_none(cls, v):
         if isinstance(v, str) and v == "":
@@ -221,7 +222,7 @@ class Node(BaseModel):
             return RunningState.FAILED
         return RunningState(v)
 
-    @validator("state", pre=True)
+    @field_validator("state", mode="before")
     @classmethod
     def convert_from_enum(cls, v):
         if isinstance(v, str):

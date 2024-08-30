@@ -1,15 +1,16 @@
 import contextlib
 import re
-from typing import Any, ClassVar, Final
+from typing import Any, Final
 
 from pydantic import (
     BaseModel,
     ByteSize,
+    ConfigDict,
     ConstrainedStr,
     Field,
+    TypeAdapter,
     ValidationError,
-    parse_obj_as,
-    root_validator,
+    model_validator,
 )
 
 from .basic_regex import DOCKER_GENERIC_TAG_KEY_RE, DOCKER_LABEL_KEY_REGEX
@@ -60,7 +61,7 @@ _UNDEFINED_LABEL_VALUE_INT: Final[str] = "0"
 
 DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: Final[
     DockerLabelKey
-] = parse_obj_as(DockerLabelKey, "ec2-instance-type")
+] = TypeAdapter(DockerLabelKey).validate_strings("ec2-instance-type")
 
 
 def to_simcore_runtime_docker_label_key(key: str) -> DockerLabelKey:
@@ -99,7 +100,8 @@ class StandardSimcoreDockerLabels(BaseModel):
         ..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}cpu-limit"
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     @classmethod
     def _backwards_compatibility(cls, values: dict[str, Any]) -> dict[str, Any]:
         # NOTE: this is necessary for dy-sidecar and legacy service until they are adjusted
@@ -122,7 +124,7 @@ class StandardSimcoreDockerLabels(BaseModel):
 
             def _convert_nano_cpus_to_cpus(nano_cpu: str) -> str:
                 with contextlib.suppress(ValidationError):
-                    return f"{parse_obj_as(float, nano_cpu) / (1.0*10**9):.2f}"
+                    return f"{TypeAdapter(float).validate_python(nano_cpu) / (1.0*10**9):.2f}"
                 return _UNDEFINED_LABEL_VALUE_INT
 
             mapped_values.setdefault(
@@ -138,7 +140,7 @@ class StandardSimcoreDockerLabels(BaseModel):
         """returns a dictionary of strings as required by docker"""
         return {
             to_simcore_runtime_docker_label_key(k): f"{v}"
-            for k, v in sorted(self.dict().items())
+            for k, v in sorted(self.model_dump().items())
         }
 
     @classmethod
@@ -146,77 +148,6 @@ class StandardSimcoreDockerLabels(BaseModel):
         assert docker_task.Spec  # nosec
         assert docker_task.Spec.ContainerSpec  # nosec
         task_labels = docker_task.Spec.ContainerSpec.Labels or {}
-        return cls.parse_obj(task_labels)
+        return cls.model_validate(task_labels)
 
-    class Config:
-        allow_population_by_field_name = True
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                # legacy service labels
-                {
-                    "study_id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
-                    "swarm_stack_name": "devel-simcore",
-                    "user_id": "5",
-                    "uuid": "1f963626-66e1-43f1-a777-33955c08b909",
-                },
-                # legacy container labels
-                {
-                    "mem_limit": "1073741824",
-                    "nano_cpus_limit": "4000000000",
-                    "node_id": "1f963626-66e1-43f1-a777-33955c08b909",
-                    "simcore_user_agent": "puppeteer",
-                    "study_id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
-                    "swarm_stack_name": "devel-simcore",
-                    "user_id": "5",
-                },
-                # dy-sidecar service labels
-                {
-                    "study_id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
-                    "swarm_stack_name": "devel-simcore",
-                    "user_id": "5",
-                    "uuid": "1f963626-66e1-43f1-a777-33955c08b909",
-                },
-                # dy-sidecar container labels
-                {
-                    "mem_limit": "1073741824",
-                    "nano_cpus_limit": "4000000000",
-                    "study_id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
-                    "user_id": "5",
-                    "uuid": "1f963626-66e1-43f1-a777-33955c08b909",
-                },
-                # dy-proxy service labels
-                {
-                    "dynamic-type": "dynamic-sidecar",
-                    "study_id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
-                    "swarm_stack_name": "devel-simcore",
-                    "type": "dependency-v2",
-                    "user_id": "5",
-                    "uuid": "1f963626-66e1-43f1-a777-33955c08b909",
-                },
-                # dy-proxy container labels
-                {
-                    "study_id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
-                    "user_id": "5",
-                    "uuid": "1f963626-66e1-43f1-a777-33955c08b909",
-                },
-                # dy-sidecar user-services labels
-                {
-                    "product_name": "osparc",
-                    "simcore_user_agent": "puppeteer",
-                    "study_id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
-                    "user_id": "5",
-                    "uuid": "1f963626-66e1-43f1-a777-33955c08b909",
-                },
-                # modern both dynamic-sidecar services and computational services
-                {
-                    "io.simcore.runtime.cpu-limit": "2.4",
-                    "io.simcore.runtime.memory-limit": "1073741824",
-                    "io.simcore.runtime.node-id": "1f963626-66e1-43f1-a777-33955c08b909",
-                    "io.simcore.runtime.product-name": "osparc",
-                    "io.simcore.runtime.project-id": "29f393fc-1410-47b3-b4b9-61dfce21a2a6",
-                    "io.simcore.runtime.simcore-user-agent": "puppeteer",
-                    "io.simcore.runtime.swarm-stack-name": "devel-osparc",
-                    "io.simcore.runtime.user-id": "5",
-                },
-            ]
-        }
+    model_config = ConfigDict(populate_by_name=True)

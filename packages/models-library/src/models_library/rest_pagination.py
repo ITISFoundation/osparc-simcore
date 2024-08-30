@@ -1,17 +1,16 @@
-from typing import Any, ClassVar, Final, Generic, TypeVar
+from typing import Final, Generic, TypeVar
 
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
+    ConfigDict,
     ConstrainedInt,
-    Extra,
     Field,
     NonNegativeInt,
     PositiveInt,
-    parse_obj_as,
-    validator,
+    TypeAdapter,
+    field_validator,
 )
-from pydantic.generics import GenericModel
 
 from .utils.common_validators import none_to_empty_list_pre_validator
 
@@ -26,14 +25,18 @@ class PageLimitInt(ConstrainedInt):
     lt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 
 
-DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = parse_obj_as(PageLimitInt, 20)
+DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(
+    PageLimitInt
+).validate_python(20)
 
 
 class PageQueryParameters(BaseModel):
     """Use as pagination options in query parameters"""
 
     limit: PageLimitInt = Field(
-        default=parse_obj_as(PageLimitInt, DEFAULT_NUMBER_OF_ITEMS_PER_PAGE),
+        default=TypeAdapter(PageLimitInt).validate_python(
+            DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
+        ),
         description="maximum number of items to return (pagination)",
     )
     offset: NonNegativeInt = Field(
@@ -47,7 +50,7 @@ class PageMetaInfoLimitOffset(BaseModel):
     offset: NonNegativeInt = 0
     count: NonNegativeInt
 
-    @validator("offset")
+    @field_validator("offset")
     @classmethod
     def _check_offset(cls, v, values):
         if v > 0 and v >= values["total"]:
@@ -55,7 +58,7 @@ class PageMetaInfoLimitOffset(BaseModel):
             raise ValueError(msg)
         return v
 
-    @validator("count")
+    @field_validator("count")
     @classmethod
     def _check_count(cls, v, values):
         if v > values["limit"]:
@@ -71,14 +74,14 @@ class PageMetaInfoLimitOffset(BaseModel):
             raise ValueError(msg)
         return v
 
-    class Config:
-        extra = Extra.forbid
-
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 {"total": 7, "count": 4, "limit": 4, "offset": 0},
             ]
-        }
+        },
+    )
 
 
 RefT = TypeVar("RefT")
@@ -90,9 +93,7 @@ class PageRefs(BaseModel, Generic[RefT]):
     prev: RefT | None
     next: RefT | None
     last: RefT
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class PageLinks(PageRefs[AnyHttpUrl]):
@@ -102,7 +103,7 @@ class PageLinks(PageRefs[AnyHttpUrl]):
 ItemT = TypeVar("ItemT")
 
 
-class Page(GenericModel, Generic[ItemT]):
+class Page(BaseModel, Generic[ItemT]):
     """
     Paginated response model of ItemTs
     """
@@ -111,11 +112,11 @@ class Page(GenericModel, Generic[ItemT]):
     links: PageLinks = Field(alias="_links")
     data: list[ItemT]
 
-    _none_is_empty = validator("data", allow_reuse=True, pre=True)(
+    _none_is_empty = field_validator("data", mode="before")(
         none_to_empty_list_pre_validator
     )
 
-    @validator("data")
+    @field_validator("data")
     @classmethod
     def _check_data_compatible_with_meta(cls, v, values):
         if "meta" not in values:
@@ -127,10 +128,9 @@ class Page(GenericModel, Generic[ItemT]):
             raise ValueError(msg)
         return v
 
-    class Config:
-        extra = Extra.forbid
-
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 # first page Page[str]
                 {
@@ -157,4 +157,5 @@ class Page(GenericModel, Generic[ItemT]):
                     "data": ["data 5", "data 6", "data 7"],
                 },
             ]
-        }
+        },
+    )

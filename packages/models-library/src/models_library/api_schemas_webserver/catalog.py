@@ -23,13 +23,13 @@ class _BaseCommonApiExtension(BaseModel):
         None,
         description="Short name for the unit for display (html-compatible), if available",
     )
-    
+
     model_config = ConfigDict(
-        alias_generator=snake_to_camel, 
-        populate_by_name=True, 
-        extra="forbid", 
-        json_dumps=json_dumps, 
-        json_loads=json_loads
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        extra="forbid",
+        json_dumps=json_dumps,
+        json_loads=json_loads,
     )
 
 
@@ -41,7 +41,7 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "displayOrder": 2,
                 "label": "Sleep Time",
@@ -74,7 +74,6 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
     )
 
 
-
 class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
     """Extends fields of api_schemas_catalog.services.ServiceGet.outputs[*]"""
 
@@ -83,7 +82,7 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
     )
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "displayOrder": 2,
                 "label": "Time Slept",
@@ -229,12 +228,9 @@ class ServiceGet(api_schemas_catalog_services.ServiceGet):
     )
 
     model_config = OutputSchema.model_config | ConfigDict(
-        json_schema_extra = {
-            "examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]
-        }
+        json_schema_extra={"examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]}
     )
 
-    
 
 class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
     model_config = OutputSchema.model_config
@@ -252,7 +248,7 @@ class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
     )
 
     model_config = OutputSchema.model_config | ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 **api_schemas_catalog_services.ServiceGetV2.Config.schema_extra[
                     "examples"
@@ -267,7 +263,6 @@ class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
             }
         }
     )
-        
 
 
 class CatalogServiceUpdate(api_schemas_catalog_services.ServiceUpdateV2):
