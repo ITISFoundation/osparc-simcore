@@ -541,7 +541,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.priority=3
         - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.entrypoints=http
         # in theory the pattern should be uuid.services.OSPARC_DOMAIN, but anything could go through.. so let's catch everything
-        - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.rule=HostRegexp(`(?P<node_uuid>(?i)[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}).services.(?P<host>.+)`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.rule=HostRegexp(`(?P<node_uuid>(?i)[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\\.services\\.(?P<host>.+)`)
         # this tricks traefik into a 502 (bad gateway) since the service does not exist on this port
         - traefik.http.services.${SWARM_STACK_NAME}_modern_services_catchall.loadbalancer.server.port=0
         # this tricks traefik into returning a 503 (service unavailable) since the healthcheck will always return false
