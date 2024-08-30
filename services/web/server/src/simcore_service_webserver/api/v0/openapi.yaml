@@ -3331,7 +3331,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5380,6 +5380,217 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.wallets._groups_api.WalletGroupGet__'
+  /v0/workspaces:
+    get:
+      tags:
+      - workspaces
+      summary: List Workspaces
+      operationId: list_workspaces
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.workspaces.WorkspaceGet__'
+    post:
+      tags:
+      - workspaces
+      summary: Create Workspace
+      operationId: create_workspace
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkspaceBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+  /v0/workspaces/default:
+    get:
+      tags:
+      - workspaces
+      summary: Get Default Workspace
+      operationId: get_default_workspace
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+  /v0/workspaces/{workspace_id}:
+    get:
+      tags:
+      - workspaces
+      summary: Get Workspace
+      operationId: get_workspace
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+    put:
+      tags:
+      - workspaces
+      summary: Update Workspace
+      operationId: update_workspace
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutWorkspaceBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+  /v0/workspaces/{workspace_id}/groups/{group_id}:
+    put:
+      tags:
+      - workspaces
+      summary: Update Workspace Group
+      operationId: update_workspace_group
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_WorkspacesGroupsBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WorkspaceGroupGet_'
+    post:
+      tags:
+      - workspaces
+      summary: Create Workspace Group
+      operationId: create_workspace_group
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_WorkspacesGroupsBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WorkspaceGroupGet_'
+    delete:
+      tags:
+      - workspaces
+      summary: Delete Workspace Group
+      operationId: delete_workspace_group
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/workspaces/{workspace_id}/groups:
+    get:
+      tags:
+      - workspaces
+      summary: List Workspace Groups
+      operationId: list_workspace_groups
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.workspaces._groups_api.WorkspaceGroupGet__'
 components:
   schemas:
     AccessEnum:
@@ -5390,27 +5601,6 @@ components:
       - ReadOnly
       type: string
       description: An enumeration.
-    AccessRights:
-      title: AccessRights
-      required:
-      - read
-      - write
-      - delete
-      type: object
-      properties:
-        read:
-          title: Read
-          type: boolean
-          description: has read access
-        write:
-          title: Write
-          type: boolean
-          description: has write access
-        delete:
-          title: Delete
-          type: boolean
-          description: has deletion rights
-      additionalProperties: false
     AccountRequestInfo:
       title: AccountRequestInfo
       required:
@@ -6427,6 +6617,22 @@ components:
           title: Comment
           maxLength: 100
           type: string
+    CreateWorkspaceBodyParams:
+      title: CreateWorkspaceBodyParams
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+      additionalProperties: false
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -7043,6 +7249,22 @@ components:
           $ref: '#/components/schemas/WorkbenchViewApiModel'
         error:
           title: Error
+    Envelope_WorkspaceGet_:
+      title: Envelope[WorkspaceGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WorkspaceGet'
+        error:
+          title: Error
+    Envelope_WorkspaceGroupGet_:
+      title: Envelope[WorkspaceGroupGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WorkspaceGroupGet'
+        error:
+          title: Error
     Envelope__ComputationStarted_:
       title: Envelope[_ComputationStarted]
       type: object
@@ -7265,6 +7487,17 @@ components:
             $ref: '#/components/schemas/WalletGetWithAvailableCredits'
         error:
           title: Error
+    Envelope_list_models_library.api_schemas_webserver.workspaces.WorkspaceGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.workspaces.WorkspaceGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceGet'
+        error:
+          title: Error
     Envelope_list_models_library.projects_comments.ProjectsCommentsAPI__:
       title: Envelope[list[models_library.projects_comments.ProjectsCommentsAPI]]
       type: object
@@ -7440,6 +7673,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WalletGroupGet'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.workspaces._groups_api.WorkspaceGroupGet__:
+      title: Envelope[list[simcore_service_webserver.workspaces._groups_api.WorkspaceGroupGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceGroupGet'
         error:
           title: Error
     Envelope_str_:
@@ -9558,7 +9802,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         tags:
           title: Tags
           type: array
@@ -9627,7 +9871,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         tags:
           title: Tags
           type: array
@@ -9857,7 +10101,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         tags:
           title: Tags
           type: array
@@ -10004,7 +10248,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         classifiers:
           title: Classifiers
           type: array
@@ -10079,7 +10323,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         tags:
           title: Tags
           type: array
@@ -10222,6 +10466,24 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/WalletStatus'
+    PutWorkspaceBodyParams:
+      title: PutWorkspaceBodyParams
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          title: Name
+          maxLength: 100
+          minLength: 1
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+      additionalProperties: false
     RegisterBody:
       title: RegisterBody
       required:
@@ -12154,6 +12416,79 @@ components:
           allOf:
           - $ref: '#/components/schemas/TaskCounts'
           description: task details
+    WorkspaceGet:
+      title: WorkspaceGet
+      required:
+      - workspaceId
+      - name
+      - createdAt
+      - modifiedAt
+      - ownerPrimaryGid
+      - myAccessRights
+      type: object
+      properties:
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+        createdAt:
+          title: Createdat
+          type: string
+          format: date-time
+        modifiedAt:
+          title: Modifiedat
+          type: string
+          format: date-time
+        ownerPrimaryGid:
+          title: Ownerprimarygid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        myAccessRights:
+          $ref: '#/components/schemas/models_library__access_rights__AccessRights'
+    WorkspaceGroupGet:
+      title: WorkspaceGroupGet
+      required:
+      - gid
+      - read
+      - write
+      - delete
+      - created
+      - modified
+      type: object
+      properties:
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
     _ComputationStarted:
       title: _ComputationStarted
       required:
@@ -12265,4 +12600,64 @@ components:
         delete:
           title: Delete
           type: boolean
+      additionalProperties: false
+    _WorkspacesGroupsBodyParams:
+      title: _WorkspacesGroupsBodyParams
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+      additionalProperties: false
+    models_library__access_rights__AccessRights:
+      title: AccessRights
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+          description: has read access
+        write:
+          title: Write
+          type: boolean
+          description: has write access
+        delete:
+          title: Delete
+          type: boolean
+          description: has deletion rights
+      additionalProperties: false
+    models_library__projects_access__AccessRights:
+      title: AccessRights
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+          description: has read access
+        write:
+          title: Write
+          type: boolean
+          description: has write access
+        delete:
+          title: Delete
+          type: boolean
+          description: has deletion rights
       additionalProperties: false
