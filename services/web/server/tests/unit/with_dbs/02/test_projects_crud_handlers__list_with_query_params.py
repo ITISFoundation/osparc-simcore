@@ -25,10 +25,8 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
 )
 from pytest_simcore.helpers.webserver_projects import create_project
-from simcore_postgres_database.models.folders_never_used import (
-    folders_never_used,
-    folders_never_used_to_projects,
-)
+from simcore_postgres_database.models.folders_v2 import folders_v2
+from simcore_postgres_database.models.projects_to_folders import projects_to_folders
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -376,29 +374,32 @@ def setup_folders_db(
     user_project: ProjectDict,
 ) -> Iterator[FolderID]:
     with postgres_db.connect() as con:
-        output = []
         result = con.execute(
-            folders_never_used.insert()
+            folders_v2.insert()
             .values(
                 name="My Folder 1",
-                description="My Folder Decription",
+                parent_folder_id=None,
+                user_id=logged_user["id"],
+                workspace_id=None,
                 product_name="osparc",
-                created_by=logged_user["primary_gid"],
+                created_by_gid=logged_user["primary_gid"],
             )
-            .returning(folders_never_used.c.id)
+            .returning(folders_v2.c.folder_id)
         )
         _folder_id = result.fetchone()[0]
 
         con.execute(
-            folders_never_used_to_projects.insert().values(
-                folder_id=_folder_id, project_uuid=user_project["uuid"]
+            projects_to_folders.insert().values(
+                folder_id=_folder_id,
+                project_uuid=user_project["uuid"],
+                user_id=logged_user["id"],
             )
         )
 
         yield FolderID(_folder_id)
 
-        con.execute(folders_never_used_to_projects.delete())
-        con.execute(folders_never_used.delete())
+        con.execute(projects_to_folders.delete())
+        con.execute(folders_v2.delete())
 
 
 @pytest.mark.parametrize(*standard_user_role())
