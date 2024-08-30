@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.types import PositiveInt
 
 

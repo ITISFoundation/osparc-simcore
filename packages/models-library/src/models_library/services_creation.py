@@ -1,6 +1,6 @@
-from typing import Any, ClassVar
+from typing import Any
 
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 
 from .services import ServiceKey, ServiceVersion
 from .services_resources import ServiceResourcesDict
@@ -23,8 +23,8 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
     service_resources: ServiceResourcesDict
     service_additional_metadata: dict[str, Any]
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "wallet_id": 1,
                 "wallet_name": "a private wallet for me",
@@ -42,3 +42,4 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
                 "service_additional_metadata": {},
             }
         }
+    )

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 from .services_types import ServiceKey, ServiceVersion
 from .utils.common_validators import empty_str_to_none_pre_validator
@@ -15,16 +15,14 @@ class ServiceKeyVersion(BaseModel):
         ...,
         description="service version number",
     )
-
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class ServiceBaseDisplay(BaseModel):
     name: str = Field(
         ...,
         description="Display name: short, human readable name for the node",
-        example="Fast Counter",
+        examples=["Fast Counter"],
     )
     thumbnail: HttpUrl | None = Field(
         None,
@@ -48,6 +46,6 @@ class ServiceBaseDisplay(BaseModel):
         " This name is not used for version comparison but is useful for communication and documentation purposes.",
     )
 
-    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True, always=False)(
+    _empty_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )

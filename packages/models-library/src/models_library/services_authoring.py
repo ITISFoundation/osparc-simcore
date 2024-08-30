@@ -1,6 +1,4 @@
-from typing import Any, ClassVar
-
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from .emails import LowerCaseEmailStr
 
@@ -19,14 +17,15 @@ class Badge(BaseModel):
         description="Link to the status",
     )
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "osparc.io",
                 "image": "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation",
                 "url": "https://itisfoundation.github.io/",
             }
         }
+    )
 
 
 class Author(BaseModel):
@@ -40,8 +39,8 @@ class Author(BaseModel):
     )
     affiliation: str | None = Field(None)
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "name": "Jim Knopf",
@@ -54,3 +53,4 @@ class Author(BaseModel):
                 },
             ]
         }
+    )

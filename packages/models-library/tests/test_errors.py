@@ -5,7 +5,7 @@
 
 import pytest
 from models_library.errors import ErrorDict
-from pydantic import Field, BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 from typing_extensions import Annotated
 
 
