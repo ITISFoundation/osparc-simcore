@@ -311,6 +311,28 @@ qx.Class.define("osparc.service.Utils", {
       return services;
     },
 
+    /**
+     * Remove frontend and deprecated services from servicesLatest object
+     * @param {Object} servicesLatest object
+     * @returns {Array} servicesList list
+     */
+    servicesLatestToCleanList: function(servicesLatest) {
+      const servicesList = [];
+      Object.keys(servicesLatest).forEach(key => {
+        const serviceLatest = servicesLatest[key];
+        // do not show frontend services
+        if (key.includes("simcore/services/frontend/")) {
+          return;
+        }
+        // do not show retired services
+        if (servicesLatest[key]["retired"]) {
+          return;
+        }
+        servicesList.push(serviceLatest);
+      });
+      return servicesList;
+    },
+
     listToMergedCards: function(rawList) {
       console.log("listToMergedCards, rawList", rawList);
       const mergedList = JSON.parse(JSON.stringify(rawList));
