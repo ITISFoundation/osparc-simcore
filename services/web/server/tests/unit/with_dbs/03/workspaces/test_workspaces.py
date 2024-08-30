@@ -111,12 +111,4 @@ async def test_project_workspace_movement_full_workflow(
 ):
     assert client.app
 
-    # create a new workspace
-    url = client.app.router["create_workspace"].url_for()
-    resp = await client.post(
-        url.path,
-        json={"name": "My first workspace", "description": "Custom description"},
-    )
-    root_workspace, _ = await assert_status(resp, status.HTTP_201_CREATED)
-
     # NOTE: MD: not yet implemented
