@@ -130,13 +130,13 @@ qx.Class.define("osparc.service.Utils", {
       return services;
     },
 
-    getVersions: function(key, filterDeprecated = true) {
+    getVersions: function(key, includeDeprecated = false) {
       const services = osparc.service.Store.servicesCached;
       let versions = [];
       if (key in services) {
         const serviceVersions = services[key];
         versions = versions.concat(Object.keys(serviceVersions));
-        if (filterDeprecated) {
+        if (!includeDeprecated) {
           versions = versions.filter(version => {
             if (services[key][version]["retired"]) {
               return false;
@@ -152,7 +152,7 @@ qx.Class.define("osparc.service.Utils", {
     getLatest: function(key) {
       const services = osparc.service.Store.servicesCached;
       if (key in services) {
-        const versions = this.getVersions(key, true);
+        const versions = this.getVersions(key);
         if (versions.length) {
           return services[key][versions[0]];
         }
