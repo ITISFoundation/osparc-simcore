@@ -1156,7 +1156,6 @@ services:
       - "--providers.swarm.refreshSeconds=1"
       - "--providers.swarm.exposedByDefault=false"
       - "--providers.swarm.constraints=Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
-      - "--core.defaultRuleSyntax=v2"
       - "--tracing"
       - "--tracing.addinternals"
       - "--tracing.otlp=true"

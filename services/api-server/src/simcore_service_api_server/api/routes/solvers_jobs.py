@@ -41,6 +41,7 @@ from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
+from ._constants import FMSG_CHANGELOG_ADDED_IN_VERSION, FMSG_CHANGELOG_NEW_IN_VERSION
 
 _logger = logging.getLogger(__name__)
 
@@ -145,6 +146,8 @@ async def create_job(
     status_code=status.HTTP_204_NO_CONTENT,
     responses=JOBS_STATUS_CODES,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    description="Deletes an existing solver job\n\n"
+    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
 )
 async def delete_job(
     solver_key: SolverKeyId,
@@ -152,10 +155,6 @@ async def delete_job(
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    """Deletes an existing solver job
-
-    New in *version 0.5*
-    """
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Deleting Job '%s'", job_name)
 
@@ -181,6 +180,11 @@ async def delete_job(
             "model": ErrorGet,
         },
     },
+    description="Starts job job_id created with the solver solver_key:version\n\n"
+    + FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.4.3", "query parameter `cluster_id`")
+    + FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+        "0.6", "responds with a 202 when successfully starting a computation"
+    ),
 )
 async def start_job(
     request: Request,
@@ -192,12 +196,6 @@ async def start_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     cluster_id: ClusterID | None = None,
 ):
-    """Starts job job_id created with the solver solver_key:version
-
-    New in *version 0.4.3*: cluster_id
-    New in *version 0.6.0*: This endpoint responds with a 202 when successfully starting a computation
-    """
-
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
 
@@ -274,6 +272,8 @@ async def inspect_job(
     response_model=JobMetadata,
     responses=METADATA_STATUS_CODES,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    description="Updates custom metadata from a job\n\n"
+    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
 )
 async def replace_job_custom_metadata(
     solver_key: SolverKeyId,
@@ -283,10 +283,6 @@ async def replace_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    """Updates custom metadata from a job
-
-    New in *version 0.5*
-    """
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
