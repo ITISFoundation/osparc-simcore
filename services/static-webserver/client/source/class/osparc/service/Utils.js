@@ -332,32 +332,18 @@ qx.Class.define("osparc.service.Utils", {
       return servicesList;
     },
 
-    listToMergedCards: function(rawList) {
-      console.log("listToMergedCards, rawList", rawList);
+    mergeList: function(rawList) {
+      console.log("mergeList, rawList", rawList);
       const mergedList = JSON.parse(JSON.stringify(rawList));
-      // Remove the services that can be upgraded
-      mergedList.forEach(service => {
-        for (let i=service["history"].length-1; i>=0; i--) {
-          let historyEntry = service["history"][i];
-          if (
-            historyEntry &&
-            historyEntry["compatibility"] &&
-            historyEntry["compatibility"]["canUpdateTo"] &&
-            historyEntry["compatibility"]["canUpdateTo"]["key"] &&
-            historyEntry["compatibility"]["canUpdateTo"]["key"] !== service["key"]
-          ) {
-            service["history"].splice(i, 1);
-          }
-        }
-      });
-      // Remove the services that have no history (all the versions can be upgraded to a different key)
+      // Remove the services that can be upgraded to a different key
       for (let i=mergedList.length-1; i>=0; i--) {
-        if (mergedList[i]["history"].length === 0) {
+        const service = mergedList[i];
+        const latestCompatible = this.getLatestCompatible(service["key"], service["version"]);
+        if (latestCompatible && latestCompatible["key"] !== service["key"]) {
           mergedList.splice(i, 1);
         }
       }
-      // update the latest's metadata to the latest available in the updated history
-      console.log("listToMergedCards, mergedList", mergedList);
+      console.log("mergeList, mergedList", mergedList);
       return mergedList;
     }
   }
