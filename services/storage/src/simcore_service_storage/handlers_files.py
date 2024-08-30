@@ -273,7 +273,9 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         StorageQueryParamsBase, request
     )
     path_params = parse_request_path_parameters_as(FilePathParams, request)
-    body = await parse_request_body_as(FileUploadCompletionBody, request)
+    body = await parse_request_body_as(
+        FileUploadCompletionBody, request
+    )  # <-- FAILS HERE
     log.debug(
         "received call to complete_upload_file with %s",
         f"{path_params=}, {query_params=}",

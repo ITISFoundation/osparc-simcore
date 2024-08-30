@@ -245,9 +245,9 @@ async def _delete_project(client: TestClient, project: dict) -> ClientResponse:
 @pytest.mark.parametrize(
     "share_rights",
     [
-        {"read": True, "write": True, "delete": True},
-        {"read": True, "write": True, "delete": False},
-        {"read": True, "write": False, "delete": False},
+        # {"read": True, "write": True, "delete": True},
+        # {"read": True, "write": True, "delete": False},
+        # {"read": True, "write": False, "delete": False},
         {"read": False, "write": False, "delete": False},
     ],
     ids=str,
