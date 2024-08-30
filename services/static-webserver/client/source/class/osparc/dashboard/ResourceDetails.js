@@ -238,7 +238,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       hBox.add(versionsBox);
 
 
-      const versions = osparc.service.Utils.getVersions(this.__resourceData["key"]);
+      const versions = osparc.service.Utils.getVersionsMerged(this.__resourceData["key"]);
       let selectedItem = null;
 
       // first setSelection

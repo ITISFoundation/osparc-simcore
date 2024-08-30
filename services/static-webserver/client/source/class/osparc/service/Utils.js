@@ -149,6 +149,40 @@ qx.Class.define("osparc.service.Utils", {
       return versions.reverse();
     },
 
+    getVersionsMerged: function(key) {
+      let versions = this.getVersions(key);
+
+      // add above the versions of the key that can be upgraded to
+      const latest = this.getLatest(key);
+      if (this.isCompatibleToDifferentKey(latest["key"], latest["version"])) {
+        const latestCompatible = this.getLatestCompatible(latest["key"], latest["version"]);
+        const versionsUp = this.getVersions(latestCompatible["key"]);
+        versions = versionsUp.concat(versions);
+      }
+
+      // add below the versions of the keys that can be upgraded from
+      const upgradedFrom = new Set();
+      const services = osparc.service.Store.servicesCached;
+      Object.keys(services).forEach(keyFrom => {
+        if (keyFrom !== key) {
+          const match = Object.keys(services[keyFrom]).some(versionFrom => {
+            const latestCompatible = this.getLatestCompatible(keyFrom, versionFrom);
+            return latestCompatible["key"] === keyFrom;
+          });
+          if (match) {
+            upgradedFrom.add(keyFrom);
+          }
+        }
+      });
+      Array(upgradedFrom).forEach(keyFrom => {
+        const latestFrom = this.getLatest(keyFrom);
+        const versionsDown = this.getVersions(latestFrom);
+        versions = versions.concat(versionsDown);
+      });
+
+      return versions.reverse();
+    },
+
     getLatest: function(key) {
       const services = osparc.service.Store.servicesCached;
       if (key in services) {
