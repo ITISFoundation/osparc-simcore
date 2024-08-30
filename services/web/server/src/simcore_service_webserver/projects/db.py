@@ -426,7 +426,7 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             )
 
-            if workspace_id is not None:
+            if workspace_id is None:
                 # If Personal workspace we check to which projects user has access
                 query = query.where(
                     (projects.c.prj_owner == user_id)
