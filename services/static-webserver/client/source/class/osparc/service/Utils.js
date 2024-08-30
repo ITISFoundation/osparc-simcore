@@ -65,8 +65,6 @@ qx.Class.define("osparc.service.Utils", {
       }
     },
 
-    servicesCached: {},
-
     getTypes: function() {
       return Object.keys(this.TYPES);
     },
@@ -262,7 +260,8 @@ qx.Class.define("osparc.service.Utils", {
 
     getParametersMetadata: function() {
       const parametersMetadata = [];
-      for (const key in this.servicesCached) {
+      const services = osparc.service.Store.servicesCached;
+      for (const key in services) {
         if (key.includes("simcore/services/frontend/parameter/")) {
           const latest = this.self().getLatest(key);
           if (latest) {
