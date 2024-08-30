@@ -3,9 +3,8 @@
 """
 
 from enum import Enum
-from typing import Any, ClassVar
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import ConfigDict, BaseModel, Field
 from pydantic.types import PositiveInt
 
 from .basic_types import IDStr
@@ -26,9 +25,7 @@ class AccessRights(BaseModel):
     read: bool = Field(..., description="has read access")
     write: bool = Field(..., description="has write access")
     delete: bool = Field(..., description="has deletion rights")
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class PositiveIntWithExclusiveMinimumRemoved(PositiveInt):
@@ -46,9 +43,9 @@ class Owner(BaseModel):
     first_name: FirstNameStr | None = Field(..., description="Owner's first name")
     last_name: LastNameStr | None = Field(..., description="Owner's last name")
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra = "forbid",
+        json_schema_extra = {
             "examples": [
                 # NOTE: None and empty string are both defining an undefined value
                 {"user_id": 1, "first_name": None, "last_name": None},
@@ -56,3 +53,4 @@ class Owner(BaseModel):
                 {"user_id": 3, "first_name": "John", "last_name": "Smith"},
             ]
         }
+    )

@@ -1,16 +1,16 @@
 from enum import auto
 from pathlib import Path
-from typing import Any, ClassVar, Final, Literal, TypeAlias
+from typing import Final, Literal, TypeAlias
 
 from pydantic import (
     AnyUrl,
     BaseModel,
-    Extra,
+    ConfigDict,
     Field,
     HttpUrl,
     SecretStr,
-    root_validator,
-    validator,
+    field_validator,
+    model_validator,
 )
 from pydantic.types import NonNegativeInt
 
@@ -31,9 +31,7 @@ class ClusterAccessRights(BaseModel):
     read: bool = Field(..., description="allows to run pipelines on that cluster")
     write: bool = Field(..., description="allows to modify the cluster")
     delete: bool = Field(..., description="allows to delete a cluster")
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 CLUSTER_ADMIN_RIGHTS = ClusterAccessRights(read=True, write=True, delete=True)
@@ -44,10 +42,7 @@ CLUSTER_NO_RIGHTS = ClusterAccessRights(read=False, write=False, delete=False)
 
 class BaseAuthentication(BaseModel):
     type: str
-
-    class Config:
-        frozen = True
-        extra = Extra.forbid
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class SimpleAuthentication(BaseAuthentication):
@@ -55,8 +50,8 @@ class SimpleAuthentication(BaseAuthentication):
     username: str
     password: SecretStr
 
-    class Config(BaseAuthentication.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "type": "simple",
@@ -65,32 +60,35 @@ class SimpleAuthentication(BaseAuthentication):
                 },
             ]
         }
+    )
 
 
 class KerberosAuthentication(BaseAuthentication):
     type: Literal["kerberos"] = "kerberos"
 
     # NOTE: the entries here still need to be defined
-    class Config(BaseAuthentication.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "type": "kerberos",
                 },
             ]
         }
+    )
 
 
 class JupyterHubTokenAuthentication(BaseAuthentication):
     type: Literal["jupyterhub"] = "jupyterhub"
     api_token: str
 
-    class Config(BaseAuthentication.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {"type": "jupyterhub", "api_token": "some_jupyterhub_token"},
             ]
         }
+    )
 
 
 class NoAuthentication(BaseAuthentication):
@@ -103,8 +101,8 @@ class TLSAuthentication(BaseAuthentication):
     tls_client_cert: Path
     tls_client_key: Path
 
-    class Config(BaseAuthentication.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "type": "tls",
@@ -114,6 +112,7 @@ class TLSAuthentication(BaseAuthentication):
                 },
             ]
         }
+    )
 
 
 InternalClusterAuthentication: TypeAlias = NoAuthentication | TLSAuthentication
@@ -141,13 +140,10 @@ class BaseCluster(BaseModel):
     )
     access_rights: dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
 
-    _from_equivalent_enums = validator("type", allow_reuse=True, pre=True)(
+    _from_equivalent_enums = field_validator("type", mode="before")(
         create_enums_pre_validator(ClusterTypeInModel)
     )
-
-    class Config:
-        extra = Extra.forbid
-        use_enum_values = True
+    model_config = ConfigDict(extra="forbid", use_enum_values=True)
 
 
 ClusterID: TypeAlias = NonNegativeInt
@@ -157,8 +153,8 @@ DEFAULT_CLUSTER_ID: Final[NonNegativeInt] = 0
 class Cluster(BaseCluster):
     id: ClusterID = Field(..., description="The cluster ID")
 
-    class Config(BaseCluster.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "id": DEFAULT_CLUSTER_ID,
@@ -217,8 +213,9 @@ class Cluster(BaseCluster):
                 },
             ]
         }
+    )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def check_owner_has_access_rights(cls, values):
         is_default_cluster = bool(values["id"] == DEFAULT_CLUSTER_ID)

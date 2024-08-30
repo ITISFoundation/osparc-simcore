@@ -1,9 +1,8 @@
 import datetime
-from typing import Any, ClassVar
 from uuid import UUID
 
 import arrow
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import ConfigDict, BaseModel, Field, PositiveInt
 
 from .clusters import ClusterID
 from .projects_nodes import NodeState
@@ -58,8 +57,8 @@ class ComputationTask(BaseModel):
         description="task last modification timestamp or None if the there is no task",
     )
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "id": "42838344-03de-4ce2-8d93-589a5dcdfd05",
@@ -127,3 +126,4 @@ class ComputationTask(BaseModel):
                 },
             ]
         }
+    )

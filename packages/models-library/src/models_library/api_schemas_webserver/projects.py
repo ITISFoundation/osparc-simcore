@@ -7,7 +7,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 from typing import Any, Literal, TypeAlias
 
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import (
@@ -40,8 +40,8 @@ class ProjectCreateNew(InputSchema):
     classifiers: list[ClassifierID] = Field(default_factory=list)
     ui: StudyUI | None = None
 
-    _empty_is_none = validator(
-        "uuid", "thumbnail", "description", allow_reuse=True, pre=True
+    _empty_is_none = field_validator(
+        "uuid", "thumbnail", "description", mode="before"
     )(empty_str_to_none_pre_validator)
 
 
@@ -52,7 +52,7 @@ class ProjectCopyOverride(InputSchema):
     thumbnail: HttpUrlWithCustomMinLength | None
     prj_owner: LowerCaseEmailStr
 
-    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+    _empty_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )
 
@@ -75,7 +75,7 @@ class ProjectGet(OutputSchema):
     dev: dict | None
     permalink: ProjectPermalink = FieldNotRequired()
 
-    _empty_description = validator("description", allow_reuse=True, pre=True)(
+    _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
     )
 
@@ -105,7 +105,7 @@ class ProjectReplace(InputSchema):
         default_factory=dict,
     )
 
-    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+    _empty_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )
 

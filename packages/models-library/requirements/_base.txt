@@ -24,10 +24,18 @@ pydantic==2.8.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
+    #   pydantic-extra-types
+    #   pydantic-settings
 pydantic-core==2.20.1
     # via pydantic
+pydantic-extra-types==2.9.0
+    # via -r requirements/_base.in
+pydantic-settings==2.4.0
+    # via -r requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
+python-dotenv==1.0.1
+    # via pydantic-settings
 referencing==0.35.1
     # via
     #   jsonschema

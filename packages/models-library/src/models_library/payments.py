@@ -1,7 +1,7 @@
 from decimal import Decimal
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
-from pydantic import BaseModel, Field, validator
+from pydantic import field_validator, ConfigDict, BaseModel, Field
 
 from .emails import LowerCaseEmailStr
 from .products import StripePriceID, StripeTaxRateID
@@ -19,15 +19,15 @@ class UserInvoiceAddress(BaseModel):
         description="Currently validated in webserver via pycountry library. Two letter country code alpha_2 expected.",
     )
 
-    @validator("*", pre=True)
+    @field_validator("*", mode="before")
     @classmethod
     def parse_empty_string_as_null(cls, v):
         if isinstance(v, str) and len(v.strip()) == 0:
             return None
         return v
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra = {
             "examples": [
                 {
                     "line1": None,
@@ -38,6 +38,7 @@ class UserInvoiceAddress(BaseModel):
                 },
             ]
         }
+    )
 
 
 class InvoiceDataGet(BaseModel):
@@ -48,8 +49,8 @@ class InvoiceDataGet(BaseModel):
     user_display_name: str
     user_email: LowerCaseEmailStr
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra = {
             "examples": [
                 {
                     "credit_amount": Decimal(15.5),
@@ -63,3 +64,5 @@ class InvoiceDataGet(BaseModel):
                 },
             ]
         }
+    )
+
