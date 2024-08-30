@@ -48,7 +48,7 @@ async def _append_fields(
     return model_schema_cls.parse_obj(project).data(exclude_unset=True)
 
 
-async def list_projects(
+async def list_projects(  # pylint: disable=too-many-arguments
     request: web.Request,
     user_id: UserID,
     product_name: str,

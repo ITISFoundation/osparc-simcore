@@ -219,7 +219,7 @@ async def _compose_project_data(
     return new_project, project_nodes
 
 
-async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, PLR0913
+async def create_project(  # pylint: disable=too-many-arguments,too-many-branches,too-many-statements  # noqa: C901, PLR0913
     task_progress: TaskProgress,
     *,
     request: web.Request,
