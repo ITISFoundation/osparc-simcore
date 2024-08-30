@@ -3331,7 +3331,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5411,19 +5411,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WorkspaceGet_'
-  /v0/workspaces/default:
-    get:
-      tags:
-      - workspaces
-      summary: Get Default Workspace
-      operationId: get_default_workspace
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_WorkspaceGet_'
   /v0/workspaces/{workspace_id}:
     get:
       tags:
@@ -5449,8 +5436,8 @@ paths:
     put:
       tags:
       - workspaces
-      summary: Update Workspace
-      operationId: update_workspace
+      summary: Replace Workspace
+      operationId: replace_workspace
       parameters:
       - required: true
         schema:
@@ -5473,6 +5460,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+    delete:
+      tags:
+      - workspaces
+      summary: Delete Workspace
+      operationId: delete_workspace
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/workspaces/{workspace_id}/groups/{group_id}:
     put:
       tags:

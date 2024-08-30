@@ -50,14 +50,6 @@ async def list_workspaces():
 
 
 @router.get(
-    "/workspaces/default",
-    response_model=Envelope[WorkspaceGet],
-)
-async def get_default_workspace():
-    ...
-
-
-@router.get(
     "/workspaces/{workspace_id}",
     response_model=Envelope[WorkspaceGet],
 )
@@ -69,7 +61,15 @@ async def get_workspace(workspace_id: WorkspaceID):
     "/workspaces/{workspace_id}",
     response_model=Envelope[WorkspaceGet],
 )
-async def update_workspace(workspace_id: WorkspaceID, body: PutWorkspaceBodyParams):
+async def replace_workspace(workspace_id: WorkspaceID, body: PutWorkspaceBodyParams):
+    ...
+
+
+@router.delete(
+    "/workspaces/{workspace_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_workspace(workspace_id: WorkspaceID):
     ...
 
 
