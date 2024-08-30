@@ -352,6 +352,12 @@ qx.Class.define("osparc.service.Utils", {
         }
       });
       // Remove the services that have no history (all the versions can be upgraded to a different key)
+      for (let i=mergedList.length-1; i>=0; i--) {
+        if (mergedList[i]["history"].length === 0) {
+          mergedList.splice(i, 1);
+        }
+      }
+      // update the latest's metadata to the latest available in the updated history
       console.log("listToMergedCards, mergedList", mergedList);
       return mergedList;
     }
