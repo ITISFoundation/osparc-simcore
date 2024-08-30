@@ -309,6 +309,29 @@ qx.Class.define("osparc.service.Utils", {
         }
       });
       return services;
+    },
+
+    listToMergedCards: function(rawList) {
+      console.log("listToMergedCards, rawList", rawList);
+      const mergedList = JSON.parse(JSON.stringify(rawList));
+      // Remove the services that can be upgraded
+      mergedList.forEach(service => {
+        for (let i=service["history"].length-1; i>=0; i--) {
+          let historyEntry = service["history"][i];
+          if (
+            historyEntry &&
+            historyEntry["compatibility"] &&
+            historyEntry["compatibility"]["canUpdateTo"] &&
+            historyEntry["compatibility"]["canUpdateTo"]["key"] &&
+            historyEntry["compatibility"]["canUpdateTo"]["key"] !== service["key"]
+          ) {
+            delete service["history"][i];
+          }
+        }
+      });
+      // Remove the services that have no history (all the versions can be upgraded to a different key)
+      console.log("listToMergedCards, mergedList", mergedList);
+      return mergedList;
     }
   }
 });

@@ -99,6 +99,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     _reloadCards: function() {
+      osparc.service.Utils.listToMergedCards(this._resourcesList);
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards("servicesList");
       cards.forEach(card => {
