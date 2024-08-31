@@ -10,7 +10,6 @@ from simcore_service_webserver.projects._access_rights_api import (
 )
 
 from ..folders import _folders_db as folders_db
-from ..workspaces.errors import FolderAndProjectIncompatibleError
 from . import _folders_db as project_to_folders_db
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
@@ -29,30 +28,33 @@ async def move_project_to_folder(
     project_api: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     project_db = await project_api.get_project_db(project_id)
 
-    if folder_id:
-        # Check whether project and folder are in the same workspace
-        folder_db = await folders_db.get_folder_db(
-            app, folder_id=folder_id, product_name=product_name
-        )
-        if folder_db.workspace_id != project_db.workspace_id:
-            raise FolderAndProjectIncompatibleError(
-                folder_id=folder_id, project_id=project_id
-            )
+    # Check access to project
+    project_access_rights = await get_user_project_access_rights(
+        app, project_id=project_id, user_id=user_id, product_name=product_name
+    )
 
+    # In personal workspace user can move as he wish, but in the
+    # shared workspace user needs to have write permission
     _personal_workspace_user_id_or_none: UserID | None = user_id
-    if project_db.workspace_id is not None:
-        # If not in personal workspace, check whether you have permission to move
-        project_access_rights = await get_user_project_access_rights(
-            app, project_id=project_id, user_id=user_id, product_name=product_name
-        )
+    if project_db.workspace_id is not None:  # shared workspace
         if project_access_rights.write is False:
             raise ProjectInvalidRightsError(
                 user_id=user_id,
                 project_uuid=project_id,
                 reason=f"User does not have write access to project {project_id}",
             )
-        # Setup folder user id to None, as this is not a private workspace
+        # Setup _personal_workspace_user_id_or_none to None, as this is not a personal workspace
         _personal_workspace_user_id_or_none = None
+
+    if folder_id:
+        # Check user has access to folder
+        await folders_db.get_folder_for_user_or_workspace(
+            app,
+            folder_id=folder_id,
+            product_name=product_name,
+            user_id=_personal_workspace_user_id_or_none,
+            workspace_id=project_db.workspace_id,
+        )
 
     # Move project to folder
     prj_to_folder_db = await project_to_folders_db.get_project_to_folder(

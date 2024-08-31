@@ -20,7 +20,6 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from ..catalog.client import get_services_for_user_in_product
 from ..folders import _folders_db as folders_db
 from ..workspaces.api import get_workspace
-from ..workspaces.errors import WorkspaceAndFolderIncompatibleError
 from . import projects_api
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
@@ -70,16 +69,6 @@ async def list_projects(  # pylint: disable=too-many-arguments
         app, user_id, product_name, only_key_versions=True
     )
 
-    if folder_id:
-        # Check whether the folder_id belongs the the workspace
-        folder_db = await folders_db.get_folder_db(
-            app, folder_id=folder_id, product_name=product_name
-        )
-        if folder_db.workspace_id != workspace_id:
-            raise WorkspaceAndFolderIncompatibleError(
-                workspace_id=workspace_id, folder_id=folder_id
-            )
-
     _personal_workspace_user_id_or_none: UserID | None = user_id
     if workspace_id:
         # Verify user access to the specified workspace; raise an error if access is denied
@@ -88,6 +77,16 @@ async def list_projects(  # pylint: disable=too-many-arguments
         )
         # Setup to None, as this is not a private workspace
         _personal_workspace_user_id_or_none = None
+
+    if folder_id:
+        # Check whether user has access to the folder
+        await folders_db.get_folder_for_user_or_workspace(
+            app,
+            folder_id=folder_id,
+            product_name=product_name,
+            user_id=_personal_workspace_user_id_or_none,
+            workspace_id=workspace_id,
+        )
 
     db_projects, db_project_types, total_number_projects = await db.list_projects(
         personal_workspace_user_id_or_none=_personal_workspace_user_id_or_none,

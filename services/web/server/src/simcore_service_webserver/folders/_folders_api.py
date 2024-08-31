@@ -29,7 +29,7 @@ async def create_folder(
 ) -> FolderGet:
     user = await get_user(app, user_id=user_id)
 
-    _private_workspace_user_id: UserID | None = user_id
+    _personal_workspace_user_id_or_none: UserID | None = user_id
     if workspace_id:
         # Check access to workspace
         workspace = await get_workspace(
@@ -40,7 +40,7 @@ async def create_folder(
                 reason=f"User {user_id} does not have write permission on workspace {workspace_id}."
             )
         # Setup folder user id to None, as this is not a private workspace
-        _private_workspace_user_id = None
+        _personal_workspace_user_id_or_none = None
 
         # Check parent_folder_id lives in the workspace
         if parent_folder_id:
@@ -58,7 +58,7 @@ async def create_folder(
             app,
             folder_id=parent_folder_id,
             product_name=product_name,
-            user_id=_private_workspace_user_id,
+            user_id=_personal_workspace_user_id_or_none,
             workspace_id=workspace_id,
         )
         if workspace_id and parent_folder_db.workspace_id != workspace_id:
@@ -73,7 +73,7 @@ async def create_folder(
         created_by_gid=user["primary_gid"],
         folder_name=name,
         parent_folder_id=parent_folder_id,
-        user_id=_private_workspace_user_id,
+        user_id=_personal_workspace_user_id_or_none,
         workspace_id=workspace_id,
     )
     return FolderGet(
@@ -96,7 +96,7 @@ async def get_folder(
         app, folder_id=folder_id, product_name=product_name
     )
 
-    _private_workspace_user_id: UserID | None = user_id
+    _personal_workspace_user_id_or_none: UserID | None = user_id
     if folder_db.workspace_id:
         # Check access to workspace
         await get_workspace(
@@ -106,13 +106,13 @@ async def get_folder(
             product_name=product_name,
         )
         # Setup folder user id to None, as this is not a private workspace
-        _private_workspace_user_id = None
+        _personal_workspace_user_id_or_none = None
 
     folder_db = await folders_db.get_folder_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
-        user_id=_private_workspace_user_id,
+        user_id=_personal_workspace_user_id_or_none,
         workspace_id=folder_db.workspace_id,
     )
     return FolderGet(
@@ -135,19 +135,30 @@ async def list_folders(
     limit: int,
     order_by: OrderBy,
 ) -> FolderGetPage:
-    _private_workspace_user_id: UserID | None = user_id
+    _personal_workspace_user_id_or_none: UserID | None = user_id
+
+    # Check user access to workspace
     if workspace_id:
-        # Check access to workspace
         await get_workspace(
             app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
         )
-        # Setup folder user id to None, as this is not a private workspace
-        _private_workspace_user_id = None
+        # Setup folder user id to None, as this is not a personal workspace
+        _personal_workspace_user_id_or_none = None
+
+    if folder_id:
+        # Check user access to folder
+        await folders_db.get_folder_for_user_or_workspace(
+            app,
+            folder_id=folder_id,
+            product_name=product_name,
+            user_id=_personal_workspace_user_id_or_none,
+            workspace_id=workspace_id,
+        )
 
     total_count, folders = await folders_db.list_folders(
         app,
         content_of_folder_id=folder_id,
-        user_id=_private_workspace_user_id,
+        user_id=_personal_workspace_user_id_or_none,
         workspace_id=workspace_id,
         product_name=product_name,
         offset=offset,
@@ -183,7 +194,7 @@ async def update_folder(
         app, folder_id=folder_id, product_name=product_name
     )
 
-    _private_workspace_user_id: UserID | None = user_id
+    _personal_workspace_user_id_or_none: UserID | None = user_id
     if folder_db.workspace_id:
         # Check access to workspace
         workspace = await get_workspace(
@@ -197,14 +208,14 @@ async def update_folder(
                 reason=f"User {user_id} does not have write permission on workspace {folder_db.workspace_id}."
             )
         # Setup folder user id to None, as this is not a private workspace
-        _private_workspace_user_id = None
+        _personal_workspace_user_id_or_none = None
 
     # Check user has acces to the folder
     await folders_db.get_folder_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
-        user_id=_private_workspace_user_id,
+        user_id=_personal_workspace_user_id_or_none,
         workspace_id=folder_db.workspace_id,
     )
 
@@ -235,7 +246,7 @@ async def delete_folder(
         app, folder_id=folder_id, product_name=product_name
     )
 
-    _private_workspace_user_id: UserID | None = user_id
+    _personal_workspace_user_id_or_none: UserID | None = user_id
     if folder_db.workspace_id:
         # Check access to workspace
         workspace = await get_workspace(
@@ -249,14 +260,14 @@ async def delete_folder(
                 reason=f"User {user_id} does not have delete permission on workspace {folder_db.workspace_id}."
             )
         # Setup folder user id to None, as this is not a private workspace
-        _private_workspace_user_id = None
+        _personal_workspace_user_id_or_none = None
 
     # Check user has acces to the folder
     await folders_db.get_folder_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
-        user_id=_private_workspace_user_id,
+        user_id=_personal_workspace_user_id_or_none,
         workspace_id=folder_db.workspace_id,
     )
 
