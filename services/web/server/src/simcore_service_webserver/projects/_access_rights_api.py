@@ -33,7 +33,13 @@ async def get_user_project_access_rights(
     product_name: ProductName,
 ) -> UserProjectAccessRights:
     """
-    NOTE: MD Write proper note explaining
+    This function resolves user access rights on the project resource.
+
+    If project belong to user personal workspace (workspace_id = None) then it is resolved
+    via user <--> groups <--> projects_to_groups.
+
+    If project belong to shared workspace (workspace_id not None) then it is resolved
+    via user <--> groups <--> workspace_access_rights
     """
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 

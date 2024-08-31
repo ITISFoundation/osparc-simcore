@@ -13,12 +13,20 @@ class WorkspaceAccessForbiddenError(WorkspacesValueError):
     msg_template = "Workspace access forbidden. {reason}"
 
 
+# Workspace groups
+
+
 class WorkspaceGroupNotFoundError(WorkspacesValueError):
     msg_template = "Workspace group not found. {reason}"
 
 
-# Workspace groups
+# Workspace and Folder
 
 
-class WalletGroupNotFoundError(WorkspacesValueError):
-    msg_template = "Workspace group not found. {reason}"
+class WorkspaceAndFolderIncompatibleError(WorkspacesValueError):
+    msg_template = "Workspace {workspace_id} and Folder {folder_id} are incompatible"
+
+
+# Workspace and Project
+class WorkspaceAndProjectIncompatibleError(WorkspacesValueError):
+    msg_template = "Workspace {workspace_id} and Project {project_id} are incompatible"

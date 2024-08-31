@@ -324,9 +324,10 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def list_projects(  # pylint: disable=too-many-arguments
         self,
-        user_id: PositiveInt,
+        personal_workspace_user_id_or_none: PositiveInt | None,
         *,
         product_name: str,
+        user_id: PositiveInt,
         filter_by_project_type: ProjectType | None = None,
         filter_by_services: list[dict] | None = None,
         only_published: bool | None = False,
@@ -345,8 +346,6 @@ class ProjectDBAPI(BaseProjectDB):
         ), "Guaranteed by ProjectListWithJsonStrParams"  # nosec
 
         async with self.engine.acquire() as conn:
-            user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
-
             access_rights_subquery = (
                 sa.select(
                     project_to_groups.c.project_uuid,
@@ -375,7 +374,10 @@ class ProjectDBAPI(BaseProjectDB):
                     projects_to_folders,
                     (
                         (projects.c.uuid == projects_to_folders.c.project_uuid)
-                        & (projects_to_folders.c.user_id == user_id)
+                        & (
+                            projects_to_folders.c.user_id
+                            == personal_workspace_user_id_or_none
+                        )
                     ),
                     isouter=True,
                 )
@@ -426,10 +428,13 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             )
 
-            if workspace_id is None:
+            if workspace_id is None and personal_workspace_user_id_or_none:
                 # If Personal workspace we check to which projects user has access
+                user_groups: list[RowProxy] = await self._list_user_groups(
+                    conn, personal_workspace_user_id_or_none
+                )
                 query = query.where(
-                    (projects.c.prj_owner == user_id)
+                    (projects.c.prj_owner == personal_workspace_user_id_or_none)
                     | sa.text(
                         f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
                     )
@@ -458,8 +463,8 @@ class ProjectDBAPI(BaseProjectDB):
 
             prjs, prj_types = await self._execute_without_permission_check(
                 conn,
-                select_projects_query=query.offset(offset).limit(limit),
                 user_id=user_id,
+                select_projects_query=query.offset(offset).limit(limit),
                 filter_by_services=filter_by_services,
             )
 

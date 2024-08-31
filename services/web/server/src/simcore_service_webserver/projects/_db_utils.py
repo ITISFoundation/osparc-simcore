@@ -13,7 +13,7 @@ from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
-from pydantic import ValidationError
+from pydantic import PositiveInt, ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
@@ -180,9 +180,9 @@ class BaseProjectDB:
     async def _execute_without_permission_check(
         self,
         conn: SAConnection,
+        user_id: PositiveInt,
         *,
         select_projects_query: Select,
-        user_id: int,
         filter_by_services: list[dict] | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType]]:
         api_projects: list[dict] = []  # API model-compatible projects
