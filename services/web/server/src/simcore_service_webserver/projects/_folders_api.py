@@ -9,6 +9,8 @@ from simcore_service_webserver.projects._access_rights_api import (
     get_user_project_access_rights,
 )
 
+from ..folders import _folders_db as folders_db
+from ..workspaces.errors import FolderAndProjectIncompatibleError
 from . import _folders_db as project_to_folders_db
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
@@ -26,7 +28,18 @@ async def move_project_to_folder(
 ) -> None:
     project_api: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     project_db = await project_api.get_project_db(project_id)
-    _private_workspace_user_id: UserID | None = user_id
+
+    if folder_id:
+        # Check whether project and folder are in the same workspace
+        folder_db = await folders_db.get_folder_db(
+            app, folder_id=folder_id, product_name=product_name
+        )
+        if folder_db.workspace_id != project_db.workspace_id:
+            raise FolderAndProjectIncompatibleError(
+                folder_id=folder_id, project_id=project_id
+            )
+
+    _personal_workspace_user_id_or_none: UserID | None = user_id
     if project_db.workspace_id is not None:
         # If not in personal workspace, check whether you have permission to move
         project_access_rights = await get_user_project_access_rights(
@@ -39,10 +52,13 @@ async def move_project_to_folder(
                 reason=f"User does not have write access to project {project_id}",
             )
         # Setup folder user id to None, as this is not a private workspace
-        _private_workspace_user_id = None
-    # Move
+        _personal_workspace_user_id_or_none = None
+
+    # Move project to folder
     prj_to_folder_db = await project_to_folders_db.get_project_to_folder(
-        app, project_id=project_id, user_id=_private_workspace_user_id
+        app,
+        project_id=project_id,
+        personal_workspace_user_id_or_none=_personal_workspace_user_id_or_none,
     )
     if prj_to_folder_db is None:
         if folder_id is None:
@@ -51,7 +67,7 @@ async def move_project_to_folder(
             app,
             project_id=project_id,
             folder_id=folder_id,
-            user_id=_private_workspace_user_id,
+            personal_workspace_user_id_or_none=_personal_workspace_user_id_or_none,
         )
     else:
         # Delete old
@@ -59,7 +75,7 @@ async def move_project_to_folder(
             app,
             project_id=project_id,
             folder_id=prj_to_folder_db.folder_id,
-            user_id=_private_workspace_user_id,
+            personal_workspace_user_id_or_none=_personal_workspace_user_id_or_none,
         )
         # Create new
         if folder_id is not None:
@@ -67,5 +83,5 @@ async def move_project_to_folder(
                 app,
                 project_id=project_id,
                 folder_id=folder_id,
-                user_id=_private_workspace_user_id,
+                personal_workspace_user_id_or_none=_personal_workspace_user_id_or_none,
             )
