@@ -618,7 +618,10 @@ async def clone_project(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    project_db = await db.get_project_db(path_params.project_id)
+    try:
+        project_db = await db.get_project_db(path_params.project_id)
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
 
     return await start_long_running_task(
         request,

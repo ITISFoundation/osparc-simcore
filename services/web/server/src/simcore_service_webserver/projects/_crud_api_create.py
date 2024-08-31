@@ -371,7 +371,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
 
-    except ProjectInvalidRightsError as exc:
+    except (ProjectInvalidRightsError, WorkspaceAccessForbiddenError) as exc:
         raise web.HTTPForbidden from exc
 
     except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
