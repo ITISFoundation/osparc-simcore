@@ -44,11 +44,13 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from .._meta import API_VTAG as VTAG
 from ..catalog.client import get_services_for_user_in_product
 from ..director_v2 import api
+from ..folders.errors import FolderAccessForbiddenError, FolderNotFoundError
 from ..login.decorators import login_required
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ..security.api import check_user_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
+from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 from . import _crud_api_create, _crud_api_read, projects_api
 from ._access_rights_api import get_user_project_access_rights
 from ._common_models import ProjectPathParams, RequestContext
@@ -92,11 +94,19 @@ def _handle_projects_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except ProjectNotFoundError as exc:
+        except (
+            ProjectNotFoundError,
+            FolderNotFoundError,
+            WorkspaceNotFoundError,
+        ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except ProjectOwnerNotFoundInTheProjectAccessRightsError as exc:
             raise web.HTTPBadRequest(reason=f"{exc}") from exc
-        except ProjectInvalidRightsError as exc:
+        except (
+            ProjectInvalidRightsError,
+            FolderAccessForbiddenError,
+            WorkspaceAccessForbiddenError,
+        ) as exc:
             raise web.HTTPUnauthorized(reason=f"{exc}") from exc
 
     return _wrapper
@@ -175,6 +185,7 @@ async def create_project(request: web.Request):
 @routes.get(f"/{VTAG}/projects", name="list_projects")
 @login_required
 @permission_required("project.read")
+@_handle_projects_exceptions
 async def list_projects(request: web.Request):
     """
 

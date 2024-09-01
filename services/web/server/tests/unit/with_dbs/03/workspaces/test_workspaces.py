@@ -14,9 +14,11 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
+# NOTE: MD: test access rights
+
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
-async def test_workspaces_full_workflow(
+async def test_workspaces_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,

@@ -35,6 +35,7 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 from . import _folders_api
 from .errors import FolderAccessForbiddenError, FolderNotFoundError
 
@@ -47,10 +48,10 @@ def handle_folders_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except FolderNotFoundError as exc:
+        except (FolderNotFoundError, WorkspaceNotFoundError) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-        except FolderAccessForbiddenError as exc:
+        except (FolderAccessForbiddenError, WorkspaceAccessForbiddenError) as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
         except FoldersError as exc:

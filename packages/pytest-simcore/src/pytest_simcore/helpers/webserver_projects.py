@@ -14,6 +14,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
+from models_library.workspaces import WorkspaceID
 from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
 from simcore_service_webserver.projects._db_utils import DB_EXCLUSIVE_COLUMNS
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
@@ -46,6 +47,7 @@ async def create_project(
     default_project_json: Path | None = None,
     force_uuid: bool = False,
     as_template: bool = False,
+    workspace_id: WorkspaceID | None = None,
 ) -> ProjectDict:
     """Injects new project in database for user or as template
 
@@ -84,7 +86,7 @@ async def create_project(
             )
             for node_id in project_data.get("workbench", {})
         },
-        workspace_id=None,
+        workspace_id=workspace_id,
     )
 
     if params_override and (
