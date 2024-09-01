@@ -18,3 +18,7 @@ class WorkspaceAccessForbiddenError(WorkspacesValueError):
 
 class WorkspaceGroupNotFoundError(WorkspacesValueError):
     msg_template = "Workspace group not found. {reason}"
+
+
+class WorkspaceFolderInconsistencyError(WorkspacesValueError):
+    msg_template = "Folder {folder_id} does not exists in the workspace {workspace_id}"

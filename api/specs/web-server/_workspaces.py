@@ -99,7 +99,7 @@ async def list_workspace_groups(workspace_id: WorkspaceID):
     "/workspaces/{workspace_id}/groups/{group_id}",
     response_model=Envelope[WorkspaceGroupGet],
 )
-async def update_workspace_group(
+async def replace_workspace_group(
     workspace_id: WorkspaceID, group_id: GroupID, body: _WorkspacesGroupsBodyParams
 ):
     ...

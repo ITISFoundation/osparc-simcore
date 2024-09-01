@@ -36,7 +36,7 @@ _SELECTION_ARGS = (
 )
 
 
-async def create_folder(
+async def create(
     app: web.Application,
     product_name: ProductName,
     created_by_gid: GroupID,
@@ -68,7 +68,7 @@ async def create_folder(
         return parse_obj_as(FolderDB, row)
 
 
-async def list_folders(
+async def list(
     app: web.Application,
     *,
     content_of_folder_id: FolderID | None,
@@ -123,7 +123,7 @@ async def list_folders(
         return cast(int, total_count), results
 
 
-async def get_folder_db(
+async def get(
     app: web.Application,
     folder_id: FolderID,
     product_name: ProductName,
@@ -147,7 +147,7 @@ async def get_folder_db(
         return parse_obj_as(FolderDB, row)
 
 
-async def get_folder_for_user_or_workspace(
+async def get_for_user_or_workspace(
     app: web.Application,
     folder_id: FolderID,
     product_name: ProductName,
@@ -182,7 +182,7 @@ async def get_folder_for_user_or_workspace(
         return parse_obj_as(FolderDB, row)
 
 
-async def update_folder(
+async def update(
     app: web.Application,
     folder_id: FolderID,
     name: str,
@@ -209,7 +209,7 @@ async def update_folder(
         return parse_obj_as(FolderDB, row)
 
 
-async def delete_folder(
+async def delete(
     app: web.Application,
     folder_id: FolderID,
     product_name: ProductName,

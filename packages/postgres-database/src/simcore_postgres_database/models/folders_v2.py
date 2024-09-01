@@ -17,7 +17,6 @@ folders_v2 = sa.Table(
         nullable=False,
         autoincrement=True,
         primary_key=True,
-        doc="Primary key",
     ),
     sa.Column(
         "name",

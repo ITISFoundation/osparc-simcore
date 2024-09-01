@@ -13,7 +13,10 @@ from pydantic import NonNegativeInt
 
 from ..users.api import get_user
 from ..workspaces.api import get_workspace
-from ..workspaces.errors import WorkspaceAccessForbiddenError
+from ..workspaces.errors import (
+    WorkspaceAccessForbiddenError,
+    WorkspaceFolderInconsistencyError,
+)
 from . import _folders_db as folders_db
 
 _logger = logging.getLogger(__name__)
@@ -44,17 +47,17 @@ async def create_folder(
 
         # Check parent_folder_id lives in the workspace
         if parent_folder_id:
-            parent_folder_db = await folders_db.get_folder_db(
+            parent_folder_db = await folders_db.get(
                 app, folder_id=parent_folder_id, product_name=product_name
             )
             if parent_folder_db.workspace_id != workspace_id:
-                raise WorkspaceAccessForbiddenError(
-                    reason=f"Folder {parent_folder_id} does not exists in workspace {workspace_id}."
+                raise WorkspaceFolderInconsistencyError(
+                    folder_id=parent_folder_id, workspace_id=workspace_id
                 )
 
     if parent_folder_id:
         # Check user has access to the parent folder
-        parent_folder_db = await folders_db.get_folder_for_user_or_workspace(
+        parent_folder_db = await folders_db.get_for_user_or_workspace(
             app,
             folder_id=parent_folder_id,
             product_name=product_name,
@@ -67,7 +70,7 @@ async def create_folder(
                 reason=f"Folder {parent_folder_id} does not exists in workspace {workspace_id}."
             )
 
-    folder_db = await folders_db.create_folder(
+    folder_db = await folders_db.create(
         app,
         product_name=product_name,
         created_by_gid=user["primary_gid"],
@@ -92,7 +95,7 @@ async def get_folder(
     folder_id: FolderID,
     product_name: ProductName,
 ) -> FolderGet:
-    folder_db = await folders_db.get_folder_db(
+    folder_db = await folders_db.get(
         app, folder_id=folder_id, product_name=product_name
     )
 
@@ -108,7 +111,7 @@ async def get_folder(
         # Setup folder user id to None, as this is not a private workspace
         _personal_workspace_user_id_or_none = None
 
-    folder_db = await folders_db.get_folder_for_user_or_workspace(
+    folder_db = await folders_db.get_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
@@ -147,7 +150,7 @@ async def list_folders(
 
     if folder_id:
         # Check user access to folder
-        await folders_db.get_folder_for_user_or_workspace(
+        await folders_db.get_for_user_or_workspace(
             app,
             folder_id=folder_id,
             product_name=product_name,
@@ -155,7 +158,7 @@ async def list_folders(
             workspace_id=workspace_id,
         )
 
-    total_count, folders = await folders_db.list_folders(
+    total_count, folders = await folders_db.list(
         app,
         content_of_folder_id=folder_id,
         user_id=_personal_workspace_user_id_or_none,
@@ -190,7 +193,7 @@ async def update_folder(
     parent_folder_id: FolderID | None,
     product_name: ProductName,
 ) -> FolderGet:
-    folder_db = await folders_db.get_folder_db(
+    folder_db = await folders_db.get(
         app, folder_id=folder_id, product_name=product_name
     )
 
@@ -211,7 +214,7 @@ async def update_folder(
         _personal_workspace_user_id_or_none = None
 
     # Check user has acces to the folder
-    await folders_db.get_folder_for_user_or_workspace(
+    await folders_db.get_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
@@ -219,7 +222,7 @@ async def update_folder(
         workspace_id=folder_db.workspace_id,
     )
 
-    folder_db = await folders_db.update_folder(
+    folder_db = await folders_db.update(
         app,
         folder_id=folder_id,
         name=name,
@@ -242,7 +245,7 @@ async def delete_folder(
     folder_id: FolderID,
     product_name: ProductName,
 ) -> None:
-    folder_db = await folders_db.get_folder_db(
+    folder_db = await folders_db.get(
         app, folder_id=folder_id, product_name=product_name
     )
 
@@ -263,7 +266,7 @@ async def delete_folder(
         _personal_workspace_user_id_or_none = None
 
     # Check user has acces to the folder
-    await folders_db.get_folder_for_user_or_workspace(
+    await folders_db.get_for_user_or_workspace(
         app,
         folder_id=folder_id,
         product_name=product_name,
@@ -271,4 +274,4 @@ async def delete_folder(
         workspace_id=folder_db.workspace_id,
     )
 
-    await folders_db.delete_folder(app, folder_id=folder_id, product_name=product_name)
+    await folders_db.delete(app, folder_id=folder_id, product_name=product_name)

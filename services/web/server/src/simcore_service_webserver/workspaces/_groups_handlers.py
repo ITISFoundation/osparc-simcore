@@ -122,12 +122,12 @@ async def list_workspace_groups(request: web.Request):
 
 @routes.put(
     f"/{VTAG}/workspaces/{{workspace_id}}/groups/{{group_id}}",
-    name="update_workspace_group",
+    name="replace_workspace_group",
 )
 @login_required
 @permission_required("workspaces.*")
 @_handle_workspaces_groups_exceptions
-async def update_workspace_group(request: web.Request):
+async def replace_workspace_group(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_WorkspacesGroupsPathParams, request)
     body_params = await parse_request_body_as(_WorkspacesGroupsBodyParams, request)

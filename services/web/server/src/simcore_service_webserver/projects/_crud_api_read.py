@@ -80,7 +80,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
 
     if folder_id:
         # Check whether user has access to the folder
-        await folders_db.get_folder_for_user_or_workspace(
+        await folders_db.get_for_user_or_workspace(
             app,
             folder_id=folder_id,
             product_name=product_name,

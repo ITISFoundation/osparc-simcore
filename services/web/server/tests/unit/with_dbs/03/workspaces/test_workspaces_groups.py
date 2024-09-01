@@ -70,7 +70,7 @@ async def test_workspaces_groups_full_workflow(
         assert data[1]["delete"] == False
 
         # Update the workspace permissions of the added user
-        url = client.app.router["update_workspace_group"].url_for(
+        url = client.app.router["replace_workspace_group"].url_for(
             workspace_id=f"{added_workspace['workspaceId']}",
             group_id=f"{new_user['primary_gid']}",
         )

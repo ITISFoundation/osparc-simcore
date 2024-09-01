@@ -19,7 +19,7 @@ async def can_update_node_inputs(context):
     if project_uuid is None or user_id is None:
         return False
 
-    # NOTE: MD this needs to be uncommented when I found out how to get access to application!
+    # NOTE: MD this needs to be uncommented when I found out how to get access to application (PC help needed)!
     # product_name = await db.get_project_product(project_uuid)
     # prj_access_rights = await get_user_project_access_rights(
     #     app, project_id=project_uuid, user_id=user_id, product_name=product_name

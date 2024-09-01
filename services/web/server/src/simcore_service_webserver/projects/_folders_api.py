@@ -5,11 +5,9 @@ from models_library.folders import FolderID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from simcore_service_webserver.projects._access_rights_api import (
-    get_user_project_access_rights,
-)
 
 from ..folders import _folders_db as folders_db
+from ..projects._access_rights_api import get_user_project_access_rights
 from . import _folders_db as project_to_folders_db
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
@@ -17,7 +15,7 @@ from .exceptions import ProjectInvalidRightsError
 _logger = logging.getLogger(__name__)
 
 
-async def move_project_to_folder(
+async def move_project_into_folder(
     app: web.Application,
     *,
     user_id: UserID,
@@ -48,7 +46,7 @@ async def move_project_to_folder(
 
     if folder_id:
         # Check user has access to folder
-        await folders_db.get_folder_for_user_or_workspace(
+        await folders_db.get_for_user_or_workspace(
             app,
             folder_id=folder_id,
             product_name=product_name,

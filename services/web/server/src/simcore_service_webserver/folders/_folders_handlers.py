@@ -35,7 +35,11 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
+from ..workspaces.errors import (
+    WorkspaceAccessForbiddenError,
+    WorkspaceFolderInconsistencyError,
+    WorkspaceNotFoundError,
+)
 from . import _folders_api
 from .errors import FolderAccessForbiddenError, FolderNotFoundError
 
@@ -51,7 +55,11 @@ def handle_folders_exceptions(handler: Handler):
         except (FolderNotFoundError, WorkspaceNotFoundError) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-        except (FolderAccessForbiddenError, WorkspaceAccessForbiddenError) as exc:
+        except (
+            FolderAccessForbiddenError,
+            WorkspaceAccessForbiddenError,
+            WorkspaceFolderInconsistencyError,
+        ) as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
         except FoldersError as exc:
@@ -90,7 +98,7 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
     )
     workspace_id: WorkspaceID | None = Field(
         default=None,
-        description="List the subfolders of this folder. By default, list the subfolders of the root directory (Folder ID is None).",
+        description="List folders in specific workspace. By default, list in the user personal workspace",
     )
 
     @validator("order_by", check_fields=False)
