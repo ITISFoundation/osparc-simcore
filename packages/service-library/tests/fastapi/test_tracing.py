@@ -22,19 +22,19 @@ def tracing_settings_in(request):
 @pytest.fixture()
 def set_and_clean_settings_env_vars(tracing_settings_in):
     if tracing_settings_in[0]:
-        os.environ["TRACING_OTEL_COLLECTOR_ENDPOINT"] = tracing_settings_in[0]
+        os.environ["TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT"] = tracing_settings_in[0]
     if tracing_settings_in[1]:
-        os.environ["TRACING_OTEL_COLLECTOR_PORT"] = str(tracing_settings_in[1])
+        os.environ["TRACING_OPENTELEMETRY_COLLECTOR_PORT"] = str(tracing_settings_in[1])
     yield
-    os.environ.pop("TRACING_OTEL_COLLECTOR_ENDPOINT", None)
-    os.environ.pop("TRACING_OTEL_COLLECTOR_PORT", None)
+    os.environ.pop("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", None)
+    os.environ.pop("TRACING_OPENTELEMETRY_COLLECTOR_PORT", None)
 
 
 @pytest.mark.parametrize(
     "tracing_settings_in",
     [
-        ("http://otel-collector", 4318),
-        ("http://otel-collector", "4318"),
+        ("http://opentelemetry-collector", 4318),
+        ("http://opentelemetry-collector", "4318"),
     ],
     indirect=True,
 )
@@ -60,9 +60,9 @@ def test_valid_tracing_settings(
 @pytest.mark.parametrize(
     "tracing_settings_in",
     [
-        ("http://otel-collector", 80),
-        ("http://otel-collector", 1238712936),
-        ("otel-collector", 4318),
+        ("http://opentelemetry-collector", 80),
+        ("http://opentelemetry-collector", 1238712936),
+        ("opentelemetry-collector", 4318),
         ("httsdasp://ot@##el-collector", 4318),
         (None, "1238712936"),
     ],
@@ -104,7 +104,7 @@ def test_missing_tracing_settings(
 
 @pytest.mark.parametrize(
     "tracing_settings_in",  # noqa: PT002
-    [("http://otel-collector", None), (None, 4318)],
+    [("http://opentelemetry-collector", None), (None, 4318)],
     indirect=True,
 )
 def test_incomplete_tracing_settings(

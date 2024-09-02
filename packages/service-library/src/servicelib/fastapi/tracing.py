@@ -23,23 +23,23 @@ def setup_opentelemetry_instrumentation(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
 ) -> FastAPIInstrumentor | None:
     if (
-        not tracing_settings.TRACING_OTEL_COLLECTOR_ENDPOINT
-        and not tracing_settings.TRACING_OTEL_COLLECTOR_PORT
+        not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
+        and not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
     ):
         log.info("Skipping opentelemetry tracing setup")
         return None
     if (
-        not tracing_settings.TRACING_OTEL_COLLECTOR_ENDPOINT
-        or not tracing_settings.TRACING_OTEL_COLLECTOR_PORT
+        not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
+        or not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
     ):
         raise RuntimeError(
-            "Variable otel_collector_endpoint [{tracing_settings.otel_collector_endpoint}] or otel_collector_port [{tracing_settings.otel_collector_port}] unset. Tracing options incomplete."
+            "Variable opentelemetry_collector_endpoint [{tracing_settings.opentelemetry_collector_endpoint}] or opentelemetry_collector_port [{tracing_settings.opentelemetry_collector_port}] unset. Tracing options incomplete."
         )
     # Set up the tracer provider
     resource = Resource(attributes={"service.name": service_name})
     trace.set_tracer_provider(TracerProvider(resource=resource))
     tracer_provider = trace.get_tracer_provider()
-    tracing_destination: str = f"{tracing_settings.TRACING_OTEL_COLLECTOR_ENDPOINT}:{tracing_settings.TRACING_OTEL_COLLECTOR_PORT}/v1/traces"
+    tracing_destination: str = f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}:{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT}/v1/traces"
     log.info(
         "Trying to connect service %s to tracing collector at %s.",
         service_name,

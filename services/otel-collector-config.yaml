@@ -7,7 +7,7 @@ receivers:
         endpoint: 0.0.0.0:4318 # Default endpoint for OTLP over HTTP
 exporters:
   otlphttp:
-    endpoint: ${TRACING_OTEL_COLLECTOR_EXPORTER_ENDPOINT}  # Adjust to your Jaeger endpoint
+    endpoint: ${TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT}  # Adjust to your Jaeger endpoint
   debug:
     verbosity: detailed
 service:
@@ -21,6 +21,6 @@ service:
 processors:
   batch:
     timeout: 5s
-    send_batch_size: ${TRACING_OTEL_COLLECTOR_BATCH_SIZE}
+    send_batch_size: ${TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE}
   probabilistic_sampler:
-    sampling_percentage: ${TRACING_OTEL_COLLECTOR_SAMPLING_PERCENTAGE}
+    sampling_percentage: ${TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE}

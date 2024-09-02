@@ -26,6 +26,6 @@ def setup_app_tracing(app: web.Application):
     return setup_tracing(
         app,
         service_name=service_name,
-        otel_collector_endpoint=settings.TRACING_OTEL_COLLECTOR_ENDPOINT,
-        otel_collector_port=settings.TRACING_OTEL_COLLECTOR_PORT,
+        opentelemetry_collector_endpoint=settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT,
+        opentelemetry_collector_port=settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT,
     )

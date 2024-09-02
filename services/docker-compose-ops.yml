@@ -99,10 +99,10 @@ services:
       - "18081:8081"
     networks:
       - simcore_default
-  otel-collector:
+  opentelemetry-collector:
     image: otel/opentelemetry-collector-contrib:0.105.0
     volumes:
-      - ./otel-collector-config.yaml:/etc/otel/config.yaml
+      - ./opentelemetry-collector-config.yaml:/etc/otel/config.yaml
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     command:
       - "--config=/etc/otel/config.yaml"
@@ -111,9 +111,9 @@ services:
     networks:
       - simcore_default
     environment:
-      TRACING_OTEL_COLLECTOR_BATCH_SIZE: ${TRACING_OTEL_COLLECTOR_BATCH_SIZE}
-      TRACING_OTEL_COLLECTOR_SAMPLING_PERCENTAGE: ${TRACING_OTEL_COLLECTOR_SAMPLING_PERCENTAGE}
-      TRACING_OTEL_COLLECTOR_EXPORTER_ENDPOINT: ${TRACING_OTEL_COLLECTOR_EXPORTER_ENDPOINT}
+      TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE: ${TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE}
+      TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE: ${TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE}
+      TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT}
 volumes:
   minio_data:
     name: ops_minio_data

@@ -12,33 +12,33 @@ from servicelib.aiohttp.tracing import setup_tracing
 
 
 @pytest.mark.parametrize(
-    "otel_collector_endpoint, otel_collector_port",  # noqa: PT002
+    "opentelemetry_collector_endpoint, opentelemetry_collector_port",  # noqa: PT002
     [
-        ("http://otel-collector", 4318),
+        ("http://opentelemetry-collector", 4318),
     ],
 )
 def test_valid_tracing_settings(
     event_loop: AbstractEventLoop,
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable,
-    otel_collector_endpoint: str,
-    otel_collector_port: int,
+    opentelemetry_collector_endpoint: str,
+    opentelemetry_collector_port: int,
 ) -> TestClient:
     app = web.Application()
     service_name = "simcore_service_webserver"
     setup_tracing(
         app,
         service_name=service_name,
-        otel_collector_endpoint=otel_collector_endpoint,
-        otel_collector_port=otel_collector_port,
+        opentelemetry_collector_endpoint=opentelemetry_collector_endpoint,
+        opentelemetry_collector_port=opentelemetry_collector_port,
     )
 
 
 @pytest.mark.parametrize(
-    "otel_collector_endpoint, otel_collector_port",  # noqa: PT002
+    "opentelemetry_collector_endpoint, opentelemetry_collector_port",  # noqa: PT002
     [
-        ("http://otel-collector", 80),
-        ("otel-collector", 4318),
+        ("http://opentelemetry-collector", 80),
+        ("opentelemetry-collector", 4318),
         ("httsdasp://ot@##el-collector", 4318),
     ],
 )
@@ -46,28 +46,28 @@ def test_invalid_tracing_settings(
     event_loop: AbstractEventLoop,
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable,
-    otel_collector_endpoint: str,
-    otel_collector_port: int,
+    opentelemetry_collector_endpoint: str,
+    opentelemetry_collector_port: int,
 ) -> TestClient:
     app = web.Application()
     service_name = "simcore_service_webserver"
     setup_tracing(
         app,
         service_name=service_name,
-        otel_collector_endpoint=otel_collector_endpoint,
-        otel_collector_port=otel_collector_port,
+        opentelemetry_collector_endpoint=opentelemetry_collector_endpoint,
+        opentelemetry_collector_port=opentelemetry_collector_port,
     )
     # assert idempotency
     setup_tracing(
         app,
         service_name=service_name,
-        otel_collector_endpoint=otel_collector_endpoint,
-        otel_collector_port=otel_collector_port,
+        opentelemetry_collector_endpoint=opentelemetry_collector_endpoint,
+        opentelemetry_collector_port=opentelemetry_collector_port,
     )
 
 
 @pytest.mark.parametrize(
-    "otel_collector_endpoint, otel_collector_port",  # noqa: PT002
+    "opentelemetry_collector_endpoint, opentelemetry_collector_port",  # noqa: PT002
     [
         ("", ""),
         (None, None),
@@ -78,8 +78,8 @@ def test_missing_tracing_settings(
     event_loop: AbstractEventLoop,
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable,
-    otel_collector_endpoint: str,
-    otel_collector_port: int,
+    opentelemetry_collector_endpoint: str,
+    opentelemetry_collector_port: int,
     caplog,
 ) -> TestClient:
     app = web.Application()
@@ -88,21 +88,21 @@ def test_missing_tracing_settings(
     setup_tracing(
         app,
         service_name=service_name,
-        otel_collector_endpoint=otel_collector_endpoint,
-        otel_collector_port=otel_collector_port,
+        opentelemetry_collector_endpoint=opentelemetry_collector_endpoint,
+        opentelemetry_collector_port=opentelemetry_collector_port,
     )
 
 
 @pytest.mark.parametrize(
-    "otel_collector_endpoint, otel_collector_port",  # noqa: PT002
-    [("http://otel-collector", None), (None, 4318)],
+    "opentelemetry_collector_endpoint, opentelemetry_collector_port",  # noqa: PT002
+    [("http://opentelemetry-collector", None), (None, 4318)],
 )
 def test_incomplete_tracing_settings(
     event_loop: AbstractEventLoop,
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable,
-    otel_collector_endpoint: str,
-    otel_collector_port: int,
+    opentelemetry_collector_endpoint: str,
+    opentelemetry_collector_port: int,
 ) -> TestClient:
     app = web.Application()
     service_name = "simcore_service_webserver"
@@ -110,6 +110,6 @@ def test_incomplete_tracing_settings(
         setup_tracing(
             app,
             service_name=service_name,
-            otel_collector_endpoint=otel_collector_endpoint,
-            otel_collector_port=otel_collector_port,
+            opentelemetry_collector_endpoint=opentelemetry_collector_endpoint,
+            opentelemetry_collector_port=opentelemetry_collector_port,
         )

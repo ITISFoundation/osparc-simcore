@@ -56,8 +56,8 @@ def create(settings: Settings) -> web.Application:
         setup_tracing(
             app,
             service_name=service_name,
-            otel_collector_endpoint=tracing_settings.TRACING_OTEL_COLLECTOR_ENDPOINT,
-            otel_collector_port=tracing_settings.TRACING_OTEL_COLLECTOR_PORT,
+            opentelemetry_collector_endpoint=tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT,
+            opentelemetry_collector_port=tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT,
         )
 
     setup_db(app)
