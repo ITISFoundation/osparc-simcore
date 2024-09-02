@@ -10,11 +10,27 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.workspaces import WorkspaceGet
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_parametrizations import (
+    ExpectedResponse,
+    standard_role_response,
+)
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
-# NOTE: MD: test access rights
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_workspaces_user_role_permissions(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+):
+    assert client.app
+
+    url = client.app.router["list_workspaces"].url_for()
+    resp = await client.get(url.path)
+    await assert_status(resp, expected.ok)
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])

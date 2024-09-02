@@ -11,12 +11,28 @@ from models_library.api_schemas_webserver.folders_v2 import FolderGet
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.webserver_parametrizations import (
+    ExpectedResponse,
+    standard_role_response,
+)
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.models import ProjectDict
 
-# NOTE: MD: test access rights
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_folders_user_role_permissions(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+):
+    assert client.app
+
+    url = client.app.router["list_folders"].url_for()
+    resp = await client.get(url.path)
+    await assert_status(resp, expected.ok)
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
