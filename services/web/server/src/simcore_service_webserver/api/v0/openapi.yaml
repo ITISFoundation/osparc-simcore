@@ -3331,7 +3331,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5481,8 +5481,8 @@ paths:
     put:
       tags:
       - workspaces
-      summary: Update Workspace Group
-      operationId: update_workspace_group
+      summary: Replace Workspace Group
+      operationId: replace_workspace_group
       parameters:
       - required: true
         schema:

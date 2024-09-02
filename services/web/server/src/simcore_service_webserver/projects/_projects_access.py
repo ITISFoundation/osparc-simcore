@@ -20,12 +20,12 @@ async def can_update_node_inputs(context):
         return False
 
     # NOTE: MD this needs to be uncommented when I found out how to get access to application (PC help needed)!
-    # product_name = await db.get_project_product(project_uuid)
-    # prj_access_rights = await get_user_project_access_rights(
-    #     app, project_id=project_uuid, user_id=user_id, product_name=product_name
-    # )
-    # if prj_access_rights.read is False:
-    #     raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
+    product_name = await db.get_project_product(project_uuid)
+    prj_access_rights = await get_user_project_access_rights(
+        app, project_id=project_uuid, user_id=user_id, product_name=product_name
+    )
+    if prj_access_rights.read is False:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 
     # get current version
     current_project, _ = await db.get_project(project_uuid)

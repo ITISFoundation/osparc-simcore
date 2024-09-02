@@ -18,7 +18,7 @@ from collections.abc import Generator
 from contextlib import suppress
 from decimal import Decimal
 from pprint import pformat
-from typing import Any, Final
+from typing import Any, Final, cast
 from uuid import UUID, uuid4
 
 from aiohttp import web
@@ -86,6 +86,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
+from simcore_service_webserver.projects._db_utils import PermissionStr
 
 from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
@@ -119,7 +120,7 @@ from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _crud_api_delete, _nodes_api
 from ._access_rights_api import (
-    get_user_project_access_rights,
+    check_user_project_permission,
     has_user_project_access_rights,
 )
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
@@ -177,14 +178,13 @@ async def get_project_for_user(
     db = ProjectDBAPI.get_from_app_context(app)
 
     product_name = await db.get_project_product(ProjectID(project_uuid))
-    prj_access_rights = await get_user_project_access_rights(
+    await check_user_project_permission(
         app,
         project_id=ProjectID(project_uuid),
         user_id=user_id,
         product_name=product_name,
+        permission=cast(PermissionStr, check_permissions),
     )
-    if getattr(prj_access_rights, check_permissions, False) is False:
-        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 
     project, project_type = await db.get_project(
         project_uuid,
@@ -238,11 +238,13 @@ async def patch_project(
     project_db = await db.get_project_db(project_uuid=project_uuid)
 
     # 2. Check user permissions
-    _user_project_access_rights = await get_user_project_access_rights(
-        app, project_id=project_uuid, user_id=user_id, product_name=product_name
+    _user_project_access_rights = await check_user_project_permission(
+        app,
+        project_id=project_uuid,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",
     )
-    if not _user_project_access_rights.write:
-        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 
     # 3. If patching access rights
     if new_prj_access_rights := _project_patch_exclude_unset.get("access_rights"):
@@ -480,11 +482,13 @@ async def _check_project_node_has_all_required_inputs(
 ) -> None:
 
     product_name = await db.get_project_product(project_uuid)
-    prj_access_rights = await get_user_project_access_rights(
-        app, project_id=project_uuid, user_id=user_id, product_name=product_name
+    await check_user_project_permission(
+        app,
+        project_id=project_uuid,
+        user_id=user_id,
+        product_name=product_name,
+        permission="read",
     )
-    if prj_access_rights.read is False:
-        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 
     project_dict, _ = await db.get_project(f"{project_uuid}")
 
@@ -751,14 +755,13 @@ async def add_project_node(
         extra=get_log_record_extra(user_id=user_id),
     )
 
-    prj_access_rights = await get_user_project_access_rights(
+    await check_user_project_permission(
         request.app,
         project_id=project["uuid"],
         user_id=user_id,
         product_name=product_name,
+        permission="write",
     )
-    if prj_access_rights.write is False:
-        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project["uuid"])
 
     node_uuid = NodeID(service_id if service_id else f"{uuid4()}")
     default_resources = await catalog_client.get_service_resources(
@@ -870,11 +873,13 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    prj_access_rights = await get_user_project_access_rights(
-        request.app, project_id=project_uuid, user_id=user_id, product_name=product_name
+    await check_user_project_permission(
+        request.app,
+        project_id=project_uuid,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",
     )
-    if prj_access_rights.write is False:
-        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 
     list_running_dynamic_services = await director_v2_api.list_dynamic_services(
         request.app, project_id=f"{project_uuid}", user_id=user_id
@@ -935,13 +940,13 @@ async def update_project_node_state(
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     product_name = await db.get_project_product(project_id)
-    prj_access_rights = await get_user_project_access_rights(
-        app, project_id=project_id, user_id=user_id, product_name=product_name
+    await check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
-    if (
-        prj_access_rights.write is False
-    ):  # NOTE: MD: before only read was sufficient, double check this
-        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
 
     updated_project, _ = await db.update_project_node_data(
         user_id=user_id,
@@ -975,11 +980,13 @@ async def patch_project_node(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # 1. Check user permissions
-    _user_project_access_rights = await get_user_project_access_rights(
-        app, project_id=project_id, user_id=user_id, product_name=product_name
+    await check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
-    if not _user_project_access_rights.write:
-        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
 
     # 2. If patching service key or version make sure it's valid
     if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
@@ -1045,13 +1052,13 @@ async def update_project_node_outputs(
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     product_name = await db.get_project_product(project_id)
-    prj_access_rights = await get_user_project_access_rights(
-        app, project_id=project_id, user_id=user_id, product_name=product_name
+    await check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
-    if (
-        prj_access_rights.write is False
-    ):  # NOTE: MD: before only read was sufficient, double check this
-        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
 
     updated_project, changed_entries = await db.update_project_node_data(
         user_id=user_id,

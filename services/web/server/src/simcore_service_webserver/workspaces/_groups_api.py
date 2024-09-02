@@ -4,7 +4,7 @@ from datetime import datetime
 from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
-from models_library.workspaces import UserWorkspaceDB, WorkspaceID
+from models_library.workspaces import UserWorkspaceAccessRightsDB, WorkspaceID
 from pydantic import BaseModel, parse_obj_as
 
 from ..users import api as users_api
@@ -36,7 +36,7 @@ async def create_workspace_group(
     delete: bool,
     product_name: ProductName,
 ) -> WorkspaceGroupGet:
-    workspace: UserWorkspaceDB = await workspaces_db.get_workspace_for_user(
+    workspace: UserWorkspaceAccessRightsDB = await workspaces_db.get_workspace_for_user(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
     if workspace.write is False:
@@ -68,7 +68,7 @@ async def list_workspace_groups_by_user_and_workspace(
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> list[WorkspaceGroupGet]:
-    workspace: UserWorkspaceDB = await workspaces_db.get_workspace_for_user(
+    workspace: UserWorkspaceAccessRightsDB = await workspaces_db.get_workspace_for_user(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
     if workspace.read is False:
@@ -120,7 +120,7 @@ async def update_workspace_group(
     delete: bool,
     product_name: ProductName,
 ) -> WorkspaceGroupGet:
-    workspace: UserWorkspaceDB = await workspaces_db.get_workspace_for_user(
+    workspace: UserWorkspaceAccessRightsDB = await workspaces_db.get_workspace_for_user(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
     if workspace.write is False:
@@ -158,7 +158,7 @@ async def delete_workspace_group(
     group_id: GroupID,
     product_name: ProductName,
 ) -> None:
-    workspace: UserWorkspaceDB = await workspaces_db.get_workspace_for_user(
+    workspace: UserWorkspaceAccessRightsDB = await workspaces_db.get_workspace_for_user(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
     if workspace.delete is False:

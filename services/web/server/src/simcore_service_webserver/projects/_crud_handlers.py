@@ -52,7 +52,7 @@ from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 from . import _crud_api_create, _crud_api_read, projects_api
-from ._access_rights_api import get_user_project_access_rights
+from ._access_rights_api import check_user_project_permission
 from ._common_models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveParams,
@@ -444,16 +444,13 @@ async def replace_project(request: web.Request):
                 reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
             )
 
-        prj_access_rights = await get_user_project_access_rights(
+        await check_user_project_permission(
             request.app,
             project_id=path_params.project_id,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
+            permission="write",
         )
-        if prj_access_rights.write is False:
-            raise ProjectInvalidRightsError(  # noqa: TRY301
-                user_id=req_ctx.user_id, project_uuid=path_params.project_id
-            )
 
         new_project = await db.replace_project(
             new_project,

@@ -12,8 +12,9 @@ from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
+from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
-from pydantic import PositiveInt, ValidationError
+from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
@@ -180,7 +181,7 @@ class BaseProjectDB:
     async def _execute_without_permission_check(
         self,
         conn: SAConnection,
-        user_id: PositiveInt,
+        user_id: UserID,
         *,
         select_projects_query: Select,
         filter_by_services: list[dict] | None = None,

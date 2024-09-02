@@ -324,7 +324,7 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def list_projects(  # pylint: disable=too-many-arguments
         self,
-        personal_workspace_user_id_or_none: PositiveInt | None,
+        private_workspace_user_id_or_none: PositiveInt | None,
         *,
         product_name: str,
         user_id: PositiveInt,
@@ -376,7 +376,7 @@ class ProjectDBAPI(BaseProjectDB):
                         (projects.c.uuid == projects_to_folders.c.project_uuid)
                         & (
                             projects_to_folders.c.user_id
-                            == personal_workspace_user_id_or_none
+                            == private_workspace_user_id_or_none
                         )
                     ),
                     isouter=True,
@@ -423,18 +423,18 @@ class ProjectDBAPI(BaseProjectDB):
                     & (
                         projects.c.workspace_id == workspace_id  # <-- Shared workspace
                         if workspace_id
-                        else projects.c.workspace_id.is_(None)  # <-- Personal workspace
+                        else projects.c.workspace_id.is_(None)  # <-- Private workspace
                     )
                 )
             )
 
-            if workspace_id is None and personal_workspace_user_id_or_none:
-                # If Personal workspace we check to which projects user has access
+            if workspace_id is None and private_workspace_user_id_or_none:
+                # If Private workspace we check to which projects user has access
                 user_groups: list[RowProxy] = await self._list_user_groups(
-                    conn, personal_workspace_user_id_or_none
+                    conn, private_workspace_user_id_or_none
                 )
                 query = query.where(
-                    (projects.c.prj_owner == personal_workspace_user_id_or_none)
+                    (projects.c.prj_owner == private_workspace_user_id_or_none)
                     | sa.text(
                         f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
                     )
@@ -552,7 +552,7 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> UserProjectAccessRights:
         """
         Be careful what you want. You should use `get_user_project_access_rights` to get access rights on the
-        project. It depends on which context you are in, whether personal or shared workspace.
+        project. It depends on which context you are in, whether private or shared workspace.
 
         User project access rights. Aggregated across all his groups.
         """

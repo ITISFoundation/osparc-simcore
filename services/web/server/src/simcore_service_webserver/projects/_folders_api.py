@@ -31,9 +31,9 @@ async def move_project_into_folder(
         app, project_id=project_id, user_id=user_id, product_name=product_name
     )
 
-    # In personal workspace user can move as he wish, but in the
+    # In private workspace user can move as he wish, but in the
     # shared workspace user needs to have write permission
-    _personal_workspace_user_id_or_none: UserID | None = user_id
+    workspace_is_private = True
     if project_db.workspace_id is not None:  # shared workspace
         if project_access_rights.write is False:
             raise ProjectInvalidRightsError(
@@ -41,8 +41,7 @@ async def move_project_into_folder(
                 project_uuid=project_id,
                 reason=f"User does not have write access to project {project_id}",
             )
-        # Setup _personal_workspace_user_id_or_none to None, as this is not a personal workspace
-        _personal_workspace_user_id_or_none = None
+        workspace_is_private = False
 
     if folder_id:
         # Check user has access to folder
@@ -50,7 +49,7 @@ async def move_project_into_folder(
             app,
             folder_id=folder_id,
             product_name=product_name,
-            user_id=_personal_workspace_user_id_or_none,
+            user_id=user_id if workspace_is_private else None,
             workspace_id=project_db.workspace_id,
         )
 
@@ -58,7 +57,7 @@ async def move_project_into_folder(
     prj_to_folder_db = await project_to_folders_db.get_project_to_folder(
         app,
         project_id=project_id,
-        personal_workspace_user_id_or_none=_personal_workspace_user_id_or_none,
+        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
     )
     if prj_to_folder_db is None:
         if folder_id is None:
@@ -67,7 +66,7 @@ async def move_project_into_folder(
             app,
             project_id=project_id,
             folder_id=folder_id,
-            personal_workspace_user_id_or_none=_personal_workspace_user_id_or_none,
+            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
         )
     else:
         # Delete old
@@ -75,7 +74,7 @@ async def move_project_into_folder(
             app,
             project_id=project_id,
             folder_id=prj_to_folder_db.folder_id,
-            personal_workspace_user_id_or_none=_personal_workspace_user_id_or_none,
+            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
         )
         # Create new
         if folder_id is not None:
@@ -83,5 +82,7 @@ async def move_project_into_folder(
                 app,
                 project_id=project_id,
                 folder_id=folder_id,
-                personal_workspace_user_id_or_none=_personal_workspace_user_id_or_none,
+                private_workspace_user_id_or_none=user_id
+                if workspace_is_private
+                else None,
             )

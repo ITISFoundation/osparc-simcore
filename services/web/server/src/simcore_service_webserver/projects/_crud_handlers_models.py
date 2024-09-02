@@ -106,7 +106,7 @@ class ProjectListParams(PageQueryParameters):
     )
     workspace_id: WorkspaceID | None = Field(
         default=None,
-        description="Filter projects in specific workspace. Default filtering is a personal workspace.",
+        description="Filter projects in specific workspace. Default filtering is a private workspace.",
     )
 
     @validator("search", pre=True)

@@ -11,7 +11,11 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import GroupID, UserID
-from models_library.workspaces import UserWorkspaceDB, WorkspaceDB, WorkspaceID
+from models_library.workspaces import (
+    UserWorkspaceAccessRightsDB,
+    WorkspaceDB,
+    WorkspaceID,
+)
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.workspaces import workspaces
@@ -89,7 +93,7 @@ async def list_workspaces_for_user(
     offset: NonNegativeInt,
     limit: NonNegativeInt,
     order_by: OrderBy,
-) -> tuple[int, list[UserWorkspaceDB]]:
+) -> tuple[int, list[UserWorkspaceAccessRightsDB]]:
     base_query = (
         select(*_SELECTION_ARGS_WITH_USER_ACCESS_RIGHTS)
         .select_from(_JOIN_TABLES)
@@ -118,7 +122,9 @@ async def list_workspaces_for_user(
 
         result = await conn.execute(list_query)
         rows = await result.fetchall() or []
-        results: list[UserWorkspaceDB] = [UserWorkspaceDB.from_orm(row) for row in rows]
+        results: list[UserWorkspaceAccessRightsDB] = [
+            UserWorkspaceAccessRightsDB.from_orm(row) for row in rows
+        ]
 
         return cast(int, total_count), results
 
@@ -128,7 +134,7 @@ async def get_workspace_for_user(
     user_id: UserID,
     workspace_id: WorkspaceID,
     product_name: ProductName,
-) -> UserWorkspaceDB:
+) -> UserWorkspaceAccessRightsDB:
     stmt = (
         select(*_SELECTION_ARGS_WITH_USER_ACCESS_RIGHTS)
         .select_from(_JOIN_TABLES)
@@ -147,7 +153,7 @@ async def get_workspace_for_user(
             raise WorkspaceAccessForbiddenError(
                 reason=f"User does not have access to the workspace {workspace_id}. Or workspace does not exist.",
             )
-        return UserWorkspaceDB.from_orm(row)
+        return UserWorkspaceAccessRightsDB.from_orm(row)
 
 
 async def update_workspace(

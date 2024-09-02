@@ -2,7 +2,7 @@
 
 
 from ._access_rights_api import (
-    get_user_project_access_rights,
+    check_user_project_permission,
     has_user_project_access_rights,
 )
 from ._groups_api import (
@@ -20,7 +20,7 @@ __all__: tuple[str, ...] = (
     "connect_wallet_to_project",
     "delete_project_group_without_checking_permissions",
     "create_project_group_without_checking_permissions",
-    "get_user_project_access_rights",
+    "check_user_project_permission",
     "has_user_project_access_rights",
 )
 

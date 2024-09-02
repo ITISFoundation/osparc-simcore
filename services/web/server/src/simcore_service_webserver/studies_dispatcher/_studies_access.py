@@ -32,7 +32,7 @@ from ..director_v2._core_dynamic_services import (
 )
 from ..products.api import get_current_product, get_product_name
 from ..projects._groups_db import get_project_group
-from ..projects.api import get_user_project_access_rights
+from ..projects.api import check_user_project_permission
 from ..projects.db import ProjectDBAPI
 from ..projects.exceptions import (
     ProjectGroupNotFoundError,
@@ -155,16 +155,13 @@ async def copy_study_to_account(
 
     try:
         product_name = await db.get_project_product(template_project["uuid"])
-        prj_access_rights = await get_user_project_access_rights(
+        await check_user_project_permission(
             request.app,
             project_id=template_project["uuid"],
             user_id=user["id"],
             product_name=product_name,
+            permission="read",
         )
-        if prj_access_rights.read is False:
-            raise ProjectInvalidRightsError(
-                user_id=user["id"], project_uuid=template_project["uuid"]
-            )
 
         # Avoids multiple copies of the same template on each account
         await db.get_project(project_uuid)

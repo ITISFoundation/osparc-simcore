@@ -33,7 +33,7 @@ class WorkspaceDB(BaseModel):
         orm_mode = True
 
 
-class UserWorkspaceDB(WorkspaceDB):
+class UserWorkspaceAccessRightsDB(WorkspaceDB):
     read: bool
     write: bool
     delete: bool

@@ -71,7 +71,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
         app, user_id, product_name, only_key_versions=True
     )
 
-    _personal_workspace_user_id_or_none: UserID | None = user_id
+    workspace_is_private = True
     if workspace_id:
         await check_user_workspace_access(
             app,
@@ -80,7 +80,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
             product_name=product_name,
             permission="read",
         )
-        _personal_workspace_user_id_or_none = None
+        workspace_is_private = False
 
     if folder_id:
         # Check whether user has access to the folder
@@ -88,12 +88,12 @@ async def list_projects(  # pylint: disable=too-many-arguments
             app,
             folder_id=folder_id,
             product_name=product_name,
-            user_id=_personal_workspace_user_id_or_none,
+            user_id=user_id if workspace_is_private else None,
             workspace_id=workspace_id,
         )
 
     db_projects, db_project_types, total_number_projects = await db.list_projects(
-        personal_workspace_user_id_or_none=_personal_workspace_user_id_or_none,
+        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
         product_name=product_name,
         user_id=user_id,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),

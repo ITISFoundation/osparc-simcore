@@ -119,7 +119,7 @@ async def list_(
 
         result = await conn.execute(list_query)
         rows = await result.fetchall() or []
-        results: list_[FolderDB] = [parse_obj_as(FolderDB, row) for row in rows]
+        results: list[FolderDB] = [parse_obj_as(FolderDB, row) for row in rows]
         return cast(int, total_count), results
 
 

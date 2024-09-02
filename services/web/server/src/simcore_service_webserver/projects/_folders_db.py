@@ -41,7 +41,7 @@ async def insert_project_to_folder(
     app: web.Application,
     project_id: ProjectID,
     folder_id: FolderID,
-    personal_workspace_user_id_or_none: UserID | None,
+    private_workspace_user_id_or_none: UserID | None,
 ) -> ProjectToFolderDB:
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
@@ -49,7 +49,7 @@ async def insert_project_to_folder(
             .values(
                 project_uuid=f"{project_id}",
                 folder_id=folder_id,
-                user_id=personal_workspace_user_id_or_none,
+                user_id=private_workspace_user_id_or_none,
                 created=func.now(),
                 modified=func.now(),
             )
@@ -63,7 +63,7 @@ async def get_project_to_folder(
     app: web.Application,
     *,
     project_id: ProjectID,
-    personal_workspace_user_id_or_none: UserID | None,
+    private_workspace_user_id_or_none: UserID | None,
 ) -> ProjectToFolderDB | None:
     stmt = select(
         projects_to_folders.c.project_uuid,
@@ -73,7 +73,7 @@ async def get_project_to_folder(
         projects_to_folders.c.modified,
     ).where(
         (projects_to_folders.c.project_uuid == f"{project_id}")
-        & (projects_to_folders.c.user_id == personal_workspace_user_id_or_none)
+        & (projects_to_folders.c.user_id == private_workspace_user_id_or_none)
     )
 
     async with get_database_engine(app).acquire() as conn:
@@ -88,13 +88,13 @@ async def delete_project_to_folder(
     app: web.Application,
     project_id: ProjectID,
     folder_id: FolderID,
-    personal_workspace_user_id_or_none: UserID | None,
+    private_workspace_user_id_or_none: UserID | None,
 ) -> None:
     async with get_database_engine(app).acquire() as conn:
         await conn.execute(
             projects_to_folders.delete().where(
                 (projects_to_folders.c.project_uuid == f"{project_id}")
                 & (projects_to_folders.c.folder_id == folder_id)
-                & (projects_to_folders.c.user_id == personal_workspace_user_id_or_none)
+                & (projects_to_folders.c.user_id == private_workspace_user_id_or_none)
             )
         )

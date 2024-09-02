@@ -98,7 +98,7 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
     )
     workspace_id: WorkspaceID | None = Field(
         default=None,
-        description="List folders in specific workspace. By default, list in the user personal workspace",
+        description="List folders in specific workspace. By default, list in the user private workspace",
     )
 
     @validator("order_by", check_fields=False)

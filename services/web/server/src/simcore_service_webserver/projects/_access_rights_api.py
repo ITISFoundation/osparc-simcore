@@ -35,7 +35,7 @@ async def get_user_project_access_rights(
     """
     This function resolves user access rights on the project resource.
 
-    If project belong to user personal workspace (workspace_id = None) then it is resolved
+    If project belong to user private workspace (workspace_id = None) then it is resolved
     via user <--> groups <--> projects_to_groups.
 
     If project belong to shared workspace (workspace_id not None) then it is resolved
@@ -83,3 +83,19 @@ async def has_user_project_access_rights(
         return getattr(prj_access_rights, permission, False) is not False
     except (ProjectInvalidRightsError, ProjectNotFoundError):
         return False
+
+
+async def check_user_project_permission(
+    app: web.Application,
+    *,
+    project_id: ProjectID,
+    user_id: UserID,
+    product_name: ProductName,
+    permission: PermissionStr = "read",
+) -> UserProjectAccessRights:
+    _user_project_access_rights = await get_user_project_access_rights(
+        app, project_id=project_id, user_id=user_id, product_name=product_name
+    )
+    if getattr(_user_project_access_rights, permission, False) is False:
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
+    return _user_project_access_rights

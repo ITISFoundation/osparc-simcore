@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.workspaces import (
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
-from models_library.workspaces import UserWorkspaceDB, WorkspaceID
+from models_library.workspaces import UserWorkspaceAccessRightsDB, WorkspaceID
 from pydantic import NonNegativeInt
 from simcore_service_webserver.projects._db_utils import PermissionStr
 from simcore_service_webserver.workspaces.errors import WorkspaceAccessForbiddenError
@@ -66,7 +66,7 @@ async def get_workspace(
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> WorkspaceGet:
-    workspace_db: UserWorkspaceDB = await db.get_workspace_for_user(
+    workspace_db: UserWorkspaceAccessRightsDB = await db.get_workspace_for_user(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
     if workspace_db.read is False:
@@ -133,7 +133,7 @@ async def update_workspace(
     thumbnail: str | None,
     product_name: ProductName,
 ) -> WorkspaceGet:
-    workspace_db: UserWorkspaceDB = await db.get_workspace_for_user(
+    workspace_db: UserWorkspaceAccessRightsDB = await db.get_workspace_for_user(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
     if workspace_db.write is False:
@@ -174,7 +174,7 @@ async def delete_workspace(
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> None:
-    workspace_db: UserWorkspaceDB = await db.get_workspace_for_user(
+    workspace_db: UserWorkspaceAccessRightsDB = await db.get_workspace_for_user(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
     if workspace_db.delete is False:
@@ -196,7 +196,7 @@ async def check_user_workspace_access(
     """
     Raises WorkspaceAccessForbiddenError if no access
     """
-    workspace_db: UserWorkspaceDB = await db.get_workspace_for_user(
+    workspace_db: UserWorkspaceAccessRightsDB = await db.get_workspace_for_user(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
     if getattr(workspace_db, permission, False) is False:
