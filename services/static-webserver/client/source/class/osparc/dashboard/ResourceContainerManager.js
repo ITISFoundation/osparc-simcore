@@ -108,6 +108,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __foldersLayout: null,
     __folderHeader: null,
     __foldersContainer: null,
+    __workspacesList: null,
+    __workspacesContainer: null,
     __nonGroupedContainer: null,
     __groupedContainersList: null,
     __groupedContainersLayout: null,
@@ -318,7 +320,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __workspaceToCard: function(workspaceData) {
       const card = this.__createWorkspaceCard(workspaceData);
-      this.__foldersContainer.add(card);
+      this.__workspacesContainer.add(card);
       return card;
     },
 

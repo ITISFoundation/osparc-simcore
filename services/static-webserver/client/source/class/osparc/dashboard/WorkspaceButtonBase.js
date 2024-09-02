@@ -35,8 +35,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
 
     this.getChildControl("main-layout");
 
-    this.addListener("pointerover", this.__onPointerOver, this);
-    this.addListener("pointerout", this.__onPointerOut, this);
+    this.addListener("pointerover", this._onPointerOver, this);
+    this.addListener("pointerout", this._onPointerOut, this);
   },
 
   properties: {
@@ -187,11 +187,11 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
       }
     },
 
-    __onPointerOver: function() {
+    _onPointerOver: function() {
       this.addState("hovered");
     },
 
-    __onPointerOut : function() {
+    _onPointerOut : function() {
       this.removeState("hovered");
     },
 
@@ -215,7 +215,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
   },
 
   destruct: function() {
-    this.removeListener("pointerover", this.__onPointerOver, this);
-    this.removeListener("pointerout", this.__onPointerOut, this);
+    this.removeListener("pointerover", this._onPointerOver, this);
+    this.removeListener("pointerout", this._onPointerOut, this);
   }
 });

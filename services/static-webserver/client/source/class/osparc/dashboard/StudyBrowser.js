@@ -102,6 +102,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
+    __workspacesList: null,
     __foldersList: null,
 
     // overridden
@@ -167,7 +168,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadWorkspaces: function() {
       osparc.store.Workspaces.fetchWorkspaces()
         .then(workspaces => {
-          this.__setWorkspacesToList(workspaces);
+          this.__workspacesList = workspaces;
+          workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
+          this.__reloadWorkspaceCards();
         });
     },
 
@@ -331,12 +334,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
-    __setWorkspacesToList: function(workspaces) {
-      this.__foldersList = workspaces;
-      workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
-      this.__reloadWorkspaceCards();
-    },
-
     __setFoldersToList: function(folders) {
       this.__foldersList = folders;
       folders.forEach(folder => folder["resourceType"] = "folder");
@@ -409,22 +406,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     // WORKSPACES
     __reloadWorkspaceCards: function() {
-      this._resourcesContainer.setWorkspacesToList(this.__foldersList);
+      this._resourcesContainer.setWorkspacesToList(this.__workspacesList);
       this._resourcesContainer.reloadWorkspaces();
 
-      const currentWorkspace = osparc.store.Workspaces.getFolder(this.getCurrentFolderId())
-      if (currentWorkspace == null || currentWorkspace.getMyAccessRights()["write"]) {
-        const newWorkspaceCard = new osparc.dashboard.WorkspaceButtonNew();
-        newWorkspaceCard.setCardKey("new-workspace");
-        newWorkspaceCard.subscribeToFilterGroup("searchBarFilter");
-        newWorkspaceCard.addListener("createWorkspace", e => {
-          const data = e.getData();
-          osparc.store.Workspaces.postWorkspace(data.name, data.description, currentWorkspace ? currentWorkspace.getFolderId() : null)
-            .then(() => this.__reloadWorkspaces())
-            .catch(err => console.error(err));
-        })
-        this._resourcesContainer.addNewWorkspaceCard(newWorkspaceCard);
-      }
+      const newWorkspaceCard = new osparc.dashboard.WorkspaceButtonNew();
+      newWorkspaceCard.setCardKey("new-workspace");
+      newWorkspaceCard.subscribeToFilterGroup("searchBarFilter");
+      newWorkspaceCard.addListener("createWorkspace", e => {
+        const data = e.getData();
+        osparc.store.Workspaces.postWorkspace(data.name, data.description)
+          .then(() => this.__reloadWorkspaces())
+          .catch(err => console.error(err));
+      });
+      this._resourcesContainer.addNewWorkspaceCard(newWorkspaceCard);
     },
     // /WORKSPACES
 
