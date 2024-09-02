@@ -41,6 +41,11 @@ class ServiceBaseDisplay(BaseModel):
             "The mother of all nodes, makes your numbers shine!",
         ],
     )
+    wiki_enabled: bool = Field(
+        default=False,
+        description="If true, front-end will render `description` markdown a single page.",
+    )
+
     version_display: str | None = Field(
         None,
         description="A user-friendly or marketing name for the release."

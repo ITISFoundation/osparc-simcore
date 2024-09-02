@@ -25,6 +25,7 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
                 "owner": 8,
                 "name": "sim4life",
                 "description": "s4l web",
+                "wiki_enabled": 0,
                 "thumbnail": "http://thumbnailit.org/image",
                 "version_display": "S4L X",
                 "created": "2021-01-18 12:46:57.7315",
@@ -65,6 +66,7 @@ class ServiceWithHistoryFromDB(BaseModel):
     # display
     name: str
     description: str
+    wiki_enabled: bool
     thumbnail: str | None
     version_display: str | None
     # ownership
