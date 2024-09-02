@@ -258,10 +258,8 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         location_id: LocationID
         file_id: StorageFileIDStr
 
-    path_params = parse_request_path_parameters_as(_PathParams, request)
+    parse_request_path_parameters_as(_PathParams, request)
     body_item = await parse_request_body_as(FileUploadCompletionBody, request)
-
-    url = _to_storage_url(request)
 
     payload, status = await _forward_request_to_storage(
         request, "POST", body=body_item.dict()
