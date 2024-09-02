@@ -36,6 +36,14 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
   },
 
   properties: {
+    currentWorkspaceId: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeCurrentFolderId",
+      apply: "__applyCurrentFolderId"
+    },
+
     currentFolderId: {
       check: "Number",
       nullable: true,
@@ -115,7 +123,12 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
       if (folder) {
         folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14");
       } else {
-        folderButton = new qx.ui.form.Button(this.tr("Home"), "@FontAwesome5Solid/home/14");
+        const workspaceId = this.getCurrentWorkspaceId();
+        if (workspaceId) {
+          folderButton = new qx.ui.form.Button(workspaceId, osparc.store.Workspaces.ICON);
+        } else {
+          folderButton = new qx.ui.form.Button(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
+        }
       }
       folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder ? folder.getFolderId() : null), this);
       folderButton.set({
