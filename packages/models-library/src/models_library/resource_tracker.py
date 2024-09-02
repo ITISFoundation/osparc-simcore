@@ -5,11 +5,14 @@ from enum import IntEnum, auto
 from typing import NamedTuple, TypeAlias
 
 from pydantic import (
-    field_validator, ConfigDict, BaseModel,
+    BaseModel,
     ByteSize,
+    ConfigDict,
     Field,
     NonNegativeInt,
-    PositiveInt)
+    PositiveInt,
+    field_validator,
+)
 
 from .products import ProductName
 from .rest_filters import Filters
@@ -69,7 +72,7 @@ class HardwareInfo(BaseModel):
     aws_ec2_instances: list[str]
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "examples": [
                 {"aws_ec2_instances": ["c6a.4xlarge"]},
                 {"aws_ec2_instances": []},
@@ -202,8 +205,8 @@ class UnitExtraInfo(BaseModel):
     VRAM: ByteSize
 
     model_config = ConfigDict(
-        populate_by_name = True,
-        extra = "allow",
+        populate_by_name=True,
+        extra="allow",
         json_schema_extra={
             "examples": [
                 {
@@ -214,7 +217,7 @@ class UnitExtraInfo(BaseModel):
                     "custom key": "custom value",
                 }
             ]
-        }
+        },
     )
 
 
@@ -233,7 +236,9 @@ class PricingUnitWithCostCreate(BaseModel):
                 {
                     "pricing_plan_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
+                    "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "cost_per_unit": 10,
@@ -265,7 +270,9 @@ class PricingUnitWithCostUpdate(BaseModel):
                     "pricing_plan_id": 1,
                     "pricing_unit_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
+                    "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "pricing_unit_cost_update": {
@@ -277,7 +284,9 @@ class PricingUnitWithCostUpdate(BaseModel):
                     "pricing_plan_id": 1,
                     "pricing_unit_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
+                    "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "pricing_unit_cost_update": None,

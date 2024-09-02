@@ -2,14 +2,15 @@
     Models Front-end UI
 """
 
-from typing import Literal, TypedDict
+from typing import Literal
 
-from pydantic import ConfigDict, BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_extra_types.color import Color
+from typing_extensions import TypedDict
 
 from .projects_nodes_io import NodeID, NodeIDStr
 from .projects_nodes_ui import Marker, Position
 from .utils.common_validators import empty_str_to_none_pre_validator
-from pydantic_extra_types.color import Color
 
 
 class WorkbenchUI(BaseModel):
@@ -32,7 +33,7 @@ class Annotation(BaseModel):
     attributes: dict = Field(..., description="svg attributes")
 
     model_config = ConfigDict(
-        extra = "forbid",
+        extra="forbid",
         json_schema_extra={
             "examples": [
                 {
@@ -58,7 +59,7 @@ class Annotation(BaseModel):
                     "attributes": {"x": 415, "y": 100, "text": "Hey!"},
                 },
             ]
-        }
+        },
     )
 
 

@@ -18,7 +18,6 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
-    TypeAdapter,
     field_validator,
 )
 
@@ -44,7 +43,7 @@ LocationName = str
 SimcoreS3FileID = Annotated[str, StringConstraints(pattern=SIMCORE_S3_FILE_ID_RE)]
 
 
-class SimcoreS3DirectoryID(ConstrainedStr):
+class SimcoreS3DirectoryID(str, StringConstraints):
     """
     A simcore directory has the following structure:
         `{project_id}/{node_id}/simcore-dir-name/`
@@ -71,7 +70,7 @@ class SimcoreS3DirectoryID(ConstrainedStr):
 
     @classmethod
     def validate(cls, value: str) -> str:
-        value = super().validate(value)
+        value = cls(value)
         value = value.rstrip("/")
         parent = cls._get_parent(value, parent_index=3)
 
@@ -84,7 +83,7 @@ class SimcoreS3DirectoryID(ConstrainedStr):
     @classmethod
     def from_simcore_s3_object(cls, s3_object: str) -> "SimcoreS3DirectoryID":
         parent_path: str = cls._get_parent(s3_object, parent_index=4)
-        return TypeAdapter(cls).validate_strings(f"{parent_path}/")
+        return cls(f"{parent_path}/")
 
 
 DatCoreFileID = Annotated[str, StringConstraints(pattern=DATCORE_FILE_ID_RE)]

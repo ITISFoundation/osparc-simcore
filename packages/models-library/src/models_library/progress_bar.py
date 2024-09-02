@@ -1,6 +1,6 @@
 from typing import Literal, TypeAlias
 
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from .basic_types import IDStr
 
@@ -16,7 +16,7 @@ class ProgressStructuredMessage(BaseModel):
     sub: "ProgressStructuredMessage | None"
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "examples": [
                 {
                     "description": "some description",
@@ -79,8 +79,8 @@ class ProgressReport(BaseModel):
         return msg
 
     model_config = ConfigDict(
-        frozen = True,
-        json_schema_extra = {
+        frozen=True,
+        json_schema_extra={
             "examples": [
                 # typical percent progress (no units)
                 {
@@ -97,10 +97,10 @@ class ProgressReport(BaseModel):
                 {
                     "actual_value": 0.3,
                     "total": 1.0,
-                    "message": ProgressStructuredMessage.Config.schema_extra[
-                        "examples"
-                    ][2],
+                    "message": ProgressStructuredMessage.model_config[
+                        "json_schema_extra"
+                    ]["examples"][2],
                 },
             ]
-        }
+        },
     )

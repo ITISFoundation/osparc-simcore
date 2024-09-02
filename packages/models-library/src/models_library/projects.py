@@ -11,9 +11,8 @@ from uuid import UUID
 from pydantic import (
     BaseModel,
     ConfigDict,
-    ConstrainedStr,
-    Extra,
     Field,
+    GetJsonSchemaHandler,
     StringConstraints,
     field_validator,
 )
@@ -40,7 +39,7 @@ _DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%fZ"
 ProjectIDStr = Annotated[str, StringConstraints(UUID_RE_BASE)]
 
 
-class DateTimeStr(ConstrainedStr):
+class DateTimeStr(str, StringConstraints):
     regex = re.compile(DATE_RE)
     model_config = ConfigDict(frozen=True)
 
@@ -93,6 +92,8 @@ class BaseProjectModel(BaseModel):
     _none_description_is_empty = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
     )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class ProjectAtDB(BaseProjectModel):
@@ -173,20 +174,21 @@ class Project(BaseProjectModel):
         default=None, description="object used for development purposes only"
     )
 
-    # TODO[pydantic]: We couldn't refactor this class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config:
-        description = "Document that stores metadata, pipeline and UI setup of a study"
-        title = "osparc-simcore project"
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        description="Document that stores metadata, pipeline and UI setup of a study",
+        title="osparc-simcore project",
+        extra="forbid",
+    )
 
-        @staticmethod
-        def schema_extra(schema: dict, _model: "Project"):
-            # pylint: disable=unsubscriptable-object
+    @staticmethod
+    def __schema_extra__(
+        schema: dict[str, Any], _handler: GetJsonSchemaHandler
+    ) -> None:
+        # pylint: disable=unsubscriptable-object
 
-            # Patch to allow jsonschema nullable
-            # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
-            state_pydantic_schema = deepcopy(schema["properties"]["state"])
-            schema["properties"]["state"] = {
-                "anyOf": [{"type": "null"}, state_pydantic_schema]
-            }
+        # Patch to allow jsonschema nullable
+        # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
+        state_pydantic_schema = deepcopy(schema["properties"]["state"])
+        schema["properties"]["state"] = {
+            "anyOf": [{"type": "null"}, state_pydantic_schema]
+        }

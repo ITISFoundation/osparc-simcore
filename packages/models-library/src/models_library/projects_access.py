@@ -3,9 +3,9 @@
 """
 
 from enum import Enum
+from typing import Any
 
-from pydantic import ConfigDict, BaseModel, Field
-from pydantic.types import PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 from .basic_types import IDStr
 from .users import FirstNameStr, LastNameStr
@@ -31,9 +31,11 @@ class AccessRights(BaseModel):
 class PositiveIntWithExclusiveMinimumRemoved(PositiveInt):
     # As we are trying to match this Pydantic model to a historical json schema "project-v0.0.1" we need to remove this
     # Pydantic does not support exclusiveMinimum boolean https://github.com/pydantic/pydantic/issues/4108
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.pop("exclusiveMinimum", None)
+    @staticmethod
+    def __schema_extra__(schema: dict[str, Any], _handler: Any) -> None:
+        # Remove "exclusiveMinimum" from the schema if it exists
+        if "exclusiveMinimum" in schema:
+            schema.pop("exclusiveMinimum")
 
 
 class Owner(BaseModel):
@@ -44,13 +46,14 @@ class Owner(BaseModel):
     last_name: LastNameStr | None = Field(..., description="Owner's last name")
 
     model_config = ConfigDict(
-        extra = "forbid",
-        json_schema_extra = {
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 # NOTE: None and empty string are both defining an undefined value
                 {"user_id": 1, "first_name": None, "last_name": None},
                 {"user_id": 2, "first_name": "", "last_name": ""},
                 {"user_id": 3, "first_name": "John", "last_name": "Smith"},
             ]
-        }
+        },
+        arbitrary_types_allowed=True,
     )

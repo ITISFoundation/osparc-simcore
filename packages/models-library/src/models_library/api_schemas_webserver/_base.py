@@ -35,7 +35,6 @@ class OutputSchema(BaseModel):
         populate_by_name=True,
         extra="ignore",
         allow_mutations=False,
-        alias_generator=snake_to_camel,
     )
 
     def data(

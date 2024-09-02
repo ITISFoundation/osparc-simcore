@@ -9,12 +9,12 @@ from models_library.basic_types import (
     UUIDStr,
     VersionTag,
 )
-from pydantic import ConstrainedStr, ValidationError
+from pydantic import StringConstraints, ValidationError
 from pydantic.tools import parse_obj_as
 
 
 class _Example(NamedTuple):
-    constr: type[ConstrainedStr]
+    constr: type[StringConstraints]
     good: str
     bad: str
 
@@ -50,7 +50,7 @@ _EXAMPLES = [
     [(p.constr, p.good) for p in _EXAMPLES],
 )
 def test_constrained_str_succeeds(
-    constraint_str_type: type[ConstrainedStr], sample: str
+    constraint_str_type: type[StringConstraints], sample: str
 ):
     assert parse_obj_as(constraint_str_type, sample) == sample
 
@@ -59,7 +59,9 @@ def test_constrained_str_succeeds(
     "constraint_str_type,sample",
     [(p.constr, p.bad) for p in _EXAMPLES],
 )
-def test_constrained_str_fails(constraint_str_type: type[ConstrainedStr], sample: str):
+def test_constrained_str_fails(
+    constraint_str_type: type[StringConstraints], sample: str
+):
     with pytest.raises(ValidationError):
         parse_obj_as(constraint_str_type, sample)
 

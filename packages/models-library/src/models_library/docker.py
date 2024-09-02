@@ -1,13 +1,13 @@
 import contextlib
 import re
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 from pydantic import (
     BaseModel,
     ByteSize,
     ConfigDict,
-    ConstrainedStr,
     Field,
+    StringConstraints,
     TypeAdapter,
     ValidationError,
     model_validator,
@@ -21,26 +21,27 @@ from .projects_nodes_io import NodeID
 from .users import UserID
 
 
-class DockerLabelKey(ConstrainedStr):
+class DockerLabelKey(str, StringConstraints):
     # NOTE: https://docs.docker.com/config/labels-custom-metadata/#key-format-recommendations
     # good practice: use reverse DNS notation
-    regex: re.Pattern[str] | None = DOCKER_LABEL_KEY_REGEX
+    pattern: re.Pattern[str] | None = DOCKER_LABEL_KEY_REGEX
 
     @classmethod
     def from_key(cls, key: str) -> "DockerLabelKey":
         return cls(key.lower().replace("_", "-"))
 
 
-class DockerGenericTag(ConstrainedStr):
-    # NOTE: https://docs.docker.com/engine/reference/commandline/tag/#description
-    regex: re.Pattern[str] | None = DOCKER_GENERIC_TAG_KEY_RE
+# NOTE: https://docs.docker.com/engine/reference/commandline/tag/#description
+DockerGenericTag = Annotated[str, StringConstraints(pattern=DOCKER_GENERIC_TAG_KEY_RE)]
 
 
-class DockerPlacementConstraint(ConstrainedStr):
-    strip_whitespace = True
-    regex = re.compile(
-        r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"
-    )
+DockerPlacementConstraint = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        pattern=r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$",
+    ),
+]
 
 
 _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX: Final[str] = "io.simcore.runtime."
@@ -61,7 +62,7 @@ _UNDEFINED_LABEL_VALUE_INT: Final[str] = "0"
 
 DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: Final[
     DockerLabelKey
-] = TypeAdapter(DockerLabelKey).validate_strings("ec2-instance-type")
+] = DockerLabelKey("ec2-instance-type")
 
 
 def to_simcore_runtime_docker_label_key(key: str) -> DockerLabelKey:
