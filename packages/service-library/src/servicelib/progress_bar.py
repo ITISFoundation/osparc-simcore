@@ -132,15 +132,6 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
                 self_report.sub = child.compute_report_message_stuct()
         return self_report
 
-    def create_progress_report(self, value: float) -> ProgressReport:
-        return ProgressReport(
-            # NOTE: here we convert back to actual value since this is possibly weighted
-            actual_value=value * self.num_steps,
-            total=self.num_steps,
-            unit=self.progress_unit,
-            message=self.compute_report_message_stuct(),
-        )
-
     async def _report_external(self, value: float) -> None:
         if not self.progress_report_cb:
             return
@@ -151,8 +142,15 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
                 (value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT
             ) or value == _FINAL_VALUE:
                 # compute progress string
-                # NOTE: here we convert back to actual value since this is possibly weighted
-                call = self.progress_report_cb(self.create_progress_report(value))
+                call = self.progress_report_cb(
+                    ProgressReport(
+                        # NOTE: here we convert back to actual value since this is possibly weighted
+                        actual_value=value * self.num_steps,
+                        total=self.num_steps,
+                        unit=self.progress_unit,
+                        message=self.compute_report_message_stuct(),
+                    ),
+                )
                 if isawaitable(call):
                     await call
                 self._last_report_value = value
