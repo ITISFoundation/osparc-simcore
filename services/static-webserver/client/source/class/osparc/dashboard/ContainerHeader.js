@@ -40,8 +40,8 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeCurrentFolderId",
-      apply: "__applyCurrentFolderId"
+      event: "changeCurrentWorkspaceId",
+      apply: "__buildBreadcrumbs"
     },
 
     currentFolderId: {
@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       nullable: true,
       init: null,
       event: "changeCurrentFolderId",
-      apply: "__applyCurrentFolderId"
+      apply: "__buildBreadcrumbs"
     }
   },
 
@@ -65,10 +65,6 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
           break;
       }
       return control || this.base(arguments, id);
-    },
-
-    __applyCurrentFolderId: function() {
-      this.__buildBreadcrumbs();
     },
 
     __buildBreadcrumbs: function() {

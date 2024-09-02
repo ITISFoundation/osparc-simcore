@@ -766,6 +766,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (containerHeader) {
         this.bind("currentFolderId", containerHeader, "currentFolderId");
         containerHeader.addListener("changeCurrentFolderId", e => this.setCurrentFolderId(e.getData()));
+        this.bind("currentFolderId", containerHeader, "currentFolderId");
+        containerHeader.addListener("changeCurrentFolderId", e => this.setCurrentFolderId(e.getData()));
       }
       const list = this._resourcesContainer.getFlatList();
       if (list) {
