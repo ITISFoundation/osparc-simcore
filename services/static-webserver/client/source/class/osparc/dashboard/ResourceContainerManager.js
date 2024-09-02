@@ -21,7 +21,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(20));
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.set({
       paddingBottom: 60

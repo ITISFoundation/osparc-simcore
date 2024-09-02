@@ -65,6 +65,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     SPACING_IN: 5,
     SPACING: 15,
     HEADER_MAX_HEIGHT: 40, // two lines in Manrope
+    ICON_SIZE: 50,
     POS: {
       HEADER: 0,
       BODY: 1,
@@ -157,24 +158,34 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
             flex: 1
           });
           break;
+        case "icon": {
+          layout = this.getChildControl("body");
+          const maxWidth = this.self().ITEM_WIDTH;
+          control = new osparc.ui.basic.Thumbnail(null, maxWidth, 124);
+          control.getChildControl("image").set({
+            anonymous: true,
+            alignY: "middle",
+            alignX: "center",
+            allowGrowX: true,
+            allowGrowY: true
+          });
+          layout.getContentElement().setStyles({
+            "border-width": "0px"
+          });
+          layout.add(control, {flex: 1});
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
 
     // overridden
-    _applyIcon: function(value, old) {
+    _applyIcon: function(value) {
       if (value.includes("@FontAwesome5Solid/")) {
         value += this.self().ICON_SIZE;
         const image = this.getChildControl("icon").getChildControl("image");
         image.set({
           source: value
-        });
-
-        [
-          "appear",
-          "loaded"
-        ].forEach(eventName => {
-          image.addListener(eventName, () => this.__fitIconHeight(), this);
         });
       } else {
         this.getContentElement().setStyles({
