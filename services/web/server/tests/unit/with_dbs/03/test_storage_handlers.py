@@ -101,10 +101,7 @@ SINGLE_ENCODE_SLASH_IN_FILE_ID = "ef944bbe-14c7-11ee-a195-02420a0f07ab%2F46ac491
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(
-    "file_id",
-    [
-        SINGLE_ENCODE_SLASH_IN_FILE_ID,
-    ],  # DOUBLE_ENCODE_SLASH_IN_FILE_ID]
+    "file_id", [SINGLE_ENCODE_SLASH_IN_FILE_ID, DOUBLE_ENCODE_SLASH_IN_FILE_ID]
 )
 @pytest.mark.parametrize(
     "method, path, body, expected_response",
@@ -198,6 +195,7 @@ def test_url_storage_resolver_helpers(faker: Faker, app_environment: EnvVarsDict
     web_request = make_mocked_request("GET", str(url), app=app)
     web_request[RQT_USERID_KEY] = faker.pyint()
 
+    # web -> storage
     storage_url = _to_storage_url(web_request)
     # Something like
     # http://storage:123/v5/locations/0/files/e3e70...c07cd%2Ff7...55%2Ffile.py:complete?user_id=8376
@@ -208,6 +206,7 @@ def test_url_storage_resolver_helpers(faker: Faker, app_environment: EnvVarsDict
     assert storage_url.port == int(app_environment["STORAGE_PORT"])
     assert storage_url.query["user_id"] == str(web_request[RQT_USERID_KEY])
 
+    # storage -> web
     web_url: AnyUrl = _from_storage_url(
         web_request, parse_obj_as(AnyUrl, str(storage_url))
     )
