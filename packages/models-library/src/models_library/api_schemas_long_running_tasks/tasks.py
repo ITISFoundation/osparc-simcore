@@ -9,7 +9,7 @@ from .base import TaskId
 
 
 class TaskStatus(BaseModel):
-    progress_report: ProgressReport | None
+    progress_report: ProgressReport
     done: bool
     started: datetime
 
