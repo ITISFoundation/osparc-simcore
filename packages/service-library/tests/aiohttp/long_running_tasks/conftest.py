@@ -91,7 +91,7 @@ def start_long_running_task(
         url = (
             client.app.router[long_running_task_entrypoint]
             .url_for()
-            .update_query(num_strings=10, sleep_time=f"{0.5}", **query_kwargs)
+            .update_query(num_strings=10, sleep_time=f"{0.2}", **query_kwargs)
         )
         resp = await client.post(f"{url}")
         data, error = await assert_status(resp, status.HTTP_202_ACCEPTED)
