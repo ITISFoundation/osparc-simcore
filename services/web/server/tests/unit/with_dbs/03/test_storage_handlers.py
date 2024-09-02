@@ -5,10 +5,13 @@
 
 
 import json
+import urllib.parse
 from typing import Any
 
 import pytest
-from aiohttp.test_utils import TestClient
+from aiohttp import web
+from aiohttp.test_utils import TestClient, make_mocked_request
+from faker import Faker
 from models_library.api_schemas_storage import (
     FileUploadCompleteResponse,
     FileUploadLinks,
@@ -20,16 +23,26 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
+from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.storage._handlers import (
+    _from_storage_url,
+    _to_storage_url,
+)
+from yarl import URL
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
             "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "STORAGE_HOST": "fake-storage",
         },
     )
 
@@ -49,7 +62,7 @@ def mock_request_storage(mocker: MockerFixture, expected_response: Any) -> None:
         return parse_obj_as(AnyUrl, "http://private-url")
 
     mocker.patch(
-        "simcore_service_webserver.storage._handlers._unresolve_storage_url",
+        "simcore_service_webserver.storage._handlers._from_storage_url",
         autospec=True,
         side_effect=_resolve,
     )
@@ -88,7 +101,7 @@ SINGLE_ENCODE_SLASH_IN_FILE_ID = "ef944bbe-14c7-11ee-a195-02420a0f07ab%2F46ac491
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(
-    "file_id", [DOUBLE_ENCODE_SLASH_IN_FILE_ID, SINGLE_ENCODE_SLASH_IN_FILE_ID]
+    "file_id", [SINGLE_ENCODE_SLASH_IN_FILE_ID, DOUBLE_ENCODE_SLASH_IN_FILE_ID]
 )
 @pytest.mark.parametrize(
     "method, path, body, expected_response",
@@ -159,3 +172,48 @@ async def test_openapi_regression_test(
     decoded_response = await response.json()
     assert decoded_response["error"] is None
     assert decoded_response["data"] is not None
+
+
+def test_url_storage_resolver_helpers(faker: Faker, app_environment: EnvVarsDict):
+
+    app = web.Application()
+    setup_settings(app)
+
+    # NOTE: careful, first we need to encode the "/" in this file path.
+    # For that we need safe="" option
+    assert urllib.parse.quote("/") == "/"
+    assert urllib.parse.quote("/", safe="") == "%2F"
+    assert urllib.parse.quote("%2F", safe="") == "%252F"
+
+    file_id = urllib.parse.quote(f"{faker.uuid4()}/{faker.uuid4()}/file.py", safe="")
+    assert "%2F" in file_id
+    assert "%252F" not in file_id
+
+    url = URL(f"/v0/storage/locations/0/files/{file_id}:complete", encoded=True)
+    assert url.raw_parts[-1] == f"{file_id}:complete"
+
+    web_request = make_mocked_request("GET", str(url), app=app)
+    web_request[RQT_USERID_KEY] = faker.pyint()
+
+    # web -> storage
+    storage_url = _to_storage_url(web_request)
+    # Something like
+    # http://storage:123/v5/locations/0/files/e3e70...c07cd%2Ff7...55%2Ffile.py:complete?user_id=8376
+
+    assert storage_url.raw_parts[-1] == web_request.url.raw_parts[-1]
+
+    assert storage_url.host == app_environment["STORAGE_HOST"]
+    assert storage_url.port == int(app_environment["STORAGE_PORT"])
+    assert storage_url.query["user_id"] == str(web_request[RQT_USERID_KEY])
+
+    # storage -> web
+    web_url: AnyUrl = _from_storage_url(
+        web_request, parse_obj_as(AnyUrl, str(storage_url))
+    )
+
+    assert storage_url.host != web_url.host
+    assert storage_url.port != web_url.port
+
+    assert isinstance(storage_url, URL)  # this is a bit inconvenient
+    assert isinstance(web_url, AnyUrl)
+    assert str(web_url) == str(web_request.url)
