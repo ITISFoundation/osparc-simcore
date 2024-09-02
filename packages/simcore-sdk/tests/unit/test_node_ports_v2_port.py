@@ -13,9 +13,8 @@ import tempfile
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Final, NamedTuple
+from typing import Any, NamedTuple
 from unittest.mock import AsyncMock
-from uuid import UUID
 
 import pytest
 from aiohttp.client import ClientSession
@@ -39,10 +38,8 @@ from simcore_sdk.node_ports_v2.links import (
 )
 from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
-from utils_port_v2 import create_valid_port_config
+from utils_port_v2 import CONSTANT_UUID, create_valid_port_config
 from yarl import URL
-
-_MOCKED_UUID: Final[UUID] = UUID(int=0)
 
 
 def camel_to_snake(name):
@@ -59,7 +56,7 @@ def another_node_file_name() -> Path:
 
 
 def download_file_folder_name() -> Path:
-    return Path(tempfile.gettempdir()) / "simcorefiles" / f"{_MOCKED_UUID}"
+    return Path(tempfile.gettempdir()) / "simcorefiles" / f"{CONSTANT_UUID}"
 
 
 def project_id() -> str:

@@ -12,8 +12,8 @@ import tempfile
 from asyncio import gather
 from collections.abc import Awaitable, Callable, Iterable
 from pathlib import Path
-from typing import Any, Final
-from uuid import UUID, uuid4
+from typing import Any
+from uuid import uuid4
 
 import np_helpers
 import pytest
@@ -36,6 +36,7 @@ from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue, PortLink
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from simcore_sdk.node_ports_v2.port import Port
+from utils_port_v2 import CONSTANT_UUID
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -48,8 +49,6 @@ pytest_simcore_ops_services_selection = [
     "minio",
     "adminer",
 ]
-
-_MOCKED_UUID: Final[UUID] = UUID(int=0)
 
 
 async def _check_port_valid(
@@ -333,7 +332,7 @@ async def test_port_file_accessors(
             Path(
                 tempfile.gettempdir(),
                 "simcorefiles",
-                f"{_MOCKED_UUID}",
+                f"{CONSTANT_UUID}",
                 "out_34",
             )
         )
@@ -522,7 +521,7 @@ async def test_get_file_from_previous_node(
     assert file_path == Path(
         tempfile.gettempdir(),
         "simcorefiles",
-        f"{_MOCKED_UUID}",
+        f"{CONSTANT_UUID}",
         "in_15",
         Path(item_value).name,
     )
@@ -583,7 +582,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     assert file_path == Path(
         tempfile.gettempdir(),
         "simcorefiles",
-        f"{_MOCKED_UUID}",
+        f"{CONSTANT_UUID}",
         "in_15",
         item_alias,
     )
@@ -643,7 +642,7 @@ async def test_file_mapping(
     assert file_path == Path(
         tempfile.gettempdir(),
         "simcorefiles",
-        f"{_MOCKED_UUID}",
+        f"{CONSTANT_UUID}",
         "in_1",
         item_alias,
     )
@@ -654,7 +653,7 @@ async def test_file_mapping(
     assert file_path == Path(
         tempfile.gettempdir(),
         "simcorefiles",
-        f"{_MOCKED_UUID}",
+        f"{CONSTANT_UUID}",
         "in_1",
         item_alias,
     )

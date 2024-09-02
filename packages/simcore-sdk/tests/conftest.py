@@ -7,7 +7,6 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
-from uuid import UUID
 
 import pytest
 import simcore_sdk
@@ -15,6 +14,7 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
+from utils_port_v2 import CONSTANT_UUID
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 sys.path.append(str(current_dir / "helpers"))
@@ -82,5 +82,5 @@ def mock_io_log_redirect_cb() -> LogRedirectCB:
 def mock_uuid4(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_sdk.node_ports_common.data_items_utils.uuid4",
-        return_value=UUID(int=0),
+        return_value=CONSTANT_UUID,
     )
