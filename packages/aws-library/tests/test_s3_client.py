@@ -257,15 +257,32 @@ async def upload_file_to_multipart_presigned_link_without_completing(
 
 
 @dataclass
-class _ProgressCallback:
+class _UploadProgressCallback:
     file_size: int
     action: str
     logger: logging.Logger
     _total_bytes_transfered: int = 0
 
-    def __call__(self, bytes_transferred: int, file_name: str) -> None:
+    def __call__(self, bytes_transferred: int, *, file_name: str) -> None:
         self._total_bytes_transfered += bytes_transferred
-        self.logger.debug(
+        assert self._total_bytes_transfered <= self.file_size
+        self.logger.info(
+            "progress: %s",
+            f"{self.action} {file_name=} {self._total_bytes_transfered} / {self.file_size} bytes",
+        )
+
+
+@dataclass
+class _CopyProgressCallback:
+    file_size: int
+    action: str
+    logger: logging.Logger
+    _total_bytes_transfered: int = 0
+
+    def __call__(self, total_bytes_copied: int, *, file_name: str) -> None:
+        self._total_bytes_transfered = total_bytes_copied
+        assert self._total_bytes_transfered <= self.file_size
+        self.logger.info(
             "progress: %s",
             f"{self.action} {file_name=} {self._total_bytes_transfered} / {self.file_size} bytes",
         )
@@ -287,7 +304,7 @@ async def upload_file(
         with log_context(
             logging.INFO, msg=f"uploading {file} to {with_s3_bucket}/{object_key}"
         ) as ctx:
-            progress_cb = _ProgressCallback(
+            progress_cb = _UploadProgressCallback(
                 file_size=file.stat().st_size, action="uploaded", logger=ctx.logger
             )
             response = await simcore_s3_api.upload_file(
@@ -365,7 +382,7 @@ async def copy_file(
             bucket=with_s3_bucket, object_key=src_key
         )
         with log_context(logging.INFO, msg=f"copying {src_key} to {dst_key}") as ctx:
-            progress_cb = _ProgressCallback(
+            progress_cb = _CopyProgressCallback(
                 file_size=file_metadata.size, action="copied", logger=ctx.logger
             )
             await simcore_s3_api.copy_object(
@@ -397,7 +414,7 @@ async def copy_files_recursively(
             logging.INFO,
             msg=f"copying {src_prefix} [{ByteSize(src_directory_metadata.size).human_readable()}] to {dst_prefix}",
         ) as ctx:
-            progress_cb = _ProgressCallback(
+            progress_cb = _CopyProgressCallback(
                 file_size=src_directory_metadata.size,
                 action="copied",
                 logger=ctx.logger,
