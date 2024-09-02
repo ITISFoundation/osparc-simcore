@@ -1,7 +1,8 @@
-from pydantic import EmailStr
+from pydantic import EmailStr, validate_email
 
 
 class LowerCaseEmailStr(EmailStr):
     @classmethod
-    def validate(cls, value: str) -> str:
-        return super().validate(value).lower()
+    def validate(cls, value: EmailStr) -> EmailStr:
+        email = validate_email(value)[1]
+        return email.lower()
