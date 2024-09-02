@@ -63,22 +63,12 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
           }));
           this._addAt(control, 0, {flex: 1});
           break;
-        case "permissions-info": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-            alignY: "middle"
-          })).set({
-            paddingRight: 14
-          });
-          this._addAt(control, 1);
-          break;
-        }
       }
       return control || this.base(arguments, id);
     },
 
     __applyCurrentFolderId: function() {
       this.__buildBreadcrumbs();
-      this.__populatePermissions();
     },
 
     __buildBreadcrumbs: function() {
@@ -141,22 +131,6 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
 
     __createArrow: function() {
       return new qx.ui.basic.Label("/");
-    },
-
-    __populatePermissions: function() {
-      const permissionsLayout = this.getChildControl("permissions-info");
-      permissionsLayout.removeAll();
-
-      if (this.getCurrentFolderId()) {
-        const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
-        const ar = currentFolder.getMyAccessRights();
-        const permissions = ar["read"] + ar["write"] + ar["delete"];
-        const roleTitle = new qx.ui.basic.Label().set({
-          value: osparc.data.Roles.FOLDERS[permissions].label
-        });
-        permissionsLayout.add(roleTitle);
-        permissionsLayout.add(osparc.data.Roles.createRolesFolderInfo(false));
-      }
     }
   }
 });
