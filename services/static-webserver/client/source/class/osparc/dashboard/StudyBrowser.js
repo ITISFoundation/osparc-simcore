@@ -49,6 +49,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   properties: {
+    currentWorkspaceId: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeCurrentWorkspaceId",
+      apply: "__applyCurrentWorkspaceId"
+    },
+
     currentFolderId: {
       check: "Number",
       nullable: true,
@@ -369,6 +377,31 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
+    __applyCurrentWorkspaceId: function() {
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        this._resourcesContainer.setResourcesToList([]);
+        this._resourcesList = [];
+        this.invalidateStudies();
+
+        this.__reloadResources();
+      }
+    },
+
+    // FOLDERS
+    __applyCurrentFolderId: function(currentFolderId) {
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        osparc.store.Folders.getInstance().fetchFolders(currentFolderId)
+          .then(() => {
+            this._resourcesContainer.setResourcesToList([]);
+            this._resourcesList = [];
+            this.invalidateStudies();
+
+            this.__reloadResources();
+          })
+          .catch(console.error);
+      }
+    },
+
     __reloadFolderCards: function() {
       this._resourcesContainer.setFoldersToList(this.__foldersList);
       this._resourcesContainer.reloadFolders();
@@ -392,20 +425,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.setCurrentFolderId(folderId);
     },
 
-    __applyCurrentFolderId: function(currentFolderId) {
-      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        osparc.store.Folders.getInstance().fetchFolders(currentFolderId)
-          .then(() => {
-            this._resourcesContainer.setResourcesToList([]);
-            this._resourcesList = [];
-            this.invalidateStudies();
-
-            this.__reloadResources();
-          })
-          .catch(console.error);
-      }
-    },
-
     _folderUpdated: function() {
       this.__reloadFolders();
     },
@@ -415,6 +434,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this.__reloadFolders())
         .catch(err => console.error(err));
     },
+    // FOLDERS
 
     __configureCards: function(cards) {
       cards.forEach(card => {
