@@ -195,12 +195,12 @@ async def test_get_status(tasks_manager: TasksManager):
     )
     task_status = tasks_manager.get_task_status(task_id, with_task_context=None)
     assert isinstance(task_status, TaskStatus)
-    assert task_status.progress_report is None
+    assert task_status.progress_report.composed_message == "0.0 / 1.0"
+    assert task_status.progress_report.percent_value == 0.0
     # let the start start
     await asyncio.sleep(0)
     task_status = tasks_manager.get_task_status(task_id, with_task_context=None)
     assert isinstance(task_status, TaskStatus)
-    assert task_status.progress_report is not None
     assert (
         task_status.progress_report.composed_message
         == "test_long_running_tasks_task.a_background_task (0.0 / 1.0)"
