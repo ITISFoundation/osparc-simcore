@@ -56,8 +56,7 @@ def setup_tracing(
     )
 
     # Add the span processor to the tracer provider
-    # Mypy bug --> https://github.com/open-telemetry/opentelemetry-python/issues/3713
-    tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))  # type: ignore[attr-defined]
+    tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))  # type: ignore[attr-defined] # https://github.com/open-telemetry/opentelemetry-python/issues/3713
     # Instrument aiohttp server and client
     AioHttpServerInstrumentor().instrument()
     AioHttpClientInstrumentor().instrument()
