@@ -18,16 +18,99 @@
 qx.Class.define("osparc.store.Workspaces", {
   type: "static",
 
-  construct: function() {
-    this.base(arguments);
+  statics: {
+    workspacesCached: [],
 
-    this.foldersCached = [];
-  },
+    FAKE_WORKSPACES: [{
+      workspaceId: 1,
+      name: "Workspace 1",
+      description: "Workspace 1 desc",
+      thumbnail: "",
+      myAccessRights: {
+        read: true,
+        write: true,
+        delete: true,
+      },
+      accessRights: {
+        3: {
+          read: true,
+          write: true,
+          delete: true,
+        },
+        5: {
+          read: true,
+          write: true,
+          delete: false,
+        },
+        9: {
+          read: true,
+          write: false,
+          delete: false,
+        },
+      },
+      createdAt: "2024-03-04 15:59:51.579217",
+      lastModified: "2024-03-05 15:18:21.515403",
+    }, {
+      workspaceId: 2,
+      name: "Workspace 2",
+      description: "Workspace 2 desc",
+      thumbnail: "",
+      myAccessRights: {
+        read: true,
+        write: true,
+        delete: false,
+      },
+      accessRights: {
+        3: {
+          read: true,
+          write: true,
+          delete: false,
+        },
+        5: {
+          read: true,
+          write: true,
+          delete: true,
+        },
+        9: {
+          read: true,
+          write: false,
+          delete: false,
+        },
+      },
+      createdAt: "2024-03-05 15:18:21.515403",
+      lastModified: "2024-04-24 12:03:05.15249",
+    }, {
+      workspaceId: 3,
+      name: "Workspace 3",
+      description: "Workspace 3 desc",
+      thumbnail: "",
+      myAccessRights: {
+        read: true,
+        write: false,
+        delete: false,
+      },
+      accessRights: {
+        3: {
+          read: true,
+          write: false,
+          delete: false,
+        },
+        5: {
+          read: true,
+          write: true,
+          delete: false,
+        },
+        9: {
+          read: true,
+          write: true,
+          delete: true,
+        },
+      },
+      createdAt: "2024-04-24 12:03:05.15249",
+      lastModified: "2024-06-21 13:00:40.33769",
+    }],
 
-  members: {
-    foldersCached: null,
-
-    fetchFolders: function(folderId = null) {
+    fetchWorkspaces: function(workspaceId = null) {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
           resolve([]);
@@ -36,48 +119,48 @@ qx.Class.define("osparc.store.Workspaces", {
 
       const params = {
         "url": {
-          folderId
+          workspaceId
         }
       };
-      return osparc.data.Resources.getInstance().getAllPages("folders", params)
-        .then(foldersData => {
-          const folders = [];
-          foldersData.forEach(folderData => {
-            const folder = new osparc.data.model.Folder(folderData);
-            this.__addToCache(folder);
-            folders.push(folder);
+      return osparc.data.Resources.getInstance().getAllPages("workspaces", params)
+        .then(workspacesData => {
+          const workspaces = [];
+          workspacesData.forEach(workspaceData => {
+            const workspace = new osparc.data.model.Workspace(workspaceData);
+            this.__addToCache(workspace);
+            workspaces.push(workspace);
           });
-          return folders;
+          return workspaces;
         });
     },
 
-    postFolder: function(name, description, parentId = null) {
-      const newFolderData = {
-        parentFolderId: parentId,
+    postWorkspace: function(name, description, parentId = null) {
+      const newWorkspaceData = {
+        parentWorkspaceId: parentId,
         name: name,
         description: description || "",
       };
       const params = {
-        data: newFolderData
+        data: newWorkspaceData
       };
-      return osparc.data.Resources.getInstance().fetch("folders", "post", params)
-        .then(folderData => {
-          const newFolder = new osparc.data.model.Folder(folderData);
-          this.__addToCache(newFolder);
-          return newFolder;
+      return osparc.data.Resources.getInstance().fetch("workspaces", "post", params)
+        .then(workspaceData => {
+          const newWorkspace = new osparc.data.model.Workspace(workspaceData);
+          this.__addToCache(newWorkspace);
+          return newWorkspace;
         });
     },
 
-    deleteFolder: function(folderId) {
+    deleteWorkspace: function(workspaceId) {
       return new Promise((resolve, reject) => {
         const params = {
           "url": {
-            folderId
+            workspaceId
           }
         };
-        osparc.data.Resources.getInstance().fetch("folders", "delete", params)
+        osparc.data.Resources.getInstance().fetch("workspaces", "delete", params)
           .then(() => {
-            if (this.__deleteFromCache(folderId)) {
+            if (this.__deleteFromCache(workspaceId)) {
               resolve();
             } else {
               reject();
@@ -87,40 +170,40 @@ qx.Class.define("osparc.store.Workspaces", {
       });
     },
 
-    putFolder: function(folderId, updateData) {
+    putWorkspace: function(workspaceId, updateData) {
       return new Promise((resolve, reject) => {
         const params = {
           "url": {
-            folderId
+            workspaceId
           },
           data: updateData
         };
-        osparc.data.Resources.getInstance().fetch("folders", "update", params)
+        osparc.data.Resources.getInstance().fetch("workspaces", "update", params)
           .then(() => {
-            const folder = this.getFolder(folderId);
+            const workspace = this.getWorkspace(workspaceId);
             Object.keys(updateData).forEach(propKey => {
               const upKey = qx.lang.String.firstUp(propKey);
               const setter = "set" + upKey;
-              if (folder && setter in folder) {
-                folder[setter](updateData[propKey]);
+              if (workspace && setter in workspace) {
+                workspace[setter](updateData[propKey]);
               }
             });
-            folder.setLastModified(new Date());
-            this.__deleteFromCache(folderId);
-            this.__addToCache(folder);
+            workspace.setLastModified(new Date());
+            this.__deleteFromCache(workspaceId);
+            this.__addToCache(workspace);
             resolve();
           })
           .catch(err => reject(err));
       });
     },
 
-    addCollaborators: function(folderId, newCollaborators) {
+    addCollaborators: function(workspaceId, newCollaborators) {
       return new Promise((resolve, reject) => {
-        const folder = this.getFolder(folderId);
-        if (folder) {
-          const accessRights = folder.getAccessRights();
+        const workspace = this.getWorkspace(workspaceId);
+        if (workspace) {
+          const accessRights = workspace.getAccessRights();
           const newAccessRights = Object.assign(accessRights, newCollaborators);
-          folder.set({
+          workspace.set({
             accessRights: newAccessRights,
             lastModified: new Date()
           })
@@ -131,13 +214,13 @@ qx.Class.define("osparc.store.Workspaces", {
       });
     },
 
-    removeCollaborator: function(folderId, gid) {
+    removeCollaborator: function(workspaceId, gid) {
       return new Promise((resolve, reject) => {
-        const folder = this.getFolder(folderId);
-        if (folder) {
-          const accessRights = folder.getAccessRights();
+        const workspace = this.getWorkspace(workspaceId);
+        if (workspace) {
+          const accessRights = workspace.getAccessRights();
           delete accessRights[gid];
-          folder.set({
+          workspace.set({
             accessRights: accessRights,
             lastModified: new Date()
           })
@@ -148,14 +231,14 @@ qx.Class.define("osparc.store.Workspaces", {
       });
     },
 
-    updateCollaborator: function(folderId, gid, newPermissions) {
+    updateCollaborator: function(workspaceId, gid, newPermissions) {
       return new Promise((resolve, reject) => {
-        const folder = this.getFolder(folderId);
-        if (folder) {
-          const accessRights = folder.getAccessRights();
+        const workspace = this.getWorkspace(workspaceId);
+        if (workspace) {
+          const accessRights = workspace.getAccessRights();
           if (gid in accessRights) {
             accessRights[gid] = newPermissions;
-            folder.set({
+            workspace.set({
               accessRights: accessRights,
               lastModified: new Date()
             })
@@ -167,25 +250,25 @@ qx.Class.define("osparc.store.Workspaces", {
       });
     },
 
-    getFolders: function(parentId = null) {
-      return this.foldersCached.filter(f => f.getParentId() === parentId);
+    getWorkspaces: function(parentId = null) {
+      return this.workspacesCached.filter(f => f.getParentId() === parentId);
     },
 
-    getFolder: function(folderId = null) {
-      return this.foldersCached.find(f => f.getFolderId() === folderId);
+    getWorkspace: function(workspaceId = null) {
+      return this.workspacesCached.find(f => f.getWorkspaceId() === workspaceId);
     },
 
-    __addToCache: function(folder) {
-      const found = this.foldersCached.find(f => f.getFolderId() === folder.getFolderId());
+    __addToCache: function(workspace) {
+      const found = this.workspacesCached.find(f => f.getWorkspaceId() === workspace.getWorkspaceId());
       if (!found) {
-        this.foldersCached.unshift(folder);
+        this.workspacesCached.unshift(workspace);
       }
     },
 
-    __deleteFromCache: function(folderId) {
-      const idx = this.foldersCached.findIndex(f => f.getFolderId() === folderId);
+    __deleteFromCache: function(workspaceId) {
+      const idx = this.workspacesCached.findIndex(f => f.getWorkspaceId() === workspaceId);
       if (idx > -1) {
-        this.foldersCached.splice(idx, 1);
+        this.workspacesCached.splice(idx, 1);
         return true;
       }
       return false;
