@@ -127,9 +127,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       layout.add(workspacesButton);
       radioGroup.add(workspacesButton);
       workspacesButton.addListener("execute", () => {
-        this.fireDataEvent("changeWorkspace", {
-          id: -1
-        });
+        this.fireDataEvent("changeWorkspace", -1);
       });
 
       osparc.store.Workspaces.fetchWorkspaces()
@@ -143,9 +141,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
             layout.add(workspaceButton);
             radioGroup.add(workspaceButton);
             workspaceButton.addListener("execute", () => {
-              this.fireDataEvent("changeWorkspace", {
-                id: workspace.getWorkspaceId()
-              });
+              this.fireDataEvent("changeWorkspace", workspace.getWorkspaceId());
             }, this);
           });
         })

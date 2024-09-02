@@ -362,7 +362,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       resourceFilter.addListener("changeWorkspace", e => {
         const workspaceId = e.getData();
-        console.log("changeWorkspace", workspaceId);
         this.setCurrentWorkspaceId(workspaceId);
       }, this);
 
