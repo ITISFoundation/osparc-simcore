@@ -158,7 +158,7 @@ async def list_folders(
             workspace_id=workspace_id,
         )
 
-    total_count, folders = await folders_db.list(
+    total_count, folders = await folders_db.list_(
         app,
         content_of_folder_id=folder_id,
         user_id=_personal_workspace_user_id_or_none,

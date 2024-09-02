@@ -68,7 +68,7 @@ async def create(
         return parse_obj_as(FolderDB, row)
 
 
-async def list(
+async def list_(
     app: web.Application,
     *,
     content_of_folder_id: FolderID | None,
@@ -119,7 +119,7 @@ async def list(
 
         result = await conn.execute(list_query)
         rows = await result.fetchall() or []
-        results: list[FolderDB] = [parse_obj_as(FolderDB, row) for row in rows]
+        results: list_[FolderDB] = [parse_obj_as(FolderDB, row) for row in rows]
         return cast(int, total_count), results
 
 
