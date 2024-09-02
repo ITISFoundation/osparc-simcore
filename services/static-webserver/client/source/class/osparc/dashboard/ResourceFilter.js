@@ -120,7 +120,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     /* WORKSPACES */
     __addWorkspaceButtons: function(layout, radioGroup) {
       layout.add(new qx.ui.core.Spacer());
-      const workspacesButton = new qx.ui.toolbar.RadioButton(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath(20));
+      const workspacesButton = new qx.ui.toolbar.RadioButton(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath(22));
       workspacesButton.set({
         appearance: "filter-toggle-button"
       });
@@ -133,7 +133,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       osparc.store.Workspaces.fetchWorkspaces()
         .then(workspaces => {
           workspaces.forEach(workspace => {
-            const workspaceButton = new qx.ui.toolbar.RadioButton(workspace.getName(), osparc.store.Workspaces.iconPath(20));
+            const workspaceButton = new qx.ui.toolbar.RadioButton(workspace.getName(), osparc.store.Workspaces.iconPath(22));
             workspaceButton.set({
               appearance: "filter-toggle-button",
               marginLeft: 15,
