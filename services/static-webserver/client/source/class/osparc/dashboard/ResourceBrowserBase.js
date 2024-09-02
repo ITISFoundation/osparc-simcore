@@ -355,6 +355,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
 
       resourceFilter.addListener("changeSharedWith", e => {
+        this.setCurrentWorkspaceId(null);
         const sharedWith = e.getData();
         this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
       }, this);
