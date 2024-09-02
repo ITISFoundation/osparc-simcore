@@ -117,6 +117,7 @@ qx.Class.define("osparc.store.Workspaces", {
         });
       }
 
+      /*
       const params = {
         "url": {
           workspaceId
@@ -132,6 +133,17 @@ qx.Class.define("osparc.store.Workspaces", {
           });
           return workspaces;
         });
+      */
+
+      return new Promise(resolve => {
+        const workspaces = [];
+        this.self().FAKE_WORKSPACES.forEach(workspaceData => {
+          const workspace = new osparc.data.model.Workspace(workspaceData);
+          this.__addToCache(workspace);
+          workspaces.push(workspace);
+        });
+        resolve(workspaces);
+      });
     },
 
     postWorkspace: function(name, description, parentId = null) {
