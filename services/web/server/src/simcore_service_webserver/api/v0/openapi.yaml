@@ -3417,7 +3417,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5842,6 +5842,10 @@ components:
         description:
           title: Description
           type: string
+        descriptionUi:
+          title: Descriptionui
+          type: boolean
+          default: false
         versionDisplay:
           title: Versiondisplay
           type: string
@@ -5908,6 +5912,7 @@ components:
       example:
         name: sleeper
         description: A service which awaits for time to pass, two times.
+        description_ui: true
         classifiers: []
         quality: {}
         accessRights:
@@ -5986,6 +5991,10 @@ components:
         description:
           title: Description
           type: string
+        descriptionUi:
+          title: Descriptionui
+          type: boolean
+          default: false
         versionDisplay:
           title: Versiondisplay
           type: string
