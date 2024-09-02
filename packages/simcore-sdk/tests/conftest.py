@@ -7,9 +7,11 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import pytest
 import simcore_sdk
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
@@ -74,3 +76,11 @@ def mock_io_log_redirect_cb() -> LogRedirectCB:
         pass
 
     return _mocked_function
+
+
+@pytest.fixture
+def mock_uuid4(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_sdk.node_ports_common.data_items_utils.uuid4",
+        return_value=UUID(int=0),
+    )

@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final, NamedTuple
 from unittest.mock import AsyncMock
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 from aiohttp.client import ClientSession
@@ -42,7 +42,7 @@ from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import create_valid_port_config
 from yarl import URL
 
-_MOCKED_UUID: Final[UUID] = uuid4()
+_MOCKED_UUID: Final[UUID] = UUID(int=0)
 
 
 def camel_to_snake(name):
@@ -140,14 +140,6 @@ def another_node_file() -> Iterator[Path]:
     yield file_path
     if file_path.exists():
         file_path.unlink()
-
-
-@pytest.fixture
-def mock_uuid4(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_sdk.node_ports_common.data_items_utils.uuid4",
-        return_value=_MOCKED_UUID,
-    )
 
 
 @pytest.fixture
