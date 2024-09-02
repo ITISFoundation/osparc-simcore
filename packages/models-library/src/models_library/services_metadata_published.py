@@ -174,7 +174,7 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBaseDisplay):
                 {
                     **_EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,
                     "version_display": "Matterhorn Release",
-                    "wiki_enabled": True,
+                    "description_ui": True,
                     "release_date": "2024-05-31T13:45:30",
                 },
             ]

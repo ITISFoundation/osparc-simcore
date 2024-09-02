@@ -386,7 +386,7 @@ def random_service_meta_data(
         "name": f"the-{_name}-service",  # display
         "description": fake.sentence(),
         # optional
-        "wiki_enabled": fake.pybool(),
+        "description_ui": fake.pybool(),
         "owner": owner_primary_gid,
         "thumbnail": _pick_from([fake.image_url(), None]),  # nullable
         "version_display": _pick_from([f"v{_version}", None]),  # nullable

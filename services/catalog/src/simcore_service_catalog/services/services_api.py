@@ -47,7 +47,7 @@ def _db_to_api_model(
             else None
         ),
         description=service_db.description,
-        wiki_enabled=service_db.wiki_enabled,
+        description_ui=service_db.description_ui,
         version_display=service_db.version_display,
         type=service_manifest.service_type,
         contact=service_manifest.contact,

@@ -53,7 +53,7 @@ services_meta_data = sa.Table(
         doc="Markdown-compatible description (editable). SEE `view_enabled`",
     ),
     sa.Column(
-        "wiki_enabled",
+        "description_ui",
         sa.Boolean,
         nullable=False,
         server_default=expression.false(),

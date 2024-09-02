@@ -194,7 +194,7 @@ async def test_get_and_patch_service(
         description="bar",
         classifiers=None,
         versionDisplay="Some nice name",
-        wikiEnabled=True,
+        descriptionUi=True,
         accessRights={1: {"execute": True, "write": True}},
     )
     response = await client.patch(
@@ -210,7 +210,7 @@ async def test_get_and_patch_service(
     assert model.version == service_version
     assert model.name == update.name
     assert model.description == update.description
-    assert model.wiki_enabled == update.wiki_enabled
+    assert model.description_ui == update.description_ui
     assert model.version_display == update.version_display
     assert model.access_rights == update.access_rights
 

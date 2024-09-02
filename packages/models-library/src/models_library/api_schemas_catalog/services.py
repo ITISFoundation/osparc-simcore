@@ -122,7 +122,7 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
     "name": "sleeper",
     "thumbnail": None,
     "description": "A service which awaits for time to pass, two times.",
-    "wiki_enabled": True,
+    "description_ui": True,
     "classifiers": [],
     "quality": {},
     "accessRights": {"1": {"execute": True, "write": False}},
@@ -222,7 +222,7 @@ class ServiceGetV2(BaseModel):
     thumbnail: HttpUrl | None = None
     description: str
 
-    wiki_enabled: bool = False
+    description_ui: bool = False
 
     version_display: str | None = None
 
@@ -320,7 +320,7 @@ class ServiceUpdateV2(BaseModel):
     thumbnail: HttpUrl | None = None
 
     description: str | None = None
-    wiki_enabled: bool = False
+    description_ui: bool = False
     version_display: str | None = None
 
     deprecated: datetime | None = None
