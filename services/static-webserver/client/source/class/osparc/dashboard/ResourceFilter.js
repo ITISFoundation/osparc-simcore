@@ -126,8 +126,10 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       });
       layout.add(workspacesButton);
       radioGroup.add(workspacesButton);
-      this.fireDataEvent("changeWorkspace", {
-        id: -1
+      workspacesButton.addListener("execute", () => {
+        this.fireDataEvent("changeWorkspace", {
+          id: -1
+        });
       });
 
       osparc.store.Workspaces.fetchWorkspaces()
