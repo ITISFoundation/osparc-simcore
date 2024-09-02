@@ -26,6 +26,7 @@ def setup_tracing(
     service_name: str,
     opentelemetry_collector_endpoint: AnyUrl | str | None,
     opentelemetry_collector_port: int | None,
+    instrument_aiopg: bool = False,
 ) -> None:
     """
     Sets up this service for a distributed tracing system (opentelemetry)
@@ -60,5 +61,6 @@ def setup_tracing(
     # Instrument aiohttp server and client
     AioHttpServerInstrumentor().instrument()
     AioHttpClientInstrumentor().instrument()
-    AiopgInstrumentor().instrument()
+    if instrument_aiopg:
+        AiopgInstrumentor().instrument()
     RequestsInstrumentor().instrument()

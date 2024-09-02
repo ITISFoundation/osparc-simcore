@@ -58,6 +58,7 @@ def create(settings: Settings) -> web.Application:
             service_name=service_name,
             opentelemetry_collector_endpoint=tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT,
             opentelemetry_collector_port=tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT,
+            instrument_aiopg=True,
         )
 
     setup_db(app)

@@ -28,4 +28,5 @@ def setup_app_tracing(app: web.Application):
         service_name=service_name,
         opentelemetry_collector_endpoint=settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT,
         opentelemetry_collector_port=settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT,
+        instrument_aiopg=True,
     )
