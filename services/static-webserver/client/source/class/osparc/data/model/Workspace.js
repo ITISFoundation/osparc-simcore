@@ -36,7 +36,7 @@ qx.Class.define("osparc.data.model.Workspace", {
       myAccessRights: workspaceData.myAccessRights,
       accessRights: workspaceData.accessRights,
       createdAt: new Date(workspaceData.createdAt),
-      lastModified: new Date(workspaceData.modifiedAt),
+      lastModified: new Date(workspaceData.lastModified),
     });
   },
 
