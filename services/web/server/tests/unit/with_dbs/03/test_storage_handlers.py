@@ -62,7 +62,7 @@ def mock_request_storage(mocker: MockerFixture, expected_response: Any) -> None:
         return parse_obj_as(AnyUrl, "http://private-url")
 
     mocker.patch(
-        "simcore_service_webserver.storage._handlers._unresolve_storage_url",
+        "simcore_service_webserver.storage._handlers._from_storage_url",
         autospec=True,
         side_effect=_resolve,
     )
