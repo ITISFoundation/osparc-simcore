@@ -79,8 +79,8 @@ async def test_workflow(
             assert task_status
             progress_updates.append(
                 (
-                    task_status.progress_report.message,
-                    task_status.progress_report.percent,
+                    task_status.progress_report.composed_message,
+                    task_status.progress_report.percent_value,
                 )
             )
             print(f"<-- received task status: {task_status.json(indent=2)}")

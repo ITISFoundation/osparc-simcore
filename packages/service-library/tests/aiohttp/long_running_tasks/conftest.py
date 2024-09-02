@@ -9,6 +9,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.basic_types import IDStr
 from pydantic import BaseModel, parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
@@ -29,12 +30,15 @@ async def _string_list_task(
     fail: bool,
 ) -> web.Response:
     generated_strings = []
-    for index in range(num_strings):
-        generated_strings.append(f"{index}")
-        await asyncio.sleep(sleep_time)
-        task_progress.update(message="generated item", percent=index / num_strings)
-        if fail:
-            raise RuntimeError("We were asked to fail!!")
+    async with task_progress.sub_progress(
+        num_strings, IDStr("generating strings")
+    ) as sub_progress:
+        for index in range(num_strings):
+            generated_strings.append(f"{index}")
+            await asyncio.sleep(sleep_time)
+            await sub_progress.update()
+            if fail:
+                raise RuntimeError("We were asked to fail!!")
 
     # NOTE: this code is used just for the sake of not returning the default 200
     return web.json_response(
@@ -87,7 +91,7 @@ def start_long_running_task(
         url = (
             client.app.router[long_running_task_entrypoint]
             .url_for()
-            .update_query(num_strings=10, sleep_time=f"{0.2}", **query_kwargs)
+            .update_query(num_strings=10, sleep_time=f"{0.5}", **query_kwargs)
         )
         resp = await client.post(f"{url}")
         data, error = await assert_status(resp, status.HTTP_202_ACCEPTED)
