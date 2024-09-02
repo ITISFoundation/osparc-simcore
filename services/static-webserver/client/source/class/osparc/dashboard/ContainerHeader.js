@@ -32,6 +32,8 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
   },
 
   events: {
+    // OM: Is this needed?
+    "changeCurrentWorkspaceId": "qx.event.type.Data",
     "changeCurrentFolderId": "qx.event.type.Data"
   },
 
