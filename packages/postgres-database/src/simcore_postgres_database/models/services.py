@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.sql import expression
 
 from .base import metadata
 
@@ -49,7 +50,14 @@ services_meta_data = sa.Table(
         "description",
         sa.String,
         nullable=False,
-        doc="Markdown-compatible description (editable)",
+        doc="Markdown-compatible description (editable). SEE `view_enabled`",
+    ),
+    sa.Column(
+        "wiki_enabled",
+        sa.Boolean,
+        nullable=False,
+        server_default=expression.false(),
+        doc="If true, the `description` is rendered in the UI like a wiki site to the final user (editable)",
     ),
     sa.Column(
         "thumbnail",
