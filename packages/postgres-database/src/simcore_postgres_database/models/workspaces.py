@@ -17,6 +17,12 @@ workspaces = sa.Table(
     sa.Column("name", sa.String, nullable=False, doc="Display name"),
     sa.Column("description", sa.String, nullable=True, doc="Short description"),
     sa.Column(
+        "thumbnail",
+        sa.String,
+        nullable=True,
+        doc="Link to image as to workspace thumbnail",
+    ),
+    sa.Column(
         "owner_primary_gid",
         sa.BigInteger,
         sa.ForeignKey(
@@ -28,15 +34,9 @@ workspaces = sa.Table(
         nullable=False,
         doc="Identifier of the group that owns this workspace (Should be just PRIMARY GROUP)",
     ),
-    sa.Column(
-        "thumbnail",
-        sa.String,
-        nullable=True,
-        doc="Link to image as to workspace thumbnail",
-    ),
+    sa.Column("product_name", sa.String, nullable=False, doc="Product name"),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
-    sa.Column("product_name", sa.String, nullable=False, doc="Product name"),
 )
 
 # ------------------------ TRIGGERS

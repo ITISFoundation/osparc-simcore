@@ -31,3 +31,6 @@ class FolderDB(BaseModel):
     )
     user_id: UserID | None
     workspace_id: WorkspaceID | None
+
+    class Config:
+        orm_mode = True

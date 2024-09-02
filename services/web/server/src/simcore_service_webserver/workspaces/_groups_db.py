@@ -9,7 +9,7 @@ from datetime import datetime
 from aiohttp import web
 from models_library.users import GroupID
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel
 from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,
 )
@@ -31,6 +31,9 @@ class WorkspaceGroupGetDB(BaseModel):
     delete: bool
     created: datetime
     modified: datetime
+
+    class Config:
+        orm_mode = True
 
 
 ## DB API
@@ -60,7 +63,7 @@ async def create_workspace_group(
             .returning(literal_column("*"))
         )
         row = await result.first()
-        return parse_obj_as(WorkspaceGroupGetDB, row)
+        return WorkspaceGroupGetDB.from_orm(row)
 
 
 async def list_workspace_groups(
@@ -83,7 +86,7 @@ async def list_workspace_groups(
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
         rows = await result.fetchall() or []
-        return parse_obj_as(list[WorkspaceGroupGetDB], rows)
+        return [WorkspaceGroupGetDB.from_orm(row) for row in rows]
 
 
 async def get_workspace_group(
@@ -114,7 +117,7 @@ async def get_workspace_group(
             raise WorkspaceGroupNotFoundError(
                 reason=f"Workspace {workspace_id} group {group_id} not found"
             )
-        return parse_obj_as(WorkspaceGroupGetDB, row)
+        return WorkspaceGroupGetDB.from_orm(row)
 
 
 async def update_workspace_group(
@@ -145,7 +148,7 @@ async def update_workspace_group(
             raise WorkspaceGroupNotFoundError(
                 reason=f"Workspace {workspace_id} group {group_id} not found"
             )
-        return parse_obj_as(WorkspaceGroupGetDB, row)
+        return WorkspaceGroupGetDB.from_orm(row)
 
 
 async def delete_workspace_group(

@@ -13,7 +13,7 @@ from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import GroupID, UserID
 from models_library.workspaces import WorkspaceID
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from sqlalchemy import func
 from sqlalchemy.sql import asc, desc, select
@@ -38,9 +38,10 @@ _SELECTION_ARGS = (
 
 async def create(
     app: web.Application,
-    product_name: ProductName,
+    *,
     created_by_gid: GroupID,
     folder_name: str,
+    product_name: ProductName,
     parent_folder_id: FolderID | None,
     user_id: UserID | None,
     workspace_id: WorkspaceID | None,
@@ -65,7 +66,7 @@ async def create(
             .returning(*_SELECTION_ARGS)
         )
         row = await result.first()
-        return parse_obj_as(FolderDB, row)
+        return FolderDB.from_orm(row)
 
 
 async def list_(
@@ -82,7 +83,6 @@ async def list_(
     """
     content_of_folder_id - Used to filter in which folder we want to list folders. None means root folder.
     """
-
     assert not (
         user_id is not None and workspace_id is not None
     ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
@@ -119,12 +119,13 @@ async def list_(
 
         result = await conn.execute(list_query)
         rows = await result.fetchall() or []
-        results: list[FolderDB] = [parse_obj_as(FolderDB, row) for row in rows]
+        results: list[FolderDB] = [FolderDB.from_orm(row) for row in rows]
         return cast(int, total_count), results
 
 
 async def get(
     app: web.Application,
+    *,
     folder_id: FolderID,
     product_name: ProductName,
 ) -> FolderDB:
@@ -144,11 +145,12 @@ async def get(
             raise FolderAccessForbiddenError(
                 reason=f"Folder {folder_id} does not exist.",
             )
-        return parse_obj_as(FolderDB, row)
+        return FolderDB.from_orm(row)
 
 
 async def get_for_user_or_workspace(
     app: web.Application,
+    *,
     folder_id: FolderID,
     product_name: ProductName,
     user_id: UserID | None,
@@ -179,11 +181,12 @@ async def get_for_user_or_workspace(
             raise FolderAccessForbiddenError(
                 reason=f"User does not have access to the folder {folder_id}. Or folder does not exist.",
             )
-        return parse_obj_as(FolderDB, row)
+        return FolderDB.from_orm(row)
 
 
 async def update(
     app: web.Application,
+    *,
     folder_id: FolderID,
     name: str,
     parent_folder_id: FolderID | None,
@@ -206,11 +209,12 @@ async def update(
         row = await result.first()
         if row is None:
             raise FolderNotFoundError(reason=f"Folder {folder_id} not found.")
-        return parse_obj_as(FolderDB, row)
+        return FolderDB.from_orm(row)
 
 
 async def delete(
     app: web.Application,
+    *,
     folder_id: FolderID,
     product_name: ProductName,
 ) -> None:

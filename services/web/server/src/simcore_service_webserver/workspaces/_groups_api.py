@@ -11,6 +11,7 @@ from ..users import api as users_api
 from . import _groups_db as workspaces_groups_db
 from . import _workspaces_db as workspaces_db
 from ._groups_db import WorkspaceGroupGetDB
+from ._workspaces_api import check_user_workspace_access
 from .errors import WorkspaceAccessForbiddenError
 
 log = logging.getLogger(__name__)
@@ -36,13 +37,13 @@ async def create_workspace_group(
     delete: bool,
     product_name: ProductName,
 ) -> WorkspaceGroupGet:
-    workspace: UserWorkspaceAccessRightsDB = await workspaces_db.get_workspace_for_user(
-        app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+    await check_user_workspace_access(
+        app=app,
+        user_id=user_id,
+        workspace_id=workspace_id,
+        product_name=product_name,
+        permission="write",
     )
-    if workspace.write is False:
-        raise WorkspaceAccessForbiddenError(
-            reason=f"User does not have write access to workspace {workspace_id}"
-        )
 
     workspace_group_db: WorkspaceGroupGetDB = (
         await workspaces_groups_db.create_workspace_group(
@@ -68,13 +69,13 @@ async def list_workspace_groups_by_user_and_workspace(
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> list[WorkspaceGroupGet]:
-    workspace: UserWorkspaceAccessRightsDB = await workspaces_db.get_workspace_for_user(
-        app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+    await check_user_workspace_access(
+        app=app,
+        user_id=user_id,
+        workspace_id=workspace_id,
+        product_name=product_name,
+        permission="read",
     )
-    if workspace.read is False:
-        raise WorkspaceAccessForbiddenError(
-            reason=f"User does not have read access to workspace {workspace_id}"
-        )
 
     workspace_groups_db: list[
         WorkspaceGroupGetDB
