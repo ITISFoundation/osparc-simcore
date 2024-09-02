@@ -52,6 +52,7 @@ from ...services.study_job_models_converters import (
 from ...services.webserver import AuthSession
 from ..dependencies.application import get_reverse_url_mapper
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
+from ._constants import FMSG_CHANGELOG_CHANGED_IN_VERSION
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -207,6 +208,9 @@ async def delete_study_job(
             "model": ErrorGet,
         },
     },
+    description=FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
+        "0.6.0", "Now responds with a 202 when successfully starting a computation"
+    ),
 )
 async def start_study_job(
     request: Request,
@@ -217,9 +221,6 @@ async def start_study_job(
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     cluster_id: ClusterID | None = None,
 ):
-    """
-    New in *version 0.6.0*: This endpoint responds with a 202 when successfully starting a computation
-    """
     job_name = _compose_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Starting Job '{job_name}'"):
         try:

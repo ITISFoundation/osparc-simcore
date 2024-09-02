@@ -61,17 +61,21 @@ openapi-client.json:
 	rm -rf "$$temp_dir"
 
 
+openapi-client-master.json:
+	wget -O $@ https://raw.githubusercontent.com/ITISFoundation/osparc-simcore-clients/master/api/openapi.json
+
+
 define _openapi_diff_inputs
 	$(SCRIPTS_DIR)/openapi-diff.bash $(foreach f,$^,/specs/$f) --fail-on-incompatible --json=/specs/$@
 endef
 
-.PHONY: openapi-diff-dev.json
-openapi-dev-diff.json: openapi.json openapi-dev.json ## Diffs against newer openapi-dev.json and checks backwards compatibility
-
+# Examples:
+#  make openapi-dev-diff.json
+#  make openapi-client-master-diff.json
+#  make openapi-client-diff.json
+openapi-%-diff.json: openapi.json openapi-%.json ## Diffs against newer or older openapi-%.json and checks backwards compatibility
 	$(call _openapi_diff_inputs)
 
-openapi-client-diff.json: openapi-client.json openapi.json ## Diffs against older openapi-client.json and checks backwards compatibility
-	$(call _openapi_diff_inputs)
 
 
 # SEE https://schemathesis.readthedocs.io/en/stable/index.html

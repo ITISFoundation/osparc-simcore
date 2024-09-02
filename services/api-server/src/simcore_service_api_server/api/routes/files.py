@@ -104,7 +104,7 @@ async def list_files(
 ):
     """Lists all files stored in the system
 
-    SEE get_files_page for a paginated version of this function
+    SEE `get_files_page` for a paginated version of this function
     """
 
     stored_files: list[StorageFileMetaData] = await storage_client.list_files(
@@ -314,8 +314,8 @@ async def search_files_page(
         )
     return create_page(
         [to_file_api_model(fmd) for fmd in stored_files],
-        len(stored_files),
-        page_params,
+        total=len(stored_files),
+        params=page_params,
     )
 
 

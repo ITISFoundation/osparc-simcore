@@ -53,6 +53,7 @@ from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
+from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
     METADATA_STATUS_CODES,
@@ -127,7 +128,7 @@ async def list_jobs(
 ):
     """List of jobs in a specific released solver (limited to 20 jobs)
 
-    SEE get_jobs_page for paginated version of this function
+    SEE `get_jobs_page` for paginated version of this function
     """
 
     solver = await catalog_client.get_service(
@@ -156,8 +157,12 @@ async def list_jobs(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/page",
     response_model=Page[Job],
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     responses=JOBS_STATUS_CODES,
+    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    description=(
+        "List of jobs on a specific released solver (includes pagination)\n\n"
+        + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")
+    ),
 )
 async def get_jobs_page(
     solver_key: SolverKeyId,
@@ -169,8 +174,6 @@ async def get_jobs_page(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    """List of jobs on a specific released solver (includes pagination)"""
-
     # NOTE: Different entry to keep backwards compatibility with list_jobs.
     # Eventually use a header with agent version to switch to new interface
 
@@ -193,8 +196,8 @@ async def get_jobs_page(
 
     return create_page(
         jobs,
-        projects_page.meta.total,
-        page_params,
+        total=projects_page.meta.total,
+        params=page_params,
     )
 
 
@@ -288,6 +291,12 @@ async def get_job_outputs(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs/logfile",
     response_class=RedirectResponse,
     responses=_LOGFILE_STATUS_CODES,
+    description=(
+        "Special extra output with persistent logs file for the solver run.\n\n"
+        "**NOTE**: this is not a log stream but a predefined output that is only\n"
+        "available after the job is done.\n\n"
+        + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.4.0")
+    ),
 )
 async def get_job_output_logfile(
     solver_key: SolverKeyId,
@@ -296,13 +305,6 @@ async def get_job_output_logfile(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
-    """Special extra output with persistent logs file for the solver run.
-
-    NOTE: this is not a log stream but a predefined output that is only
-    available after the job is done.
-
-    New in *version 0.4.0*
-    """
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Get Job '%s' outputs logfile", job_name)
 
@@ -318,7 +320,7 @@ async def get_job_output_logfile(
         len(logs_urls),
         f"{project_id=}",
         f"{user_id=}",
-        list(elm.download_link for elm in logs_urls),
+        [e.download_link for e in logs_urls],
     )
 
     # if more than one node? should rezip all of them??
@@ -348,6 +350,8 @@ async def get_job_output_logfile(
     response_model=JobMetadata,
     responses=METADATA_STATUS_CODES,
     include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    description="Gets custom metadata from a job\n\n"
+    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
 )
 async def get_job_custom_metadata(
     solver_key: SolverKeyId,
@@ -356,10 +360,6 @@ async def get_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    """Gets custom metadata from a job
-
-    New in *version 0.5*
-    """
     job_name = _compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 

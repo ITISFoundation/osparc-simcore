@@ -157,10 +157,9 @@ async def setup_director(app: FastAPI) -> None:
             _logger, logging.DEBUG, "Setup director at %s", f"{settings.base_url=}"
         ):
 
-            client = DirectorApi(base_url=settings.base_url, app=app)
-
             async for attempt in AsyncRetrying(**_director_startup_retry_policy):
                 with attempt:
+                    client = DirectorApi(base_url=settings.base_url, app=app)
                     if not await client.is_responsive():
                         with suppress(Exception):
                             await client.close()
