@@ -43,7 +43,7 @@ class S3TransferDataCB:
             f"/{self.total_bytes_to_transfer.human_readable()}]",
             ProgressPercent(
                 min(self._total_bytes_copied, self.total_bytes_to_transfer)
-                / self.total_bytes_to_transfer
+                / (self.total_bytes_to_transfer or 1)
             ),
         )
 
@@ -53,19 +53,19 @@ class S3TransferDataCB:
         )
         self._update()
 
-    def copy_transfer_cb(self, file_total_bytes: int, file_name: str) -> None:
+    def copy_transfer_cb(self, total_bytes_copied: int, *, file_name: str) -> None:
         logger.debug(
             "Copied %s of %s",
-            parse_obj_as(ByteSize, file_total_bytes).human_readable(),
+            parse_obj_as(ByteSize, total_bytes_copied).human_readable(),
             file_name,
         )
-        self._file_total_bytes_copied[file_name] = file_total_bytes
+        self._file_total_bytes_copied[file_name] = total_bytes_copied
         self._total_bytes_copied = sum(self._file_total_bytes_copied.values())
         if self.total_bytes_to_transfer != 0:
             self._update()
 
-    def upload_transfer_cb(self, file_increment_bytes: int, file_name: str) -> None:
-        self._file_total_bytes_copied[file_name] += file_increment_bytes
+    def upload_transfer_cb(self, bytes_transferred: int, *, file_name: str) -> None:
+        self._file_total_bytes_copied[file_name] += bytes_transferred
         self._total_bytes_copied = sum(self._file_total_bytes_copied.values())
         if self.total_bytes_to_transfer != 0:
             self._update()
