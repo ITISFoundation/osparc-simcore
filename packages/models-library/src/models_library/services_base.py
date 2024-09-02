@@ -43,7 +43,7 @@ class ServiceBaseDisplay(BaseModel):
     )
     description_ui: bool = Field(
         default=False,
-        description="If true, front-end will render `description` markdown a single page.",
+        description="A flag to enable the `description` to be presented as a single web page (=true) or in another structured format (default=false).",
     )
 
     version_display: str | None = Field(

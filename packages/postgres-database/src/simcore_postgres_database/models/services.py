@@ -57,7 +57,9 @@ services_meta_data = sa.Table(
         sa.Boolean,
         nullable=False,
         server_default=expression.false(),
-        doc="If true, the `description` is rendered in the UI like a wiki site to the final user (editable)",
+        doc="A flag that determines how the `description` column is rendered in the UI (editable)"
+        "Specifically, it indicates whether the `description` should be presented as a single web page (=true) or in another structured format (default=false)."
+        "This field is primarily used by the front-end of the application to decide on the presentation style of the service's metadata.",
     ),
     sa.Column(
         "thumbnail",
