@@ -400,6 +400,7 @@ async def replace_project(request: web.Request):
         "project.update | project.workbench.node.inputs.update",
         context={
             "dbapi": db,
+            "app": request.app,
             "project_id": f"{path_params.project_id}",
             "user_id": req_ctx.user_id,
             "new_data": new_project,

@@ -2,6 +2,7 @@ import jsondiff  # type: ignore[import-untyped]
 from aiohttp import web
 from simcore_postgres_database.models.users import UserRole
 
+from ..projects.api import check_user_project_permission
 from ..security.api import get_access_model
 from .db import ProjectDBAPI
 
@@ -12,6 +13,7 @@ async def can_update_node_inputs(context):
     Returns True if user has permission to update inputs
     """
     db: ProjectDBAPI = context["dbapi"]
+    app: web.Application = context["app"]
     project_uuid = context["project_id"]
     user_id = context["user_id"]
     updated_project = context["new_data"]
@@ -19,14 +21,14 @@ async def can_update_node_inputs(context):
     if project_uuid is None or user_id is None:
         return False
 
-    # NOTE: MD this needs to be uncommented when I found out how to get access to application (PC help needed)!
     product_name = await db.get_project_product(project_uuid)
-    prj_access_rights = await get_user_project_access_rights(
-        app, project_id=project_uuid, user_id=user_id, product_name=product_name
+    await check_user_project_permission(
+        app,
+        project_id=project_uuid,
+        user_id=user_id,
+        product_name=product_name,
+        permission="read",
     )
-    if prj_access_rights.read is False:
-        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
-
     # get current version
     current_project, _ = await db.get_project(project_uuid)
 
