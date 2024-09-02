@@ -11,8 +11,8 @@ from uuid import uuid4
 
 from models_library.basic_types import IDStr
 from pydantic import PositiveFloat
-from servicelib.progress_bar import ProgressBarData
 
+from ..progress_bar import ProgressBarData
 from ._errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
@@ -210,9 +210,7 @@ class TasksManager:
 
         return TaskStatus.parse_obj(
             {
-                "progress_report": tracked_task.task_progress.create_progress_report(
-                    tracked_task.task_progress._current_steps
-                ),
+                "progress_report": tracked_task.last_progress_report,
                 "done": done,
                 "started": tracked_task.started,
             }
