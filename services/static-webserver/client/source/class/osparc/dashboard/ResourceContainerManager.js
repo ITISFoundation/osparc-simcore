@@ -320,6 +320,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     reloadWorkspaces: function() {
       this.__cleanAll();
+      this._add(this.__containerHeader);
       this._add(this.__workspacesContainer);
       let workspacesCards = [];
       this.__workspacesList.forEach(workspaceData => workspacesCards.push(this.__workspaceToCard(workspaceData)));
