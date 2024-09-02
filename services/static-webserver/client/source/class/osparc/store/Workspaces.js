@@ -29,7 +29,7 @@ qx.Class.define("osparc.store.Workspaces", {
       workspaceId: 1,
       name: "Workspace 1",
       description: "Workspace 1 desc",
-      thumbnail: "",
+      thumbnail: "https://images.ctfassets.net/hrltx12pl8hq/01rJn4TormMsGQs1ZRIpzX/16a1cae2440420d0fd0a7a9a006f2dcb/Artboard_Copy_231.jpg?fit=fill&w=600&h=600",
       myAccessRights: {
         read: true,
         write: true,
@@ -58,7 +58,7 @@ qx.Class.define("osparc.store.Workspaces", {
       workspaceId: 2,
       name: "Workspace 2",
       description: "Workspace 2 desc",
-      thumbnail: "",
+      thumbnail: "https://image.shutterstock.com/image-vector/dotted-spiral-vortex-royaltyfree-images-600w-2227567913.jpg",
       myAccessRights: {
         read: true,
         write: true,
@@ -87,7 +87,7 @@ qx.Class.define("osparc.store.Workspaces", {
       workspaceId: 3,
       name: "Workspace 3",
       description: "Workspace 3 desc",
-      thumbnail: "",
+      thumbnail: "https://media.springernature.com/lw703/springer-static/image/art%3A10.1038%2F528452a/MediaObjects/41586_2015_Article_BF528452a_Figg_HTML.jpg",
       myAccessRights: {
         read: true,
         write: false,
