@@ -13,7 +13,7 @@ import arrow
 from models_library.basic_types import IDStr
 from pydantic import PositiveFloat
 
-from ..progress_bar import ProgressBarData
+from ..progress_bar import ProgressBarData, ProgressReport
 from ._errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
@@ -211,7 +211,8 @@ class TasksManager:
 
         return TaskStatus.parse_obj(
             {
-                "progress_report": tracked_task.last_progress_report,
+                "progress_report": tracked_task.last_progress_report
+                or ProgressReport(actual_value=0),
                 "done": done,
                 "started": tracked_task.started,
             }
