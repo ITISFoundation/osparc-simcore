@@ -22,9 +22,9 @@ def create_simcore_file_id(
     return SimcoreS3FileID(f"{clean_path}")
 
 
-def create_folder_path(key: str) -> Path:
+def get_folder_path(key: str) -> Path:
     return _TMP_SIMCOREFILES / f"{uuid4()}" / key
 
 
-def create_file_path(key: str, name: str) -> Path:
+def get_file_path(key: str, name: str) -> Path:
     return _TMP_SIMCOREFILES / f"{uuid4()}" / key / name
