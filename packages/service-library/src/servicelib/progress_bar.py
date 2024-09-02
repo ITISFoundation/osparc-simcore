@@ -39,7 +39,7 @@ def _normalize_weights(steps: int, weights: list[float]) -> list[float]:
     return [weight / total for weight in weights]
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(kw_only=True)
 class ProgressBarData:  # pylint: disable=too-many-instance-attributes
     """A progress bar data allows to keep track of multiple progress(es) even in deeply nested processes.
 
@@ -132,6 +132,15 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
                 self_report.sub = child.compute_report_message_stuct()
         return self_report
 
+    def create_progress_report(self, value: float) -> ProgressReport:
+        return ProgressReport(
+            # NOTE: here we convert back to actual value since this is possibly weighted
+            actual_value=value * self.num_steps,
+            total=self.num_steps,
+            unit=self.progress_unit,
+            message=self.compute_report_message_stuct(),
+        )
+
     async def _report_external(self, value: float) -> None:
         if not self.progress_report_cb:
             return
@@ -142,15 +151,8 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
                 (value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT
             ) or value == _FINAL_VALUE:
                 # compute progress string
-                call = self.progress_report_cb(
-                    ProgressReport(
-                        # NOTE: here we convert back to actual value since this is possibly weighted
-                        actual_value=value * self.num_steps,
-                        total=self.num_steps,
-                        unit=self.progress_unit,
-                        message=self.compute_report_message_stuct(),
-                    ),
-                )
+                # NOTE: here we convert back to actual value since this is possibly weighted
+                call = self.progress_report_cb(self.create_progress_report(value))
                 if isawaitable(call):
                     await call
                 self._last_report_value = value

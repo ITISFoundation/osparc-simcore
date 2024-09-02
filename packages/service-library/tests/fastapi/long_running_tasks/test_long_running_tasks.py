@@ -22,6 +22,7 @@ from pydantic import parse_obj_as
 from servicelib.fastapi import long_running_tasks
 from servicelib.long_running_tasks._models import TaskGet, TaskId
 from servicelib.long_running_tasks._task import TaskContext
+from servicelib.progress_bar import ProgressBarData
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -32,18 +33,21 @@ ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 
 
 async def _string_list_task(
-    task_progress: long_running_tasks.server.TaskProgress,
+    task_progress: ProgressBarData,
     num_strings: int,
     sleep_time: float,
     fail: bool,
 ) -> list[str]:
     generated_strings = []
-    for index in range(num_strings):
-        generated_strings.append(f"{index}")
-        await asyncio.sleep(sleep_time)
-        task_progress.update(message="generated item", percent=index / num_strings)
-        if fail:
-            raise RuntimeError("We were asked to fail!!")
+    async with task_progress.sub_progress(
+        num_strings, "generating strings"
+    ) as sub_progress:
+        for index in range(num_strings):
+            generated_strings.append(f"{index}")
+            await asyncio.sleep(sleep_time)
+            await sub_progress.update()
+            if fail:
+                raise RuntimeError("We were asked to fail!!")
 
     return generated_strings
 
@@ -101,9 +105,9 @@ def start_long_running_task() -> Callable[[FastAPI, AsyncClient], Awaitable[Task
 
 
 @pytest.fixture
-def wait_for_task() -> Callable[
-    [FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]
-]:
+def wait_for_task() -> (
+    Callable[[FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]]
+):
     async def _waiter(
         app: FastAPI,
         client: AsyncClient,
@@ -152,7 +156,10 @@ async def test_workflow(
             task_status = long_running_tasks.server.TaskStatus.parse_obj(result.json())
             assert task_status
             progress_updates.append(
-                (task_status.task_progress.message, task_status.task_progress.percent)
+                (
+                    task_status.progress_report.composed_message,
+                    task_status.progress_report.percent_value,
+                )
             )
             print(f"<-- received task status: {task_status.json(indent=2)}")
             assert task_status.done, "task incomplete"
@@ -161,7 +168,10 @@ async def test_workflow(
             )
 
     EXPECTED_MESSAGES = [
-        ("starting", 0.0),
+        (
+            "executing tests.fastapi.long_running_tasks.test_long_running_tasks._string_list_task (0.0 / 1.0)/generating strings 0.0 / 10",
+            0.0,
+        ),
         ("generated item", 0.0),
         ("generated item", 0.1),
         ("generated item", 0.2),

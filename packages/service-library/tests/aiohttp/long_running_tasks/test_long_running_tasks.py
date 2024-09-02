@@ -78,7 +78,10 @@ async def test_workflow(
             task_status = long_running_tasks.server.TaskStatus.parse_obj(data)
             assert task_status
             progress_updates.append(
-                (task_status.task_progress.message, task_status.task_progress.percent)
+                (
+                    task_status.progress_report.message,
+                    task_status.progress_report.percent,
+                )
             )
             print(f"<-- received task status: {task_status.json(indent=2)}")
             assert task_status.done, "task incomplete"

@@ -9,11 +9,9 @@ from datetime import datetime
 from typing import Any, Protocol
 from uuid import uuid4
 
-from models_library.api_schemas_long_running_tasks.base import (
-    ProgressPercent,
-    TaskProgress,
-)
+from models_library.basic_types import IDStr
 from pydantic import PositiveFloat
+from servicelib.progress_bar import ProgressBarData
 
 from ._errors import (
     TaskAlreadyRunningError,
@@ -161,7 +159,7 @@ class TasksManager:
         self,
         task_name: TaskName,
         task: asyncio.Task,
-        task_progress: TaskProgress,
+        task_progress: ProgressBarData,
         task_context: TaskContext,
         task_id: TaskId,
         *,
@@ -212,7 +210,9 @@ class TasksManager:
 
         return TaskStatus.parse_obj(
             {
-                "task_progress": tracked_task.task_progress,
+                "progress_report": tracked_task.task_progress.create_progress_report(
+                    tracked_task.task_progress._current_steps
+                ),
                 "done": done,
                 "started": tracked_task.started,
             }
@@ -290,7 +290,7 @@ class TasksManager:
                     await asyncio.wait_for(
                         _await_task(task), timeout=self._cancel_task_timeout_s
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.warning(
                         "Timed out while awaiting for cancellation of '%s'", reference
                     )
@@ -352,7 +352,9 @@ class TasksManager:
 
 
 class TaskProtocol(Protocol):
-    async def __call__(self, progress: TaskProgress, *args: Any, **kwargs: Any) -> Any:
+    async def __call__(
+        self, progress: ProgressBarData, *args: Any, **kwargs: Any
+    ) -> Any:
         ...
 
     @property
@@ -373,7 +375,7 @@ def start_task(
     """
     Creates a background task from an async function.
 
-    An asyncio task will be created out of it by injecting a `TaskProgress` as the first
+    An asyncio task will be created out of it by injecting a `ProgressBarData` as the first
     positional argument and adding all `handler_kwargs` as named parameters.
 
     NOTE: the progress is automatically bounded between 0 and 1
@@ -413,15 +415,18 @@ def start_task(
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
     task_id = tasks_manager.create_task_id(task_name=task_name)
-    task_progress = TaskProgress.create(task_id=task_id)
+
+    task_progress = ProgressBarData(
+        num_steps=1, description=IDStr(f"executing {task_name}")
+    )
 
     # bind the task with progress 0 and 1
-    async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
-        progress.update(message="starting", percent=ProgressPercent(0))
+    async def _progress_task(progress: ProgressBarData, handler: TaskProtocol):
         try:
+            await progress.start()
             return await handler(progress, **task_kwargs)
         finally:
-            progress.update(message="finished", percent=ProgressPercent(1))
+            await progress.finish()
 
     async_task = asyncio.create_task(
         _progress_task(task_progress, task), name=f"{task_name}"
@@ -444,7 +449,6 @@ __all__: tuple[str, ...] = (
     "TaskCancelledError",
     "TaskId",
     "TasksManager",
-    "TaskProgress",
     "TaskProtocol",
     "TaskStatus",
     "TaskResult",

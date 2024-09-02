@@ -99,8 +99,8 @@ async def periodic_task_result(
         logger.debug("Task status %s", task_status.json())
         await progress_manager.update(
             task_id=task_id,
-            message=task_status.task_progress.message,
-            percent=task_status.task_progress.percent,
+            message=task_status.progress_report.composed_message,
+            percent=ProgressPercent(task_status.progress_report.percent_value),
         )
         return task_status
 

@@ -9,7 +9,6 @@ running task. The client will take care of recovering the result from it.
 from ...long_running_tasks._errors import TaskAlreadyRunningError, TaskCancelledError
 from ...long_running_tasks._task import (
     TaskId,
-    TaskProgress,
     TaskResult,
     TasksManager,
     TaskStatus,
@@ -26,7 +25,6 @@ __all__: tuple[str, ...] = (
     "TaskCancelledError",
     "TaskId",
     "TasksManager",
-    "TaskProgress",
     "TaskResult",
     "TaskStatus",
 )

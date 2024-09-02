@@ -4,11 +4,12 @@ from typing import Any
 
 from pydantic import BaseModel, validator
 
-from .base import TaskId, TaskProgress
+from ..progress_bar import ProgressReport
+from .base import TaskId
 
 
 class TaskStatus(BaseModel):
-    task_progress: TaskProgress
+    progress_report: ProgressReport
     done: bool
     started: datetime
 

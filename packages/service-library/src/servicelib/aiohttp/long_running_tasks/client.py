@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from typing import Any, Final, TypeAlias
 
 from aiohttp import ClientConnectionError, ClientSession
+from models_library.progress_bar import ProgressReport
 from servicelib.aiohttp import status
+from servicelib.progress_bar import ProgressBarData
 from tenacity import TryAgain, retry
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -13,7 +15,7 @@ from tenacity.wait import wait_random_exponential
 from yarl import URL
 
 from ..rest_responses import unwrap_envelope
-from .server import TaskGet, TaskId, TaskProgress, TaskStatus
+from .server import TaskGet, TaskId, TaskStatus
 
 RequestBody: TypeAlias = Any
 
@@ -44,7 +46,7 @@ async def _wait_for_completion(
     task_id: TaskId,
     status_url: URL,
     client_timeout: int,
-) -> AsyncGenerator[TaskProgress, None]:
+) -> AsyncGenerator[ProgressReport, None]:
     try:
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(client_timeout),
@@ -58,7 +60,7 @@ async def _wait_for_completion(
                     assert not error  # nosec
                     assert data is not None  # nosec
                 task_status = TaskStatus.parse_obj(data)
-                yield task_status.task_progress
+                yield task_status.progress_report
                 if not task_status.done:
                     await asyncio.sleep(
                         float(
@@ -67,7 +69,7 @@ async def _wait_for_completion(
                             )
                         )
                     )
-                    msg = f"{task_id=}, {task_status.started=} has status: '{task_status.task_progress.message}' {task_status.task_progress.percent}%"
+                    msg = f"{task_id=}, {task_status.started=} has status: '{task_status.progress_report.message}' {task_status.progress_report.percent_value * 100.0:.1f}%"
                     raise TryAgain(msg)  # noqa: TRY301
 
     except TryAgain as exc:
@@ -99,7 +101,7 @@ async def _abort_task(session: ClientSession, abort_url: URL) -> None:
 
 @dataclass(frozen=True)
 class LRTask:
-    progress: TaskProgress
+    progress: ProgressBarData
     _result: Coroutine[Any, Any, Any] | None = None
 
     def done(self) -> bool:

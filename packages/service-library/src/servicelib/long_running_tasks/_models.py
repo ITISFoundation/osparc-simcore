@@ -8,7 +8,6 @@ from models_library.api_schemas_long_running_tasks.base import (
     ProgressMessage,
     ProgressPercent,
     TaskId,
-    TaskProgress,
 )
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
@@ -16,6 +15,8 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskStatus,
 )
 from pydantic import BaseModel, Field, PositiveFloat
+
+from ..progress_bar import ProgressBarData
 
 TaskName: TypeAlias = str
 
@@ -30,7 +31,7 @@ class TrackedTask(BaseModel):
     task_id: str
     task: Task
     task_name: TaskName
-    task_progress: TaskProgress
+    task_progress: ProgressBarData
     # NOTE: this context lifetime is with the tracked task (similar to aiohttp storage concept)
     task_context: dict[str, Any]
     fire_and_forget: bool = Field(
@@ -67,7 +68,6 @@ __all__: tuple[str, ...] = (
     "TaskId",
     "TaskResult",
     "TaskStatus",
-    "TaskProgress",
     "ProgressPercent",
     "ProgressMessage",
 )
