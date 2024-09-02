@@ -1,11 +1,11 @@
 import tempfile
-import uuid
 from pathlib import Path
 from typing import Final
+from uuid import uuid4
 
 from models_library.projects_nodes_io import SimcoreS3FileID
 
-_TMP_SIMCOREFILES: Final[Path] = Path(tempfile.gettempdir(), "simcorefiles")
+_TMP_SIMCOREFILES: Final[Path] = Path(tempfile.gettempdir()) / "simcorefiles"
 
 
 def create_simcore_file_id(
@@ -23,8 +23,8 @@ def create_simcore_file_id(
 
 
 def create_folder_path(key: str) -> Path:
-    return _TMP_SIMCOREFILES / f"{uuid.uuid4()}" / key
+    return _TMP_SIMCOREFILES / f"{uuid4()}" / key
 
 
 def create_file_path(key: str, name: str) -> Path:
-    return _TMP_SIMCOREFILES / f"{uuid.uuid4()}" / key / name
+    return _TMP_SIMCOREFILES / f"{uuid4()}" / key / name

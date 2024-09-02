@@ -10,12 +10,12 @@ import os
 import re
 import shutil
 import tempfile
-import threading
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 from unittest.mock import AsyncMock
+from uuid import UUID, uuid4
 
 import pytest
 from aiohttp.client import ClientSession
@@ -42,6 +42,8 @@ from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import create_valid_port_config
 from yarl import URL
 
+_MOCKED_UUID: Final[UUID] = uuid4()
+
 
 def camel_to_snake(name):
     name = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
@@ -57,7 +59,7 @@ def another_node_file_name() -> Path:
 
 
 def download_file_folder_name() -> Path:
-    return Path(tempfile.gettempdir(), "simcorefiles", f"{threading.get_ident()}")
+    return Path(tempfile.gettempdir()) / "simcorefiles" / f"{_MOCKED_UUID}"
 
 
 def project_id() -> str:
@@ -141,7 +143,15 @@ def another_node_file() -> Iterator[Path]:
 
 
 @pytest.fixture
-def download_file_folder() -> Iterator[Path]:
+def mock_uud4(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_sdk.node_ports_common.data_items_utils.uuid4",
+        return_value=_MOCKED_UUID,
+    )
+
+
+@pytest.fixture
+def download_file_folder(mock_uud4: None) -> Iterator[Path]:
     destination_path = download_file_folder_name()
     destination_path.mkdir(parents=True, exist_ok=True)
     yield destination_path
