@@ -10,9 +10,11 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
 from pydantic import NonNegativeInt
+from simcore_service_webserver.workspaces._workspaces_api import (
+    check_user_workspace_access,
+)
 
 from ..users.api import get_user
-from ..workspaces.api import get_workspace
 from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceFolderInconsistencyError,
@@ -34,15 +36,13 @@ async def create_folder(
 
     _personal_workspace_user_id_or_none: UserID | None = user_id
     if workspace_id:
-        # Check access to workspace
-        workspace = await get_workspace(
-            app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+        await check_user_workspace_access(
+            app,
+            user_id=user_id,
+            workspace_id=workspace_id,
+            product_name=product_name,
+            permission="write",
         )
-        if workspace.my_access_rights.write is False:
-            raise WorkspaceAccessForbiddenError(
-                reason=f"User {user_id} does not have write permission on workspace {workspace_id}."
-            )
-        # Setup folder user id to None, as this is not a private workspace
         _personal_workspace_user_id_or_none = None
 
         # Check parent_folder_id lives in the workspace
@@ -101,14 +101,13 @@ async def get_folder(
 
     _personal_workspace_user_id_or_none: UserID | None = user_id
     if folder_db.workspace_id:
-        # Check access to workspace
-        await get_workspace(
+        await check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=folder_db.workspace_id,
             product_name=product_name,
+            permission="read",
         )
-        # Setup folder user id to None, as this is not a private workspace
         _personal_workspace_user_id_or_none = None
 
     folder_db = await folders_db.get_for_user_or_workspace(
@@ -142,10 +141,13 @@ async def list_folders(
 
     # Check user access to workspace
     if workspace_id:
-        await get_workspace(
-            app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+        await check_user_workspace_access(
+            app,
+            user_id=user_id,
+            workspace_id=workspace_id,
+            product_name=product_name,
+            permission="read",
         )
-        # Setup folder user id to None, as this is not a personal workspace
         _personal_workspace_user_id_or_none = None
 
     if folder_id:
@@ -199,18 +201,13 @@ async def update_folder(
 
     _personal_workspace_user_id_or_none: UserID | None = user_id
     if folder_db.workspace_id:
-        # Check access to workspace
-        workspace = await get_workspace(
+        await check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=folder_db.workspace_id,
             product_name=product_name,
+            permission="write",
         )
-        if workspace.my_access_rights.write is False:
-            raise WorkspaceAccessForbiddenError(
-                reason=f"User {user_id} does not have write permission on workspace {folder_db.workspace_id}."
-            )
-        # Setup folder user id to None, as this is not a private workspace
         _personal_workspace_user_id_or_none = None
 
     # Check user has acces to the folder
@@ -251,18 +248,13 @@ async def delete_folder(
 
     _personal_workspace_user_id_or_none: UserID | None = user_id
     if folder_db.workspace_id:
-        # Check access to workspace
-        workspace = await get_workspace(
+        await check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=folder_db.workspace_id,
             product_name=product_name,
+            permission="delete",
         )
-        if workspace.my_access_rights.delete is False:
-            raise WorkspaceAccessForbiddenError(
-                reason=f"User {user_id} does not have delete permission on workspace {folder_db.workspace_id}."
-            )
-        # Setup folder user id to None, as this is not a private workspace
         _personal_workspace_user_id_or_none = None
 
     # Check user has acces to the folder

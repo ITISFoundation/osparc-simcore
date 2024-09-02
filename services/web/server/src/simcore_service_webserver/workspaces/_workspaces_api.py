@@ -13,6 +13,7 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import UserWorkspaceDB, WorkspaceID
 from pydantic import NonNegativeInt
+from simcore_service_webserver.projects._db_utils import PermissionStr
 from simcore_service_webserver.workspaces.errors import WorkspaceAccessForbiddenError
 
 from ..users.api import get_user
@@ -182,3 +183,21 @@ async def delete_workspace(
         )
 
     await db.delete_workspace(app, workspace_id=workspace_id, product_name=product_name)
+
+
+async def check_user_workspace_access(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    workspace_id: WorkspaceID,
+    product_name: ProductName,
+    permission: PermissionStr = "read",
+) -> None:
+    """
+    Raises WorkspaceAccessForbiddenError if no access
+    """
+    workspace_db: UserWorkspaceDB = await db.get_workspace_for_user(
+        app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+    )
+    if getattr(workspace_db, permission, False) is False:
+        raise WorkspaceAccessForbiddenError
