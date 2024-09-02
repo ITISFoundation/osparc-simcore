@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Any, Protocol
 from uuid import uuid4
 
+import arrow
 from models_library.basic_types import IDStr
 from pydantic import PositiveFloat
 
@@ -22,7 +23,7 @@ from ._errors import (
 )
 from ._models import TaskId, TaskName, TaskResult, TaskStatus, TrackedTask
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def _await_task(task: asyncio.Task) -> None:
@@ -98,7 +99,7 @@ class TasksManager:
         # will not be the case.
 
         while await asyncio.sleep(self.stale_task_check_interval_s, result=True):
-            utc_now = datetime.utcnow()
+            utc_now = arrow.utcnow().datetime
 
             tasks_to_remove: list[TaskId] = []
             for tasks in self._tasks_groups.values():
@@ -118,7 +119,7 @@ class TasksManager:
                 # - finished with a result
                 # - finished with errors
                 # we just print the status from where one can infer the above
-                logger.warning(
+                _logger.warning(
                     "Removing stale task '%s' with status '%s'",
                     task_id,
                     self.get_task_status(task_id, with_task_context=None).json(),
@@ -203,7 +204,7 @@ class TasksManager:
         raises TaskNotFoundError if the task cannot be found
         """
         tracked_task: TrackedTask = self._get_tracked_task(task_id, with_task_context)
-        tracked_task.last_status_check = datetime.utcnow()
+        tracked_task.last_status_check = arrow.utcnow().datetime
 
         task = tracked_task.task
         done = task.done()
@@ -258,11 +259,11 @@ class TasksManager:
                 error = TaskExceptionError(
                     task_id=task_id, exception=exception, traceback=formatted_traceback
                 )
-                logger.warning("Task %s finished with error: %s", task_id, f"{error}")
+                _logger.warning("Task %s finished with error: %s", task_id, f"{error}")
                 return TaskResult(result=None, error=f"{error}")
         except asyncio.CancelledError:
             error = TaskCancelledError(task_id=task_id)
-            logger.warning("Task %s was cancelled", task_id)
+            _logger.warning("Task %s was cancelled", task_id)
             return TaskResult(result=None, error=f"{error}")
 
         return TaskResult(result=tracked_task.task.result(), error=None)
@@ -289,7 +290,7 @@ class TasksManager:
                         _await_task(task), timeout=self._cancel_task_timeout_s
                     )
                 except TimeoutError:
-                    logger.warning(
+                    _logger.warning(
                         "Timed out while awaiting for cancellation of '%s'", reference
                     )
             except Exception:  # pylint:disable=broad-except

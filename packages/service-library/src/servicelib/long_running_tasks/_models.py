@@ -4,6 +4,7 @@ from collections.abc import Awaitable, Callable, Coroutine
 from datetime import datetime
 from typing import Any, TypeAlias
 
+import arrow
 from models_library.api_schemas_long_running_tasks.base import (
     ProgressMessage,
     ProgressPercent,
@@ -40,7 +41,7 @@ class TrackedTask(BaseModel):
         description="if True then the task will not be auto-cancelled if no one enquires of its status",
     )
 
-    started: datetime = Field(default_factory=datetime.utcnow)
+    started: datetime = Field(default_factory=lambda: arrow.utcnow().datetime)
     last_status_check: datetime | None = Field(
         default=None,
         description=(
