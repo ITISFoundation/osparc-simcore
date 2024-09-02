@@ -12,17 +12,14 @@ from typing import Any, Final
 
 import pytest
 from faker import Faker
+from models_library.basic_types import IDStr
 from servicelib.long_running_tasks._errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from servicelib.long_running_tasks._models import (
-    ProgressPercent,
-    TaskResult,
-    TaskStatus,
-)
+from servicelib.long_running_tasks._models import TaskResult, TaskStatus
 from servicelib.long_running_tasks._task import TasksManager, start_task
 from servicelib.progress_bar import ProgressBarData
 from tenacity import TryAgain
@@ -40,14 +37,17 @@ _RETRY_PARAMS: dict[str, Any] = {
 
 
 async def a_background_task(
-    task_progress: ProgressBarData,
+    progress: ProgressBarData,
     raise_when_finished: bool,
     total_sleep: int,
 ) -> int:
     """sleeps and raises an error or returns 42"""
-    for i in range(total_sleep):
-        await asyncio.sleep(1)
-        task_progress.update(percent=ProgressPercent((i + 1) / total_sleep))
+    async with progress.sub_progress(
+        steps=total_sleep, description=IDStr("sleeping")
+    ) as sub_progress:
+        for _ in range(total_sleep):
+            await asyncio.sleep(1)
+            await sub_progress.update()
     if raise_when_finished:
         msg = "raised this error as instructed"
         raise RuntimeError(msg)
@@ -55,12 +55,12 @@ async def a_background_task(
     return 42
 
 
-async def fast_background_task(task_progress: ProgressBarData) -> int:
+async def fast_background_task(progress: ProgressBarData) -> int:
     """this task does nothing and returns a constant"""
     return 42
 
 
-async def failing_background_task(task_progress: ProgressBarData):
+async def failing_background_task(progress: ProgressBarData):
     """this task does nothing and returns a constant"""
     msg = "failing asap"
     raise RuntimeError(msg)
@@ -161,7 +161,7 @@ async def test_get_result_of_unfinished_task_raises(tasks_manager: TasksManager)
 
 
 async def test_unique_task_already_running(tasks_manager: TasksManager):
-    async def unique_task(task_progress: ProgressBarData):
+    async def unique_task(progress: ProgressBarData):
         await asyncio.sleep(1)
 
     start_task(tasks_manager=tasks_manager, task=unique_task, unique=True)
@@ -173,7 +173,7 @@ async def test_unique_task_already_running(tasks_manager: TasksManager):
 
 
 async def test_start_multiple_not_unique_tasks(tasks_manager: TasksManager):
-    async def not_unique_task(task_progress: ProgressBarData):
+    async def not_unique_task(progress: ProgressBarData):
         await asyncio.sleep(1)
 
     for _ in range(5):
@@ -195,9 +195,18 @@ async def test_get_status(tasks_manager: TasksManager):
     )
     task_status = tasks_manager.get_task_status(task_id, with_task_context=None)
     assert isinstance(task_status, TaskStatus)
-    assert task_status.progress_report.message == ""
-    assert task_status.progress_report.percent == 0.0
-    assert task_status.done == False
+    assert task_status.progress_report is None
+    # let the start start
+    await asyncio.sleep(0)
+    task_status = tasks_manager.get_task_status(task_id, with_task_context=None)
+    assert isinstance(task_status, TaskStatus)
+    assert task_status.progress_report is not None
+    assert (
+        task_status.progress_report.composed_message
+        == "test_long_running_tasks_task.a_background_task (0.0 / 1.0)"
+    )
+    assert task_status.progress_report.percent_value == 0.0
+    assert task_status.done is False
     assert isinstance(task_status.started, datetime)
 
 

@@ -24,13 +24,13 @@ from tenacity.wait import wait_fixed
 
 
 async def _string_list_task(
-    task_progress: ProgressBarData,
+    progress: ProgressBarData,
     num_strings: int,
     sleep_time: float,
     fail: bool,
 ) -> web.Response:
     generated_strings = []
-    async with task_progress.sub_progress(
+    async with progress.sub_progress(
         num_strings, IDStr("generating strings")
     ) as sub_progress:
         for index in range(num_strings):
@@ -38,7 +38,8 @@ async def _string_list_task(
             await asyncio.sleep(sleep_time)
             await sub_progress.update()
             if fail:
-                raise RuntimeError("We were asked to fail!!")
+                msg = "We were asked to fail!!"
+                raise RuntimeError(msg)
 
     # NOTE: this code is used just for the sake of not returning the default 200
     return web.json_response(

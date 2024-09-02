@@ -414,9 +414,7 @@ def start_task(
 
     task_id = tasks_manager.create_task_id(task_name=task_name)
 
-    task_progress = ProgressBarData(
-        num_steps=1, description=IDStr(f"executing {task_name}")
-    )
+    task_progress = ProgressBarData(num_steps=1, description=IDStr(f"{task_name}"))
 
     # bind the task with progress 0 and 1
     async def _progress_task(progress: ProgressBarData, handler: TaskProtocol):

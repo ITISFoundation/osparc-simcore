@@ -62,7 +62,7 @@ async def test_workflow(
     task_id = await start_long_running_task(client)
 
     # get progress updates
-    progress_updates = []
+    progress_updates = set()
     status_url = client.app.router["get_task_status"].url_for(task_id=task_id)
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
@@ -77,7 +77,8 @@ async def test_workflow(
             assert not error
             task_status = long_running_tasks.server.TaskStatus.parse_obj(data)
             assert task_status
-            progress_updates.append(
+            assert task_status.progress_report
+            progress_updates.add(
                 (
                     task_status.progress_report.composed_message,
                     task_status.progress_report.percent_value,
@@ -88,20 +89,53 @@ async def test_workflow(
             print(
                 f"-- waiting for task status completed successfully: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
             )
-    EXPECTED_MESSAGES = [
-        ("starting", 0.0),
-        ("generated item", 0.0),
-        ("generated item", 0.1),
-        ("generated item", 0.2),
-        ("generated item", 0.3),
-        ("generated item", 0.4),
-        ("generated item", 0.5),
-        ("generated item", 0.6),
-        ("generated item", 0.7),
-        ("generated item", 0.8),
-        ("finished", 1.0),
-    ]
-    assert all(x in progress_updates for x in EXPECTED_MESSAGES)
+    EXPECTED_MESSAGES = {
+        (
+            "POST%20%2Flong_running_task%3Astart%3Fnum_strings%3D10%26sleep_time%3D0.2 (0.0 / 1.0)",
+            0.0,
+        ),
+        (
+            "POST%20%2Flong_running_task%3Astart%3Fnum_strings%3D10%26sleep_time%3D0.2 (0.1 / 1.0)/generating strings 1.0 / 10",
+            0.1,
+        ),
+        (
+            "POST%20%2Flong_running_task%3Astart%3Fnum_strings%3D10%26sleep_time%3D0.2 (0.2 / 1.0)/generating strings 2.0 / 10",
+            0.2,
+        ),
+        (
+            "POST%20%2Flong_running_task%3Astart%3Fnum_strings%3D10%26sleep_time%3D0.2 (0.3 / 1.0)/generating strings 3.0 / 10",
+            0.3,
+        ),
+        (
+            "POST%20%2Flong_running_task%3Astart%3Fnum_strings%3D10%26sleep_time%3D0.2 (0.4 / 1.0)/generating strings 4.0 / 10",
+            0.4,
+        ),
+        (
+            "POST%20%2Flong_running_task%3Astart%3Fnum_strings%3D10%26sleep_time%3D0.2 (0.5 / 1.0)/generating strings 5.0 / 10",
+            0.5,
+        ),
+        (
+            "POST%20%2Flong_running_task%3Astart%3Fnum_strings%3D10%26sleep_time%3D0.2 (0.6 / 1.0)/generating strings 6.0 / 10",
+            0.6,
+        ),
+        (
+            "POST%20%2Flong_running_task%3Astart%3Fnum_strings%3D10%26sleep_time%3D0.2 (0.7 / 1.0)/generating strings 7.0 / 10",
+            0.7,
+        ),
+        (
+            "POST%20%2Flong_running_task%3Astart%3Fnum_strings%3D10%26sleep_time%3D0.2 (0.8 / 1.0)/generating strings 8.0 / 10",
+            0.8,
+        ),
+        (
+            "POST%20%2Flong_running_task%3Astart%3Fnum_strings%3D10%26sleep_time%3D0.2 (0.9 / 1.0)/generating strings 9.0 / 10",
+            0.9,
+        ),
+        (
+            "POST%20%2Flong_running_task%3Astart%3Fnum_strings%3D10%26sleep_time%3D0.2 (1.0 / 1.0)",
+            1.0,
+        ),
+    }
+    assert progress_updates == EXPECTED_MESSAGES
     # now get the result
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")

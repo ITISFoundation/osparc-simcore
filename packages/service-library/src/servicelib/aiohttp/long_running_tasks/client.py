@@ -5,8 +5,6 @@ from typing import Any, Final, TypeAlias
 
 from aiohttp import ClientConnectionError, ClientSession
 from models_library.progress_bar import ProgressReport
-from servicelib.aiohttp import status
-from servicelib.progress_bar import ProgressBarData
 from tenacity import TryAgain, retry
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -14,6 +12,8 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from yarl import URL
 
+from ...aiohttp import status
+from ...progress_bar import ProgressBarData
 from ..rest_responses import unwrap_envelope
 from .server import TaskGet, TaskId, TaskStatus
 
@@ -60,6 +60,7 @@ async def _wait_for_completion(
                     assert not error  # nosec
                     assert data is not None  # nosec
                 task_status = TaskStatus.parse_obj(data)
+                assert task_status.progress_report is not None
                 yield task_status.progress_report
                 if not task_status.done:
                     await asyncio.sleep(
@@ -75,7 +76,7 @@ async def _wait_for_completion(
     except TryAgain as exc:
         # this is a timeout
         msg = f"Long running task {task_id}, calling to {status_url} timed-out after {client_timeout} seconds"
-        raise asyncio.TimeoutError(msg) from exc
+        raise TimeoutError(msg) from exc
 
 
 @retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
@@ -145,7 +146,7 @@ async def long_running_task_request(
             _result=_task_result(session, URL(task.result_href)),
         )
 
-    except (asyncio.CancelledError, asyncio.TimeoutError):
+    except (TimeoutError, asyncio.CancelledError):
         if task:
             await _abort_task(session, URL(task.abort_href))
         raise
