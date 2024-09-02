@@ -20,7 +20,7 @@
  *
  */
 
-qx.Class.define("osparc.dashboard.FolderHeader", {
+qx.Class.define("osparc.dashboard.ContainerHeader", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

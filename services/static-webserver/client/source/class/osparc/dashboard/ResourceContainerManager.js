@@ -31,9 +31,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     this.__workspacesList = [];
     this.__resourcesList = [];
 
+    const containerHeader = this.__containerHeader = new osparc.dashboard.ContainerHeader();
+    this._add(containerHeader);
+    containerHeader.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
+
     const folders = this.__foldersLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-    const folderHeader = this.__folderHeader = new osparc.dashboard.FolderHeader();
-    folders.add(folderHeader);
     const foldersContainer = this.__foldersContainer = new osparc.dashboard.ToggleButtonContainer();
     folders.add(foldersContainer);
     this._add(folders);
@@ -111,7 +113,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __foldersList: null,
     __resourcesList: null,
     __foldersLayout: null,
-    __folderHeader: null,
+    __containerHeader: null,
     __foldersContainer: null,
     __workspacesList: null,
     __workspacesContainer: null,
@@ -158,8 +160,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       }
     },
 
-    getFolderHeader: function() {
-      return this.__folderHeader;
+    getContainerHeader: function() {
+      return this.__containerHeader;
     },
 
     getFlatList: function() {
