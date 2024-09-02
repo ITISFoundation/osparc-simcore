@@ -27,16 +27,22 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     this.set({
       width: this.self().ITEM_WIDTH,
       height: this.self().ITEM_HEIGHT,
-      padding: 5,
-      alignY: "middle"
+      padding: 0
     });
 
     this._setLayout(new qx.ui.layout.Canvas());
 
     this.getChildControl("main-layout");
 
-    this.addListener("pointerover", this._onPointerOver, this);
-    this.addListener("pointerout", this._onPointerOut, this);
+    [
+      "pointerover",
+      "focus"
+    ].forEach(e => this.addListener(e, this._onPointerOver, this));
+
+    [
+      "pointerout",
+      "focusout"
+    ].forEach(e => this.addListener(e, this._onPointerOut, this));
   },
 
   properties: {
@@ -79,6 +85,11 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     FPOS: {
       MODIFIED: 0
     }
+  },
+
+  events: {
+    /** (Fired by {@link qx.ui.form.List}) */
+    "action": "qx.event.type.Event"
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
@@ -150,7 +161,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-light",
             font: "text-14",
-            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
+            allowGrowX: true,
             maxHeight: this.self().HEADER_MAX_HEIGHT
           });
           layout = this.getChildControl("header");
@@ -198,10 +209,16 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
       }
     },
 
+    /**
+     * Event handler for the pointer over event.
+     */
     _onPointerOver: function() {
       this.addState("hovered");
     },
 
+    /**
+     * Event handler for the pointer out event.
+     */
     _onPointerOut : function() {
       this.removeState("hovered");
     },

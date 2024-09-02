@@ -29,6 +29,10 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
   construct: function(workspace) {
     this.base(arguments);
 
+    this.set({
+      appearance: "pb-listitem"
+    });
+
     this.addListener("changeValue", e => this.__itemSelected(e.getData()), this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
