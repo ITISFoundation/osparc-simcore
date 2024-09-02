@@ -143,7 +143,7 @@ def another_node_file() -> Iterator[Path]:
 
 
 @pytest.fixture
-def mock_uud4(mocker: MockerFixture) -> None:
+def mock_uuid4(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_sdk.node_ports_common.data_items_utils.uuid4",
         return_value=_MOCKED_UUID,
@@ -151,7 +151,7 @@ def mock_uud4(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def download_file_folder(mock_uud4: None) -> Iterator[Path]:
+def download_file_folder(mock_uuid4: None) -> Iterator[Path]:
     destination_path = download_file_folder_name()
     destination_path.mkdir(parents=True, exist_ok=True)
     yield destination_path
