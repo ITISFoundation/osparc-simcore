@@ -470,7 +470,7 @@ qx.Class.define("osparc.data.Resources", {
        * SERVICES V2 (web-api >=0.42.0)
        */
       "servicesV2": {
-        useCache: false, // handled in osparc.service.Store
+        useCache: false, // handled in osparc.store.Services
         idField: ["key", "version"],
         endpoints: {
           get: {

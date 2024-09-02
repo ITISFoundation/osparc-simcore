@@ -58,7 +58,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __loadServices: function() {
-      osparc.service.Store.getServicesLatest()
+      osparc.store.Services.getServicesLatest()
         .then(servicesLatest => {
           const servicesList = [];
           Object.keys(servicesLatest).forEach(key => {

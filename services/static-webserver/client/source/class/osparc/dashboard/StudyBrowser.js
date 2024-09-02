@@ -186,7 +186,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (nStudies === 0) {
             const promises = [
               osparc.store.Store.getInstance().getTemplates(),
-              osparc.service.Store.getServicesLatest(),
+              osparc.store.Services.getServicesLatest(),
             ];
             if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
               promises.push(osparc.store.Folders.getInstance().fetchFolders());
@@ -671,7 +671,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // scale to latest compatible
         const latestVersion = versions[0];
         const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
-        osparc.service.Store.getService(latestCompatible["key"], latestCompatible["version"])
+        osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
           .then(latestMetadata => {
             const title = newButtonInfo.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
             const desc = newButtonInfo.description;
