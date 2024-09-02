@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
 import parse
 import rich
@@ -135,7 +135,10 @@ def summary(
 @app.command()
 def cancel_jobs(
     user_id: Annotated[int, typer.Option(help="the user ID")],
-    wallet_id: Annotated[int | None, typer.Option(help="the wallet ID")] = None,
+    wallet_id: Annotated[
+        Optional[int | None],  # noqa: UP007 # typer does not understand | syntax
+        typer.Option(help="the wallet ID"),
+    ] = None,
     *,
     force: Annotated[
         bool,
