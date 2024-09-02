@@ -52,6 +52,12 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
       check: ["workspace"],
       init: "workspace",
       nullable: false
+    },
+
+    priority: {
+      check: "Number",
+      init: null,
+      nullable: false
     }
   },
 

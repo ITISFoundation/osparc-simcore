@@ -149,19 +149,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     reloadResources: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        this.__reloadResources();
+        this.__reloadFoldersAndStudies();
       } else {
         this.__resetStudiesList();
       }
     },
 
-    __reloadResources: function() {
+    __reloadFoldersAndStudies: function() {
       this.__reloadFolders();
       this.__reloadStudies();
     },
 
     __reloadFilteredResources: function() {
       this.__reloadFilteredStudies();
+    },
+
+    __reloadWorkspaces: function() {
+      osparc.store.Workspaces.fetchWorkspaces()
+        .then(workspaces => {
+          this.__setWorkspacesToList(workspaces);
+        });
     },
 
     __reloadFolders: function() {
@@ -324,6 +331,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
+    __setWorkspacesToList: function(workspaces) {
+      this.__foldersList = workspaces;
+      workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
+      this.__reloadWorkspaceCards();
+    },
+
     __setFoldersToList: function(folders) {
       this.__foldersList = folders;
       folders.forEach(folder => folder["resourceType"] = "folder");
@@ -377,15 +390,43 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
-    __applyCurrentWorkspaceId: function() {
+    __applyCurrentWorkspaceId: function(workspaceId) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        this._resourcesContainer.setResourcesToList([]);
-        this._resourcesList = [];
-        this.invalidateStudies();
+        if (workspaceId === -1) {
+          this._resourcesContainer.setResourcesToList([]);
+          this._resourcesList = [];
 
-        this.__reloadResources();
+          this.__reloadWorkspaces();
+        } else {
+          this._resourcesContainer.setResourcesToList([]);
+          this._resourcesList = [];
+          this.invalidateStudies();
+
+          this.__reloadFoldersAndStudies();
+        }
       }
     },
+
+    // WORKSPACES
+    __reloadWorkspaceCards: function() {
+      this._resourcesContainer.setWorkspacesToList(this.__foldersList);
+      this._resourcesContainer.reloadWorkspaces();
+
+      const currentWorkspace = osparc.store.Workspaces.getFolder(this.getCurrentFolderId())
+      if (currentWorkspace == null || currentWorkspace.getMyAccessRights()["write"]) {
+        const newWorkspaceCard = new osparc.dashboard.WorkspaceButtonNew();
+        newWorkspaceCard.setCardKey("new-workspace");
+        newWorkspaceCard.subscribeToFilterGroup("searchBarFilter");
+        newWorkspaceCard.addListener("createWorkspace", e => {
+          const data = e.getData();
+          osparc.store.Workspaces.postWorkspace(data.name, data.description, currentWorkspace ? currentWorkspace.getFolderId() : null)
+            .then(() => this.__reloadWorkspaces())
+            .catch(err => console.error(err));
+        })
+        this._resourcesContainer.addNewWorkspaceCard(newWorkspaceCard);
+      }
+    },
+    // /WORKSPACES
 
     // FOLDERS
     __applyCurrentFolderId: function(currentFolderId) {
@@ -396,7 +437,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this._resourcesList = [];
             this.invalidateStudies();
 
-            this.__reloadResources();
+            this.__reloadFoldersAndStudies();
           })
           .catch(console.error);
       }
@@ -434,7 +475,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this.__reloadFolders())
         .catch(err => console.error(err));
     },
-    // FOLDERS
+    // /FOLDERS
 
     __configureCards: function(cards) {
       cards.forEach(card => {
@@ -815,7 +856,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (filterData.text) {
           this.__reloadFilteredResources(filterData.text);
         } else {
-          this.__reloadResources();
+          this.__reloadFoldersAndStudies();
         }
         sharedWithButton.filterChanged(filterData);
       }, this);

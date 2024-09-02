@@ -238,17 +238,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return card;
     },
 
-    __createFolderCard: function(folder) {
-      const card = new osparc.dashboard.FolderButtonItem(folder);
-      card.subscribeToFilterGroup("searchBarFilter");
-      [
-        "folderSelected",
-        "folderUpdated",
-        "deleteFolderRequested",
-      ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
-      return card;
-    },
-
     setResourcesToList: function(resourcesList) {
       this.__resourcesList = resourcesList;
     },
@@ -309,6 +298,43 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return newCards;
     },
 
+    // WORKSPACES
+    setWorkspacesToList: function(workspacesList) {
+      this.__workspacesList = workspacesList;
+    },
+
+    reloadWorkspaces: function() {
+      if (this.__workspacesContainer) {
+        this.__workspacesContainer.removeAll();
+      }
+      let workspacesCards = [];
+      this.__workspacesList.forEach(workspaceData => workspacesCards.push(this.__workspaceToCard(workspaceData)));
+      return workspacesCards;
+    },
+
+    addNewWorkspaceCard: function(newWorkspaceCard) {
+      this.__workspacesContainer.addAt(newWorkspaceCard, 0);
+    },
+
+    __workspaceToCard: function(workspaceData) {
+      const card = this.__createWorkspaceCard(workspaceData);
+      this.__foldersContainer.add(card);
+      return card;
+    },
+
+    __createWorkspaceCard: function(workspace) {
+      const card = new osparc.dashboard.WorkspaceButtonItem(workspace);
+      card.subscribeToFilterGroup("searchBarFilter");
+      [
+        "workspaceSelected",
+        "workspaceUpdated",
+        "deleteWorkspaceRequested",
+      ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
+      return card;
+    },
+    // /WORKSPACES
+
+    // FOLDERS
     setFoldersToList: function(foldersList) {
       this.__foldersList = foldersList;
     },
@@ -325,6 +351,24 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     addNewFolderCard: function(newFolderCard) {
       this.__foldersContainer.addAt(newFolderCard, 0);
     },
+
+    __folderToCard: function(folderData) {
+      const card = this.__createFolderCard(folderData);
+      this.__foldersContainer.add(card);
+      return card;
+    },
+
+    __createFolderCard: function(folder) {
+      const card = new osparc.dashboard.FolderButtonItem(folder);
+      card.subscribeToFilterGroup("searchBarFilter");
+      [
+        "folderSelected",
+        "folderUpdated",
+        "deleteFolderRequested",
+      ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
+      return card;
+    },
+    // /FOLDERS
 
     __moveNoGroupToLast: function() {
       const idx = this.__groupedContainersLayout.getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));
@@ -417,12 +461,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         this.self().sortListByPriority(this.__nonGroupedContainer);
       }
       return cardsCreated;
-    },
-
-    __folderToCard: function(folderData) {
-      const card = this.__createFolderCard(folderData);
-      this.__foldersContainer.add(card);
-      return card;
     }
   }
 });
