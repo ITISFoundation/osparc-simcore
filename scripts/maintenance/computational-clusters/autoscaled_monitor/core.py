@@ -38,8 +38,14 @@ def _parse_computational(
     state: AppState, instance: Instance
 ) -> ComputationalInstance | None:
     name = utils.get_instance_name(instance)
-    if result := state.computational_parser.search(name):
+    if result := (
+        state.computational_parser_workers.parse(name)
+        or state.computational_parser_primary.parse(name)
+    ):
         assert isinstance(result, parse.Result)
+        # special handling for optional wallet
+        rich.print(result.named)
+
         last_heartbeat = utils.get_last_heartbeat(instance)
         return ComputationalInstance(
             role=InstanceRole(result["role"]),
