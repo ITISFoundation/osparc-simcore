@@ -80,7 +80,6 @@ async def list_projects(  # pylint: disable=too-many-arguments
             product_name=product_name,
             permission="read",
         )
-        # Setup to None, as this is not a private workspace
         _personal_workspace_user_id_or_none = None
 
     if folder_id:
