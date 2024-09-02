@@ -98,9 +98,10 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       let layout;
       switch (id) {
         case "shared-icon":
-          control = new qx.ui.basic.Label().set({
-            textColor: "contrasted-text-light",
-            font: "text-14"
+          control = new qx.ui.basic.Image().set({
+            alignY: "middle",
+            allowGrowX: false,
+            allowShrinkX: false
           });
           layout = this.getChildControl("header");
           layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.HPOS.SHARED);
@@ -215,17 +216,13 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
     __applyAccessRights: function(value) {
       if (value && Object.keys(value).length) {
-        /*
-        const shareIcon = this.getChildControl("icon").getChildControl("shared-icon");
-        // if it's not shared don't show the share icon
-        shareIcon.addListener("changeSource", e => {
-          const newSource = e.getData();
-          shareIcon.set({
-            visibility: newSource.includes(osparc.dashboard.CardBase.SHARE_ICON) ? "hidden" : "visible"
-          });
-        });
+        const shareIcon = this.getChildControl("shared-icon");
+        shareIcon.addListener("tap", e => {
+          e.stopPropagation();
+          this.__openShareWith();
+        }, this);
+        shareIcon.addListener("pointerdown", e => e.stopPropagation());
         osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
-        */
       }
     },
 
@@ -249,15 +246,10 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
     },
 
     __openShareWith: function() {
-      const disableShare = true;
-      if (disableShare) {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("Not yet implemented"), "WARNING");
-      } else {
-        const title = this.tr("Share Workspace");
-        const permissionsView = new osparc.share.CollaboratorsWorkspace(this.getWorkspace());
-        osparc.ui.window.Window.popUpInWindow(permissionsView, title);
-        permissionsView.addListener("updateAccessRights", () => this.__applyAccessRights(this.getWorkspace().getAccessRights()), this);
-      }
+      const title = this.tr("Share Workspace");
+      const permissionsView = new osparc.share.CollaboratorsWorkspace(this.getWorkspace());
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title);
+      permissionsView.addListener("updateAccessRights", () => this.__applyAccessRights(this.getWorkspace().getAccessRights()), this);
     },
 
     __deleteStudyRequested: function() {
