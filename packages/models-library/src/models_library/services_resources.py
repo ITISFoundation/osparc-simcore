@@ -41,7 +41,7 @@ class ResourceValue(BaseModel):
     limit: StrictInt | StrictFloat | str
     reservation: StrictInt | StrictFloat | str
 
-    @model_validator()
+    @model_validator(mode="before")
     @classmethod
     def _ensure_limits_are_equal_or_above_reservations(cls, values):
         if isinstance(values["reservation"], str):

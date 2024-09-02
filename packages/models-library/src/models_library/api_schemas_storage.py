@@ -17,6 +17,7 @@ from pydantic import (
     ConfigDict,
     Field,
     PositiveInt,
+    RootModel,
     StringConstraints,
     field_validator,
     model_validator,
@@ -235,8 +236,8 @@ class FileMetaDataGet(BaseModel):
     )
 
 
-class FileMetaDataArray(BaseModel):
-    __root__: list[FileMetaDataGet] = []
+class FileMetaDataArray(RootModel):
+    root: list[FileMetaDataGet] = []
 
 
 # /locations/{location_id}/files/{file_id}
@@ -310,7 +311,7 @@ class FoldersBody(BaseModel):
     destination: dict[str, Any] = Field(default_factory=dict)
     nodes_map: dict[NodeID, NodeID] = Field(default_factory=dict)
 
-    @model_validator()
+    @model_validator(mode="before")
     @classmethod
     def ensure_consistent_entries(cls, values):
         source_node_keys = (NodeID(n) for n in values["source"].get("workbench", {}))

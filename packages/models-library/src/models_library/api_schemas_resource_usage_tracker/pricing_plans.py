@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ..resource_tracker import (
     HardwareInfo,
@@ -24,18 +24,22 @@ class PricingUnitGet(BaseModel):
     specific_info: HardwareInfo
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "examples": [
                 {
                     "pricing_unit_id": 1,
                     "unit_name": "SMALL",
-                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
+                    "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,
                     "specific_info": hw_config_example,
                 }
-                for hw_config_example in HardwareInfo.Config.schema_extra["examples"]
+                for hw_config_example in HardwareInfo.model_config["json_schema_extra"][
+                    "examples"
+                ]
             ]
         }
     )
@@ -52,7 +56,7 @@ class PricingPlanGet(BaseModel):
     is_active: bool
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "examples": [
                 {
                     "pricing_plan_id": 1,
@@ -64,9 +68,9 @@ class PricingPlanGet(BaseModel):
                     "pricing_units": [pricing_unit_get_example],
                     "is_active": True,
                 }
-                for pricing_unit_get_example in PricingUnitGet.Config.schema_extra[
-                    "examples"
-                ]
+                for pricing_unit_get_example in PricingUnitGet.model_config[
+                    "json_schema_extra"
+                ]["examples"]
             ]
         }
     )
@@ -79,7 +83,7 @@ class PricingPlanToServiceGet(BaseModel):
     created: datetime
 
     model_config = ConfigDict(
-        json_schema_extra = {
+        json_schema_extra={
             "examples": [
                 {
                     "pricing_plan_id": 1,

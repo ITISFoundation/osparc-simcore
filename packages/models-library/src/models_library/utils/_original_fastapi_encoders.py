@@ -11,7 +11,7 @@ from types import GeneratorType
 from typing import Any
 
 from pydantic import BaseModel
-from pydantic.json import ENCODERS_BY_TYPE
+from pydantic.v1.json import ENCODERS_BY_TYPE
 
 SetIntStr = set[int | str]
 DictIntStrAny = dict[int | str, Any]

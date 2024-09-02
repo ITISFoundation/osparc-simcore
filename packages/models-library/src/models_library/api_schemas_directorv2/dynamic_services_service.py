@@ -31,6 +31,8 @@ class CommonServiceDetails(BaseModel):
     project_id: ProjectID
     node_uuid: NodeID = Field(..., alias="service_uuid")
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class ServiceDetails(CommonServiceDetails):
     basepath: Path = Field(

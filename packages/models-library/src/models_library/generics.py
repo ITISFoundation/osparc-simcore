@@ -1,14 +1,13 @@
 from collections.abc import ItemsView, Iterable, Iterator, KeysView, ValuesView
 from typing import Any, Generic, TypeVar
-from pydantic import BaseModel
+
+from pydantic import BaseModel, RootModel
 
 DictKey = TypeVar("DictKey")
 DictValue = TypeVar("DictValue")
 
 
-class DictModel(BaseModel, Generic[DictKey, DictValue]):
-    __root__: dict[DictKey, DictValue]
-
+class DictModel(RootModel[dict[DictKey, DictValue]], Generic[DictKey, DictValue]):
     def __getitem__(self, k: DictKey) -> DictValue:
         return self.__root__.__getitem__(k)
 
@@ -43,9 +42,7 @@ class DictModel(BaseModel, Generic[DictKey, DictValue]):
 DataT = TypeVar("DataT")
 
 
-class ListModel(BaseModel, Generic[DataT]):
-    __root__: list[DataT]
-
+class ListModel(RootModel[list[DataT]], Generic[DataT]):
     def __iter__(self):
         return iter(self.__root__)
 

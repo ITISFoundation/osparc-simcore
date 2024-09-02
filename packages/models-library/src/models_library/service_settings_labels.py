@@ -340,7 +340,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         """if paths mapping is present the service needs to be ran via dynamic-sidecar"""
         return self.paths_mapping is not None
 
-    @validator("container_http_entry", always=True)
+    @field_validator("container_http_entry", mode="before")
     @classmethod
     def compose_spec_requires_container_http_entry(cls, v, values) -> str | None:
         v = None if v == "" else v
@@ -446,7 +446,7 @@ class DynamicSidecarServiceLabels(BaseModel):
                 raise ValueError(msg)
         return v
 
-    @model_validator
+    @model_validator(mode="before")
     @classmethod
     def _not_allowed_in_both_specs(cls, values):
         match_keys = {
@@ -521,16 +521,22 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                 # legacy service
                 {
                     "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
+                        SimcoreServiceSettingLabelEntry.model_config[
+                            "json_schema_extra"
+                        ]["examples"]
                     )
                 },
                 # dynamic-service
                 {
                     "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
+                        SimcoreServiceSettingLabelEntry.model_config[
+                            "json_schema_extra"
+                        ]["examples"]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.Config.schema_extra["examples"][0]
+                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][
+                            0
+                        ]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
                     "simcore.service.callbacks-mapping": json_dumps(
@@ -549,10 +555,14 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                 # dynamic-service with compose spec
                 {
                     "simcore.service.settings": json_dumps(
-                        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
+                        SimcoreServiceSettingLabelEntry.model_config[
+                            "json_schema_extra"
+                        ]["examples"]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.Config.schema_extra["examples"][0]
+                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][
+                            0
+                        ]
                     ),
                     "simcore.service.compose-spec": json_dumps(
                         {
@@ -580,7 +590,9 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.container-http-entrypoint": "rt-web",
                     "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
                     "simcore.service.callbacks-mapping": json_dumps(
-                        CallbacksMapping.Config.schema_extra["examples"][3]
+                        CallbacksMapping.model_config["json_schema_extra"]["examples"][
+                            3
+                        ]
                     ),
                 },
             ]

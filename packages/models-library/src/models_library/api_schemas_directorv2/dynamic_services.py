@@ -68,9 +68,15 @@ class DynamicServiceCreate(ServiceDetails):
                 "service_resources": ServiceResourcesDictHelpers.Config.schema_extra[
                     "examples"
                 ][0],
-                "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
-                "pricing_info": PricingInfo.Config.schema_extra["examples"][0],
-                "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
+                "wallet_info": WalletInfo.model_config["json_schema_extra"]["examples"][
+                    0
+                ],
+                "pricing_info": PricingInfo.model_config["json_schema_extra"][
+                    "examples"
+                ][0],
+                "hardware_info": HardwareInfo.model_config["json_schema_extra"][
+                    "examples"
+                ][0],
             }
         }
     )

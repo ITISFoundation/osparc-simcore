@@ -7,7 +7,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 from typing import Any, Literal, TypeAlias
 
-from pydantic import Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import (
@@ -40,9 +40,11 @@ class ProjectCreateNew(InputSchema):
     classifiers: list[ClassifierID] = Field(default_factory=list)
     ui: StudyUI | None = None
 
-    _empty_is_none = field_validator(
-        "uuid", "thumbnail", "description", mode="before"
-    )(empty_str_to_none_pre_validator)
+    _empty_is_none = field_validator("uuid", "thumbnail", "description", mode="before")(
+        empty_str_to_none_pre_validator
+    )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 # NOTE: based on OVERRIDABLE_DOCUMENT_KEYS
@@ -55,6 +57,8 @@ class ProjectCopyOverride(InputSchema):
     _empty_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class ProjectGet(OutputSchema):
@@ -78,6 +82,8 @@ class ProjectGet(OutputSchema):
     _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
     )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 TaskProjectGet: TypeAlias = TaskGet
@@ -109,6 +115,8 @@ class ProjectReplace(InputSchema):
         empty_str_to_none_pre_validator
     )
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class ProjectUpdate(InputSchema):
     name: ShortTruncatedStr = FieldNotRequired()
@@ -121,6 +129,8 @@ class ProjectUpdate(InputSchema):
     ui: StudyUI | None = None
     quality: dict[str, Any] = FieldNotRequired()
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class ProjectPatch(InputSchema):
     name: ShortTruncatedStr = FieldNotRequired()
@@ -131,6 +141,8 @@ class ProjectPatch(InputSchema):
     dev: dict | None = FieldNotRequired()
     ui: StudyUI | None = FieldNotRequired()
     quality: dict[str, Any] = FieldNotRequired()
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 __all__: tuple[str, ...] = (
