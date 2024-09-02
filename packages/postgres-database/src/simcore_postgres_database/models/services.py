@@ -50,7 +50,7 @@ services_meta_data = sa.Table(
         "description",
         sa.String,
         nullable=False,
-        doc="Markdown-compatible description (editable). SEE `view_enabled`",
+        doc="Markdown-compatible description (editable). SEE `description_ui`",
     ),
     sa.Column(
         "description_ui",
