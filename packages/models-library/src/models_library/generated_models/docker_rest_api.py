@@ -8,11 +8,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 
-class Model(BaseModel):
-    __root__: Any
+class Model(RootModel):
+    ...
 
 
 class Type(str, Enum):
@@ -154,8 +154,9 @@ class BindOptions(BaseModel):
     Optional configuration for the `bind` type.
     """
 
-    Propagation: Propagation | None = Field(
+    Propagation_: Propagation | None = Field(
         None,
+        alias="Propagation",
         description="A propagation mode with the value `[r]private`, `[r]shared`, or `[r]slave`.",
     )
     NonRecursive: bool | None = Field(
@@ -187,8 +188,8 @@ class VolumeOptions(BaseModel):
     Labels: dict[str, str] | None = Field(
         None, description="User-defined key/value metadata."
     )
-    DriverConfig: DriverConfig | None = Field(
-        None, description="Map of driver specific options"
+    DriverConfig_: DriverConfig | None = Field(
+        None, alias="DriverConfig", description="Map of driver specific options"
     )
 
 
@@ -221,14 +222,20 @@ class Mount(BaseModel):
         None,
         description="The consistency requirement for the mount: `default`, `consistent`, `cached`, or `delegated`.",
     )
-    BindOptions: BindOptions | None = Field(
-        None, description="Optional configuration for the `bind` type."
+    BindOptions_: BindOptions | None = Field(
+        None,
+        alias="BindOptions",
+        description="Optional configuration for the `bind` type.",
     )
-    VolumeOptions: VolumeOptions | None = Field(
-        None, description="Optional configuration for the `volume` type."
+    VolumeOptions_: VolumeOptions | None = Field(
+        None,
+        alias="VolumeOptions",
+        description="Optional configuration for the `volume` type.",
     )
-    TmpfsOptions: TmpfsOptions | None = Field(
-        None, description="Optional configuration for the `tmpfs` type."
+    TmpfsOptions_: TmpfsOptions | None = Field(
+        None,
+        alias="TmpfsOptions",
+        description="Optional configuration for the `tmpfs` type.",
     )
 
 
@@ -259,8 +266,9 @@ class RestartPolicy(BaseModel):
 
     """
 
-    Name: Name | None = Field(
+    Name_: Name | None = Field(
         None,
+        alias="Name",
         description="- Empty string means not to restart\n- `no` Do not automatically restart\n- `always` Always restart\n- `unless-stopped` Restart always except when the user has manually stopped the container\n- `on-failure` Restart only when the container exit code is non-zero\n",
     )
     MaximumRetryCount: int | None = Field(
@@ -433,18 +441,22 @@ class DiscreteResourceSpec(BaseModel):
 
 
 class GenericResource(BaseModel):
-    NamedResourceSpec: NamedResourceSpec | None = None
-    DiscreteResourceSpec: DiscreteResourceSpec | None = None
+    NamedResourceSpec_: NamedResourceSpec | None = Field(
+        None, alias="NamedResourceSpec"
+    )
+    DiscreteResourceSpec_: DiscreteResourceSpec | None = Field(
+        None, alias="DiscreteResourceSpec"
+    )
 
 
-class GenericResources(BaseModel):
+class GenericResources(RootModel):
     """
         User-defined resources can be either Integer resources (e.g, `SSD=3`) or
     String resources (e.g, `GPU=UUID1`).
 
     """
 
-    __root__: list[GenericResource] = Field(
+    root: list[GenericResource] = Field(
         ...,
         description="User-defined resources can be either Integer resources (e.g, `SSD=3`) or\nString resources (e.g, `GPU=UUID1`).\n",
         examples=[
@@ -562,8 +574,8 @@ class CgroupnsMode(str, Enum):
     host = "host"
 
 
-class ConsoleSizeItem(BaseModel):
-    __root__: int = Field(..., ge=0)
+class ConsoleSizeItem(RootModel):
+    root: int = Field(..., ge=0)
 
 
 class Isolation(str, Enum):
@@ -842,7 +854,7 @@ class ImageInspect(BaseModel):
         description="The ID of the container that was used to create the image.\n\nDepending on how the image was created, this field may be empty.\n",
         examples=["65974bc86f1770ae4bff79f651ebdbce166ae9aada632ee3fa9af3a264911735"],
     )
-    ContainerConfig: ContainerConfig | None = None
+    ContainerConfig_: ContainerConfig | None = Field(None, alias="ContainerConfig")
     DockerVersion: str | None = Field(
         None,
         description="The version of Docker that was used to build the image.\n\nDepending on how the image was created, this field may be empty.\n",
@@ -885,12 +897,14 @@ class ImageInspect(BaseModel):
         examples=[1239828],
     )
     GraphDriver: GraphDriverData | None = None
-    RootFS: RootFS | None = Field(
+    RootFS_: RootFS | None = Field(
         None,
+        alias="RootFS",
         description="Information about the image's RootFS, including the layer IDs.\n",
     )
-    Metadata: Metadata | None = Field(
+    Metadata_: Metadata | None = Field(
         None,
+        alias="Metadata",
         description="Additional metadata of the image in the local cache. This information\nis local to the daemon, and not part of the image itself.\n",
     )
 
@@ -1042,8 +1056,9 @@ class Volume(BaseModel):
             }
         ],
     )
-    Scope: Scope = Field(
+    Scope_: Scope = Field(
         ...,
+        alias="Scope",
         description="The level at which the volume exists. Either `global` for cluster-wide,\nor `local` for machine level.\n",
         examples=["local"],
     )
@@ -1052,8 +1067,9 @@ class Volume(BaseModel):
         description="The driver specific options used when creating the volume.\n",
         examples=[{"device": "tmpfs", "o": "size=100m,uid=1000", "type": "tmpfs"}],
     )
-    UsageData: UsageData | None = Field(
+    UsageData_: UsageData | None = Field(
         None,
+        alias="UsageData",
         description="Usage details about the volume. This information is used by the\n`GET /system/df` endpoint, and omitted in other endpoints.\n",
     )
 
@@ -1287,8 +1303,9 @@ class Interface(BaseModel):
         ..., examples=[["docker.volumedriver/1.0"]]
     )
     Socket: str = Field(..., examples=["plugins.sock"])
-    ProtocolScheme: ProtocolScheme | None = Field(
+    ProtocolScheme_: ProtocolScheme | None = Field(
         None,
+        alias="ProtocolScheme",
         description="Protocol to use for clients connecting to the plugin.",
         examples=["some.protocol/v1.0"],
     )
@@ -1341,14 +1358,16 @@ class Config(BaseModel):
     )
     Description: str = Field(..., examples=["A sample volume plugin for Docker"])
     Documentation: str = Field(..., examples=["/engine/extend/plugins/"])
-    Interface: Interface = Field(
-        ..., description="The interface between Docker and the plugin"
+    Interface_: Interface = Field(
+        ...,
+        alias="Interface",
+        description="The interface between Docker and the plugin",
     )
     Entrypoint: list[str] = Field(
         ..., examples=[["/usr/bin/sample-volume-plugin", "/data"]]
     )
     WorkDir: str = Field(..., examples=["/bin/"])
-    User: User | None = None
+    User_: User | None = Field(None, alias="User")
     Network: Network1
     Linux: Linux
     PropagatedMount: str = Field(..., examples=["/mnt/volumes"])
@@ -1387,8 +1406,8 @@ class Plugin(BaseModel):
         description="True if the plugin is running. False if the plugin is not running, only installed.",
         examples=[True],
     )
-    Settings: Settings = Field(
-        ..., description="Settings that can be modified by users."
+    Settings_: Settings = Field(
+        ..., alias="Settings", description="Settings that can be modified by users."
     )
     PluginReference: str | None = Field(
         None,
@@ -1442,11 +1461,14 @@ class NodeSpec(BaseModel):
     Labels: dict[str, str] | None = Field(
         None, description="User-defined key/value metadata."
     )
-    Role: Role | None = Field(
-        None, description="Role of the node.", examples=["manager"]
+    Role_: Role | None = Field(
+        None, alias="Role", description="Role of the node.", examples=["manager"]
     )
-    Availability: Availability | None = Field(
-        None, description="Availability of the node.", examples=["active"]
+    Availability_: Availability | None = Field(
+        None,
+        alias="Availability",
+        description="Availability of the node.",
+        examples=["active"],
     )
 
 
@@ -1614,8 +1636,9 @@ class Protocol(str, Enum):
 
 
 class ExternalCA(BaseModel):
-    Protocol: Protocol | None = Field(
+    Protocol_: Protocol | None = Field(
         Protocol.cfssl,
+        alias="Protocol",
         description="Protocol for communication with the external CA (currently\nonly `cfssl` is supported).\n",
     )
     URL: str | None = Field(
@@ -1698,8 +1721,9 @@ class TaskDefaults(BaseModel):
     Defaults for creating tasks in this cluster.
     """
 
-    LogDriver: LogDriver | None = Field(
+    LogDriver_: LogDriver | None = Field(
         None,
+        alias="LogDriver",
         description="The log driver to use for tasks created in the orchestrator if\nunspecified by a service.\n\nUpdating this value only affects new tasks. Existing tasks continue\nto use their previously configured log driver until recreated.\n",
     )
 
@@ -1722,17 +1746,25 @@ class SwarmSpec(BaseModel):
             }
         ],
     )
-    Orchestration: Orchestration | None = Field(
-        None, description="Orchestration configuration."
+    Orchestration_: Orchestration | None = Field(
+        None, alias="Orchestration", description="Orchestration configuration."
     )
-    Raft: Raft | None = Field(None, description="Raft configuration.")
-    Dispatcher: Dispatcher | None = Field(None, description="Dispatcher configuration.")
-    CAConfig: CAConfig | None = Field(None, description="CA configuration.")
-    EncryptionConfig: EncryptionConfig | None = Field(
-        None, description="Parameters related to encryption-at-rest."
+    Raft_: Raft | None = Field(None, alias="Raft", description="Raft configuration.")
+    Dispatcher_: Dispatcher | None = Field(
+        None, alias="Dispatcher", description="Dispatcher configuration."
     )
-    TaskDefaults: TaskDefaults | None = Field(
-        None, description="Defaults for creating tasks in this cluster."
+    CAConfig_: CAConfig | None = Field(
+        None, alias="CAConfig", description="CA configuration."
+    )
+    EncryptionConfig_: EncryptionConfig | None = Field(
+        None,
+        alias="EncryptionConfig",
+        description="Parameters related to encryption-at-rest.",
+    )
+    TaskDefaults_: TaskDefaults | None = Field(
+        None,
+        alias="TaskDefaults",
+        description="Defaults for creating tasks in this cluster.",
     )
 
 
@@ -1758,7 +1790,7 @@ class ClusterInfo(BaseModel):
         examples=["2017-08-09T07:09:37.632105588Z"],
     )
     Spec: SwarmSpec | None = None
-    TLSInfo: TLSInfo | None = None
+    TLSInfo_: TLSInfo | None = Field(None, alias="TLSInfo")
     RootRotationInProgress: bool | None = Field(
         None,
         description="Whether there is currently a root CA rotation in progress for the swarm\n",
@@ -1804,7 +1836,7 @@ class JoinTokens(BaseModel):
 
 
 class Swarm(ClusterInfo):
-    JoinTokens: JoinTokens | None = None
+    JoinTokens_: JoinTokens | None = Field(None, alias="JoinTokens")
 
 
 class PluginSpec(BaseModel):
@@ -1869,11 +1901,13 @@ class Privileges(BaseModel):
     Security options for the container
     """
 
-    CredentialSpec: CredentialSpec | None = Field(
-        None, description="CredentialSpec for managed service account (Windows only)"
+    CredentialSpec_: CredentialSpec | None = Field(
+        None,
+        alias="CredentialSpec",
+        description="CredentialSpec for managed service account (Windows only)",
     )
-    SELinuxContext: SELinuxContext | None = Field(
-        None, description="SELinux labels of the container"
+    SELinuxContext_: SELinuxContext | None = Field(
+        None, alias="SELinuxContext", description="SELinux labels of the container"
     )
 
 
@@ -1913,8 +1947,9 @@ class File(BaseModel):
 
 
 class Secret(BaseModel):
-    File: File | None = Field(
+    File_: File | None = Field(
         None,
+        alias="File",
         description="File represents a specific target that is backed by a file.\n",
     )
     SecretID: str | None = Field(
@@ -1999,8 +2034,8 @@ class ContainerSpec(BaseModel):
         None,
         description="A list of additional groups that the container process will run as.\n",
     )
-    Privileges: Privileges | None = Field(
-        None, description="Security options for the container"
+    Privileges_: Privileges | None = Field(
+        None, alias="Privileges", description="Security options for the container"
     )
     TTY: bool | None = Field(
         None, description="Whether a pseudo-TTY should be allocated."
@@ -2023,8 +2058,9 @@ class ContainerSpec(BaseModel):
         None,
         description="A list of hostname/IP mappings to add to the container's `hosts`\nfile. The format of extra hosts is specified in the\n[hosts(5)](http://man7.org/linux/man-pages/man5/hosts.5.html)\nman page:\n\n    IP_address canonical_hostname [aliases...]\n",
     )
-    DNSConfig: DNSConfig | None = Field(
+    DNSConfig_: DNSConfig | None = Field(
         None,
+        alias="DNSConfig",
         description="Specification for DNS related configurations in resolver configuration\nfile (`resolv.conf`).\n",
     )
     Secrets: list[Secret] | None = Field(
@@ -2035,8 +2071,9 @@ class ContainerSpec(BaseModel):
         None,
         description="Configs contains references to zero or more configs that will be\nexposed to the service.\n",
     )
-    Isolation: Isolation | None = Field(
+    Isolation_: Isolation | None = Field(
         None,
+        alias="Isolation",
         description="Isolation technology of the containers running the service.\n(Windows only)\n",
     )
     Init: bool | None = Field(
@@ -2099,7 +2136,9 @@ class RestartPolicy1(BaseModel):
 
     """
 
-    Condition: Condition | None = Field(None, description="Condition for restart.")
+    Condition_: Condition | None = Field(
+        None, alias="Condition", description="Condition for restart."
+    )
     Delay: int | None = Field(None, description="Delay between restart attempts.")
     MaxAttempts: int | None = Field(
         0,
@@ -2118,7 +2157,7 @@ class Spread(BaseModel):
 
 
 class Preference(BaseModel):
-    Spread: Spread | None = None
+    Spread_: Spread | None = Field(None, alias="Spread")
 
 
 class Placement(BaseModel):
@@ -2196,7 +2235,7 @@ class Status1(BaseModel):
     State: TaskState | None = None
     Message: str | None = None
     Err: str | None = None
-    ContainerStatus: ContainerStatus | None = None
+    ContainerStatus_: ContainerStatus | None = Field(None, alias="ContainerStatus")
 
 
 class Replicated(BaseModel):
@@ -2224,10 +2263,11 @@ class Mode(BaseModel):
     Scheduling mode for the service.
     """
 
-    Replicated: Replicated | None = None
+    Replicated_: Replicated | None = Field(None, alias="Replicated")
     Global: dict[str, Any] | None = None
-    ReplicatedJob: ReplicatedJob | None = Field(
+    ReplicatedJob_: ReplicatedJob | None = Field(
         None,
+        alias="ReplicatedJob",
         description="The mode used for services with a finite number of tasks that run\nto a completed state.\n",
     )
     GlobalJob: dict[str, Any] | None = Field(
@@ -2272,8 +2312,9 @@ class UpdateConfig(BaseModel):
     Delay: int | None = Field(
         None, description="Amount of time between updates, in nanoseconds."
     )
-    FailureAction: FailureAction | None = Field(
+    FailureAction_: FailureAction | None = Field(
         None,
+        alias="FailureAction",
         description="Action to take if an updated task fails to run, or stops running\nduring the update.\n",
     )
     Monitor: int | None = Field(
@@ -2284,8 +2325,9 @@ class UpdateConfig(BaseModel):
         0,
         description="The fraction of tasks that may fail during an update before the\nfailure action is invoked, specified as a floating point number\nbetween 0 and 1.\n",
     )
-    Order: Order | None = Field(
+    Order_: Order | None = Field(
         None,
+        alias="Order",
         description="The order of operations when rolling out an updated task. Either\nthe old task is shut down before the new task is started, or the\nnew task is started before the old task is shut down.\n",
     )
 
@@ -2326,8 +2368,9 @@ class RollbackConfig(BaseModel):
         0,
         description="The fraction of tasks that may fail during a rollback before the\nfailure action is invoked, specified as a floating point number\nbetween 0 and 1.\n",
     )
-    Order: Order | None = Field(
+    Order_: Order | None = Field(
         None,
+        alias="Order",
         description="The order of operations when rolling back a task. Either the old\ntask is shut down before the new task is started, or the new task\nis started before the old task is shut down.\n",
     )
 
@@ -2355,8 +2398,9 @@ class EndpointPortConfig(BaseModel):
     Protocol: Type | None = None
     TargetPort: int | None = Field(None, description="The port inside the container.")
     PublishedPort: int | None = Field(None, description="The port on the swarm hosts.")
-    PublishMode: PublishMode | None = Field(
+    PublishMode_: PublishMode | None = Field(
         PublishMode.ingress,
+        alias="PublishMode",
         description='The mode in which port is published.\n\n<p><br /></p>\n\n- "ingress" makes the target port accessible on every node,\n  regardless of whether there is a task for the service running on\n  that node or not.\n- "host" bypasses the routing mesh and publish the port directly on\n  the swarm node where that service is running.\n',
         examples=["ingress"],
     )
@@ -2409,7 +2453,7 @@ class UpdateStatus(BaseModel):
     The status of a service update.
     """
 
-    State: State | None = None
+    State_: State | None = Field(None, alias="State")
     StartedAt: str | None = None
     CompletedAt: str | None = None
     Message: str | None = None
@@ -3028,7 +3072,7 @@ class ResourceObject(BaseModel):
 
     NanoCPUs: int | None = Field(None, examples=[4000000000])
     MemoryBytes: int | None = Field(None, examples=[8272408576])
-    GenericResources: GenericResources | None = None
+    GenericResources_: GenericResources | None = Field(None, alias="GenericResources")
 
 
 class Health(BaseModel):
@@ -3037,8 +3081,9 @@ class Health(BaseModel):
 
     """
 
-    Status: Status | None = Field(
+    Status_: Status | None = Field(
         None,
+        alias="Status",
         description='Status is one of `none`, `starting`, `healthy` or `unhealthy`\n\n- "none"      Indicates there is no healthcheck\n- "starting"  Starting indicates that the container is not yet ready\n- "healthy"   Healthy indicates that the container is running correctly\n- "unhealthy" Unhealthy indicates that the container has a problem\n',
         examples=["healthy"],
     )
@@ -3064,15 +3109,17 @@ class HostConfig(Resources):
     ContainerIDFile: str | None = Field(
         None, description="Path to a file where the container ID is written"
     )
-    LogConfig: LogConfig | None = Field(
-        None, description="The logging configuration for this container"
+    LogConfig_: LogConfig | None = Field(
+        None,
+        alias="LogConfig",
+        description="The logging configuration for this container",
     )
     NetworkMode: str | None = Field(
         None,
         description="Network mode to use for this container. Supported standard values\nare: `bridge`, `host`, `none`, and `container:<name|id>`. Any\nother value is taken as a custom network's name to which this\ncontainer should connect to.\n",
     )
     PortBindings: PortMap | None = None
-    RestartPolicy: RestartPolicy | None = None
+    RestartPolicy_: RestartPolicy | None = Field(None, alias="RestartPolicy")
     AutoRemove: bool | None = Field(
         None,
         description="Automatically remove the container when the container's process\nexits. This has no effect if `RestartPolicy` is set.\n",
@@ -3095,8 +3142,9 @@ class HostConfig(Resources):
         None,
         description="A list of kernel capabilities to drop from the container. Conflicts\nwith option 'Capabilities'.\n",
     )
-    CgroupnsMode: CgroupnsMode | None = Field(
+    CgroupnsMode_: CgroupnsMode | None = Field(
         None,
+        alias="CgroupnsMode",
         description='cgroup namespace mode for the container. Possible values are:\n\n- `"private"`: the container runs in its own private cgroup namespace\n- `"host"`: use the host system\'s cgroup namespace\n\nIf not specified, the daemon default is used, which can either be `"private"`\nor `"host"`, depending on daemon version, kernel support and configuration.\n',
     )
     Dns: list[str] | None = Field(
@@ -3177,8 +3225,10 @@ class HostConfig(Resources):
         max_length=2,
         min_length=2,
     )
-    Isolation: Isolation | None = Field(
-        None, description="Isolation technology of the container. (Windows only)\n"
+    Isolation_: Isolation | None = Field(
+        None,
+        alias="Isolation",
+        description="Isolation technology of the container. (Windows only)\n",
     )
     MaskedPaths: list[str] | None = Field(
         None,
@@ -3289,10 +3339,10 @@ class NodeDescription(BaseModel):
     """
 
     Hostname: str | None = Field(None, examples=["bf3067039e47"])
-    Platform: Platform | None = None
+    Platform_: Platform | None = Field(None, alias="Platform")
     Resources: ResourceObject | None = None
     Engine: EngineDescription | None = None
-    TLSInfo: TLSInfo | None = None
+    TLSInfo_: TLSInfo | None = Field(None, alias="TLSInfo")
 
 
 class NodeStatus(BaseModel):
@@ -3320,7 +3370,7 @@ class ManagerStatus(BaseModel):
     """
 
     Leader: bool | None = Field(False, examples=[True])
-    Reachability: Reachability | None = None
+    Reachability_: Reachability | None = Field(None, alias="Reachability")
     Addr: str | None = Field(
         None,
         description="The IP address and port at which the manager is reachable.\n",
@@ -3346,16 +3396,19 @@ class TaskSpec(BaseModel):
     User modifiable task configuration.
     """
 
-    PluginSpec: PluginSpec | None = Field(
+    PluginSpec_: PluginSpec | None = Field(
         None,
+        alias="PluginSpec",
         description="Plugin spec for the service.  *(Experimental release only.)*\n\n<p><br /></p>\n\n> **Note**: ContainerSpec, NetworkAttachmentSpec, and PluginSpec are\n> mutually exclusive. PluginSpec is only used when the Runtime field\n> is set to `plugin`. NetworkAttachmentSpec is used when the Runtime\n> field is set to `attachment`.\n",
     )
-    ContainerSpec: ContainerSpec | None = Field(
+    ContainerSpec_: ContainerSpec | None = Field(
         None,
+        alias="ContainerSpec",
         description="Container spec for the service.\n\n<p><br /></p>\n\n> **Note**: ContainerSpec, NetworkAttachmentSpec, and PluginSpec are\n> mutually exclusive. PluginSpec is only used when the Runtime field\n> is set to `plugin`. NetworkAttachmentSpec is used when the Runtime\n> field is set to `attachment`.\n",
     )
-    NetworkAttachmentSpec: NetworkAttachmentSpec | None = Field(
+    NetworkAttachmentSpec_: NetworkAttachmentSpec | None = Field(
         None,
+        alias="NetworkAttachmentSpec",
         description="Read-only spec type for non-swarm containers attached to swarm overlay\nnetworks.\n\n<p><br /></p>\n\n> **Note**: ContainerSpec, NetworkAttachmentSpec, and PluginSpec are\n> mutually exclusive. PluginSpec is only used when the Runtime field\n> is set to `plugin`. NetworkAttachmentSpec is used when the Runtime\n> field is set to `attachment`.\n",
     )
     Resources: Resources1 | None = Field(
@@ -3366,7 +3419,7 @@ class TaskSpec(BaseModel):
         None,
         description="Specification for the restart policy which applies to containers\ncreated as part of this service.\n",
     )
-    Placement: Placement | None = None
+    Placement_: Placement | None = Field(None, alias="Placement")
     ForceUpdate: int | None = Field(
         None,
         description="A counter that triggers an update even if no relevant parameters have\nbeen changed.\n",
@@ -3420,17 +3473,23 @@ class ServiceSpec(BaseModel):
         None, description="User-defined key/value metadata."
     )
     TaskTemplate: TaskSpec | None = None
-    Mode: Mode | None = Field(None, description="Scheduling mode for the service.")
-    UpdateConfig: UpdateConfig | None = Field(
-        None, description="Specification for the update strategy of the service."
+    Mode_: Mode | None = Field(
+        None, alias="Mode", description="Scheduling mode for the service."
     )
-    RollbackConfig: RollbackConfig | None = Field(
-        None, description="Specification for the rollback strategy of the service."
+    UpdateConfig_: UpdateConfig | None = Field(
+        None,
+        alias="UpdateConfig",
+        description="Specification for the update strategy of the service.",
+    )
+    RollbackConfig_: RollbackConfig | None = Field(
+        None,
+        alias="RollbackConfig",
+        description="Specification for the rollback strategy of the service.",
     )
     Networks: list[NetworkAttachmentConfig] | None = Field(
         None, description="Specifies which networks the service should attach to."
     )
-    EndpointSpec: EndpointSpec | None = None
+    EndpointSpec_: EndpointSpec | None = Field(None, alias="EndpointSpec")
 
 
 class Service(BaseModel):
@@ -3439,16 +3498,18 @@ class Service(BaseModel):
     CreatedAt: str | None = None
     UpdatedAt: str | None = None
     Spec: ServiceSpec | None = None
-    Endpoint: Endpoint | None = None
-    UpdateStatus: UpdateStatus | None = Field(
-        None, description="The status of a service update."
+    Endpoint_: Endpoint | None = Field(None, alias="Endpoint")
+    UpdateStatus_: UpdateStatus | None = Field(
+        None, alias="UpdateStatus", description="The status of a service update."
     )
-    ServiceStatus: ServiceStatus | None = Field(
+    ServiceStatus_: ServiceStatus | None = Field(
         None,
+        alias="ServiceStatus",
         description="The status of the service's tasks. Provided only when requested as\npart of a ServiceList operation.\n",
     )
-    JobStatus: JobStatus | None = Field(
+    JobStatus_: JobStatus | None = Field(
         None,
+        alias="JobStatus",
         description="The status of the service when it is in one of ReplicatedJob or\nGlobalJob modes. Absent on Replicated and Global mode services. The\nJobIteration is an ObjectVersion, but unlike the Service's version,\ndoes not need to be sent with an update request.\n",
     )
 
@@ -3549,7 +3610,7 @@ class ContainerState(BaseModel):
         description="The time when this container last exited.",
         examples=["2020-01-06T09:07:59.461876391Z"],
     )
-    Health: Health | None = None
+    Health_: Health | None = Field(None, alias="Health")
 
 
 class ContainerWaitResponse(BaseModel):
@@ -3646,7 +3707,7 @@ class SwarmInfo(BaseModel):
         description="IP address at which this node can be reached by other nodes in the\nswarm.\n",
         examples=["10.0.0.46"],
     )
-    LocalNodeState: LocalNodeState | None = None
+    LocalNodeState_: LocalNodeState | None = Field(None, alias="LocalNodeState")
     ControlAvailable: bool | None = Field(False, examples=[True])
     Error: str | None = ""
     RemoteManagers: list[PeerNode] | None = Field(
@@ -3773,7 +3834,7 @@ class Network(BaseModel):
     Scope: str | None = None
     Driver: str | None = None
     EnableIPv6: bool | None = None
-    IPAM: IPAM | None = None
+    IPAM_: IPAM | None = Field(None, alias="IPAM")
     Internal: bool | None = None
     Attachable: bool | None = None
     Ingress: bool | None = None
@@ -3798,7 +3859,7 @@ class Node(BaseModel):
     Spec: NodeSpec | None = None
     Description: NodeDescription | None = None
     Status: NodeStatus | None = None
-    ManagerStatus: ManagerStatus | None = None
+    ManagerStatus_: ManagerStatus | None = Field(None, alias="ManagerStatus")
 
 
 class SystemInfo(BaseModel):
@@ -3932,13 +3993,15 @@ class SystemInfo(BaseModel):
     LoggingDriver: str | None = Field(
         None, description="The logging driver to use as a default for new containers.\n"
     )
-    CgroupDriver: CgroupDriver | None = Field(
+    CgroupDriver_: CgroupDriver | None = Field(
         CgroupDriver.cgroupfs,
+        alias="CgroupDriver",
         description="The driver to use for managing cgroups.\n",
         examples=["cgroupfs"],
     )
-    CgroupVersion: CgroupVersion | None = Field(
+    CgroupVersion_: CgroupVersion | None = Field(
         CgroupVersion.field_1,
+        alias="CgroupVersion",
         description="The version of the cgroup.\n",
         examples=["1"],
     )
@@ -3986,7 +4049,7 @@ class SystemInfo(BaseModel):
         examples=["https://index.docker.io/v1/"],
     )
     RegistryConfig: RegistryServiceConfig | None = None
-    GenericResources: GenericResources | None = None
+    GenericResources_: GenericResources | None = Field(None, alias="GenericResources")
     HttpProxy: str | None = Field(
         None,
         description="HTTP-proxy configured for the daemon. This value is obtained from the\n[`HTTP_PROXY`](https://www.gnu.org/software/wget/manual/html_node/Proxies.html) environment variable.\nCredentials ([user info component](https://tools.ietf.org/html/rfc3986#section-3.2.1)) in the proxy URL\nare masked in the API response.\n\nContainers do not automatically inherit this configuration.\n",
