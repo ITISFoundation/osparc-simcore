@@ -113,6 +113,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
         case "menu-button":
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
+            minWidth: this.self().MENU_BTN_DIMENSIONS,
+            minHeight: this.self().MENU_BTN_DIMENSIONS,
             width: this.self().MENU_BTN_DIMENSIONS,
             height: this.self().MENU_BTN_DIMENSIONS,
             padding: [0, 8, 0, 8],
