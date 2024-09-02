@@ -16,10 +16,12 @@ from models_library.workspaces import WorkspaceID
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
+from simcore_service_webserver.workspaces._workspaces_api import (
+    check_user_workspace_access,
+)
 
 from ..catalog.client import get_services_for_user_in_product
 from ..folders import _folders_db as folders_db
-from ..workspaces.api import get_workspace
 from . import projects_api
 from ._permalink_api import update_or_pop_permalink_in_project
 from .db import ProjectDBAPI
@@ -71,9 +73,12 @@ async def list_projects(  # pylint: disable=too-many-arguments
 
     _personal_workspace_user_id_or_none: UserID | None = user_id
     if workspace_id:
-        # Verify user access to the specified workspace; raise an error if access is denied
-        await get_workspace(
-            app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+        await check_user_workspace_access(
+            app,
+            user_id=user_id,
+            workspace_id=workspace_id,
+            product_name=product_name,
+            permission="read",
         )
         # Setup to None, as this is not a private workspace
         _personal_workspace_user_id_or_none = None
