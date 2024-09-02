@@ -25,18 +25,15 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     this.base(arguments);
 
     this.set({
-      width: osparc.dashboard.GridButtonBase.ITEM_WIDTH,
-      minHeight: this.self().HEIGHT,
+      width: this.self().ITEM_WIDTH,
+      height: this.self().ITEM_HEIGHT,
       padding: 5,
       alignY: "middle"
     });
 
-    const gridLayout = new qx.ui.layout.Grid();
-    gridLayout.setSpacing(this.self().SPACING);
-    gridLayout.setColumnFlex(this.self().POS.TITLE.column, 1);
-    gridLayout.setColumnAlign(this.self().POS.ICON.column, "center", "middle");
-    gridLayout.setColumnAlign(this.self().POS.TITLE.column, "left", "middle");
-    this._setLayout(gridLayout);
+    this._setLayout(new qx.ui.layout.Canvas());
+
+    this.getChildControl("main-layout");
 
     this.addListener("pointerover", this.__onPointerOver, this);
     this.addListener("pointerout", this.__onPointerOut, this);
@@ -62,27 +59,24 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
   },
 
   statics: {
-    HEIGHT: 50,
-    SPACING: 5,
+    ITEM_WIDTH: 190,
+    ITEM_HEIGHT: 190,
+    PADDING: 10,
+    SPACING_IN: 5,
+    SPACING: 15,
+    HEADER_MAX_HEIGHT: 40, // two lines in Manrope
     POS: {
-      ICON: {
-        column: 0,
-        row: 0,
-        rowSpan: 2
-      },
-      TITLE: {
-        column: 1,
-        row: 0
-      },
-      SUBTITLE: {
-        column: 1,
-        row: 1
-      },
-      MENU: {
-        column: 2,
-        row: 0,
-        rowSpan: 2
-      }
+      HEADER: 0,
+      BODY: 1,
+      FOOTER: 2
+    },
+    HPOS: {
+      SHARED: 0,
+      TITLE: 1,
+      MENU: 2,
+    },
+    FPOS: {
+      MODIFIED: 0
     }
   },
 
@@ -93,6 +87,104 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
       hovered : true,
       selected : true,
       dragover : true
+    },
+
+    // overridden
+    _createChildControlImpl: function(id) {
+      let layout;
+      let control;
+      switch (id) {
+        case "main-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(this.self().SPACING_IN));
+          const header = this.getChildControl("header");
+          const body = this.getChildControl("body");
+          const footer = this.getChildControl("footer");
+          control.addAt(header, this.self().POS.HEADER);
+          control.addAt(body, this.self().POS.BODY, {
+            flex: 1
+          });
+          control.addAt(footer, this.self().POS.FOOTER);
+          this._add(control, {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
+          });
+          break;
+        }
+        case "header":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+            backgroundColor: "background-card-overlay",
+            anonymous: true,
+            maxWidth: this.self().ITEM_WIDTH,
+            maxHeight: this.self().HEADER_MAX_HEIGHT,
+            padding: this.self().PADDING,
+            alignY: "middle",
+          });
+          break;
+        case "body":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+            decorator: "main",
+            allowGrowY: true,
+            allowGrowX: true,
+            allowShrinkX: true,
+            padding: this.self().PADDING
+          });
+          control.getContentElement().setStyles({
+            "border-width": 0
+          });
+          break;
+        case "footer": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+            backgroundColor: "background-card-overlay",
+            anonymous: true,
+            maxWidth: this.self().ITEM_WIDTH,
+            maxHeight: this.self().ITEM_HEIGHT,
+            padding: this.self().PADDING,
+            alignY: "middle",
+          });
+          break;
+        }
+        case "title":
+          control = new qx.ui.basic.Label().set({
+            textColor: "contrasted-text-light",
+            font: "text-14",
+            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
+            maxHeight: this.self().HEADER_MAX_HEIGHT
+          });
+          layout = this.getChildControl("header");
+          layout.addAt(control, this.self().HPOS.TITLE, {
+            flex: 1
+          });
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
+
+    // overridden
+    _applyIcon: function(value, old) {
+      if (value.includes("@FontAwesome5Solid/")) {
+        value += this.self().ICON_SIZE;
+        const image = this.getChildControl("icon").getChildControl("image");
+        image.set({
+          source: value
+        });
+
+        [
+          "appear",
+          "loaded"
+        ].forEach(eventName => {
+          image.addListener(eventName, () => this.__fitIconHeight(), this);
+        });
+      } else {
+        this.getContentElement().setStyles({
+          "background-image": `url(${value})`,
+          "background-repeat": "no-repeat",
+          "background-size": "cover", // auto width, 85% height
+          "background-position": "center center",
+          "background-origin": "border-box"
+        });
+      }
     },
 
     __onPointerOver: function() {

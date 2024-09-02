@@ -29,10 +29,6 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
   construct: function(workspace) {
     this.base(arguments);
 
-    this.set({
-      appearance: "pb-study"
-    });
-
     this.addListener("changeValue", e => this.__itemSelected(e.getData()), this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.ITEM);
@@ -59,12 +55,6 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
     workspaceId: {
       check: "Number",
       nullable: false
-    },
-
-    parentWorkspaceId: {
-      check: "Number",
-      nullable: true,
-      init: true
     },
 
     title: {
@@ -98,63 +88,65 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
     }
   },
 
+  statics: {
+    MENU_BTN_DIMENSIONS: 24
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
+      let layout;
       switch (id) {
-        case "icon": {
-          control = new osparc.dashboard.WorkspaceWithSharedIcon().set({
-            anonymous: true,
-            height: 40,
-            padding: 5
-          });
-          this._add(control, osparc.dashboard.WorkspaceButtonBase.POS.ICON);
-          break;
-        }
-        case "title":
+        case "shared-icon":
           control = new qx.ui.basic.Label().set({
-            anonymous: true,
-            font: "text-14",
-            rich: true,
+            textColor: "contrasted-text-light",
+            font: "text-14"
           });
-          this._add(control, osparc.dashboard.WorkspaceButtonBase.POS.TITLE);
+          layout = this.getChildControl("header");
+          layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.HPOS.SHARED);
           break;
-        case "last-modified":
-          control = new qx.ui.basic.Label().set({
-            anonymous: true,
-            font: "text-12",
-          });
-          this._add(control, osparc.dashboard.WorkspaceButtonBase.POS.SUBTITLE);
-          break;
-        case "menu-button": {
+        case "menu-button":
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
-            padding: [0, 8],
-            maxWidth: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
-            maxHeight: osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS,
+            width: this.self().MENU_BTN_DIMENSIONS,
+            height: this.self().MENU_BTN_DIMENSIONS,
+            padding: [0, 8, 0, 8],
+            alignX: "center",
+            alignY: "middle",
             icon: "@FontAwesome5Solid/ellipsis-v/14",
             focusable: false
           });
           // make it circular
           control.getContentElement().setStyles({
-            "border-radius": `${osparc.dashboard.ListButtonItem.MENU_BTN_DIMENSIONS / 2}px`
+            "border-radius": `${this.self().MENU_BTN_DIMENSIONS / 2}px`
           });
-          this._add(control, osparc.dashboard.WorkspaceButtonBase.POS.MENU);
+          layout = this.getChildControl("header");
+          layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.HPOS.MENU);
           break;
-        }
+        case "modified-text":
+          control = new qx.ui.basic.Label().set({
+            textColor: "contrasted-text-dark",
+            alignY: "middle",
+            rich: true,
+            anonymous: true,
+            font: "text-12",
+            allowGrowY: false
+          });
+          layout = this.getChildControl("footer");
+          layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.FPOS.MODIFIED);
+          break;
       }
       return control || this.base(arguments, id);
     },
 
     __applyWorkspace: function(workspace) {
-      this.getChildControl("icon");
       this.set({
         cardKey: "workspace-" + workspace.getWorkspaceId()
       });
       workspace.bind("workspaceId", this, "workspaceId");
-      workspace.bind("parentId", this, "parentWorkspaceId");
       workspace.bind("name", this, "title");
       workspace.bind("description", this, "description");
+      workspace.bind("thumbnail", this, "icon");
       workspace.bind("accessRights", this, "accessRights");
       workspace.bind("lastModified", this, "lastModified");
       workspace.bind("myAccessRights", this, "myAccessRights");
@@ -168,13 +160,6 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
     __applyDescription: function() {
       this.__updateTooltip();
-    },
-
-    __applyLastModified: function(value) {
-      if (value) {
-        const label = this.getChildControl("last-modified");
-        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
-      }
     },
 
     __applyMyAccessRights: function(value) {
@@ -230,6 +215,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
     __applyAccessRights: function(value) {
       if (value && Object.keys(value).length) {
+        /*
         const shareIcon = this.getChildControl("icon").getChildControl("shared-icon");
         // if it's not shared don't show the share icon
         shareIcon.addListener("changeSource", e => {
@@ -239,7 +225,13 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           });
         });
         osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
+        */
       }
+    },
+
+    __applyLastModified: function(value) {
+      const label = this.getChildControl("modified-text");
+      label.setValue(osparc.utils.Utils.formatDateAndTime(value));
     },
 
     __updateTooltip: function() {
