@@ -15,7 +15,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskStatus,
 )
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel, Field, PositiveFloat, root_validator
+from pydantic import BaseModel, Field, PositiveFloat
 
 from ..progress_bar import ProgressBarData
 
@@ -53,10 +53,9 @@ class TrackedTask(BaseModel):
     async def _progress_report_cb(self, report: ProgressReport) -> None:
         self.last_progress_report = report
 
-    @root_validator
-    def _auto_insert_progress_report_cb(self, values: dict[str, Any]):
-        task_progress: ProgressBarData = values["task_progress"]
-        task_progress.progress_report_cb = self._progress_report_cb
+    # NOTE: in pydantic v2 there is a post_init method that could be used
+    def set_progress_report_callback(self):
+        self.task_progress.progress_report_cb = self._progress_report_cb
 
     class Config:
         arbitrary_types_allowed = True

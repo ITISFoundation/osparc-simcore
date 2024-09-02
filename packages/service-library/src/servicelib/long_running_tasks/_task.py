@@ -438,6 +438,8 @@ def start_task(
         fire_and_forget=fire_and_forget,
         task_id=task_id,
     )
+    # NOTE: in pydantic v2 this can go away and be replaced by a post_init_model
+    tracked_task.set_progress_report_callback()
 
     return tracked_task.task_id
 
