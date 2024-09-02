@@ -42,10 +42,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     const mainLayoutWithSideSpacers = new qx.ui.container.Composite(new qx.ui.layout.HBox(spacing))
     this._addToMainLayout(mainLayoutWithSideSpacers);
 
-    this.__leftLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+    this.__leftFilters = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
       width: leftColumnWidth
     });
-    mainLayoutWithSideSpacers.add(this.__leftLayout);
+    mainLayoutWithSideSpacers.add(this.__leftFilters);
 
     this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     mainLayoutWithSideSpacers.add(this.__centerLayout);
@@ -68,7 +68,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
 
       const compactVersion = w < this.__centerLayout.getMinWidth() + leftColumnWidth + emptyColumnMinWidth;
-      this.__leftLayout.setVisibility(compactVersion ? "excluded" : "visible");
       rightColum.setVisibility(compactVersion ? "excluded" : "visible");
     };
     fitResourceCards();
@@ -83,7 +82,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
   statics: {
     PAGINATED_STUDIES: 10,
-    MIN_GRID_CARDS_PER_ROW: 4,
+    MIN_GRID_CARDS_PER_ROW: 3,
     SIDE_SPACER_WIDTH: 180,
 
     checkLoggedIn: function() {
@@ -186,7 +185,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   members: {
-    __leftLayout: null,
+    __leftFilters: null,
     __centerLayout: null,
     _resourceType: null,
     _resourcesList: null,
@@ -380,7 +379,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         resourceFilter.filterChanged(filterData);
       });
 
-      this.__leftLayout.add(resourceFilter);
+      this.__leftFilters.add(resourceFilter);
     },
 
     /**
