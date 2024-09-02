@@ -21,8 +21,10 @@ qx.Class.define("osparc.store.Workspaces", {
   statics: {
     workspacesCached: [],
 
-    ICON: "@FontAwesome5Solid/paw/14",
-    // project-diagram
+    iconPath: function(iconsSize = 14) {
+      // @FontAwesome5Solid/project-diagram/
+      return "@FontAwesome5Solid/paw/"+iconsSize
+    },
 
     FAKE_WORKSPACES: [{
       workspaceId: 1,

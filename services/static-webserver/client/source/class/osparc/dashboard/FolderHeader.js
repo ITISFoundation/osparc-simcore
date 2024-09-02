@@ -125,7 +125,7 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
       } else {
         const workspaceId = this.getCurrentWorkspaceId();
         if (workspaceId) {
-          folderButton = new qx.ui.form.Button(workspaceId, osparc.store.Workspaces.ICON);
+          folderButton = new qx.ui.form.Button(workspaceId, osparc.store.Workspaces.iconPath());
         } else {
           folderButton = new qx.ui.form.Button(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
         }

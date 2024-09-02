@@ -360,6 +360,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
       }, this);
 
+      resourceFilter.addListener("changeWorkspace", e => {
+        const workspaceId = e.getData();
+        console.log("changeWorkspace", workspaceId);
+        this.setCurrentWorkspaceId(workspaceId);
+      }, this);
+
       resourceFilter.addListener("changeSelectedTags", e => {
         const selectedTagIds = e.getData();
         this._searchBarFilter.setTagsActiveFilter(selectedTagIds);
