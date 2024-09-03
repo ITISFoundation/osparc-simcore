@@ -15,11 +15,13 @@ from simcore_service_webserver._resources import webserver_resources
 openapi_modules = [
     importlib.import_module(name)
     for name in (
+        # NOTE: order matters
         "_activity",
         "_admin",
         "_announcements",
         "_auth",
         "_catalog",
+        "_catalog_tags",
         "_cluster",
         "_computations",
         "_diagnostics",
@@ -31,8 +33,8 @@ openapi_modules = [
         "_nih_sparc_redirections",
         "_nih_sparc",
         "_products",
-        "_projects_comments",
         "_projects_crud",
+        "_projects_comments",
         "_projects_folders",
         "_projects_groups",
         "_projects_metadata",
@@ -46,8 +48,8 @@ openapi_modules = [
         "_resource_usage",
         "_statics",
         "_storage",
-        "_tags_groups",
         "_tags",
+        "_tags_groups",
         "_users",
         "_version_control",
         "_wallets",
