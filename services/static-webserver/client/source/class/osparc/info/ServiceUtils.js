@@ -186,7 +186,25 @@ qx.Class.define("osparc.info.ServiceUtils", {
         noMargin: true,
         maxHeight: maxHeight
       });
-      description.setValue(serviceData["description"]);
+      // display markdown link content if that's the case
+      if (
+        osparc.utils.Utils.isValidHttpUrl(serviceData["description"]) &&
+        serviceData["description"].includes(".md")
+      ) {
+        // if it's a link, fetch the content
+        fetch(serviceData["description"])
+          .then(response => response.blob())
+          .then(blob => blob.text())
+          .then(markdown => {
+            description.setValue(markdown)
+          })
+          .catch(err => {
+            console.error(err);
+            description.setValue(serviceData["description"]);
+          });
+      } else {
+        description.setValue(serviceData["description"]);
+      }
       descriptionLayout.add(description);
 
       return descriptionLayout;

@@ -90,6 +90,23 @@ qx.Class.define("osparc.info.ServiceLarge", {
         vBox.add(deprecated);
       }
 
+      if (
+        this.getService()["descriptionUi"] &&
+        !osparc.service.Utils.canIWrite(this.getService()["accessRights"])
+      ) {
+        // Show description only
+        const description = this.__createDescription();
+        if (description.getChildren().length > 1) {
+          vBox.add(description.getChildren()[1]);
+          const scrollContainer = new qx.ui.container.Scroll();
+          scrollContainer.add(vBox);
+          this._add(scrollContainer, {
+            flex: 1
+          });
+          return;
+        }
+      }
+
       const title = this.__createTitle();
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
       vBox.add(titleLayout);
