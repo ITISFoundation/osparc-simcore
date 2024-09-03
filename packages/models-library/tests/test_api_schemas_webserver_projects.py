@@ -14,7 +14,7 @@ from models_library.api_schemas_webserver.projects import (
 )
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter, parse_obj_as
 from pytest_simcore.simcore_webserver_projects_rest_api import (
     CREATE_FROM_SERVICE,
     CREATE_FROM_TEMPLATE,
@@ -34,12 +34,12 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
     ids=lambda c: c.name,
 )
 def test_create_project_schemas(api_call: HttpApiCallCapture):
-    request_payload = ProjectCreateNew.parse_obj(api_call.request_payload)
+    request_payload = ProjectCreateNew.model_validate(api_call.request_payload)
     assert request_payload
 
-    response_body = parse_obj_as(
-        Envelope[ProjectGet] | Envelope[TaskProjectGet], api_call.response_body
-    )
+    response_body = TypeAdapter(
+        Envelope[ProjectGet] | Envelope[TaskProjectGet]
+    ).validate_python(api_call.response_body)
     assert response_body
 
 
@@ -51,7 +51,7 @@ def test_create_project_schemas(api_call: HttpApiCallCapture):
 def test_list_project_schemas(api_call: HttpApiCallCapture):
     assert api_call.request_payload is None
 
-    response_body = parse_obj_as(Page[ProjectListItem], api_call.response_body)
+    response_body = TypeAdapter(Page[ProjectListItem]).validate_python(api_call.response_body)
     assert response_body
 
 

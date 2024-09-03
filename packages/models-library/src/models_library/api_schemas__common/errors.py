@@ -22,7 +22,7 @@ class DefaultApiError(BaseModel):
         httplib_code = http.HTTPStatus(code)
 
         return cls(
-            name=f"{code}",  # type: ignore[arg-type]
+            name=IDStr(f"{code}"),
             detail=detail or httplib_code.description or httplib_code.phrase,
         )
 

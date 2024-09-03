@@ -4,7 +4,7 @@
 
 from enum import Enum, unique
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from .projects_access import Owner
 
@@ -82,20 +82,20 @@ class ProjectLocked(BaseModel):
 
     @field_validator("owner", mode="before")
     @classmethod
-    def check_not_null(cls, v, values):
-        if values["value"] is True and v is None:
+    def check_not_null(cls, v, info: ValidationInfo):
+        if info.data["value"] is True and v is None:
             msg = "value cannot be None when project is locked"
             raise ValueError(msg)
         return v
 
     @field_validator("status")
     @classmethod
-    def check_status_compatible(cls, v, values):
-        if values["value"] is False and v not in ["CLOSED", "OPENED"]:
-            msg = f"status is set to {v} and lock is set to {values['value']}!"
+    def check_status_compatible(cls, v, info: ValidationInfo):
+        if info.data["value"] is False and v not in ["CLOSED", "OPENED"]:
+            msg = f"status is set to {v} and lock is set to {info.data['value']}!"
             raise ValueError(msg)
-        if values["value"] is True and v == "CLOSED":
-            msg = f"status is set to {v} and lock is set to {values['value']}!"
+        if info.data["value"] is True and v == "CLOSED":
+            msg = f"status is set to {v} and lock is set to {info.data['value']}!"
             raise ValueError(msg)
         return v
 

@@ -3,6 +3,8 @@ from enum import StrEnum
 from typing import Annotated, Final, TypeAlias
 
 from pydantic import AfterValidator, Field, HttpUrl, PositiveInt, StringConstraints
+from pydantic_core import PydanticCustomError
+from pydantic.json_schema import JsonSchemaValue
 
 from .basic_regex import (
     PROPERTY_KEY_RE,
@@ -56,27 +58,43 @@ _ELLIPSIS_CHAR: Final[str] = "..."
 
 
 class IDStr(str, StringConstraints):
-    strip_whitespace = True
-    min_length = 1
-    max_length = 100
+    strip_whitespace: bool = True
+    min_length: int = 1
+    max_length: int = 100
 
-    @staticmethod
-    def concatenate(*args: "IDStr", link_char: str = " ") -> "IDStr":
+    def __new__(cls, value: str) -> "IDStr":
+        # Apply the constraints before creating the new instance
+        if cls.strip_whitespace:
+            value = value.strip()
+
+        if len(value) < cls.min_length:
+            raise PydanticCustomError('string_too_short', f"IDStr is too short: {value}")
+
+        if len(value) > cls.max_length:
+            raise PydanticCustomError('string_too_long', f"IDStr is too long: {value}")
+
+        return str.__new__(cls, value)
+
+    @classmethod
+    def concatenate(cls, *args: str, link_char: str = " ") -> "IDStr":
         result = link_char.join(args).strip()
-        assert IDStr.min_length  # nosec
-        assert IDStr.max_length  # nosec
-        if len(result) > IDStr.max_length:
-            if IDStr.max_length > len(_ELLIPSIS_CHAR):
+
+        max_length = cls.max_length
+        min_length = cls.min_length
+
+        if len(result) > max_length:
+            if max_length > len(_ELLIPSIS_CHAR):
                 result = (
-                    result[: IDStr.max_length - len(_ELLIPSIS_CHAR)].rstrip()
+                    result[: max_length - len(_ELLIPSIS_CHAR)].rstrip()
                     + _ELLIPSIS_CHAR
                 )
             else:
-                result = _ELLIPSIS_CHAR[0] * IDStr.max_length
-        if len(result) < IDStr.min_length:
-            msg = f"IDStr.concatenate: result is too short: {result}"
-            raise ValueError(msg)
-        return IDStr(result)
+                result = _ELLIPSIS_CHAR[0] * max_length
+
+        if len(result) < min_length:
+            raise ValueError(f"IDStr.concatenate: result is too short: {result}")
+
+        return cls(result)
 
 
 # NOTE: Use to input e.g. titles or display names
