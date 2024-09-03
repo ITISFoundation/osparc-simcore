@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.sql import expression
 
 from .base import metadata
 
@@ -49,7 +50,16 @@ services_meta_data = sa.Table(
         "description",
         sa.String,
         nullable=False,
-        doc="Markdown-compatible description (editable)",
+        doc="Markdown-compatible description (editable). SEE `description_ui`",
+    ),
+    sa.Column(
+        "description_ui",
+        sa.Boolean,
+        nullable=False,
+        server_default=expression.false(),
+        doc="A flag that determines how the `description` column is rendered in the UI (editable)"
+        "Specifically, it indicates whether the `description` should be presented as a single web page (=true) or in another structured format (default=false)."
+        "This field is primarily used by the front-end of the application to decide on the presentation style of the service's metadata.",
     ),
     sa.Column(
         "thumbnail",
