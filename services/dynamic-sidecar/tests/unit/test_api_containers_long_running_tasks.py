@@ -20,6 +20,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import AsyncClient
+from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -364,8 +365,11 @@ async def test_create_containers_task(
 ) -> None:
     last_progress_message: tuple[str, float] | None = None
 
-    async def create_progress(message: str, percent: float, _: TaskId) -> None:
+    async def create_progress(
+        message: str, percent: ProgressPercent | None, _: TaskId
+    ) -> None:
         nonlocal last_progress_message
+        assert percent is not None
         last_progress_message = (message, percent)
         print(message, percent)
 
@@ -380,7 +384,10 @@ async def test_create_containers_task(
     ) as result:
         assert shared_store.container_names == result
 
-    assert last_progress_message == ("finished", 1.0)
+    assert last_progress_message == (
+        "simcore_service_dynamic_sidecar.modules.long_running_tasks.task_create_service_containers (1.0 / 1.0)",
+        1.0,
+    )
 
 
 async def test_create_containers_task_invalid_yaml_spec(
