@@ -41,7 +41,8 @@ class ProgressStructuredMessage(BaseModel):
                     },
                 },
             ]
-        }
+        },
+        arbitrary_types_allowed=True,
     )
 
 

@@ -38,8 +38,12 @@ class CreateFolderBodyParams(InputSchema):
         "parent_folder_id", mode="before"
     )(null_or_none_str_to_none_validator)
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class PutFolderBodyParams(InputSchema):
     name: IDStr
     description: str
     model_config = ConfigDict(extra="forbid")
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)

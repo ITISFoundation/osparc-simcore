@@ -21,6 +21,8 @@ class WalletGet(OutputSchema):
     created: datetime
     modified: datetime
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class WalletGetWithAvailableCredits(WalletGet):
     available_credits: Decimal
@@ -67,6 +69,8 @@ class WalletPaymentInitiated(OutputSchema):
         "None if no prompt step is required (e.g. pre-selected credit card)",
     )
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class PaymentTransaction(OutputSchema):
     payment_id: PaymentID
@@ -82,6 +86,8 @@ class PaymentTransaction(OutputSchema):
     )
     state_message: str = FieldNotRequired()
     invoice_url: HttpUrl = FieldNotRequired()
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class PaymentMethodInitiated(OutputSchema):
@@ -100,7 +106,8 @@ class PaymentMethodInitiated(OutputSchema):
                     "payment_method_form_url": "https://example.com/payment-method/form",
                 }
             ]
-        }
+        },
+        arbitrary_types_allowed=True,
     )
 
 
@@ -119,7 +126,8 @@ class PaymentMethodTransaction(OutputSchema):
                     "state": "SUCCESS",
                 }
             ]
-        }
+        },
+        arbitrary_types_allowed=True,
     )
 
 
@@ -158,7 +166,8 @@ class PaymentMethodGet(OutputSchema):
                     "autoRecharge": "False",
                 },
             ],
-        }
+        },
+        arbitrary_types_allowed=True,
     )
 
 
@@ -190,6 +199,8 @@ class GetWalletAutoRecharge(OutputSchema):
         "None indicates no limit.",
     )
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class ReplaceWalletAutoRecharge(InputSchema):
     enabled: bool
@@ -205,3 +216,5 @@ class ReplaceWalletAutoRecharge(InputSchema):
             msg = "Monthly limit ({v} USD) should be greater than top up amount ({top_up} USD)"
             raise ValueError(msg)
         return v
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)

@@ -1,7 +1,7 @@
 import http
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..basic_types import IDStr
 from ..utils.pydantic_tools_extension import NOT_REQUIRED
@@ -25,3 +25,5 @@ class DefaultApiError(BaseModel):
             name=f"{code}",  # type: ignore[arg-type]
             detail=detail or httplib_code.description or httplib_code.phrase,
         )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)

@@ -44,6 +44,8 @@ class GetProductTemplate(OutputSchema):
     id_: IDStr = Field(..., alias="id")
     content: str
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 class UpdateProductTemplate(InputSchema):
     content: str

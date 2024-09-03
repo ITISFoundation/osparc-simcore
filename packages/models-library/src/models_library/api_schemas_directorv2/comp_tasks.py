@@ -1,7 +1,7 @@
 from typing import Any, TypeAlias
 
 from models_library.basic_types import IDStr
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, field_validator
+from pydantic import AnyHttpUrl, AnyUrl, BaseModel, ConfigDict, Field, field_validator
 
 from ..clusters import ClusterID
 from ..projects import ProjectID
@@ -96,3 +96,5 @@ OutputName: TypeAlias = IDStr
 
 class TasksOutputs(BaseModel):
     nodes_outputs: dict[NodeID, dict[OutputName, Any]]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
