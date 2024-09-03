@@ -58,7 +58,7 @@ def random_user(
     data = {
         # NOTE: ensures user name is unique to avoid flaky tests
         "name": f"{fake.user_name()}_{fake.uuid4()}",
-        "email": fake.email().lower(),
+        "email": f"{fake.uuid4()}_{fake.email().lower()}",
         "password_hash": _DEFAULT_HASH,
         "status": UserStatus.ACTIVE,
     }
