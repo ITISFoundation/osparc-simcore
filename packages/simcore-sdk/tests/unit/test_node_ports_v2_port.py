@@ -10,7 +10,6 @@ import os
 import re
 import shutil
 import tempfile
-import threading
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -39,7 +38,7 @@ from simcore_sdk.node_ports_v2.links import (
 )
 from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
-from utils_port_v2 import create_valid_port_config
+from utils_port_v2 import CONSTANT_UUID, create_valid_port_config
 from yarl import URL
 
 
@@ -57,7 +56,7 @@ def another_node_file_name() -> Path:
 
 
 def download_file_folder_name() -> Path:
-    return Path(tempfile.gettempdir(), "simcorefiles", f"{threading.get_ident()}")
+    return Path(tempfile.gettempdir()) / "simcorefiles" / f"{CONSTANT_UUID}"
 
 
 def project_id() -> str:
@@ -141,7 +140,7 @@ def another_node_file() -> Iterator[Path]:
 
 
 @pytest.fixture
-def download_file_folder() -> Iterator[Path]:
+def download_file_folder(constant_uuid4: None) -> Iterator[Path]:
     destination_path = download_file_folder_name()
     destination_path.mkdir(parents=True, exist_ok=True)
     yield destination_path
