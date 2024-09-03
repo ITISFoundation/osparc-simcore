@@ -158,6 +158,7 @@ qx.Class.define("osparc.store.Workspaces", {
     },
 
     postWorkspace: function(newWorkspaceData) {
+      /*
       const params = {
         data: newWorkspaceData
       };
@@ -167,6 +168,25 @@ qx.Class.define("osparc.store.Workspaces", {
           this.__addToCache(newWorkspace);
           return newWorkspace;
         });
+      */
+      const deleteAccess = {
+        read: true,
+        write: true,
+        delete: true,
+      }
+      const workspaceData = newWorkspaceData;
+      workspaceData["workspaceId"] = Math.floor(Math.random() * 100) + 100;
+      workspaceData["myAccessRights"] = deleteAccess;
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      workspaceData["accessRights"] = {};
+      workspaceData["accessRights"][myGroupId] = deleteAccess;
+      workspaceData["createdAt"] = new Date().toISOString();
+      workspaceData["lastModified"] = new Date().toISOString();
+      return new Promise(resolve => {
+        const workspace = new osparc.data.model.Workspace(workspaceData);
+        this.__addToCache(workspace);
+        resolve(workspace);
+      });
     },
 
     deleteWorkspace: function(workspaceId) {
