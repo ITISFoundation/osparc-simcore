@@ -751,17 +751,18 @@ class SimcoreS3DataManager(BaseDataManager):
                 dest=dst_project_uuid,
                 progress=sub_progress,
             )
-            await self._copy_collected_files(
-                user_id=user_id,
-                src_project_uuid=src_project_uuid,
-                src_project_files=src_project_files,
-                src_project_num_files=total_num_of_files,
-                src_project_total_data_size=src_project_total_data_size,
-                dst_project=dst_project,
-                dst_project_uuid=dst_project_uuid,
-                node_mapping=node_mapping,
-                progress=sub_progress,
-            )
+            if src_project_files:
+                await self._copy_collected_files(
+                    user_id=user_id,
+                    src_project_uuid=src_project_uuid,
+                    src_project_files=src_project_files,
+                    src_project_num_files=total_num_of_files,
+                    src_project_total_data_size=src_project_total_data_size,
+                    dst_project=dst_project,
+                    dst_project_uuid=dst_project_uuid,
+                    node_mapping=node_mapping,
+                    progress=sub_progress,
+                )
 
     async def _get_size_and_num_files(
         self, fmd: FileMetaDataAtDB
