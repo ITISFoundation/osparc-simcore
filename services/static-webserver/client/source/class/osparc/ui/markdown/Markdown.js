@@ -89,9 +89,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
           return linkWithRightColor;
         };
 
-        const html = marked(value, {
-          renderer, // An object containing functions to render tokens to HTML
-        });
+        const html = marked(value, { renderer });
 
         const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
         this.setHtml(safeHtml);
@@ -127,6 +125,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       }
       if (domElement && domElement.children) {
         const elemHeight = this.__getChildrenElementHeight(domElement.children);
+        console.log("resizeMe elemHeight", elemHeight);
         if (this.getMaxHeight() && elemHeight > this.getMaxHeight()) {
           this.setHeight(elemHeight);
         } else {
