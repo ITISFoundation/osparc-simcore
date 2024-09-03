@@ -18,7 +18,6 @@ async-timeout==4.0.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   redis
 asyncpg==0.27.0
     # via
     #   -c requirements/_base.txt
@@ -66,10 +65,6 @@ frozenlist==1.4.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-greenlet==2.0.2
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
 hypothesis==6.91.0
     # via -r requirements/_test.in
 icdiff==2.0.7
@@ -174,7 +169,9 @@ python-dateutil==2.8.2
     #   -c requirements/_base.txt
     #   faker
 python-dotenv==1.0.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 pyyaml==6.0.1
     # via
     #   -c requirements/../../../../requirements/constraints.txt
@@ -217,8 +214,6 @@ tenacity==8.5.0
     #   -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via coverage
 types-aiofiles==24.1.0.20240626
     # via -r requirements/_test.in
 types-jsonschema==4.23.0.20240813
