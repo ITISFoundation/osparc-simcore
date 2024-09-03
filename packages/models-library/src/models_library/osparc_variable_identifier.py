@@ -20,10 +20,10 @@ class OsparcVariableIdentifier(RootModel):
     )
 
     def __hash__(self):
-        return hash(str(self.__root__))
+        return hash(str(self.root))
 
     def __eq__(self, other):
-        return self.__root__ == other.__root__
+        return self.root == other.root
 
     def _get_without_template_markers(self) -> str:
         # $VAR

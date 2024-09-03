@@ -10,7 +10,7 @@ from models_library.osparc_variable_identifier import (
     raise_if_unresolved_osparc_variable_identifier_found,
     replace_osparc_variable_identifier,
 )
-from pydantic import BaseModel, ValidationError, parse_obj_as
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 VALID_IDENTIFIERS: list[str] = [
     "$OSPARC_VARIABLE_One121_",
@@ -76,13 +76,19 @@ class Example(BaseModel):
 @pytest.mark.parametrize(
     "object_template",
     [
-        parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1"),
-        [parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1")],
-        (parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1"),),
-        {parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1")},
-        {"test": parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1")},
+        TypeAdapter(OsparcVariableIdentifier).validate_python("$OSPARC_VARIABLE_1"),
+        [TypeAdapter(OsparcVariableIdentifier).validate_python("$OSPARC_VARIABLE_1")],
+        (TypeAdapter(OsparcVariableIdentifier).validate_python("$OSPARC_VARIABLE_1"),),
+        {TypeAdapter(OsparcVariableIdentifier).validate_python("$OSPARC_VARIABLE_1")},
+        {
+            "test": TypeAdapter(OsparcVariableIdentifier).validate_python(
+                "$OSPARC_VARIABLE_1"
+            )
+        },
         Example(
-            nested_objects=parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_1")
+            nested_objects=TypeAdapter(OsparcVariableIdentifier).validate_python(
+                "$OSPARC_VARIABLE_1"
+            )
         ),
     ],
 )
@@ -147,6 +153,8 @@ def test_osparc_variable_name_and_default_value(
     expected_osparc_variable_name: str,
     expected_default_value: str | None,
 ):
-    osparc_variable_identifer = parse_obj_as(OsparcVariableIdentifier, str_identifier)
+    osparc_variable_identifer = TypeAdapter(OsparcVariableIdentifier).validate_python(
+        str_identifier
+    )
     assert osparc_variable_identifer.name == expected_osparc_variable_name
     assert osparc_variable_identifer.default_value == expected_default_value

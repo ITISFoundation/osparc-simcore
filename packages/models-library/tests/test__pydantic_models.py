@@ -63,21 +63,26 @@ def test_json_type():
     #
     # the constructor would expect a raw string but we produced a nested dict
     with pytest.raises(ValidationError) as exc_info:
-        ArgumentAnnotation(**x_annotation.dict())
+        ArgumentAnnotation(**x_annotation.model_dump())
 
     assert exc_info.value.errors()[0] == {
+        "input": {"items": {"type": "integer"}, "title": "schema[x]", "type": "array"},
         "loc": ("data_schema",),
-        "msg": "JSON object must be str, bytes or bytearray",
-        "type": "type_error.json",
+        "msg": "JSON input should be string, bytes or bytearray",
+        "type": "json_type",
+        "url": "https://errors.pydantic.dev/2.8/v/json_type",
     }
 
     with pytest.raises(ValidationError) as exc_info:
         ArgumentAnnotation(name="foo", data_schema="invalid-json")
 
     assert exc_info.value.errors()[0] == {
+        "ctx": {"error": "expected value at line 1 column 1"},
+        "input": "invalid-json",
         "loc": ("data_schema",),
-        "msg": "Invalid JSON",
-        "type": "value_error.json",
+        "msg": "Invalid JSON: expected value at line 1 column 1",
+        "type": "json_invalid",
+        "url": "https://errors.pydantic.dev/2.8/v/json_invalid",
     }
 
 
@@ -94,33 +99,37 @@ def test_union_types_coercion():
     # NOTE: it is recommended that, when defining Union annotations, the most specific type is included first and followed by less specific types.
     #
 
-    assert Func.schema()["properties"]["input"] == {
+    assert Func.model_json_schema()["properties"]["input"] == {
         "title": "Input",
         "anyOf": [
             {"type": "boolean"},
             {"type": "integer"},
             {"type": "number"},
-            {"format": "json-string", "type": "string"},
+            {
+                "contentMediaType": "application/json",
+                "contentSchema": {},
+                "type": "string",
+            },
             {"type": "string"},
-            {"$ref": "#/definitions/PortLink"},
-            {"$ref": "#/definitions/SimCoreFileLink"},
-            {"$ref": "#/definitions/DatCoreFileLink"},
-            {"$ref": "#/definitions/DownloadLink"},
+            {"$ref": "#/$defs/PortLink"},
+            {"$ref": "#/$defs/SimCoreFileLink"},
+            {"$ref": "#/$defs/DatCoreFileLink"},
+            {"$ref": "#/$defs/DownloadLink"},
             {"type": "array", "items": {}},
             {"type": "object"},
         ],
     }
 
     # integers ------------------------
-    model = Func.parse_obj({"input": "0", "output": 1})
-    print(model.json(indent=1))
+    model = Func.model_validate({"input": "0", "output": 1})
+    print(model.model_dump_json(indent=1))
 
     assert model.input == 0
     assert model.output == 1
 
     # numbers and bool ------------------------
-    model = Func.parse_obj({"input": "0.5", "output": "false"})
-    print(model.json(indent=1))
+    model = Func.model_validate({"input": "0.5", "output": "false"})
+    print(model.model_dump_json(indent=1))
 
     assert model.input == 0.5
     assert model.output is False

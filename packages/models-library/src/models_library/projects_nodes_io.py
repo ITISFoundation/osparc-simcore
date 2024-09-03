@@ -18,6 +18,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
+    ValidationInfo,
     field_validator,
 )
 
@@ -188,9 +189,9 @@ class SimCoreFileLink(BaseFileLink):
 
     @field_validator("label", mode="before")
     @classmethod
-    def pre_fill_label_with_filename_ext(cls, v, values):
-        if v is None and "path" in values:
-            return Path(values["path"]).name
+    def pre_fill_label_with_filename_ext(cls, v, info: ValidationInfo):
+        if v is None and "path" in info.data:
+            return Path(info.data["path"]).name
         return v
 
     model_config = ConfigDict(
