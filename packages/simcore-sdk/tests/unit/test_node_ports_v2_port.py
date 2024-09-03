@@ -140,7 +140,7 @@ def another_node_file() -> Iterator[Path]:
 
 
 @pytest.fixture
-def download_file_folder(mock_uuid4: None) -> Iterator[Path]:
+def download_file_folder(constant_uuid4: None) -> Iterator[Path]:
     destination_path = download_file_folder_name()
     destination_path.mkdir(parents=True, exist_ok=True)
     yield destination_path

@@ -273,7 +273,7 @@ async def test_port_file_accessors(
     e_tag: str,
     option_r_clone_settings: RCloneSettings | None,
     request: pytest.FixtureRequest,
-    mock_uuid4: None,
+    constant_uuid4: None,
 ):
 
     if item_value == "symlink_path":
@@ -496,7 +496,7 @@ async def test_get_file_from_previous_node(
     item_value: str,
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
-    mock_uuid4: None,
+    constant_uuid4: None,
 ):
     config_dict, _, _ = create_2nodes_configuration(
         prev_node_inputs=None,
@@ -553,7 +553,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     item_alias: str,
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
-    mock_uuid4: None,
+    constant_uuid4: None,
 ):
     config_dict, _, this_node_uuid = create_2nodes_configuration(
         prev_node_inputs=None,
@@ -615,7 +615,7 @@ async def test_file_mapping(
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
-    mock_uuid4: None,
+    constant_uuid4: None,
 ):
     config_dict, project_id, node_uuid = create_special_configuration(
         inputs=[("in_1", item_type, await create_store_link(item_value))],

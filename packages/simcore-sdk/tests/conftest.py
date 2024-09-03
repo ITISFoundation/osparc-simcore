@@ -79,7 +79,7 @@ def mock_io_log_redirect_cb() -> LogRedirectCB:
 
 
 @pytest.fixture
-def mock_uuid4(mocker: MockerFixture) -> None:
+def constant_uuid4(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_sdk.node_ports_common.data_items_utils.uuid4",
         return_value=CONSTANT_UUID,
