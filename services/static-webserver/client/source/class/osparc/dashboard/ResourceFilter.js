@@ -26,6 +26,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     this.__resourceType = resourceType;
     this.__sharedWithButtons = [];
+    this.__workspaceButtons = [];
     this.__tagButtons = [];
     this.__serviceTypeButtons = [];
 
@@ -43,6 +44,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
   members: {
     __resourceType: null,
     __sharedWithButtons: null,
+    __workspaceButtons: null,
     __tagButtons: null,
     __serviceTypeButtons: null,
 
@@ -136,6 +138,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           workspaces.forEach(workspace => {
             const workspaceButton = new qx.ui.toolbar.RadioButton(workspace.getName(), osparc.store.Workspaces.iconPath(22));
             workspaceButton.workspaceId = workspace.getWorkspaceId();
+            this.__workspaceButtons.push(workspaceButton);
             workspaceButton.set({
               appearance: "filter-toggle-button",
               marginLeft: 15,
@@ -148,6 +151,13 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           });
         })
         .catch(console.error);
+    },
+
+    workspaceSelected: function(workspaceId) {
+      const foundButton = this.__workspaceButtons.find(workspaceButton => workspaceButton.workspaceId === workspaceId);
+      if (foundButton) {
+        foundButton.execute();
+      }
     },
     /* /WORKSPACES */
 

@@ -253,7 +253,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("folderSelected", e => this._folderSelected(e.getData()));
       resourcesContainer.addListener("folderUpdated", e => this._folderUpdated(e.getData()));
       resourcesContainer.addListener("deleteFolderRequested", e => this._deleteFolderRequested(e.getData()));
-      resourcesContainer.addListener("workspaceSelected", e => this._workspaceSelected(e.getData()));
+      resourcesContainer.addListener("workspaceSelected", e => {
+        const workspaceId = e.getData();
+        this._workspaceSelected(workspaceId);
+        this.__resourceFilter.workspaceSelected(workspaceId);
+      });
       resourcesContainer.addListener("workspaceUpdated", e => this._workspaceUpdated(e.getData()));
       resourcesContainer.addListener("deleteWorkspaceRequested", e => this._deleteWorkspaceRequested(e.getData()));
       this._addToLayout(resourcesContainer);
@@ -351,7 +355,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _addResourceFilter: function() {
-      const resourceFilter = new osparc.dashboard.ResourceFilter(this._resourceType).set({
+      const resourceFilter = this.__resourceFilter = new osparc.dashboard.ResourceFilter(this._resourceType).set({
         marginTop: osparc.dashboard.SearchBarFilter.HEIGHT + 10, // aligned with toolbar buttons: search bar + spacing
         maxWidth: this.self().SIDE_SPACER_WIDTH,
         width: this.self().SIDE_SPACER_WIDTH
