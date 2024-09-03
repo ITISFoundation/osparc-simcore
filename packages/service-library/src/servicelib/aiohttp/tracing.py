@@ -32,7 +32,7 @@ def setup_tracing(
     Sets up this service for a distributed tracing system (opentelemetry)
     """
     if not opentelemetry_collector_endpoint and not opentelemetry_collector_port:
-        log.info("Skipping opentelemetry tracing setup")
+        log.warning("Skipping opentelemetry tracing setup")
         return
     if not opentelemetry_collector_endpoint or not opentelemetry_collector_port:
         raise RuntimeError(
