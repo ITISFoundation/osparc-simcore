@@ -129,8 +129,8 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`${osparc.data.Roles.WORKSPACES[1].label} successfully changed ${osparc.data.Roles.WORKSPACES[2].label}`),
-        this.tr(`Something went wrong changing ${osparc.data.Roles.WORKSPACES[1].label} to ${osparc.data.Roles.WORKSPACES[2].label}`),
+        this.tr(`${osparc.data.Roles.WORKSPACE[1].label} successfully changed ${osparc.data.Roles.WORKSPACE[2].label}`),
+        this.tr(`Something went wrong changing ${osparc.data.Roles.WORKSPACE[1].label} to ${osparc.data.Roles.WORKSPACE[2].label}`),
         item
       );
     },
@@ -139,8 +139,8 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
-        this.tr(`${osparc.data.Roles.WORKSPACES[2].label} successfully changed to ${osparc.data.Roles.WORKSPACES[3].label}`),
-        this.tr(`Something went wrong changing ${osparc.data.Roles.WORKSPACES[2].label} to ${osparc.data.Roles.WORKSPACES[3].label}`),
+        this.tr(`${osparc.data.Roles.WORKSPACE[2].label} successfully changed to ${osparc.data.Roles.WORKSPACE[3].label}`),
+        this.tr(`Something went wrong changing ${osparc.data.Roles.WORKSPACE[2].label} to ${osparc.data.Roles.WORKSPACE[3].label}`),
         item
       );
     },
@@ -151,8 +151,8 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
         this.__make(
           gid,
           this.self().getViewerAccessRight(),
-          this.tr(`${osparc.data.Roles.WORKSPACES[2].label} successfully changed to ${osparc.data.Roles.WORKSPACES[1].label}`),
-          this.tr(`Something went wrong changing ${osparc.data.Roles.WORKSPACES[2].label} to ${osparc.data.Roles.WORKSPACES[1].label}`),
+          this.tr(`${osparc.data.Roles.WORKSPACE[2].label} successfully changed to ${osparc.data.Roles.WORKSPACE[1].label}`),
+          this.tr(`Something went wrong changing ${osparc.data.Roles.WORKSPACE[2].label} to ${osparc.data.Roles.WORKSPACE[1].label}`),
           itm
         );
       };
@@ -160,7 +160,7 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       const groupData = await osparc.store.Store.getInstance().getGroup(groupId);
       const isOrganization = (groupData && !("id" in groupData));
       if (isOrganization) {
-        const msg = this.tr(`Demoting to ${osparc.data.Roles.WORKSPACES[1].label} will remove write access to all the members of the Organization. Are you sure?`);
+        const msg = this.tr(`Demoting to ${osparc.data.Roles.WORKSPACE[1].label} will remove write access to all the members of the Organization. Are you sure?`);
         const win = new osparc.ui.window.Confirmation(msg).set({
           confirmAction: "delete",
           confirmText: this.tr("Yes")
@@ -181,8 +181,8 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`${osparc.data.Roles.WORKSPACES[3].label} successfully changed to ${osparc.data.Roles.WORKSPACES[2].label}`),
-        this.tr(`Something went wrong changing ${osparc.data.Roles.WORKSPACES[3].label} to ${osparc.data.Roles.WORKSPACES[2].label}`),
+        this.tr(`${osparc.data.Roles.WORKSPACE[3].label} successfully changed to ${osparc.data.Roles.WORKSPACE[2].label}`),
+        this.tr(`Something went wrong changing ${osparc.data.Roles.WORKSPACE[3].label} to ${osparc.data.Roles.WORKSPACE[2].label}`),
         item
       );
     }

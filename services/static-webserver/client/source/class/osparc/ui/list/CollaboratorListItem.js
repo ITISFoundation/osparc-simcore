@@ -84,7 +84,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       } else if (resource === "service") {
         return osparc.data.Roles.SERVICES[i];
       } else if (resource === "workspace") {
-        return osparc.data.Roles.WORKSPACES[i];
+        return osparc.data.Roles.WORKSPACE[i];
       }
       return undefined;
     },

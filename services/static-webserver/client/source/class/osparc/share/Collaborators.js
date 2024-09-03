@@ -213,10 +213,10 @@ qx.Class.define("osparc.share.Collaborators", {
           rolesLayout = osparc.data.Roles.createRolesServicesInfo();
           break;
         case "workspace":
-          rolesLayout = osparc.data.Roles.createRolesFolderInfo();
+          rolesLayout = osparc.data.Roles.createRolesWorkspaceInfo();
           break;
         default:
-          rolesLayout = osparc.data.Roles.createRolesWorkspaceInfo();
+          rolesLayout = osparc.data.Roles.createRolesStudyInfo();
           break;
       }
       return rolesLayout;
