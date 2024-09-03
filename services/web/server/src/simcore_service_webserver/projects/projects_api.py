@@ -196,6 +196,8 @@ async def get_project_for_user(
             user_id, project, project_type is ProjectType.TEMPLATE, app
         )
 
+    # If from workspace -> hack workspace permissions
+
     Project.parse_obj(project)  # NOTE: only validates
     return project
 

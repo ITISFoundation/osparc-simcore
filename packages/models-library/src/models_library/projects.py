@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Any, Final, TypeAlias
 from uuid import UUID
 
+from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
@@ -171,6 +172,12 @@ class Project(BaseProjectModel):
     # Dev only
     dev: dict | None = Field(
         default=None, description="object used for development purposes only"
+    )
+
+    workspace_id: WorkspaceID | None = Field(
+        ...,
+        description="To which workspace project belongs. If None, belongs to private user workspace.",
+        alias="workspaceId",
     )
 
     class Config:
