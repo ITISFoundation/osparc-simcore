@@ -319,6 +319,42 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      "workspaces": {
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/workspaces?workspace_id={workspaceId}&offset={offset}&limit={limit}"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/workspaces/{workspaceId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/workspaces"
+          },
+          update: {
+            method: "PUT",
+            url: statics.API + "/workspaces/{workspaceId}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/workspaces/{workspaceId}"
+          },
+          postAccessRights: {
+            method: "POST",
+            url: statics.API + "/workspaces/{workspaceId}/groups/{groupId}"
+          },
+          putAccessRights: {
+            method: "PUT",
+            url: statics.API + "/workspaces/{workspaceId}/groups/{groupId}"
+          },
+          deleteAccessRights: {
+            method: "DELETE",
+            url: statics.API + "/workspaces/{workspaceId}/groups/{groupId}"
+          },
+        }
+      },
       "resourceUsage": {
         useCache: false,
         endpoints: {
