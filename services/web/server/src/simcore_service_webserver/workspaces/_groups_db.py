@@ -115,7 +115,7 @@ async def get_workspace_group(
         row = await result.first()
         if row is None:
             raise WorkspaceGroupNotFoundError(
-                reason=f"Workspace {workspace_id} group {group_id} not found"
+                workspace_id=workspace_id, group_id=group_id
             )
         return WorkspaceGroupGetDB.from_orm(row)
 
@@ -146,7 +146,7 @@ async def update_workspace_group(
         row = await result.first()
         if row is None:
             raise WorkspaceGroupNotFoundError(
-                reason=f"Workspace {workspace_id} group {group_id} not found"
+                workspace_id=workspace_id, group_id=group_id
             )
         return WorkspaceGroupGetDB.from_orm(row)
 

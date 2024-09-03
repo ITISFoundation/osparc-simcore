@@ -38,7 +38,7 @@ async def get_user_project_access_rights(
     If project belong to user private workspace (workspace_id = None) then it is resolved
     via user <--> groups <--> projects_to_groups.
 
-    If project belong to shared workspace (workspace_id not None) then it is resolved
+    If project belonsg to shared workspace (workspace_id not None) then it is resolved
     via user <--> groups <--> workspace_access_rights
     """
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
