@@ -84,7 +84,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             "description": "Optionally defines the step relative weight (defaults to steps of equal weights)"
         },
     )
-    description: IDStr = field(metadata={"description": "define the progress name"})
+    description: str = field(metadata={"description": "define the progress name"})
     progress_unit: ProgressUnit | None = None
     progress_report_cb: AsyncReportCB | ReportCB | None = None
     _current_steps: float = _INITIAL_VALUE
