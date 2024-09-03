@@ -13,7 +13,6 @@ from tenacity.wait import wait_random_exponential
 from yarl import URL
 
 from ...aiohttp import status
-from ...progress_bar import ProgressBarData
 from ..rest_responses import unwrap_envelope
 from .server import TaskGet, TaskId, TaskStatus
 
@@ -102,7 +101,7 @@ async def _abort_task(session: ClientSession, abort_url: URL) -> None:
 
 @dataclass(frozen=True)
 class LRTask:
-    progress: ProgressBarData
+    progress: ProgressReport
     _result: Coroutine[Any, Any, Any] | None = None
 
     def done(self) -> bool:
@@ -131,15 +130,14 @@ async def long_running_task_request(
     task = None
     try:
         task = await _start(session, url, json)
-        last_progress = None
-        async for task_progress in _wait_for_completion(
+        async for task_progress_report in _wait_for_completion(
             session,
             task.task_id,
             URL(task.status_href),
             client_timeout,
         ):
-            last_progress = task_progress
-            yield LRTask(progress=task_progress)
+            last_progress: ProgressReport = task_progress_report
+            yield LRTask(progress=task_progress_report)
         assert last_progress  # nosec
         yield LRTask(
             progress=last_progress,
