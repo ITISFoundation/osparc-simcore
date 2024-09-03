@@ -1,9 +1,11 @@
 import tempfile
-import threading
 from pathlib import Path
-from typing import Optional
+from typing import Final
+from uuid import uuid4
 
 from models_library.projects_nodes_io import SimcoreS3FileID
+
+_TMP_SIMCOREFILES: Final[Path] = Path(tempfile.gettempdir()) / "simcorefiles"
 
 
 def create_simcore_file_id(
@@ -11,7 +13,7 @@ def create_simcore_file_id(
     project_id: str,
     node_id: str,
     *,
-    file_base_path: Optional[Path] = None,
+    file_base_path: Path | None = None,
 ) -> SimcoreS3FileID:
     s3_file_name = file_path.name
     if file_base_path:
@@ -20,12 +22,9 @@ def create_simcore_file_id(
     return SimcoreS3FileID(f"{clean_path}")
 
 
-_INTERNAL_DIR = Path(tempfile.gettempdir(), "simcorefiles")
+def get_folder_path(key: str) -> Path:
+    return _TMP_SIMCOREFILES / f"{uuid4()}" / key
 
 
-def create_folder_path(key: str) -> Path:
-    return Path(_INTERNAL_DIR, f"{threading.get_ident()}", key)
-
-
-def create_file_path(key: str, name: str) -> Path:
-    return Path(_INTERNAL_DIR, f"{threading.get_ident()}", key, name)
+def get_file_path(key: str, name: str) -> Path:
+    return _TMP_SIMCOREFILES / f"{uuid4()}" / key / name
