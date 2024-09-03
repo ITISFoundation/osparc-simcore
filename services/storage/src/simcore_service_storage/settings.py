@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import Field, PositiveInt, root_validator, validator
+from pydantic import Field, PositiveInt, field_validator, model_validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.postgres import PostgresSettings
@@ -17,7 +17,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     STORAGE_PORT: PortInt = PortInt(8080)
 
     LOG_LEVEL: LogLevel = Field(
-        "INFO", env=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        "INFO", validation_alias=["STORAGE_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
 
     STORAGE_MAX_WORKERS: PositiveInt = Field(
@@ -65,17 +65,20 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         False,
-        env=["STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        validation_alias=[
+            "STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
+        ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    @validator("LOG_LEVEL")
+    @field_validator("LOG_LEVEL")
     @classmethod
     def _validate_loglevel(cls, value) -> str:
         log_level: str = cls.validate_log_level(value)
         return log_level
 
-    @root_validator()
+    @model_validator()
     @classmethod
     def ensure_settings_consistency(cls, values: dict[str, Any]):
         if values.get("STORAGE_CLEANER_INTERVAL_S") and not values.get("STORAGE_REDIS"):

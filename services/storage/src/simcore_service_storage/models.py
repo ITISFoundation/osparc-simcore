@@ -31,15 +31,15 @@ from pydantic import (
     AnyUrl,
     BaseModel,
     ByteSize,
-    Extra,
+    ConfigDict,
     Field,
-    parse_obj_as,
-    root_validator,
-    validate_arguments,
-    validator,
+    TypeAdapter,
+    field_validator,
+    model_validator,
+    validate_call,
 )
 
-UNDEFINED_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, -1)
+UNDEFINED_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(-1)
 
 
 class DatasetMetaData(DatasetMetaDataGet):
@@ -72,10 +72,7 @@ class FileMetaDataAtDB(BaseModel):
     upload_expires_at: datetime.datetime | None = None
     is_directory: bool
     sha256_checksum: SHA256Str | None = None
-
-    class Config:
-        orm_mode = True
-        extra = Extra.forbid
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
 
 
 class FileMetaData(FileMetaDataGet):
@@ -91,7 +88,7 @@ class FileMetaData(FileMetaDataGet):
     sha256_checksum: SHA256Str | None
 
     @classmethod
-    @validate_arguments
+    @validate_call
     def from_simcore_node(
         cls,
         user_id: UserID,
@@ -103,7 +100,7 @@ class FileMetaData(FileMetaDataGet):
         **file_meta_data_kwargs,
     ):
         parts = file_id.split("/")
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.UTC)
         fmd_kwargs = {
             "file_uuid": file_id,
             "location_id": location_id,
@@ -113,9 +110,13 @@ class FileMetaData(FileMetaDataGet):
             "file_name": parts[-1],
             "user_id": user_id,
             "project_id": (
-                parse_obj_as(ProjectID, parts[0]) if is_uuid(parts[0]) else None
+                TypeAdapter(ProjectID).validate_python(parts[0])
+                if is_uuid(parts[0])
+                else None
             ),
-            "node_id": parse_obj_as(NodeID, parts[1]) if is_uuid(parts[1]) else None,
+            "node_id": TypeAdapter(NodeID).validate_python(parts[1])
+            if is_uuid(parts[1])
+            else None,
             "file_id": file_id,
             "created_at": now,
             "last_modified": now,
@@ -128,7 +129,7 @@ class FileMetaData(FileMetaDataGet):
             "is_directory": False,
         }
         fmd_kwargs.update(**file_meta_data_kwargs)
-        return cls.parse_obj(fmd_kwargs)
+        return cls.model_validate(fmd_kwargs)
 
 
 @dataclass
@@ -139,10 +140,7 @@ class UploadLinks:
 
 class StorageQueryParamsBase(BaseModel):
     user_id: UserID
-
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
 
 class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
@@ -163,7 +161,7 @@ class SyncMetadataQueryParams(BaseModel):
 class FileDownloadQueryParams(StorageQueryParamsBase):
     link_type: LinkType = LinkType.PRESIGNED
 
-    @validator("link_type", pre=True)
+    @field_validator("link_type", mode="before")
     @classmethod
     def convert_from_lower_case(cls, v):
         if v is not None:
@@ -177,14 +175,14 @@ class FileUploadQueryParams(StorageQueryParamsBase):
     is_directory: bool = False
     sha256_checksum: SHA256Str | None = None
 
-    @validator("link_type", pre=True)
+    @field_validator("link_type", mode="before")
     @classmethod
     def convert_from_lower_case(cls, v):
         if v is not None:
             return f"{v}".upper()
         return v
 
-    @root_validator()
+    @model_validator()
     @classmethod
     def when_directory_force_link_type_and_file_size(cls, values):
         if values["is_directory"] is True:
@@ -211,17 +209,14 @@ class SearchFilesQueryParams(StorageQueryParamsBase):
     )
     offset: int = Field(default=0, ge=0, description="Page offset")
 
-    _empty_is_none = validator("startswith", allow_reuse=True, pre=True)(
+    _empty_is_none = field_validator("startswith", mode="before")(
         empty_str_to_none_pre_validator
     )
 
 
 class LocationPathParams(BaseModel):
     location_id: LocationID
-
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
 
 class FilesMetadataDatasetPathParams(LocationPathParams):
@@ -231,7 +226,7 @@ class FilesMetadataDatasetPathParams(LocationPathParams):
 class FilePathParams(LocationPathParams):
     file_id: StorageFileID
 
-    @validator("file_id", pre=True)
+    @field_validator("file_id", mode="before")
     @classmethod
     def unquote(cls, v):
         if v is not None:
@@ -250,7 +245,7 @@ class SimcoreS3FoldersParams(BaseModel):
 class CopyAsSoftLinkParams(BaseModel):
     file_id: StorageFileID
 
-    @validator("file_id", pre=True)
+    @field_validator("file_id", mode="before")
     @classmethod
     def unquote(cls, v):
         if v is not None:
