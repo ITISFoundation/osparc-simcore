@@ -21,8 +21,6 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
   construct: function(newWorkspace = true) {
     this.base(arguments);
 
-    this.__newWorkspace = newWorkspace;
-
     this._setLayout(new qx.ui.layout.VBox(8));
 
     const manager = this.__validator = new qx.ui.form.validation.Manager();
@@ -31,7 +29,6 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
     manager.add(title);
     this.getChildControl("description");
     this.getChildControl("thumbnail");
-    this.getChildControl("share-with");
     newWorkspace ? this.getChildControl("create") : this.getChildControl("save");
 
     this.addListener("appear", this.__onAppear, this);
@@ -111,11 +108,6 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           this._add(control);
           break;
         }
-        case "share-with": {
-          control = this.__createAddCollaboratorSection();
-          this._add(control);
-          break;
-        }
         case "create": {
           const buttons = this.getChildControl("buttonsLayout");
           control = new osparc.ui.form.FetchButton(this.tr("Create")).set({
@@ -159,21 +151,6 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
       }
 
       return control || this.base(arguments, id);
-    },
-
-    __createAddCollaboratorSection: function() {
-      let serializedDataCopy = null;
-      if (this.__newWorkspace) {
-        serializedDataCopy = osparc.store.Workspaces.createNewWorkspaceData()
-      } else {
-        serializedDataCopy = osparc.utils.Utils.deepCloneObject(this._serializedDataCopy);
-      }
-      serializedDataCopy["resourceType"] = "workspace";
-      const addCollaborators = new osparc.share.CollaboratorsWorkspace(serializedDataCopy);
-      addCollaborators.addListener("updateAccessRights", e => {
-        console.log("updateAccessRights", e.getData())
-      }, this);
-      return addCollaborators;
     },
 
     __onAppear: function() {

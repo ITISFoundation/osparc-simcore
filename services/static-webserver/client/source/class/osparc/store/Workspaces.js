@@ -22,7 +22,11 @@ qx.Class.define("osparc.store.Workspaces", {
     workspacesCached: [],
 
     iconPath: function(iconsSize = 18) {
-      return "@MaterialIcons/folder_shared/"+iconsSize
+      const source = "@MaterialIcons/folder_shared/";
+      if (iconsSize === -1) {
+        return source;
+      }
+      return source+iconsSize;
     },
 
     FAKE_WORKSPACES: [{
@@ -58,7 +62,7 @@ qx.Class.define("osparc.store.Workspaces", {
       workspaceId: 2,
       name: "Workspace 2",
       description: "Workspace 2 desc",
-      thumbnail: "https://image.shutterstock.com/image-vector/dotted-spiral-vortex-royaltyfree-images-600w-2227567913.jpg",
+      thumbnail: "",
       myAccessRights: {
         read: true,
         write: true,
