@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 from models_library.basic_types import BootModeEnum
+from packaging.version import Version
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.logging_utils import config_all_loggers
 
@@ -20,17 +21,24 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def _label_info_with_state(settings: ApplicationSettings, title: str, version: str):
+def _label_title_and_version(settings: ApplicationSettings, title: str, version: str):
     labels = []
     if settings.API_SERVER_DEV_FEATURES_ENABLED:
-        labels.append("dev")
+        # builds public version identifier with pre: `[N!]N(.N)*[{a|b|rc}N][.postN][.devN]`
+        # SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#public-version-identifiers
+        v = Version(version)
+        version = f"{v.base_version}.post0.dev0"
+        assert Version(version).is_devrelease, version  # nosec
+        _logger.info("Setting up a developmental version: %s -> %s", v, version)
 
     if settings.debug:
         labels.append("debug")
 
-    if suffix_label := "+".join(labels):
-        title += f" ({suffix_label})"
-        version += f"-{suffix_label}"
+    if local_version_label := "-".join(labels):
+        # Appends local version identifier `<public version identifier>[+<local version label>]`
+        # SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#local-version-identifiers
+        title += f" ({local_version_label})"
+        version += f"+{local_version_label}"
 
     return title, version
 
@@ -48,10 +56,12 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     _logger.debug("App settings:\n%s", settings.json(indent=2))
 
     # Labeling
-    title = "osparc.io web API"
-    version = API_VERSION
+    title = "osparc.io public API"
+    version = API_VERSION  # public version identifier
     description = "osparc-simcore public API specifications"
-    title, version = _label_info_with_state(settings, title, version)
+
+    # Appends local version identifier if setup: version=<public version identifier>[+<local version label>]
+    title, version = _label_title_and_version(settings, title, version)
 
     # creates app instance
     app = FastAPI(

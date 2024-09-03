@@ -123,6 +123,7 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
     "name": "sleeper",
     "thumbnail": None,
     "description": "A service which awaits for time to pass, two times.",
+    "description_ui": True,
     "classifiers": [],
     "quality": {},
     "accessRights": {"1": {"execute": True, "write": False}},
@@ -221,6 +222,8 @@ class ServiceGetV2(BaseModel):
     thumbnail: HttpUrl | None = None
     description: str
 
+    description_ui: bool = False
+
     version_display: str | None = None
 
     service_type: ServiceType = Field(default=..., alias="type")
@@ -318,6 +321,7 @@ class ServiceUpdateV2(BaseModel):
     thumbnail: HttpUrl | None = None
 
     description: str | None = None
+    description_ui: bool = False
     version_display: str | None = None
 
     deprecated: datetime | None = None

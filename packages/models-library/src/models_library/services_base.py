@@ -39,6 +39,11 @@ class ServiceBaseDisplay(BaseModel):
             "The mother of all nodes, makes your numbers shine!",
         ],
     )
+    description_ui: bool = Field(
+        default=False,
+        description="A flag to enable the `description` to be presented as a single web page (=true) or in another structured format (default=false).",
+    )
+
     version_display: str | None = Field(
         None,
         description="A user-friendly or marketing name for the release."

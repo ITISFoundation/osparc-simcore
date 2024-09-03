@@ -21,6 +21,7 @@ class ServiceMetaDataEditable(ServiceBaseDisplay):
     name: str | None  # type: ignore[assignment]
     thumbnail: HttpUrl | None
     description: str | None  # type: ignore[assignment]
+    description_ui: bool = False
     version_display: str | None = None
 
     # Below fields only in the database ----
