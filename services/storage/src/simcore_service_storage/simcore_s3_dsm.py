@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import datetime
 import logging
@@ -665,6 +666,7 @@ class SimcoreS3DataManager(BaseDataManager):
             ):
                 copy_tasks = []
                 s3_transfered_data_cb = S3TransferDataCB(
+                    asyncio.get_event_loop(),
                     sub_progress,
                     src_project_total_data_size,
                     task_progress_message_prefix=f"Copying {src_project_num_files} files to '{dst_project['name']}'",

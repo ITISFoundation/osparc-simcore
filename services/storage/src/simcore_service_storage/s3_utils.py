@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class S3TransferDataCB:
+    main_loop: asyncio.AbstractEventLoop
     task_progress: ProgressBarData
     total_bytes_to_transfer: ByteSize
     task_progress_message_prefix: str = ""
@@ -19,12 +20,9 @@ class S3TransferDataCB:
         default_factory=lambda: defaultdict(int)
     )
 
-    def __post_init__(self) -> None:
-        self._update()
-
     def _update(self) -> None:
-        asyncio.get_event_loop().run_until_complete(
-            self.task_progress.set_(self._total_bytes_copied)
+        asyncio.run_coroutine_threadsafe(
+            self.task_progress.set_(self._total_bytes_copied), self.main_loop
         )
 
     def finalize_transfer(self) -> None:
