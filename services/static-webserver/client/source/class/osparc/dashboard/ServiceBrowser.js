@@ -100,7 +100,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     _reloadCards: function() {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
-      const cards = this._resourcesContainer.reloadCards("servicesList");
+      const cards = this._resourcesContainer.reloadCards("services");
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("execute", () => this.__itemClicked(card), this);

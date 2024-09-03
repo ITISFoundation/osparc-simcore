@@ -363,7 +363,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const visibility = this._loadingResourcesBtn ? this._loadingResourcesBtn.getVisibility() : "excluded";
 
       this._resourcesContainer.setResourcesToList(this._resourcesList);
-      const cards = this._resourcesContainer.reloadCards("studiesList");
+      const cards = this._resourcesContainer.reloadCards("studies");
       this.__configureCards(cards);
 
       this.__addNewStudyButtons();

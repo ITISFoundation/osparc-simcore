@@ -269,17 +269,19 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this._removeAll();
     },
 
-    reloadCards: function(listId) {
+    reloadCards: function(resourceType) {
       this.__cleanAll();
-      this._add(this.__containerHeader);
-      this._add(this.__foldersContainer);
+      if (resourceType === "studies") {
+        this._add(this.__containerHeader);
+        this._add(this.__foldersContainer);
+      }
       if (this.getGroupBy()) {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
         this.__groupedContainers.add(noGroupContainer);
         this._add(this.__groupedContainers);
       } else {
         const flatList = this.__nonGroupedContainer = new osparc.dashboard.ToggleButtonContainer();
-        osparc.utils.Utils.setIdToWidget(flatList, listId);
+        osparc.utils.Utils.setIdToWidget(flatList, resourceType + "List");
         [
           "changeSelection",
           "changeVisibility"
