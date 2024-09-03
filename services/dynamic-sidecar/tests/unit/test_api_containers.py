@@ -710,7 +710,7 @@ async def test_attach_detach_container_to_network(
                 container = await docker.containers.get(container_name)
                 container_inspect = await container.show()
                 networks = container_inspect["NetworkSettings"]["Networks"]
-                assert network_id in networks
+                assert network_id not in networks
 
 
 @pytest.fixture
