@@ -11,9 +11,10 @@ from uuid import uuid4
 
 import arrow
 from models_library.basic_types import IDStr
+from models_library.progress_bar import ProgressReport
 from pydantic import PositiveFloat
 
-from ..progress_bar import ProgressBarData, ProgressReport
+from ..progress_bar import ProgressBarData
 from ._errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
