@@ -7,6 +7,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 from typing import Any, Literal, TypeAlias
 
+from models_library.workspaces import WorkspaceID
 from pydantic import Field, validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
@@ -74,6 +75,7 @@ class ProjectGet(OutputSchema):
     quality: dict[str, Any] = {}
     dev: dict | None
     permalink: ProjectPermalink = FieldNotRequired()
+    workspace_id: WorkspaceID | None
 
     _empty_description = validator("description", allow_reuse=True, pre=True)(
         none_to_empty_str_pre_validator
