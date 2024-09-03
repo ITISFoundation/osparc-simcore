@@ -49,18 +49,31 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
   members: {
     __itemSelected: function(newVal) {
       if (newVal) {
-        const newWorkspace = true;
-        const workspaceEditor = new osparc.editor.WorkspaceEditor(newWorkspace);
+        const workspaceEditor = new osparc.editor.WorkspaceEditor(true);
         const title = this.tr("New Workspace");
         const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 300, 200);
         workspaceEditor.addListener("createWorkspace", () => {
-          const name = workspaceEditor.getLabel();
-          const description = workspaceEditor.getDescription();
-          this.fireDataEvent("createWorkspace", {
+          const newWorkspaceData = {
+            name: workspaceEditor.getLabel(),
+            description: workspaceEditor.getDescription(),
+            thumbnail: workspaceEditor.getThumbnail(),
+          };
+          osparc.store.Workspaces.postWorkspace(newWorkspaceData)
+            .then(newWorkspace => {
+              this.fireDataEvent("createWorkspace");
+              const permissionsView = new osparc.share.CollaboratorsWorkspace(newWorkspace);
+              permissionsView.addListener("updateAccessRights", e => {
+                const updatedData = e.getData();
+                console.log(updatedData);
+              }, this);
+            })
+            .catch(console.error)
+            .finally(() => win.close());
+          
             name,
             description
           });
-          win.close();
+          
         });
         workspaceEditor.addListener("cancel", () => win.close());
       }
