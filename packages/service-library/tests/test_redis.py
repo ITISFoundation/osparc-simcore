@@ -21,6 +21,7 @@ from servicelib.redis import (
     RedisClientsManager,
     RedisManagerDBConfig,
 )
+from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
@@ -262,7 +263,9 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
             ):
                 await counter.race_condition_increase(INCREASE_BY)
 
-    await asyncio.gather(*(_inc_counter() for _ in range(INCREASE_OPERATIONS)))
+    await logged_gather(
+        *(_inc_counter() for _ in range(INCREASE_OPERATIONS)), max_concurrency=15
+    )
     assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
 
 
