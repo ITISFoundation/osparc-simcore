@@ -273,11 +273,7 @@ class BaseProjectDB:
 
         query = (
             sa.select(
-                *[
-                    col
-                    for col in projects.columns
-                    if col.name not in ["access_rights", "workspace_id"]
-                ],
+                *[col for col in projects.columns if col.name not in ["access_rights"]],
                 access_rights_subquery.c.access_rights,
             )
             .select_from(projects.join(access_rights_subquery, isouter=True))

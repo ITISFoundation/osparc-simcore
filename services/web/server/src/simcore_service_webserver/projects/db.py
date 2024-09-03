@@ -43,6 +43,9 @@ from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.wallets import wallets
+from simcore_postgres_database.models.workspaces_access_rights import (
+    workspaces_access_rights,
+)
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
@@ -324,7 +327,7 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def list_projects(  # pylint: disable=too-many-arguments
         self,
-        private_workspace_user_id_or_none: PositiveInt | None,
+        # workspace_is_private: bool,
         *,
         product_name: str,
         user_id: PositiveInt,
@@ -341,31 +344,62 @@ class ProjectDBAPI(BaseProjectDB):
         folder_id: FolderID | None = None,
         workspace_id: WorkspaceID | None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
+        """
+        If workspace_id is provided, then listing in workspace is considered/preffered
+        """
         assert (
             order_by.field in projects.columns
         ), "Guaranteed by ProjectListWithJsonStrParams"  # nosec
 
+        # helper
+        workspace_is_private: bool = not workspace_id
+
         async with self.engine.acquire() as conn:
-            access_rights_subquery = (
-                sa.select(
-                    project_to_groups.c.project_uuid,
-                    sa.func.jsonb_object_agg(
-                        project_to_groups.c.gid,
-                        sa.func.jsonb_build_object(
-                            "read",
-                            project_to_groups.c.read,
-                            "write",
-                            project_to_groups.c.write,
-                            "delete",
-                            project_to_groups.c.delete,
-                        ),
+
+            if workspace_is_private:
+                access_rights_subquery = (
+                    sa.select(
+                        project_to_groups.c.project_uuid,
+                        sa.func.jsonb_object_agg(
+                            project_to_groups.c.gid,
+                            sa.func.jsonb_build_object(
+                                "read",
+                                project_to_groups.c.read,
+                                "write",
+                                project_to_groups.c.write,
+                                "delete",
+                                project_to_groups.c.delete,
+                            ),
+                        )
+                        .filter(
+                            project_to_groups.c.read  # Filters out entries where "read" is False
+                        )
+                        .label("access_rights"),
+                    ).group_by(project_to_groups.c.project_uuid)
+                ).subquery("access_rights_subquery")
+            else:
+                access_rights_subquery = (
+                    sa.select(
+                        workspaces_access_rights.c.workspace_id,
+                        sa.func.jsonb_object_agg(
+                            workspaces_access_rights.c.gid,
+                            sa.func.jsonb_build_object(
+                                "read",
+                                workspaces_access_rights.c.read,
+                                "write",
+                                workspaces_access_rights.c.write,
+                                "delete",
+                                workspaces_access_rights.c.delete,
+                            ),
+                        )
+                        .filter(
+                            workspaces_access_rights.c.read  # Filters out entries where "read" is False
+                        )
+                        .label("access_rights"),
                     )
-                    .filter(
-                        project_to_groups.c.read  # Filters out entries where "read" is False
-                    )
-                    .label("access_rights"),
-                ).group_by(project_to_groups.c.project_uuid)
-            ).subquery("access_rights_subquery")
+                    .where(workspaces_access_rights.c.workspace_id == workspace_id)
+                    .group_by(workspaces_access_rights.c.workspace_id)
+                ).subquery("access_rights_subquery")
 
             _join_query = (
                 projects.join(projects_to_products, isouter=True)
@@ -375,8 +409,9 @@ class ProjectDBAPI(BaseProjectDB):
                     (
                         (projects.c.uuid == projects_to_folders.c.project_uuid)
                         & (
-                            projects_to_folders.c.user_id
-                            == private_workspace_user_id_or_none
+                            projects_to_folders.c.user_id == user_id
+                            if workspace_is_private
+                            else None
                         )
                     ),
                     isouter=True,
@@ -388,7 +423,7 @@ class ProjectDBAPI(BaseProjectDB):
                     *[
                         col
                         for col in projects.columns
-                        if col.name not in ["access_rights", "workspace_id"]
+                        if col.name not in ["access_rights"]
                     ],
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
@@ -428,13 +463,13 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             )
 
-            if workspace_id is None and private_workspace_user_id_or_none:
+            if workspace_is_private:
                 # If Private workspace we check to which projects user has access
                 user_groups: list[RowProxy] = await self._list_user_groups(
-                    conn, private_workspace_user_id_or_none
+                    conn, user_id
                 )
                 query = query.where(
-                    (projects.c.prj_owner == private_workspace_user_id_or_none)
+                    (projects.c.prj_owner == user_id)
                     | sa.text(
                         f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
                     )

@@ -93,7 +93,6 @@ async def list_projects(  # pylint: disable=too-many-arguments
         )
 
     db_projects, db_project_types, total_number_projects = await db.list_projects(
-        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
         product_name=product_name,
         user_id=user_id,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
