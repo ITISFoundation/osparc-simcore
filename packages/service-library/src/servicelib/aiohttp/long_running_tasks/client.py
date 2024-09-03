@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Final, TypeAlias
 
 from aiohttp import ClientConnectionError, ClientSession
-from servicelib.aiohttp import status
+from models_library.progress_bar import ProgressReport
 from tenacity import TryAgain, retry
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -12,8 +12,9 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 from yarl import URL
 
+from ...aiohttp import status
 from ..rest_responses import unwrap_envelope
-from .server import TaskGet, TaskId, TaskProgress, TaskStatus
+from .server import TaskGet, TaskId, TaskStatus
 
 RequestBody: TypeAlias = Any
 
@@ -44,7 +45,7 @@ async def _wait_for_completion(
     task_id: TaskId,
     status_url: URL,
     client_timeout: int,
-) -> AsyncGenerator[TaskProgress, None]:
+) -> AsyncGenerator[ProgressReport, None]:
     try:
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(client_timeout),
@@ -58,7 +59,8 @@ async def _wait_for_completion(
                     assert not error  # nosec
                     assert data is not None  # nosec
                 task_status = TaskStatus.parse_obj(data)
-                yield task_status.task_progress
+                assert task_status.progress_report is not None
+                yield task_status.progress_report
                 if not task_status.done:
                     await asyncio.sleep(
                         float(
@@ -67,13 +69,13 @@ async def _wait_for_completion(
                             )
                         )
                     )
-                    msg = f"{task_id=}, {task_status.started=} has status: '{task_status.task_progress.message}' {task_status.task_progress.percent}%"
+                    msg = f"{task_id=}, {task_status.started=} has status: '{task_status.progress_report.message}' {task_status.progress_report.percent_value * 100.0:.1f}%"
                     raise TryAgain(msg)  # noqa: TRY301
 
     except TryAgain as exc:
         # this is a timeout
         msg = f"Long running task {task_id}, calling to {status_url} timed-out after {client_timeout} seconds"
-        raise asyncio.TimeoutError(msg) from exc
+        raise TimeoutError(msg) from exc
 
 
 @retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
@@ -99,7 +101,7 @@ async def _abort_task(session: ClientSession, abort_url: URL) -> None:
 
 @dataclass(frozen=True)
 class LRTask:
-    progress: TaskProgress
+    progress: ProgressReport
     _result: Coroutine[Any, Any, Any] | None = None
 
     def done(self) -> bool:
@@ -128,22 +130,21 @@ async def long_running_task_request(
     task = None
     try:
         task = await _start(session, url, json)
-        last_progress = None
-        async for task_progress in _wait_for_completion(
+        async for task_progress_report in _wait_for_completion(
             session,
             task.task_id,
             URL(task.status_href),
             client_timeout,
         ):
-            last_progress = task_progress
-            yield LRTask(progress=task_progress)
+            last_progress: ProgressReport = task_progress_report
+            yield LRTask(progress=task_progress_report)
         assert last_progress  # nosec
         yield LRTask(
             progress=last_progress,
             _result=_task_result(session, URL(task.result_href)),
         )
 
-    except (asyncio.CancelledError, asyncio.TimeoutError):
+    except (TimeoutError, asyncio.CancelledError):
         if task:
             await _abort_task(session, URL(task.abort_href))
         raise

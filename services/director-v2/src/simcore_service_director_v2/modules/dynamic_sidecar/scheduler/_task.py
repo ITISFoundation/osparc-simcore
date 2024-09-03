@@ -18,7 +18,7 @@ from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.progress_bar import ProgressBarData
 
 from ....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
@@ -58,7 +58,7 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         )
 
     async def remove_service_sidecar_proxy_docker_networks_and_volumes(
-        self, task_progress: TaskProgress, node_uuid: NodeID
+        self, task_progress: ProgressBarData, node_uuid: NodeID
     ) -> None:
         return await self.scheduler.remove_service_sidecar_proxy_docker_networks_and_volumes(
             task_progress, node_uuid

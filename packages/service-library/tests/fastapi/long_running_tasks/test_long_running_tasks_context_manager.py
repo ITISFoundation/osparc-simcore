@@ -19,7 +19,6 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
 from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
-    TaskProgress,
     TasksManager,
     get_tasks_manager,
 )
@@ -29,6 +28,7 @@ from servicelib.long_running_tasks._errors import (
     TaskClientResultError,
     TaskClientTimeoutError,
 )
+from servicelib.progress_bar import ProgressBarData
 
 TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 
@@ -42,12 +42,12 @@ async def _assert_task_removed(
     assert result.status_code == status.HTTP_404_NOT_FOUND
 
 
-async def a_test_task(task_progress: TaskProgress) -> int:
+async def a_test_task(task_progress: ProgressBarData) -> int:
     await asyncio.sleep(TASK_SLEEP_INTERVAL)
     return 42
 
 
-async def a_failing_test_task(task_progress: TaskProgress) -> None:
+async def a_failing_test_task(task_progress: ProgressBarData) -> None:
     await asyncio.sleep(TASK_SLEEP_INTERVAL)
     raise RuntimeError("I am failing as requested")
 

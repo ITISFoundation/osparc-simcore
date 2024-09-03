@@ -9,12 +9,12 @@ from datetime import datetime
 from typing import Any, Protocol
 from uuid import uuid4
 
-from models_library.api_schemas_long_running_tasks.base import (
-    ProgressPercent,
-    TaskProgress,
-)
+import arrow
+from models_library.basic_types import IDStr
+from models_library.progress_bar import ProgressReport
 from pydantic import PositiveFloat
 
+from ..progress_bar import ProgressBarData
 from ._errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
@@ -24,7 +24,7 @@ from ._errors import (
 )
 from ._models import TaskId, TaskName, TaskResult, TaskStatus, TrackedTask
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def _await_task(task: asyncio.Task) -> None:
@@ -100,7 +100,7 @@ class TasksManager:
         # will not be the case.
 
         while await asyncio.sleep(self.stale_task_check_interval_s, result=True):
-            utc_now = datetime.utcnow()
+            utc_now = arrow.utcnow().datetime
 
             tasks_to_remove: list[TaskId] = []
             for tasks in self._tasks_groups.values():
@@ -120,7 +120,7 @@ class TasksManager:
                 # - finished with a result
                 # - finished with errors
                 # we just print the status from where one can infer the above
-                logger.warning(
+                _logger.warning(
                     "Removing stale task '%s' with status '%s'",
                     task_id,
                     self.get_task_status(task_id, with_task_context=None).json(),
@@ -161,7 +161,7 @@ class TasksManager:
         self,
         task_name: TaskName,
         task: asyncio.Task,
-        task_progress: TaskProgress,
+        task_progress: ProgressBarData,
         task_context: TaskContext,
         task_id: TaskId,
         *,
@@ -205,14 +205,15 @@ class TasksManager:
         raises TaskNotFoundError if the task cannot be found
         """
         tracked_task: TrackedTask = self._get_tracked_task(task_id, with_task_context)
-        tracked_task.last_status_check = datetime.utcnow()
+        tracked_task.last_status_check = arrow.utcnow().datetime
 
         task = tracked_task.task
         done = task.done()
 
         return TaskStatus.parse_obj(
             {
-                "task_progress": tracked_task.task_progress,
+                "progress_report": tracked_task.last_progress_report
+                or ProgressReport(actual_value=0),
                 "done": done,
                 "started": tracked_task.started,
             }
@@ -260,11 +261,11 @@ class TasksManager:
                 error = TaskExceptionError(
                     task_id=task_id, exception=exception, traceback=formatted_traceback
                 )
-                logger.warning("Task %s finished with error: %s", task_id, f"{error}")
+                _logger.warning("Task %s finished with error: %s", task_id, f"{error}")
                 return TaskResult(result=None, error=f"{error}")
         except asyncio.CancelledError:
             error = TaskCancelledError(task_id=task_id)
-            logger.warning("Task %s was cancelled", task_id)
+            _logger.warning("Task %s was cancelled", task_id)
             return TaskResult(result=None, error=f"{error}")
 
         return TaskResult(result=tracked_task.task.result(), error=None)
@@ -290,8 +291,8 @@ class TasksManager:
                     await asyncio.wait_for(
                         _await_task(task), timeout=self._cancel_task_timeout_s
                     )
-                except asyncio.TimeoutError:
-                    logger.warning(
+                except TimeoutError:
+                    _logger.warning(
                         "Timed out while awaiting for cancellation of '%s'", reference
                     )
             except Exception:  # pylint:disable=broad-except
@@ -352,7 +353,9 @@ class TasksManager:
 
 
 class TaskProtocol(Protocol):
-    async def __call__(self, progress: TaskProgress, *args: Any, **kwargs: Any) -> Any:
+    async def __call__(
+        self, progress: ProgressBarData, *args: Any, **kwargs: Any
+    ) -> Any:
         ...
 
     @property
@@ -373,7 +376,7 @@ def start_task(
     """
     Creates a background task from an async function.
 
-    An asyncio task will be created out of it by injecting a `TaskProgress` as the first
+    An asyncio task will be created out of it by injecting a `ProgressBarData` as the first
     positional argument and adding all `handler_kwargs` as named parameters.
 
     NOTE: the progress is automatically bounded between 0 and 1
@@ -413,15 +416,16 @@ def start_task(
         raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
 
     task_id = tasks_manager.create_task_id(task_name=task_name)
-    task_progress = TaskProgress.create(task_id=task_id)
+
+    task_progress = ProgressBarData(num_steps=1, description=IDStr(f"{task_name}"))
 
     # bind the task with progress 0 and 1
-    async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
-        progress.update(message="starting", percent=ProgressPercent(0))
+    async def _progress_task(progress: ProgressBarData, handler: TaskProtocol):
         try:
+            await progress.start()
             return await handler(progress, **task_kwargs)
         finally:
-            progress.update(message="finished", percent=ProgressPercent(1))
+            await progress.finish()
 
     async_task = asyncio.create_task(
         _progress_task(task_progress, task), name=f"{task_name}"
@@ -435,6 +439,8 @@ def start_task(
         fire_and_forget=fire_and_forget,
         task_id=task_id,
     )
+    # NOTE: in pydantic v2 this can go away and be replaced by a post_init_model
+    tracked_task.set_progress_report_callback()
 
     return tracked_task.task_id
 
@@ -444,7 +450,6 @@ __all__: tuple[str, ...] = (
     "TaskCancelledError",
     "TaskId",
     "TasksManager",
-    "TaskProgress",
     "TaskProtocol",
     "TaskStatus",
     "TaskResult",

@@ -4,18 +4,21 @@ from collections.abc import Awaitable, Callable, Coroutine
 from datetime import datetime
 from typing import Any, TypeAlias
 
+import arrow
 from models_library.api_schemas_long_running_tasks.base import (
     ProgressMessage,
     ProgressPercent,
     TaskId,
-    TaskProgress,
 )
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskResult,
     TaskStatus,
 )
+from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel, Field, PositiveFloat
+
+from ..progress_bar import ProgressBarData
 
 TaskName: TypeAlias = str
 
@@ -30,7 +33,7 @@ class TrackedTask(BaseModel):
     task_id: str
     task: Task
     task_name: TaskName
-    task_progress: TaskProgress
+    task_progress: ProgressBarData
     # NOTE: this context lifetime is with the tracked task (similar to aiohttp storage concept)
     task_context: dict[str, Any]
     fire_and_forget: bool = Field(
@@ -38,7 +41,7 @@ class TrackedTask(BaseModel):
         description="if True then the task will not be auto-cancelled if no one enquires of its status",
     )
 
-    started: datetime = Field(default_factory=datetime.utcnow)
+    started: datetime = Field(default_factory=lambda: arrow.utcnow().datetime)
     last_status_check: datetime | None = Field(
         default=None,
         description=(
@@ -46,6 +49,14 @@ class TrackedTask(BaseModel):
             "polled by the client who created it"
         ),
     )
+    last_progress_report: ProgressReport | None = Field(default=None)
+
+    async def _progress_report_cb(self, report: ProgressReport) -> None:
+        self.last_progress_report = report
+
+    # NOTE: in pydantic v2 there is a post_init method that could be used
+    def set_progress_report_callback(self):
+        self.task_progress.progress_report_cb = self._progress_report_cb
 
     class Config:
         arbitrary_types_allowed = True
@@ -67,7 +78,6 @@ __all__: tuple[str, ...] = (
     "TaskId",
     "TaskResult",
     "TaskStatus",
-    "TaskProgress",
     "ProgressPercent",
     "ProgressMessage",
 )

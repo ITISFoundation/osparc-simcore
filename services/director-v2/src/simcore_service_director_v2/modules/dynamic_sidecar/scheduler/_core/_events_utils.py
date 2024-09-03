@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING, Any, cast
 
 from fastapi import FastAPI
-from models_library.api_schemas_long_running_tasks.base import ProgressPercent
+from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.projects_networks import ProjectsNetworks
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -24,8 +24,8 @@ from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
     TaskClientResultError,
 )
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
+from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -185,91 +185,88 @@ async def service_push_outputs(
 
 
 async def service_remove_sidecar_proxy_docker_networks_and_volumes(
-    task_progress: TaskProgress,
+    task_progress: ProgressBarData,
     app: FastAPI,
     node_uuid: NodeID,
     swarm_stack_name: str,
     set_were_state_and_outputs_saved: bool | None = None,
 ) -> None:
-    scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
+    async with task_progress.sub_progress(
+        4, IDStr("removing resources")
+    ) as sub_progress:
+        scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
 
-    if set_were_state_and_outputs_saved is not None:
-        scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
+        if set_were_state_and_outputs_saved is not None:
+            scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
 
-    task_progress.update(
-        message="removing dynamic sidecar stack", percent=ProgressPercent(0.1)
-    )
-    await remove_dynamic_sidecar_stack(
-        node_uuid=scheduler_data.node_uuid,
-        swarm_stack_name=swarm_stack_name,
-    )
-    # remove network
-    task_progress.update(message="removing network", percent=ProgressPercent(0.2))
-    await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
+        await remove_dynamic_sidecar_stack(
+            node_uuid=scheduler_data.node_uuid,
+            swarm_stack_name=swarm_stack_name,
+        )
+        await sub_progress.update()
+        # remove network
+        await remove_dynamic_sidecar_network(
+            scheduler_data.dynamic_sidecar_network_name
+        )
+        await sub_progress.update()
 
-    if scheduler_data.dynamic_sidecar.were_state_and_outputs_saved:
-        if scheduler_data.dynamic_sidecar.docker_node_id is None:
-            _logger.warning(
-                "Skipped volume removal for %s, since a docker_node_id was not found.",
-                scheduler_data.node_uuid,
-            )
-        else:
-            # Remove all dy-sidecar associated volumes from node
-            task_progress.update(
-                message="removing volumes", percent=ProgressPercent(0.3)
-            )
-            unique_volume_names = [
-                DynamicSidecarVolumesPathsResolver.source(
-                    path=volume_path,
-                    node_uuid=scheduler_data.node_uuid,
-                    run_id=scheduler_data.run_id,
+        if scheduler_data.dynamic_sidecar.were_state_and_outputs_saved:
+            if scheduler_data.dynamic_sidecar.docker_node_id is None:
+                _logger.warning(
+                    "Skipped volume removal for %s, since a docker_node_id was not found.",
+                    scheduler_data.node_uuid,
                 )
-                for volume_path in [
-                    DY_SIDECAR_SHARED_STORE_PATH,
-                    scheduler_data.paths_mapping.inputs_path,
-                    scheduler_data.paths_mapping.outputs_path,
-                    *scheduler_data.paths_mapping.state_paths,
+            else:
+                # Remove all dy-sidecar associated volumes from node
+                unique_volume_names = [
+                    DynamicSidecarVolumesPathsResolver.source(
+                        path=volume_path,
+                        node_uuid=scheduler_data.node_uuid,
+                        run_id=scheduler_data.run_id,
+                    )
+                    for volume_path in [
+                        DY_SIDECAR_SHARED_STORE_PATH,
+                        scheduler_data.paths_mapping.inputs_path,
+                        scheduler_data.paths_mapping.outputs_path,
+                        *scheduler_data.paths_mapping.state_paths,
+                    ]
                 ]
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"removing volumes via service for {node_uuid}",
+                ):
+                    await remove_volumes_from_node(
+                        swarm_stack_name=swarm_stack_name,
+                        volume_names=unique_volume_names,
+                        docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                        user_id=scheduler_data.user_id,
+                        project_id=scheduler_data.project_id,
+                        node_uuid=scheduler_data.node_uuid,
+                    )
+        await sub_progress.update()
+
+        _logger.debug(
+            "Removed dynamic-sidecar services and crated container for '%s'",
+            scheduler_data.service_name,
+        )
+
+        used_projects_networks = await get_projects_networks_containers(
+            project_id=scheduler_data.project_id
+        )
+        await logged_gather(
+            *[
+                try_to_remove_network(network_name)
+                for network_name, container_count in used_projects_networks.items()
+                if container_count == 0
             ]
-            with log_context(
-                _logger, logging.DEBUG, f"removing volumes via service for {node_uuid}"
-            ):
-                await remove_volumes_from_node(
-                    swarm_stack_name=swarm_stack_name,
-                    volume_names=unique_volume_names,
-                    docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
-                    user_id=scheduler_data.user_id,
-                    project_id=scheduler_data.project_id,
-                    node_uuid=scheduler_data.node_uuid,
-                )
+        )
 
-    _logger.debug(
-        "Removed dynamic-sidecar services and crated container for '%s'",
-        scheduler_data.service_name,
-    )
-
-    task_progress.update(
-        message="removing project networks", percent=ProgressPercent(0.8)
-    )
-    used_projects_networks = await get_projects_networks_containers(
-        project_id=scheduler_data.project_id
-    )
-    await logged_gather(
-        *[
-            try_to_remove_network(network_name)
-            for network_name, container_count in used_projects_networks.items()
-            if container_count == 0
-        ]
-    )
-
-    # pylint: disable=protected-access
-    scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
-    await app.state.dynamic_sidecar_scheduler.scheduler.remove_service_from_observation(
-        scheduler_data.node_uuid
-    )
-    task_progress.update(
-        message="finished removing resources", percent=ProgressPercent(1)
-    )
+        # pylint: disable=protected-access
+        scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
+        await app.state.dynamic_sidecar_scheduler.scheduler.remove_service_from_observation(
+            scheduler_data.node_uuid
+        )
 
 
 async def attempt_pod_removal_and_data_saving(
@@ -353,9 +350,12 @@ async def attempt_pod_removal_and_data_saving(
             )
             raise
 
-    await service_remove_sidecar_proxy_docker_networks_and_volumes(
-        TaskProgress.create(), app, scheduler_data.node_uuid, settings.SWARM_STACK_NAME
-    )
+    async with ProgressBarData(
+        num_steps=1, description=IDStr("removing docker networs and volumes")
+    ) as progress_bar:
+        await service_remove_sidecar_proxy_docker_networks_and_volumes(
+            progress_bar, app, scheduler_data.node_uuid, settings.SWARM_STACK_NAME
+        )
 
     # remove sidecar's api client
     remove_sidecars_client(app, scheduler_data.node_uuid)

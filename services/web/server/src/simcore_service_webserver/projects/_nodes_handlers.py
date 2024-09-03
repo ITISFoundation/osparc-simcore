@@ -33,10 +33,7 @@ from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field, parse_obj_as
-from servicelib.aiohttp.long_running_tasks.server import (
-    TaskProgress,
-    start_long_running_task,
-)
+from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -48,6 +45,7 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
@@ -333,12 +331,13 @@ async def start_node(request: web.Request) -> web.Response:
 
 
 async def _stop_dynamic_service_task(
-    _task_progress: TaskProgress,
+    progress: ProgressBarData,
     *,
     app: web.Application,
     dynamic_service_stop: DynamicServiceStop,
 ):
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
+    assert progress  # nosec
     try:
         await dynamic_scheduler_api.stop_dynamic_service(
             app, dynamic_service_stop=dynamic_service_stop
@@ -377,7 +376,7 @@ async def stop_node(request: web.Request) -> web.Response:
 
     return await start_long_running_task(
         request,
-        _stop_dynamic_service_task,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
+        _stop_dynamic_service_task,
         task_context=jsonable_encoder(req_ctx),
         # task arguments from here on ---
         app=request.app,

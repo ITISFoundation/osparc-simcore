@@ -39,7 +39,7 @@ def _normalize_weights(steps: int, weights: list[float]) -> list[float]:
     return [weight / total for weight in weights]
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(kw_only=True)
 class ProgressBarData:  # pylint: disable=too-many-instance-attributes
     """A progress bar data allows to keep track of multiple progress(es) even in deeply nested processes.
 
@@ -84,7 +84,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             "description": "Optionally defines the step relative weight (defaults to steps of equal weights)"
         },
     )
-    description: IDStr = field(metadata={"description": "define the progress name"})
+    description: str = field(metadata={"description": "define the progress name"})
     progress_unit: ProgressUnit | None = None
     progress_report_cb: AsyncReportCB | ReportCB | None = None
     _current_steps: float = _INITIAL_VALUE
@@ -210,6 +210,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         description: IDStr,
         step_weights: list[float] | None = None,
         progress_unit: ProgressUnit | None = None,
+        progress_report_cb: AsyncReportCB | ReportCB | None = None,
     ) -> "ProgressBarData":
         if len(self._children) == self.num_steps:
             msg = "Too many sub progresses created already. Wrong usage of the progress bar"
@@ -220,6 +221,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             step_weights=step_weights,
             progress_unit=progress_unit,
             _parent=self,
+            progress_report_cb=progress_report_cb,
         )
         self._children.append(child)
         return child

@@ -9,12 +9,14 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.basic_types import IDStr
 from pydantic import BaseModel, parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks.server import TaskId
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.long_running_tasks._task import TaskContext
+from servicelib.progress_bar import ProgressBarData
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -22,18 +24,22 @@ from tenacity.wait import wait_fixed
 
 
 async def _string_list_task(
-    task_progress: long_running_tasks.server.TaskProgress,
+    progress: ProgressBarData,
     num_strings: int,
     sleep_time: float,
     fail: bool,
 ) -> web.Response:
     generated_strings = []
-    for index in range(num_strings):
-        generated_strings.append(f"{index}")
-        await asyncio.sleep(sleep_time)
-        task_progress.update(message="generated item", percent=index / num_strings)
-        if fail:
-            raise RuntimeError("We were asked to fail!!")
+    async with progress.sub_progress(
+        num_strings, IDStr("generating strings")
+    ) as sub_progress:
+        for index in range(num_strings):
+            generated_strings.append(f"{index}")
+            await asyncio.sleep(sleep_time)
+            await sub_progress.update()
+            if fail:
+                msg = "We were asked to fail!!"
+                raise RuntimeError(msg)
 
     # NOTE: this code is used just for the sake of not returning the default 200
     return web.json_response(

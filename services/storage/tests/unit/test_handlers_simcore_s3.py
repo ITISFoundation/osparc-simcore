@@ -110,7 +110,10 @@ async def _request_copy_folders(
                 )
             ),
         ):
-            ctx.logger.info("%s", f"<-- current state is {lr_task.progress=}")
+            ctx.logger.info(
+                "%s",
+                f"<-- current state {lr_task.progress.actual_value}  is {lr_task.progress.composed_message}",
+            )
             if lr_task.done():
                 return await lr_task.result()
 

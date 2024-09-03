@@ -45,7 +45,7 @@ from servicelib.background_task import (
     stop_periodic_task,
 )
 from servicelib.fastapi.long_running_tasks.client import ProgressCallback
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.progress_bar import ProgressBarData
 from servicelib.redis import RedisClientsManager
 from servicelib.redis_utils import exclusive
 from settings_library.redis import RedisDatabase
@@ -211,7 +211,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         )
 
     async def remove_service_sidecar_proxy_docker_networks_and_volumes(
-        self, task_progress: TaskProgress, node_uuid: NodeID
+        self, task_progress: ProgressBarData, node_uuid: NodeID
     ) -> None:
         dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER

@@ -1,20 +1,28 @@
 from contextlib import suppress
+from dataclasses import fields
 from pathlib import Path
 from typing import cast
 
 from aiopg.sa.connection import SAConnection
 from aws_library.s3 import S3MetaData, SimcoreS3API
 from models_library.api_schemas_storage import S3BucketName
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
     SimcoreS3DirectoryID,
     SimcoreS3FileID,
     StorageFileID,
 )
+from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.utils import ensure_ends_with
 
-from . import db_file_meta_data
-from .exceptions import FileMetaDataNotFoundError
+from . import db_file_meta_data, db_projects
+from .db_access_layer import AccessRights, get_project_access_rights
+from .exceptions import (
+    FileMetaDataNotFoundError,
+    ProjectAccessRightError,
+    ProjectNotFoundError,
+)
 from .models import FileMetaData, FileMetaDataAtDB
 from .utils import convert_db_to_model
 
@@ -118,3 +126,27 @@ async def get_directory_file_id(
     directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
 
     return directory_file_id if directory_file_id_fmd else None
+
+
+async def check_project_exists(conn: SAConnection, *, project_id: ProjectID) -> None:
+    if not await db_projects.project_exists(conn, project_id):
+        raise ProjectNotFoundError(project_id=project_id)
+
+
+async def check_project_access_rights(
+    conn: SAConnection,
+    *,
+    project_id: ProjectID,
+    user_id: UserID,
+    required_access: AccessRights,
+) -> None:
+    source_access_rights = await get_project_access_rights(
+        conn, user_id, project_id=project_id
+    )
+    for required_right in fields(required_access):
+        if getattr(required_access, required_right.name) is True and not getattr(
+            source_access_rights, required_right.name
+        ):
+            raise ProjectAccessRightError(
+                access_Right=required_right.name, project_id=project_id
+            )

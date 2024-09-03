@@ -6,7 +6,8 @@ from typing import AsyncIterator
 
 import typer
 from fastapi import FastAPI
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from models_library.basic_types import IDStr
+from servicelib.progress_bar import ProgressBarData
 from settings_library.utils_cli import create_settings_command
 
 from ._meta import PROJECT_NAME
@@ -69,8 +70,10 @@ def state_save():
         async with _initialized_app() as app:
             settings: ApplicationSettings = app.state.settings
             mounted_volumes: MountedVolumes = app.state.mounted_volumes
-
-            await task_save_state(TaskProgress.create(), settings, mounted_volumes, app)
+            async with ProgressBarData(
+                num_steps=1, description=IDStr("saving state")
+            ) as progress:
+                await task_save_state(progress, settings, mounted_volumes, app)
 
     asyncio.run(_async_save_state())
     _print_highlight("state save finished successfully")
@@ -83,7 +86,10 @@ def outputs_push():
     async def _async_outputs_push() -> None:
         async with _initialized_app() as app:
             outputs_manager: OutputsManager = app.state.outputs_manager
-            await task_ports_outputs_push(TaskProgress.create(), outputs_manager, app)
+            async with ProgressBarData(
+                num_steps=1, description=IDStr("pushing outputs")
+            ) as progress:
+                await task_ports_outputs_push(progress, outputs_manager, app)
 
     asyncio.run(_async_outputs_push())
     _print_highlight("output ports push finished successfully")
