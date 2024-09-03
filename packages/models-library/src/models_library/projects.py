@@ -175,7 +175,7 @@ class Project(BaseProjectModel):
     )
 
     workspace_id: WorkspaceID | None = Field(
-        ...,
+        default=None,
         description="To which workspace project belongs. If None, belongs to private user workspace.",
         alias="workspaceId",
     )
