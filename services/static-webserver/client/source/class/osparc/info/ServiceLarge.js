@@ -343,7 +343,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __createDescription: function() {
-      const maxHeight = 400;
+      const maxHeight = 600;
       return osparc.info.ServiceUtils.createDescription(this.getService(), maxHeight);
     },
 
