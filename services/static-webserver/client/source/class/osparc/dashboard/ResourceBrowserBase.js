@@ -355,7 +355,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
 
       resourceFilter.addListener("changeSharedWith", e => {
-        this.setCurrentWorkspaceId(null);
+        if (this._resourceType === "study") {
+          this.setCurrentWorkspaceId(null);
+        }
         const sharedWith = e.getData();
         this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
       }, this);
@@ -363,6 +365,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourceFilter.addListener("changeWorkspace", e => {
         const workspaceId = e.getData();
         this.setCurrentWorkspaceId(workspaceId);
+        if (this._resourceType === "study") {
+          this._searchBarFilter.resetSharedWithActiveFilter();
+        }
       }, this);
 
       resourceFilter.addListener("changeSelectedTags", e => {
