@@ -26,7 +26,7 @@ def setup_opentelemetry_instrumentation(
         not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
         and not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
     ):
-        log.info("Skipping opentelemetry tracing setup")
+        log.warning("Skipping opentelemetry tracing setup")
         return None
     if (
         not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
