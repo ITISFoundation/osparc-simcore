@@ -2,14 +2,13 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import os
-from asyncio import AbstractEventLoop
 
 import pytest
 from fastapi import FastAPI
 from pydantic import ValidationError
 from servicelib.fastapi.tracing import setup_opentelemetry_instrumentation
 from settings_library.tracing import TracingSettings
+
 
 @pytest.fixture
 def mocked_app() -> FastAPI:
@@ -22,14 +21,13 @@ def tracing_settings_in(request):
 
 
 @pytest.fixture()
-def set_and_clean_settings_env_vars(tracing_settings_in):
+def set_and_clean_settings_env_vars(monkeypatch: pytest.MonkeyPatch):
     if tracing_settings_in[0]:
-        os.environ["TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT"] = tracing_settings_in[0]
+        monkeypatch.setenv(
+            "TRACING_OTEL_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}"
+        )
     if tracing_settings_in[1]:
-        os.environ["TRACING_OPENTELEMETRY_COLLECTOR_PORT"] = str(tracing_settings_in[1])
-    yield
-    os.environ.pop("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", None)
-    os.environ.pop("TRACING_OPENTELEMETRY_COLLECTOR_PORT", None)
+        monkeypatch.setenv("TRACING_OTEL_COLLECTOR_PORT", f"{tracing_settings_in[1]}")
 
 
 @pytest.mark.parametrize(
@@ -40,20 +38,19 @@ def set_and_clean_settings_env_vars(tracing_settings_in):
     ],
     indirect=True,
 )
-def test_valid_tracing_settings(
+async def test_valid_tracing_settings(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars,
-    event_loop: AbstractEventLoop,
     tracing_settings_in: TracingSettings,
-):    
+):
     tracing_settings = TracingSettings()
     setup_opentelemetry_instrumentation(
-        app,
+        mocked_app,
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
     )
     setup_opentelemetry_instrumentation(
-        app,
+        mocked_app,
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
     )
@@ -70,12 +67,12 @@ def test_valid_tracing_settings(
     ],
     indirect=True,
 )
-def test_invalid_tracing_settings(
+async def test_invalid_tracing_settings(
+    mocked_app: FastAPI,
     set_and_clean_settings_env_vars,
-    event_loop: AbstractEventLoop,
     tracing_settings_in: TracingSettings,
 ):
-    app = mock_app
+    app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
         tracing_settings = TracingSettings()
         setup_opentelemetry_instrumentation(
@@ -90,12 +87,12 @@ def test_invalid_tracing_settings(
     [("", ""), ("", None), (None, None)],
     indirect=True,
 )
-def test_missing_tracing_settings(
+async def test_missing_tracing_settings(
+    mocked_app: FastAPI,
     set_and_clean_settings_env_vars,
-    event_loop: AbstractEventLoop,
     tracing_settings_in: TracingSettings,
 ):
-    app = mock_app
+    app = mocked_app
     tracing_settings = TracingSettings()
     setup_opentelemetry_instrumentation(
         app,
@@ -109,9 +106,8 @@ def test_missing_tracing_settings(
     [("http://opentelemetry-collector", None), (None, 4318)],
     indirect=True,
 )
-def test_incomplete_tracing_settings(
+async def test_incomplete_tracing_settings(
     set_and_clean_settings_env_vars,
-    event_loop: AbstractEventLoop,
     tracing_settings_in: TracingSettings,
 ):
     pass
