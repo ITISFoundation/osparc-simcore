@@ -1,15 +1,15 @@
-"""add_workspaces_and_folders_2
+"""add_workspaces_and_folders_v2
 
-Revision ID: d5ee4dabab82
+Revision ID: 9f381dcb9b95
 Revises: feca36c8e18f
-Create Date: 2024-08-29 13:21:53.604727+00:00
+Create Date: 2024-09-03 05:49:16.581965+00:00
 
 """
 import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "d5ee4dabab82"
+revision = "9f381dcb9b95"
 down_revision = "feca36c8e18f"
 branch_labels = None
 depends_on = None
@@ -50,8 +50,9 @@ def upgrade():
         sa.Column("workspace_id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
-        sa.Column("owner_primary_gid", sa.BigInteger(), nullable=False),
         sa.Column("thumbnail", sa.String(), nullable=True),
+        sa.Column("owner_primary_gid", sa.BigInteger(), nullable=False),
+        sa.Column("product_name", sa.String(), nullable=False),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),
@@ -64,7 +65,6 @@ def upgrade():
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.Column("product_name", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(
             ["owner_primary_gid"],
             ["groups.gid"],
@@ -172,8 +172,8 @@ def upgrade():
     )
     op.create_table(
         "projects_to_folders",
-        sa.Column("folder_id", sa.BigInteger(), nullable=True),
         sa.Column("project_uuid", sa.String(), nullable=True),
+        sa.Column("folder_id", sa.BigInteger(), nullable=True),
         sa.Column("user_id", sa.BigInteger(), nullable=True),
         sa.Column(
             "created",
@@ -208,6 +208,7 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
+        sa.UniqueConstraint("project_uuid", "folder_id", "user_id"),
     )
     op.add_column("projects", sa.Column("workspace_id", sa.BigInteger(), nullable=True))
     op.create_foreign_key(

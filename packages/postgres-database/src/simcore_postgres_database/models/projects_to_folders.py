@@ -1,10 +1,6 @@
 import sqlalchemy as sa
 
-from ._common import (
-    column_created_datetime,
-    column_modified_datetime,
-    register_modified_datetime_auto_update_trigger,
-)
+from ._common import column_created_datetime, column_modified_datetime
 from .base import metadata
 from .folders_v2 import folders_v2
 
@@ -47,5 +43,3 @@ projects_to_folders = sa.Table(
     column_modified_datetime(timezone=True),
     sa.UniqueConstraint("project_uuid", "folder_id", "user_id"),
 )
-
-register_modified_datetime_auto_update_trigger(projects_to_folders)

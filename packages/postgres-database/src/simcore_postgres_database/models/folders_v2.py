@@ -1,10 +1,6 @@
 import sqlalchemy as sa
 
-from ._common import (
-    column_created_datetime,
-    column_modified_datetime,
-    register_modified_datetime_auto_update_trigger,
-)
+from ._common import column_created_datetime, column_modified_datetime
 from .base import metadata
 from .workspaces import workspaces
 
@@ -79,6 +75,3 @@ folders_v2 = sa.Table(
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
 )
-
-
-register_modified_datetime_auto_update_trigger(folders_v2)
