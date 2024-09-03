@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
       appearance: "pb-new"
     });
 
-    // this.addListener("changeValue", e => this.__itemSelected(e.getData()), this);
+    this.addListener("changeValue", e => this.__itemSelected(e.getData()), this);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.NEW);
 
