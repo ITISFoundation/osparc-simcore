@@ -139,14 +139,14 @@ async def _analyze_current_cluster(
         else:
             pending_nodes.append(instance)
 
-    drained_nodes, reserve_drained_nodes, terminating_nodes = sort_drained_nodes(
+    drained_nodes, buffer_drained_nodes, terminating_nodes = sort_drained_nodes(
         app_settings, all_drained_nodes, allowed_instance_types
     )
     cluster = Cluster(
         active_nodes=active_nodes,
         pending_nodes=pending_nodes,
         drained_nodes=drained_nodes,
-        reserve_drained_nodes=reserve_drained_nodes,
+        buffer_drained_nodes=buffer_drained_nodes,
         pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
         broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
         buffer_ec2s=[
@@ -200,14 +200,13 @@ async def _make_pending_buffer_ec2s_join_cluster(
     app: FastAPI,
     cluster: Cluster,
 ) -> Cluster:
-    # started buffer instance shall be asked to join the cluster once they are running
-    ssm_client = get_ssm_client(app)
-
     if buffer_ec2s_pending := [
         i.ec2_instance
         for i in cluster.pending_ec2s
         if is_buffer_machine(i.ec2_instance.tags)
     ]:
+        # started buffer instance shall be asked to join the cluster once they are running
+        ssm_client = get_ssm_client(app)
         buffer_ec2_connection_state = await limited_gather(
             *[
                 ssm_client.is_instance_connected_to_ssm_server(i.id)
@@ -286,19 +285,19 @@ async def _try_attach_pending_ec2s(
                 )
             else:
                 still_pending_ec2s.append(instance_data)
-        except Ec2InvalidDnsNameError:  # noqa: PERF203
+        except Ec2InvalidDnsNameError:
             _logger.exception("Unexpected EC2 private dns")
     # NOTE: first provision the reserve drained nodes if possible
     all_drained_nodes = (
-        cluster.drained_nodes + cluster.reserve_drained_nodes + new_found_instances
+        cluster.drained_nodes + cluster.buffer_drained_nodes + new_found_instances
     )
-    drained_nodes, reserve_drained_nodes, _ = sort_drained_nodes(
+    drained_nodes, buffer_drained_nodes, _ = sort_drained_nodes(
         app_settings, all_drained_nodes, allowed_instance_types
     )
     return dataclasses.replace(
         cluster,
         drained_nodes=drained_nodes,
-        reserve_drained_nodes=reserve_drained_nodes,
+        buffer_drained_nodes=buffer_drained_nodes,
         pending_ec2s=still_pending_ec2s,
     )
 
@@ -360,9 +359,7 @@ async def _activate_drained_nodes(
 ) -> Cluster:
     nodes_to_activate = [
         node
-        for node in itertools.chain(
-            cluster.drained_nodes, cluster.reserve_drained_nodes
-        )
+        for node in itertools.chain(cluster.drained_nodes, cluster.buffer_drained_nodes)
         if node.assigned_tasks
     ]
 
@@ -381,14 +378,14 @@ async def _activate_drained_nodes(
     ]
     remaining_reserved_drained_nodes = [
         node
-        for node in cluster.reserve_drained_nodes
+        for node in cluster.buffer_drained_nodes
         if node.ec2_instance.id not in new_active_node_ids
     ]
     return dataclasses.replace(
         cluster,
         active_nodes=cluster.active_nodes + nodes_to_activate,
         drained_nodes=remaining_drained_nodes,
-        reserve_drained_nodes=remaining_reserved_drained_nodes,
+        buffer_drained_nodes=remaining_reserved_drained_nodes,
     )
 
 
@@ -491,7 +488,7 @@ async def _assign_tasks_to_current_cluster(
             ),
             lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
                 task,
-                instances=cluster.drained_nodes + cluster.reserve_drained_nodes,
+                instances=cluster.drained_nodes + cluster.buffer_drained_nodes,
                 task_required_ec2_instance=required_ec2,
                 task_required_resources=required_resources,
             ),
@@ -621,7 +618,7 @@ async def _find_needed_instances(
     if (
         num_missing_nodes := (
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-            - len(cluster.reserve_drained_nodes)
+            - len(cluster.buffer_drained_nodes)
         )
     ) > 0:
         # check if some are already pending
@@ -630,7 +627,7 @@ async def _find_needed_instances(
         ] + [i.ec2_instance for i in cluster.pending_nodes if not i.assigned_tasks]
         if len(remaining_pending_instances) < (
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-            - len(cluster.reserve_drained_nodes)
+            - len(cluster.buffer_drained_nodes)
         ):
             default_instance_type = get_machine_buffer_type(available_ec2_types)
             num_instances_per_type[default_instance_type] += num_missing_nodes
@@ -1086,7 +1083,7 @@ async def _autoscale_cluster(
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     if queued_or_missing_instance_tasks or (
-        len(cluster.reserve_drained_nodes)
+        len(cluster.buffer_drained_nodes)
         < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     ):
         if (
@@ -1127,7 +1124,7 @@ async def _notify_autoscaling_status(
 
     monitored_instances = list(
         itertools.chain(
-            cluster.active_nodes, cluster.drained_nodes, cluster.reserve_drained_nodes
+            cluster.active_nodes, cluster.drained_nodes, cluster.buffer_drained_nodes
         )
     )
 
@@ -1148,7 +1145,7 @@ async def _notify_autoscaling_status(
         )
         # prometheus instrumentation
         if has_instrumentation(app):
-            get_instrumentation(app).update_from_cluster(cluster)
+            get_instrumentation(app).cluster_metrics.update_from_cluster(cluster)
 
 
 async def auto_scale_cluster(

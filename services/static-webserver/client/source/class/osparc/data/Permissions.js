@@ -117,7 +117,6 @@ qx.Class.define("osparc.data.Permissions", {
           "study.node.export",
           "study.edge.create",
           "study.edge.delete",
-          "study.service.update",
           "study.classifier",
           "study.tag",
           "study.slides.edit",

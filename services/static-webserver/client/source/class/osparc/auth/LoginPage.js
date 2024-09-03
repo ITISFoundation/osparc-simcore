@@ -210,9 +210,8 @@ qx.Class.define("osparc.auth.LoginPage", {
 
       const login = this.getChildControl("login-view");
       const registration = this.getChildControl("registration-view");
-      const config = osparc.store.Store.getInstance().get("config");
       let requestAccount = null;
-      if (config["invitation_required"] && osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (osparc.product.Utils.getCreateAccountAction() === "REQUEST_ACCOUNT_FORM") {
         requestAccount = this.getChildControl("request-account");
       }
       const verifyPhoneNumber = this.getChildControl("verify-phone-number-view");

@@ -1,10 +1,10 @@
 import inspect
-from enum import Enum, unique
+from enum import Enum, StrEnum, unique
 from typing import Any
 
 
 @unique
-class StrAutoEnum(str, Enum):
+class StrAutoEnum(StrEnum):
     @staticmethod
     def _generate_next_value_(name, start, count, last_values):
         return name.upper()

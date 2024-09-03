@@ -53,11 +53,6 @@ coverage==7.6.1
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.1
-    # via
-    #   -c requirements/_base.txt
-    #   hypothesis
-    #   pytest
 execnet==2.1.1
     # via pytest-xdist
 faker==19.6.1
@@ -66,7 +61,7 @@ faker==19.6.1
     #   -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
-frozenlist==1.3.0
+frozenlist==1.4.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -223,10 +218,7 @@ tenacity==8.5.0
 termcolor==2.4.0
     # via pytest-sugar
 tomli==2.0.1
-    # via
-    #   coverage
-    #   mypy
-    #   pytest
+    # via coverage
 types-aiofiles==24.1.0.20240626
     # via -r requirements/_test.in
 types-jsonschema==4.23.0.20240813
@@ -251,7 +243,7 @@ urllib3==1.26.11
     #   requests
 websockets==13.0
     # via -r requirements/_test.in
-yarl==1.5.1
+yarl==1.9.4
     # via
     #   -c requirements/_base.txt
     #   aiohttp

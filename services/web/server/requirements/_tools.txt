@@ -97,8 +97,6 @@ typing-extensions==4.12.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
-    #   astroid
-    #   black
     #   mypy
 virtualenv==20.26.3
     # via pre-commit

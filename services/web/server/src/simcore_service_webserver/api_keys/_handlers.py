@@ -23,8 +23,8 @@ routes = RouteTableDef()
 
 
 class _RequestContext(RequestParams):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 @routes.get(f"/{API_VTAG}/auth/api-keys", name="list_api_keys")

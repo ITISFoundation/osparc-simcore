@@ -126,7 +126,9 @@ async def _async_aws_cli_command(
     )
 
     assert proc.stdout  # nosec
-    await asyncio.wait([_read_stream(proc.stdout, [*aws_cli_s3_log_parsers])])
+    await asyncio.wait(
+        [asyncio.create_task(_read_stream(proc.stdout, [*aws_cli_s3_log_parsers]))]
+    )
 
     _stdout, _stderr = await proc.communicate()
 

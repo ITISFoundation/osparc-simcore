@@ -73,7 +73,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
   },
 
   events: {
-    "updateNodeDecorator": "qx.event.type.Event"
+    "updateNodeDecorator": "qx.event.type.Event",
+    "requestOpenLogger": "qx.event.type.Event",
   },
 
   members: {
@@ -146,6 +147,20 @@ qx.Class.define("osparc.workbench.NodeUI", {
           }
           const nodeStatus = new osparc.ui.basic.NodeStatusUI(this.getNode());
           control.add(nodeStatus);
+          const statusLabel = nodeStatus.getChildControl("label");
+          const requestOpenLogger = () => this.fireEvent("requestOpenLogger");
+          const evaluateLabel = () => {
+            const failed = statusLabel.getValue() === "Failed";
+            statusLabel.setCursor(failed ? "pointer" : "auto");
+            if (nodeStatus.hasListener("tap")) {
+              nodeStatus.removeListener("tap", requestOpenLogger);
+            }
+            if (failed) {
+              nodeStatus.addListener("tap", requestOpenLogger);
+            }
+          };
+          evaluateLabel();
+          statusLabel.addListener("changeValue", evaluateLabel);
           this.add(control, {
             row: 0,
             column: 1

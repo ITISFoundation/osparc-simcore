@@ -122,17 +122,6 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
     },
 
     // overridden
-    _openEditAccessLevel: function() {
-      const settingsEditorLayout = osparc.node.slideshow.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
-      const propsFormEditor = this.getNode().getPropsFormEditor();
-      settingsEditorLayout.add(propsFormEditor);
-      const title = this.getNode().getLabel();
-      osparc.ui.window.Window.popUpInWindow(settingsEditorLayout, title, 800, 600).set({
-        autoDestroy: false
-      });
-    },
-
-    // overridden
     _applyNode: function(node) {
       this.base(arguments, node);
     },

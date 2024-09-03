@@ -3,5 +3,10 @@
 # Include this file with --contraints
 #
 
-# SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_url_compose_changed_with_latest_release
-yarl<1.6
+# yarl version 1.8.2 is the first one shipping wheels for Python 3.11
+# SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_new_url_generation for properly usage
+yarl>=1.8.2
+frozenlist>=1.3.1
+
+# See: https://github.com/pydantic/pydantic/issues/4011
+pydantic>=1.10
