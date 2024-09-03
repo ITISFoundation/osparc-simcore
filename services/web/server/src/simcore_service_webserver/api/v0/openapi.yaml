@@ -9652,6 +9652,50 @@ components:
       example:
         first_name: Pedro
         last_name: Crespo
+    ProgressReport:
+      title: ProgressReport
+      required:
+      - actual_value
+      type: object
+      properties:
+        actual_value:
+          title: Actual Value
+          type: number
+        total:
+          title: Total
+          type: number
+          default: 1.0
+        unit:
+          title: Unit
+          enum:
+          - Byte
+          type: string
+        message:
+          $ref: '#/components/schemas/ProgressStructuredMessage'
+    ProgressStructuredMessage:
+      title: ProgressStructuredMessage
+      required:
+      - description
+      - current
+      - total
+      type: object
+      properties:
+        description:
+          title: Description
+          maxLength: 100
+          minLength: 1
+          type: string
+        current:
+          title: Current
+          type: number
+        total:
+          title: Total
+          type: integer
+        unit:
+          title: Unit
+          type: string
+        sub:
+          $ref: '#/components/schemas/ProgressStructuredMessage'
     ProjectCopyOverride:
       title: ProjectCopyOverride
       required:
@@ -11549,37 +11593,16 @@ components:
         exception:
           title: Exception
           type: string
-    TaskProgress:
-      title: TaskProgress
-      type: object
-      properties:
-        task_id:
-          title: Task Id
-          type: string
-        message:
-          title: Message
-          type: string
-          default: ''
-        percent:
-          title: Percent
-          maximum: 1.0
-          minimum: 0.0
-          type: number
-          default: 0.0
-      description: 'Helps the user to keep track of the progress. Progress is expected
-        to be
-
-        defined as a float bound between 0.0 and 1.0'
     TaskStatus:
       title: TaskStatus
       required:
-      - task_progress
+      - progress_report
       - done
       - started
       type: object
       properties:
-        task_progress:
-          $ref: '#/components/schemas/TaskProgress'
+        progress_report:
+          $ref: '#/components/schemas/ProgressReport'
         done:
           title: Done
           type: boolean
