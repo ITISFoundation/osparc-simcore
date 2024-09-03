@@ -258,9 +258,9 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
     },
 
     __openShareWith: function() {
-      const title = this.tr("Share Workspace");
       const permissionsView = new osparc.share.CollaboratorsWorkspace(this.getWorkspace());
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title);
+      const title = this.tr("Share Workspace");
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);
       permissionsView.addListener("updateAccessRights", () => this.__applyAccessRights(this.getWorkspace().getAccessRights()), this);
     },
 
