@@ -1,7 +1,7 @@
 """add_workspaces_and_folders_v2
 
 Revision ID: 9f381dcb9b95
-Revises: feca36c8e18f
+Revises: 926c3eb2254e
 Create Date: 2024-09-03 05:49:16.581965+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "9f381dcb9b95"
-down_revision = "feca36c8e18f"
+down_revision = "926c3eb2254e"
 branch_labels = None
 depends_on = None
 
