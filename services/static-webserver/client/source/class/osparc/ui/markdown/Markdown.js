@@ -7,7 +7,7 @@
  */
 
 /**
- * @asset(marked/marked.js)
+ * @asset(marked/marked.min.js)
  * @ignore(marked)
  */
 
@@ -32,7 +32,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
         resolve(marked);
       } else {
         const loader = new qx.util.DynamicScriptLoader([
-          "marked/marked.js"
+          "marked/marked.min.js"
         ]);
         loader.addListenerOnce("ready", () => {
           resolve(marked);
@@ -80,7 +80,6 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     _applyMarkdown: function(value = "") {
       this.__loadMarked.then(() => {
         const renderer = new marked.Renderer();
-
         const linkRenderer = renderer.link;
         renderer.link = (href, title, text) => {
           const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
@@ -90,7 +89,9 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
           return linkWithRightColor;
         };
 
-        const html = marked(value, { renderer });
+        const html = marked(value, {
+          renderer, // An object containing functions to render tokens to HTML
+        });
 
         const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
         this.setHtml(safeHtml);
