@@ -19,7 +19,7 @@ from settings_library.tracing import TracingSettings
 log = logging.getLogger(__name__)
 
 
-def setup_opentelemetry_instrumentation(
+def setup_tracing(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
 ) -> FastAPIInstrumentor | None:
     if (

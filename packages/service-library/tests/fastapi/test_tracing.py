@@ -6,7 +6,7 @@
 import pytest
 from fastapi import FastAPI
 from pydantic import ValidationError
-from servicelib.fastapi.tracing import setup_opentelemetry_instrumentation
+from servicelib.fastapi.tracing import setup_tracing
 from settings_library.tracing import TracingSettings
 
 
@@ -44,12 +44,13 @@ async def test_valid_tracing_settings(
     tracing_settings_in: TracingSettings,
 ):
     tracing_settings = TracingSettings()
-    setup_opentelemetry_instrumentation(
+    setup_tracing(
         mocked_app,
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
     )
-    setup_opentelemetry_instrumentation(
+    # idempotency
+    setup_tracing(
         mocked_app,
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
@@ -75,7 +76,7 @@ async def test_invalid_tracing_settings(
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
         tracing_settings = TracingSettings()
-        setup_opentelemetry_instrumentation(
+        setup_tracing(
             app,
             tracing_settings=tracing_settings,
             service_name="Mock-Openetlemetry-Pytest",
@@ -94,13 +95,14 @@ async def test_missing_tracing_settings(
 ):
     app = mocked_app
     tracing_settings = TracingSettings()
-    setup_opentelemetry_instrumentation(
+    setup_tracing(
         app,
         tracing_settings=tracing_settings,
         service_name="Mock-Openetlemetry-Pytest",
     )
 
 
+# TODO
 @pytest.mark.parametrize(
     "tracing_settings_in",  # noqa: PT002
     [("http://opentelemetry-collector", None), (None, 4318)],
@@ -109,5 +111,11 @@ async def test_missing_tracing_settings(
 async def test_incomplete_tracing_settings(
     set_and_clean_settings_env_vars,
     tracing_settings_in: TracingSettings,
+    mocked_app: FastAPI,
 ):
-    pass
+    with pytest.raises(RuntimeError):
+        setup_tracing(
+            mocked_app,
+            tracing_settings=tracing_settings_in,
+            service_name="Mock-Openetlemetry-Pytest",
+        )

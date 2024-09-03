@@ -55,9 +55,9 @@ def create(settings: Settings) -> web.Application:
         service_name = "simcore_service_storage"
         setup_tracing(
             app,
-            service_name=service_name,
             opentelemetry_collector_endpoint=tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT,
             opentelemetry_collector_port=tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT,
+            service_name=service_name,
             instrument_aiopg=True,
         )
 

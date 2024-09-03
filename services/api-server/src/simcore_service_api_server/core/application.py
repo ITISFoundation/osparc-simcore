@@ -5,7 +5,7 @@ from fastapi_pagination import add_pagination
 from models_library.basic_types import BootModeEnum
 from packaging.version import Version
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
-from servicelib.fastapi.tracing import setup_opentelemetry_instrumentation
+from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 
 from .. import exceptions
@@ -84,7 +84,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if settings.API_SERVER_WEBSERVER:
         webserver.setup(app, settings.API_SERVER_WEBSERVER)
     if app.state.settings.API_SERVER_TRACING:
-        setup_opentelemetry_instrumentation(
+        setup_tracing(
             app, app.state.settings.API_SERVER_TRACING, app.state.settings.APP_NAME
         )
 

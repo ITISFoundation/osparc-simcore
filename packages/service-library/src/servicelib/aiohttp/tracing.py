@@ -15,22 +15,24 @@ from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from pydantic import AnyUrl
+from settings_library.tracing import TracingSettings
 
 log = logging.getLogger(__name__)
 
 
 def setup_tracing(
     app: web.Application,  # pylint: disable=unused-argument
-    *,
+    tracing_settings: TracingSettings,
     service_name: str,
-    opentelemetry_collector_endpoint: AnyUrl | str | None,
-    opentelemetry_collector_port: int | None,
-    instrument_aiopg: bool = False,
+    instrument_aiopg: bool = False,  # noqa: FBT001, FBT002
 ) -> None:
     """
     Sets up this service for a distributed tracing system (opentelemetry)
     """
+    opentelemetry_collector_endpoint = (
+        tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
+    )
+    opentelemetry_collector_port = tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
     if not opentelemetry_collector_endpoint and not opentelemetry_collector_port:
         log.warning("Skipping opentelemetry tracing setup")
         return

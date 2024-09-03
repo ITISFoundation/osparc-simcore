@@ -6,7 +6,7 @@ from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.prometheus_instrumentation import (
     setup_prometheus_instrumentation,
 )
-from servicelib.fastapi.tracing import setup_opentelemetry_instrumentation
+from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import API_VERSION, API_VTAG
@@ -68,10 +68,10 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if app.state.settings.DATCORE_ADAPTER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
     if app.state.settings.DATCORE_ADAPTER_TRACING:
-        setup_opentelemetry_instrumentation(
+        setup_tracing(
             app,
             app.state.settings.DATCORE_ADAPTER_TRACING,
-            "simcore_service_datcore_adapter",
+            app.state.settings.APP_NAME,
         )
 
     # events

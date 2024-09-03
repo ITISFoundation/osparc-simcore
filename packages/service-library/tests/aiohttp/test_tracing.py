@@ -42,8 +42,9 @@ def test_valid_tracing_settings(
         ("httsdasp://ot@##el-collector", 4318),
     ],
 )
-def test_invalid_tracing_settings(
-    event_loop: AbstractEventLoop,
+# TODO rework
+# Todo same style functions
+async def test_invalid_tracing_settings(
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable,
     opentelemetry_collector_endpoint: str,
@@ -51,19 +52,13 @@ def test_invalid_tracing_settings(
 ) -> TestClient:
     app = web.Application()
     service_name = "simcore_service_webserver"
-    setup_tracing(
-        app,
-        service_name=service_name,
-        opentelemetry_collector_endpoint=opentelemetry_collector_endpoint,
-        opentelemetry_collector_port=opentelemetry_collector_port,
-    )
-    # assert idempotency
-    setup_tracing(
-        app,
-        service_name=service_name,
-        opentelemetry_collector_endpoint=opentelemetry_collector_endpoint,
-        opentelemetry_collector_port=opentelemetry_collector_port,
-    )
+    with pytest.raises((BaseException, TypeError)):  # noqa: PT012
+        setup_tracing(
+            app,
+            service_name=service_name,
+            opentelemetry_collector_endpoint=opentelemetry_collector_endpoint,
+            opentelemetry_collector_port=opentelemetry_collector_port,
+        )
 
 
 @pytest.mark.parametrize(

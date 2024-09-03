@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import FastAPI
-from servicelib.fastapi.tracing import setup_opentelemetry_instrumentation
+from servicelib.fastapi.tracing import setup_tracing
 
 from .._meta import (
     API_VERSION,
@@ -71,7 +71,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_auto_scaler_background_task(app)
     setup_buffer_machines_pool_task(app)
     if app.state.settings.AUTOSCALING_TRACING:
-        setup_opentelemetry_instrumentation(
+        setup_tracing(
             app, app.state.settings.AUTOSCALING_TRACING, app.state.settings.APP_NAME
         )
 
