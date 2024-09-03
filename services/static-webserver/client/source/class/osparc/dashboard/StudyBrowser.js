@@ -413,6 +413,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       newWorkspaceCard.setCardKey("new-workspace");
       newWorkspaceCard.subscribeToFilterGroup("searchBarFilter");
       newWorkspaceCard.addListener("createWorkspace", () => this.__reloadWorkspaces());
+      newWorkspaceCard.addListener("updateWorkspace", () => this.__reloadWorkspaces());
       this._resourcesContainer.addNewWorkspaceCard(newWorkspaceCard);
     },
     // /WORKSPACES
