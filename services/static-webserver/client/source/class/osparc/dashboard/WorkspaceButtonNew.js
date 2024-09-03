@@ -62,10 +62,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
             .then(newWorkspace => {
               this.fireDataEvent("createWorkspace");
               const permissionsView = new osparc.share.CollaboratorsWorkspace(newWorkspace);
-              permissionsView.addListener("updateAccessRights", e => {
-                const updatedData = e.getData();
-                console.log(updatedData);
-              }, this);
+              const title2 = qx.locale.Manager.tr("Share Workspace");
+              osparc.ui.window.Window.popUpInWindow(permissionsView, title2, 500, 400);
             })
             .catch(console.error)
             .finally(() => win.close());

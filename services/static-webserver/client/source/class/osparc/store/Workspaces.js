@@ -169,17 +169,12 @@ qx.Class.define("osparc.store.Workspaces", {
           return newWorkspace;
         });
       */
-      const deleteAccess = {
-        read: true,
-        write: true,
-        delete: true,
-      }
       const workspaceData = newWorkspaceData;
       workspaceData["workspaceId"] = Math.floor(Math.random() * 100) + 100;
-      workspaceData["myAccessRights"] = deleteAccess;
+      workspaceData["myAccessRights"] = osparc.share.CollaboratorsWorkspace.getOwnerAccessRight();
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       workspaceData["accessRights"] = {};
-      workspaceData["accessRights"][myGroupId] = deleteAccess;
+      workspaceData["accessRights"][myGroupId] = osparc.share.CollaboratorsWorkspace.getOwnerAccessRight();
       workspaceData["createdAt"] = new Date().toISOString();
       workspaceData["lastModified"] = new Date().toISOString();
       return new Promise(resolve => {
