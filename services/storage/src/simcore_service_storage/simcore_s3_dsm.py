@@ -21,7 +21,7 @@ from aws_library.s3 import (
     UploadedBytesTransferredCallback,
 )
 from models_library.api_schemas_storage import LinkType, S3BucketName, UploadedPart
-from models_library.basic_types import SHA256Str
+from models_library.basic_types import IDStr, SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
     LocationID,
@@ -32,8 +32,8 @@ from models_library.projects_nodes_io import (
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
-from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
+from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import ensure_ends_with, limited_gather
 
 from . import db_file_meta_data, db_projects, db_tokens
@@ -61,7 +61,6 @@ from .exceptions import (
     FileMetaDataNotFoundError,
     LinkAlreadyExistsError,
     ProjectAccessRightError,
-    ProjectNotFoundError,
 )
 from .models import (
     DatasetMetaData,
@@ -72,9 +71,14 @@ from .models import (
     UserOrProjectFilter,
 )
 from .s3 import get_s3_client
-from .s3_utils import S3TransferDataCB, update_task_progress
+from .s3_utils import S3TransferDataCB
 from .settings import Settings
-from .simcore_s3_dsm_utils import expand_directory, get_directory_file_id
+from .simcore_s3_dsm_utils import (
+    check_project_access_rights,
+    check_project_exists,
+    expand_directory,
+    get_directory_file_id,
+)
 from .utils import (
     convert_db_to_model,
     download_to_file_or_raise,
@@ -561,135 +565,203 @@ class SimcoreS3DataManager(BaseDataManager):
             ),
         )
 
+    async def _copy_check_project_access(
+        self,
+        *,
+        user_id: UserID,
+        src: ProjectID,
+        dest: ProjectID,
+        progress: ProgressBarData,
+    ) -> None:
+        async with progress.sub_progress(1, IDStr("Check project access")):
+            with log_context(
+                _logger,
+                logging.INFO,
+                msg=f"{src} -> {dest}: "
+                "Step 1: check access rights (read of src and write of dst)",
+            ):
+                async with self.engine.acquire() as conn:
+                    for prj_uuid in [src, dest]:
+                        await check_project_exists(conn, project_id=prj_uuid)
+                    await check_project_access_rights(
+                        conn,
+                        project_id=src,
+                        user_id=user_id,
+                        required_access=AccessRights(
+                            read=True, write=False, delete=False
+                        ),
+                    )
+                    await check_project_access_rights(
+                        conn,
+                        project_id=dest,
+                        user_id=user_id,
+                        required_access=AccessRights(
+                            read=False, write=True, delete=False
+                        ),
+                    )
+
+    async def _copy_collect_files_to_copy(
+        self,
+        *,
+        src: ProjectID,
+        dest: ProjectID,
+        progress: ProgressBarData,
+    ) -> tuple[list[FileMetaDataAtDB], int, ByteSize]:
+        async with progress.sub_progress(2, IDStr("Collecting files")) as sub_progress:
+            with log_context(
+                _logger,
+                logging.INFO,
+                msg=f"{src} -> {dest}:" " Step 2: collect what to copy",
+            ):
+                async with self.engine.acquire() as conn:
+                    src_project_files: list[
+                        FileMetaDataAtDB
+                    ] = await db_file_meta_data.list_fmds(conn, project_ids=[src])
+                await sub_progress.update()
+
+                with log_context(
+                    _logger,
+                    logging.INFO,
+                    f"{src} -> {dest}: get total file size for "
+                    f"{len(src_project_files)} files",
+                    log_duration=True,
+                ):
+                    sizes_and_num_files: list[
+                        tuple[ByteSize, int]
+                    ] = await limited_gather(
+                        *[
+                            self._get_size_and_num_files(fmd)
+                            for fmd in src_project_files
+                        ],
+                        limit=_MAX_PARALLEL_S3_CALLS,
+                    )
+                total_num_of_files = sum(n for _, n in sizes_and_num_files)
+                src_project_total_data_size: ByteSize = parse_obj_as(
+                    ByteSize, sum(n for n, _ in sizes_and_num_files)
+                )
+            return src_project_files, total_num_of_files, src_project_total_data_size
+
+    async def _copy_collected_files(
+        self,
+        *,
+        user_id: UserID,
+        src_project_uuid: ProjectID,
+        src_project_files: list[FileMetaDataAtDB],
+        src_project_num_files: int,
+        src_project_total_data_size: ByteSize,
+        node_mapping: dict[NodeID, NodeID],
+        dst_project_uuid: ProjectID,
+        dst_project: dict[str, Any],
+        progress: ProgressBarData,
+    ) -> None:
+        async with progress.sub_progress(
+            src_project_total_data_size, IDStr("Coping files")
+        ) as sub_progress:
+            with log_context(
+                _logger,
+                logging.INFO,
+                msg=f"{src_project_uuid} -> {dst_project_uuid}:"
+                " Step 3.1: prepare copy tasks for files referenced from simcore",
+            ):
+                copy_tasks = []
+                s3_transfered_data_cb = S3TransferDataCB(
+                    sub_progress,
+                    src_project_total_data_size,
+                    task_progress_message_prefix=f"Copying {src_project_num_files} files to '{dst_project['name']}'",
+                )
+                for src_fmd in src_project_files:
+                    if not src_fmd.node_id or (src_fmd.location_id != self.location_id):
+                        msg = (
+                            "This is not foreseen, stem from old decisions, and needs to "
+                            f"be implemented if needed. Faulty metadata: {src_fmd=}"
+                        )
+                        raise NotImplementedError(msg)
+
+                    if new_node_id := node_mapping.get(src_fmd.node_id):
+                        copy_tasks.append(
+                            self._copy_path_s3_s3(
+                                user_id,
+                                src_fmd=src_fmd,
+                                dst_file_id=SimcoreS3FileID(
+                                    f"{dst_project_uuid}/{new_node_id}/{src_fmd.object_name.split('/', maxsplit=2)[-1]}"
+                                ),
+                                bytes_transfered_cb=s3_transfered_data_cb.copy_transfer_cb,
+                            )
+                        )
+            with log_context(
+                _logger,
+                logging.INFO,
+                msg=f"{src_project_uuid} -> {dst_project_uuid}:"
+                " Step 3.1: prepare copy tasks for files referenced from DAT-CORE",
+            ):
+                for node_id, node in dst_project.get("workbench", {}).items():
+                    copy_tasks.extend(
+                        [
+                            self._copy_file_datcore_s3(
+                                user_id=user_id,
+                                source_uuid=output["path"],
+                                dest_project_id=dst_project_uuid,
+                                dest_node_id=NodeID(node_id),
+                                file_storage_link=output,
+                                bytes_transfered_cb=s3_transfered_data_cb.upload_transfer_cb,
+                            )
+                            for output in node.get("outputs", {}).values()
+                            if isinstance(output, dict)
+                            and (
+                                int(output.get("store", self.location_id)) == DATCORE_ID
+                            )
+                        ]
+                    )
+            with log_context(
+                _logger,
+                logging.INFO,
+                msg=f"{src_project_uuid} -> {dst_project_uuid}: Step 3.3: effective copying {len(copy_tasks)} files",
+            ):
+                await limited_gather(*copy_tasks, limit=MAX_CONCURRENT_S3_TASKS)
+
+            # ensure the full size is reported
+            s3_transfered_data_cb.finalize_transfer()
+
     async def deep_copy_project_simcore_s3(
         self,
         user_id: UserID,
         src_project: dict[str, Any],
         dst_project: dict[str, Any],
         node_mapping: dict[NodeID, NodeID],
-        task_progress: TaskProgress | None = None,
+        task_progress: ProgressBarData,
     ) -> None:
-        src_project_uuid: ProjectID = ProjectID(src_project["uuid"])
-        dst_project_uuid: ProjectID = ProjectID(dst_project["uuid"])
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg=f"{src_project_uuid} -> {dst_project_uuid}: "
-            "Step 1: check access rights (read of src and write of dst)",
-        ):
-            update_task_progress(task_progress, "Checking study access rights...")
-            async with self.engine.acquire() as conn:
-                for prj_uuid in [src_project_uuid, dst_project_uuid]:
-                    if not await db_projects.project_exists(conn, prj_uuid):
-                        raise ProjectNotFoundError(project_id=prj_uuid)
-                source_access_rights = await get_project_access_rights(
-                    conn, user_id, project_id=src_project_uuid
-                )
-                dest_access_rights = await get_project_access_rights(
-                    conn, user_id, project_id=dst_project_uuid
-                )
-            if not source_access_rights.read:
-                raise ProjectAccessRightError(
-                    access_right="read", project_id=src_project_uuid
-                )
-            if not dest_access_rights.write:
-                raise ProjectAccessRightError(
-                    access_right="write", project_id=dst_project_uuid
-                )
-
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg=f"{src_project_uuid} -> {dst_project_uuid}:"
-            " Step 2: collect what to copy",
-        ):
-            update_task_progress(
-                task_progress, f"Collecting files of '{src_project['name']}'..."
+        async with task_progress.sub_progress(
+            3, IDStr("Copy project data")
+        ) as sub_progress:
+            src_project_uuid: ProjectID = ProjectID(src_project["uuid"])
+            dst_project_uuid: ProjectID = ProjectID(dst_project["uuid"])
+            await self._copy_check_project_access(
+                user_id=user_id,
+                src=src_project_uuid,
+                dest=dst_project_uuid,
+                progress=sub_progress,
             )
-            async with self.engine.acquire() as conn:
-                src_project_files: list[
-                    FileMetaDataAtDB
-                ] = await db_file_meta_data.list_fmds(
-                    conn, project_ids=[src_project_uuid]
-                )
 
-            with log_context(
-                _logger,
-                logging.INFO,
-                f"{src_project_uuid} -> {dst_project_uuid}: get total file size for "
-                f"{len(src_project_files)} files",
-                log_duration=True,
-            ):
-                sizes_and_num_files: list[tuple[ByteSize, int]] = await limited_gather(
-                    *[self._get_size_and_num_files(fmd) for fmd in src_project_files],
-                    limit=_MAX_PARALLEL_S3_CALLS,
-                )
-            total_num_of_files = sum(n for _, n in sizes_and_num_files)
-            src_project_total_data_size: ByteSize = parse_obj_as(
-                ByteSize, sum(n for n, _ in sizes_and_num_files)
-            )
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg=f"{src_project_uuid} -> {dst_project_uuid}:"
-            " Step 3.1: prepare copy tasks for files referenced from simcore",
-        ):
-            copy_tasks = []
-            s3_transfered_data_cb = S3TransferDataCB(
-                task_progress,
+            (
+                src_project_files,
+                total_num_of_files,
                 src_project_total_data_size,
-                task_progress_message_prefix=f"Copying {total_num_of_files} files to '{dst_project['name']}'",
+            ) = await self._copy_collect_files_to_copy(
+                src=src_project_uuid,
+                dest=dst_project_uuid,
+                progress=sub_progress,
             )
-            for src_fmd in src_project_files:
-                if not src_fmd.node_id or (src_fmd.location_id != self.location_id):
-                    msg = (
-                        "This is not foreseen, stem from old decisions, and needs to "
-                        f"be implemented if needed. Faulty metadata: {src_fmd=}"
-                    )
-                    raise NotImplementedError(msg)
-
-                if new_node_id := node_mapping.get(src_fmd.node_id):
-                    copy_tasks.append(
-                        self._copy_path_s3_s3(
-                            user_id,
-                            src_fmd=src_fmd,
-                            dst_file_id=SimcoreS3FileID(
-                                f"{dst_project_uuid}/{new_node_id}/{src_fmd.object_name.split('/', maxsplit=2)[-1]}"
-                            ),
-                            bytes_transfered_cb=s3_transfered_data_cb.copy_transfer_cb,
-                        )
-                    )
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg=f"{src_project_uuid} -> {dst_project_uuid}:"
-            " Step 3.1: prepare copy tasks for files referenced from DAT-CORE",
-        ):
-            for node_id, node in dst_project.get("workbench", {}).items():
-                copy_tasks.extend(
-                    [
-                        self._copy_file_datcore_s3(
-                            user_id=user_id,
-                            source_uuid=output["path"],
-                            dest_project_id=dst_project_uuid,
-                            dest_node_id=NodeID(node_id),
-                            file_storage_link=output,
-                            bytes_transfered_cb=s3_transfered_data_cb.upload_transfer_cb,
-                        )
-                        for output in node.get("outputs", {}).values()
-                        if isinstance(output, dict)
-                        and (int(output.get("store", self.location_id)) == DATCORE_ID)
-                    ]
-                )
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg=f"{src_project_uuid} -> {dst_project_uuid}: Step 3.3: effective copying {len(copy_tasks)} files",
-        ):
-            await limited_gather(*copy_tasks, limit=MAX_CONCURRENT_S3_TASKS)
-
-        # ensure the full size is reported
-        s3_transfered_data_cb.finalize_transfer()
+            await self._copy_collected_files(
+                user_id=user_id,
+                src_project_uuid=src_project_uuid,
+                src_project_files=src_project_files,
+                src_project_num_files=total_num_of_files,
+                src_project_total_data_size=src_project_total_data_size,
+                dst_project=dst_project,
+                dst_project_uuid=dst_project_uuid,
+                node_mapping=node_mapping,
+                progress=sub_progress,
+            )
 
     async def _get_size_and_num_files(
         self, fmd: FileMetaDataAtDB

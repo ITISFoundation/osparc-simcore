@@ -1,30 +1,17 @@
+import asyncio
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 
 from pydantic import ByteSize, parse_obj_as
-from servicelib.aiohttp.long_running_tasks.server import (
-    ProgressMessage,
-    ProgressPercent,
-    TaskProgress,
-)
+from servicelib.progress_bar import ProgressBarData
 
 logger = logging.getLogger(__name__)
 
 
-def update_task_progress(
-    task_progress: TaskProgress | None,
-    message: ProgressMessage | None = None,
-    progress: ProgressPercent | None = None,
-) -> None:
-    logger.debug("%s [%s]", message or "", progress or "n/a")
-    if task_progress:
-        task_progress.update(message=message, percent=progress)
-
-
 @dataclass
 class S3TransferDataCB:
-    task_progress: TaskProgress | None
+    task_progress: ProgressBarData
     total_bytes_to_transfer: ByteSize
     task_progress_message_prefix: str = ""
     _total_bytes_copied: int = 0
@@ -36,15 +23,8 @@ class S3TransferDataCB:
         self._update()
 
     def _update(self) -> None:
-        update_task_progress(
-            self.task_progress,
-            f"{self.task_progress_message_prefix} - "
-            f"{parse_obj_as(ByteSize,self._total_bytes_copied).human_readable()}"
-            f"/{self.total_bytes_to_transfer.human_readable()}]",
-            ProgressPercent(
-                min(self._total_bytes_copied, self.total_bytes_to_transfer)
-                / (self.total_bytes_to_transfer or 1)
-            ),
+        asyncio.get_event_loop().run_until_complete(
+            self.task_progress.set_(self._total_bytes_copied)
         )
 
     def finalize_transfer(self) -> None:

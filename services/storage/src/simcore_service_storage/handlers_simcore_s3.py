@@ -7,10 +7,7 @@ from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
 from models_library.projects import ProjectID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
-from servicelib.aiohttp.long_running_tasks.server import (
-    TaskProgress,
-    start_long_running_task,
-)
+from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -18,6 +15,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.logging_utils import log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.progress_bar import ProgressBarData
 from settings_library.s3 import S3Settings
 
 from . import sts
@@ -56,7 +54,7 @@ async def get_or_create_temporary_s3_access(request: web.Request) -> web.Respons
 
 
 async def _copy_folders_from_project(
-    task_progress: TaskProgress,
+    progress: ProgressBarData,
     app: web.Application,
     query_params: StorageQueryParamsBase,
     body: FoldersBody,
@@ -75,7 +73,7 @@ async def _copy_folders_from_project(
             body.source,
             body.destination,
             body.nodes_map,
-            task_progress=task_progress,
+            task_progress=progress,
         )
 
     raise web.HTTPCreated(
@@ -95,7 +93,7 @@ async def copy_folders_from_project(request: web.Request) -> web.Response:
     )
     return await start_long_running_task(
         request,
-        _copy_folders_from_project,  # type: ignore[arg-type]
+        _copy_folders_from_project,
         task_context={},
         app=request.app,
         query_params=query_params,
