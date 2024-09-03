@@ -31,12 +31,6 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
     }));
   },
 
-  events: {
-    // OM: Is this needed?
-    "changeCurrentWorkspaceId": "qx.event.type.Data",
-    "changeCurrentFolderId": "qx.event.type.Data"
-  },
-
   properties: {
     currentWorkspaceId: {
       check: "Number",
@@ -106,21 +100,38 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       return this.__createFolderButton(currentFolder);
     },
 
+    __createRootButton: function(workspaceId) {
+      let rootButton = null;
+      if (workspaceId) {
+        if (workspaceId === -1) {
+          rootButton = new qx.ui.form.Button(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath());
+        } else {
+          const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
+          rootButton = new qx.ui.form.Button(workspace.getName(), osparc.store.Workspaces.iconPath());
+        }
+        rootButton.addListener("execute", () => this.set({
+          currentWorkspaceId: workspaceId,
+          currentFolderId: null,
+        }));
+      } else {
+        rootButton = new qx.ui.form.Button(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
+        rootButton.addListener("execute", () => this.set({
+          currentWorkspaceId: null,
+          currentFolderId: null,
+        }));
+      }
+      return rootButton;
+    },
+
     __createFolderButton: function(folder) {
       let folderButton = null;
       if (folder) {
         folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14");
+        folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder ? folder.getFolderId() : null), this);
       } else {
         const workspaceId = this.getCurrentWorkspaceId();
-        if (workspaceId === -1) {
-          folderButton = new qx.ui.form.Button(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath());
-        } else if (workspaceId) {
-          folderButton = new qx.ui.form.Button(workspaceId, osparc.store.Workspaces.iconPath());
-        } else {
-          folderButton = new qx.ui.form.Button(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
-        }
+        folderButton = this.__createRootButton(workspaceId);
       }
-      folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder ? folder.getFolderId() : null), this);
       folderButton.set({
         backgroundColor: "transparent",
         textColor: "text",

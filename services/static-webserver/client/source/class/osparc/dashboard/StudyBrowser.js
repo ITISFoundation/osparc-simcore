@@ -764,10 +764,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const containerHeader = this._resourcesContainer.getContainerHeader();
       if (containerHeader) {
+        this.bind("currentWorkspaceId", containerHeader, "currentWorkspaceId");
+        containerHeader.bind("currentWorkspaceId", this, "currentWorkspaceId");
         this.bind("currentFolderId", containerHeader, "currentFolderId");
-        containerHeader.addListener("changeCurrentFolderId", e => this.setCurrentFolderId(e.getData()));
-        this.bind("currentFolderId", containerHeader, "currentFolderId");
-        containerHeader.addListener("changeCurrentFolderId", e => this.setCurrentFolderId(e.getData()));
+        containerHeader.bind("currentFolderId", this, "currentFolderId");
       }
       const list = this._resourcesContainer.getFlatList();
       if (list) {

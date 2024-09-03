@@ -21,7 +21,7 @@ qx.Class.define("osparc.store.Workspaces", {
   statics: {
     workspacesCached: [],
 
-    iconPath: function(iconsSize = 14) {
+    iconPath: function(iconsSize = 18) {
       return "@MaterialIcons/folder_shared/"+iconsSize
     },
 
@@ -114,7 +114,7 @@ qx.Class.define("osparc.store.Workspaces", {
       lastModified: "2024-06-21 13:00:40.33769",
     }],
 
-    fetchWorkspaces: function(workspaceId = null) {
+    fetchWorkspaces: function() {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
           resolve([]);
@@ -122,11 +122,6 @@ qx.Class.define("osparc.store.Workspaces", {
       }
 
       /*
-      const params = {
-        "url": {
-          workspaceId
-        }
-      };
       return osparc.data.Resources.getInstance().getAllPages("workspaces", params)
         .then(workspacesData => {
           const workspaces = [];
@@ -150,12 +145,16 @@ qx.Class.define("osparc.store.Workspaces", {
       });
     },
 
-    postWorkspace: function(name, description, parentId = null) {
-      const newWorkspaceData = {
-        parentWorkspaceId: parentId,
-        name: name,
+    createNewWorkspaceData: function(name, description, thumbnail, accessRights) {
+      return {
+        name,
         description: description || "",
+        thumbnail: thumbnail || "",
+        accessRights: accessRights || {},
       };
+    },
+
+    postWorkspace: function(newWorkspaceData) {
       const params = {
         data: newWorkspaceData
       };
