@@ -1,7 +1,9 @@
+import functools
 import logging
 from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from models_library.basic_types import IDStr
 from models_library.projects_nodes_io import NodeID
 from pydantic import BaseModel, PositiveInt
 from servicelib.fastapi.long_running_tasks.client import (
@@ -11,11 +13,11 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.fastapi.long_running_tasks.server import (
     TaskAlreadyRunningError,
     TaskId,
-    TaskProgress,
     TasksManager,
     get_tasks_manager,
     start_task,
 )
+from servicelib.progress_bar import ProgressBarData
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
@@ -81,6 +83,19 @@ async def update_service_observation(
     )
 
 
+async def _progress_callback(
+    message: ProgressMessage,
+    percent: ProgressPercent | None,
+    _: TaskId,
+    *,
+    sub_progress: ProgressBarData,
+) -> None:
+    if message:
+        sub_progress.description = IDStr(message)
+    if percent:
+        await sub_progress.update(percent)
+
+
 @router.delete(
     "/services/{node_uuid}/containers",
     summary="Removes the service's user services",
@@ -100,21 +115,24 @@ async def delete_service_containers(
     ],
 ):
     async def _task_remove_service_containers(
-        task_progress: TaskProgress, node_uuid: NodeID
+        progress: ProgressBarData, node_uuid: NodeID
     ) -> None:
-        async def _progress_callback(
-            message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
-        ) -> None:
-            task_progress.update(message=message, percent=percent)
 
-        await dynamic_sidecars_scheduler.remove_service_containers(
-            node_uuid=node_uuid, progress_callback=_progress_callback
-        )
+        async with progress.sub_progress(
+            100, IDStr("removing containers")
+        ) as sub_progress:
+
+            await dynamic_sidecars_scheduler.remove_service_containers(
+                node_uuid=node_uuid,
+                progress_callback=functools.partial(
+                    _progress_callback, sub_progress=sub_progress
+                ),
+            )
 
     try:
         return start_task(
             tasks_manager,
-            task=_task_remove_service_containers,  # type: ignore[arg-type]
+            task=_task_remove_service_containers,
             unique=True,
             node_uuid=node_uuid,
         )
@@ -134,9 +152,7 @@ async def get_service_state(
         DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
     ],
 ):
-    return dynamic_sidecars_scheduler.scheduler.get_scheduler_data(  # noqa: SLF001
-        node_uuid
-    )
+    return dynamic_sidecars_scheduler.scheduler.get_scheduler_data(node_uuid)
 
 
 @router.post(
@@ -158,22 +174,24 @@ async def save_service_state(
     ],
 ):
     async def _task_save_service_state(
-        task_progress: TaskProgress,
+        progress: ProgressBarData,
         node_uuid: NodeID,
     ) -> None:
-        async def _progress_callback(
-            message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
-        ) -> None:
-            task_progress.update(message=message, percent=percent)
+        async with progress.sub_progress(
+            100, IDStr("saving service state")
+        ) as sub_progress:
 
-        await dynamic_sidecars_scheduler.save_service_state(
-            node_uuid=node_uuid, progress_callback=_progress_callback
-        )
+            await dynamic_sidecars_scheduler.save_service_state(
+                node_uuid=node_uuid,
+                progress_callback=functools.partial(
+                    _progress_callback, sub_progress=sub_progress
+                ),
+            )
 
     try:
         return start_task(
             tasks_manager,
-            task=_task_save_service_state,  # type: ignore[arg-type]
+            task=_task_save_service_state,
             unique=True,
             node_uuid=node_uuid,
         )
@@ -200,21 +218,23 @@ async def push_service_outputs(
     ],
 ):
     async def _task_push_service_outputs(
-        task_progress: TaskProgress, node_uuid: NodeID
+        progress: ProgressBarData, node_uuid: NodeID
     ) -> None:
-        async def _progress_callback(
-            message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
-        ) -> None:
-            task_progress.update(message=message, percent=percent)
+        async with progress.sub_progress(
+            100, IDStr("saving service state")
+        ) as sub_progress:
 
-        await dynamic_sidecars_scheduler.push_service_outputs(
-            node_uuid=node_uuid, progress_callback=_progress_callback
-        )
+            await dynamic_sidecars_scheduler.push_service_outputs(
+                node_uuid=node_uuid,
+                progress_callback=functools.partial(
+                    _progress_callback, sub_progress=sub_progress
+                ),
+            )
 
     try:
         return start_task(
             tasks_manager,
-            task=_task_push_service_outputs,  # type: ignore[arg-type]
+            task=_task_push_service_outputs,
             unique=True,
             node_uuid=node_uuid,
         )
@@ -241,16 +261,16 @@ async def delete_service_docker_resources(
     ],
 ):
     async def _task_cleanup_service_docker_resources(
-        task_progress: TaskProgress, node_uuid: NodeID
+        progress: ProgressBarData, node_uuid: NodeID
     ) -> None:
         await dynamic_sidecars_scheduler.remove_service_sidecar_proxy_docker_networks_and_volumes(
-            task_progress=task_progress, node_uuid=node_uuid
+            task_progress=progress, node_uuid=node_uuid
         )
 
     try:
         return start_task(
             tasks_manager,
-            task=_task_cleanup_service_docker_resources,  # type: ignore[arg-type]
+            task=_task_cleanup_service_docker_resources,
             unique=True,
             node_uuid=node_uuid,
         )
