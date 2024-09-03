@@ -40,7 +40,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_prometheus_instrumentation(app)
     if app.state.settings.INVITATIONS_TRACING:
         setup_opentelemetry_instrumentation(
-            app, app.state.settings.INVITATIONS_TRACING, "simcore_service_invitations"
+            app, app.state.settings.INVITATIONS_TRACING, app.state.settings.APP_NAME
         )
 
     # ERROR HANDLERS

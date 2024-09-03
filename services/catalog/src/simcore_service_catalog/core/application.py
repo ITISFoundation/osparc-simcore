@@ -67,7 +67,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         )
     if app.state.settings.CATALOG_TRACING:
         setup_opentelemetry_instrumentation(
-            app, app.state.settings.CATALOG_TRACING, "simcore_service_catalog"
+            app, app.state.settings.CATALOG_TRACING, app.state.settings.APP_NAME
         )
 
     app.add_middleware(GZipMiddleware)

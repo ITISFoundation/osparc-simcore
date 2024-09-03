@@ -85,7 +85,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         webserver.setup(app, settings.API_SERVER_WEBSERVER)
     if app.state.settings.API_SERVER_TRACING:
         setup_opentelemetry_instrumentation(
-            app, app.state.settings.API_SERVER_TRACING, "simcore_service_apiserver"
+            app, app.state.settings.API_SERVER_TRACING, app.state.settings.APP_NAME
         )
 
     if settings.API_SERVER_CATALOG:

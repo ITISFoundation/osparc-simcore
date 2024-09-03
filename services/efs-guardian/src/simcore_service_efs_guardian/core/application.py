@@ -37,7 +37,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
     if app.state.settings.EFS_GUARDIAN_TRACING:
         setup_opentelemetry_instrumentation(
-            app, app.state.settings.EFS_GUARDIAN_TRACING, "simcore_service_efs_guardian"
+            app, app.state.settings.EFS_GUARDIAN_TRACING, app.state.settings.APP_NAME
         )
 
     # PLUGINS SETUP

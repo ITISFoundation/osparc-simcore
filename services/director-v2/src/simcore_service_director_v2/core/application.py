@@ -195,7 +195,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         setup_prometheus_instrumentation(app)
     if settings.DIRECTOR_V2_TRACING:
         setup_opentelemetry_instrumentation(
-            app, app.state.settings.DIRECTOR_V2_TRACING, "simcore_service_director-v2"
+            app, app.state.settings.DIRECTOR_V2_TRACING, app.state.settings.APP_NAME
         )
 
     if settings.DIRECTOR_V2_PROFILING:

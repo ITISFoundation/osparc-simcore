@@ -71,7 +71,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_prometheus_instrumentation(app)
     if app.state.settings.PAYMENTS_TRACING:
         setup_opentelemetry_instrumentation(
-            app, app.state.settings.PAYMENTS_TRACING, "simcore_service_payments"
+            app, app.state.settings.PAYMENTS_TRACING, app.state.settings.APP_NAME
         )
 
     # ERROR HANDLERS
