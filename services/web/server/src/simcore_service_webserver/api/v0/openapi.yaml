@@ -3331,7 +3331,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -9912,6 +9912,11 @@ components:
           type: object
         permalink:
           $ref: '#/components/schemas/ProjectPermalink'
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     ProjectGroupGet:
       title: ProjectGroupGet
       required:
@@ -10142,6 +10147,11 @@ components:
           type: object
         permalink:
           $ref: '#/components/schemas/ProjectPermalink'
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     ProjectLocked:
       title: ProjectLocked
       required:
