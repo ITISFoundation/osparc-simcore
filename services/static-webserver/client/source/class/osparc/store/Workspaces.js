@@ -145,12 +145,21 @@ qx.Class.define("osparc.store.Workspaces", {
       });
     },
 
-    createNewWorkspaceData: function(name, description, thumbnail, accessRights) {
+    createNewWorkspaceData: function(name, description = "", thumbnail = "") {
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      const accessRights = {};
+      const deleteAccess = {
+        read: true,
+        write: false,
+        delete: false,
+      };
+      accessRights[myGroupId] = deleteAccess;
       return {
         name,
-        description: description || "",
-        thumbnail: thumbnail || "",
-        accessRights: accessRights || {},
+        description,
+        thumbnail,
+        myAccessRights: deleteAccess,
+        accessRights,
       };
     },
 
