@@ -860,6 +860,77 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ServicePricingPlanGet_'
+  /v0/catalog/services/{service_key}/{service_version}/tags/{tag_id}:
+    put:
+      tags:
+      - catalog
+      - tags
+      summary: Add Service Tag
+      description: Adds a tag (needs access) to a service (need access)
+      operationId: add_service_tag
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          type: integer
+        name: tag_id
+        in: path
+      - required: true
+        schema:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        name: service_key
+        in: path
+      - required: true
+        schema:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name: service_version
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectGet_'
+    delete:
+      tags:
+      - catalog
+      - tags
+      summary: Remove Service Tag
+      description: Adds a tag (needs access) from a service (need access)
+      operationId: remove_service_tag
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          type: integer
+        name: tag_id
+        in: path
+      - required: true
+        schema:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        name: service_key
+        in: path
+      - required: true
+        schema:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name: service_version
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectGet_'
   /v0/clusters:
     get:
       tags:
@@ -2074,231 +2145,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_InvitationGenerated_'
-  /v0/projects/{project_id}/nodes/{node_id}/pricing-unit:
-    get:
-      tags:
-      - projects
-      summary: Get currently connected pricing unit to the project node.
-      operationId: get_project_node_pricing_unit
-      parameters:
-      - required: true
-        schema:
-          title: Project Id
-          type: string
-          format: uuid
-        name: project_id
-        in: path
-      - required: true
-        schema:
-          title: Node Id
-          type: string
-          format: uuid
-        name: node_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Union_PricingUnitGet__NoneType__'
-  /v0/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan_id}/pricing-unit/{pricing_unit_id}:
-    put:
-      tags:
-      - projects
-      summary: Connect pricing unit to the project node (Project node can have only
-        one pricing unit)
-      operationId: connect_pricing_unit_to_project_node
-      parameters:
-      - required: true
-        schema:
-          title: Project Id
-          type: string
-          format: uuid
-        name: project_id
-        in: path
-      - required: true
-        schema:
-          title: Node Id
-          type: string
-          format: uuid
-        name: node_id
-        in: path
-      - required: true
-        schema:
-          title: Pricing Plan Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: pricing_plan_id
-        in: path
-      - required: true
-        schema:
-          title: Pricing Unit Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: pricing_unit_id
-        in: path
-      responses:
-        '204':
-          description: Successful Response
-  /v0/projects/{project_uuid}/comments:
-    get:
-      tags:
-      - projects
-      - comments
-      summary: Retrieve all comments for a specific project.
-      operationId: list_project_comments
-      parameters:
-      - required: true
-        schema:
-          title: Project Uuid
-          type: string
-          format: uuid
-        name: project_uuid
-        in: path
-      - required: false
-        schema:
-          title: Limit
-          type: integer
-          default: 20
-        name: limit
-        in: query
-      - required: false
-        schema:
-          title: Offset
-          minimum: 0
-          type: integer
-          default: 0
-        name: offset
-        in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.projects_comments.ProjectsCommentsAPI__'
-    post:
-      tags:
-      - projects
-      - comments
-      summary: Create a new comment for a specific project. The request body should
-        contain the comment contents and user information.
-      operationId: create_project_comment
-      parameters:
-      - required: true
-        schema:
-          title: Project Uuid
-          type: string
-          format: uuid
-        name: project_uuid
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_ProjectCommentsBodyParams'
-        required: true
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_dict_Literal__comment_id____pydantic.types.PositiveInt__'
-  /v0/projects/{project_uuid}/comments/{comment_id}:
-    get:
-      tags:
-      - projects
-      - comments
-      summary: Retrieve a specific comment by its ID within a project.
-      operationId: get_project_comment
-      parameters:
-      - required: true
-        schema:
-          title: Project Uuid
-          type: string
-          format: uuid
-        name: project_uuid
-        in: path
-      - required: true
-        schema:
-          title: Comment Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: comment_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectsCommentsAPI_'
-    put:
-      tags:
-      - projects
-      - comments
-      summary: Update the contents of a specific comment for a project. The request
-        body should contain the updated comment contents.
-      operationId: update_project_comment
-      parameters:
-      - required: true
-        schema:
-          title: Project Uuid
-          type: string
-          format: uuid
-        name: project_uuid
-        in: path
-      - required: true
-        schema:
-          title: Comment Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: comment_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_ProjectCommentsBodyParams'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectsCommentsAPI_'
-    delete:
-      tags:
-      - projects
-      - comments
-      summary: Delete a specific comment associated with a project.
-      operationId: delete_project_comment
-      parameters:
-      - required: true
-        schema:
-          title: Project Uuid
-          type: string
-          format: uuid
-        name: project_uuid
-        in: path
-      - required: true
-        schema:
-          title: Comment Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: comment_id
-        in: path
-      responses:
-        '204':
-          description: Successful Response
   /v0/projects:
     get:
       tags:
@@ -2606,6 +2452,188 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_GetProjectInactivityResponse_'
+  /v0/projects/{project_uuid}/comments:
+    get:
+      tags:
+      - projects
+      - comments
+      summary: Retrieve all comments for a specific project.
+      operationId: list_project_comments
+      parameters:
+      - required: true
+        schema:
+          title: Project Uuid
+          type: string
+          format: uuid
+        name: project_uuid
+        in: path
+      - required: false
+        schema:
+          title: Limit
+          type: integer
+          default: 20
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.projects_comments.ProjectsCommentsAPI__'
+    post:
+      tags:
+      - projects
+      - comments
+      summary: Create a new comment for a specific project. The request body should
+        contain the comment contents and user information.
+      operationId: create_project_comment
+      parameters:
+      - required: true
+        schema:
+          title: Project Uuid
+          type: string
+          format: uuid
+        name: project_uuid
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectCommentsBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_Literal__comment_id____pydantic.types.PositiveInt__'
+  /v0/projects/{project_uuid}/comments/{comment_id}:
+    get:
+      tags:
+      - projects
+      - comments
+      summary: Retrieve a specific comment by its ID within a project.
+      operationId: get_project_comment
+      parameters:
+      - required: true
+        schema:
+          title: Project Uuid
+          type: string
+          format: uuid
+        name: project_uuid
+        in: path
+      - required: true
+        schema:
+          title: Comment Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: comment_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectsCommentsAPI_'
+    put:
+      tags:
+      - projects
+      - comments
+      summary: Update the contents of a specific comment for a project. The request
+        body should contain the updated comment contents.
+      operationId: update_project_comment
+      parameters:
+      - required: true
+        schema:
+          title: Project Uuid
+          type: string
+          format: uuid
+        name: project_uuid
+        in: path
+      - required: true
+        schema:
+          title: Comment Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: comment_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectCommentsBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectsCommentsAPI_'
+    delete:
+      tags:
+      - projects
+      - comments
+      summary: Delete a specific comment associated with a project.
+      operationId: delete_project_comment
+      parameters:
+      - required: true
+        schema:
+          title: Project Uuid
+          type: string
+          format: uuid
+        name: project_uuid
+        in: path
+      - required: true
+        schema:
+          title: Comment Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: comment_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/projects/{project_id}/folders/{folder_id}:
+    put:
+      tags:
+      - projects
+      - folders
+      summary: Move project to the folder
+      operationId: replace_project_folder
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/projects/{project_id}/groups/{group_id}:
     put:
       tags:
@@ -2720,32 +2748,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._groups_api.ProjectGroupGet__'
-  /v0/projects/{project_id}/folders/{folder_id}:
-    put:
-      tags:
-      - projects
-      - folders
-      summary: Move project to the folder
-      operationId: replace_project_folder
-      parameters:
-      - required: true
-        schema:
-          title: Project Id
-          type: string
-          format: uuid
-        name: project_id
-        in: path
-      - required: true
-        schema:
-          title: Folder Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: folder_id
-        in: path
-      responses:
-        '204':
-          description: Successful Response
   /v0/projects/{project_id}/metadata:
     get:
       tags:
@@ -2795,6 +2797,75 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectMetadataGet_'
+  /v0/projects/{project_id}/nodes/{node_id}/pricing-unit:
+    get:
+      tags:
+      - projects
+      summary: Get currently connected pricing unit to the project node.
+      operationId: get_project_node_pricing_unit
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+          format: uuid
+        name: node_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Union_PricingUnitGet__NoneType__'
+  /v0/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan_id}/pricing-unit/{pricing_unit_id}:
+    put:
+      tags:
+      - projects
+      summary: Connect pricing unit to the project node (Project node can have only
+        one pricing unit)
+      operationId: connect_pricing_unit_to_project_node
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+          format: uuid
+        name: node_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Unit Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_unit_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/projects/{project_id}/nodes:
     post:
       tags:
@@ -3380,9 +3451,9 @@ paths:
       tags:
       - projects
       - tags
-      summary: Add Tag
+      summary: Add Project Tag
       description: Links an existing label with an existing study
-      operationId: add_tag
+      operationId: add_project_tag
       parameters:
       - required: true
         schema:
@@ -3408,9 +3479,9 @@ paths:
       tags:
       - projects
       - tags
-      summary: Remove Tag
+      summary: Remove Project Tag
       description: Removes an existing link between a label and a study
-      operationId: remove_tag
+      operationId: remove_project_tag
       parameters:
       - required: true
         schema:
@@ -4390,6 +4461,124 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TagGet_'
+  /v0/tags/{tag_id}/groups:
+    get:
+      tags:
+      - tags
+      summary: List Tag Groups
+      operationId: list_tag_groups
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: tag_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags._handlers.TagGroupGet__'
+  /v0/tags/{tag_id}/groups/{group_id}:
+    put:
+      tags:
+      - tags
+      summary: Replace Tag Groups
+      operationId: replace_tag_groups
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: tag_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagGroupCreate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags._handlers.TagGroupGet__'
+    post:
+      tags:
+      - tags
+      summary: Create Tag Group
+      operationId: create_tag_group
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: tag_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagGroupCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TagGet_'
+    delete:
+      tags:
+      - tags
+      summary: Delete Tag Group
+      operationId: delete_tag_group
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: tag_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/me:
     get:
       tags:
@@ -7623,6 +7812,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TagGet'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.tags._handlers.TagGroupGet__:
+      title: Envelope[list[simcore_service_webserver.tags._handlers.TagGroupGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/TagGroupGet'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.users._notifications.UserNotification__:
@@ -11608,6 +11808,56 @@ components:
           type: string
         accessRights:
           $ref: '#/components/schemas/TagAccessRights'
+    TagGroupCreate:
+      title: TagGroupCreate
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+    TagGroupGet:
+      title: TagGroupGet
+      required:
+      - read
+      - write
+      - delete
+      - gid
+      - created
+      - modified
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
     TagUpdate:
       title: TagUpdate
       type: object
