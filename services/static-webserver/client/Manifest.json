@@ -29,7 +29,7 @@
       "svg/svg.path.js",
       "jsondiffpatch/jsondiffpatch.min.js",
       "jsontreeviewer/jsonTree.js",
-      "marked/marked.js",
+      "marked/marked.min.js",
       "DOMPurify/purify.min.js"
     ],
     "css": [
