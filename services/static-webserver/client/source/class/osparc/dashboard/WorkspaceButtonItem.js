@@ -219,7 +219,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
         menu.addSeparator();
 
         const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
-        deleteButton.addListener("execute", () => this.__deleteStudyRequested(), this);
+        deleteButton.addListener("execute", () => this.__deleteWorkspaceRequested(), this);
         menu.add(deleteButton);
 
         menuButton.setMenu(menu);
@@ -264,7 +264,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       permissionsView.addListener("updateAccessRights", () => this.__applyAccessRights(this.getWorkspace().getAccessRights()), this);
     },
 
-    __deleteStudyRequested: function() {
+    __deleteWorkspaceRequested: function() {
       const msg = this.tr("Are you sure you want to delete") + " <b>" + this.getTitle() + "</b>?";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         confirmText: this.tr("Delete"),

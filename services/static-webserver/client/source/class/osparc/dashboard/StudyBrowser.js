@@ -416,6 +416,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       newWorkspaceCard.addListener("updateWorkspace", () => this.__reloadWorkspaces());
       this._resourcesContainer.addNewWorkspaceCard(newWorkspaceCard);
     },
+
+    _workspaceSelected: function(workspaceId) {
+      this.setCurrentWorkspaceId(workspaceId);
+    },
+
+    _workspaceUpdated: function() {
+      this.__reloadWorkspaceCards();
+    },
+
+    _deleteWorkspaceRequested: function(workspaceId) {
+      osparc.store.Workspaces.deleteWorkspace(workspaceId)
+        .then(() => this.__reloadWorkspaceCards())
+        .catch(err => console.error(err));
+    },
     // /WORKSPACES
 
     // FOLDERS

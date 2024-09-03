@@ -87,6 +87,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "folderSelected": "qx.event.type.Data",
     "folderUpdated": "qx.event.type.Data",
     "deleteFolderRequested": "qx.event.type.Data",
+    "workspaceSelected": "qx.event.type.Data",
+    "workspaceUpdated": "qx.event.type.Data",
+    "deleteWorkspaceRequested": "qx.event.type.Data",
   },
 
   statics: {

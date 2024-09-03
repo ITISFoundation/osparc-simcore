@@ -186,6 +186,12 @@ qx.Class.define("osparc.store.Workspaces", {
 
     deleteWorkspace: function(workspaceId) {
       return new Promise((resolve, reject) => {
+        if (this.__deleteFromCache(workspaceId)) {
+          resolve();
+        } else {
+          reject();
+        }
+        /*
         const params = {
           "url": {
             workspaceId
@@ -200,6 +206,7 @@ qx.Class.define("osparc.store.Workspaces", {
             }
           })
           .catch(err => reject(err));
+        */
       });
     },
 
