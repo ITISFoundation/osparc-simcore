@@ -2070,6 +2070,12 @@
             "title": "Description",
             "description": "human readable description of the purpose of the node"
           },
+          "description_ui": {
+            "type": "boolean",
+            "title": "Description Ui",
+            "description": "A flag to enable the `description` to be presented as a single web page (=true) or in another structured format (default=false).",
+            "default": false
+          },
           "version_display": {
             "type": "string",
             "title": "Version Display",
@@ -2549,6 +2555,11 @@
           "description": {
             "type": "string",
             "title": "Description"
+          },
+          "description_ui": {
+            "type": "boolean",
+            "title": "Description Ui",
+            "default": false
           },
           "version_display": {
             "type": "string",

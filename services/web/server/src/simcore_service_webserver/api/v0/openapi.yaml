@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.42.0
+  version: 0.43.0
 servers:
 - url: ''
   description: webserver
@@ -5950,6 +5950,10 @@ components:
         description:
           title: Description
           type: string
+        descriptionUi:
+          title: Descriptionui
+          type: boolean
+          default: false
         versionDisplay:
           title: Versiondisplay
           type: string
@@ -6016,6 +6020,7 @@ components:
       example:
         name: sleeper
         description: A service which awaits for time to pass, two times.
+        description_ui: true
         classifiers: []
         quality: {}
         accessRights:
@@ -6094,6 +6099,10 @@ components:
         description:
           title: Description
           type: string
+        descriptionUi:
+          title: Descriptionui
+          type: boolean
+          default: false
         versionDisplay:
           title: Versiondisplay
           type: string
