@@ -139,17 +139,13 @@ qx.Class.define("osparc.store.Workspaces", {
       */
 
       return new Promise(resolve => {
-        const workspaces = [];
-        if (Object.keys(this.workspacesCached)) {
-          resolve(workspaces);
-          return;
+        if (this.workspacesCached.length === 0) {
+          this.self().FAKE_WORKSPACES.forEach(workspaceData => {
+            const workspace = new osparc.data.model.Workspace(workspaceData);
+            this.__addToCache(workspace);
+          });
         }
-        this.self().FAKE_WORKSPACES.forEach(workspaceData => {
-          const workspace = new osparc.data.model.Workspace(workspaceData);
-          this.__addToCache(workspace);
-          workspaces.push(workspace);
-        });
-        resolve(workspaces);
+        resolve(this.workspacesCached);
       });
     },
 
