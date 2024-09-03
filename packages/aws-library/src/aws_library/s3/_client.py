@@ -1,11 +1,12 @@
 import asyncio
 import contextlib
+import functools
 import logging
 import urllib.parse
-from collections.abc import AsyncGenerator, Callable, Sequence
+from collections.abc import AsyncGenerator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, Final, Protocol, cast
 
 import aioboto3
 from aiobotocore.session import ClientCreatorContext
@@ -41,6 +42,16 @@ _DEFAULT_AWS_REGION: Final[str] = "us-east-1"
 _MAX_ITEMS_PER_PAGE: Final[int] = 500
 _MAX_CONCURRENT_COPY: Final[int] = 4
 _AWS_MAX_ITEMS_PER_PAGE: Final[int] = 1000
+
+
+class UploadedBytesTransferredCallback(Protocol):
+    def __call__(self, bytes_transferred: int, *, file_name: str) -> None:
+        ...
+
+
+class CopiedBytesTransferredCallback(Protocol):
+    def __call__(self, total_bytes_copied: int, *, file_name: str) -> None:
+        ...
 
 
 @dataclass(frozen=True)
@@ -372,7 +383,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bucket: S3BucketName,
         file: Path,
         object_key: S3ObjectKey,
-        bytes_transfered_cb: Callable[[int], None] | None,
+        bytes_transfered_cb: UploadedBytesTransferredCallback | None,
     ) -> None:
         """upload a file using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
         upload_options: dict[str, Any] = {
@@ -381,7 +392,11 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             "Config": TransferConfig(max_concurrency=self.transfer_max_concurrency),
         }
         if bytes_transfered_cb:
-            upload_options |= {"Callback": bytes_transfered_cb}
+            upload_options |= {
+                "Callback": functools.partial(
+                    bytes_transfered_cb, file_name=f"{object_key}"
+                )
+            }
         await self._client.upload_file(f"{file}", **upload_options)
 
     @s3_exception_handler(_logger)
@@ -391,7 +406,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bucket: S3BucketName,
         src_object_key: S3ObjectKey,
         dst_object_key: S3ObjectKey,
-        bytes_transfered_cb: Callable[[int], None] | None,
+        bytes_transfered_cb: CopiedBytesTransferredCallback | None,
     ) -> None:
         """copy a file in S3 using aioboto3 transfer manager (e.g. works >5Gb and creates multiple threads)"""
         copy_options: dict[str, Any] = {
@@ -404,7 +419,11 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             ),
         }
         if bytes_transfered_cb:
-            copy_options |= {"Callback": bytes_transfered_cb}
+            copy_options |= {
+                "Callback": functools.partial(
+                    bytes_transfered_cb, file_name=f"{dst_object_key}"
+                )
+            }
         await self._client.copy(**copy_options)
 
     @s3_exception_handler(_logger)
@@ -414,7 +433,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bucket: S3BucketName,
         src_prefix: str,
         dst_prefix: str,
-        bytes_transfered_cb: Callable[[int], None] | None,
+        bytes_transfered_cb: CopiedBytesTransferredCallback | None,
     ) -> None:
         """copy from 1 location in S3 to another recreating the same structure"""
         dst_metadata = await self.get_directory_metadata(

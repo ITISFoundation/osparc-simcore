@@ -861,7 +861,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       if (this.__resetCtrlField(portId)) {
         if (portId in this.__linkUnlinkStackMap) {
           const stack = this.__linkUnlinkStackMap[portId];
-          if (stack.getSelectables() > 0) {
+          if (stack.getSelectables().length > 0) {
             stack.setSelection([stack.getSelectables()[0]]);
           }
         }

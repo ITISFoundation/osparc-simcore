@@ -18,7 +18,8 @@ class AppState:
     ec2_resource_autoscaling: EC2ServiceResource | None = None
     ec2_resource_clusters_keeper: EC2ServiceResource | None = None
     dynamic_parser: parse.Parser
-    computational_parser: parse.Parser
+    computational_parser_primary: parse.Parser
+    computational_parser_workers: parse.Parser
     deploy_config: Path | None = None
     ssh_key_path: Path | None = None
 
