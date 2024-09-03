@@ -135,7 +135,7 @@ qx.Class.define("osparc.data.Roles", {
       }
     },
 
-    WORKSPACE: {
+    WORKSPACES: {
       1: {
         id: "read",
         label: qx.locale.Manager.tr("Viewer"),
@@ -217,7 +217,7 @@ qx.Class.define("osparc.data.Roles", {
     },
 
     createRolesFolderInfo: function(showWording = true) {
-      return this.__createIntoFromRoles(osparc.data.Roles.WORKSPACE, showWording);
+      return this.__createIntoFromRoles(osparc.data.Roles.WORKSPACES, showWording);
     }
   }
 });
