@@ -67,6 +67,49 @@
         }
       }
     },
+    "/v1/containers/compose-spec": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Store Compose Spec",
+        "description": "Validates and stores the docker compose spec for the user services.",
+        "operationId": "store_compose_spec_v1_containers_compose_spec_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContainersComposeSpec"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "500": {
+            "description": "Errors in container"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/containers": {
       "get": {
         "tags": [
@@ -120,7 +163,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Starts the containers as defined in ContainerCreate by:\n- cleaning up resources from previous runs if any\n- pulling the needed images\n- starting the containers\n\nProgress may be obtained through URL\nProcess may be cancelled through URL",
+        "summary": "Starts the containers as defined in ContainerCreate by:\n- cleaning up resources from previous runs if any\n- starting the containers\n\nProgress may be obtained through URL\nProcess may be cancelled through URL",
         "operationId": "create_service_containers_task_v1_containers_post",
         "requestBody": {
           "content": {
@@ -847,19 +890,27 @@
         "title": "BootMode",
         "description": "An enumeration."
       },
-      "ContainersCreate": {
+      "ContainersComposeSpec": {
         "properties": {
           "docker_compose_yaml": {
             "type": "string",
             "title": "Docker Compose Yaml"
-          },
+          }
+        },
+        "type": "object",
+        "required": [
+          "docker_compose_yaml"
+        ],
+        "title": "ContainersComposeSpec"
+      },
+      "ContainersCreate": {
+        "properties": {
           "metrics_params": {
             "$ref": "#/components/schemas/CreateServiceMetricsAdditionalParams"
           }
         },
         "type": "object",
         "required": [
-          "docker_compose_yaml",
           "metrics_params"
         ],
         "title": "ContainersCreate"

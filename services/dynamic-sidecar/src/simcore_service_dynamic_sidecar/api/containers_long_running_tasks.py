@@ -47,7 +47,6 @@ router = APIRouter()
         """
         Starts the containers as defined in ContainerCreate by:
         - cleaning up resources from previous runs if any
-        - pulling the needed images
         - starting the containers
 
         Progress may be obtained through URL
@@ -66,7 +65,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     shared_store: Annotated[SharedStore, Depends(get_shared_store)],
     app: Annotated[FastAPI, Depends(get_application)],
     application_health: Annotated[ApplicationHealth, Depends(get_application_health)],
-    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
 ) -> TaskId:
     assert request  # nosec
 
@@ -78,7 +76,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
             settings=settings,
             containers_create=containers_create,
             shared_store=shared_store,
-            mounted_volumes=mounted_volumes,
             app=app,
             application_health=application_health,
         )

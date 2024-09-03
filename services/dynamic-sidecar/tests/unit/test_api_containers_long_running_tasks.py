@@ -34,7 +34,11 @@ from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api import containers_long_running_tasks
-from simcore_service_dynamic_sidecar.models.schemas.containers import ContainersCreate
+from simcore_service_dynamic_sidecar.core.validation import InvalidComposeSpecError
+from simcore_service_dynamic_sidecar.models.schemas.containers import (
+    ContainersComposeSpec,
+    ContainersCreate,
+)
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_pulling
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
@@ -267,9 +271,13 @@ async def _get_task_id_create_service_containers(
     *args,
     **kwargs,
 ) -> TaskId:
-    containers_create = ContainersCreate(
-        docker_compose_yaml=compose_spec, metrics_params=mock_metrics_params
+    ctontainers_compose_spec = ContainersComposeSpec(
+        docker_compose_yaml=compose_spec,
     )
+    await httpx_async_client.post(
+        f"/{API_VTAG}/containers/compose-spec", json=ctontainers_compose_spec.dict()
+    )
+    containers_create = ContainersCreate(metrics_params=mock_metrics_params)
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers", json=containers_create.dict()
     )
@@ -389,7 +397,7 @@ async def test_create_containers_task_invalid_yaml_spec(
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
-    with pytest.raises(TaskClientResultError) as exec_info:
+    with pytest.raises(InvalidComposeSpecError) as exec_info:
         async with periodic_task_result(
             client=client,
             task_id=await _get_task_id_create_service_containers(
@@ -400,7 +408,7 @@ async def test_create_containers_task_invalid_yaml_spec(
             progress_callback=_debug_progress,
         ):
             pass
-    assert "raise InvalidComposeSpec" in f"{exec_info.value}"
+    assert "Provided yaml is not valid" in f"{exec_info.value}"
 
 
 @pytest.mark.parametrize(
@@ -423,11 +431,12 @@ async def test_same_task_id_is_returned_if_task_exists(
     get_task_id_callable: Callable[..., Awaitable],
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
+    compose_spec: str,
 ) -> None:
     def _get_awaitable() -> Awaitable:
         return get_task_id_callable(
             httpx_async_client=httpx_async_client,
-            compose_spec="",
+            compose_spec=compose_spec,
             mock_metrics_params=mock_metrics_params,
             port_keys=None,
             command_timeout=0,
