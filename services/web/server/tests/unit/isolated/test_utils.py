@@ -18,25 +18,33 @@ from yarl import URL
 
 
 def test_yarl_new_url_generation():
-    api_endpoint = URL("http://director:8001/v0")
+    base_url_with_autoencode = URL("http://director:8001/v0", encoded=False)
     service_key = "simcore/services/dynamic/smash"
     service_version = "1.0.3"
+
+    # NOTE: careful, first we need to encode the "/" in this file path.
+    # For that we need safe="" option
+    assert urllib.parse.quote("/") == "/"
+    assert urllib.parse.quote("/", safe="") == "%2F"
+    assert urllib.parse.quote("%2F", safe="") == "%252F"
 
     quoted_service_key = urllib.parse.quote(service_key, safe="")
 
     # Since 1.6.x composition using '/' creates URLs with auto-encoding enabled by default
     assert (
-        (str(api_endpoint / "services" / quoted_service_key / service_version))
+        str(
+            base_url_with_autoencode / "services" / quoted_service_key / service_version
+        )
         == "http://director:8001/v0/services/simcore%252Fservices%252Fdynamic%252Fsmash/1.0.3"
     )
 
     # Passing encoded=True parameter prevents URL auto-encoding, user is responsible about URL correctness
-    url = URL(
+    url_without_autoencode = URL(
         f"http://director:8001/v0/services/{quoted_service_key}/1.0.3", encoded=True
     )
 
     assert (
-        (str(url))
+        str(url_without_autoencode)
         == "http://director:8001/v0/services/simcore%2Fservices%2Fdynamic%2Fsmash/1.0.3"
     )
 

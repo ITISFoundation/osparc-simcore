@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
 import parse
 import rich
@@ -10,15 +10,22 @@ from dotenv import dotenv_values
 from . import core as api
 from .constants import (
     DEFAULT_COMPUTATIONAL_EC2_FORMAT,
+    DEFAULT_COMPUTATIONAL_EC2_FORMAT_WORKERS,
     DEFAULT_DYNAMIC_EC2_FORMAT,
     DEPLOY_SSH_KEY_PARSER,
+    wallet_id_spec,
 )
 from .ec2 import autoscaling_ec2_client, cluster_keeper_ec2_client
 from .models import AppState
 
 state: AppState = AppState(
     dynamic_parser=parse.compile(DEFAULT_DYNAMIC_EC2_FORMAT),
-    computational_parser=parse.compile(DEFAULT_COMPUTATIONAL_EC2_FORMAT),
+    computational_parser_primary=parse.compile(
+        DEFAULT_COMPUTATIONAL_EC2_FORMAT, {"wallet_id_spec": wallet_id_spec}
+    ),
+    computational_parser_workers=parse.compile(
+        DEFAULT_COMPUTATIONAL_EC2_FORMAT_WORKERS, {"wallet_id_spec": wallet_id_spec}
+    ),
 )
 
 app = typer.Typer()
@@ -68,13 +75,24 @@ def main(
     state.ec2_resource_clusters_keeper = cluster_keeper_ec2_client(state)
 
     assert state.environment["EC2_INSTANCES_KEY_NAME"]
-    state.dynamic_parser = parse.compile(
-        f"{state.environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
-    )
+    dynamic_pattern = f"{state.environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
+    state.dynamic_parser = parse.compile(dynamic_pattern)
+    rich.print(f"using dynamic-naming-regex: {dynamic_pattern}")
     if state.environment["CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX"]:
-        state.computational_parser = parse.compile(
-            f"{state.environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX']}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT}"
+        state.computational_parser_primary = parse.compile(
+            f"{state.environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX'].strip('-')}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT}",
+            {"wallet_id_spec", wallet_id_spec},
         )
+        state.computational_parser_workers = parse.compile(
+            f"{state.environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX'].strip('-')}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT_WORKERS}",
+            {"wallet_id_spec", wallet_id_spec},
+        )
+    rich.print(
+        f"compuational-primary-naming-regex: {state.computational_parser_primary._expression}"  # noqa: SLF001
+    )
+    rich.print(
+        f"compuational-workers-naming-regex: {state.computational_parser_workers._expression}"  # noqa: SLF001
+    )
 
     # locate ssh key path
     for file_path in deploy_config.glob("**/*.pem"):
@@ -117,7 +135,10 @@ def summary(
 @app.command()
 def cancel_jobs(
     user_id: Annotated[int, typer.Option(help="the user ID")],
-    wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
+    wallet_id: Annotated[
+        Optional[int | None],  # noqa: UP007 # typer does not understand | syntax
+        typer.Option(help="the wallet ID"),
+    ] = None,
     *,
     force: Annotated[
         bool,

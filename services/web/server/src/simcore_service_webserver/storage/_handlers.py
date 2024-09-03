@@ -37,30 +37,45 @@ log = logging.getLogger(__name__)
 
 def _get_base_storage_url(app: web.Application) -> URL:
     settings: StorageSettings = get_plugin_settings(app)
-
-    # storage service API endpoint
-    return URL(settings.base_url)
+    return URL(settings.base_url, encoded=True)
 
 
-def _get_storage_prefix(app: web.Application) -> str:
+def _get_storage_vtag(app: web.Application) -> str:
     settings: StorageSettings = get_plugin_settings(app)
     storage_prefix: str = settings.STORAGE_VTAG
     return storage_prefix
 
 
-def _resolve_storage_url(request: web.Request) -> URL:
-    """Composes a new url against storage API"""
+def _to_storage_url(request: web.Request) -> URL:
+    """Converts web-api url to storage-api url"""
     userid = request[RQT_USERID_KEY]
 
     # storage service API endpoint
-    endpoint = _get_base_storage_url(request.app)
+    url = _get_base_storage_url(request.app)
 
     basepath_index = 3
     # strip basepath from webserver API path (i.e. webserver api version)
     # >>> URL('http://storage:1234/v5/storage/asdf/').raw_parts[3:]
     suffix = "/".join(request.url.raw_parts[basepath_index:])
 
-    return (endpoint / suffix).with_query(request.query).update_query(user_id=userid)
+    return (
+        url.joinpath(suffix, encoded=True)
+        .with_query(request.query)
+        .update_query(user_id=userid)
+    )
+
+
+def _from_storage_url(request: web.Request, storage_url: AnyUrl) -> AnyUrl:
+    """Converts storage-api url to web-api url"""
+    assert storage_url.path  # nosec
+
+    prefix = f"/{_get_storage_vtag(request.app)}"
+    converted_url = request.url.with_path(
+        f"/v0/storage{storage_url.path.removeprefix(prefix)}", encoded=True
+    ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
+
+    webserver_url: AnyUrl = parse_obj_as(AnyUrl, f"{converted_url}")
+    return webserver_url
 
 
 class _ResponseTuple(NamedTuple):
@@ -71,7 +86,7 @@ class _ResponseTuple(NamedTuple):
 async def _forward_request_to_storage(
     request: web.Request, method: str, body: dict[str, Any] | None = None, **kwargs
 ) -> _ResponseTuple:
-    url = _resolve_storage_url(request)
+    url = _to_storage_url(request)
     session = get_client_session(request.app)
 
     async with session.request(
@@ -79,16 +94,6 @@ async def _forward_request_to_storage(
     ) as resp:
         payload = await resp.json()
         return _ResponseTuple(payload=payload, status_code=resp.status)
-
-
-def _unresolve_storage_url(request: web.Request, storage_url: AnyUrl) -> AnyUrl:
-    assert storage_url.path  # nosec
-    prefix = f"/{_get_storage_prefix(request.app)}"
-    converted_url = request.url.with_path(
-        f"/v0/storage{storage_url.path.removeprefix(prefix)}"
-    ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
-    converted_url_: AnyUrl = parse_obj_as(AnyUrl, f"{converted_url}")
-    return converted_url_
 
 
 # ---------------------------------------------------------------------
@@ -233,10 +238,10 @@ async def upload_file(request: web.Request) -> web.Response:
     payload, status = await _forward_request_to_storage(request, "PUT", body=None)
     data, _ = unwrap_envelope(payload)
     file_upload_schema = FileUploadSchema.parse_obj(data)
-    file_upload_schema.links.complete_upload = _unresolve_storage_url(
+    file_upload_schema.links.complete_upload = _from_storage_url(
         request, file_upload_schema.links.complete_upload
     )
-    file_upload_schema.links.abort_upload = _unresolve_storage_url(
+    file_upload_schema.links.abort_upload = _from_storage_url(
         request, file_upload_schema.links.abort_upload
     )
     return create_data_response(jsonable_encoder(file_upload_schema), status=status)
@@ -261,7 +266,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
     )
     data, _ = unwrap_envelope(payload)
     file_upload_complete = FileUploadCompleteResponse.parse_obj(data)
-    file_upload_complete.links.state = _unresolve_storage_url(
+    file_upload_complete.links.state = _from_storage_url(
         request, file_upload_complete.links.state
     )
     return create_data_response(jsonable_encoder(file_upload_complete), status=status)

@@ -1,6 +1,9 @@
-from typing import Any
+from typing import Any, Final
+from uuid import UUID
 
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
+
+CONSTANT_UUID: Final[UUID] = UUID(int=0)
 
 
 def create_valid_port_config(conf_type: str, **kwargs) -> dict[str, Any]:

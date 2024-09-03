@@ -804,9 +804,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (osparc.data.model.Study.canIWrite(accessRights)) {
         permissionIcon.exclude();
       } else {
-        permissionIcon.setSource(osparc.dashboard.CardBase.PERM_READ);
-        this.addListener("mouseover", () => permissionIcon.show(), this);
-        this.addListener("mouseout", () => permissionIcon.exclude(), this);
+        permissionIcon.show();
       }
     },
 

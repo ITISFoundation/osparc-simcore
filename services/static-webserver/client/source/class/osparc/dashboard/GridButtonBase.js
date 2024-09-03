@@ -80,7 +80,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         rowSpan: 1,
         colSpan: 2
       },
-      VIEWER_MODE: {
+      UI_MODE: {
         row: 0,
         column: 3,
         colSpan: 1
@@ -98,6 +98,11 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       HITS: {
         row: 1,
         column: 2,
+        colSpan: 1
+      },
+      PERMISSION: {
+        row: 1,
+        column: 4,
         colSpan: 1
       }
     }
