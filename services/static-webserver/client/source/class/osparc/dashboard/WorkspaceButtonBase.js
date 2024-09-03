@@ -71,7 +71,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     SPACING_IN: 5,
     SPACING: 15,
     HEADER_MAX_HEIGHT: 40, // two lines in Manrope
-    ICON_SIZE: 50,
+    ICON_SIZE: 60,
     POS: {
       HEADER: 0,
       BODY: 1,
@@ -192,7 +192,10 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
 
     // overridden
     _applyIcon: function(value) {
-      if (value.includes("@FontAwesome5Solid/")) {
+      if (
+        value.includes("@FontAwesome5Solid/") ||
+        value.includes("@MaterialIcons/")
+      ) {
         value += this.self().ICON_SIZE;
         const image = this.getChildControl("icon").getChildControl("image");
         image.set({
