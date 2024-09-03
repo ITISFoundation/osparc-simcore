@@ -22,15 +22,12 @@ from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from httpx import ASGITransport
-from models_library.api_schemas_long_running_tasks.tasks import (
-    TaskGet,
-    TaskProgress,
-    TaskStatus,
-)
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
 from models_library.api_schemas_storage import HealthCheck
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope
+from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
 from models_library.users import UserID
@@ -570,9 +567,7 @@ def patch_webserver_long_running_project_tasks(
                 json={
                     "data": jsonable_encoder(
                         TaskStatus(
-                            task_progress=TaskProgress(
-                                message="fake job done", percent=1
-                            ),
+                            progress_report=ProgressReport(actual_value=1),
                             done=True,
                             started="2018-07-01T11:13:43Z",
                         ),

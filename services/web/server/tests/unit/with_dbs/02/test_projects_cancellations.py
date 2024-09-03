@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 import pytest
 from aiohttp.test_utils import TestClient
+from models_library.progress_bar import ProgressReport
 from pydantic import ByteSize, parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -19,7 +20,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
 )
 from servicelib.aiohttp.long_running_tasks.client import LRTask
-from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskProgress
+from servicelib.aiohttp.long_running_tasks.server import TaskGet
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.application_settings import get_application_settings
@@ -53,7 +54,7 @@ async def slow_storage_subsystem_mock(
         async def _mock_result():
             ...
 
-        yield LRTask(progress=TaskProgress(), _result=_mock_result())
+        yield LRTask(progress=ProgressReport(actual_value=0), _result=_mock_result())
 
     storage_subsystem_mock.copy_data_folders_from_project.side_effect = (
         _very_slow_copy_of_data

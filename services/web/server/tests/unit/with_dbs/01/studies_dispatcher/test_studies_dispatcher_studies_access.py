@@ -18,6 +18,8 @@ import redis.asyncio as aioredis
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
+from models_library.basic_types import IDStr
+from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
@@ -27,7 +29,6 @@ from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsy
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import LRTask
-from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
@@ -162,13 +163,35 @@ async def storage_subsystem_mock_override(
             f"with {len(nodes_map)} s3 objects by user={user_id}"
         )
 
-        yield LRTask(TaskProgress(message="pytest mocked fct, started"))
+        yield LRTask(
+            ProgressReport(
+                actual_value=0,
+                total=1,
+                message=ProgressStructuredMessage(
+                    description=IDStr("pytest mocked fct, started"),
+                    current=0,
+                    total=1,
+                    unit=None,
+                    sub=None,
+                ),
+            )
+        )
 
         async def _mock_result():
             return None
 
         yield LRTask(
-            TaskProgress(message="pytest mocked fct, finished", percent=1.0),
+            ProgressReport(
+                actual_value=1,
+                total=1,
+                message=ProgressStructuredMessage(
+                    description=IDStr("pytest mocked fct, finished"),
+                    current=1,
+                    total=1,
+                    unit=None,
+                    sub=None,
+                ),
+            ),
             _result=_mock_result(),
         )
 

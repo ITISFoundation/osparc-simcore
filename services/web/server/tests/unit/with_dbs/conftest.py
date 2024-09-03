@@ -37,6 +37,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.products import ProductName
+from models_library.progress_bar import ProgressReport
 from models_library.services_enums import ServiceState
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
@@ -48,7 +49,7 @@ from pytest_simcore.helpers.webserver_projects import NewProject
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.long_running_tasks.client import LRTask
-from servicelib.aiohttp.long_running_tasks.server import ProgressPercent, TaskProgress
+from servicelib.aiohttp.long_running_tasks.server import ProgressPercent
 from servicelib.common_aiopg_utils import DSN
 from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -326,15 +327,13 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
             f"with {len(nodes_map)} s3 objects by user={user_id}"
         )
 
-        yield LRTask(TaskProgress(message="pytest mocked fct, started"))
+        yield LRTask(ProgressReport(actual_value=0))
 
         async def _mock_result():
             return None
 
         yield LRTask(
-            TaskProgress(
-                message="pytest mocked fct, finished", percent=ProgressPercent(1.0)
-            ),
+            ProgressReport(actual_value=1),
             _result=_mock_result(),
         )
 
