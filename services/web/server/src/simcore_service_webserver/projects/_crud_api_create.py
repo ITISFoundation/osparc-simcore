@@ -6,8 +6,8 @@ from typing import Any, TypeAlias
 
 from aiohttp import web
 from jsonschema import ValidationError as JsonSchemaValidationError
-from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import ProjectStatus
@@ -15,8 +15,8 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
 from pydantic import parse_obj_as
-from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.progress_bar import ProgressBarData
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
     ProjectNodeCreate,
@@ -66,7 +66,7 @@ async def _prepare_project_copy(
     src_project_uuid: ProjectID,
     as_template: bool,
     deep_copy: bool,
-    task_progress: TaskProgress,
+    task_progress: ProgressBarData,
 ) -> tuple[ProjectDict, CopyProjectNodesCoro | None, CopyFileCoro | None]:
     source_project = await projects_api.get_project_for_user(
         app,
@@ -147,7 +147,7 @@ async def _copy_files_from_source_project(
     new_project: ProjectDict,
     nodes_map: NodesMap,
     user_id: UserID,
-    task_progress: TaskProgress,
+    task_progress: ProgressBarData,
 ):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
     needs_lock_source_project: bool = (
@@ -166,20 +166,13 @@ async def _copy_files_from_source_project(
                     await get_user_fullname(app, user_id),
                 )
             )
-        starting_value = task_progress.percent
+        sub_progress = await stack.enter_async_context(
+            task_progress.sub_progress(100, IDStr("coping files"))
+        )
         async for long_running_task in copy_data_folders_from_project(
             app, source_project, new_project, nodes_map, user_id
         ):
-            task_progress.update(
-                message=long_running_task.progress.message,
-                percent=parse_obj_as(
-                    ProgressPercent,
-                    (
-                        starting_value
-                        + long_running_task.progress.percent * (1.0 - starting_value)
-                    ),
-                ),
-            )
+            await sub_progress.set_(long_running_task.progress.percent_value * 100.0)
             if long_running_task.done():
                 await long_running_task.result()
 
@@ -217,7 +210,7 @@ async def _compose_project_data(
 
 
 async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, PLR0913
-    task_progress: TaskProgress,
+    progress: ProgressBarData,
     *,
     request: web.Request,
     new_project_was_hidden_before_data_was_copied: bool,
@@ -258,125 +251,127 @@ async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, P
     new_project: ProjectDict = {}
     copy_file_coro = None
     project_nodes = None
-    try:
-        task_progress.update(message="creating new study...")
-        if from_study:
-            # 1. prepare copy
-            (
-                new_project,
-                project_node_coro,
-                copy_file_coro,
-            ) = await _prepare_project_copy(
+    async with progress.sub_progress(4, IDStr("creating new study")) as sub_progress:
+        try:
+            if from_study:
+                # 1. prepare copy
+                (
+                    new_project,
+                    project_node_coro,
+                    copy_file_coro,
+                ) = await _prepare_project_copy(
+                    request.app,
+                    user_id=user_id,
+                    src_project_uuid=from_study,
+                    as_template=as_template,
+                    deep_copy=copy_data,
+                    task_progress=sub_progress,
+                )
+                if project_node_coro:
+                    project_nodes = await project_node_coro
+
+            if predefined_project:
+                # 2. overrides with optional body and re-validate
+                new_project, project_nodes = await _compose_project_data(
+                    request.app,
+                    user_id=user_id,
+                    new_project=new_project,
+                    predefined_project=predefined_project,
+                )
+
+            # 3. save new project in DB
+            new_project = await db.insert_project(
+                project=jsonable_encoder(new_project),
+                user_id=user_id,
+                product_name=product_name,
+                force_as_template=as_template,
+                hidden=copy_data,
+                project_nodes=project_nodes,
+            )
+            # add parent linking if needed
+            await set_project_ancestors(
                 request.app,
                 user_id=user_id,
-                src_project_uuid=from_study,
-                as_template=as_template,
-                deep_copy=copy_data,
-                task_progress=task_progress,
+                project_uuid=new_project["uuid"],
+                parent_project_uuid=parent_project_uuid,
+                parent_node_id=parent_node_id,
             )
-            if project_node_coro:
-                project_nodes = await project_node_coro
+            await sub_progress.update()
 
-        if predefined_project:
-            # 2. overrides with optional body and re-validate
-            new_project, project_nodes = await _compose_project_data(
-                request.app,
+            # 4. deep copy source project's files
+            if copy_file_coro:
+                # NOTE: storage needs to have access to the new project prior to copying files
+                await copy_file_coro
+
+            # 5. unhide the project if needed since it is now complete
+            if not new_project_was_hidden_before_data_was_copied:
+                await db.set_hidden_flag(new_project["uuid"], hidden=False)
+
+            # update the network information in director-v2
+            await api.update_dynamic_service_networks_in_project(
+                request.app, ProjectID(new_project["uuid"])
+            )
+            await sub_progress.update()
+
+            # This is a new project and every new graph needs to be reflected in the pipeline tables
+            await api.create_or_update_pipeline(
+                request.app, user_id, new_project["uuid"], product_name
+            )
+            # get the latest state of the project (lastChangeDate for instance)
+            new_project, _ = await db.get_project(
+                user_id=user_id, project_uuid=new_project["uuid"]
+            )
+            # Appends state
+            new_project = await projects_api.add_project_states_for_user(
                 user_id=user_id,
-                new_project=new_project,
-                predefined_project=predefined_project,
-            )
-
-        # 3. save new project in DB
-        new_project = await db.insert_project(
-            project=jsonable_encoder(new_project),
-            user_id=user_id,
-            product_name=product_name,
-            force_as_template=as_template,
-            hidden=copy_data,
-            project_nodes=project_nodes,
-        )
-        # add parent linking if needed
-        await set_project_ancestors(
-            request.app,
-            user_id=user_id,
-            project_uuid=new_project["uuid"],
-            parent_project_uuid=parent_project_uuid,
-            parent_node_id=parent_node_id,
-        )
-        task_progress.update()
-
-        # 4. deep copy source project's files
-        if copy_file_coro:
-            # NOTE: storage needs to have access to the new project prior to copying files
-            await copy_file_coro
-
-        # 5. unhide the project if needed since it is now complete
-        if not new_project_was_hidden_before_data_was_copied:
-            await db.set_hidden_flag(new_project["uuid"], hidden=False)
-
-        # update the network information in director-v2
-        await api.update_dynamic_service_networks_in_project(
-            request.app, ProjectID(new_project["uuid"])
-        )
-        task_progress.update()
-
-        # This is a new project and every new graph needs to be reflected in the pipeline tables
-        await api.create_or_update_pipeline(
-            request.app, user_id, new_project["uuid"], product_name
-        )
-        # get the latest state of the project (lastChangeDate for instance)
-        new_project, _ = await db.get_project(
-            user_id=user_id, project_uuid=new_project["uuid"]
-        )
-        # Appends state
-        new_project = await projects_api.add_project_states_for_user(
-            user_id=user_id,
-            project=new_project,
-            is_template=as_template,
-            app=request.app,
-        )
-        task_progress.update()
-
-        # Adds permalink
-        await update_or_pop_permalink_in_project(request, new_project)
-
-        # Ensures is like ProjectGet
-        data = ProjectGet.parse_obj(new_project).data(exclude_unset=True)
-
-        raise web.HTTPCreated(
-            text=json_dumps({"data": data}),
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )
-
-    except JsonSchemaValidationError as exc:
-        raise web.HTTPBadRequest(reason="Invalid project data") from exc
-
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
-
-    except ProjectInvalidRightsError as exc:
-        raise web.HTTPForbidden from exc
-
-    except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
-        if project_uuid := new_project.get("uuid"):
-            await projects_api.submit_delete_project_task(
+                project=new_project,
+                is_template=as_template,
                 app=request.app,
-                project_uuid=project_uuid,
-                user_id=user_id,
-                simcore_user_agent=simcore_user_agent,
             )
-        raise web.HTTPNotFound(reason=f"{exc}") from exc
+            await sub_progress.update()
 
-    except asyncio.CancelledError:
-        log.warning(
-            "cancelled create_project for '%s'. Cleaning up",
-            f"{user_id=}",
-        )
-        if project_uuid := new_project.get("uuid"):
-            await projects_api.submit_delete_project_task(
-                app=request.app,
-                project_uuid=project_uuid,
-                user_id=user_id,
-                simcore_user_agent=simcore_user_agent,
+            # Adds permalink
+            await update_or_pop_permalink_in_project(request, new_project)
+
+            # Ensures is like ProjectGet
+            data = ProjectGet.parse_obj(new_project).data(exclude_unset=True)
+
+            raise web.HTTPCreated(
+                text=json_dumps({"data": data}),
+                content_type=MIMETYPE_APPLICATION_JSON,
             )
-        raise
+
+        except JsonSchemaValidationError as exc:
+            raise web.HTTPBadRequest(reason="Invalid project data") from exc
+
+        except ProjectNotFoundError as exc:
+            raise web.HTTPNotFound(
+                reason=f"Project {exc.project_uuid} not found"
+            ) from exc
+
+        except ProjectInvalidRightsError as exc:
+            raise web.HTTPForbidden from exc
+
+        except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:
+            if project_uuid := new_project.get("uuid"):
+                await projects_api.submit_delete_project_task(
+                    app=request.app,
+                    project_uuid=project_uuid,
+                    user_id=user_id,
+                    simcore_user_agent=simcore_user_agent,
+                )
+            raise web.HTTPNotFound(reason=f"{exc}") from exc
+
+        except asyncio.CancelledError:
+            log.warning(
+                "cancelled create_project for '%s'. Cleaning up",
+                f"{user_id=}",
+            )
+            if project_uuid := new_project.get("uuid"):
+                await projects_api.submit_delete_project_task(
+                    app=request.app,
+                    project_uuid=project_uuid,
+                    user_id=user_id,
+                    simcore_user_agent=simcore_user_agent,
+                )
+            raise
