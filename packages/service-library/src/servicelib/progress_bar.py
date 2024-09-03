@@ -210,6 +210,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         description: IDStr,
         step_weights: list[float] | None = None,
         progress_unit: ProgressUnit | None = None,
+        progress_report_cb: AsyncReportCB | ReportCB | None = None,
     ) -> "ProgressBarData":
         if len(self._children) == self.num_steps:
             msg = "Too many sub progresses created already. Wrong usage of the progress bar"
@@ -220,6 +221,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             step_weights=step_weights,
             progress_unit=progress_unit,
             _parent=self,
+            progress_report_cb=progress_report_cb,
         )
         self._children.append(child)
         return child

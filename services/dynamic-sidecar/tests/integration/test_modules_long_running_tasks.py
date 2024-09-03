@@ -20,6 +20,7 @@ from botocore.client import Config
 from botocore.exceptions import ClientError
 from fastapi import FastAPI
 from models_library.api_schemas_storage import S3BucketName
+from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -28,7 +29,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_project
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
+from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.models.projects import projects
@@ -131,8 +132,9 @@ async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
 
 
 @pytest.fixture
-def task_progress() -> TaskProgress:
-    return TaskProgress.create()
+async def task_progress() -> ProgressBarData:
+    async with ProgressBarData(1, IDStr("pytesting stuff")) as progress_bar:
+        return progress_bar
 
 
 @pytest.fixture
@@ -373,7 +375,7 @@ async def test_legacy_state_open_and_clone(
     expected_contents_paths: dict[Path, Path],
     app: FastAPI,
     app_state: AppState,
-    task_progress: TaskProgress,
+    task_progress: ProgressBarData,
     project_id: ProjectID,
     node_id: NodeID,
     s3_client: S3Client,
@@ -434,7 +436,7 @@ async def test_state_open_and_close(
     expected_contents_paths: dict[Path, Path],
     app: FastAPI,
     app_state: AppState,
-    task_progress: TaskProgress,
+    task_progress: ProgressBarData,
     project_id: ProjectID,
     node_id: NodeID,
     s3_client: S3Client,
