@@ -69,11 +69,6 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
             })
             .catch(console.error)
             .finally(() => win.close());
-          
-            name,
-            description
-          });
-          
         });
         workspaceEditor.addListener("cancel", () => win.close());
       }
