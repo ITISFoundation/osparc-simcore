@@ -20,10 +20,12 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.put(f"/{API_VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}", name="add_tag")
+@routes.put(
+    f"/{API_VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}", name="add_project_tag"
+)
 @login_required
 @permission_required("project.tag.*")
-async def add_tag(request: web.Request):
+async def add_project_tag(request: web.Request):
     user_id: int = request[RQT_USERID_KEY]
 
     try:
@@ -44,11 +46,11 @@ async def add_tag(request: web.Request):
 
 
 @routes.delete(
-    f"/{API_VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}", name="remove_tag"
+    f"/{API_VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}", name="remove_project_tag"
 )
 @login_required
 @permission_required("project.tag.*")
-async def remove_tag(request: web.Request):
+async def remove_project_tag(request: web.Request):
     user_id: int = request[RQT_USERID_KEY]
 
     tag_id, project_uuid = (
