@@ -21,6 +21,7 @@ from servicelib.redis import (
     RedisClientsManager,
     RedisManagerDBConfig,
 )
+from servicelib.utils import logged_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
@@ -227,11 +228,7 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
     faker: Faker,
 ):
     INCREASE_OPERATIONS: Final[int] = 250
-    # FIXME: DK changes this value from 10-->8 Aug2024
-    # when introducing opentelemetry tracing since this test would
-    # always fail in the github-runners, but not on local machines...
-    # This may need some refactoring/investigation
-    INCREASE_BY: Final[int] = 8
+    INCREASE_BY: Final[int] = 10
 
     class RaceConditionCounter:
         def __init__(self):
@@ -266,7 +263,9 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
             ):
                 await counter.race_condition_increase(INCREASE_BY)
 
-    await asyncio.gather(*(_inc_counter() for _ in range(INCREASE_OPERATIONS)))
+    await logged_gather(
+        *(_inc_counter() for _ in range(INCREASE_OPERATIONS)), max_concurrency=15
+    )
     assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
 
 
