@@ -1,10 +1,11 @@
 import functools
 import re
+from datetime import datetime
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
-from models_library.users import UserID
+from models_library.users import GroupID, UserID
 from pydantic import BaseModel, ConstrainedStr, Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
@@ -181,3 +182,24 @@ async def delete_tag(request: web.Request):
         await repo.delete(conn, tag_id=path_params.tag_id)
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+
+
+#
+# Share API
+#
+
+
+class _TagGroupPathParams(TagPathParams):
+    group_id: GroupID
+
+
+class TagGroupCreate(BaseModel):
+    read: bool
+    write: bool
+    delete: bool
+
+
+class TagGroupGet(TagGroupCreate):
+    gid: GroupID
+    created: datetime
+    modified: datetime
