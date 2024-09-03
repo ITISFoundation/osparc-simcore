@@ -3331,7 +3331,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -12427,8 +12427,8 @@ components:
       - name
       - createdAt
       - modifiedAt
-      - ownerPrimaryGid
       - myAccessRights
+      - accessRights
       type: object
       properties:
         workspaceId:
@@ -12453,13 +12453,13 @@ components:
           title: Modifiedat
           type: string
           format: date-time
-        ownerPrimaryGid:
-          title: Ownerprimarygid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
         myAccessRights:
           $ref: '#/components/schemas/models_library__access_rights__AccessRights'
+        accessRights:
+          title: Accessrights
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/models_library__access_rights__AccessRights'
     WorkspaceGroupGet:
       title: WorkspaceGroupGet
       required:

@@ -124,7 +124,7 @@ async def update_workspace_group(
     workspace: UserWorkspaceAccessRightsDB = await workspaces_db.get_workspace_for_user(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
-    if workspace.write is False:
+    if workspace.my_access_rights.write is False:
         raise WorkspaceAccessForbiddenError(
             reason=f"User does not have write access to workspace {workspace_id}"
         )
@@ -162,7 +162,7 @@ async def delete_workspace_group(
     workspace: UserWorkspaceAccessRightsDB = await workspaces_db.get_workspace_for_user(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
-    if workspace.delete is False:
+    if workspace.my_access_rights.delete is False:
         raise WorkspaceAccessForbiddenError(
             reason=f"User does not have delete access to workspace {workspace_id}"
         )

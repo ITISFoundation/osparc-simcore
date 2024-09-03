@@ -24,7 +24,7 @@ from simcore_postgres_database.models.workspaces_access_rights import (
 )
 from sqlalchemy import asc, desc, func
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
-from sqlalchemy.sql import select
+from sqlalchemy.sql import Subquery, select
 
 from ..db.plugin import get_database_engine
 from .errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
@@ -69,20 +69,49 @@ async def create_workspace(
         return WorkspaceDB.from_orm(row)
 
 
-_SELECTION_ARGS_WITH_USER_ACCESS_RIGHTS = (
-    *_SELECTION_ARGS,
-    func.max(workspaces_access_rights.c.read.cast(INTEGER)).cast(BOOLEAN).label("read"),
-    func.max(workspaces_access_rights.c.write.cast(INTEGER))
-    .cast(BOOLEAN)
-    .label("write"),
-    func.max(workspaces_access_rights.c.delete.cast(INTEGER))
-    .cast(BOOLEAN)
-    .label("delete"),
-)
+access_rights_subquery = (
+    select(
+        workspaces_access_rights.c.workspace_id,
+        func.jsonb_object_agg(
+            workspaces_access_rights.c.gid,
+            func.jsonb_build_object(
+                "read",
+                workspaces_access_rights.c.read,
+                "write",
+                workspaces_access_rights.c.write,
+                "delete",
+                workspaces_access_rights.c.delete,
+            ),
+        )
+        .filter(
+            workspaces_access_rights.c.read  # Filters out entries where "read" is False
+        )
+        .label("access_rights"),
+    ).group_by(workspaces_access_rights.c.workspace_id)
+).subquery("access_rights_subquery")
 
-_JOIN_TABLES = workspaces.join(workspaces_access_rights).join(
-    user_to_groups, user_to_groups.c.gid == workspaces_access_rights.c.gid
-)
+
+def _create_my_access_rights_subquery(user_id: UserID) -> Subquery:
+    return (
+        select(
+            workspaces_access_rights.c.workspace_id,
+            func.json_build_object(
+                "read",
+                func.max(workspaces_access_rights.c.read.cast(INTEGER)).cast(BOOLEAN),
+                "write",
+                func.max(workspaces_access_rights.c.write.cast(INTEGER)).cast(BOOLEAN),
+                "delete",
+                func.max(workspaces_access_rights.c.delete.cast(INTEGER)).cast(BOOLEAN),
+            ).label("my_access_rights"),
+        )
+        .select_from(
+            workspaces_access_rights.join(
+                user_to_groups, user_to_groups.c.gid == workspaces_access_rights.c.gid
+            )
+        )
+        .where(user_to_groups.c.uid == user_id)
+        .group_by(workspaces_access_rights.c.workspace_id)
+    ).subquery("my_access_rights_subquery")
 
 
 async def list_workspaces_for_user(
@@ -94,15 +123,20 @@ async def list_workspaces_for_user(
     limit: NonNegativeInt,
     order_by: OrderBy,
 ) -> tuple[int, list[UserWorkspaceAccessRightsDB]]:
+    my_access_rights_subquery = _create_my_access_rights_subquery(user_id=user_id)
+
     base_query = (
-        select(*_SELECTION_ARGS_WITH_USER_ACCESS_RIGHTS)
-        .select_from(_JOIN_TABLES)
-        .where(
-            (user_to_groups.c.uid == user_id)
-            # & (workspaces_access_rights.c.read == True)
-            & (workspaces.c.product_name == product_name)
+        select(
+            *_SELECTION_ARGS,
+            access_rights_subquery.c.access_rights,
+            my_access_rights_subquery.c.my_access_rights,
         )
-        .group_by(*_SELECTION_ARGS)
+        .select_from(
+            workspaces.join(access_rights_subquery, isouter=True).join(
+                my_access_rights_subquery
+            )
+        )
+        .where(workspaces.c.product_name == product_name)
     )
 
     # Select total count from base_query
@@ -135,19 +169,23 @@ async def get_workspace_for_user(
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> UserWorkspaceAccessRightsDB:
-    stmt = (
-        select(*_SELECTION_ARGS_WITH_USER_ACCESS_RIGHTS)
-        .select_from(_JOIN_TABLES)
+    my_access_rights_subquery = _create_my_access_rights_subquery(user_id=user_id)
+
+    base_query = (
+        select(
+            *_SELECTION_ARGS,
+            access_rights_subquery.c.access_rights,
+            my_access_rights_subquery.c.my_access_rights,
+        )
+        .select_from(workspaces.join(my_access_rights_subquery))
         .where(
-            (user_to_groups.c.uid == user_id)
-            & (workspaces.c.workspace_id == workspace_id)
+            (workspaces.c.workspace_id == workspace_id)
             & (workspaces.c.product_name == product_name)
         )
-        .group_by(*_SELECTION_ARGS)
     )
 
     async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(stmt)
+        result = await conn.execute(base_query)
         row = await result.first()
         if row is None:
             raise WorkspaceAccessForbiddenError(

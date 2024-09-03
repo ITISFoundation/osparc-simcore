@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import TypeAlias
 
+from models_library.access_rights import AccessRights
+from models_library.users import GroupID
 from pydantic import BaseModel, Field, PositiveInt
 
 WorkspaceID: TypeAlias = PositiveInt
@@ -34,9 +36,8 @@ class WorkspaceDB(BaseModel):
 
 
 class UserWorkspaceAccessRightsDB(WorkspaceDB):
-    read: bool
-    write: bool
-    delete: bool
+    my_access_rights: AccessRights
+    access_rights: dict[GroupID, AccessRights]
 
     class Config:
         orm_mode = True

@@ -3,7 +3,6 @@
 import logging
 
 from aiohttp import web
-from models_library.access_rights import AccessRights
 from models_library.api_schemas_webserver.workspaces import (
     WorkspaceGet,
     WorkspaceGetPage,
@@ -53,10 +52,8 @@ async def create_workspace(
         thumbnail=workspace_db.thumbnail,
         created_at=workspace_db.created,
         modified_at=workspace_db.modified,
-        owner_primary_gid=workspace_db.owner_primary_gid,
-        my_access_rights=AccessRights(
-            read=workspace_db.read, write=workspace_db.write, delete=workspace_db.delete
-        ),
+        my_access_rights=workspace_db.my_access_rights,
+        access_rights=workspace_db.access_rights,
     )
 
 
@@ -66,13 +63,13 @@ async def get_workspace(
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> WorkspaceGet:
-    workspace_db: UserWorkspaceAccessRightsDB = await db.get_workspace_for_user(
-        app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+    workspace_db = await check_user_workspace_access(
+        app=app,
+        user_id=user_id,
+        workspace_id=workspace_id,
+        product_name=product_name,
+        permission="read",
     )
-    if workspace_db.read is False:
-        raise WorkspaceAccessForbiddenError(
-            reason=f"User {user_id} does not have read permission on workspace {workspace_id}."
-        )
     return WorkspaceGet(
         workspace_id=workspace_db.workspace_id,
         name=workspace_db.name,
@@ -80,10 +77,8 @@ async def get_workspace(
         thumbnail=workspace_db.thumbnail,
         created_at=workspace_db.created,
         modified_at=workspace_db.modified,
-        owner_primary_gid=workspace_db.owner_primary_gid,
-        my_access_rights=AccessRights(
-            read=workspace_db.read, write=workspace_db.write, delete=workspace_db.delete
-        ),
+        my_access_rights=workspace_db.my_access_rights,
+        access_rights=workspace_db.access_rights,
     )
 
 
@@ -113,10 +108,8 @@ async def list_workspaces(
                 thumbnail=workspace.thumbnail,
                 created_at=workspace.created,
                 modified_at=workspace.modified,
-                owner_primary_gid=workspace.owner_primary_gid,
-                my_access_rights=AccessRights(
-                    read=workspace.read, write=workspace.write, delete=workspace.delete
-                ),
+                my_access_rights=workspace.my_access_rights,
+                access_rights=workspace.access_rights,
             )
             for workspace in workspaces
         ],
@@ -133,13 +126,13 @@ async def update_workspace(
     thumbnail: str | None,
     product_name: ProductName,
 ) -> WorkspaceGet:
-    workspace_db: UserWorkspaceAccessRightsDB = await db.get_workspace_for_user(
-        app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+    await check_user_workspace_access(
+        app=app,
+        user_id=user_id,
+        workspace_id=workspace_id,
+        product_name=product_name,
+        permission="write",
     )
-    if workspace_db.write is False:
-        raise WorkspaceAccessForbiddenError(
-            reason=f"User {user_id} does not have write permission on workspace {workspace_id}."
-        )
     await db.update_workspace(
         app,
         workspace_id=workspace_id,
@@ -161,10 +154,8 @@ async def update_workspace(
         thumbnail=workspace_db.thumbnail,
         created_at=workspace_db.created,
         modified_at=workspace_db.modified,
-        owner_primary_gid=workspace_db.owner_primary_gid,
-        my_access_rights=AccessRights(
-            read=workspace_db.read, write=workspace_db.write, delete=workspace_db.delete
-        ),
+        my_access_rights=workspace_db.my_access_rights,
+        access_rights=workspace_db.access_rights,
     )
 
 
@@ -174,13 +165,13 @@ async def delete_workspace(
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> None:
-    workspace_db: UserWorkspaceAccessRightsDB = await db.get_workspace_for_user(
-        app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
+    await check_user_workspace_access(
+        app=app,
+        user_id=user_id,
+        workspace_id=workspace_id,
+        product_name=product_name,
+        permission="delete",
     )
-    if workspace_db.delete is False:
-        raise WorkspaceAccessForbiddenError(
-            reason=f"User {user_id} does not have delete permission on workspace {workspace_id}"
-        )
 
     await db.delete_workspace(app, workspace_id=workspace_id, product_name=product_name)
 
@@ -192,12 +183,13 @@ async def check_user_workspace_access(
     workspace_id: WorkspaceID,
     product_name: ProductName,
     permission: PermissionStr = "read",
-) -> None:
+) -> UserWorkspaceAccessRightsDB:
     """
     Raises WorkspaceAccessForbiddenError if no access
     """
     workspace_db: UserWorkspaceAccessRightsDB = await db.get_workspace_for_user(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
-    if getattr(workspace_db, permission, False) is False:
+    if getattr(workspace_db.my_access_rights, permission, False) is False:
         raise WorkspaceAccessForbiddenError
+    return workspace_db

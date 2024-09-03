@@ -17,8 +17,8 @@ class WorkspaceGet(OutputSchema):
     thumbnail: str | None
     created_at: datetime
     modified_at: datetime
-    owner_primary_gid: GroupID
     my_access_rights: AccessRights
+    access_rights: dict[GroupID, AccessRights]
 
 
 class WorkspaceGetPage(NamedTuple):
