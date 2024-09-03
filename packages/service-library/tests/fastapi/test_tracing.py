@@ -41,11 +41,11 @@ def set_and_clean_settings_env_vars(tracing_settings_in):
     indirect=True,
 )
 def test_valid_tracing_settings(
+    mocked_app: FastAPI,
     set_and_clean_settings_env_vars,
     event_loop: AbstractEventLoop,
     tracing_settings_in: TracingSettings,
-):
-    app = mock_app
+):    
     tracing_settings = TracingSettings()
     setup_opentelemetry_instrumentation(
         app,
