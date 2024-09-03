@@ -162,14 +162,6 @@ SIMCORE_SERVICES_PREFIX: str = os.environ.get(
 # NOTE: keep disabled for unit-testing otherwise mocks will not hold
 MONITORING_ENABLED: bool = strtobool(os.environ.get("MONITORING_ENABLED", "False"))
 
-# tracing
-TRACING_OPENTELEMETRY_COLLECTOR_PORT: str = os.environ.get(
-    "TRACING_OPENTELEMETRY_COLLECTOR_PORT"
-)
-TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: str = os.environ.get(
-    "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT"
-)
-
 # resources: not taken from servicelib.resources since the director uses a fixed hash of that library
 CPU_RESOURCE_LIMIT_KEY = "SIMCORE_NANO_CPUS_LIMIT"
 MEM_RESOURCE_LIMIT_KEY = "SIMCORE_MEMORY_BYTES_LIMIT"
