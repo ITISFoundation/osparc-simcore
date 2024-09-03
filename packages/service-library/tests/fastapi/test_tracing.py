@@ -11,7 +11,9 @@ from pydantic import ValidationError
 from servicelib.fastapi.tracing import setup_opentelemetry_instrumentation
 from settings_library.tracing import TracingSettings
 
-mock_app = FastAPI(title="Opentelemetry example")
+@pytest.fixture
+def mocked_app() -> FastAPI:
+    return FastAPI(title="Opentelemetry example")
 
 
 @pytest.fixture
