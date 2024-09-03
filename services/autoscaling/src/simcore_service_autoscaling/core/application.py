@@ -72,7 +72,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_buffer_machines_pool_task(app)
     if app.state.settings.AUTOSCALING_TRACING:
         setup_opentelemetry_instrumentation(
-            app, app.state.settings.AUTOSCALING_TRACING, "simcore_service_autoscaling"
+            app, app.state.settings.AUTOSCALING_TRACING, app.state.settings.APP_NAME
         )
 
     # ERROR HANDLERS
