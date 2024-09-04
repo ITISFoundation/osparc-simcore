@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.42.0
+  version: 0.43.0
 servers:
 - url: ''
   description: webserver
@@ -1222,6 +1222,22 @@ paths:
       summary: List Folders
       operationId: list_folders
       parameters:
+      - required: false
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: query
+      - required: false
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: query
       - description: Order by field (modified_at|name|description) and direction (asc|desc).
           The default sorting order is ascending.
         required: false
@@ -1257,7 +1273,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.folders.FolderGet__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.folders_v2.FolderGet__'
     post:
       tags:
       - folders
@@ -1342,124 +1358,6 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/folders/{folder_id}/groups/{group_id}:
-    put:
-      tags:
-      - folders
-      summary: Replace Folder Group
-      operationId: replace_folder_group
-      parameters:
-      - required: true
-        schema:
-          title: Folder Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: folder_id
-        in: path
-      - required: true
-        schema:
-          title: Group Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: group_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_FoldersGroupsBodyParams'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_FolderGroupGet_'
-    post:
-      tags:
-      - folders
-      summary: Create Folder Group
-      operationId: create_folder_group
-      parameters:
-      - required: true
-        schema:
-          title: Folder Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: folder_id
-        in: path
-      - required: true
-        schema:
-          title: Group Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: group_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_FoldersGroupsBodyParams'
-        required: true
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_FolderGroupGet_'
-    delete:
-      tags:
-      - folders
-      summary: Delete Folder Group
-      operationId: delete_folder_group
-      parameters:
-      - required: true
-        schema:
-          title: Folder Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: folder_id
-        in: path
-      - required: true
-        schema:
-          title: Group Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: group_id
-        in: path
-      responses:
-        '204':
-          description: Successful Response
-  /v0/folders/{folder_id}/groups:
-    get:
-      tags:
-      - folders
-      summary: List Folder Groups
-      operationId: list_folder_groups
-      parameters:
-      - required: true
-        schema:
-          title: Folder Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: folder_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.folders._groups_api.FolderGroupGet__'
   /v0/groups:
     get:
       tags:
@@ -2465,6 +2363,14 @@ paths:
           type: integer
           minimum: 0
         name: folder_id
+        in: query
+      - required: false
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
         in: query
       responses:
         '200':
@@ -5466,6 +5372,221 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.wallets._groups_api.WalletGroupGet__'
+  /v0/workspaces:
+    get:
+      tags:
+      - workspaces
+      summary: List Workspaces
+      operationId: list_workspaces
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.workspaces.WorkspaceGet__'
+    post:
+      tags:
+      - workspaces
+      summary: Create Workspace
+      operationId: create_workspace
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkspaceBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+  /v0/workspaces/{workspace_id}:
+    get:
+      tags:
+      - workspaces
+      summary: Get Workspace
+      operationId: get_workspace
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+    put:
+      tags:
+      - workspaces
+      summary: Replace Workspace
+      operationId: replace_workspace
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutWorkspaceBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+    delete:
+      tags:
+      - workspaces
+      summary: Delete Workspace
+      operationId: delete_workspace
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/workspaces/{workspace_id}/groups/{group_id}:
+    put:
+      tags:
+      - workspaces
+      summary: Replace Workspace Group
+      operationId: replace_workspace_group
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_WorkspacesGroupsBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WorkspaceGroupGet_'
+    post:
+      tags:
+      - workspaces
+      summary: Create Workspace Group
+      operationId: create_workspace_group
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_WorkspacesGroupsBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WorkspaceGroupGet_'
+    delete:
+      tags:
+      - workspaces
+      summary: Delete Workspace Group
+      operationId: delete_workspace_group
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/workspaces/{workspace_id}/groups:
+    get:
+      tags:
+      - workspaces
+      summary: List Workspace Groups
+      operationId: list_workspace_groups
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.workspaces._groups_api.WorkspaceGroupGet__'
 components:
   schemas:
     AccessEnum:
@@ -5476,27 +5597,6 @@ components:
       - ReadOnly
       type: string
       description: An enumeration.
-    AccessRights:
-      title: AccessRights
-      required:
-      - read
-      - write
-      - delete
-      type: object
-      properties:
-        read:
-          title: Read
-          type: boolean
-          description: has read access
-        write:
-          title: Write
-          type: boolean
-          description: has write access
-        delete:
-          title: Delete
-          type: boolean
-          description: has deletion rights
-      additionalProperties: false
     AccountRequestInfo:
       title: AccountRequestInfo
       required:
@@ -5842,6 +5942,10 @@ components:
         description:
           title: Description
           type: string
+        descriptionUi:
+          title: Descriptionui
+          type: boolean
+          default: false
         versionDisplay:
           title: Versiondisplay
           type: string
@@ -5908,6 +6012,7 @@ components:
       example:
         name: sleeper
         description: A service which awaits for time to pass, two times.
+        description_ui: true
         classifiers: []
         quality: {}
         accessRights:
@@ -5986,6 +6091,10 @@ components:
         description:
           title: Description
           type: string
+        descriptionUi:
+          title: Descriptionui
+          type: boolean
+          default: false
         versionDisplay:
           title: Versiondisplay
           type: string
@@ -6416,7 +6525,6 @@ components:
       title: CreateFolderBodyParams
       required:
       - name
-      - description
       type: object
       properties:
         name:
@@ -6424,11 +6532,13 @@ components:
           maxLength: 100
           minLength: 1
           type: string
-        description:
-          title: Description
-          type: string
         parentFolderId:
           title: Parentfolderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        workspaceId:
+          title: Workspaceid
           exclusiveMinimum: true
           type: integer
           minimum: 0
@@ -6512,6 +6622,22 @@ components:
           title: Comment
           maxLength: 100
           type: string
+    CreateWorkspaceBodyParams:
+      title: CreateWorkspaceBodyParams
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+      additionalProperties: false
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -6749,14 +6875,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/FolderGet'
-        error:
-          title: Error
-    Envelope_FolderGroupGet_:
-      title: Envelope[FolderGroupGet]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/FolderGroupGet'
         error:
           title: Error
     Envelope_GetCreditPrice_:
@@ -7136,6 +7254,22 @@ components:
           $ref: '#/components/schemas/WorkbenchViewApiModel'
         error:
           title: Error
+    Envelope_WorkspaceGet_:
+      title: Envelope[WorkspaceGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WorkspaceGet'
+        error:
+          title: Error
+    Envelope_WorkspaceGroupGet_:
+      title: Envelope[WorkspaceGroupGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WorkspaceGroupGet'
+        error:
+          title: Error
     Envelope__ComputationStarted_:
       title: Envelope[_ComputationStarted]
       type: object
@@ -7281,8 +7415,8 @@ components:
             $ref: '#/components/schemas/ClusterGet'
         error:
           title: Error
-    Envelope_list_models_library.api_schemas_webserver.folders.FolderGet__:
-      title: Envelope[list[models_library.api_schemas_webserver.folders.FolderGet]]
+    Envelope_list_models_library.api_schemas_webserver.folders_v2.FolderGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.folders_v2.FolderGet]]
       type: object
       properties:
         data:
@@ -7358,6 +7492,17 @@ components:
             $ref: '#/components/schemas/WalletGetWithAvailableCredits'
         error:
           title: Error
+    Envelope_list_models_library.api_schemas_webserver.workspaces.WorkspaceGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.workspaces.WorkspaceGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceGet'
+        error:
+          title: Error
     Envelope_list_models_library.projects_comments.ProjectsCommentsAPI__:
       title: Envelope[list[models_library.projects_comments.ProjectsCommentsAPI]]
       type: object
@@ -7390,17 +7535,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Announcement'
-        error:
-          title: Error
-    Envelope_list_simcore_service_webserver.folders._groups_api.FolderGroupGet__:
-      title: Envelope[list[simcore_service_webserver.folders._groups_api.FolderGroupGet]]
-      type: object
-      properties:
-        data:
-          title: Data
-          type: array
-          items:
-            $ref: '#/components/schemas/FolderGroupGet'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.projects._groups_api.ProjectGroupGet__:
@@ -7544,6 +7678,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WalletGroupGet'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.workspaces._groups_api.WorkspaceGroupGet__:
+      title: Envelope[list[simcore_service_webserver.workspaces._groups_api.WorkspaceGroupGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceGroupGet'
         error:
           title: Error
     Envelope_str_:
@@ -7883,12 +8028,9 @@ components:
       required:
       - folderId
       - name
-      - description
       - createdAt
       - modifiedAt
       - owner
-      - myAccessRights
-      - accessRights
       type: object
       properties:
         folderId:
@@ -7904,9 +8046,6 @@ components:
         name:
           title: Name
           type: string
-        description:
-          title: Description
-          type: string
         createdAt:
           title: Createdat
           type: string
@@ -7920,46 +8059,6 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        myAccessRights:
-          $ref: '#/components/schemas/AccessRights'
-        accessRights:
-          title: Accessrights
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
-    FolderGroupGet:
-      title: FolderGroupGet
-      required:
-      - gid
-      - read
-      - write
-      - delete
-      - created
-      - modified
-      type: object
-      properties:
-        gid:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        read:
-          title: Read
-          type: boolean
-        write:
-          title: Write
-          type: boolean
-        delete:
-          title: Delete
-          type: boolean
-        created:
-          title: Created
-          type: string
-          format: date-time
-        modified:
-          title: Modified
-          type: string
-          format: date-time
     GenerateInvitation:
       title: GenerateInvitation
       required:
@@ -9708,7 +9807,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         tags:
           title: Tags
           type: array
@@ -9721,6 +9820,11 @@ components:
             type: string
         ui:
           $ref: '#/components/schemas/StudyUI'
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     ProjectGet:
       title: ProjectGet
       required:
@@ -9777,7 +9881,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         tags:
           title: Tags
           type: array
@@ -9805,6 +9909,11 @@ components:
           type: object
         permalink:
           $ref: '#/components/schemas/ProjectPermalink'
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     ProjectGroupGet:
       title: ProjectGroupGet
       required:
@@ -10007,7 +10116,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         tags:
           title: Tags
           type: array
@@ -10035,6 +10144,11 @@ components:
           type: object
         permalink:
           $ref: '#/components/schemas/ProjectPermalink'
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     ProjectLocked:
       title: ProjectLocked
       required:
@@ -10154,7 +10268,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         classifiers:
           title: Classifiers
           type: array
@@ -10229,7 +10343,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         tags:
           title: Tags
           type: array
@@ -10341,7 +10455,6 @@ components:
       title: PutFolderBodyParams
       required:
       - name
-      - description
       type: object
       properties:
         name:
@@ -10349,9 +10462,11 @@ components:
           maxLength: 100
           minLength: 1
           type: string
-        description:
-          title: Description
-          type: string
+        parentFolderId:
+          title: Parentfolderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
       additionalProperties: false
     PutWalletBodyParams:
       title: PutWalletBodyParams
@@ -10371,6 +10486,24 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/WalletStatus'
+    PutWorkspaceBodyParams:
+      title: PutWorkspaceBodyParams
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          title: Name
+          maxLength: 100
+          minLength: 1
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+      additionalProperties: false
     RegisterBody:
       title: RegisterBody
       required:
@@ -12303,6 +12436,79 @@ components:
           allOf:
           - $ref: '#/components/schemas/TaskCounts'
           description: task details
+    WorkspaceGet:
+      title: WorkspaceGet
+      required:
+      - workspaceId
+      - name
+      - createdAt
+      - modifiedAt
+      - myAccessRights
+      - accessRights
+      type: object
+      properties:
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+        createdAt:
+          title: Createdat
+          type: string
+          format: date-time
+        modifiedAt:
+          title: Modifiedat
+          type: string
+          format: date-time
+        myAccessRights:
+          $ref: '#/components/schemas/models_library__access_rights__AccessRights'
+        accessRights:
+          title: Accessrights
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/models_library__access_rights__AccessRights'
+    WorkspaceGroupGet:
+      title: WorkspaceGroupGet
+      required:
+      - gid
+      - read
+      - write
+      - delete
+      - created
+      - modified
+      type: object
+      properties:
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
     _ComputationStarted:
       title: _ComputationStarted
       required:
@@ -12320,24 +12526,6 @@ components:
           items:
             type: integer
           description: Checkpoints IDs for created pipeline
-    _FoldersGroupsBodyParams:
-      title: _FoldersGroupsBodyParams
-      required:
-      - read
-      - write
-      - delete
-      type: object
-      properties:
-        read:
-          title: Read
-          type: boolean
-        write:
-          title: Write
-          type: boolean
-        delete:
-          title: Delete
-          type: boolean
-      additionalProperties: false
     _PageParams:
       title: _PageParams
       type: object
@@ -12432,4 +12620,64 @@ components:
         delete:
           title: Delete
           type: boolean
+      additionalProperties: false
+    _WorkspacesGroupsBodyParams:
+      title: _WorkspacesGroupsBodyParams
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+      additionalProperties: false
+    models_library__access_rights__AccessRights:
+      title: AccessRights
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+          description: has read access
+        write:
+          title: Write
+          type: boolean
+          description: has write access
+        delete:
+          title: Delete
+          type: boolean
+          description: has deletion rights
+      additionalProperties: false
+    models_library__projects_access__AccessRights:
+      title: AccessRights
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+          description: has read access
+        write:
+          title: Write
+          type: boolean
+          description: has write access
+        delete:
+          title: Delete
+          type: boolean
+          description: has deletion rights
       additionalProperties: false

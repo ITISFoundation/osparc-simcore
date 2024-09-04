@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.product import (
     GenerateInvitation,
     InvitationGenerated,
 )
+from models_library.invitations import _MAX_LEN
 from pydantic import PositiveInt
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -99,7 +100,10 @@ async def test_product_owner_generates_invitation(
     assert not error
 
     got = InvitationGenerated.parse_obj(data)
-    expected = {"issuer": logged_user["email"], **request_model.dict(exclude_none=True)}
+    expected = {
+        "issuer": logged_user["email"][:_MAX_LEN],
+        **request_model.dict(exclude_none=True),
+    }
     assert got.dict(include=set(expected), by_alias=False) == expected
 
     product_base_url = f"{client.make_url('/')}"
