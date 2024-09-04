@@ -5,13 +5,13 @@ from typing import Any, TypeAlias
 from aiopg.sa.result import RowProxy
 from models_library.basic_types import HttpUrlWithCustomMinLength
 from models_library.projects import ClassifierID, ProjectID
-from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_ui import StudyUI
 from models_library.users import UserID
 from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
 )
+from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, validator
 from simcore_postgres_database.models.projects import ProjectType, projects
 
@@ -43,13 +43,13 @@ class ProjectDB(BaseModel):
     prj_owner: UserID
     creation_date: datetime
     last_change_date: datetime
-    access_rights: dict[GroupIDStr, AccessRights]
     ui: StudyUI | None
     classifiers: list[ClassifierID]
     dev: dict | None
     quality: dict[str, Any]
     published: bool
     hidden: bool
+    workspace_id: WorkspaceID | None
 
     class Config:
         orm_mode = True
@@ -64,7 +64,7 @@ class ProjectDB(BaseModel):
 
 
 assert set(ProjectDB.__fields__.keys()).issubset(  # nosec
-    {c.name for c in projects.columns}
+    {c.name for c in projects.columns if c.name not in ["access_rights"]}
 )
 
 

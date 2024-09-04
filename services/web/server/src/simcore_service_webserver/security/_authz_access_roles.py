@@ -82,6 +82,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "user.profile.update",
             "user.tokens.*",
             "wallets.*",
+            "workspaces.*",
         ],
         inherits=[UserRole.GUEST, UserRole.ANONYMOUS],
     ),

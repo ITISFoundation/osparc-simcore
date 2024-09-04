@@ -44,12 +44,15 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from .._meta import API_VTAG as VTAG
 from ..catalog.client import get_services_for_user_in_product
 from ..director_v2 import api
+from ..folders.errors import FolderAccessForbiddenError, FolderNotFoundError
 from ..login.decorators import login_required
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ..security.api import check_user_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
+from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 from . import _crud_api_create, _crud_api_read, projects_api
+from ._access_rights_api import check_user_project_permission
 from ._common_models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveParams,
@@ -91,11 +94,19 @@ def _handle_projects_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except ProjectNotFoundError as exc:
+        except (
+            ProjectNotFoundError,
+            FolderNotFoundError,
+            WorkspaceNotFoundError,
+        ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except ProjectOwnerNotFoundInTheProjectAccessRightsError as exc:
             raise web.HTTPBadRequest(reason=f"{exc}") from exc
-        except ProjectInvalidRightsError as exc:
+        except (
+            ProjectInvalidRightsError,
+            FolderAccessForbiddenError,
+            WorkspaceAccessForbiddenError,
+        ) as exc:
             raise web.HTTPUnauthorized(reason=f"{exc}") from exc
 
     return _wrapper
@@ -127,6 +138,7 @@ async def create_project(request: web.Request):
     # :create, :copy (w/ and w/o override)
     # NOTE: see clone_project
 
+    workspace_id = None
     if not request.can_read_body:
         # request w/o body
         predefined_project = None
@@ -146,6 +158,10 @@ async def create_project(request: web.Request):
             or None
         )
 
+        # # Manually include workspace after exclude
+        # workspace_id = project_create.dict(by_alias=True).get("workspaceId", None)
+        # predefined_project["workspaceId"] = workspace_id
+
     return await start_long_running_task(
         request,
         _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
@@ -163,6 +179,7 @@ async def create_project(request: web.Request):
         predefined_project=predefined_project,
         parent_project_uuid=header_params.parent_project_uuid,
         parent_node_id=header_params.parent_node_id,
+        workspace_id=workspace_id,
     )
 
 
@@ -173,6 +190,7 @@ async def create_project(request: web.Request):
 @routes.get(f"/{VTAG}/projects", name="list_projects")
 @login_required
 @permission_required("project.read")
+@_handle_projects_exceptions
 async def list_projects(request: web.Request):
     """
 
@@ -196,6 +214,7 @@ async def list_projects(request: web.Request):
         search=query_params.search,
         order_by=parse_obj_as(OrderBy, query_params.order_by),
         folder_id=query_params.folder_id,
+        workspace_id=query_params.workspace_id,
     )
 
     page = Page[ProjectDict].parse_obj(
@@ -386,6 +405,7 @@ async def replace_project(request: web.Request):
         "project.update | project.workbench.node.inputs.update",
         context={
             "dbapi": db,
+            "app": request.app,
             "project_id": f"{path_params.project_id}",
             "user_id": req_ctx.user_id,
             "new_data": new_project,
@@ -429,6 +449,14 @@ async def replace_project(request: web.Request):
             raise web.HTTPConflict(
                 reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
             )
+
+        await check_user_project_permission(
+            request.app,
+            project_id=path_params.project_id,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            permission="write",
+        )
 
         new_project = await db.replace_project(
             new_project,
@@ -603,6 +631,12 @@ async def clone_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
+    try:
+        project_db = await db.get_project_db(path_params.project_id)
+    except ProjectNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
+
     return await start_long_running_task(
         request,
         _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
@@ -622,4 +656,5 @@ async def clone_project(request: web.Request):
         predefined_project=None,
         parent_project_uuid=None,
         parent_node_id=None,
+        workspace_id=project_db.workspace_id,
     )
