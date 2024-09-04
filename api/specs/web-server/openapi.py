@@ -55,7 +55,6 @@ openapi_modules = [
         "_statics",
         "_storage",
         "_version_control",
-        "_wallets",
         "_workspaces",
         # maintenance ----
         "_admin",

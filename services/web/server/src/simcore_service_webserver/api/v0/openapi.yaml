@@ -5540,6 +5540,7 @@ paths:
     put:
       tags:
       - workspaces
+      - groups
       summary: Replace Workspace Group
       operationId: replace_workspace_group
       parameters:
@@ -5575,6 +5576,7 @@ paths:
     post:
       tags:
       - workspaces
+      - groups
       summary: Create Workspace Group
       operationId: create_workspace_group
       parameters:
@@ -5610,6 +5612,7 @@ paths:
     delete:
       tags:
       - workspaces
+      - groups
       summary: Delete Workspace Group
       operationId: delete_workspace_group
       parameters:
@@ -5636,6 +5639,7 @@ paths:
     get:
       tags:
       - workspaces
+      - groups
       summary: List Workspace Groups
       operationId: list_workspace_groups
       parameters:
