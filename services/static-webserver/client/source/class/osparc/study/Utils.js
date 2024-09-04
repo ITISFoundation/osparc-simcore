@@ -220,13 +220,24 @@ qx.Class.define("osparc.study.Utils", {
                 progressSequence.setOverallProgress(percent);
                 const existingTask = progressSequence.getTask(message);
                 if (existingTask) {
-                  osparc.widget.ProgressSequence.updateTaskProgress(existingTask, percent);
+                  // update task
+                  osparc.widget.ProgressSequence.updateTaskProgress(existingTask, {
+                    value: percent,
+                    progressLabel: percent*100 + "%"
+                  });
                 } else {
-                  // all to 100%
-                  progressSequence.getTasks().forEach(tsk => osparc.widget.ProgressSequence.updateTaskProgress(tsk, 1));
+                  // new task
+                  // all the previous steps to 100%
+                  progressSequence.getTasks().forEach(tsk => osparc.widget.ProgressSequence.updateTaskProgress(tsk, {
+                    value: 1,
+                    progressLabel: "100%"
+                  }));
                   // and move to the next new task
                   const subTask = progressSequence.addNewTask(message);
-                  osparc.widget.ProgressSequence.updateTaskProgress(subTask, percent);
+                  osparc.widget.ProgressSequence.updateTaskProgress(subTask, {
+                    value: percent,
+                    progressLabel: "0%"
+                  });
                 }
                 /*
                 loadingPage.setMessages([message]);
