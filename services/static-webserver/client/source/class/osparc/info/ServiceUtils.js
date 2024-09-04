@@ -172,7 +172,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       * @param maxHeight {Number} description's maxHeight
       */
-    createDescription: function(serviceData, maxHeight) {
+    createDescription: function(serviceData) {
       const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignY: "middle"
       }));
@@ -184,12 +184,36 @@ qx.Class.define("osparc.info.ServiceUtils", {
 
       const description = new osparc.ui.markdown.Markdown().set({
         noMargin: true,
-        maxHeight: maxHeight
       });
-      description.setValue(serviceData["description"]);
+      // display markdown link content if that's the case
+      if (
+        osparc.utils.Utils.isValidHttpUrl(serviceData["description"]) &&
+        serviceData["description"].slice(-3) === ".md"
+      ) {
+        // if it's a link, fetch the content
+        fetch(serviceData["description"])
+          .then(response => response.blob())
+          .then(blob => blob.text())
+          .then(markdown => {
+            description.setValue(markdown)
+          })
+          .catch(err => {
+            console.error(err);
+            description.setValue(serviceData["description"]);
+          });
+      } else {
+        description.setValue(serviceData["description"]);
+      }
       descriptionLayout.add(description);
 
       return descriptionLayout;
+    },
+
+    RESOURCES_INFO: {
+      "limit": {
+        label: qx.locale.Manager.tr("Limit"),
+        tooltip: qx.locale.Manager.tr("Runtime check:<br>The service can consume a maximum of 'limit' resources - if it attempts to use more resources than this limit, it will be stopped")
+      }
     },
 
     createResourcesInfo: function() {
@@ -226,14 +250,37 @@ qx.Class.define("osparc.info.ServiceUtils", {
       return resourcesLayout;
     },
 
-    RESOURCES_INFO: {
-      "limit": {
-        label: qx.locale.Manager.tr("Limit"),
-        tooltip: qx.locale.Manager.tr("Runtime check:<br>The service can consume a maximum of 'limit' resources - if it attempts to use more resources than this limit, it will be stopped")
-      }
+    createResourcesInfoCompact: function() {
+      const resourcesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignY: "middle"
+      }));
+
+      const headerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Resource Limits")).set({
+        font: "text-13"
+      });
+      headerLayout.add(label);
+      const infoHint = new osparc.ui.hint.InfoHint(this.RESOURCES_INFO["limit"].tooltip);
+      headerLayout.add(infoHint);
+      resourcesLayout.add(headerLayout);
+
+      const grid = new qx.ui.layout.Grid(10, 5);
+      grid.setColumnAlign(0, "left", "middle"); // resource type
+      grid.setColumnAlign(1, "left", "middle"); // resource limit value
+      const resourcesInfo = new qx.ui.container.Composite(grid).set({
+        allowGrowX: false,
+        alignX: "left",
+        alignY: "middle"
+      });
+      resourcesLayout.add(resourcesInfo);
+
+      return resourcesLayout;
     },
 
     resourcesToResourcesInfo: function(resourcesLayout, imagesResourcesInfo) {
+      if (resourcesLayout.getChildren().length < 2) {
+        return;
+      }
       const layout = resourcesLayout.getChildren()[1];
       let row = 1;
       Object.entries(imagesResourcesInfo).forEach(([imageName, imageInfo]) => {
@@ -277,6 +324,49 @@ qx.Class.define("osparc.info.ServiceUtils", {
             row++;
           });
         }
+      });
+    },
+
+    resourcesToResourcesInfoCompact: function(resourcesLayout, imagesResourcesInfo) {
+      if (resourcesLayout.getChildren().length < 2) {
+        return;
+      }
+      const gridLayout = resourcesLayout.getChildren()[1];
+
+      const compactInfo = {};
+      Object.values(imagesResourcesInfo).forEach(imageInfo => {
+        const resourcesInfo = imageInfo["resources"];
+        Object.keys(resourcesInfo).forEach(resourceKey => {
+          if (resourcesInfo[resourceKey]["limit"]) {
+            if (!(resourceKey in compactInfo)) {
+              compactInfo[resourceKey] = 0;
+            }
+            compactInfo[resourceKey] += resourcesInfo[resourceKey]["limit"]
+          }
+        });
+      });
+
+      let row = 0;
+      Object.entries(compactInfo).forEach(([resourceKey, limitsSumUp]) => {
+        let label = resourceKey;
+        let value = limitsSumUp;
+        if (resourceKey === "RAM") {
+          label += " (GiB)";
+          value = osparc.utils.Utils.bytesToGiB(value);
+        }
+        gridLayout.add(new qx.ui.basic.Label(label).set({
+          font: "text-13"
+        }), {
+          row,
+          column: 0
+        });
+        gridLayout.add(new qx.ui.basic.Label(String(value)).set({
+          font: "text-13"
+        }), {
+          row,
+          column: 1
+        });
+        row++;
       });
     },
 
