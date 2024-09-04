@@ -9,7 +9,7 @@ from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
 )
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def update_task_progress(
@@ -17,7 +17,7 @@ def update_task_progress(
     message: ProgressMessage | None = None,
     progress: ProgressPercent | None = None,
 ) -> None:
-    logger.debug("%s [%s]", message or "", progress or "n/a")
+    _logger.debug("%s [%s]", message or "", progress or "n/a")
     if task_progress:
         task_progress.update(message=message, percent=progress)
 
@@ -53,7 +53,7 @@ class S3TransferDataCB:
         self._update()
 
     def copy_transfer_cb(self, total_bytes_copied: int, *, file_name: str) -> None:
-        logger.debug(
+        _logger.debug(
             "Copied %s of %s",
             parse_obj_as(ByteSize, total_bytes_copied).human_readable(),
             file_name,
@@ -64,6 +64,11 @@ class S3TransferDataCB:
             self._update()
 
     def upload_transfer_cb(self, bytes_transferred: int, *, file_name: str) -> None:
+        _logger.debug(
+            "Uploaded %s of %s",
+            parse_obj_as(ByteSize, bytes_transferred).human_readable(),
+            file_name,
+        )
         self._file_total_bytes_copied[file_name] += bytes_transferred
         self._total_bytes_copied = sum(self._file_total_bytes_copied.values())
         if self.total_bytes_to_transfer != 0:
