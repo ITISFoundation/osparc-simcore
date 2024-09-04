@@ -295,7 +295,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       };
 
       try {
-        const metadata = await osparc.service.Store.getService(key, version);
+        const metadata = await osparc.store.Services.getService(key, version);
         const resp = await osparc.data.Resources.fetch("studies", "addNode", params);
         const nodeId = resp["node_id"];
 
@@ -679,7 +679,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const metadataPromises = [];
       nodeIds.forEach(nodeId => {
         const nodeData = workbenchData[nodeId];
-        metadataPromises.push(osparc.service.Store.getService(nodeData.key, nodeData.version));
+        metadataPromises.push(osparc.store.Services.getService(nodeData.key, nodeData.version));
       });
 
       return Promise.all(metadataPromises)

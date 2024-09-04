@@ -16,44 +16,36 @@
 ************************************************************************ */
 
 /**
- * Class that stores Folder data.
+ * Class that stores Workspace data.
  */
 
-qx.Class.define("osparc.data.model.Folder", {
+qx.Class.define("osparc.data.model.Workspace", {
   extend: qx.core.Object,
 
   /**
-   * @param folderData {Object} Object containing the serialized Folder Data
+   * @param workspaceData {Object} Object containing the serialized Workspace Data
    */
-  construct: function(folderData) {
+  construct: function(workspaceData) {
     this.base(arguments);
 
     this.set({
-      folderId: folderData.folderId,
-      parentId: folderData.parentFolderId,
-      name: folderData.name,
-      description: folderData.description,
-      myAccessRights: folderData.myAccessRights,
-      accessRights: folderData.accessRights,
-      owner: folderData.owner,
-      createdAt: new Date(folderData.createdAt),
-      lastModified: new Date(folderData.modifiedAt),
+      workspaceId: workspaceData.workspaceId,
+      name: workspaceData.name,
+      description: workspaceData.description,
+      thumbnail: workspaceData.thumbnail,
+      myAccessRights: workspaceData.myAccessRights,
+      accessRights: workspaceData.accessRights,
+      createdAt: new Date(workspaceData.createdAt),
+      lastModified: new Date(workspaceData.lastModified),
     });
   },
 
   properties: {
-    folderId: {
+    workspaceId: {
       check: "Number",
       nullable: false,
       init: null,
       event: "changeId"
-    },
-
-    parentId: {
-      check: "Number",
-      nullable: true,
-      init: null,
-      event: "changeParentId"
     },
 
     name: {
@@ -70,6 +62,13 @@ qx.Class.define("osparc.data.model.Folder", {
       event: "changeDescription"
     },
 
+    thumbnail: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changeThumbnail"
+    },
+
     myAccessRights: {
       check: "Object",
       nullable: false,
@@ -82,13 +81,6 @@ qx.Class.define("osparc.data.model.Folder", {
       nullable: false,
       init: null,
       event: "changeAccessRights"
-    },
-
-    owner: {
-      check: "Number",
-      nullable: true,
-      init: null,
-      event: "changeOwner"
     },
 
     createdAt: {
@@ -107,12 +99,12 @@ qx.Class.define("osparc.data.model.Folder", {
   },
 
   statics: {
-    putFolder: function(folderId, propKey, value) {
-      return osparc.store.Folders.getInstance().putFolder(folderId, propKey, value);
+    putWorkspace: function(workspaceId, propKey, value) {
+      return osparc.store.Workspaces.putWorkspace(workspaceId, propKey, value);
     },
 
     getProperties: function() {
-      return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Folder));
+      return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Workspace));
     }
   },
 

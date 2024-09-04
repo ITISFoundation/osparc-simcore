@@ -287,6 +287,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       });
     },
 
+    resetSharedWithActiveFilter: function() {
+      this.__removeChips("shared-with");
+      this.__filter();
+    },
+
     setSharedWithActiveFilter: function(optionId, optionLabel) {
       this.__removeChips("shared-with");
       if (optionId === "show-all") {

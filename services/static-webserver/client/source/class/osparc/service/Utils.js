@@ -65,8 +65,6 @@ qx.Class.define("osparc.service.Utils", {
       }
     },
 
-    servicesCached: {},
-
     getTypes: function() {
       return Object.keys(this.TYPES);
     },
@@ -133,7 +131,7 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getVersions: function(key, filterDeprecated = true) {
-      const services = osparc.service.Store.servicesCached;
+      const services = osparc.store.Services.servicesCached;
       let versions = [];
       if (key in services) {
         const serviceVersions = services[key];
@@ -152,7 +150,7 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getLatest: function(key) {
-      const services = osparc.service.Store.servicesCached;
+      const services = osparc.store.Services.servicesCached;
       if (key in services) {
         const versions = this.getVersions(key, true);
         if (versions.length) {
@@ -163,7 +161,7 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getLatestCompatible: function(key, version) {
-      const services = osparc.service.Store.servicesCached;
+      const services = osparc.store.Services.servicesCached;
       if (key in services && version in services[key]) {
         const serviceMD = services[key][version];
         if (serviceMD["compatibility"] && serviceMD["compatibility"]["canUpdateTo"]) {
@@ -183,7 +181,7 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getVersionDisplay: function(key, version) {
-      const services = osparc.service.Store.servicesCached;
+      const services = osparc.store.Services.servicesCached;
       if (key in services && version in services[key]) {
         return this.extractVersionDisplay(services[key][version]);
       }
@@ -195,7 +193,7 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getReleasedDate: function(key, version) {
-      const services = osparc.service.Store.servicesCached;
+      const services = osparc.store.Services.servicesCached;
       if (
         key in services &&
         version in services[key] &&
@@ -262,7 +260,8 @@ qx.Class.define("osparc.service.Utils", {
 
     getParametersMetadata: function() {
       const parametersMetadata = [];
-      for (const key in this.servicesCached) {
+      const services = osparc.store.Services.servicesCached;
+      for (const key in services) {
         if (key.includes("simcore/services/frontend/parameter/")) {
           const latest = this.self().getLatest(key);
           if (latest) {

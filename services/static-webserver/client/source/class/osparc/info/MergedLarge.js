@@ -325,7 +325,7 @@ qx.Class.define("osparc.info.MergedLarge", {
         };
         promise = osparc.data.Resources.get("nodesInStudyResources", params);
       } else {
-        promise = osparc.service.Store.getResources(this.getNode().getKey(), this.getNode().getVersion())
+        promise = osparc.store.Services.getResources(this.getNode().getKey(), this.getNode().getVersion())
       }
       promise
         .then(serviceResources => {
