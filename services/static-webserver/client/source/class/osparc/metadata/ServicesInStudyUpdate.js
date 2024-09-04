@@ -205,7 +205,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-        const metadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+        const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
         const currentVersionLabel = new qx.ui.basic.Label(osparc.service.Utils.extractVersionDisplay(metadata)).set({
           font: "text-14"
         });
@@ -221,7 +221,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyUpdate", {
         const latestCompatible = osparc.service.Utils.getLatestCompatible(node["key"], node["version"]);
         if (latestCompatible) {
           // updatable
-          osparc.service.Store.getService(latestCompatible["key"], latestCompatible["version"])
+          osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
             .then(latestMetadata => {
               let label = osparc.service.Utils.extractVersionDisplay(latestMetadata)
               if (node["key"] !== latestMetadata["key"]) {

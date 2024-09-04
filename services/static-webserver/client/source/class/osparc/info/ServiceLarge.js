@@ -92,7 +92,6 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
       const title = this.__createTitle();
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
-      vBox.add(titleLayout);
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
@@ -109,28 +108,57 @@ qx.Class.define("osparc.info.ServiceLarge", {
         alignX: "center"
       });
 
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
+      const infoAndThumbnail = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
         alignX: "center"
       }));
-      hBox.add(extraInfoLayout);
-      hBox.add(thumbnailLayout, {
+      infoAndThumbnail.add(extraInfoLayout);
+      infoAndThumbnail.add(thumbnailLayout, {
         flex: 1
       });
-      vBox.add(hBox);
+
+      let descriptionUi = null;
+      if (osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
+        descriptionUi = this.__createDescriptionUi();
+      }
 
       const description = this.__createDescription();
       const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
       description.addAt(editInTitle, 0);
-      vBox.add(description);
 
-      const resources = this.__createResources();
-      vBox.add(resources);
+      let resources = null;
+      if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        resources = this.__createResources();
+      }
 
       const copyMetadataButton = new qx.ui.form.Button(this.tr("Copy Raw metadata"), "@FontAwesome5Solid/copy/12").set({
         allowGrowX: false
       });
       copyMetadataButton.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService())), this);
-      vBox.add(copyMetadataButton);
+
+
+      if (
+        this.getService()["descriptionUi"] &&
+        !osparc.service.Utils.canIWrite(this.getService()["accessRights"]) &&
+        description.getChildren().length > 1
+      ) {
+        // Show description only
+        vBox.add(description.getChildren()[1]);
+        if (osparc.data.Permissions.getInstance().isTester()) {
+          // Also copyMetadataButton if tester
+          vBox.add(copyMetadataButton);
+        }
+      } else {
+        vBox.add(titleLayout);
+        vBox.add(infoAndThumbnail);
+        if (descriptionUi) {
+          vBox.add(descriptionUi);
+        }
+        vBox.add(description);
+        if (resources) {
+          vBox.add(resources);
+        }
+        vBox.add(copyMetadataButton);
+      }
 
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(vBox);
@@ -342,13 +370,25 @@ qx.Class.define("osparc.info.ServiceLarge", {
       return thumbnail;
     },
 
+    __createDescriptionUi: function() {
+      const cbAutoPorts = new qx.ui.form.CheckBox().set({
+        label: this.tr("Show Description only"),
+        toolTipText: this.tr("From all the metadata shown in this view,\nonly the Description will be shown to Users."),
+        iconPosition: "right",
+      });
+      cbAutoPorts.setValue(Boolean(this.getService()["descriptionUi"]));
+      cbAutoPorts.addListener("changeValue", e => {
+        this.__patchService("descriptionUi", e.getData());
+      });
+      return cbAutoPorts;
+    },
+
     __createDescription: function() {
-      const maxHeight = 400;
-      return osparc.info.ServiceUtils.createDescription(this.getService(), maxHeight);
+      return osparc.info.ServiceUtils.createDescription(this.getService());
     },
 
     __createResources: function() {
-      const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfo();
+      const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfoCompact();
       resourcesLayout.exclude();
       let promise = null;
       if (this.getNodeId()) {
@@ -360,12 +400,12 @@ qx.Class.define("osparc.info.ServiceLarge", {
         };
         promise = osparc.data.Resources.get("nodesInStudyResources", params);
       } else {
-        promise = osparc.service.Store.getResources(this.getService()["key"], this.getService()["version"])
+        promise = osparc.store.Services.getResources(this.getService()["key"], this.getService()["version"])
       }
       promise
         .then(serviceResources => {
           resourcesLayout.show();
-          osparc.info.ServiceUtils.resourcesToResourcesInfo(resourcesLayout, serviceResources);
+          osparc.info.ServiceUtils.resourcesToResourcesInfoCompact(resourcesLayout, serviceResources);
         })
         .catch(err => console.error(err));
       return resourcesLayout;
@@ -473,8 +513,9 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __patchService: function(key, value) {
+      this.setEnabled(false);
       const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.getService());
-      osparc.service.Store.patchServiceData(serviceDataCopy, key, value)
+      osparc.store.Services.patchServiceData(serviceDataCopy, key, value)
         .then(() => {
           this.setService(serviceDataCopy);
           this.fireDataEvent("updateService", this.getService());
@@ -483,7 +524,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
           console.error(err);
           const msg = err.message || this.tr("There was an error while updating the information.");
           osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        });
+        })
+        .finally(() => this.setEnabled(true));
     }
   }
 });

@@ -58,7 +58,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __loadServices: function() {
-      osparc.service.Store.getServicesLatest()
+      osparc.store.Services.getServicesLatest()
         .then(servicesLatest => {
           const servicesList = [];
           Object.keys(servicesLatest).forEach(key => {
@@ -100,7 +100,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     _reloadCards: function() {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
-      const cards = this._resourcesContainer.reloadCards("servicesList");
+      const cards = this._resourcesContainer.reloadCards("services");
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("execute", () => this.__itemClicked(card), this);
