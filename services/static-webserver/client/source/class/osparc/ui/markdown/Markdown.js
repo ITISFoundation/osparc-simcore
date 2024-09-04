@@ -80,9 +80,9 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     __applyMarkdown: function(value = "") {
       this.__loadMarked.then(() => {
         // trying to prettify:
-        // - links
-        // - headers
-        // - line height
+        // - links: color with own colors
+        // - headers: add margins
+        // - line height: increase to 1.5
         /*
         const walkTokens = token => {
           // Check if the token is a link

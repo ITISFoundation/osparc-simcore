@@ -116,6 +116,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
         flex: 1
       });
 
+      const descriptionUi = this.__createDescriptionUi();
+
       const description = this.__createDescription();
       const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
       description.addAt(editInTitle, 0);
@@ -142,6 +144,9 @@ qx.Class.define("osparc.info.ServiceLarge", {
       } else {
         vBox.add(titleLayout);
         vBox.add(infoAndThumbnail);
+        if (osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
+          vBox.add(descriptionUi);
+        }
         vBox.add(description);
         vBox.add(resources);
         vBox.add(copyMetadataButton);
@@ -357,6 +362,19 @@ qx.Class.define("osparc.info.ServiceLarge", {
       return thumbnail;
     },
 
+    __createDescriptionUi: function() {
+      const cbAutoPorts = new qx.ui.form.CheckBox().set({
+        label: this.tr("Show Description only"),
+        toolTipText: this.tr("From all the metadata shown in this view,<br>only the Description will be shown to Users."),
+        iconPosition: "right",
+      });
+      cbAutoPorts.setValue(Boolean(this.getService()["descriptionUi"]));
+      cbAutoPorts.addListener("changeValue", e => {
+        this.__patchService("descriptionUi", e.getData());
+      });
+      return cbAutoPorts;
+    },
+
     __createDescription: function() {
       return osparc.info.ServiceUtils.createDescription(this.getService());
     },
@@ -487,6 +505,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __patchService: function(key, value) {
+      this.setEnabled(false);
       const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.getService());
       osparc.service.Store.patchServiceData(serviceDataCopy, key, value)
         .then(() => {
@@ -497,7 +516,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
           console.error(err);
           const msg = err.message || this.tr("There was an error while updating the information.");
           osparc.FlashMessenger.getInstance().logAs(msg, "ERROR");
-        });
+        })
+        .finally(() => this.setEnabled(true));
     }
   }
 });
