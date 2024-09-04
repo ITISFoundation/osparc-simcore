@@ -7,8 +7,8 @@ from pydantic import (
     HttpUrl,
     PositiveFloat,
     SecretStr,
-    parse_obj_as,
-    validator,
+    TypeAdapter,
+    field_validator,
 )
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
@@ -27,16 +27,17 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = PROJECT_NAME
-    API_VTAG: VersionTag = parse_obj_as(VersionTag, API_VTAG)
+    API_VTAG: VersionTag = TypeAdapter(VersionTag).validate_python(API_VTAG)
 
     # RUNTIME  -----------------------------------------------------------
 
     PAYMENTS_LOGLEVEL: LogLevel = Field(
-        default=LogLevel.INFO, env=["PAYMENTS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        default=LogLevel.INFO,
+        validation_alias=["PAYMENTS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
     PAYMENTS_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=[
             "PAYMENTS_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ],
@@ -47,7 +48,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def LOG_LEVEL(self):  # noqa: N802
         return self.PAYMENTS_LOGLEVEL
 
-    @validator("PAYMENTS_LOGLEVEL")
+    @field_validator("PAYMENTS_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)

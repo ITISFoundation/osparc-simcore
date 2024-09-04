@@ -1,6 +1,5 @@
 import datetime
 from decimal import Decimal
-from typing import Any, ClassVar
 
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from models_library.emails import LowerCaseEmailStr
@@ -8,7 +7,7 @@ from models_library.payments import StripeInvoiceID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, ConfigDict, HttpUrl
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -47,24 +46,7 @@ class PaymentsTransactionsDB(BaseModel):
     completed_at: datetime.datetime | None
     state: PaymentTransactionState
     state_message: str | None
-
-    class Config:
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                _EXAMPLE_AFTER_INIT,
-                # successful completion
-                {
-                    **_EXAMPLE_AFTER_INIT,
-                    "invoice_url": "https://my-fake-pdf-link.com",
-                    "stripe_invoice_id": "12345",
-                    "invoice_pdf_url": "https://my-fake-pdf-link.com",
-                    "completed_at": "2023-09-27T10:00:10",
-                    "state": "SUCCESS",
-                    "state_message": "Payment completed successfully",
-                },
-            ]
-        }
+    model_config = ConfigDict(from_attributes=True)
 
 
 _EXAMPLE_AFTER_INIT_PAYMENT_METHOD = {
@@ -86,18 +68,4 @@ class PaymentsMethodsDB(BaseModel):
     completed_at: datetime.datetime | None
     state: InitPromptAckFlowState
     state_message: str | None
-
-    class Config:
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                _EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
-                # successful completion
-                {
-                    **_EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
-                    "completed_at": "2023-09-27T10:00:15",
-                    "state": "SUCCESS",
-                    "state_message": "Payment method completed successfully",
-                },
-            ]
-        }
+    model_config = ConfigDict(from_attributes=True)
