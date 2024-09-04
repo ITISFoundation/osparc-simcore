@@ -2415,14 +2415,6 @@ paths:
         in: query
       - required: false
         schema:
-          title: Workspace Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: workspace_id
-        in: query
-      - required: false
-        schema:
           title: X-Simcore-User-Agent
           type: string
           default: undefined
@@ -3331,7 +3323,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -9828,6 +9820,11 @@ components:
             type: string
         ui:
           $ref: '#/components/schemas/StudyUI'
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     ProjectGet:
       title: ProjectGet
       required:
