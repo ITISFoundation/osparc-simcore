@@ -1,13 +1,13 @@
 import base64
 import binascii
 import logging
-from typing import Any, ClassVar, cast
+from typing import cast
 from urllib import parse
 
 from cryptography.fernet import Fernet, InvalidToken
 from models_library.invitations import InvitationContent, InvitationInputs
 from models_library.products import ProductName
-from pydantic import HttpUrl, ValidationError, parse_obj_as
+from pydantic import ConfigDict, HttpUrl, TypeAdapter, ValidationError
 from starlette.datastructures import URL
 
 _logger = logging.getLogger(__name__)
@@ -23,9 +23,9 @@ class _ContentWithShortNames(InvitationContent):
     @classmethod
     def serialize(cls, model_obj: InvitationContent) -> str:
         """Exports to json using *short* aliases and values in order to produce shorter codes"""
-        model_w_short_aliases_json: str = cls.construct(
-            **model_obj.dict(exclude_unset=True)
-        ).json(exclude_unset=True, by_alias=True)
+        model_w_short_aliases_json: str = cls.model_construct(
+            **model_obj.model_dump(exclude_unset=True)
+        ).model_dump_json(exclude_unset=True, by_alias=True)
         # NOTE: json arguments try to minimize the amount of data
         # serialized. The CONS is that it relies on models in the code
         # that might change over time. This might lead to some datasets in codes
@@ -35,17 +35,17 @@ class _ContentWithShortNames(InvitationContent):
     @classmethod
     def deserialize(cls, raw_json: str) -> InvitationContent:
         """Parses a json string and returns InvitationContent model"""
-        model_w_short_aliases = cls.parse_raw(raw_json)
-        return InvitationContent.construct(
-            **model_w_short_aliases.dict(exclude_unset=True)
+        model_w_short_aliases = cls.model_validate_json(raw_json)
+        return InvitationContent.model_construct(
+            **model_w_short_aliases.model_dump(exclude_unset=True)
         )
 
-    class Config:
-        allow_population_by_field_name = True  # NOTE: can parse using field names
-        allow_mutation = False
-        anystr_strip_whitespace = True
+    model_config = ConfigDict(
+        populate_by_name=True,  # NOTE: can parse using field names
+        frozen=True,
+        str_strip_whitespace=True,
         # NOTE: Can export with alias: short aliases to minimize the size of serialization artifact
-        fields: ClassVar[dict[str, Any]] = {
+        fields={
             "issuer": {
                 "alias": "i",
             },
@@ -64,7 +64,8 @@ class _ContentWithShortNames(InvitationContent):
             "created": {
                 "alias": "c",
             },
-        }
+        },
+    )
 
 
 #
@@ -81,7 +82,7 @@ def _build_link(
     # Adds query to fragment
     base_url = f"{base_url.rstrip('/')}/"
     url = URL(base_url).replace(fragment=f"{r}")
-    return cast(HttpUrl, parse_obj_as(HttpUrl, f"{url}"))
+    return cast(HttpUrl, TypeAdapter(HttpUrl).validate_python(f"{url}"))
 
 
 def _fernet_encrypt_as_urlsafe_code(

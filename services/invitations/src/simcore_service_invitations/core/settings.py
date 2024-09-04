@@ -1,7 +1,7 @@
 from functools import cached_property
 
 from models_library.products import ProductName
-from pydantic import Field, HttpUrl, PositiveInt, SecretStr, validator
+from pydantic import Field, HttpUrl, PositiveInt, SecretStr, field_validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.utils_logging import MixinLoggingSettings
@@ -38,11 +38,12 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # RUNTIME  -----------------------------------------------------------
 
     INVITATIONS_LOGLEVEL: LogLevel = Field(
-        default=LogLevel.INFO, env=["INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        default=LogLevel.INFO,
+        validation_alias=["INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
     INVITATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=[
             "INVITATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ],
@@ -53,7 +54,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self):
         return self.INVITATIONS_LOGLEVEL
 
-    @validator("INVITATIONS_LOGLEVEL")
+    @field_validator("INVITATIONS_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
