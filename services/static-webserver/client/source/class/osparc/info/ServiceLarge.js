@@ -365,7 +365,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     __createDescriptionUi: function() {
       const cbAutoPorts = new qx.ui.form.CheckBox().set({
         label: this.tr("Show Description only"),
-        toolTipText: this.tr("From all the metadata shown in this view,<br>only the Description will be shown to Users."),
+        toolTipText: this.tr("From all the metadata shown in this view,\nonly the Description will be shown to Users."),
         iconPosition: "right",
       });
       cbAutoPorts.setValue(Boolean(this.getService()["descriptionUi"]));

@@ -188,7 +188,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       // display markdown link content if that's the case
       if (
         osparc.utils.Utils.isValidHttpUrl(serviceData["description"]) &&
-        serviceData["description"].includes(".md")
+        serviceData["description"].slice(-3) === ".md"
       ) {
         // if it's a link, fetch the content
         fetch(serviceData["description"])
