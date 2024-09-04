@@ -363,7 +363,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __createResources: function() {
-      const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfo();
+      const resourcesLayout = osparc.info.ServiceUtils.createResourcesInfoCompact();
       resourcesLayout.exclude();
       let promise = null;
       if (this.getNodeId()) {
@@ -380,7 +380,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       promise
         .then(serviceResources => {
           resourcesLayout.show();
-          osparc.info.ServiceUtils.resourcesToResourcesInfo(resourcesLayout, serviceResources);
+          osparc.info.ServiceUtils.resourcesToResourcesInfoCompact(resourcesLayout, serviceResources);
         })
         .catch(err => console.error(err));
       return resourcesLayout;
