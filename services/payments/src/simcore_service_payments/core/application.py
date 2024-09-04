@@ -9,6 +9,7 @@ from .._meta import (
     API_VERSION,
     API_VTAG,
     APP_FINISHED_BANNER_MSG,
+    APP_NAME,
     APP_STARTED_BANNER_MSG,
     PROJECT_NAME,
     SUMMARY,
@@ -70,9 +71,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if app.state.settings.PAYMENTS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
     if app.state.settings.PAYMENTS_TRACING:
-        setup_tracing(
-            app, app.state.settings.PAYMENTS_TRACING, app.state.settings.APP_NAME
-        )
+        setup_tracing(app, app.state.settings.PAYMENTS_TRACING, APP_NAME)
 
     # ERROR HANDLERS
     # ... add here ...

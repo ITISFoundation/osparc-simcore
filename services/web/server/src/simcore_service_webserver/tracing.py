@@ -21,11 +21,10 @@ def get_plugin_settings(app: web.Application) -> TracingSettings:
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_TRACING", logger=log
 )
 def setup_app_tracing(app: web.Application):
-    settings: TracingSettings = get_plugin_settings(app)
+    tracing_settings: TracingSettings = get_plugin_settings(app)
     setup_tracing(
         app,
-        opentelemetry_collector_endpoint=settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT,
-        opentelemetry_collector_port=settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT,
+        tracing_settings=tracing_settings,
         instrument_aiopg=True,
         service_name=app.state.settings.APP_NAME,
     )

@@ -52,12 +52,10 @@ def create(settings: Settings) -> web.Application:
     # Tracing
     tracing_settings: TracingSettings | None = app[APP_CONFIG_KEY].STORAGE_TRACING
     if tracing_settings:
-        service_name = "simcore_service_storage"
         setup_tracing(
             app,
-            opentelemetry_collector_endpoint=tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT,
-            opentelemetry_collector_port=tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT,
-            service_name=service_name,
+            tracing_settings=tracing_settings,
+            service_name=APP_NAME,
             instrument_aiopg=True,
         )
 

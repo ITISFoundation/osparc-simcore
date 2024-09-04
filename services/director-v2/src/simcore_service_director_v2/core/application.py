@@ -19,7 +19,7 @@ from ..api.errors.http_error import (
     make_http_error_handler_for_exception,
 )
 from ..api.errors.validation_error import http422_error_handler
-from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
+from ..meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..modules import (
     catalog,
     comp_scheduler,
@@ -194,9 +194,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
     if settings.DIRECTOR_V2_TRACING:
-        setup_tracing(
-            app, app.state.settings.DIRECTOR_V2_TRACING, app.state.settings.APP_NAME
-        )
+        setup_tracing(app, app.state.settings.DIRECTOR_V2_TRACING, APP_NAME)
 
     if settings.DIRECTOR_V2_PROFILING:
         app.add_middleware(ProfilerMiddleware)

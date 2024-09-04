@@ -12,7 +12,7 @@ from servicelib.fastapi.prometheus_instrumentation import (
 from servicelib.fastapi.tracing import setup_tracing
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
+from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..api.rest.routes import setup_rest_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..exceptions.handlers import setup_exception_handlers
@@ -66,9 +66,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
             BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header
         )
     if app.state.settings.CATALOG_TRACING:
-        setup_tracing(
-            app, app.state.settings.CATALOG_TRACING, app.state.settings.APP_NAME
-        )
+        setup_tracing(app, app.state.settings.CATALOG_TRACING, APP_NAME)
 
     app.add_middleware(GZipMiddleware)
 

@@ -10,6 +10,7 @@ from .._meta import (
     API_VERSION,
     API_VTAG,
     APP_FINISHED_BANNER_MSG,
+    APP_NAME,
     APP_STARTED_BANNER_MSG,
     PROJECT_NAME,
     SUMMARY,
@@ -50,7 +51,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_tracing(
             app,
             app.state.settings.DYNAMIC_SCHEDULER_TRACING,
-            app.state.settings.APP_NAME,
+            APP_NAME,
         )
 
     # PLUGINS SETUP
