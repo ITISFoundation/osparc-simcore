@@ -89,7 +89,7 @@ class GenerateInvitation(InputSchema):
 
 class InvitationGenerated(OutputSchema):
     product_name: ProductName
-    issuer: LowerCaseEmailStr
+    issuer: str
     guest: LowerCaseEmailStr
     trial_account_days: PositiveInt | None = None
     extra_credits_in_usd: PositiveInt | None = None
@@ -101,7 +101,7 @@ class InvitationGenerated(OutputSchema):
             "examples": [
                 {
                     "productName": "osparc",
-                    "issuer": "john.doe@email.com",
+                    "issuer": "john.doe",
                     "guest": "guest@example.com",
                     "trialAccountDays": 7,
                     "extraCreditsInUsd": 30,
