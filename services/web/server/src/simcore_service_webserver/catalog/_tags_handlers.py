@@ -21,7 +21,7 @@ routes = web.RouteTableDef()
 
 
 @routes.get(
-    f"{API_VTAG}/catalog/services/{{service_key}}/{{service_version}}/tags",
+    f"/{API_VTAG}/catalog/services/{{service_key}}/{{service_version}}/tags",
     name="list_service_tags",
 )
 @login_required
@@ -35,7 +35,7 @@ async def list_service_tags(request: web.Request):
 
 
 @routes.put(
-    f"{API_VTAG}/catalog/services/{{service_key}}/{{service_version}}/tags/{{tag_id}}",
+    f"/{API_VTAG}/catalog/services/{{service_key}}/{{service_version}}/tags/{{tag_id}}",
     name="add_service_tag",
 )
 @login_required

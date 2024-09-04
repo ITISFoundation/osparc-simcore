@@ -2,6 +2,7 @@ import functools
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
+from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -23,6 +24,7 @@ from .schemas import (
     TagCreate,
     TagGet,
     TagGroupCreate,
+    TagGroupGet,
     TagGroupPathParams,
     TagPathParams,
     TagRequestContext,
@@ -129,10 +131,12 @@ async def list_tag_groups(request: web.Request):
     path_params = parse_request_path_parameters_as(TagPathParams, request)
 
     assert path_params  # nosec
+    assert envelope_json_response(parse_obj_as(list[TagGroupGet], []))
+
     raise NotImplementedError
 
 
-@routes.get(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="create_tag_group")
+@routes.post(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="create_tag_group")
 @login_required
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
@@ -168,6 +172,5 @@ async def delete_tag_group(request: web.Request):
     path_params = parse_request_path_parameters_as(TagGroupPathParams, request)
 
     assert path_params  # nosec
-
+    assert web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
     raise NotImplementedError
-    # NOTE: will raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
