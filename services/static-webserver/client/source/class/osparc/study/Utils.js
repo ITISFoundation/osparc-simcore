@@ -211,6 +211,7 @@ qx.Class.define("osparc.study.Utils", {
               minHeight: 180 // four tasks
             });
             progressSequence.addOverallProgressBar();
+            loadingPage.clearMessages();
             loadingPage.addWidgetToMessages(progressSequence);
             task.addListener("updateReceived", e => {
               const updateData = e.getData();
@@ -241,14 +242,6 @@ qx.Class.define("osparc.study.Utils", {
                     progressLabel: "0%"
                   });
                 }
-                /*
-                loadingPage.setMessages([message]);
-                const pBar = new qx.ui.indicator.ProgressBar(percent, 1).set({
-                  width: osparc.ui.message.Loading.LOGO_WIDTH,
-                  maxWidth: osparc.ui.message.Loading.LOGO_WIDTH
-                });
-                loadingPage.addWidgetToMessages(pBar);
-                */
               }
             }, this);
             task.addListener("resultReceived", e => {
