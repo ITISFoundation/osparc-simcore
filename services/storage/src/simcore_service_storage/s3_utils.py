@@ -39,8 +39,7 @@ class S3TransferDataCB:
         update_task_progress(
             self.task_progress,
             f"{self.task_progress_message_prefix} - "
-            f"{parse_obj_as(ByteSize,self._total_bytes_copied).human_readable()}"
-            f"/{self.total_bytes_to_transfer.human_readable()}]",
+            f"{self.total_bytes_to_transfer.human_readable()}",
             ProgressPercent(
                 min(self._total_bytes_copied, self.total_bytes_to_transfer)
                 / (self.total_bytes_to_transfer or 1)
