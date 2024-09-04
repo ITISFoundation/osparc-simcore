@@ -14,6 +14,7 @@ from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
+from models_library.workspaces import WorkspaceID
 from pydantic import parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -31,6 +32,8 @@ from ..storage.api import (
     get_project_total_size_simcore_s3,
 )
 from ..users.api import get_user_fullname
+from ..workspaces.api import get_workspace
+from ..workspaces.errors import WorkspaceAccessForbiddenError
 from . import projects_api
 from ._metadata_api import set_project_ancestors
 from ._permalink_api import update_or_pop_permalink_in_project
@@ -216,7 +219,7 @@ async def _compose_project_data(
     return new_project, project_nodes
 
 
-async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, PLR0913
+async def create_project(  # pylint: disable=too-many-arguments,too-many-branches,too-many-statements  # noqa: C901, PLR0913
     task_progress: TaskProgress,
     *,
     request: web.Request,
@@ -230,6 +233,7 @@ async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, P
     simcore_user_agent: str,
     parent_project_uuid: ProjectID | None,
     parent_node_id: NodeID | None,
+    workspace_id: WorkspaceID | None,
 ) -> None:
     """Implements TaskProtocol for 'create_projects' handler
 
@@ -286,6 +290,20 @@ async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, P
                 predefined_project=predefined_project,
             )
 
+        # If user wants to create project in specific workspace
+        if workspace_id:
+            # Verify user access to the specified workspace; raise an error if access is denied
+            workspace = await get_workspace(
+                request.app,
+                user_id=user_id,
+                workspace_id=workspace_id,
+                product_name=product_name,
+            )
+            if workspace.my_access_rights.write is False:
+                raise WorkspaceAccessForbiddenError(
+                    reason=f"User {user_id} does not have write permission on workspace {workspace_id}."
+                )
+
         # 3. save new project in DB
         new_project = await db.insert_project(
             project=jsonable_encoder(new_project),
@@ -325,9 +343,7 @@ async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, P
             request.app, user_id, new_project["uuid"], product_name
         )
         # get the latest state of the project (lastChangeDate for instance)
-        new_project, _ = await db.get_project(
-            user_id=user_id, project_uuid=new_project["uuid"]
-        )
+        new_project, _ = await db.get_project(project_uuid=new_project["uuid"])
         # Appends state
         new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,
@@ -354,7 +370,7 @@ async def create_project(  # pylint: disable=too-many-arguments  # noqa: C901, P
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
 
-    except ProjectInvalidRightsError as exc:
+    except (ProjectInvalidRightsError, WorkspaceAccessForbiddenError) as exc:
         raise web.HTTPForbidden from exc
 
     except (ParentProjectNotFoundError, ParentNodeNotFoundError) as exc:

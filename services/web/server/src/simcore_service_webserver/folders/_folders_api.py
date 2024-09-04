@@ -1,21 +1,25 @@
 # pylint: disable=unused-argument
 
 import logging
-from typing import cast
 
 from aiohttp import web
-from aiopg.sa.engine import Engine
-from models_library.api_schemas_webserver.folders import FolderGet, FolderGetPage
+from models_library.api_schemas_webserver.folders_v2 import FolderGet, FolderGetPage
 from models_library.folders import FolderID
 from models_library.products import ProductName
-from models_library.projects_access import AccessRights
 from models_library.rest_ordering import OrderBy
-from models_library.users import GroupID, UserID
-from pydantic import NonNegativeInt, parse_obj_as
-from simcore_postgres_database import utils_folders as folders_db
+from models_library.users import UserID
+from models_library.workspaces import WorkspaceID
+from pydantic import NonNegativeInt
+from simcore_service_webserver.workspaces._workspaces_api import (
+    check_user_workspace_access,
+)
 
-from .._constants import APP_DB_ENGINE_KEY
 from ..users.api import get_user
+from ..workspaces.errors import (
+    WorkspaceAccessForbiddenError,
+    WorkspaceFolderInconsistencyError,
+)
+from . import _folders_db as folders_db
 
 _logger = logging.getLogger(__name__)
 
@@ -23,45 +27,65 @@ _logger = logging.getLogger(__name__)
 async def create_folder(
     app: web.Application,
     user_id: UserID,
-    folder_name: str,
-    description: str | None,
+    name: str,
     parent_folder_id: FolderID | None,
     product_name: ProductName,
+    workspace_id: WorkspaceID | None,
 ) -> FolderGet:
     user = await get_user(app, user_id=user_id)
 
-    engine: Engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as connection:
-        # NOTE: folder permissions are checked inside the function
-        folder_id = await folders_db.folder_create(
-            connection,
+    workspace_is_private = True
+    if workspace_id:
+        await check_user_workspace_access(
+            app,
+            user_id=user_id,
+            workspace_id=workspace_id,
             product_name=product_name,
-            name=folder_name,
-            gids={user["primary_gid"]},
-            description=description if description else "",
-            parent=parent_folder_id,
+            permission="write",
         )
-        folder_db: folders_db.FolderEntry = await folders_db.folder_get(
-            connection,
+        workspace_is_private = False
+
+        # Check parent_folder_id lives in the workspace
+        if parent_folder_id:
+            parent_folder_db = await folders_db.get(
+                app, folder_id=parent_folder_id, product_name=product_name
+            )
+            if parent_folder_db.workspace_id != workspace_id:
+                raise WorkspaceFolderInconsistencyError(
+                    folder_id=parent_folder_id, workspace_id=workspace_id
+                )
+
+    if parent_folder_id:
+        # Check user has access to the parent folder
+        parent_folder_db = await folders_db.get_for_user_or_workspace(
+            app,
+            folder_id=parent_folder_id,
             product_name=product_name,
-            folder_id=folder_id,
-            gids={user["primary_gid"]},
+            user_id=user_id if workspace_is_private else None,
+            workspace_id=workspace_id,
         )
+        if workspace_id and parent_folder_db.workspace_id != workspace_id:
+            # Check parent folder id exists inside the same workspace
+            raise WorkspaceAccessForbiddenError(
+                reason=f"Folder {parent_folder_id} does not exists in workspace {workspace_id}."
+            )
+
+    folder_db = await folders_db.create(
+        app,
+        product_name=product_name,
+        created_by_gid=user["primary_gid"],
+        folder_name=name,
+        parent_folder_id=parent_folder_id,
+        user_id=user_id if workspace_is_private else None,
+        workspace_id=workspace_id,
+    )
     return FolderGet(
-        folder_id=folder_db.id,
-        parent_folder_id=folder_db.parent_folder,
+        folder_id=folder_db.folder_id,
+        parent_folder_id=folder_db.parent_folder_id,
         name=folder_db.name,
-        description=folder_db.description,
         created_at=folder_db.created,
         modified_at=folder_db.modified,
-        owner=folder_db.owner,
-        my_access_rights=parse_obj_as(
-            AccessRights, folder_db.my_access_rights.to_dict()
-        ),
-        access_rights=parse_obj_as(
-            dict[GroupID, AccessRights],
-            {key: value.to_dict() for key, value in folder_db.access_rights.items()},
-        ),
+        owner=folder_db.created_by_gid,
     )
 
 
@@ -71,32 +95,35 @@ async def get_folder(
     folder_id: FolderID,
     product_name: ProductName,
 ) -> FolderGet:
-    user = await get_user(app, user_id=user_id)
+    folder_db = await folders_db.get(
+        app, folder_id=folder_id, product_name=product_name
+    )
 
-    engine: Engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as connection:
-        # NOTE: folder permissions are checked inside the function
-        folder_db: folders_db.FolderEntry = await folders_db.folder_get(
-            connection,
+    workspace_is_private = True
+    if folder_db.workspace_id:
+        await check_user_workspace_access(
+            app,
+            user_id=user_id,
+            workspace_id=folder_db.workspace_id,
             product_name=product_name,
-            folder_id=folder_id,
-            gids={user["primary_gid"]},
+            permission="read",
         )
+        workspace_is_private = False
+
+    folder_db = await folders_db.get_for_user_or_workspace(
+        app,
+        folder_id=folder_id,
+        product_name=product_name,
+        user_id=user_id if workspace_is_private else None,
+        workspace_id=folder_db.workspace_id,
+    )
     return FolderGet(
-        folder_id=folder_db.id,
-        parent_folder_id=folder_db.parent_folder,
+        folder_id=folder_db.folder_id,
+        parent_folder_id=folder_db.parent_folder_id,
         name=folder_db.name,
-        description=folder_db.description,
         created_at=folder_db.created,
         modified_at=folder_db.modified,
-        owner=folder_db.owner,
-        my_access_rights=parse_obj_as(
-            AccessRights, folder_db.my_access_rights.to_dict()
-        ),
-        access_rights=parse_obj_as(
-            dict[GroupID, AccessRights],
-            {key: value.to_dict() for key, value in folder_db.access_rights.items()},
-        ),
+        owner=folder_db.created_by_gid,
     )
 
 
@@ -105,46 +132,54 @@ async def list_folders(
     user_id: UserID,
     product_name: ProductName,
     folder_id: FolderID | None,
+    workspace_id: WorkspaceID | None,
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
 ) -> FolderGetPage:
-    user = await get_user(app, user_id=user_id)
+    workspace_is_private = True
 
-    engine: Engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as connection:
-        # NOTE: folder permissions are checked inside the function
-        total_count, folder_list_db = await folders_db.folder_list(
-            connection,
+    if workspace_id:
+        await check_user_workspace_access(
+            app,
+            user_id=user_id,
+            workspace_id=workspace_id,
             product_name=product_name,
-            folder_id=folder_id,
-            gids={user["primary_gid"]},
-            offset=offset,
-            limit=limit,
-            order_by=cast(folders_db.OrderByDict, order_by.dict()),
+            permission="read",
         )
+        workspace_is_private = False
+
+    if folder_id:
+        # Check user access to folder
+        await folders_db.get_for_user_or_workspace(
+            app,
+            folder_id=folder_id,
+            product_name=product_name,
+            user_id=user_id if workspace_is_private else None,
+            workspace_id=workspace_id,
+        )
+
+    total_count, folders = await folders_db.list_(
+        app,
+        content_of_folder_id=folder_id,
+        user_id=user_id if workspace_is_private else None,
+        workspace_id=workspace_id,
+        product_name=product_name,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+    )
     return FolderGetPage(
         items=[
             FolderGet(
-                folder_id=folder.id,
-                parent_folder_id=folder.parent_folder,
+                folder_id=folder.folder_id,
+                parent_folder_id=folder.parent_folder_id,
                 name=folder.name,
-                description=folder.description,
                 created_at=folder.created,
                 modified_at=folder.modified,
-                owner=folder.owner,
-                my_access_rights=parse_obj_as(
-                    AccessRights, folder.my_access_rights.to_dict()
-                ),
-                access_rights=parse_obj_as(
-                    dict[GroupID, AccessRights],
-                    {
-                        key: value.to_dict()
-                        for key, value in folder.access_rights.items()
-                    },
-                ),
+                owner=folder.created_by_gid,
             )
-            for folder in folder_list_db
+            for folder in folders
         ],
         total=total_count,
     )
@@ -154,44 +189,50 @@ async def update_folder(
     app: web.Application,
     user_id: UserID,
     folder_id: FolderID,
+    *,
     name: str,
-    description: str | None,
+    parent_folder_id: FolderID | None,
     product_name: ProductName,
 ) -> FolderGet:
-    user = await get_user(app, user_id=user_id)
+    folder_db = await folders_db.get(
+        app, folder_id=folder_id, product_name=product_name
+    )
 
-    engine: Engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as connection:
-        # NOTE: folder permissions are checked inside the function
-        await folders_db.folder_update(
-            connection,
+    workspace_is_private = True
+    if folder_db.workspace_id:
+        await check_user_workspace_access(
+            app,
+            user_id=user_id,
+            workspace_id=folder_db.workspace_id,
             product_name=product_name,
-            folder_id=folder_id,
-            gids={user["primary_gid"]},
-            name=name,
-            description=description,
+            permission="write",
         )
-        folder_db: folders_db.FolderEntry = await folders_db.folder_get(
-            connection,
-            product_name=product_name,
-            folder_id=folder_id,
-            gids={user["primary_gid"]},
-        )
+        workspace_is_private = False
+
+    # Check user has acces to the folder
+    # NOTE: MD: TODO check function!
+    await folders_db.get_for_user_or_workspace(
+        app,
+        folder_id=folder_id,
+        product_name=product_name,
+        user_id=user_id if workspace_is_private else None,
+        workspace_id=folder_db.workspace_id,
+    )
+
+    folder_db = await folders_db.update(
+        app,
+        folder_id=folder_id,
+        name=name,
+        parent_folder_id=parent_folder_id,
+        product_name=product_name,
+    )
     return FolderGet(
-        folder_id=folder_db.id,
-        parent_folder_id=folder_db.parent_folder,
+        folder_id=folder_db.folder_id,
+        parent_folder_id=folder_db.parent_folder_id,
         name=folder_db.name,
-        description=folder_db.description,
         created_at=folder_db.created,
         modified_at=folder_db.modified,
-        owner=folder_db.owner,
-        my_access_rights=parse_obj_as(
-            AccessRights, folder_db.my_access_rights.to_dict()
-        ),
-        access_rights=parse_obj_as(
-            dict[GroupID, AccessRights],
-            {key: value.to_dict() for key, value in folder_db.access_rights.items()},
-        ),
+        owner=folder_db.created_by_gid,
     )
 
 
@@ -201,14 +242,28 @@ async def delete_folder(
     folder_id: FolderID,
     product_name: ProductName,
 ) -> None:
-    user = await get_user(app, user_id=user_id)
+    folder_db = await folders_db.get(
+        app, folder_id=folder_id, product_name=product_name
+    )
 
-    engine: Engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as connection:
-        # NOTE: folder permissions are checked inside the function
-        await folders_db.folder_delete(
-            connection,
+    workspace_is_private = True
+    if folder_db.workspace_id:
+        await check_user_workspace_access(
+            app,
+            user_id=user_id,
+            workspace_id=folder_db.workspace_id,
             product_name=product_name,
-            folder_id=folder_id,
-            gids={user["primary_gid"]},
+            permission="delete",
         )
+        workspace_is_private = False
+
+    # Check user has acces to the folder
+    await folders_db.get_for_user_or_workspace(
+        app,
+        folder_id=folder_id,
+        product_name=product_name,
+        user_id=user_id if workspace_is_private else None,
+        workspace_id=folder_db.workspace_id,
+    )
+
+    await folders_db.delete(app, folder_id=folder_id, product_name=product_name)
