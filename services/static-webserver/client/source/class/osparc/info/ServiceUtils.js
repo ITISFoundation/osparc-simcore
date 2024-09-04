@@ -185,9 +185,6 @@ qx.Class.define("osparc.info.ServiceUtils", {
       const description = new osparc.ui.markdown.Markdown().set({
         noMargin: true,
       });
-      description.getContentElement().setStyle({
-        "line-height": 1.5
-      });
       // display markdown link content if that's the case
       if (
         osparc.utils.Utils.isValidHttpUrl(serviceData["description"]) &&

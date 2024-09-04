@@ -79,15 +79,40 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      */
     __applyMarkdown: function(value = "") {
       this.__loadMarked.then(() => {
-        const renderer = new marked.Renderer();
-        const linkRenderer = renderer.link;
-        renderer.link = (href, title, text) => {
-          const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
-          const html = linkRenderer.call(renderer, href, title, text);
-          // eslint-disable-next-line quotes
-          const linkWithRightColor = html.replace(/^<a /, '<a style="color:'+ linkColor + ' !important"');
-          return linkWithRightColor;
+        // trying to prettify:
+        // - links
+        // - headers
+        // - line height
+        /*
+        const walkTokens = token => {
+          // Check if the token is a link
+          if (token.type === 'link' && token.tokens.length > 0) {
+            // Check if the link contains an image token
+            const containsImage = token.tokens.some(t => t.type === "image");
+            // If the link does not contain an image, modify the text to include color styling
+            if (!containsImage) {
+              const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
+              token.text = `<span style="color: ${linkColor};">${token.text}</span>`;
+            }
+          }
         };
+        marked.use({ walkTokens });
+        */
+        /*
+        const renderer = new marked.Renderer();
+        renderer.link = ({href, title, tokens}) => {
+          // Check if the tokens array contains an image token
+          const hasImageToken = tokens.some(token => token.type === "image");
+          if (hasImageToken) {
+            // Return the link HTML as is for image links (badges)
+            return `<a href="${href}" title="${title || ''}">${tokens.map(token => token.text || '').join('')}</a>`;
+          }
+          // text links
+          const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
+          return `<a href="${href}" title="${title || ''}" style="color: ${linkColor};>${tokens.map(token => token.text || '').join('')}</a>`;
+        };
+        marked.use({ renderer });
+        */
 
         const html = marked.parse(value);
 
@@ -123,6 +148,9 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       if (domElement === null) {
         return;
       }
+      this.getContentElement().setStyle({
+        "line-height": 1.5
+      });
       if (domElement && domElement.children) {
         const elemHeight = this.__getChildrenElementHeight(domElement.children);
         console.log("resizeMe elemHeight", elemHeight);
