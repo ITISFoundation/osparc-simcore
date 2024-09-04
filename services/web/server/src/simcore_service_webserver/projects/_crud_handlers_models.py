@@ -79,14 +79,9 @@ class ProjectCreateParams(BaseModel):
         default=False,
         description="Enables/disables hidden flag. Hidden projects are by default unlisted",
     )
-    workspace_id: WorkspaceID | None
 
     class Config:
         extra = Extra.forbid
-
-    _null_or_none_str_to_none_validator = validator(
-        "workspace_id", allow_reuse=True, pre=True
-    )(null_or_none_str_to_none_validator)
 
 
 class ProjectListParams(PageQueryParameters):

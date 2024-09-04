@@ -312,7 +312,6 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             force_as_template=as_template,
             hidden=copy_data,
             project_nodes=project_nodes,
-            workspace_id=workspace_id,
         )
         # add parent linking if needed
         await set_project_ancestors(

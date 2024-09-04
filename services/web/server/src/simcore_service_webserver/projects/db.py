@@ -279,6 +279,8 @@ class ProjectDBAPI(BaseProjectDB):
         insert_values.setdefault("name", "New Study")
         insert_values.setdefault("workbench", {})
 
+        insert_values.setdefault("workspace_id", None)
+
         # must be valid uuid
         try:
             ProjectID(str(insert_values.get("uuid")))

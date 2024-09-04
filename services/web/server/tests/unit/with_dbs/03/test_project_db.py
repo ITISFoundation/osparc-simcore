@@ -190,7 +190,6 @@ async def insert_project_in_db(
             "user_id": None,
             "product_name": osparc_product_name,
             "project_nodes": None,
-            "workspace_id": None,
         }
         default_config.update(**overrides)
         new_project = await db_api.insert_project(**default_config)

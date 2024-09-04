@@ -138,6 +138,7 @@ async def create_project(request: web.Request):
     # :create, :copy (w/ and w/o override)
     # NOTE: see clone_project
 
+    workspace_id = None
     if not request.can_read_body:
         # request w/o body
         predefined_project = None
@@ -157,6 +158,10 @@ async def create_project(request: web.Request):
             or None
         )
 
+        # # Manually include workspace after exclude
+        # workspace_id = project_create.dict(by_alias=True).get("workspaceId", None)
+        # predefined_project["workspaceId"] = workspace_id
+
     return await start_long_running_task(
         request,
         _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
@@ -174,7 +179,7 @@ async def create_project(request: web.Request):
         predefined_project=predefined_project,
         parent_project_uuid=header_params.parent_project_uuid,
         parent_node_id=header_params.parent_node_id,
-        workspace_id=query_params.workspace_id,
+        workspace_id=workspace_id,
     )
 
 
