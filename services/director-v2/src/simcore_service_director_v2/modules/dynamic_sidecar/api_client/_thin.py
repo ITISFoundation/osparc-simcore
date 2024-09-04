@@ -18,7 +18,7 @@ from ....core.dynamic_services_settings.scheduler import (
 )
 
 
-class ThinSidecarsClient(BaseThinClient):
+class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-methods
     """
     NOTE: all calls can raise the following errors.
     - `UnexpectedStatusError`
