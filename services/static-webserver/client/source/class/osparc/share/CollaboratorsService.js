@@ -90,7 +90,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       gids.forEach(gid => {
         newAccessRights[gid] = this.self().getCollaboratorAccessRight();
       });
-      osparc.service.Store.patchServiceData(this._serializedDataCopy, "accessRights", newAccessRights)
+      osparc.store.Services.patchServiceData(this._serializedDataCopy, "accessRights", newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           let text = this.tr("Editor(s) successfully added.");
@@ -119,7 +119,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
         return;
       }
 
-      osparc.service.Store.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+      osparc.store.Services.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
@@ -139,7 +139,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
       this._serializedDataCopy["accessRights"][collaboratorGId] = newAccessRights;
-      osparc.service.Store.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
+      osparc.store.Services.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(successMsg);

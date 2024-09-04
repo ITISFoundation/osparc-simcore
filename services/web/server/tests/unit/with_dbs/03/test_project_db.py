@@ -31,6 +31,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_webserver.projects._db_utils import PermissionStr
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
+from simcore_service_webserver.projects.api import has_user_project_access_rights
 from simcore_service_webserver.projects.db import ProjectAccessRights, ProjectDBAPI
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
@@ -807,14 +808,33 @@ async def test_has_permission(
         assert permission in access_rights
 
         # owner always is allowed to do everything
-        assert await db_api.has_permission(owner_id, project_id, permission) is True
+        # assert await db_api.has_permission(owner_id, project_id, permission) is True
+        assert (
+            await has_user_project_access_rights(
+                client.app,
+                project_id=project_id,
+                user_id=owner_id,
+                permission=permission,
+            )
+            is True
+        )
 
         # user does not exits
-        assert await db_api.has_permission(-1, project_id, permission) is False
+        assert (
+            await has_user_project_access_rights(
+                client.app, project_id=project_id, user_id=-1, permission=permission
+            )
+            is False
+        )
 
         # other user
         assert (
-            await db_api.has_permission(second_user["id"], project_id, permission)
+            await has_user_project_access_rights(
+                client.app,
+                project_id=project_id,
+                user_id=second_user["id"],
+                permission=permission,
+            )
             is access_rights[permission]
         ), f"Found unexpected {permission=} for {access_rights=} of {user_role=} and {project_id=}"
 
@@ -891,6 +911,7 @@ async def inserted_project(
 )
 @pytest.mark.parametrize("user_role", [(UserRole.USER)])
 async def test_check_project_node_has_all_required_inputs_raises(
+    client: TestClient,
     logged_user: dict[str, Any],
     db_api: ProjectDBAPI,
     inserted_project: dict,
@@ -899,6 +920,7 @@ async def test_check_project_node_has_all_required_inputs_raises(
 
     with pytest.raises(ProjectNodeRequiredInputsNotSetError) as exc:
         await _check_project_node_has_all_required_inputs(
+            client.app,
             db_api,
             user_id=logged_user["id"],
             project_uuid=UUID(inserted_project["uuid"]),
@@ -920,11 +942,13 @@ async def test_check_project_node_has_all_required_inputs_raises(
 )
 @pytest.mark.parametrize("user_role", [(UserRole.USER)])
 async def test_check_project_node_has_all_required_inputs_ok(
+    client: TestClient,
     logged_user: dict[str, Any],
     db_api: ProjectDBAPI,
     inserted_project: dict,
 ):
     await _check_project_node_has_all_required_inputs(
+        client.app,
         db_api,
         user_id=logged_user["id"],
         project_uuid=UUID(inserted_project["uuid"]),

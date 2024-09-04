@@ -400,7 +400,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         };
         promise = osparc.data.Resources.get("nodesInStudyResources", params);
       } else {
-        promise = osparc.service.Store.getResources(this.getService()["key"], this.getService()["version"])
+        promise = osparc.store.Services.getResources(this.getService()["key"], this.getService()["version"])
       }
       promise
         .then(serviceResources => {
@@ -515,7 +515,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     __patchService: function(key, value) {
       this.setEnabled(false);
       const serviceDataCopy = osparc.utils.Utils.deepCloneObject(this.getService());
-      osparc.service.Store.patchServiceData(serviceDataCopy, key, value)
+      osparc.store.Services.patchServiceData(serviceDataCopy, key, value)
         .then(() => {
           this.setService(serviceDataCopy);
           this.fireDataEvent("updateService", this.getService());

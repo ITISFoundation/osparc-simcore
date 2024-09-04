@@ -370,7 +370,7 @@ qx.Class.define("osparc.info.StudyUtils", {
     openAccessRights: function(studyData) {
       const permissionsView = new osparc.share.CollaboratorsStudy(studyData);
       const title = qx.locale.Manager.tr("Share with Editors and Organizations");
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 500);
       return permissionsView;
     },
 

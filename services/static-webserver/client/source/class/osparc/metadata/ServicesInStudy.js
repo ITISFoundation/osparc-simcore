@@ -45,7 +45,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
     const servicesInStudy = osparc.study.Utils.extractServices(this._studyData["workbench"]);
     if (servicesInStudy.length) {
       const promises = [];
-      servicesInStudy.forEach(srv => promises.push(osparc.service.Store.getService(srv.key, srv.version)));
+      servicesInStudy.forEach(srv => promises.push(osparc.store.Services.getService(srv.key, srv.version)));
       Promise.all(promises)
         .then(() => this._populateLayout());
     } else {
@@ -137,7 +137,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
 
         const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
         infoButton.addListener("execute", () => {
-          const metadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+          const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
           if (metadata === null) {
             osparc.FlashMessenger.logAs(this.tr("Service information could not be retrieved"), "WARNING");
             return;
@@ -167,7 +167,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
         });
         this.__grid.setRowHeight(i, 24);
 
-        const nodeMetadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+        const nodeMetadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
         if (nodeMetadata === null) {
           osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;

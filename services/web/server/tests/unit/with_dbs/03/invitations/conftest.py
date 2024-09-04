@@ -147,7 +147,6 @@ def mock_invitations_service_http_api(
             body["product"] = example["product"]
 
         fake_code = binascii.hexlify(json.dumps(body).encode()).decode()
-
         return CallbackResult(
             status=status.HTTP_200_OK,
             payload=jsonable_encoder(

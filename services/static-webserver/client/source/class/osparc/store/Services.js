@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.service.Store", {
+qx.Class.define("osparc.store.Services", {
   type: "static",
 
   statics: {

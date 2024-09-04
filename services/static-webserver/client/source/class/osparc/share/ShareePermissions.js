@@ -51,7 +51,7 @@ qx.Class.define("osparc.share.ShareePermissions", {
                 const label = new qx.ui.basic.Label();
                 hBox.add(infoButton);
                 hBox.add(label);
-                osparc.service.Store.getService(inaccessibleService.key, inaccessibleService.version)
+                osparc.store.Services.getService(inaccessibleService.key, inaccessibleService.version)
                   .then(metadata => {
                     label.setValue(metadata["name"] + " : " + metadata["version"])
                     infoButton.addListener("execute", () => {
