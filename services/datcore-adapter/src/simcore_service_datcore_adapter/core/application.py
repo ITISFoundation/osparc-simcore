@@ -9,7 +9,7 @@ from servicelib.fastapi.prometheus_instrumentation import (
 from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 
-from .._meta import API_VERSION, API_VTAG
+from .._meta import API_VERSION, API_VTAG, APP_NAME
 from ..api.errors.http_error import http_error_handler
 from ..api.errors.validation_error import http422_error_handler
 from ..api.module_setup import setup_api
@@ -71,7 +71,7 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_tracing(
             app,
             app.state.settings.DATCORE_ADAPTER_TRACING,
-            app.state.settings.APP_NAME,
+            APP_NAME,
         )
 
     # events

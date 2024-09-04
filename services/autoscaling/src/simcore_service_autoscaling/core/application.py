@@ -71,9 +71,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_auto_scaler_background_task(app)
     setup_buffer_machines_pool_task(app)
     if app.state.settings.AUTOSCALING_TRACING:
-        setup_tracing(
-            app, app.state.settings.AUTOSCALING_TRACING, app.state.settings.APP_NAME
-        )
+        setup_tracing(app, app.state.settings.AUTOSCALING_TRACING, APP_NAME)
 
     # ERROR HANDLERS
 

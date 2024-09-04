@@ -47,7 +47,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         setup_tracing(
             app,
             app.state.settings.CLUSTERS_KEEPER_TRACING,
-            app.state.settings.APP_NAME,
+            APP_NAME,
         )
 
     # PLUGINS SETUP

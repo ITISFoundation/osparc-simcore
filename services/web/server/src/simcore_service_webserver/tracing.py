@@ -5,6 +5,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from servicelib.aiohttp.tracing import setup_tracing
 from settings_library.tracing import TracingSettings
 
+from .._meta import APP_NAME
 from ._constants import APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
@@ -26,5 +27,5 @@ def setup_app_tracing(app: web.Application):
         app,
         tracing_settings=tracing_settings,
         instrument_aiopg=True,
-        service_name=app.state.settings.APP_NAME,
+        service_name=APP_NAME,
     )
