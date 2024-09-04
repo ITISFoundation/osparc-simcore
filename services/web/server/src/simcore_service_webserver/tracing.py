@@ -1,11 +1,11 @@
 import logging
 
+from _meta import APP_NAME
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.tracing import setup_tracing
 from settings_library.tracing import TracingSettings
 
-from .._meta import APP_NAME
 from ._constants import APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
