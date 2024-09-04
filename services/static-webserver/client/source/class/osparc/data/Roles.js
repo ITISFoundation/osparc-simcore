@@ -135,7 +135,7 @@ qx.Class.define("osparc.data.Roles", {
       }
     },
 
-    FOLDERS: {
+    WORKSPACE: {
       1: {
         id: "read",
         label: qx.locale.Manager.tr("Viewer"),
@@ -158,7 +158,7 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Owner"),
         longLabel: qx.locale.Manager.tr("Owner: Read/Write/Delete access"),
         canDo: [
-          qx.locale.Manager.tr("- can rename folder"),
+          qx.locale.Manager.tr("- can rename workspace"),
           qx.locale.Manager.tr("- can share it"),
           qx.locale.Manager.tr("- can delete it")
         ]
@@ -216,8 +216,8 @@ qx.Class.define("osparc.data.Roles", {
       return this.__createIntoFromRoles(osparc.data.Roles.SERVICES);
     },
 
-    createRolesFolderInfo: function(showWording = true) {
-      return this.__createIntoFromRoles(osparc.data.Roles.FOLDERS, showWording);
+    createRolesWorkspaceInfo: function(showWording = true) {
+      return this.__createIntoFromRoles(osparc.data.Roles.WORKSPACE, showWording);
     }
   }
 });

@@ -199,8 +199,8 @@ qx.Class.define("osparc.share.Collaborators", {
         case "service":
           fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
-        case "folder":
-          fullOptions = osparc.share.CollaboratorsFolder.canIDelete(this._serializedDataCopy["myAccessRights"]);
+        case "workspace":
+          fullOptions = osparc.share.CollaboratorsWorkspace.canIDelete(this._serializedDataCopy["myAccessRights"]);
           break;
       }
       return fullOptions;
@@ -212,8 +212,8 @@ qx.Class.define("osparc.share.Collaborators", {
         case "service":
           rolesLayout = osparc.data.Roles.createRolesServicesInfo();
           break;
-        case "folder":
-          rolesLayout = osparc.data.Roles.createRolesFolderInfo();
+        case "workspace":
+          rolesLayout = osparc.data.Roles.createRolesWorkspaceInfo();
           break;
         default:
           rolesLayout = osparc.data.Roles.createRolesStudyInfo();

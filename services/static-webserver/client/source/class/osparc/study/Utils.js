@@ -35,7 +35,7 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     getInaccessibleServices: function(workbench) {
-      const allServices = osparc.service.Store.servicesCached;
+      const allServices = osparc.store.Services.servicesCached;
       const unaccessibleServices = [];
       const wbServices = new Set(this.extractServices(workbench));
       wbServices.forEach(srv => {
@@ -70,7 +70,7 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     isWorkbenchRetired: function(workbench) {
-      const allServices = osparc.service.Store.servicesCached;
+      const allServices = osparc.store.Services.servicesCached;
       const services = new Set(this.extractServices(workbench));
       const isRetired = Array.from(services).some(srv => {
         if (srv.key in allServices && srv.version in allServices[srv.key]) {
@@ -88,7 +88,7 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     isWorkbenchDeprecated: function(workbench) {
-      const allServices = osparc.service.Store.servicesCached;
+      const allServices = osparc.store.Services.servicesCached;
       const services = new Set(this.extractServices(workbench));
       const isRetired = Array.from(services).some(srv => {
         if (srv.key in allServices && srv.version in allServices[srv.key]) {
@@ -107,7 +107,7 @@ qx.Class.define("osparc.study.Utils", {
 
     createStudyFromService: function(key, version, existingStudies, newStudyLabel) {
       return new Promise((resolve, reject) => {
-        osparc.service.Store.getService(key, version)
+        osparc.store.Services.getService(key, version)
           .then(metadata => {
             const newUuid = osparc.utils.Utils.uuidV4();
             const minStudyData = osparc.data.model.Study.createMyNewStudyObject();

@@ -197,7 +197,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
 
     __populateList: function() {
       this.__servicesLatest = [];
-      osparc.service.Store.getServicesLatest()
+      osparc.store.Services.getServicesLatest()
         .then(servicesLatest => {
           Object.keys(servicesLatest).forEach(key => {
             this.__servicesLatest.push(servicesLatest[key]);
@@ -293,7 +293,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       if (version == this.self(arguments).LATEST.toString()) {
         version = this.__versionsBox.getChildrenContainer().getSelectables()[1].version;
       }
-      const serviceMetadata = await osparc.service.Store.getService(key, version);
+      const serviceMetadata = await osparc.store.Services.getService(key, version);
       return serviceMetadata;
     },
 

@@ -79,18 +79,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       apply: "__applyDescription"
     },
 
-    myAccessRights: {
-      check: "Object",
-      nullable: true,
-      apply: "__applyMyAccessRights"
-    },
-
-    accessRights: {
-      check: "Object",
-      nullable: true,
-      apply: "__applyAccessRights"
-    },
-
     lastModified: {
       check: "Date",
       nullable: true,
@@ -103,7 +91,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       let control;
       switch (id) {
         case "icon": {
-          control = new osparc.dashboard.FolderWithSharedIcon().set({
+          control = new qx.ui.basic.Image().set({
+            source: "@FontAwesome5Solid/folder/26",
             anonymous: true,
             height: 40,
             padding: 5
@@ -155,9 +144,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       folder.bind("parentId", this, "parentFolderId");
       folder.bind("name", this, "title");
       folder.bind("description", this, "description");
-      folder.bind("accessRights", this, "accessRights");
       folder.bind("lastModified", this, "lastModified");
-      folder.bind("myAccessRights", this, "myAccessRights");
+
+      this.__addMenuButton();
     },
 
     __applyTitle: function(value) {
@@ -177,73 +166,51 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       }
     },
 
-    __applyMyAccessRights: function(value) {
-      if (value && value["delete"]) {
-        const menuButton = this.getChildControl("menu-button");
-        menuButton.setVisibility("visible");
+    __addMenuButton: function() {
+      const menuButton = this.getChildControl("menu-button");
+      menuButton.setVisibility("visible");
 
-        const menu = new qx.ui.menu.Menu().set({
-          position: "bottom-right"
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+
+      const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
+      editButton.addListener("execute", () => {
+        const folder = this.getFolder();
+        const newFolder = false;
+        const folderEditor = new osparc.editor.FolderEditor(newFolder).set({
+          label: folder.getName(),
+          description: folder.getDescription()
         });
-
-        const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
-        editButton.addListener("execute", () => {
-          const folder = this.getFolder();
-          const newFolder = false;
-          const folderEditor = new osparc.editor.FolderEditor(newFolder).set({
-            label: folder.getName(),
-            description: folder.getDescription()
-          });
-          const title = this.tr("Edit Folder");
-          const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 200);
-          folderEditor.addListener("updateFolder", () => {
-            const newName = folderEditor.getLabel();
-            const newDescription = folderEditor.getDescription();
-            const updateData = {
-              "name": newName,
-              "description": newDescription
-            };
-            osparc.data.model.Folder.putFolder(this.getFolderId(), updateData)
-              .then(() => {
-                folder.set({
-                  name: newName,
-                  description: newDescription
-                });
-                this.fireDataEvent("folderUpdated", folder.getFolderId());
-              })
-              .catch(err => console.error(err));
-            win.close();
-          });
-          folderEditor.addListener("cancel", () => win.close());
+        const title = this.tr("Edit Folder");
+        const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 200);
+        folderEditor.addListener("updateFolder", () => {
+          const newName = folderEditor.getLabel();
+          const newDescription = folderEditor.getDescription();
+          const updateData = {
+            "name": newName,
+            "description": newDescription
+          };
+          osparc.data.model.Folder.putFolder(this.getFolderId(), updateData)
+            .then(() => {
+              folder.set({
+                name: newName,
+                description: newDescription
+              });
+              this.fireDataEvent("folderUpdated", folder.getFolderId());
+            })
+            .catch(err => console.error(err));
+          win.close();
         });
-        menu.add(editButton);
+        folderEditor.addListener("cancel", () => win.close());
+      });
+      menu.add(editButton);
 
-        const shareButton = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
-        shareButton.addListener("execute", () => this.__openShareWith(), this);
-        menu.add(shareButton);
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+      deleteButton.addListener("execute", () => this.__deleteStudyRequested(), this);
+      menu.add(deleteButton);
 
-        menu.addSeparator();
-
-        const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
-        deleteButton.addListener("execute", () => this.__deleteStudyRequested(), this);
-        menu.add(deleteButton);
-
-        menuButton.setMenu(menu);
-      }
-    },
-
-    __applyAccessRights: function(value) {
-      if (value && Object.keys(value).length) {
-        const shareIcon = this.getChildControl("icon").getChildControl("shared-icon");
-        // if it's not shared don't show the share icon
-        shareIcon.addListener("changeSource", e => {
-          const newSource = e.getData();
-          shareIcon.set({
-            visibility: newSource.includes(osparc.dashboard.CardBase.SHARE_ICON) ? "hidden" : "visible"
-          });
-        });
-        osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
-      }
+      menuButton.setMenu(menu);
     },
 
     __updateTooltip: function() {
@@ -258,18 +225,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         this.fireDataEvent("folderSelected", this.getFolderId());
       }
       this.setValue(false);
-    },
-
-    __openShareWith: function() {
-      const disableShare = true;
-      if (disableShare) {
-        osparc.FlashMessenger.getInstance().logAs(this.tr("Not yet implemented"), "WARNING");
-      } else {
-        const title = this.tr("Share Folder");
-        const permissionsView = new osparc.share.CollaboratorsFolder(this.getFolder());
-        osparc.ui.window.Window.popUpInWindow(permissionsView, title);
-        permissionsView.addListener("updateAccessRights", () => this.__applyAccessRights(this.getFolder().getAccessRights()), this);
-      }
     },
 
     __deleteStudyRequested: function() {
