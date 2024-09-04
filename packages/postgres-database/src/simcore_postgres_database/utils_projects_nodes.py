@@ -43,7 +43,7 @@ class ProjectNodeCreate(BaseModel):
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
-        return {name for name in cls.__fields__ if name not in exclude}
+        return {name for name in cls.model_fields if name not in exclude}
 
     model_config = ConfigDict(frozen=True)
 
@@ -52,10 +52,9 @@ class ProjectNode(ProjectNodeCreate):
     created: datetime.datetime
     modified: datetime.datetime
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(ProjectNodeCreate.Config):
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -86,7 +85,7 @@ class ProjectNodesRepo:
                 [
                     {
                         "project_uuid": f"{self.project_uuid}",
-                        **node.dict(),
+                        **node.model_dump(),
                     }
                     for node in nodes
                 ]
@@ -105,7 +104,7 @@ class ProjectNodesRepo:
             assert result  # nosec
             rows = await result.fetchall()
             assert rows is not None  # nosec
-            return [ProjectNode.from_orm(r) for r in rows]
+            return [ProjectNode.model_validate(r) for r in rows]
         except ForeignKeyViolation as exc:
             # this happens when the project does not exist, as we first check the node exists
             raise ProjectNodesProjectNotFoundError(
@@ -157,7 +156,7 @@ class ProjectNodesRepo:
                 project_uuid=self.project_uuid, node_id=node_id
             )
         assert row  # nosec
-        return ProjectNode.from_orm(row)
+        return ProjectNode.model_validate(row)
 
     async def update(
         self, connection: SAConnection, *, node_id: uuid.UUID, **values
