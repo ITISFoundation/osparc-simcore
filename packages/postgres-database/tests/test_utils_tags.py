@@ -137,6 +137,7 @@ async def test_tags_access_with_primary_groups(
 async def test_tags_access_with_multiple_groups(
     connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
 ):
+
     conn = connection
 
     (tag_id, other_tag_id, group_tag_id, everyone_tag_id) = [

@@ -166,26 +166,26 @@ def pg_sa_engine(
 
 
 @pytest.fixture
-async def pg_engine(
+async def aiopg_engine(
     pg_sa_engine: sa.engine.Engine, make_engine: Callable
 ) -> AsyncIterator[Engine]:
     """
     Return an aiopg.sa engine connected to a responsive and migrated pg database
     """
-    async_engine = await make_engine(is_async=True)
+    aiopg_sa_engine = await make_engine(is_async=True)
 
-    yield async_engine
+    yield aiopg_sa_engine
 
     # closes async-engine connections and terminates
-    async_engine.close()
-    await async_engine.wait_closed()
-    async_engine.terminate()
+    aiopg_sa_engine.close()
+    await aiopg_sa_engine.wait_closed()
+    aiopg_sa_engine.terminate()
 
 
 @pytest.fixture
-async def connection(pg_engine: Engine) -> AsyncIterator[SAConnection]:
+async def connection(aiopg_engine: Engine) -> AsyncIterator[SAConnection]:
     """Returns an aiopg.sa connection from an engine to a fully furnished and ready pg database"""
-    async with pg_engine.acquire() as _conn:
+    async with aiopg_engine.acquire() as _conn:
         yield _conn
 
 
@@ -264,7 +264,7 @@ def create_fake_user(
 
 @pytest.fixture
 async def create_fake_cluster(
-    pg_engine: Engine, faker: Faker
+    aiopg_engine: Engine, faker: Faker
 ) -> AsyncIterator[Callable[..., Awaitable[int]]]:
     cluster_ids = []
     assert cluster_to_groups is not None
@@ -278,7 +278,7 @@ async def create_fake_cluster(
             "authentication": faker.pydict(value_types=[str]),
         }
         insert_values.update(overrides)
-        async with pg_engine.acquire() as conn:
+        async with aiopg_engine.acquire() as conn:
             cluster_id = await conn.scalar(
                 clusters.insert().values(**insert_values).returning(clusters.c.id)
             )
@@ -289,13 +289,13 @@ async def create_fake_cluster(
     yield _creator
 
     # cleanup
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         await conn.execute(clusters.delete().where(clusters.c.id.in_(cluster_ids)))
 
 
 @pytest.fixture
 async def create_fake_project(
-    pg_engine: Engine,
+    aiopg_engine: Engine,
 ) -> AsyncIterator[Callable[..., Awaitable[RowProxy]]]:
     created_project_uuids = []
 
@@ -312,7 +312,7 @@ async def create_fake_project(
 
     yield _creator
 
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         await conn.execute(
             projects.delete().where(projects.c.uuid.in_(created_project_uuids))
         )

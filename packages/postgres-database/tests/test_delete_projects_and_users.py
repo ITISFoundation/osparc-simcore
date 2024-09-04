@@ -15,8 +15,8 @@ from sqlalchemy import func
 
 
 @pytest.fixture
-async def engine(pg_engine: Engine):
-    async with pg_engine.acquire() as conn:
+async def engine(aiopg_engine: Engine):
+    async with aiopg_engine.acquire() as conn:
         await conn.execute(users.insert().values(**random_user(name="A")))
         await conn.execute(users.insert().values(**random_user()))
         await conn.execute(users.insert().values(**random_user()))
@@ -27,7 +27,7 @@ async def engine(pg_engine: Engine):
         with pytest.raises(ForeignKeyViolation):
             await conn.execute(projects.insert().values(**random_project(prj_owner=4)))
 
-    return pg_engine
+    return aiopg_engine
 
 
 @pytest.mark.skip(reason="sandbox for dev purposes")

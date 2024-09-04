@@ -59,9 +59,9 @@ def make_table() -> Callable:
 
 @pytest.fixture
 async def connection(
-    pg_engine: sa.engine.Engine, connection: SAConnection, make_table: Callable
+    aiopg_engine: sa.engine.Engine, connection: SAConnection, make_table: Callable
 ):
-    assert pg_engine
+    assert aiopg_engine
     # NOTE: do not remove th pg_engine, or the test will fail as pytest
     # cannot set the parameters in the fixture
 
