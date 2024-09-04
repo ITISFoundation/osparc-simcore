@@ -578,14 +578,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      const currentFolderId = this.getCurrentFolderId();
-      params.url.folderId = currentFolderId;
+      params.url.workspaceIdId = this.getCurrentWorkspaceId();
+      params.url.folderId = this.getCurrentFolderId();
       if (params.url.orderBy) {
-        return osparc.data.Resources.fetch("studies", "getPageFolderSortBy", params, undefined, options);
+        return osparc.data.Resources.fetch("studies", "getPageSortBy", params, undefined, options);
       } else if (params.url.search) {
-        return osparc.data.Resources.fetch("studies", "getPageFolderSearch", params, undefined, options);
+        return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
       }
-      return osparc.data.Resources.fetch("studies", "getPageFolder", params, undefined, options);
+      return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
     },
 
     __getTextFilteredNextRequest: function(text) {
@@ -605,9 +605,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      const currentFolderId = this.getCurrentFolderId();
-      params.url.folderId = currentFolderId;
-      return osparc.data.Resources.fetch("studies", "getPageFolderSearch", params, undefined, options);
+      params.url.workspaceId = this.getCurrentWorkspaceId();
+      params.url.folderId = this.getCurrentFolderId();
+      return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
     },
 
     __getSortedByNextRequest: function() {
@@ -627,9 +627,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      const currentFolderId = this.getCurrentFolderId();
-      params.url.folderId = currentFolderId;
-      return osparc.data.Resources.fetch("studies", "getPageFolderSortBy", params, undefined, options);
+      params.url.workspaceId = this.getCurrentWorkspaceId();
+      params.url.folderId = this.getCurrentFolderId();
+      return osparc.data.Resources.fetch("studies", "getPageSortBy", params, undefined, options);
     },
 
     invalidateStudies: function() {
