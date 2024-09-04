@@ -172,7 +172,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       * @param maxHeight {Number} description's maxHeight
       */
-    createDescription: function(serviceData, maxHeight) {
+    createDescription: function(serviceData) {
       const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignY: "middle"
       }));
@@ -184,7 +184,6 @@ qx.Class.define("osparc.info.ServiceUtils", {
 
       const description = new osparc.ui.markdown.Markdown().set({
         noMargin: true,
-        maxHeight: maxHeight
       });
       // display markdown link content if that's the case
       if (

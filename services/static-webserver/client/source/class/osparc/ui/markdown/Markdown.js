@@ -62,7 +62,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      */
     value: {
       check: "String",
-      apply: "_applyMarkdown"
+      apply: "__applyMarkdown"
     },
 
     noMargin: {
@@ -77,7 +77,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      * Apply function for the markdown property. Compiles the markdown text to HTML and applies it to the value property of the label.
      * @param {String} value Plain text accepting markdown syntax.
      */
-    _applyMarkdown: function(value = "") {
+    __applyMarkdown: function(value = "") {
       this.__loadMarked.then(() => {
         const renderer = new marked.Renderer();
         const linkRenderer = renderer.link;
@@ -89,7 +89,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
           return linkWithRightColor;
         };
 
-        const html = marked(value, { renderer });
+        const html = marked.parse(value);
 
         const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
         this.setHtml(safeHtml);
