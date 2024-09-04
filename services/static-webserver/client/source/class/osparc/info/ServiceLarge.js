@@ -116,13 +116,19 @@ qx.Class.define("osparc.info.ServiceLarge", {
         flex: 1
       });
 
-      const descriptionUi = this.__createDescriptionUi();
+      let descriptionUi = null;
+      if (osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
+        descriptionUi = this.__createDescriptionUi();
+      }
 
       const description = this.__createDescription();
       const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
       description.addAt(editInTitle, 0);
 
-      const resources = this.__createResources();
+      let resources = null;
+      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        resources = this.__createResources();
+      }
 
       const copyMetadataButton = new qx.ui.form.Button(this.tr("Copy Raw metadata"), "@FontAwesome5Solid/copy/12").set({
         allowGrowX: false
@@ -144,11 +150,13 @@ qx.Class.define("osparc.info.ServiceLarge", {
       } else {
         vBox.add(titleLayout);
         vBox.add(infoAndThumbnail);
-        if (osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
+        if (descriptionUi) {
           vBox.add(descriptionUi);
         }
         vBox.add(description);
-        vBox.add(resources);
+        if (resources) {
+          vBox.add(resources);
+        }
         vBox.add(copyMetadataButton);
       }
 
