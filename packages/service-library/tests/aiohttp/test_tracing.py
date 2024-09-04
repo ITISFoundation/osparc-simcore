@@ -9,6 +9,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from servicelib.aiohttp.tracing import setup_tracing
+from settings_library.tracing import TracingSettings
 
 
 @pytest.mark.parametrize(
@@ -89,22 +90,19 @@ def test_missing_tracing_settings(
 
 
 @pytest.mark.parametrize(
-    "opentelemetry_collector_endpoint, opentelemetry_collector_port",  # noqa: PT002
+    "tracing_settings_in",  # noqa: PT002
     [("http://opentelemetry-collector", None), (None, 4318)],
+    indirect=True,
 )
 def test_incomplete_tracing_settings(
     event_loop: AbstractEventLoop,
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable,
-    opentelemetry_collector_endpoint: str,
-    opentelemetry_collector_port: int,
+    tracing_settings_in: TracingSettings,
 ) -> TestClient:
     app = web.Application()
     service_name = "simcore_service_webserver"
     with pytest.raises(RuntimeError):
         setup_tracing(
-            app,
-            service_name=service_name,
-            opentelemetry_collector_endpoint=opentelemetry_collector_endpoint,
-            opentelemetry_collector_port=opentelemetry_collector_port,
+            app, service_name=service_name, tracing_settings=tracing_settings_in
         )

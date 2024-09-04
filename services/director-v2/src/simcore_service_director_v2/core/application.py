@@ -13,13 +13,13 @@ from servicelib.fastapi.prometheus_instrumentation import (
 from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 
+from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..api.entrypoints import api_router
 from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,
 )
 from ..api.errors.validation_error import http422_error_handler
-from ..meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..modules import (
     catalog,
     comp_scheduler,

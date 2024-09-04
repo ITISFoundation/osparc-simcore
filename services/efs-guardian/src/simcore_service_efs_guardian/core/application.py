@@ -36,9 +36,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     app.state.settings = settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
     if app.state.settings.EFS_GUARDIAN_TRACING:
-        setup_tracing(
-            app, app.state.settings.EFS_GUARDIAN_TRACING, app.state.settings.APP_NAME
-        )
+        setup_tracing(app, app.state.settings.EFS_GUARDIAN_TRACING, APP_NAME)
 
     # PLUGINS SETUP
     setup_rabbitmq(app)
