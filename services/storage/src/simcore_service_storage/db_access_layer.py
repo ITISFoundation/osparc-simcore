@@ -135,7 +135,9 @@ access_rights_subquery = (
                 "delete",
                 project_to_groups.c.delete,
             ),
-        ).label("access_rights"),
+        )
+        .filter(project_to_groups.c.read)  # Filters out entries where "read" is False
+        .label("access_rights"),
     ).group_by(project_to_groups.c.project_uuid)
 ).subquery("access_rights_subquery")
 

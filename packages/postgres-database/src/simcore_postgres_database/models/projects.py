@@ -141,6 +141,18 @@ projects = sa.Table(
         default=False,
         doc="If true, the project is by default not listed in the API",
     ),
+    sa.Column(
+        "workspace_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            "workspaces.workspace_id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+            name="fk_projects_to_workspaces_id",
+        ),
+        nullable=True,
+        default=None,
+    ),
 )
 
 

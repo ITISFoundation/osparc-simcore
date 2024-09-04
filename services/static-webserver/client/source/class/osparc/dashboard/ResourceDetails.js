@@ -257,7 +257,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         if (selection.length) {
           const serviceVersion = selection[0].version;
           if (serviceVersion !== this.__resourceData["version"]) {
-            osparc.service.Store.getService(this.__resourceData["key"], serviceVersion)
+            osparc.store.Services.getService(this.__resourceData["key"], serviceVersion)
               .then(serviceData => {
                 serviceData["resourceType"] = "service";
                 this.__resourceData = serviceData;
