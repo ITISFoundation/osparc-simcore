@@ -90,26 +90,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
         vBox.add(deprecated);
       }
 
-      if (
-        this.getService()["descriptionUi"] &&
-        !osparc.service.Utils.canIWrite(this.getService()["accessRights"])
-      ) {
-        // Show description only
-        const description = this.__createDescription();
-        if (description.getChildren().length > 1) {
-          vBox.add(description.getChildren()[1]);
-          const scrollContainer = new qx.ui.container.Scroll();
-          scrollContainer.add(vBox);
-          this._add(scrollContainer, {
-            flex: 1
-          });
-          return;
-        }
-      }
-
       const title = this.__createTitle();
       const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
-      vBox.add(titleLayout);
 
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
@@ -126,28 +108,44 @@ qx.Class.define("osparc.info.ServiceLarge", {
         alignX: "center"
       });
 
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
+      const infoAndThumbnail = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
         alignX: "center"
       }));
-      hBox.add(extraInfoLayout);
-      hBox.add(thumbnailLayout, {
+      infoAndThumbnail.add(extraInfoLayout);
+      infoAndThumbnail.add(thumbnailLayout, {
         flex: 1
       });
-      vBox.add(hBox);
 
       const description = this.__createDescription();
       const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
       description.addAt(editInTitle, 0);
-      vBox.add(description);
 
       const resources = this.__createResources();
-      vBox.add(resources);
 
       const copyMetadataButton = new qx.ui.form.Button(this.tr("Copy Raw metadata"), "@FontAwesome5Solid/copy/12").set({
         allowGrowX: false
       });
       copyMetadataButton.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(osparc.utils.Utils.prettifyJson(this.getService())), this);
-      vBox.add(copyMetadataButton);
+
+
+      if (
+        this.getService()["descriptionUi"] &&
+        !osparc.service.Utils.canIWrite(this.getService()["accessRights"]) &&
+        description.getChildren().length > 1
+      ) {
+        // Show description only
+        vBox.add(description.getChildren()[1]);
+        if (osparc.data.Permissions.getInstance().isTester()) {
+          // Also copyMetadataButton if tester
+          vBox.add(copyMetadataButton);
+        }
+      } else {
+        vBox.add(titleLayout);
+        vBox.add(infoAndThumbnail);
+        vBox.add(description);
+        vBox.add(resources);
+        vBox.add(copyMetadataButton);
+      }
 
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(vBox);
