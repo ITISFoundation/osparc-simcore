@@ -115,7 +115,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
       }
 
       const gid = orgModel.getGid();
-      osparc.service.Store.getServicesLatest()
+      osparc.store.Services.getServicesLatest()
         .then(servicesLatest => {
           const orgServices = [];
           Object.keys(servicesLatest).forEach(key => {

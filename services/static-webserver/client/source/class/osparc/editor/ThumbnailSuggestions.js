@@ -138,7 +138,7 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       }
 
       const promises = [];
-      queryParams.forEach(qP => promises.push(osparc.service.Store.getService(qP.key, qP.version)));
+      queryParams.forEach(qP => promises.push(osparc.store.Services.getService(qP.key, qP.version)));
       return Promise.all(promises)
         .then(values => {
           const suggestions = new Set([]);

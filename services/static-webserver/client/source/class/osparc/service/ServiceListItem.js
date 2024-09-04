@@ -158,7 +158,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
       if (version === this.self().LATEST) {
         version = this.__versionsBox.getChildrenContainer().getSelectables()[1].version;
       }
-      osparc.service.Store.getService(key, version)
+      osparc.store.Services.getService(key, version)
         .then(serviceMetadata => {
           const serviceDetails = new osparc.info.ServiceLarge(serviceMetadata);
           const title = this.tr("Service information");

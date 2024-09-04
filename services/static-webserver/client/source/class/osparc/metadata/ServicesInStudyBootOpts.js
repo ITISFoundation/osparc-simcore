@@ -25,7 +25,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyBootOpts", {
       if ("workbench" in studyData) {
         for (const nodeId in studyData["workbench"]) {
           const node = studyData["workbench"][nodeId];
-          const metadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+          const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
           if (metadata && osparc.data.model.Node.hasBootModes(metadata)) {
             return true;
           }
@@ -74,7 +74,7 @@ qx.Class.define("osparc.metadata.ServicesInStudyBootOpts", {
       for (const nodeId in workbench) {
         i++;
         const node = workbench[nodeId];
-        const nodeMetadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+        const nodeMetadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
         if (nodeMetadata === null) {
           osparc.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
           break;
