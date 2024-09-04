@@ -126,7 +126,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       description.addAt(editInTitle, 0);
 
       let resources = null;
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
         resources = this.__createResources();
       }
 
