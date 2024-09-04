@@ -51,7 +51,7 @@ qx.Class.define("osparc.ui.message.Loading", {
       check: "String",
       init: null,
       nullable: true,
-      event: "changeLogo"
+      apply: "__applyLogo"
     },
 
     header: {
@@ -91,6 +91,7 @@ qx.Class.define("osparc.ui.message.Loading", {
 
   members: {
     __mainLayout: null,
+    __thumbnail: null,
     __header: null,
     __messages: null,
     __extraWidgets: null,
@@ -120,33 +121,23 @@ qx.Class.define("osparc.ui.message.Loading", {
       });
 
       const productLogoPath = osparc.product.Utils.getLogoPath();
-      const logo = new osparc.ui.basic.Thumbnail(productLogoPath, this.self().ICON_WIDTH, this.self().LOGO_HEIGHT).set({
+      const thumbnail = this.__thumbnail = new osparc.ui.basic.Thumbnail(productLogoPath, this.self().ICON_WIDTH, this.self().LOGO_HEIGHT).set({
         alignX: "center"
       });
       let logoHeight = this.self().LOGO_HEIGHT;
       if (qx.util.ResourceManager.getInstance().getImageFormat(productLogoPath) === "png") {
         logoHeight = osparc.ui.basic.Logo.getHeightKeepingAspectRatio(productLogoPath, this.self().ICON_WIDTH);
-        logo.getChildControl("image").set({
+        thumbnail.getChildControl("image").set({
           width: this.self().ICON_WIDTH,
           height: logoHeight
         });
       } else {
-        logo.getChildControl("image").set({
+        thumbnail.getChildControl("image").set({
           width: this.self().ICON_WIDTH,
           height: logoHeight
         });
       }
-      this.bind("logo", logo, "source", {
-        converter: newPath => newPath ? newPath : productLogoPath,
-        onUpdate: (source, target) => {
-          if (source.getLogo() === productLogoPath) {
-            target.getChildControl("image").setMaxHeight(logoHeight);
-          } else {
-            target.getChildControl("image").setMaxHeight(this.self().ICON_HEIGHT);
-          }
-        }
-      });
-      mainLayout.addAt(logo, {
+      mainLayout.addAt(thumbnail, {
         column: 0,
         row: this.self().GRID_POS.LOGO
       });
@@ -206,6 +197,21 @@ qx.Class.define("osparc.ui.message.Loading", {
         flex: 1
       });
       this._add(maximizeLayout);
+    },
+
+    __applyLogo: function(newLogo) {
+      const productLogoPath = osparc.product.Utils.getLogoPath();
+      if (newLogo !== productLogoPath) {
+        this.__thumbnail.set({
+          maxHeight: this.self().ICON_HEIGHT,
+          height: this.self().ICON_HEIGHT,
+        });
+        this.__thumbnail.getChildControl("image").set({
+          maxHeight: this.self().ICON_HEIGHT,
+          height: this.self().ICON_HEIGHT,
+        });
+      }
+      this.__thumbnail.setSource(newLogo);
     },
 
     __applyHeader: function(value) {
