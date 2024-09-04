@@ -189,7 +189,7 @@ async def delete_tag(request: web.Request):
 #
 
 
-class _TagGroupPathParams(TagPathParams):
+class TagGroupPathParams(TagPathParams):
     group_id: GroupID
 
 
@@ -203,3 +203,55 @@ class TagGroupGet(TagGroupCreate):
     gid: GroupID
     created: datetime
     modified: datetime
+
+
+@routes.get(f"/{VTAG}" + "/tags/{tag_id}/groups", name="list_tag_groups")
+@login_required
+@permission_required("tag.crud.*")
+@_handle_tags_exceptions
+async def list_tag_groups(request: web.Request):
+    path_params = parse_request_path_parameters_as(TagPathParams, request)
+
+    assert path_params  # nosec
+    raise NotImplementedError
+
+
+@routes.get(f"/{VTAG}" + "/tags/{tag_id}/groups/{group_id}", name="create_tag_group")
+@login_required
+@permission_required("tag.crud.*")
+@_handle_tags_exceptions
+async def create_tag_group(request: web.Request):
+    path_params = parse_request_path_parameters_as(TagGroupPathParams, request)
+    new_tag_group = await parse_request_body_as(TagGroupCreate, request)
+
+    assert path_params  # nosec
+    assert new_tag_group  # nosec
+
+    raise NotImplementedError
+
+
+@routes.put(f"/{VTAG}" + "/tags/{tag_id}/groups/{group_id}", name="replace_tag_groups")
+@login_required
+@permission_required("tag.crud.*")
+@_handle_tags_exceptions
+async def replace_tag_groups(request: web.Request):
+    path_params = parse_request_path_parameters_as(TagGroupPathParams, request)
+    new_tag_group = await parse_request_body_as(TagGroupCreate, request)
+
+    assert path_params  # nosec
+    assert new_tag_group  # nosec
+
+    raise NotImplementedError
+
+
+@routes.delete(f"/{VTAG}" + "/tags/{tag_id}/groups/{group_id}", name="delete_tag_group")
+@login_required
+@permission_required("tag.crud.*")
+@_handle_tags_exceptions
+async def delete_tag_group(request: web.Request):
+    path_params = parse_request_path_parameters_as(TagGroupPathParams, request)
+
+    assert path_params  # nosec
+
+    raise NotImplementedError
+    # NOTE: will raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

@@ -2670,322 +2670,6 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/groups:
-    get:
-      tags:
-      - groups
-      summary: List Groups
-      operationId: list_groups
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_AllUsersGroups_'
-    post:
-      tags:
-      - groups
-      summary: Create Group
-      operationId: create_group
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_UsersGroup_'
-  /v0/groups/{gid}:
-    get:
-      tags:
-      - groups
-      summary: Get Group
-      operationId: get_group
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_UsersGroup_'
-    delete:
-      tags:
-      - groups
-      summary: Delete Group
-      operationId: delete_group
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      responses:
-        '204':
-          description: Successful Response
-    patch:
-      tags:
-      - groups
-      summary: Update Group
-      operationId: update_group
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UsersGroup'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_UsersGroup_'
-  /v0/groups/{gid}/users:
-    get:
-      tags:
-      - groups
-      summary: Get Group Users
-      operationId: get_group_users
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.groups.GroupUserGet__'
-    post:
-      tags:
-      - groups
-      summary: Add Group User
-      operationId: add_group_user
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupUserGet'
-        required: true
-      responses:
-        '204':
-          description: Successful Response
-  /v0/groups/{gid}/users/{uid}:
-    get:
-      tags:
-      - groups
-      summary: Get Group User
-      operationId: get_group_user
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      - required: true
-        schema:
-          title: Uid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: uid
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_GroupUserGet_'
-    delete:
-      tags:
-      - groups
-      summary: Delete Group User
-      operationId: delete_group_user
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      - required: true
-        schema:
-          title: Uid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: uid
-        in: path
-      responses:
-        '204':
-          description: Successful Response
-    patch:
-      tags:
-      - groups
-      summary: Update Group User
-      operationId: update_group_user
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      - required: true
-        schema:
-          title: Uid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: uid
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupUserGet'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_GroupUserGet_'
-  /v0/groups/{gid}/classifiers:
-    get:
-      tags:
-      - groups
-      summary: Get Group Classifiers
-      operationId: get_group_classifiers
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      - required: false
-        schema:
-          title: Tree View
-          enum:
-          - std
-          type: string
-          default: std
-        name: tree_view
-        in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_dict_str__Any__'
-  /v0/groups/sparc/classifiers/scicrunch-resources/{rrid}:
-    get:
-      tags:
-      - groups
-      summary: Get Scicrunch Resource
-      operationId: get_scicrunch_resource
-      parameters:
-      - required: true
-        schema:
-          title: Rrid
-          type: string
-        name: rrid
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ResearchResource_'
-    post:
-      tags:
-      - groups
-      summary: Add Scicrunch Resource
-      operationId: add_scicrunch_resource
-      parameters:
-      - required: true
-        schema:
-          title: Rrid
-          type: string
-        name: rrid
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ResearchResource_'
-  /v0/groups/sparc/classifiers/scicrunch-resources:search:
-    get:
-      tags:
-      - groups
-      summary: Search Scicrunch Resources
-      operationId: search_scicrunch_resources
-      parameters:
-      - required: true
-        schema:
-          title: Guess Name
-          type: string
-        name: guess_name
-        in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.scicrunch.models.ResourceHit__'
   /v0/tasks:
     get:
       tags:
@@ -5755,398 +5439,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
-  /v0/email:test:
-    post:
-      tags:
-      - admin
-      summary: Test Email
-      operationId: test_email
-      parameters:
-      - required: false
-        schema:
-          title: X-Simcore-Products-Name
-          type: string
-        name: x-simcore-products-name
-        in: header
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TestEmail'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Union_EmailTestFailed__EmailTestPassed__'
-  /v0/:
-    get:
-      tags:
-      - maintenance
-      summary: Healthcheck Readiness Probe
-      description: 'Readiness probe: check if the container is ready to receive traffic'
-      operationId: healthcheck_readiness_probe
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_HealthInfoDict_'
-  /v0/health:
-    get:
-      tags:
-      - maintenance
-      summary: Healthcheck Liveness Probe
-      description: 'Liveness probe: check if the container is alive'
-      operationId: healthcheck_liveness_probe
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_dict_str__Any__'
-  /v0/config:
-    get:
-      tags:
-      - maintenance
-      summary: Front end runtime configuration
-      description: Returns app and products configs
-      operationId: get_config
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_dict_str__Any__'
-  /v0/scheduled_maintenance:
-    get:
-      tags:
-      - maintenance
-      summary: Get Scheduled Maintenance
-      operationId: get_scheduled_maintenance
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_str_'
-  /v0/status:
-    get:
-      tags:
-      - maintenance
-      summary: checks status of self and connected services
-      operationId: get_app_status
-      responses:
-        '200':
-          description: Returns app status check
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_AppStatusCheck_'
-  /v0/status/diagnostics:
-    get:
-      tags:
-      - maintenance
-      summary: Get App Diagnostics
-      operationId: get_app_diagnostics
-      parameters:
-      - required: false
-        schema:
-          title: Top Tracemalloc
-          type: integer
-        name: top_tracemalloc
-        in: query
-      responses:
-        '200':
-          description: Returns app diagnostics report
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_StatusDiagnosticsGet_'
-  /v0/status/{service_name}:
-    get:
-      tags:
-      - maintenance
-      summary: Get Service Status
-      operationId: get_service_status
-      parameters:
-      - required: true
-        schema:
-          title: Service Name
-          type: string
-        name: service_name
-        in: path
-      responses:
-        '200':
-          description: Returns app status check
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.PaymentMethodGet__'
-  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:
-    get:
-      tags:
-      - wallets
-      summary: Get Payment Method
-      operationId: get_payment_method
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      - required: true
-        schema:
-          title: Payment Method Id
-          maxLength: 100
-          minLength: 1
-          type: string
-        name: payment_method_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_PaymentMethodGet_'
-    delete:
-      tags:
-      - wallets
-      summary: Delete Payment Method
-      operationId: delete_payment_method
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      - required: true
-        schema:
-          title: Payment Method Id
-          maxLength: 100
-          minLength: 1
-          type: string
-        name: payment_method_id
-        in: path
-      responses:
-        '204':
-          description: Successfully deleted
-  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:pay:
-    post:
-      tags:
-      - wallets
-      summary: Pay With Payment Method
-      operationId: pay_with_payment_method
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      - required: true
-        schema:
-          title: Payment Method Id
-          maxLength: 100
-          minLength: 1
-          type: string
-        name: payment_method_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateWalletPayment'
-        required: true
-      responses:
-        '202':
-          description: Pay with payment-method
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_WalletPaymentInitiated_'
-  /v0/wallets/{wallet_id}/auto-recharge:
-    get:
-      tags:
-      - wallets
-      summary: Get Wallet Autorecharge
-      operationId: get_wallet_autorecharge
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_GetWalletAutoRecharge_'
-    put:
-      tags:
-      - wallets
-      summary: Replace Wallet Autorecharge
-      operationId: replace_wallet_autorecharge
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReplaceWalletAutoRecharge'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_GetWalletAutoRecharge_'
-  /v0/wallets/{wallet_id}/groups/{group_id}:
-    put:
-      tags:
-      - wallets
-      summary: Update Wallet Group
-      operationId: update_wallet_group
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      - required: true
-        schema:
-          title: Group Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: group_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_WalletsGroupsBodyParams'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_WalletGroupGet_'
-    post:
-      tags:
-      - wallets
-      summary: Create Wallet Group
-      operationId: create_wallet_group
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      - required: true
-        schema:
-          title: Group Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: group_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_WalletsGroupsBodyParams'
-        required: true
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_WalletGroupGet_'
-    delete:
-      tags:
-      - wallets
-      summary: Delete Wallet Group
-      operationId: delete_wallet_group
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      - required: true
-        schema:
-          title: Group Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: group_id
-        in: path
-      responses:
-        '204':
-          description: Successful Response
-  /v0/wallets/{wallet_id}/groups:
-    get:
-      tags:
-      - wallets
-      summary: List Wallet Groups
-      operationId: list_wallet_groups
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.wallets._groups_api.WalletGroupGet__'
   /v0/workspaces:
     get:
       tags:
@@ -6362,6 +5654,140 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.workspaces._groups_api.WorkspaceGroupGet__'
+  /v0/email:test:
+    post:
+      tags:
+      - admin
+      summary: Test Email
+      operationId: test_email
+      parameters:
+      - required: false
+        schema:
+          title: X-Simcore-Products-Name
+          type: string
+        name: x-simcore-products-name
+        in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestEmail'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Union_EmailTestFailed__EmailTestPassed__'
+  /v0/:
+    get:
+      tags:
+      - maintenance
+      summary: Healthcheck Readiness Probe
+      description: 'Readiness probe: check if the container is ready to receive traffic'
+      operationId: healthcheck_readiness_probe
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_HealthInfoDict_'
+  /v0/health:
+    get:
+      tags:
+      - maintenance
+      summary: Healthcheck Liveness Probe
+      description: 'Liveness probe: check if the container is alive'
+      operationId: healthcheck_liveness_probe
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_str__Any__'
+  /v0/config:
+    get:
+      tags:
+      - maintenance
+      summary: Front end runtime configuration
+      description: Returns app and products configs
+      operationId: get_config
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_str__Any__'
+  /v0/scheduled_maintenance:
+    get:
+      tags:
+      - maintenance
+      summary: Get Scheduled Maintenance
+      operationId: get_scheduled_maintenance
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_str_'
+  /v0/status:
+    get:
+      tags:
+      - maintenance
+      summary: checks status of self and connected services
+      operationId: get_app_status
+      responses:
+        '200':
+          description: Returns app status check
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_AppStatusCheck_'
+  /v0/status/diagnostics:
+    get:
+      tags:
+      - maintenance
+      summary: Get App Diagnostics
+      operationId: get_app_diagnostics
+      parameters:
+      - required: false
+        schema:
+          title: Top Tracemalloc
+          type: integer
+        name: top_tracemalloc
+        in: query
+      responses:
+        '200':
+          description: Returns app diagnostics report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StatusDiagnosticsGet_'
+  /v0/status/{service_name}:
+    get:
+      tags:
+      - maintenance
+      summary: Get Service Status
+      operationId: get_service_status
+      parameters:
+      - required: true
+        schema:
+          title: Service Name
+          type: string
+        name: service_name
+        in: path
+      responses:
+        '200':
+          description: Returns app status check
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_AppStatusCheck_'
 components:
   schemas:
     AccessEnum:

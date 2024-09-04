@@ -13,8 +13,8 @@ from simcore_service_webserver.tags._handlers import (
     TagGet,
     TagGroupCreate,
     TagGroupGet,
+    TagGroupPathParams,
     TagPathParams,
-    _TagGroupPathParams,
 )
 
 router = APIRouter(
@@ -40,7 +40,7 @@ async def list_tag_groups(_path_params: Annotated[TagPathParams, Depends()]):
     status_code=status.HTTP_201_CREATED,
 )
 async def create_tag_group(
-    _path_params: Annotated[_TagGroupPathParams, Depends()], _body: TagGroupCreate
+    _path_params: Annotated[TagGroupPathParams, Depends()], _body: TagGroupCreate
 ):
     ...
 
@@ -50,7 +50,7 @@ async def create_tag_group(
     response_model=Envelope[list[TagGroupGet]],
 )
 async def replace_tag_groups(
-    _path_params: Annotated[_TagGroupPathParams, Depends()], _body: TagGroupCreate
+    _path_params: Annotated[TagGroupPathParams, Depends()], _body: TagGroupCreate
 ):
     ...
 
@@ -59,5 +59,5 @@ async def replace_tag_groups(
     "/tags/{tag_id}/groups/{group_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_tag_group(_path_params: Annotated[_TagGroupPathParams, Depends()]):
+async def delete_tag_group(_path_params: Annotated[TagGroupPathParams, Depends()]):
     ...
