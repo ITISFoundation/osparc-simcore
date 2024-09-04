@@ -5,9 +5,9 @@ Read operations are list, get
 
 """
 
-from typing import Any
 
 from aiohttp import web
+from models_library.access_rights import AccessRights
 from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.projects import ProjectListItem
 from models_library.folders import FolderID
@@ -37,7 +37,7 @@ async def _append_fields(
     user_id: UserID,
     project: ProjectDict,
     is_template: bool,
-    workspace_access_rights: dict[GroupID, Any] | None,
+    workspace_access_rights: dict[GroupID, AccessRights] | None,
     model_schema_cls: type[OutputSchema],
 ):
     # state
