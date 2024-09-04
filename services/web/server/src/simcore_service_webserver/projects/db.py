@@ -17,6 +17,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
+from models_library.products import ProductName
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
@@ -30,15 +31,16 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletDB, WalletID
+from models_library.workspaces import WorkspaceID
 from pydantic import parse_obj_as
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
-from simcore_postgres_database.models.folders import folders_to_projects
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
+from simcore_postgres_database.models.projects_to_folders import projects_to_folders
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_postgres_database.utils_groups_extra_properties import (
@@ -58,7 +60,6 @@ from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
-from ..application_settings import ApplicationSettings
 from ..db.models import projects_tags, projects_to_wallet
 from ..utils import now_str
 from ._comments_db import (
@@ -72,10 +73,8 @@ from ._comments_db import (
 from ._db_utils import (
     ANY_USER_ID_SENTINEL,
     BaseProjectDB,
-    PermissionStr,
     ProjectAccessRights,
     assemble_array_groups,
-    check_project_permissions,
     convert_to_db_names,
     convert_to_schema_names,
     create_project_access_rights,
@@ -280,6 +279,8 @@ class ProjectDBAPI(BaseProjectDB):
         insert_values.setdefault("name", "New Study")
         insert_values.setdefault("workbench", {})
 
+        insert_values.setdefault("workspace_id", None)
+
         # must be valid uuid
         try:
             ProjectID(str(insert_values.get("uuid")))
@@ -321,10 +322,9 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def list_projects(  # pylint: disable=too-many-arguments
         self,
-        user_id: PositiveInt,
         *,
         product_name: str,
-        settings: ApplicationSettings,
+        user_id: PositiveInt,
         filter_by_project_type: ProjectType | None = None,
         filter_by_services: list[dict] | None = None,
         only_published: bool | None = False,
@@ -336,14 +336,23 @@ class ProjectDBAPI(BaseProjectDB):
             field=IDStr("last_change_date"), direction=OrderDirection.DESC
         ),
         folder_id: FolderID | None = None,
+        workspace_id: WorkspaceID | None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
+        """
+        If workspace_id is provided, then listing in workspace is considered/preffered
+        """
         assert (
             order_by.field in projects.columns
         ), "Guaranteed by ProjectListWithJsonStrParams"  # nosec
 
-        async with self.engine.acquire() as conn:
-            user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
+        # helper
+        private_workspace_user_id_or_none: UserID | None = (
+            None if workspace_id else user_id
+        )
 
+        async with self.engine.acquire() as conn:
+
+            # if workspace_is_private:
             access_rights_subquery = (
                 sa.select(
                     project_to_groups.c.project_uuid,
@@ -357,19 +366,60 @@ class ProjectDBAPI(BaseProjectDB):
                             "delete",
                             project_to_groups.c.delete,
                         ),
-                    ).label("access_rights"),
+                    )
+                    .filter(
+                        project_to_groups.c.read  # Filters out entries where "read" is False
+                    )
+                    .label("access_rights"),
                 ).group_by(project_to_groups.c.project_uuid)
             ).subquery("access_rights_subquery")
+            # else:
+            #     access_rights_subquery = (
+            #         sa.select(
+            #             workspaces_access_rights.c.workspace_id,
+            #             sa.func.jsonb_object_agg(
+            #                 workspaces_access_rights.c.gid,
+            #                 sa.func.jsonb_build_object(
+            #                     "read",
+            #                     workspaces_access_rights.c.read,
+            #                     "write",
+            #                     workspaces_access_rights.c.write,
+            #                     "delete",
+            #                     workspaces_access_rights.c.delete,
+            #                 ),
+            #             )
+            #             .filter(
+            #                 workspaces_access_rights.c.read  # Filters out entries where "read" is False
+            #             )
+            #             .label("access_rights"),
+            #         )
+            #         .where(workspaces_access_rights.c.workspace_id == workspace_id)
+            #         .group_by(workspaces_access_rights.c.workspace_id)
+            #     ).subquery("access_rights_subquery")
 
-            _join_query = projects.join(projects_to_products, isouter=True).join(
-                access_rights_subquery, isouter=True
+            _join_query = (
+                projects.join(projects_to_products, isouter=True)
+                .join(access_rights_subquery, isouter=True)
+                .join(
+                    projects_to_folders,
+                    (
+                        (projects_to_folders.c.project_uuid == projects.c.uuid)
+                        & (
+                            projects_to_folders.c.user_id
+                            == private_workspace_user_id_or_none
+                        )
+                    ),
+                    isouter=True,
+                )
             )
-            if settings.WEBSERVER_FOLDERS:
-                _join_query = _join_query.join(folders_to_projects, isouter=True)
 
             query = (
                 sa.select(
-                    *[col for col in projects.columns if col.name != "access_rights"],
+                    *[
+                        col
+                        for col in projects.columns
+                        if col.name not in ["access_rights"]
+                    ],
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                 )
@@ -391,27 +441,39 @@ class ProjectDBAPI(BaseProjectDB):
                         else sa.text("")
                     )
                     & (
-                        (projects.c.prj_owner == user_id)
-                        | sa.text(
-                            f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
-                        )
-                    )
-                    & (
                         (projects_to_products.c.product_name == product_name)
                         # This was added for backward compatibility, including old projects not in the projects_to_products table.
                         | (projects_to_products.c.product_name.is_(None))
                     )
+                    & (
+                        projects_to_folders.c.folder_id == folder_id
+                        if folder_id
+                        else projects_to_folders.c.folder_id.is_(None)
+                    )
+                    & (
+                        projects.c.workspace_id == workspace_id  # <-- Shared workspace
+                        if workspace_id
+                        else projects.c.workspace_id.is_(None)  # <-- Private workspace
+                    )
                 )
             )
-            if settings.WEBSERVER_FOLDERS:
+
+            if private_workspace_user_id_or_none:
+                # If Private workspace we check to which projects user has access
+                user_groups: list[RowProxy] = await self._list_user_groups(
+                    conn, user_id
+                )
                 query = query.where(
-                    folders_to_projects.c.folder_id == f"{folder_id}"
-                    if folder_id
-                    else folders_to_projects.c.folder_id.is_(None)
+                    (projects.c.prj_owner == user_id)
+                    | sa.text(
+                        f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
+                    )
                 )
 
             if search:
-                query = query.join(users, isouter=True)
+                query = query.join(
+                    users, users.c.id == projects.c.prj_owner, isouter=True
+                )
                 query = query.where(
                     (projects.c.name.ilike(f"%{search}%"))
                     | (projects.c.description.ilike(f"%{search}%"))
@@ -429,11 +491,10 @@ class ProjectDBAPI(BaseProjectDB):
             )
             assert total_number_of_projects is not None  # nosec
 
-            prjs, prj_types = await self._execute_with_permission_check(
+            prjs, prj_types = await self._execute_without_permission_check(
                 conn,
-                select_projects_query=query.offset(offset).limit(limit),
                 user_id=user_id,
-                user_groups=user_groups,
+                select_projects_query=query.offset(offset).limit(limit),
                 filter_by_services=filter_by_services,
             )
 
@@ -454,12 +515,10 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def get_project(
         self,
-        user_id: UserID,
         project_uuid: str,
         *,
         only_published: bool = False,
         only_templates: bool = False,
-        check_permissions: PermissionStr = "read",
     ) -> tuple[ProjectDict, ProjectType]:
         """Returns all projects *owned* by the user
 
@@ -468,16 +527,13 @@ class ProjectDBAPI(BaseProjectDB):
             - Notice that a user can have access to a project where he/she has read access
 
         :raises ProjectNotFoundError: project is not assigned to user
-        raises ProjectInvalidRightsError: if user has no access rights to do check_permissions
         """
         async with self.engine.acquire() as conn:
             project = await self._get_project(
                 conn,
-                user_id,
                 project_uuid,
                 only_published=only_published,
                 only_templates=only_templates,
-                check_permissions=check_permissions,
             )
             # pylint: disable=no-value-for-parameter
             user_email = await self._get_user_email(conn, project["prj_owner"])
@@ -500,13 +556,13 @@ class ProjectDBAPI(BaseProjectDB):
         projects.c.prj_owner,
         projects.c.creation_date,
         projects.c.last_change_date,
-        projects.c.access_rights,
         projects.c.ui,
         projects.c.classifiers,
         projects.c.dev,
         projects.c.quality,
         projects.c.published,
         projects.c.hidden,
+        projects.c.workspace_id,
     ]
 
     async def get_project_db(self, project_uuid: ProjectID) -> ProjectDB:
@@ -521,10 +577,13 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return ProjectDB.from_orm(row)
 
-    async def get_project_access_rights_for_user(
+    async def get_pure_project_access_rights_without_workspace(
         self, user_id: UserID, project_uuid: ProjectID
     ) -> UserProjectAccessRights:
         """
+        Be careful what you want. You should use `get_user_project_access_rights` to get access rights on the
+        project. It depends on which context you are in, whether private or shared workspace.
+
         User project access rights. Aggregated across all his groups.
         """
         _SELECTION_ARGS = (
@@ -598,13 +657,11 @@ class ProjectDBAPI(BaseProjectDB):
 
             current_project: dict = await self._get_project(
                 db_connection,
-                user_id,
                 project_uuid,
                 exclude_foreign=["tags"],
                 for_update=True,
             )
-            user_groups = await self._list_user_groups(db_connection, user_id)
-            check_project_permissions(current_project, user_id, user_groups, "write")
+
             # uuid can ONLY be set upon creation
             if current_project["uuid"] != new_project_data["uuid"]:
                 raise ProjectInvalidRightsError(
@@ -661,6 +718,18 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return ProjectDB.from_orm(row)
 
+    async def get_project_product(self, project_uuid: ProjectID) -> ProductName:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select(projects_to_products.c.product_name).where(
+                    projects.c.uuid == f"{project_uuid}"
+                )
+            )
+            row = await result.fetchone()
+            if row is None:
+                raise ProjectNotFoundError(project_uuid=project_uuid)
+            return cast(str, row[0])
+
     async def update_project_owner_without_checking_permissions(
         self,
         project_uuid: ProjectIDStr,
@@ -703,12 +772,6 @@ class ProjectDBAPI(BaseProjectDB):
         )
 
         async with self.engine.acquire() as conn, conn.begin():
-            project = await self._get_project(
-                conn, user_id, project_uuid, for_update=True
-            )
-            # if we have delete access we delete the project
-            user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
-            check_project_permissions(project, user_id, user_groups, "delete")
             await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 projects.delete().where(projects.c.uuid == project_uuid)
@@ -803,15 +866,10 @@ class ProjectDBAPI(BaseProjectDB):
 
             current_project: dict = await self._get_project(
                 db_connection,
-                user_id,
                 project_uuid,
                 exclude_foreign=["tags"],
                 for_update=True,
             )
-            user_groups: list[RowProxy] = await self._list_user_groups(
-                db_connection, user_id
-            )
-            check_project_permissions(current_project, user_id, user_groups, "write")
 
             new_project_data, changed_entries = patch_workbench(
                 current_project,
@@ -982,41 +1040,6 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
     #
-    # Project ACCESS RIGHTS/PERMISSIONS
-    #
-
-    async def has_permission(
-        self, user_id: UserID, project_uuid: str, permission: PermissionStr
-    ) -> bool:
-        """
-        NOTE: this function should never raise
-        NOTE: if user_id does not exist it is not an issue
-        """
-
-        async with self.engine.acquire() as conn:
-            try:
-                project = await self._get_project(conn, user_id, project_uuid)
-                user_groups: list[RowProxy] = await self._list_user_groups(
-                    conn, user_id
-                )
-                check_project_permissions(project, user_id, user_groups, permission)
-                return True
-            except (ProjectInvalidRightsError, ProjectNotFoundError):
-                return False
-
-    async def check_delete_project_permission(self, user_id: int, project_uuid: str):
-        """
-        raises ProjectInvalidRightsError
-        """
-        async with self.engine.acquire() as conn, conn.begin():
-            project = await self._get_project(
-                conn, user_id, project_uuid, for_update=True
-            )
-            # if we have delete access we delete the project
-            user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
-            check_project_permissions(project, user_id, user_groups, "delete")
-
-    #
     # Project TAGS
     #
 
@@ -1026,7 +1049,7 @@ class ProjectDBAPI(BaseProjectDB):
         """Creates a tag and associates it to this project"""
         async with self.engine.acquire() as conn:
             project = await self._get_project(
-                conn, user_id=user_id, project_uuid=project_uuid, exclude_foreign=None
+                conn, project_uuid=project_uuid, exclude_foreign=None
             )
             user_email = await self._get_user_email(conn, user_id)
 
@@ -1048,7 +1071,7 @@ class ProjectDBAPI(BaseProjectDB):
         self, user_id: int, project_uuid: str, tag_id: int
     ) -> ProjectDict:
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
+            project = await self._get_project(conn, project_uuid)
             user_email = await self._get_user_email(conn, user_id)
             # pylint: disable=no-value-for-parameter
             query = projects_tags.delete().where(

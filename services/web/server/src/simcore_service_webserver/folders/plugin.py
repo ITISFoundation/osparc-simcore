@@ -7,7 +7,7 @@ from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import _folders_handlers, _groups_handlers
+from . import _folders_handlers
 
 _logger = logging.getLogger(__name__)
 
@@ -24,4 +24,3 @@ def setup_folders(app: web.Application):
 
     # routes
     app.router.add_routes(_folders_handlers.routes)
-    app.router.add_routes(_groups_handlers.routes)

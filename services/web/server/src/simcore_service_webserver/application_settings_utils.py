@@ -181,6 +181,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> dict[str, Any]:
         "version_control": {"enabled": app_settings.WEBSERVER_VERSION_CONTROL},
         "wallets": {"enabled": app_settings.WEBSERVER_WALLETS},
         "folders": {"enabled": app_settings.WEBSERVER_FOLDERS},
+        "workspaces": {"enabled": app_settings.WEBSERVER_WORKSPACES},
     }
 
 

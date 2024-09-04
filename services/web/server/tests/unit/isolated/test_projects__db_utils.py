@@ -7,25 +7,21 @@ import json
 import re
 from copy import deepcopy
 from dataclasses import dataclass
-from itertools import combinations
 from typing import Any, Callable
 
 import pytest
 from faker import Faker
 from models_library.projects_nodes import Node
 from models_library.services import ServiceKey
-from models_library.users import GroupID, UserID
+from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from simcore_postgres_database.models.groups import GroupType
 from simcore_service_webserver.projects._db_utils import (
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
 )
 from simcore_service_webserver.projects.db import (
-    ANY_USER,
     ProjectAccessRights,
     assemble_array_groups,
-    check_project_permissions,
     convert_to_db_names,
     convert_to_schema_names,
     create_project_access_rights,
@@ -34,7 +30,6 @@ from simcore_service_webserver.projects.db import (
 )
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,
-    ProjectInvalidRightsError,
     ProjectInvalidUsageError,
 )
 
@@ -129,146 +124,9 @@ def test_convert_to_schema_names_camel_casing(fake_db_dict):
     assert db_entries["prjOwner"] == fake_email
 
 
-def test_check_project_permissions_for_any_user():
-    project = {"access_rights": {"1": {"read": True, "write": False, "delete": False}}}
-
-    check_project_permissions(
-        project,
-        user_id=ANY_USER,
-        user_groups=[{"gid": 1, "type": GroupType.EVERYONE}],
-        permission="read",
-    )
-
-
-def all_permission_combinations() -> list[str]:
-    entries_list = ["read", "write", "delete"]
-    temp = []
-    for i in range(1, len(entries_list) + 1):
-        temp.extend(list(combinations(entries_list, i)))
-    return ["|".join(el) for el in temp]
-
-
 @pytest.fixture
 def group_id(faker: Faker) -> GroupID:
     return faker.pyint(min_value=1)
-
-
-@pytest.mark.parametrize("wanted_permissions", all_permission_combinations())
-def test_check_project_permissions(
-    user_id: UserID,
-    group_id: GroupID,
-    wanted_permissions: str,
-):
-    project = {"access_rights": {}}
-
-    # this should not raise as needed permissions is empty
-    check_project_permissions(project, user_id, user_groups=[], permission="")
-
-    # this should raise cause we have no user groups defined and we want permission
-    with pytest.raises(ProjectInvalidRightsError):
-        check_project_permissions(
-            project, user_id, user_groups=[], permission=wanted_permissions
-        )
-
-    def _project_access_rights_from_permissions(
-        permissions: str, *, invert: bool
-    ) -> dict[str, bool]:
-        access_rights = {}
-        for p in ["read", "write", "delete"]:
-            access_rights[p] = (
-                p in permissions if invert is False else p not in permissions
-            )
-        return access_rights
-
-    # primary group has needed access, so this should not raise
-    project = {
-        "access_rights": {
-            str(group_id): _project_access_rights_from_permissions(
-                wanted_permissions, invert=False
-            )
-        }
-    }
-    user_groups = [
-        {"type": GroupType.PRIMARY, "gid": group_id},
-        {"type": GroupType.EVERYONE, "gid": 2},
-    ]
-    check_project_permissions(project, user_id, user_groups, wanted_permissions)
-
-    # primary group does not have access, it should raise
-    project = {
-        "access_rights": {
-            str(group_id): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            )
-        }
-    }
-    with pytest.raises(ProjectInvalidRightsError):
-        check_project_permissions(project, user_id, user_groups, wanted_permissions)
-
-    # if no primary group, we rely on standard groups and the most permissive access are used. so this should not raise
-    project = {
-        "access_rights": {
-            str(group_id): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-            str(group_id + 1): _project_access_rights_from_permissions(
-                wanted_permissions, invert=False
-            ),
-            str(group_id + 2): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-        }
-    }
-    user_groups = [
-        {"type": GroupType.PRIMARY, "gid": group_id},
-        {"type": GroupType.EVERYONE, "gid": 2},
-        {"type": GroupType.STANDARD, "gid": group_id + 1},
-        {"type": GroupType.STANDARD, "gid": group_id + 2},
-    ]
-    check_project_permissions(project, user_id, user_groups, wanted_permissions)
-
-    # if both primary and standard do not have rights it should raise
-    project = {
-        "access_rights": {
-            str(group_id): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-            str(group_id + 1): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-            str(group_id + 2): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-        }
-    }
-    user_groups = [
-        {"type": GroupType.PRIMARY, "gid": group_id},
-        {"type": GroupType.EVERYONE, "gid": 2},
-        {"type": GroupType.STANDARD, "gid": group_id + 1},
-        {"type": GroupType.STANDARD, "gid": group_id + 2},
-    ]
-    with pytest.raises(ProjectInvalidRightsError):
-        check_project_permissions(project, user_id, user_groups, wanted_permissions)
-
-    # the everyone group has access so it should not raise
-    project = {
-        "access_rights": {
-            str(2): _project_access_rights_from_permissions(
-                wanted_permissions, invert=False
-            ),
-            str(group_id): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-            str(group_id + 1): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-            str(group_id + 2): _project_access_rights_from_permissions(
-                wanted_permissions, invert=True
-            ),
-        }
-    }
-
-    check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
 
 @pytest.mark.parametrize("project_access_rights", list(ProjectAccessRights))
