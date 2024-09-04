@@ -3323,7 +3323,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -8059,6 +8059,11 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     GenerateInvitation:
       title: GenerateInvitation
       required:
@@ -8390,7 +8395,6 @@ components:
         issuer:
           title: Issuer
           type: string
-          format: email
         guest:
           title: Guest
           type: string
@@ -9822,6 +9826,11 @@ components:
           $ref: '#/components/schemas/StudyUI'
         workspaceId:
           title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        folderId:
+          title: Folderid
           exclusiveMinimum: true
           type: integer
           minimum: 0
