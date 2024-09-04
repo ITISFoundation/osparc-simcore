@@ -160,10 +160,9 @@ async def detach_container_from_network(
         container_instance = await docker.containers.get(container_id)
         container_inspect = await container_instance.show()
 
-        attached_network_ids: set[str] = {
-            x["NetworkID"]
-            for x in container_inspect["NetworkSettings"]["Networks"].values()
-        }
+        attached_network_ids: set[str] = set(
+            container_inspect["NetworkSettings"]["Networks"].keys()
+        )
 
         if item.network_id not in attached_network_ids:
             _logger.debug(
@@ -176,4 +175,4 @@ async def detach_container_from_network(
         # NOTE: A docker network is only visible on a docker node when it is
         # used by a container
         network = DockerNetwork(docker=docker, id_=item.network_id)
-        await network.disconnect({"Container": container_id})
+        await network.disconnect({"Container": container_id, "Force": True})

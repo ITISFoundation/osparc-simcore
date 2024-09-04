@@ -60,7 +60,7 @@ async def generate_invitation(request: web.Request):
 
     invitation = InvitationGenerated(
         product_name=generated.product,
-        issuer=generated.issuer,  # type: ignore[arg-type]
+        issuer=generated.issuer,
         guest=generated.guest,  # type: ignore[arg-type]
         trial_account_days=generated.trial_account_days,
         extra_credits_in_usd=generated.extra_credits_in_usd,
