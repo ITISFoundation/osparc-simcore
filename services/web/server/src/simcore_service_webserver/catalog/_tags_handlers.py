@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+from models_library.api_schemas_webserver.catalog import CatalogServiceGet
 from models_library.basic_types import IdInt
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 
@@ -44,7 +45,8 @@ async def add_service_tag(request: web.Request):
     path_params = parse_request_path_parameters_as(ServiceTagPathParams, request)
     assert path_params  # nosec
 
-    assert TagGet  # nosec
+    # responds with parent's resource to get the current state (as with patch/update)
+    assert CatalogServiceGet  # nosec
     raise NotImplementedError
 
 
@@ -58,5 +60,6 @@ async def remove_service_tag(request: web.Request):
     path_params = parse_request_path_parameters_as(ServiceTagPathParams, request)
     assert path_params  # nosec
 
+    # responds with parent's resource to get the current state (as with patch/update)
+    assert CatalogServiceGet  # nosec
     raise NotImplementedError
-    # NOTE: will raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

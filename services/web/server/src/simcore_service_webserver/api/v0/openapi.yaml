@@ -761,7 +761,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags._handlers.TagGet__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags.schemas.TagGet__'
     post:
       tags:
       - tags
@@ -847,7 +847,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags._handlers.TagGroupGet__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags.schemas.TagGroupGet__'
   /v0/tags/{tag_id}/groups/{group_id}:
     put:
       tags:
@@ -884,7 +884,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags._handlers.TagGroupGet__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags.schemas.TagGroupGet__'
     post:
       tags:
       - tags
@@ -2237,7 +2237,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags._handlers.TagGet__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags.schemas.TagGet__'
   /v0/catalog/services/{service_key}/{service_version}/tags/{tag_id}:
     put:
       tags:
@@ -2274,7 +2274,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_TagGet_'
+                $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
     delete:
       tags:
       - catalog
@@ -2305,8 +2305,12 @@ paths:
         name: tag_id
         in: path
       responses:
-        '204':
+        '200':
           description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
   /v0/clusters:
     get:
       tags:
@@ -4253,7 +4257,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -7846,8 +7850,8 @@ components:
             $ref: '#/components/schemas/Viewer'
         error:
           title: Error
-    Envelope_list_simcore_service_webserver.tags._handlers.TagGet__:
-      title: Envelope[list[simcore_service_webserver.tags._handlers.TagGet]]
+    Envelope_list_simcore_service_webserver.tags.schemas.TagGet__:
+      title: Envelope[list[simcore_service_webserver.tags.schemas.TagGet]]
       type: object
       properties:
         data:
@@ -7857,8 +7861,8 @@ components:
             $ref: '#/components/schemas/TagGet'
         error:
           title: Error
-    Envelope_list_simcore_service_webserver.tags._handlers.TagGroupGet__:
-      title: Envelope[list[simcore_service_webserver.tags._handlers.TagGroupGet]]
+    Envelope_list_simcore_service_webserver.tags.schemas.TagGroupGet__:
+      title: Envelope[list[simcore_service_webserver.tags.schemas.TagGroupGet]]
       type: object
       properties:
         data:
