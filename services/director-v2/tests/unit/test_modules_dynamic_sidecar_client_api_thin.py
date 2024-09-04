@@ -2,8 +2,8 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from collections.abc import Callable
-from typing import Any, AsyncIterable
+from collections.abc import AsyncIterable, Callable
+from typing import Any
 
 import pytest
 from faker import Faker
@@ -282,11 +282,10 @@ async def test_put_volumes(
             "post_containers_tasks",
             "/containers",
             {
-                "compose_spec": "some_fake_compose_as_str",
                 "metrics_params": parse_obj_as(
                     CreateServiceMetricsAdditionalParams,
                     CreateServiceMetricsAdditionalParams.Config.schema_extra["example"],
-                ),
+                )
             },
             id="post_containers_tasks",
         ),
@@ -386,4 +385,23 @@ async def test_post_disk_reserved_free(
     )
 
     response = await thin_client.post_disk_reserved_free(dynamic_sidecar_endpoint)
+    assert_responses(mock_response, response)
+
+
+async def test_post_containers_compose_spec(
+    thin_client: ThinSidecarsClient,
+    dynamic_sidecar_endpoint: AnyHttpUrl,
+    mock_request: MockRequestType,
+):
+    mock_response = Response(status.HTTP_202_ACCEPTED)
+    mock_request(
+        "POST",
+        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/compose-spec",
+        mock_response,
+        None,
+    )
+
+    response = await thin_client.post_containers_compose_spec(
+        dynamic_sidecar_endpoint, compose_spec="some_fake_compose_as_str"
+    )
     assert_responses(mock_response, response)

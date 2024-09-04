@@ -466,6 +466,10 @@ async def prepare_services_environment(
     if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
         tasks.append(sidecars_client.restore_service_state(dynamic_sidecar_endpoint))
 
+    # TODO: add here pulling of images!!!
+    # TODO: extend sidecar to pull images via a task on a separate route with long running tasks!!!
+    # TODO: sidecar no longer pulls any images in the create_services step
+
     await logged_gather(*tasks, max_concurrency=2)
 
     # inside this directory create the missing dirs, fetch those form the labels

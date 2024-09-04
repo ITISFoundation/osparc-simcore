@@ -168,21 +168,26 @@ class ThinSidecarsClient(BaseThinClient):
 
     @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
-    async def post_containers_tasks(
+    async def post_containers_compose_spec(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         *,
         compose_spec: str,
+    ) -> Response:
+        url = self._get_url(dynamic_sidecar_endpoint, "/containers/compose-spec")
+        return await self.client.post(url, json={"docker_compose_yaml": compose_spec})
+
+    @retry_on_errors()
+    @expect_status(status.HTTP_202_ACCEPTED)
+    async def post_containers_tasks(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        *,
         metrics_params: CreateServiceMetricsAdditionalParams,
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "/containers")
-        # change introduce in OAS version==1.1.0
         return await self.client.post(
-            url,
-            json={
-                "docker_compose_yaml": compose_spec,
-                "metrics_params": metrics_params.dict(),
-            },
+            url, json={"metrics_params": metrics_params.dict()}
         )
 
     @retry_on_errors()

@@ -280,6 +280,15 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             ]
         )
 
+    async def submit_docker_compose_spec(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        compose_spec: str,
+    ) -> None:
+        await self._thin_client.post_containers_compose_spec(
+            dynamic_sidecar_endpoint, compose_spec=compose_spec
+        )
+
     def _get_client(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Client:
         return Client(
             app=self._app,
@@ -307,13 +316,11 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
     async def create_containers(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        compose_spec: str,
         metrics_params: CreateServiceMetricsAdditionalParams,
         progress_callback: ProgressCallback | None = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks(
             dynamic_sidecar_endpoint,
-            compose_spec=compose_spec,
             metrics_params=metrics_params,
         )
         task_id: TaskId = response.json()
