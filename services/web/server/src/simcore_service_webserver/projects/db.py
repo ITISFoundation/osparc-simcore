@@ -232,7 +232,6 @@ class ProjectDBAPI(BaseProjectDB):
         force_as_template: bool = False,
         hidden: bool = False,
         project_nodes: dict[NodeID, ProjectNodeCreate] | None,
-        workspace_id: WorkspaceID | None,
     ) -> dict[str, Any]:
         """Inserts a new project in the database
 
@@ -279,9 +278,6 @@ class ProjectDBAPI(BaseProjectDB):
         # All non-default in projects table
         insert_values.setdefault("name", "New Study")
         insert_values.setdefault("workbench", {})
-
-        # workspace_id
-        insert_values.setdefault("workspace_id", workspace_id)
 
         # must be valid uuid
         try:

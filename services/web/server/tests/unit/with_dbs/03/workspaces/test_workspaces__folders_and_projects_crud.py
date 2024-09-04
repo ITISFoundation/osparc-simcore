@@ -65,12 +65,12 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
 
     # Create project in workspace
     project_data = deepcopy(fake_project)
+    project_data["workspace_id"] = f"{added_workspace['workspaceId']}"
     project = await create_project(
         client.app,
         project_data,
         user_id=logged_user["id"],
         product_name="osparc",
-        workspace_id=added_workspace["workspaceId"],
     )
 
     # List project in workspace
