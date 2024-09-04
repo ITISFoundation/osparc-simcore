@@ -39,7 +39,7 @@ class InvitationInputs(BaseModel):
     @classmethod
     def trim_long_issuers_to_max_length(cls, v):
         if v and isinstance(v, str):
-            return v[: _MAX_LEN - 1]
+            return v[:_MAX_LEN]
         return v
 
 
