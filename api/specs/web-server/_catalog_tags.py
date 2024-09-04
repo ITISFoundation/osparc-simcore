@@ -13,7 +13,7 @@ from simcore_service_webserver.catalog._tags_handlers import (
     ServicePathParams,
     ServiceTagPathParams,
 )
-from simcore_service_webserver.tags._handlers import TagGet
+from simcore_service_webserver.tags.schemas import TagGet
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",

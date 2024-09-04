@@ -5,10 +5,10 @@ from models_library.basic_types import IdInt
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 
 from .._meta import API_VTAG
-from ..catalog._handlers import ServicePathParams
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
-from ..tags._handlers import TagGet
+from ..tags.schemas import TagGet
+from ._handlers import ServicePathParams
 
 _logger = logging.getLogger(__name__)
 
