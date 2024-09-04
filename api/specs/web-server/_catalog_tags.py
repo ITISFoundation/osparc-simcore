@@ -6,11 +6,14 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
-from models_library.api_schemas_webserver.projects import ProjectGet
+from fastapi import APIRouter, Depends, status
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.catalog._handlers import ServicePathParams
+from simcore_service_webserver.catalog._tags_handlers import (
+    ServicePathParams,
+    ServiceTagPathParams,
+)
+from simcore_service_webserver.tags._handlers import TagGet
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -21,27 +24,31 @@ router = APIRouter(
 )
 
 
+@router.get(
+    "/catalog/services/{service_key}/{service_version}/tags",
+    response_model=Envelope[list[TagGet]],
+)
+def list_service_tags(
+    _path_params: Annotated[ServicePathParams, Depends()],
+):
+    ...
+
+
 @router.put(
     "/catalog/services/{service_key}/{service_version}/tags/{tag_id}",
-    response_model=Envelope[ProjectGet],
+    response_model=Envelope[TagGet],
 )
 def add_service_tag(
-    _path_params: Annotated[ServicePathParams, Depends()],
-    tag_id: int,
+    _path_params: Annotated[ServiceTagPathParams, Depends()],
 ):
-    """
-    Adds a tag (needs access) to a service (need access)
-    """
+    ...
 
 
 @router.delete(
     "/catalog/services/{service_key}/{service_version}/tags/{tag_id}",
-    response_model=Envelope[ProjectGet],
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 def remove_service_tag(
-    _path_params: Annotated[ServicePathParams, Depends()],
-    tag_id: int,
+    _path_params: Annotated[ServiceTagPathParams, Depends()],
 ):
-    """
-    Adds a tag (needs access) from a service (need access)
-    """
+    ...

@@ -1,15 +1,37 @@
 import logging
 
 from aiohttp import web
+from models_library.basic_types import IdInt
+from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 
 from .._meta import API_VTAG
+from ..catalog._handlers import ServicePathParams
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
+from ..tags._handlers import TagGet
 
 _logger = logging.getLogger(__name__)
 
 
+class ServiceTagPathParams(ServicePathParams):
+    tag_id: IdInt
+
+
 routes = web.RouteTableDef()
+
+
+@routes.get(
+    f"{API_VTAG}/catalog/services/{{service_key}}/{{service_version}}/tags",
+    name="list_service_tags",
+)
+@login_required
+@permission_required("service.tag.*")
+async def list_service_tags(request: web.Request):
+    path_params = parse_request_path_parameters_as(ServicePathParams, request)
+    assert path_params  # nosec
+
+    assert list[TagGet]  # nosec
+    raise NotImplementedError
 
 
 @routes.put(
@@ -19,6 +41,10 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("service.tag.*")
 async def add_service_tag(request: web.Request):
+    path_params = parse_request_path_parameters_as(ServiceTagPathParams, request)
+    assert path_params  # nosec
+
+    assert TagGet  # nosec
     raise NotImplementedError
 
 
@@ -29,4 +55,8 @@ async def add_service_tag(request: web.Request):
 @login_required
 @permission_required("service.tag.*")
 async def remove_service_tag(request: web.Request):
+    path_params = parse_request_path_parameters_as(ServiceTagPathParams, request)
+    assert path_params  # nosec
+
     raise NotImplementedError
+    # NOTE: will raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
