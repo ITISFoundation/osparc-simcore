@@ -4226,7 +4226,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -11844,14 +11844,19 @@ components:
     TagGroupGet:
       title: TagGroupGet
       required:
+      - gid
       - read
       - write
       - delete
-      - gid
       - created
       - modified
       type: object
       properties:
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
         read:
           title: Read
           type: boolean
@@ -11861,11 +11866,6 @@ components:
         delete:
           title: Delete
           type: boolean
-        gid:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
         created:
           title: Created
           type: string

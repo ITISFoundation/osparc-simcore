@@ -6,9 +6,11 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.users import GroupID, UserID
-from pydantic import BaseModel, ConstrainedStr, Field, PositiveInt
+from pydantic import ConstrainedStr, Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
+    RequestParams,
+    StrictRequestParams,
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
@@ -48,16 +50,16 @@ def _handle_tags_exceptions(handler: Handler):
 #
 
 
-class _RequestContext(BaseModel):
+class _RequestContext(RequestParams):
     user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+
+
+class TagPathParams(StrictRequestParams):
+    tag_id: PositiveInt
 
 
 class ColorStr(ConstrainedStr):
     regex = re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
-
-
-class TagPathParams(BaseModel):
-    tag_id: PositiveInt
 
 
 class TagUpdate(InputSchema):
@@ -193,19 +195,24 @@ class TagGroupPathParams(TagPathParams):
     group_id: GroupID
 
 
-class TagGroupCreate(BaseModel):
+class TagGroupCreate(InputSchema):
     read: bool
     write: bool
     delete: bool
 
 
-class TagGroupGet(TagGroupCreate):
+class TagGroupGet(OutputSchema):
     gid: GroupID
+    # access
+    read: bool
+    write: bool
+    delete: bool
+    # timestamps
     created: datetime
     modified: datetime
 
 
-@routes.get(f"/{VTAG}" + "/tags/{tag_id}/groups", name="list_tag_groups")
+@routes.get(f"/{VTAG}/tags/{{tag_id}}/groups", name="list_tag_groups")
 @login_required
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
@@ -216,7 +223,7 @@ async def list_tag_groups(request: web.Request):
     raise NotImplementedError
 
 
-@routes.get(f"/{VTAG}" + "/tags/{tag_id}/groups/{group_id}", name="create_tag_group")
+@routes.get(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="create_tag_group")
 @login_required
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
@@ -230,7 +237,7 @@ async def create_tag_group(request: web.Request):
     raise NotImplementedError
 
 
-@routes.put(f"/{VTAG}" + "/tags/{tag_id}/groups/{group_id}", name="replace_tag_groups")
+@routes.put(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="replace_tag_groups")
 @login_required
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
@@ -244,7 +251,7 @@ async def replace_tag_groups(request: web.Request):
     raise NotImplementedError
 
 
-@routes.delete(f"/{VTAG}" + "/tags/{tag_id}/groups/{group_id}", name="delete_tag_group")
+@routes.delete(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="delete_tag_group")
 @login_required
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
