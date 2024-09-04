@@ -2,7 +2,7 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library.api_schemas_webserver.folders import (
+from models_library.api_schemas_webserver.folders_v2 import (
     CreateFolderBodyParams,
     FolderGet,
     FolderGetPage,
@@ -15,6 +15,7 @@ from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
+from models_library.workspaces import WorkspaceID
 from pydantic import Extra, Field, Json, parse_obj_as, validator
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
@@ -34,6 +35,11 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from ..workspaces.errors import (
+    WorkspaceAccessForbiddenError,
+    WorkspaceFolderInconsistencyError,
+    WorkspaceNotFoundError,
+)
 from . import _folders_api
 from .errors import FolderAccessForbiddenError, FolderNotFoundError
 
@@ -46,10 +52,14 @@ def handle_folders_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except FolderNotFoundError as exc:
+        except (FolderNotFoundError, WorkspaceNotFoundError) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-        except FolderAccessForbiddenError as exc:
+        except (
+            FolderAccessForbiddenError,
+            WorkspaceAccessForbiddenError,
+            WorkspaceFolderInconsistencyError,
+        ) as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
         except FoldersError as exc:
@@ -86,6 +96,10 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
         default=None,
         description="List the subfolders of this folder. By default, list the subfolders of the root directory (Folder ID is None).",
     )
+    workspace_id: WorkspaceID | None = Field(
+        default=None,
+        description="List folders in specific workspace. By default, list in the user private workspace",
+    )
 
     @validator("order_by", check_fields=False)
     @classmethod
@@ -109,6 +123,10 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
         "folder_id", allow_reuse=True, pre=True
     )(null_or_none_str_to_none_validator)
 
+    _null_or_none_str_to_none_validator2 = validator(
+        "workspace_id", allow_reuse=True, pre=True
+    )(null_or_none_str_to_none_validator)
+
 
 @routes.post(f"/{VTAG}/folders", name="create_folder")
 @login_required
@@ -121,10 +139,10 @@ async def create_folder(request: web.Request):
     folder = await _folders_api.create_folder(
         request.app,
         user_id=req_ctx.user_id,
-        folder_name=body_params.name,
-        description=body_params.description,
+        name=body_params.name,
         parent_folder_id=body_params.parent_folder_id,
         product_name=req_ctx.product_name,
+        workspace_id=body_params.workspace_id,
     )
 
     return envelope_json_response(folder, web.HTTPCreated)
@@ -145,6 +163,7 @@ async def list_folders(request: web.Request):
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         folder_id=query_params.folder_id,
+        workspace_id=query_params.workspace_id,
         offset=query_params.offset,
         limit=query_params.limit,
         order_by=parse_obj_as(OrderBy, query_params.order_by),
@@ -200,7 +219,7 @@ async def replace_folder(request: web.Request):
         user_id=req_ctx.user_id,
         folder_id=path_params.folder_id,
         name=body_params.name,
-        description=body_params.description,
+        parent_folder_id=body_params.parent_folder_id,
         product_name=req_ctx.product_name,
     )
     return envelope_json_response(folder)

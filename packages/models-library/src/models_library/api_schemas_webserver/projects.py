@@ -7,6 +7,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 from typing import Any, Literal, TypeAlias
 
+from models_library.workspaces import WorkspaceID
 from pydantic import ConfigDict, Field, field_validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
@@ -39,8 +40,9 @@ class ProjectCreateNew(InputSchema):
     tags: list[int] = Field(default_factory=list)
     classifiers: list[ClassifierID] = Field(default_factory=list)
     ui: StudyUI | None = None
+    workspace_id: WorkspaceID | None = None
 
-    _empty_is_none = field_validator("uuid", "thumbnail", "description", mode="before")(
+    _empty_is_none = field_validator("uuid", "thumbnail", "description", "workspace_id", mode="before")(
         empty_str_to_none_pre_validator
     )
 
@@ -78,6 +80,7 @@ class ProjectGet(OutputSchema):
     quality: dict[str, Any] = {}
     dev: dict | None
     permalink: ProjectPermalink = FieldNotRequired()
+    workspace_id: WorkspaceID | None
 
     _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator

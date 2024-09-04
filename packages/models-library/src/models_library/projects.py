@@ -15,7 +15,10 @@ from pydantic import (
     GetJsonSchemaHandler,
     StringConstraints,
     field_validator,
+    Extra
 )
+from models_library.workspaces import WorkspaceID
+from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .basic_types import HttpUrlWithCustomMinLength
@@ -174,11 +177,20 @@ class Project(BaseProjectModel):
         default=None, description="object used for development purposes only"
     )
 
-    model_config = ConfigDict(
-        description="Document that stores metadata, pipeline and UI setup of a study",
-        title="osparc-simcore project",
-        extra="forbid",
+    workspace_id: WorkspaceID | None = Field(
+        default=None,
+        description="To which workspace project belongs. If None, belongs to private user workspace.",
+        alias="workspaceId",
     )
+
+    class Config:
+        description = "Document that stores metadata, pipeline and UI setup of a study"
+        title = "osparc-simcore project"
+        extra = Extra.forbid
+
+        @staticmethod
+        def schema_extra(schema: dict, _model: "Project"):
+            # pylint: disable=unsubscriptable-object
 
     @staticmethod
     def __schema_extra__(
