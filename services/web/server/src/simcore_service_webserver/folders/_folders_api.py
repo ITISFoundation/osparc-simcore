@@ -86,6 +86,7 @@ async def create_folder(
         created_at=folder_db.created,
         modified_at=folder_db.modified,
         owner=folder_db.created_by_gid,
+        workspace_id=workspace_id,
     )
 
 
@@ -124,6 +125,7 @@ async def get_folder(
         created_at=folder_db.created,
         modified_at=folder_db.modified,
         owner=folder_db.created_by_gid,
+        workspace_id=folder_db.workspace_id,
     )
 
 
@@ -178,6 +180,7 @@ async def list_folders(
                 created_at=folder.created,
                 modified_at=folder.modified,
                 owner=folder.created_by_gid,
+                workspace_id=folder.workspace_id,
             )
             for folder in folders
         ],
@@ -233,6 +236,7 @@ async def update_folder(
         created_at=folder_db.created,
         modified_at=folder_db.modified,
         owner=folder_db.created_by_gid,
+        workspace_id=folder_db.workspace_id,
     )
 
 

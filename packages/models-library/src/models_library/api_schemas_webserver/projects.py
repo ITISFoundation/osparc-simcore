@@ -7,6 +7,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 from typing import Any, Literal, TypeAlias
 
+from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
 from pydantic import Field, validator
 
@@ -41,6 +42,7 @@ class ProjectCreateNew(InputSchema):
     classifiers: list[ClassifierID] = Field(default_factory=list)
     ui: StudyUI | None = None
     workspace_id: WorkspaceID | None = None
+    folder_id: FolderID | None = None
 
     _empty_is_none = validator(
         "uuid", "thumbnail", "description", "workspace_id", allow_reuse=True, pre=True

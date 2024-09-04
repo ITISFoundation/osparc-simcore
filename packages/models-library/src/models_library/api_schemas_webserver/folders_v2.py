@@ -18,6 +18,7 @@ class FolderGet(OutputSchema):
     created_at: datetime
     modified_at: datetime
     owner: GroupID
+    workspace_id: WorkspaceID | None
 
 
 class FolderGetPage(NamedTuple):
