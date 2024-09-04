@@ -458,7 +458,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         newFolderCard.subscribeToFilterGroup("searchBarFilter");
         newFolderCard.addListener("createFolder", e => {
           const data = e.getData();
-          osparc.store.Folders.getInstance().postFolder(data.name, data.description, currentFolder ? currentFolder.getFolderId() : null)
+          const parentFolderId = currentFolder ? currentFolder.getFolderId() : null;
+          const currentWorkspaceId = this.getCurrentWorkspaceId();
+          osparc.store.Folders.getInstance().postFolder(data.name, parentFolderId, currentWorkspaceId)
             .then(() => this.__reloadFolders())
             .catch(err => console.error(err));
         })

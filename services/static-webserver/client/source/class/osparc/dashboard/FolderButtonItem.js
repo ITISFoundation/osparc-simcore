@@ -73,12 +73,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       apply: "__applyTitle"
     },
 
-    description: {
-      check: "String",
-      nullable: true,
-      apply: "__applyDescription"
-    },
-
     lastModified: {
       check: "Date",
       nullable: true,
@@ -143,7 +137,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       folder.bind("folderId", this, "folderId");
       folder.bind("parentId", this, "parentFolderId");
       folder.bind("name", this, "title");
-      folder.bind("description", this, "description");
       folder.bind("lastModified", this, "lastModified");
 
       this.__addMenuButton();
@@ -152,11 +145,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     __applyTitle: function(value) {
       const label = this.getChildControl("title");
       label.setValue(value);
-      this.__updateTooltip();
-    },
-
-    __applyDescription: function() {
-      this.__updateTooltip();
     },
 
     __applyLastModified: function(value) {
@@ -180,22 +168,18 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         const newFolder = false;
         const folderEditor = new osparc.editor.FolderEditor(newFolder).set({
           label: folder.getName(),
-          description: folder.getDescription()
         });
         const title = this.tr("Edit Folder");
-        const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 200);
+        const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 150);
         folderEditor.addListener("updateFolder", () => {
           const newName = folderEditor.getLabel();
-          const newDescription = folderEditor.getDescription();
           const updateData = {
             "name": newName,
-            "description": newDescription
           };
           osparc.data.model.Folder.putFolder(this.getFolderId(), updateData)
             .then(() => {
               folder.set({
                 name: newName,
-                description: newDescription
               });
               this.fireDataEvent("folderUpdated", folder.getFolderId());
             })
@@ -211,13 +195,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       menu.add(deleteButton);
 
       menuButton.setMenu(menu);
-    },
-
-    __updateTooltip: function() {
-      const toolTipText = this.getTitle() + (this.getDescription() ? "<br>" + this.getDescription() : "");
-      this.set({
-        toolTipText
-      })
     },
 
     __itemSelected: function(newVal) {

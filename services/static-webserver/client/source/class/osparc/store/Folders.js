@@ -52,11 +52,11 @@ qx.Class.define("osparc.store.Folders", {
         });
     },
 
-    postFolder: function(name, description, parentId = null) {
+    postFolder: function(name, parentFolderId = null, workspaceId = null) {
       const newFolderData = {
-        parentFolderId: parentId,
-        name: name,
-        description: description || "",
+        name,
+        parentFolderId,
+        workspaceId,
       };
       const params = {
         data: newFolderData
