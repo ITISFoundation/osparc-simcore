@@ -15,31 +15,37 @@ from simcore_service_webserver._resources import webserver_resources
 openapi_modules = [
     importlib.import_module(name)
     for name in (
-        # NOTE: order matters
-        "_activity",
-        "_admin",
-        "_announcements",
+        # NOTE: order matters on how the paths are displayed in the OAS!
+        # It does not have to be alphabetical
+        #
+        # core ---
         "_auth",
+        "_groups",
+        "_tags",
+        "_tags_groups",  # after _tags
+        "_products",
+        "_users",
+        "_wallets",
+        # add-ons ---
+        "_activity",
+        "_announcements",
         "_catalog",
-        "_catalog_tags",
+        "_catalog_tags",  # after _catalog
         "_cluster",
         "_computations",
-        "_diagnostics",
         "_exporter",
         "_folders",
-        "_groups",
         "_long_running_tasks",
         "_metamodeling",
-        "_nih_sparc_redirections",
         "_nih_sparc",
-        "_products",
+        "_nih_sparc_redirections",
         "_projects_crud",
         "_projects_comments",
         "_projects_folders",
         "_projects_groups",
         "_projects_metadata",
-        "_projects_nodes_pricing_unit",
         "_projects_nodes",
+        "_projects_nodes_pricing_unit",  # after _projects_nodes
         "_projects_ports",
         "_projects_states",
         "_projects_tags",
@@ -48,12 +54,12 @@ openapi_modules = [
         "_resource_usage",
         "_statics",
         "_storage",
-        "_tags",
-        "_tags_groups",
-        "_users",
         "_version_control",
         "_wallets",
         "_workspaces",
+        # maintenance ----
+        "_admin",
+        "_diagnostics",
     )
 ]
 

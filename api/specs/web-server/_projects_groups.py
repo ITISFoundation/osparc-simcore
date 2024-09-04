@@ -18,9 +18,7 @@ from simcore_service_webserver.projects._groups_handlers import (
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
-    tags=[
-        "projects",
-    ],
+    tags=["projects", "groups"],
 )
 
 

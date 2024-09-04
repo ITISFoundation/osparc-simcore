@@ -17,7 +17,13 @@ from simcore_service_webserver.tags._handlers import (
     _TagGroupPathParams,
 )
 
-router = APIRouter(prefix=f"/{API_VTAG}", tags=["tags"])
+router = APIRouter(
+    prefix=f"/{API_VTAG}",
+    tags=[
+        "tags",
+        "groups",
+    ],
+)
 
 
 @router.get(
