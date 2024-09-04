@@ -12,13 +12,10 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    GetJsonSchemaHandler,
     StringConstraints,
     field_validator,
-    Extra
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .basic_types import HttpUrlWithCustomMinLength
@@ -182,25 +179,18 @@ class Project(BaseProjectModel):
         description="To which workspace project belongs. If None, belongs to private user workspace.",
         alias="workspaceId",
     )
-
-    class Config:
-        description = "Document that stores metadata, pipeline and UI setup of a study"
-        title = "osparc-simcore project"
-        extra = Extra.forbid
-
-        @staticmethod
-        def schema_extra(schema: dict, _model: "Project"):
-            # pylint: disable=unsubscriptable-object
-
-    @staticmethod
-    def __schema_extra__(
-        schema: dict[str, Any], _handler: GetJsonSchemaHandler
-    ) -> None:
-        # pylint: disable=unsubscriptable-object
-
+    
+    def __state_schema(self, schema):
         # Patch to allow jsonschema nullable
-        # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
+            # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
         state_pydantic_schema = deepcopy(schema["properties"]["state"])
         schema["properties"]["state"] = {
             "anyOf": [{"type": "null"}, state_pydantic_schema]
         }
+
+    model_config = ConfigDict(
+        description = "Document that stores metadata, pipeline and UI setup of a study",
+        title = "osparc-simcore project",
+        extra = "forbid",
+        json_schema_extra=__state_schema
+    )
