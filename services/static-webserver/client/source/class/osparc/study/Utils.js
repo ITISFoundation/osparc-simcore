@@ -207,7 +207,9 @@ qx.Class.define("osparc.study.Utils", {
         pollTasks.createPollingTask(fetchPromise, interval)
           .then(task => {
             const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
-            const progressSequence = new osparc.widget.ProgressSequence(title);
+            const progressSequence = new osparc.widget.ProgressSequence(title).set({
+              minHeight: 180 // four tasks
+            });
             progressSequence.addOverallProgressBar();
             loadingPage.addWidgetToMessages(progressSequence);
             task.addListener("updateReceived", e => {

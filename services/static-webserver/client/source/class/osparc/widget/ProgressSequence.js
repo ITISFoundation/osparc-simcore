@@ -158,7 +158,10 @@ qx.Class.define("osparc.widget.ProgressSequence", {
 
     getTask: function(text) {
       const taskFound = this.__tasks.find(task => {
-        return task.getChildren()[this.POS.LABEL] === text;
+        if (task.getChildren().length > this.self().POS.LABEL) {
+          return task.getChildren()[this.self().POS.LABEL].getValue() === text;
+        }
+        return false;
       });
       return taskFound;
     },
@@ -180,6 +183,7 @@ qx.Class.define("osparc.widget.ProgressSequence", {
       }
       const newTask = osparc.widget.ProgressSequence.createTaskLayout(text);
       this._add(newTask);
+      this.__tasks.push(newTask);
       return newTask;
     }
   }
