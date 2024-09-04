@@ -83,7 +83,8 @@ def make_engine(
 
 
 @pytest.fixture
-def make_asyncio_engine(postgres_service: str) -> Callable[[bool], AsyncEngine]:
+def make_asyncpg_engine(postgres_service: str) -> Callable[[bool], AsyncEngine]:
+    # NOTE: users is responsible of `await engine.dispose()`
     dsn = postgres_service.replace("postgresql://", "postgresql+asyncpg://")
     minsize = 1
     maxsize = 50
@@ -131,6 +132,11 @@ def pg_sa_engine(
 ) -> Iterator[sa.engine.Engine]:
     """
     Runs migration to create tables and return a sqlalchemy engine
+
+    NOTE: use this fixture to ensure pg db:
+        - up,
+        - responsive,
+        - init (w/ tables) and/or migrated
     """
     # NOTE: Using migration to upgrade/downgrade is not
     # such a great idea since these tests are used while developing
@@ -187,6 +193,24 @@ async def connection(aiopg_engine: Engine) -> AsyncIterator[SAConnection]:
     """Returns an aiopg.sa connection from an engine to a fully furnished and ready pg database"""
     async with aiopg_engine.acquire() as _conn:
         yield _conn
+
+
+@pytest.fixture
+async def asyncpg_engine(
+    is_pdb_enabled: bool,
+    pg_sa_engine: sa.engine.Engine,
+    make_asyncpg_engine: Callable[[bool], AsyncEngine],
+) -> AsyncIterator[AsyncEngine]:
+
+    assert (
+        pg_sa_engine
+    ), "Ensures pg db up, responsive, init (w/ tables) and/or migrated"
+
+    _apg_engine = make_asyncpg_engine(is_pdb_enabled)
+
+    yield _apg_engine
+
+    await _apg_engine.dispose()
 
 
 #
