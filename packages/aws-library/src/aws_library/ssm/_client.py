@@ -118,8 +118,16 @@ class SimcoreSSMAPI:
             instance_ids=[response["InstanceId"]],
             status=response["Status"] if response["Status"] != "Delayed" else "Pending",
             message=response["StatusDetails"],
-            start_time=arrow.get(response["ExecutionStartDateTime"]).datetime,
-            finish_time=arrow.get(response["ExecutionEndDateTime"]).datetime,
+            start_time=(
+                arrow.get(response["ExecutionStartDateTime"]).datetime
+                if response.get("ExecutionStartDateTime")
+                else None
+            ),
+            finish_time=(
+                arrow.get(response["ExecutionEndDateTime"]).datetime
+                if response.get("ExecutionEndDateTime")
+                else None
+            ),
         )
 
     @log_decorator(_logger, logging.DEBUG)
