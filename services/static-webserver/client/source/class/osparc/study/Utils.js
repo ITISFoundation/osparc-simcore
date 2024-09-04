@@ -219,7 +219,6 @@ qx.Class.define("osparc.study.Utils", {
                 const progress = updateData["task_progress"];
                 const message = progress["message"];
                 const percent = progress["percent"];
-                console.log("task_progress", progress, message, percent);
                 progressSequence.setOverallProgress(percent);
                 const existingTask = progressSequence.getTask(message);
                 if (existingTask) {
