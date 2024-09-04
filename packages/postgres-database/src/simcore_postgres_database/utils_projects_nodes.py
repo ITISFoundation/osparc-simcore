@@ -5,7 +5,7 @@ from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -45,14 +45,15 @@ class ProjectNodeCreate(BaseModel):
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
         return {name for name in cls.__fields__ if name not in exclude}
 
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class ProjectNode(ProjectNodeCreate):
     created: datetime.datetime
     modified: datetime.datetime
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(ProjectNodeCreate.Config):
         orm_mode = True
 

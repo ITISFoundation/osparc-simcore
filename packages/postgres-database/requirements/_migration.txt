@@ -12,10 +12,6 @@ click==8.1.7
     # via -r requirements/_migration.in
 docker==7.1.0
     # via -r requirements/_migration.in
-greenlet==3.0.3
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
 idna==3.7
     # via
     #   -c requirements/_base.txt

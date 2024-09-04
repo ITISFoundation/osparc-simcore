@@ -5,7 +5,7 @@ from typing import Any
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -46,17 +46,14 @@ class DBProjectInvalidParentNodeError(BaseProjectsMetadataError):
 
 
 class ProjectMetadata(BaseModel):
-    custom: dict[str, Any] | None
-    created: datetime.datetime | None
-    modified: datetime.datetime | None
-    parent_project_uuid: uuid.UUID | None
-    parent_node_id: uuid.UUID | None
-    root_parent_project_uuid: uuid.UUID | None
-    root_parent_node_id: uuid.UUID | None
-
-    class Config:
-        frozen = True
-        orm_mode = True
+    custom: dict[str, Any] | None = None
+    created: datetime.datetime | None = None
+    modified: datetime.datetime | None = None
+    parent_project_uuid: uuid.UUID | None = None
+    parent_node_id: uuid.UUID | None = None
+    root_parent_project_uuid: uuid.UUID | None = None
+    root_parent_node_id: uuid.UUID | None = None
+    model_config = ConfigDict(frozen=True, from_attributes=True)
 
 
 #
