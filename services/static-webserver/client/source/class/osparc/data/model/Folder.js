@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Class that stores Service data.
+ * Class that stores Folder data.
  */
 
 qx.Class.define("osparc.data.model.Folder", {

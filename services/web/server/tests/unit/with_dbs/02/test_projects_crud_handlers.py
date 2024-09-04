@@ -602,6 +602,7 @@ async def test_new_template_from_project(
         },
         "tags": [],
         "classifiers": [],
+        "workspaceId": None,
     }
     new_template_prj = await request_create_project(
         client,

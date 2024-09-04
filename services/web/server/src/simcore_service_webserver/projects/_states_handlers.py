@@ -113,7 +113,7 @@ async def open_project(request: web.Request) -> web.Response:
             user_id=req_ctx.user_id,
             include_state=True,
             check_permissions=(
-                "read|write" if project_type is ProjectType.TEMPLATE else "read"
+                "write" if project_type is ProjectType.TEMPLATE else "read"
             ),
         )
 

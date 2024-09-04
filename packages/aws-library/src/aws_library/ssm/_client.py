@@ -1,10 +1,12 @@
 import contextlib
+import datetime
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Final, cast
 
 import aioboto3
+import arrow
 import botocore
 import botocore.exceptions
 from aiobotocore.session import ClientCreatorContext
@@ -31,6 +33,8 @@ class SSMCommand:
     command_id: str
     instance_ids: Sequence[str]
     status: CommandStatusType
+    start_time: datetime.datetime | None
+    finish_time: datetime.datetime | None
     message: str | None = None
 
 
@@ -89,12 +93,15 @@ class SimcoreSSMAPI:
         assert "Comment" in response["Command"]  # nosec
         assert "CommandId" in response["Command"]  # nosec
         assert "Status" in response["Command"]  # nosec
+        assert "RequestedDateTime" in response["Command"]  # nosec
 
         return SSMCommand(
             name=response["Command"]["Comment"],
             command_id=response["Command"]["CommandId"],
             status=response["Command"]["Status"],
             instance_ids=instance_ids,
+            start_time=None,
+            finish_time=None,
         )
 
     @log_decorator(_logger, logging.DEBUG)
@@ -111,6 +118,16 @@ class SimcoreSSMAPI:
             instance_ids=[response["InstanceId"]],
             status=response["Status"] if response["Status"] != "Delayed" else "Pending",
             message=response["StatusDetails"],
+            start_time=(
+                arrow.get(response["ExecutionStartDateTime"]).datetime
+                if response.get("ExecutionStartDateTime")
+                else None
+            ),
+            finish_time=(
+                arrow.get(response["ExecutionEndDateTime"]).datetime
+                if response.get("ExecutionEndDateTime")
+                else None
+            ),
         )
 
     @log_decorator(_logger, logging.DEBUG)

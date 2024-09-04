@@ -49,6 +49,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   properties: {
+    currentWorkspaceId: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeCurrentWorkspaceId",
+      apply: "__applyCurrentWorkspaceId"
+    },
+
     currentFolderId: {
       check: "Number",
       nullable: true,
@@ -94,6 +102,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
+    __workspacesList: null,
     __foldersList: null,
 
     // overridden
@@ -141,19 +150,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     reloadResources: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        this.__reloadResources();
+        this.__reloadFoldersAndStudies();
       } else {
         this.__resetStudiesList();
       }
     },
 
-    __reloadResources: function() {
+    __reloadFoldersAndStudies: function() {
       this.__reloadFolders();
       this.__reloadStudies();
     },
 
     __reloadFilteredResources: function() {
       this.__reloadFilteredStudies();
+    },
+
+    __reloadWorkspaces: function() {
+      osparc.store.Workspaces.fetchWorkspaces()
+        .then(workspaces => {
+          this.__workspacesList = workspaces;
+          workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
+          this.__reloadWorkspaceCards();
+        });
     },
 
     __reloadFolders: function() {
@@ -186,7 +204,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (nStudies === 0) {
             const promises = [
               osparc.store.Store.getInstance().getTemplates(),
-              osparc.service.Store.getServicesLatest(),
+              osparc.store.Services.getServicesLatest(),
             ];
             if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
               promises.push(osparc.store.Folders.getInstance().fetchFolders());
@@ -345,7 +363,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const visibility = this._loadingResourcesBtn ? this._loadingResourcesBtn.getVisibility() : "excluded";
 
       this._resourcesContainer.setResourcesToList(this._resourcesList);
-      const cards = this._resourcesContainer.reloadCards("studiesList");
+      const cards = this._resourcesContainer.reloadCards("studies");
       this.__configureCards(cards);
 
       this.__addNewStudyButtons();
@@ -367,6 +385,66 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__configureCards(cards);
 
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
+    },
+
+    __applyCurrentWorkspaceId: function(workspaceId) {
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        if (workspaceId === -1) {
+          this._resourcesContainer.setResourcesToList([]);
+          this._resourcesList = [];
+
+          this.__reloadWorkspaces();
+        } else {
+          this._resourcesContainer.setResourcesToList([]);
+          this._resourcesList = [];
+          this.invalidateStudies();
+
+          this.__reloadFoldersAndStudies();
+        }
+      }
+    },
+
+    // WORKSPACES
+    __reloadWorkspaceCards: function() {
+      this._resourcesContainer.setWorkspacesToList(this.__workspacesList);
+      this._resourcesContainer.reloadWorkspaces();
+
+      const newWorkspaceCard = new osparc.dashboard.WorkspaceButtonNew();
+      newWorkspaceCard.setCardKey("new-workspace");
+      newWorkspaceCard.subscribeToFilterGroup("searchBarFilter");
+      newWorkspaceCard.addListener("createWorkspace", () => this.__reloadWorkspaces());
+      newWorkspaceCard.addListener("updateWorkspace", () => this.__reloadWorkspaces());
+      this._resourcesContainer.addNewWorkspaceCard(newWorkspaceCard);
+    },
+
+    _workspaceSelected: function(workspaceId) {
+      this.setCurrentWorkspaceId(workspaceId);
+    },
+
+    _workspaceUpdated: function() {
+      this.__reloadWorkspaceCards();
+    },
+
+    _deleteWorkspaceRequested: function(workspaceId) {
+      osparc.store.Workspaces.deleteWorkspace(workspaceId)
+        .then(() => this.__reloadWorkspaceCards())
+        .catch(err => console.error(err));
+    },
+    // /WORKSPACES
+
+    // FOLDERS
+    __applyCurrentFolderId: function(currentFolderId) {
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        osparc.store.Folders.getInstance().fetchFolders(currentFolderId)
+          .then(() => {
+            this._resourcesContainer.setResourcesToList([]);
+            this._resourcesList = [];
+            this.invalidateStudies();
+
+            this.__reloadFoldersAndStudies();
+          })
+          .catch(console.error);
+      }
     },
 
     __reloadFolderCards: function() {
@@ -392,20 +470,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.setCurrentFolderId(folderId);
     },
 
-    __applyCurrentFolderId: function(currentFolderId) {
-      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        osparc.store.Folders.getInstance().fetchFolders(currentFolderId)
-          .then(() => {
-            this._resourcesContainer.setResourcesToList([]);
-            this._resourcesList = [];
-            this.invalidateStudies();
-
-            this.__reloadResources();
-          })
-          .catch(console.error);
-      }
-    },
-
     _folderUpdated: function() {
       this.__reloadFolders();
     },
@@ -415,6 +479,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this.__reloadFolders())
         .catch(err => console.error(err));
     },
+    // /FOLDERS
 
     __configureCards: function(cards) {
       cards.forEach(card => {
@@ -671,7 +736,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // scale to latest compatible
         const latestVersion = versions[0];
         const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
-        osparc.service.Store.getService(latestCompatible["key"], latestCompatible["version"])
+        osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
           .then(latestMetadata => {
             const title = newButtonInfo.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
             const desc = newButtonInfo.description;
@@ -707,10 +772,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     _createLayout: function() {
       this._createResourcesLayout();
 
-      const folderHeader = this._resourcesContainer.getFolderHeader();
-      if (folderHeader) {
-        this.bind("currentFolderId", folderHeader, "currentFolderId");
-        folderHeader.addListener("changeCurrentFolderId", e => this.setCurrentFolderId(e.getData()));
+      const containerHeader = this._resourcesContainer.getContainerHeader();
+      if (containerHeader) {
+        this.bind("currentWorkspaceId", containerHeader, "currentWorkspaceId");
+        containerHeader.bind("currentWorkspaceId", this, "currentWorkspaceId");
+        this.bind("currentFolderId", containerHeader, "currentFolderId");
+        containerHeader.bind("currentFolderId", this, "currentFolderId");
       }
       const list = this._resourcesContainer.getFlatList();
       if (list) {
@@ -795,7 +862,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (filterData.text) {
           this.__reloadFilteredResources(filterData.text);
         } else {
-          this.__reloadResources();
+          this.__reloadFoldersAndStudies();
         }
         sharedWithButton.filterChanged(filterData);
       }, this);

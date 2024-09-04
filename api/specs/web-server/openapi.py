@@ -50,6 +50,7 @@ openapi_modules = [
         "_users",
         "_version_control",
         "_wallets",
+        "_workspaces",
     )
 ]
 

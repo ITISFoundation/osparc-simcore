@@ -68,7 +68,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             "description": "This is a EC2-backed docker node which is drained (cannot accept tasks)"
         }
     )
-    reserve_drained_nodes: list[AssociatedInstance] = field(
+    buffer_drained_nodes: list[AssociatedInstance] = field(
         metadata={
             "description": "This is a EC2-backed docker node which is drained in the reserve if this is enabled (with no tasks)"
         }
@@ -115,7 +115,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             len(self.active_nodes)
             + len(self.pending_nodes)
             + len(self.drained_nodes)
-            + len(self.reserve_drained_nodes)
+            + len(self.buffer_drained_nodes)
             + len(self.pending_ec2s)
             + len(self.broken_ec2s)
             + len(self.terminating_nodes)
@@ -131,7 +131,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             f"Cluster(active-nodes: count={len(self.active_nodes)} {_get_instance_ids(self.active_nodes)}, "
             f"pending-nodes: count={len(self.pending_nodes)} {_get_instance_ids(self.pending_nodes)}, "
             f"drained-nodes: count={len(self.drained_nodes)} {_get_instance_ids(self.drained_nodes)}, "
-            f"reserve-drained-nodes: count={len(self.reserve_drained_nodes)} {_get_instance_ids(self.reserve_drained_nodes)}, "
+            f"reserve-drained-nodes: count={len(self.buffer_drained_nodes)} {_get_instance_ids(self.buffer_drained_nodes)}, "
             f"pending-ec2s: count={len(self.pending_ec2s)} {_get_instance_ids(self.pending_ec2s)}, "
             f"broken-ec2s: count={len(self.broken_ec2s)} {_get_instance_ids(self.broken_ec2s)}, "
             f"buffer-ec2s: count={len(self.buffer_ec2s)} {_get_instance_ids(self.buffer_ec2s)}, "

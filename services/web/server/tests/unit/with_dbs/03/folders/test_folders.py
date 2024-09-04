@@ -7,12 +7,32 @@ from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_webserver.folders import FolderGet
+from models_library.api_schemas_webserver.folders_v2 import FolderGet
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
+from pytest_simcore.helpers.webserver_parametrizations import (
+    ExpectedResponse,
+    standard_role_response,
+)
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.models import ProjectDict
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_folders_user_role_permissions(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+):
+    assert client.app
+
+    url = client.app.router["list_folders"].url_for()
+    resp = await client.get(url.path)
+    await assert_status(resp, expected.ok)
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
@@ -32,9 +52,7 @@ async def test_folders_full_workflow(
 
     # create a new folder
     url = client.app.router["create_folder"].url_for()
-    resp = await client.post(
-        url.path, json={"name": "My first folder", "description": "Custom description"}
-    )
+    resp = await client.post(url.path, json={"name": "My first folder"})
     added_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
     assert FolderGet.parse_obj(added_folder)
 
@@ -47,9 +65,6 @@ async def test_folders_full_workflow(
     assert len(data) == 1
     assert data[0]["folderId"] == added_folder["folderId"]
     assert data[0]["name"] == "My first folder"
-    assert data[0]["description"] == "Custom description"
-    assert data[0]["myAccessRights"]
-    assert data[0]["accessRights"]
     assert meta["count"] == 1
     assert links
 
@@ -61,9 +76,6 @@ async def test_folders_full_workflow(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["folderId"] == added_folder["folderId"]
     assert data["name"] == "My first folder"
-    assert data["description"] == "Custom description"
-    assert data["myAccessRights"]
-    assert data["accessRights"]
 
     # update a folder
     url = client.app.router["replace_folder"].url_for(
@@ -73,7 +85,6 @@ async def test_folders_full_workflow(
         url.path,
         json={
             "name": "My Second folder",
-            "description": "",
         },
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
@@ -85,9 +96,6 @@ async def test_folders_full_workflow(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["name"] == "My Second folder"
-    assert data[0]["description"] == ""
-    assert data[0]["myAccessRights"]
-    assert data[0]["accessRights"]
 
     # delete a folder
     url = client.app.router["delete_folder"].url_for(
@@ -120,9 +128,7 @@ async def test_sub_folders_full_workflow(
 
     # create a new folder
     url = client.app.router["create_folder"].url_for()
-    resp = await client.post(
-        url.path, json={"name": "My first folder", "description": "Custom description"}
-    )
+    resp = await client.post(url.path, json={"name": "My first folder"})
     root_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # create a subfolder folder
@@ -131,7 +137,6 @@ async def test_sub_folders_full_workflow(
         url.path,
         json={
             "name": "My subfolder",
-            "description": "Custom subfolder description",
             "parentFolderId": root_folder["folderId"],
         },
     )
@@ -143,7 +148,6 @@ async def test_sub_folders_full_workflow(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["name"] == "My first folder"
-    assert data[0]["description"] == "Custom description"
 
     # list user specific folder
     base_url = client.app.router["list_folders"].url_for()
@@ -158,7 +162,6 @@ async def test_sub_folders_full_workflow(
         url.path,
         json={
             "name": "My sub sub folder",
-            "description": "Custom sub sub folder description",
             "parentFolderId": subfolder_folder["folderId"],
         },
     )
@@ -171,8 +174,28 @@ async def test_sub_folders_full_workflow(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["name"] == "My sub sub folder"
-    assert data[0]["description"] == "Custom sub sub folder description"
     assert data[0]["parentFolderId"] == subfolder_folder["folderId"]
+
+    # move sub sub folder to root folder
+    url = client.app.router["replace_folder"].url_for(
+        folder_id=f"{subsubfolder_folder['folderId']}"
+    )
+    resp = await client.put(
+        url.path,
+        json={
+            "name": "My Updated Folder",
+            "parentFolderId": None,
+        },
+    )
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert FolderGet.parse_obj(data)
+
+    # list user root folders
+    base_url = client.app.router["list_folders"].url_for()
+    url = base_url.with_query({"folder_id": "null"})
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 2
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
@@ -186,9 +209,7 @@ async def test_project_folder_movement_full_workflow(
 
     # create a new folder
     url = client.app.router["create_folder"].url_for()
-    resp = await client.post(
-        url.path, json={"name": "My first folder", "description": "Custom description"}
-    )
+    resp = await client.post(url.path, json={"name": "My first folder"})
     root_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # add project to the folder
@@ -204,7 +225,6 @@ async def test_project_folder_movement_full_workflow(
         url.path,
         json={
             "name": "My sub folder",
-            "description": "Custom sub folder description",
             "parentFolderId": root_folder["folderId"],
         },
     )
@@ -223,3 +243,95 @@ async def test_project_folder_movement_full_workflow(
     )
     resp = await client.put(url.path)
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+
+@pytest.fixture
+def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
+    mocker.patch(
+        "simcore_service_webserver.projects._crud_api_read.get_services_for_user_in_product",
+        spec=True,
+        return_value=[],
+    )
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+async def test_project_listing_inside_of_private_folder(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
+):
+    assert client.app
+
+    # create a new folder
+    url = client.app.router["create_folder"].url_for()
+    resp = await client.post(url.path, json={"name": "My first folder"})
+    original_user_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    # add project to the folder
+    url = client.app.router["replace_project_folder"].url_for(
+        folder_id=f"{original_user_folder['folderId']}",
+        project_id=f"{user_project['uuid']}",
+    )
+    resp = await client.put(url.path)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # list project in user private folder
+    base_url = client.app.router["list_projects"].url_for()
+    url = base_url.with_query({"folder_id": f"{original_user_folder['folderId']}"})
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+    assert data[0]["uuid"] == user_project["uuid"]
+
+    # Create new user
+    async with LoggedUser(client) as new_logged_user:
+        # Try to list folder that user doesn't have access to
+        base_url = client.app.router["list_projects"].url_for()
+        url = base_url.with_query({"folder_id": f"{original_user_folder['folderId']}"})
+        resp = await client.get(url)
+        _, errors = await assert_status(
+            resp,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+        assert errors
+
+        # Now we will share the project with the new user
+        await update_or_insert_project_group(
+            client.app,
+            project_id=user_project["uuid"],
+            group_id=new_logged_user["primary_gid"],
+            read=True,
+            write=True,
+            delete=False,
+        )
+
+        # list new user root folder
+        base_url = client.app.router["list_projects"].url_for()
+        url = base_url.with_query({"folder_id": "null"})
+        resp = await client.get(url)
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+        assert len(data) == 1
+        assert data[0]["uuid"] == user_project["uuid"]
+
+        # create a new folder
+        url = client.app.router["create_folder"].url_for()
+        resp = await client.post(url.path, json={"name": "New user folder"})
+        new_user_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+        # add project to the folder
+        url = client.app.router["replace_project_folder"].url_for(
+            folder_id=f"{new_user_folder['folderId']}",
+            project_id=f"{user_project['uuid']}",
+        )
+        resp = await client.put(url.path)
+        await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+        # list new user specific folder
+        base_url = client.app.router["list_projects"].url_for()
+        url = base_url.with_query({"folder_id": f"{new_user_folder['folderId']}"})
+        resp = await client.get(url)
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+        assert len(data) == 1
+        assert data[0]["uuid"] == user_project["uuid"]

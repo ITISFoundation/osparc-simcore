@@ -83,7 +83,7 @@ qx.Class.define("osparc.pricing.ServicesList", {
       services.forEach(service => {
         const key = service["serviceKey"];
         const version = service["serviceVersion"];
-        metadataPromises.push(osparc.service.Store.getService(key, version));
+        metadataPromises.push(osparc.store.Services.getService(key, version));
       });
       Promise.all(metadataPromises)
         .catch(err => console.error(err))
@@ -92,7 +92,7 @@ qx.Class.define("osparc.pricing.ServicesList", {
           services.forEach(service => {
             const key = service["serviceKey"];
             const version = service["serviceVersion"];
-            const serviceMetadata = osparc.service.Store.getMetadata(key, version);
+            const serviceMetadata = osparc.store.Services.getMetadata(key, version);
             if (serviceMetadata) {
               sList.push(new osparc.data.model.Service(serviceMetadata));
             }
