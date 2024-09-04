@@ -11,7 +11,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, ConfigDict, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -41,9 +41,7 @@ class MyRequestContext(BaseModel):
 
 class MyRequestPathParams(BaseModel):
     project_uuid: UUID
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @classmethod
     def create_fake(cls, faker: Faker):
@@ -66,9 +64,7 @@ class MyRequestQueryParams(BaseModel):
 class MyRequestHeadersParams(BaseModel):
     user_agent: str = Field(alias="X-Simcore-User-Agent")
     optional_header: str | None = Field(default=None, alias="X-Simcore-Optional-Header")
-
-    class Config:
-        allow_population_by_field_name = False
+    model_config = ConfigDict(populate_by_name=False)
 
     @classmethod
     def create_fake(cls, faker: Faker):
