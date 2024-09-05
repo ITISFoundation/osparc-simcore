@@ -180,7 +180,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           position: "bottom-right"
         });
 
-        const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
+        const editButton = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesome5Solid/pencil-alt/12");
         editButton.addListener("execute", () => {
           const workspace = this.getWorkspace();
           const newWorkspace = false;
