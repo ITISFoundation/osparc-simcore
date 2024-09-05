@@ -1075,6 +1075,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return osparc.data.Resources.fetch("studies", "moveToFolder", params);
     },
 
+    __moveStudyToWorkspace: function(studyId, workspaceId) {
+      const params = {
+        url: {
+          studyId,
+          folderId: workspaceId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "moveToWorkspace", params);
+    },
+
     _updateStudyData: function(studyData) {
       studyData["resourceType"] = "study";
       const studies = this._resourcesList;
@@ -1152,9 +1162,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       if (writeAccess && osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        menu.addSeparator();
+
         const moveToFolderButton = this.__getMoveToFolderMenuButton(studyData);
         if (moveToFolderButton) {
           menu.add(moveToFolderButton);
+        }
+
+        const moveToWorkspaceButton = this.__getMoveToWorkspaceMenuButton(studyData);
+        if (moveToWorkspaceButton) {
+          menu.add(moveToWorkspaceButton);
         }
       }
 
@@ -1245,28 +1262,49 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const moveToFolderButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/folder/12");
       moveToFolderButton["moveToFolderButton"] = true;
       moveToFolderButton.addListener("tap", () => {
-        if (Object.keys(studyData["accessRights"]).length > 1) {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Shared projects can't be moved yet"), "WARNING");
-        } else {
-          const title = this.tr("Move") + " " + studyData["name"];
-          const moveStudyToFolder = new osparc.dashboard.MoveStudyToFolder(studyData, this.getCurrentFolderId());
-          const win = osparc.ui.window.Window.popUpInWindow(moveStudyToFolder, title, 350, 280);
-          moveStudyToFolder.addListener("moveToFolder", e => {
-            win.close();
-            const folderId = e.getData();
-            this.__moveStudyToFolder(studyData["uuid"], folderId)
-              .then(() => {
-                this.__removeFromStudyList(studyData["uuid"]);
-              })
-              .catch(err => {
-                console.error(err);
-                osparc.FlashMessenger.logAs(err.message, "ERROR");
-              });
-          }, this);
-          moveStudyToFolder.addListener("cancel", () => win.close());
-        }
+        const title = this.tr("Move") + " " + studyData["name"];
+        const moveStudyToFolder = new osparc.dashboard.MoveStudyToFolder(studyData, this.getCurrentFolderId());
+        const win = osparc.ui.window.Window.popUpInWindow(moveStudyToFolder, title, 350, 280);
+        moveStudyToFolder.addListener("moveToFolder", e => {
+          win.close();
+          const folderId = e.getData();
+          this.__moveStudyToFolder(studyData["uuid"], folderId)
+            .then(() => {
+              this.__removeFromStudyList(studyData["uuid"]);
+            })
+            .catch(err => {
+              console.error(err);
+              osparc.FlashMessenger.logAs(err.message, "ERROR");
+            });
+        }, this);
+        moveStudyToFolder.addListener("cancel", () => win.close());
       }, this);
       return moveToFolderButton;
+    },
+
+    __getMoveToWorkspaceMenuButton: function(studyData) {
+      const text = osparc.utils.Utils.capitalize(this.tr("Move to Workspace..."));
+      const moveToWorkspaceButton = new qx.ui.menu.Button(text, osparc.store.Workspaces.iconPath(14));
+      moveToWorkspaceButton["moveToWorkspaceButton"] = true;
+      moveToWorkspaceButton.addListener("tap", () => {
+        const title = this.tr("Move") + " " + studyData["name"];
+        const moveStudyToWorkspace = new osparc.dashboard.MoveStudyToWorkspace(studyData, this.getCurrentFolderId());
+        const win = osparc.ui.window.Window.popUpInWindow(moveStudyToWorkspace, title, 350, 280);
+        moveStudyToWorkspace.addListener("moveToWorkspace", e => {
+          win.close();
+          const workspaceId = e.getData();
+          this.__moveStudyToWorkspace(studyData["uuid"], workspaceId)
+            .then(() => {
+              this.__removeFromStudyList(studyData["uuid"]);
+            })
+            .catch(err => {
+              console.error(err);
+              osparc.FlashMessenger.logAs(err.message, "ERROR");
+            });
+        }, this);
+        moveStudyToWorkspace.addListener("cancel", () => win.close());
+      }, this);
+      return moveToWorkspaceButton;
     },
 
     __getDuplicateMenuButton: function(studyData) {
