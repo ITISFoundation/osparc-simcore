@@ -72,8 +72,8 @@ async def test_clone_project_user_permissions(
 
     try:
         cloned_project = await _request_clone_project(client, url)
-    except Exception as exc:
-        assert exc.status == expected.ok
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        assert exc.status == expected.ok  # pylint: disable=no-member
 
     if expected.ok == status.HTTP_200_OK:
         # check whether it's a clone
