@@ -216,6 +216,16 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
 
     @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
+    async def post_containers_user_services_images_pull(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> Response:
+        url = self._get_url(
+            dynamic_sidecar_endpoint, "/containers/user-services/images:pull"
+        )
+        return await self.client.post(url)
+
+    @retry_on_errors()
+    @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_ports_inputs_pull(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,

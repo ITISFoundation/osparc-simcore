@@ -296,6 +296,12 @@ async def test_put_volumes(
             id="down",
         ),
         pytest.param(
+            "post_containers_user_services_images_pull",
+            "/containers/user-services/images:pull",
+            {},
+            id="user_servces_images_pull",
+        ),
+        pytest.param(
             "post_containers_tasks_state_restore",
             "/containers/state:restore",
             {},

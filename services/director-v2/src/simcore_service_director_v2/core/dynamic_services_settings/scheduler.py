@@ -111,6 +111,11 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         ),
     )
 
+    DYNAMIC_SIDECAR_API_USER_SERVICES_PULLING_TIMEOUT: PositiveFloat = Field(
+        120.0 * _MINUTE,
+        description="before starting the user services pull all the images in parallel",
+    )
+
     DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT: PositiveFloat = Field(
         1.0 * _MINUTE,
         description=(

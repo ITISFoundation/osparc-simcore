@@ -362,6 +362,21 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             _debug_progress_callback,
         )
 
+    async def pull_user_services_images(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> None:
+        response = await self._thin_client.post_containers_user_services_images_pull(
+            dynamic_sidecar_endpoint
+        )
+        task_id: TaskId = response.json()
+
+        await self._await_for_result(
+            task_id,
+            dynamic_sidecar_endpoint,
+            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_USER_SERVICES_PULLING_TIMEOUT,
+            _debug_progress_callback,
+        )
+
     async def save_service_state(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
