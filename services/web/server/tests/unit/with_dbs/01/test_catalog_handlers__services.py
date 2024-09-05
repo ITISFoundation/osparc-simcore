@@ -216,3 +216,89 @@ async def test_get_and_patch_service(
 
     assert mocked_rpc_catalog_service_api["get_service"].call_count == 1
     assert mocked_rpc_catalog_service_api["update_service"].call_count == 1
+
+
+@pytest.xfail(reason="service tags entrypoints under development")
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_tags_in_services(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocked_rpc_catalog_service_api: dict[str, MagicMock],
+):
+    assert client.app
+    assert client.app.router
+
+    service_key = "simcore/services/dynamic/someservice"
+    service_version = "3.4.5"
+
+    # the service
+    url = client.app.router["get_service"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+    )
+    response = await client.get(f"{url}")
+    data, error = await assert_status(response, status.HTTP_200_OK)
+    assert not error
+
+    # list tags
+    url = client.app.router["list_service_tags"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+    )
+    response = await client.get(f"{url}")
+    data, error = await assert_status(response, status.HTTP_200_OK)
+
+    assert not error
+    assert not data
+
+    # create a tag
+    fake_tag = {"name": "tag1", "description": "description1", "color": "#f00"}
+    url = client.app.router["create_tag"].url_for()
+    resp = await client.post(f"{url}", json=fake_tag)
+    tag, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    tag_id = tag["id"]
+    assert tag["name"] == fake_tag["name"]
+
+    # add_service_tag
+    url = client.app.router["add_service_tag"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+        tag_id=tag_id,
+    )
+    response = await client.get(f"{url}")
+    data, error = await assert_status(response, status.HTTP_200_OK)
+
+    # list_service_tags
+    url = client.app.router["list_service_tags"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+    )
+    response = await client.put(f"{url}")
+    data, error = await assert_status(response, status.HTTP_200_OK)
+
+    assert not error
+    assert len(data) == 1
+
+    # remove_service_tag
+    url = client.app.router["remove_service_tag"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+        tag_id=tag_id,
+    )
+    response = await client.delete(f"{url}")
+    data, error = await assert_status(response, status.HTTP_204_NO_CONTENT)
+
+    # list_service_tags
+    url = client.app.router["list_service_tags"].url_for(
+        service_key=urllib.parse.quote(service_key, safe=""),
+        service_version=service_version,
+    )
+    response = await client.put(f"{url}")
+    data, error = await assert_status(response, status.HTTP_200_OK)
+
+    assert not error
+    assert not data
