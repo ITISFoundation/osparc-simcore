@@ -116,7 +116,7 @@ class TagsRepo:
             access = result.first()
             assert access
 
-            return TagDict(itertools.chain(tag.items(), access.items()))  # type: ignore
+            return TagDict(itertools.chain(tag, access))
 
     async def list_all(
         self,
@@ -126,7 +126,8 @@ class TagsRepo:
     ) -> list[TagDict]:
         async with get_or_create_connection(self.engine, connection) as conn:
             stmt_list = list_tags_stmt(user_id=user_id)
-            return [TagDict(row.items()) async for row in conn.execute(stmt_list)]  # type: ignore
+            result = await conn.stream(stmt_list)
+            return [TagDict(**row) async for row in result]
 
     async def get(
         self,
@@ -142,7 +143,7 @@ class TagsRepo:
             if not row:
                 msg = f"{tag_id=} not found: either no access or does not exists"
                 raise TagNotFoundError(msg)
-            return TagDict(row.items())  # type: ignore
+            return TagDict(**row)
 
     async def update(
         self,
@@ -170,7 +171,7 @@ class TagsRepo:
                 msg = f"{tag_id=} not updated: either no access or not found"
                 raise TagOperationNotAllowedError(msg)
 
-            return TagDict(row.items())  # type: ignore
+            return TagDict(**row)
 
     async def delete(
         self,

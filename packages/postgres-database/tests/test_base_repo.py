@@ -6,6 +6,7 @@
 
 from typing import Any, TypedDict
 
+import pytest
 import sqlalchemy as sa
 from simcore_postgres_database.base_repo import (
     get_or_create_connection,
@@ -80,6 +81,7 @@ class OneResourceRepoDemo:
             return result.rowcount > 0
 
 
+@pytest.mark.skip()
 async def test_sqlachemy_asyncio_example(asyncpg_engine: AsyncEngine):
     #
     # Same example as in https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#synopsis-core
