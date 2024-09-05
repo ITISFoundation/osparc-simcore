@@ -12,6 +12,7 @@ from ..workspaces.api import check_user_workspace_access
 from . import _folders_db as project_to_folders_db
 from . import _groups_db as project_groups_db
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .exceptions import ProjectInvalidRightsError
 
 _logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ async def move_project_into_workspace(
         app, project_id=project_id, user_id=user_id, product_name=product_name
     )
     if project_access_rights.delete is False:
-        raise ValueError("not enough permissions")
+        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
 
     # 2. User needs to have write permission on workspace
     if workspace_id:
