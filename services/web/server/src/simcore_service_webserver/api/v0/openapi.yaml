@@ -3323,7 +3323,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -3488,7 +3488,7 @@ paths:
       - projects
       - workspaces
       summary: Move project to the workspace
-      operationId: replace_project_folder
+      operationId: replace_project_workspace
       parameters:
       - required: true
         schema:

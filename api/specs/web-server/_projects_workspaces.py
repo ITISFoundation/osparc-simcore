@@ -28,7 +28,7 @@ router = APIRouter(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Move project to the workspace",
 )
-async def replace_project_folder(
+async def replace_project_workspace(
     _path: Annotated[_ProjectWorkspacesPathParams, Depends()],
 ):
     ...
