@@ -445,9 +445,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // /WORKSPACES
 
     // FOLDERS
-    __applyCurrentFolderId: function(currentFolderId) {
+    __applyCurrentFolderId: function() {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        osparc.store.Folders.getInstance().fetchFolders(currentFolderId)
+        const folderId = this.getCurrentFolderId();
+        const workspaceId = this.getCurrentWorkspaceId();
+        osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
           .then(() => {
             this._resourcesContainer.setResourcesToList([]);
             this._resourcesList = [];
