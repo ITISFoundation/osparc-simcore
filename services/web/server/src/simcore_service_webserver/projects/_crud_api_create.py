@@ -401,7 +401,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 )
             )
             new_project["accessRights"] = {
-                key: access.dict() for key, access in workspace_db.access_rights.items()
+                gid: access.dict() for gid, access in workspace_db.access_rights.items()
             }
 
         # Ensures is like ProjectGet

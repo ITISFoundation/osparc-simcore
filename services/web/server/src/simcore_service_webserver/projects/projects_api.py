@@ -208,7 +208,7 @@ async def get_project_for_user(
             )
         )
         project["accessRights"] = {
-            key: access.dict() for key, access in workspace_db.access_rights.items()
+            gid: access.dict() for gid, access in workspace_db.access_rights.items()
         }
 
     Project.parse_obj(project)  # NOTE: only validates

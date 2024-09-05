@@ -54,7 +54,7 @@ async def _append_fields(
     # replace project access rights (if project is in workspace)
     if workspace_access_rights:
         project["accessRights"] = {
-            key: access.dict() for key, access in workspace_access_rights.items()
+            gid: access.dict() for gid, access in workspace_access_rights.items()
         }
 
     # validate
