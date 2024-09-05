@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
 
     const studiesLabel = osparc.product.Utils.getStudyAlias({plural: true});
     const msg = this.tr("\
-    An organization is a group of users who can share ") + studiesLabel + this.tr(".<br>\
+    An organization is a group of users who can share ") + studiesLabel + this.tr(" and other resources.<br>\
     Here you can see the list of organizations you belong to, create new organizations, \
     or manage the membership by setting up the access rights of each member in the organization \
     if you are a manager or administrator.");

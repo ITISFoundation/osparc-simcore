@@ -985,11 +985,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       button.setValue(false);
       const minStudyData = osparc.data.model.Study.createMinStudyObject();
       const title = osparc.utils.Utils.getUniqueStudyName(minStudyData.name, this._resourcesList);
-      const workspace = osparc.store.Workspaces.getWorkspaces(this.getCurrentWorkspaceId());
       minStudyData["name"] = title;
-      minStudyData["workbench"] = {};
-      minStudyData["accessRights"] = workspace ? workspace.getAccessRights() : null;
-      minStudyData["workspaceId"] = workspace ? workspace.getWorkspaceId() : null;
+      minStudyData["workspaceId"] = this.getCurrentWorkspaceId();
       minStudyData["folderId"] = this.getCurrentFolderId();
       this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
       const params = {

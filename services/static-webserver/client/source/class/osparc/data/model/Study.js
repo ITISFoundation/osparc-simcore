@@ -218,7 +218,6 @@ qx.Class.define("osparc.data.model.Study", {
       const newStudyObject = {
         "name": "",
         "workbench": {},
-        "accessRights": {},
       };
       return newStudyObject;
     },

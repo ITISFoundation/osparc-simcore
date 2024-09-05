@@ -110,7 +110,7 @@ qx.Class.define("osparc.study.Utils", {
         osparc.store.Services.getService(key, version)
           .then(metadata => {
             const newUuid = osparc.utils.Utils.uuidV4();
-            // Study will be created in the root folder of the personal workspace
+            // Study will be created in the root folder of my personal workspace
             const minStudyData = osparc.data.model.Study.createMinStudyObject();
             if (newStudyLabel === undefined) {
               newStudyLabel = metadata["name"];

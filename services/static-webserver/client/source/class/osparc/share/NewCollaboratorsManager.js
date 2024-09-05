@@ -9,6 +9,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function(resourceData, showOrganizations = true) {
+    // OM remove this
+    showOrganizations = false;
     this.base(arguments, "collaboratorsManager", this.tr("Share with"));
     this.set({
       layout: new qx.ui.layout.VBox(),
@@ -43,7 +45,10 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   members: {
     __resourceData: null,
     __showOrganizations: null,
+    __introLabel: null,
+    __textFilter: null,
     __collabButtonsContainer: null,
+    __orgsButton: null,
     __shareButton: null,
     __selectedCollaborators: null,
     __visibleCollaborators: null,
@@ -53,7 +58,14 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     },
 
     __renderLayout: function() {
-      const filter = new osparc.filter.TextFilter("name", "collaboratorsManager").set({
+      const introText = this.tr("In order to start sharing, you first need to belong to an organization.");
+      const introLabel = this.__introLabel = new qx.ui.basic.Label(introText).set({
+        visibility: "excluded",
+        padding: 8
+      });
+      this.add(introLabel);
+
+      const filter = this.__textFilter = new osparc.filter.TextFilter("name", "collaboratorsManager").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
@@ -70,6 +82,11 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "right"
       }));
+      const orgsButton = this.__orgsButton = new qx.ui.form.Button(this.tr("Check Organizations...")).set({
+        appearance: "form-button"
+      });
+      orgsButton.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
+      buttons.add(orgsButton);
       const shareButton = this.__shareButton = new osparc.ui.form.FetchButton(this.tr("Share")).set({
         appearance: "form-button"
       });
@@ -94,8 +111,23 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       }
       osparc.store.Store.getInstance().getPotentialCollaborators(false, includeProductEveryone)
         .then(potentialCollaborators => {
+          // OM remove this
+          potentialCollaborators = {};
           this.__visibleCollaborators = potentialCollaborators;
-          this.__addEditors();
+          const anyCollaborator = Object.keys(potentialCollaborators).length;
+          if (anyCollaborator) {
+            this.__introText.setVisibility(anyCollaborator ? "excluded" : "visible");
+            this.__orgsButton.setVisibility(anyCollaborator ? "excluded" : "visible");
+            this.__textFilter.setVisibility(anyCollaborator ? "visible" : "excluded");
+            this.__shareButton.setVisibility(anyCollaborator ? "visible" : "excluded");
+            this.__addEditors();
+          } else {
+            // tell the user that belonging to an organization is required to start sharing
+            this.__introText.setVisibility(anyCollaborator ? "visible" : "excluded");
+            this.__orgsButton.setVisibility(anyCollaborator ? "visible" : "excluded");
+            this.__textFilter.setVisibility(anyCollaborator ? "excluded" : "visible");
+            this.__shareButton.setVisibility(anyCollaborator ? "excluded" : "visible");
+          }
         });
     },
 
@@ -153,6 +185,9 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         }
         this.__collabButtonsContainer.add(this.__collaboratorButton(visibleCollaborator));
       });
+    },
+
+    __openOrganization: function() {
     },
 
     __shareClicked: function() {
