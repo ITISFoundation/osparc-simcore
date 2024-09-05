@@ -1079,7 +1079,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const params = {
         url: {
           studyId,
-          folderId: workspaceId
+          workspaceId,
         }
       };
       return osparc.data.Resources.fetch("studies", "moveToWorkspace", params);
@@ -1263,7 +1263,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       moveToFolderButton["moveToFolderButton"] = true;
       moveToFolderButton.addListener("tap", () => {
         const title = this.tr("Move") + " " + studyData["name"];
-        const moveStudyToFolder = new osparc.dashboard.MoveStudyToFolder(studyData, this.getCurrentFolderId());
+        const moveStudyToFolder = new osparc.dashboard.MoveStudyToFolder(studyData, this.getCurrentFolderId(), this.getCurrentWorkspaceId());
         const win = osparc.ui.window.Window.popUpInWindow(moveStudyToFolder, title, 350, 280);
         moveStudyToFolder.addListener("moveToFolder", e => {
           win.close();

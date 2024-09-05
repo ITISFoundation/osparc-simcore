@@ -15,15 +15,13 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.FoldersTree", {
+qx.Class.define("osparc.dashboard.WorkspacesTree", {
   extend: qx.ui.tree.VirtualTree,
 
-  construct: function(currentWorkspaceId) {
-    this.__currentWorkspaceId = currentWorkspaceId;
-    const workspace = osparc.store.Workspaces.getWorkspace(currentWorkspaceId);
-    const rootLabel = workspace ? workspace.getName() : "My Workspace";
-    const rootFolder = this.self().createNewEntry(rootLabel, null);
-    const root = qx.data.marshal.Json.createModel(rootFolder, true);
+  construct: function() {
+    const rootLabel = "Root";
+    const rootWorkspace = this.self().createNewEntry(rootLabel, null);
+    const root = qx.data.marshal.Json.createModel(rootWorkspace, true);
     this.__fetchChildren(root);
 
     this.base(arguments, root, "label", "children");
@@ -34,6 +32,7 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
       font: "text-14",
       showLeafs: true,
       paddingLeft: -10,
+      hideRoot: true
     });
 
     this.__initTree();
@@ -44,10 +43,10 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
   },
 
   statics: {
-    createNewEntry: function(label, folderId) {
+    createNewEntry: function(label, workspaceId) {
       return {
         label,
-        folderId,
+        workspaceId,
         children: [
           this.self().getLoadingData()
         ],
@@ -57,7 +56,7 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
 
     getLoadingData: function() {
       return {
-        folderId: -1,
+        workspaceId: -1,
         label: "Loading...",
         children: [],
         icon: "@FontAwesome5Solid/circle-notch/12",
@@ -83,22 +82,11 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
     __currentWorkspaceId:null,
 
     __initTree: function() {
-      const that = this;
       this.setDelegate({
-        createItem: () => new osparc.dashboard.FolderTreeItem(),
+        createItem: () => new osparc.dashboard.WorkspaceTreeItem(),
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
-          c.bindProperty("folderId", "model", null, item, id);
-          c.bindProperty("", "open", {
-            converter(value, _, __, target) {
-              const isOpen = target.isOpen();
-              if (isOpen && !value.getLoaded()) {
-                // eslint-disable-next-line no-underscore-dangle
-                that.__fetchChildren(value);
-              }
-              return isOpen;
-            }
-          }, item, id);
+          c.bindProperty("workspaceId", "model", null, item, id);
         },
         configureItem: item => {
           item.addListener("tap", () => this.fireDataEvent("selectionChanged", item.getModel()), this);
@@ -120,14 +108,13 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
     __fetchChildren: function(parentModel) {
       parentModel.setLoaded(true);
 
-      const folderId = parentModel.getFolderId ? parentModel.getFolderId() : parentModel.getModel();
-      osparc.store.Folders.getInstance().fetchFolders(folderId, this.__currentWorkspaceId)
-        .then(folders => {
+      osparc.store.Workspaces.fetchWorkspaces()
+        .then(workspaces => {
           this.self().removeLoadingChild(parentModel);
-          folders.forEach(folder => {
-            const folderData = this.self().createNewEntry(folder.getName(), folder.getFolderId());
-            const folderModel = qx.data.marshal.Json.createModel(folderData, true);
-            parentModel.getChildren().append(folderModel);
+          workspaces.forEach(workspace => {
+            const workspaceData = this.self().createNewEntry(workspace.getName(), workspace.getWorkspaceId());
+            const workspaceModel = qx.data.marshal.Json.createModel(workspaceData, true);
+            parentModel.getChildren().append(workspaceModel);
           });
         })
         .catch(console.error);

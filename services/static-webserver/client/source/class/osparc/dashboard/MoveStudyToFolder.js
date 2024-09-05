@@ -18,11 +18,12 @@
 qx.Class.define("osparc.dashboard.MoveStudyToFolder", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyData, currentFolderId) {
+  construct: function(studyData, currentFolderId, currentWorkspaceId) {
     this.base(arguments);
 
     this.__studyData = studyData;
     this.__currentFolderId = currentFolderId;
+    this.__currentWorkspaceId = currentWorkspaceId;
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
@@ -59,7 +60,7 @@ qx.Class.define("osparc.dashboard.MoveStudyToFolder", {
           break;
         }
         case "folders-tree":
-          control = new osparc.dashboard.FoldersTree();
+          control = new osparc.dashboard.FoldersTree(this.__currentWorkspaceId);
           this._add(control);
           break;
         case "buttons-layout":
