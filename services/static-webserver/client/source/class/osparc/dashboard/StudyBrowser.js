@@ -1122,7 +1122,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       menu.addSeparator();
 
-      if (writeAccess) {
+      if (writeAccess && this.getCurrentWorkspaceId() === null) {
         const shareButton = this._getShareMenuButton(card);
         if (shareButton) {
           menu.add(shareButton);
