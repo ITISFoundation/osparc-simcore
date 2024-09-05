@@ -92,7 +92,15 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
             button.set({
               label: this.tr("My Workspace")
             });
-          } else {
+          } else if (option.id === "shared-with-me") {
+            button.set({
+              label: this.tr("Shared") + " " + osparc.product.Utils.getStudyAlias({
+                firstUpperCase: true,
+                plural: true,
+              })
+            });
+          }
+          if (option.id !== "show-all") {
             button.set({
               marginLeft: 15
             });
