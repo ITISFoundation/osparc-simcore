@@ -109,13 +109,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // overridden
     initResources: function() {
       this._resourcesList = [];
-      const promises = [
-        this.__getActiveStudy()
-      ];
-      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        promises.push(osparc.store.Folders.getInstance().fetchFolders());
-      }
-      Promise.all(promises)
+      this.__getActiveStudy()
         .then(() => {
           this.getChildControl("resources-layout");
           this.__attachEventHandlers();
@@ -176,8 +170,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadFolders: function() {
-      const folders = osparc.store.Folders.getInstance().getFolders(this.getCurrentFolderId())
-      this.__setFoldersToList(folders);
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        const folderId = this.getCurrentFolderId();
+        const workspaceId = this.getCurrentWorkspaceId();
+        osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
+          .then(folders => {
+            this.__setFoldersToList(folders);
+          })
+          .catch(console.error);
+      }
     },
 
     __reloadStudies: function() {
