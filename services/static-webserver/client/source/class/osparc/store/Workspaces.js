@@ -125,28 +125,14 @@ qx.Class.define("osparc.store.Workspaces", {
         });
       }
 
-      /*
-      return osparc.data.Resources.getInstance().getAllPages("workspaces", params)
+      return osparc.data.Resources.getInstance().getAllPages("workspaces")
         .then(workspacesData => {
-          const workspaces = [];
           workspacesData.forEach(workspaceData => {
             const workspace = new osparc.data.model.Workspace(workspaceData);
             this.__addToCache(workspace);
-            workspaces.push(workspace);
           });
-          return workspaces;
+          return this.workspacesCached;
         });
-      */
-
-      return new Promise(resolve => {
-        if (this.workspacesCached.length === 0) {
-          this.self().FAKE_WORKSPACES.forEach(workspaceData => {
-            const workspace = new osparc.data.model.Workspace(workspaceData);
-            this.__addToCache(workspace);
-          });
-        }
-        resolve(this.workspacesCached);
-      });
     },
 
     createNewWorkspaceData: function(name, description = "", thumbnail = "") {
@@ -158,7 +144,6 @@ qx.Class.define("osparc.store.Workspaces", {
     },
 
     postWorkspace: function(newWorkspaceData) {
-      /*
       const params = {
         data: newWorkspaceData
       };
@@ -168,30 +153,10 @@ qx.Class.define("osparc.store.Workspaces", {
           this.__addToCache(newWorkspace);
           return newWorkspace;
         });
-      */
-      const workspaceData = newWorkspaceData;
-      workspaceData["workspaceId"] = Math.floor(Math.random() * 100) + 100;
-      workspaceData["myAccessRights"] = osparc.share.CollaboratorsWorkspace.getOwnerAccessRight();
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      workspaceData["accessRights"] = {};
-      workspaceData["accessRights"][myGroupId] = osparc.share.CollaboratorsWorkspace.getOwnerAccessRight();
-      workspaceData["createdAt"] = new Date().toISOString();
-      workspaceData["lastModified"] = new Date().toISOString();
-      return new Promise(resolve => {
-        const workspace = new osparc.data.model.Workspace(workspaceData);
-        this.__addToCache(workspace);
-        resolve(workspace);
-      });
     },
 
     deleteWorkspace: function(workspaceId) {
       return new Promise((resolve, reject) => {
-        if (this.__deleteFromCache(workspaceId)) {
-          resolve();
-        } else {
-          reject();
-        }
-        /*
         const params = {
           "url": {
             workspaceId
@@ -206,7 +171,6 @@ qx.Class.define("osparc.store.Workspaces", {
             }
           })
           .catch(err => reject(err));
-        */
       });
     },
 
@@ -229,9 +193,7 @@ qx.Class.define("osparc.store.Workspaces", {
               }
             });
             workspace.setLastModified(new Date());
-            this.__deleteFromCache(workspaceId);
-            this.__addToCache(workspace);
-            resolve();
+            resolve(workspace);
           })
           .catch(err => reject(err));
       });

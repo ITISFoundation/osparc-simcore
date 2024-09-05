@@ -197,12 +197,8 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
               "name": newName,
               "description": newDescription
             };
-            osparc.data.model.Workspace.putWorkspace(this.getWorkspaceId(), updateData)
+            osparc.store.Workspaces.putWorkspace(this.getWorkspaceId(), updateData)
               .then(() => {
-                workspace.set({
-                  name: newName,
-                  description: newDescription
-                });
                 this.fireDataEvent("workspaceUpdated", workspace.getWorkspaceId());
               })
               .catch(err => console.error(err));

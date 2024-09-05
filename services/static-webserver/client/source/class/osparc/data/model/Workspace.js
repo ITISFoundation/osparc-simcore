@@ -99,10 +99,6 @@ qx.Class.define("osparc.data.model.Workspace", {
   },
 
   statics: {
-    putWorkspace: function(workspaceId, propKey, value) {
-      return osparc.store.Workspaces.putWorkspace(workspaceId, propKey, value);
-    },
-
     getProperties: function() {
       return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Workspace));
     }
