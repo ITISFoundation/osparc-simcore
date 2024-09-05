@@ -436,7 +436,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _deleteWorkspaceRequested: function(workspaceId) {
       osparc.store.Workspaces.deleteWorkspace(workspaceId)
-        .then(() => this.__reloadWorkspaceCards())
+        .then(() => {
+          this._resourceFilter.reloadWorkspaceButtons();
+          this.__reloadWorkspaces();
+        })
         .catch(err => console.error(err));
     },
     // /WORKSPACES

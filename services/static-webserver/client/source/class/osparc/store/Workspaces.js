@@ -111,56 +111,71 @@ qx.Class.define("osparc.store.Workspaces", {
     },
 
     addCollaborators: function(workspaceId, newCollaborators) {
-      return new Promise((resolve, reject) => {
-        const workspace = this.getWorkspace(workspaceId);
-        if (workspace) {
-          const accessRights = workspace.getAccessRights();
-          const newAccessRights = Object.assign(accessRights, newCollaborators);
+      const promises = [];
+      Object.keys(newCollaborators).forEach(groupId => {
+        const params = {
+          url: {
+            workspaceId,
+            groupId,
+          },
+          data: newCollaborators[groupId]
+        };
+        promises.push(osparc.data.Resources.fetch("studies", "postAccessRights", params));
+      });
+      return Promise.all(promises)
+        .then(() => {
+          const workspace = this.getWorkspace(workspaceId);
+          const newAccessRights = workspace.getAccessRights();
+          Object.keys(newCollaborators).forEach(gid => {
+            newAccessRights[gid] = newCollaborators[gid];
+          });
           workspace.set({
             accessRights: newAccessRights,
-            lastModified: new Date()
-          })
-          resolve();
-        } else {
-          reject();
-        }
-      });
+            modifiedAt: new Date()
+          });
+        })
+        .catch(console.error);
     },
 
-    removeCollaborator: function(workspaceId, gid) {
-      return new Promise((resolve, reject) => {
-        const workspace = this.getWorkspace(workspaceId);
-        if (workspace) {
-          const accessRights = workspace.getAccessRights();
-          delete accessRights[gid];
+    removeCollaborator: function(workspaceId, groupId) {
+      const params = {
+        url: {
+          workspaceId,
+          groupId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "deleteAccessRights", params)
+        .then(() => {
+          const workspace = this.getWorkspace(workspaceId);
+          const newAccessRights = workspace.getAccessRights();
+          delete newAccessRights[groupId];
           workspace.set({
-            accessRights: accessRights,
-            lastModified: new Date()
-          })
-          resolve();
-        } else {
-          reject();
-        }
-      });
+            accessRights: newAccessRights,
+            modifiedAt: new Date()
+          });
+        })
+        .catch(console.error);
     },
 
-    updateCollaborator: function(workspaceId, gid, newPermissions) {
-      return new Promise((resolve, reject) => {
-        const workspace = this.getWorkspace(workspaceId);
-        if (workspace) {
-          const accessRights = workspace.getAccessRights();
-          if (gid in accessRights) {
-            accessRights[gid] = newPermissions;
-            workspace.set({
-              accessRights: accessRights,
-              lastModified: new Date()
-            })
-            resolve();
-            return;
-          }
-        }
-        reject();
-      });
+    updateCollaborator: function(workspaceId, groupId, newPermissions) {
+      const params = {
+        url: {
+          workspaceId,
+          groupId,
+        },
+        data: newPermissions
+      };
+      return osparc.data.Resources.fetch("studies", "putAccessRights", params)
+        .then(() => {
+          const workspace = this.getWorkspace(workspaceId);
+          const newAccessRights = workspace.getAccessRights();
+          newAccessRights[groupId] = newPermissions;
+          workspace.set({
+            accessRights: workspace.newAccessRights,
+            modifiedAt: new Date()
+          });
+        })
+        .catch(console.error);
     },
 
     getWorkspaces: function(parentId = null) {
