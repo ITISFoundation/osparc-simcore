@@ -215,11 +215,19 @@ qx.Class.define("osparc.data.model.Study", {
     ],
 
     createMinStudyObject: function() {
-      const newStudyObject = {
-        "name": "",
-        "workbench": {},
-      };
-      return newStudyObject;
+      let myNewStudyObject = {};
+      const props = qx.util.PropertyUtil.getProperties(osparc.data.model.Study);
+      for (let key in props) {
+        const prop = props[key];
+        if (!prop.nullable) {
+          if (typeof prop.init === "object") {
+            myNewStudyObject[key] = osparc.utils.Utils.deepCloneObject(prop.init);
+          } else {
+            myNewStudyObject[key] = prop.init;
+          }
+        }
+      }
+      return myNewStudyObject;
     },
 
     getProperties: function() {
