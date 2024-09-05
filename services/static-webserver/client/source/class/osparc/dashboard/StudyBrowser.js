@@ -1122,6 +1122,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       menu.addSeparator();
 
+      // Access Rights are set at workspace level)
       if (writeAccess && this.getCurrentWorkspaceId() === null) {
         const shareButton = this._getShareMenuButton(card);
         if (shareButton) {
