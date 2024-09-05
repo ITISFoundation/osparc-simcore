@@ -287,6 +287,8 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                     user_id=user_id if workspace_id is None else None,
                     workspace_id=workspace_id,
                 )
+                # Folder ID is not part of the project resource
+                predefined_project.pop("folderId")
 
         if from_study:
             # 1.1 prepare copy
