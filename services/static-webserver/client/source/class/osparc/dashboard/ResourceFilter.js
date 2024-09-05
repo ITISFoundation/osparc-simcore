@@ -152,8 +152,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         const workspaceButton = this.__workspaceButtons[i];
         this.__contextLayout.remove(workspaceButton);
         this.__contextRadioGroup.remove(workspaceButton);
-        this.__workspaceButtons = [];
       }
+      this.__workspaceButtons = [];
       osparc.store.Workspaces.fetchWorkspaces()
         .then(workspaces => {
           workspaces.forEach(workspace => {
