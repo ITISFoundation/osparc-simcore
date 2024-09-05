@@ -103,7 +103,9 @@ qx.Class.define("osparc.store.Workspaces", {
                 workspace[setter](updateData[propKey]);
               }
             });
-            workspace.setLastModified(new Date());
+            workspace.set({
+              modifiedAt: new Date()
+            });
             resolve(workspace);
           })
           .catch(err => reject(err));
