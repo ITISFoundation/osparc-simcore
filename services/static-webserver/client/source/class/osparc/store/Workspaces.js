@@ -120,7 +120,7 @@ qx.Class.define("osparc.store.Workspaces", {
           },
           data: newCollaborators[groupId]
         };
-        promises.push(osparc.data.Resources.fetch("studies", "postAccessRights", params));
+        promises.push(osparc.data.Resources.fetch("workspaces", "postAccessRights", params));
       });
       return Promise.all(promises)
         .then(() => {
@@ -144,7 +144,7 @@ qx.Class.define("osparc.store.Workspaces", {
           groupId,
         }
       };
-      return osparc.data.Resources.fetch("studies", "deleteAccessRights", params)
+      return osparc.data.Resources.fetch("workspaces", "deleteAccessRights", params)
         .then(() => {
           const workspace = this.getWorkspace(workspaceId);
           const newAccessRights = workspace.getAccessRights();
@@ -165,7 +165,7 @@ qx.Class.define("osparc.store.Workspaces", {
         },
         data: newPermissions
       };
-      return osparc.data.Resources.fetch("studies", "putAccessRights", params)
+      return osparc.data.Resources.fetch("workspaces", "putAccessRights", params)
         .then(() => {
           const workspace = this.getWorkspace(workspaceId);
           const newAccessRights = workspace.getAccessRights();
