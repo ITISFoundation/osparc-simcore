@@ -102,6 +102,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
+    __currentRequest: null,
     __workspacesList: null,
     __foldersList: null,
 
@@ -215,7 +216,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
-      this.__getNextStudiesRequest()
+      const currentRequest = this.__currentRequest = this.__getNextStudiesRequest();
+      currentRequest
         .then(resp => {
           const studies = resp["data"];
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
@@ -242,6 +244,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => console.error(err))
         .finally(() => {
+          this.__currentRequest = null;
           this._loadingResourcesBtn.setFetching(false);
           this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
           this._moreResourcesRequired();
@@ -412,7 +415,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         "updateWorkspace"
       ].forEach(e => {
         newWorkspaceCard.addListener(e, () => {
-          this._resourceFilter.reloadWorkspaces();
+          this._resourceFilter.reloadWorkspaceButtons();
           this.__reloadWorkspaces();
         });
       });
