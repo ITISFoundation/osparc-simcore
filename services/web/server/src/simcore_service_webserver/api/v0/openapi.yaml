@@ -8031,6 +8031,7 @@ components:
       - createdAt
       - modifiedAt
       - owner
+      - myAccessRights
       type: object
       properties:
         folderId:
@@ -8059,6 +8060,13 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        myAccessRights:
+          $ref: '#/components/schemas/models_library__access_rights__AccessRights'
     GenerateInvitation:
       title: GenerateInvitation
       required:
@@ -8390,7 +8398,6 @@ components:
         issuer:
           title: Issuer
           type: string
-          format: email
         guest:
           title: Guest
           type: string
@@ -9822,6 +9829,11 @@ components:
           $ref: '#/components/schemas/StudyUI'
         workspaceId:
           title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        folderId:
+          title: Folderid
           exclusiveMinimum: true
           type: integer
           minimum: 0

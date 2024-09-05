@@ -74,6 +74,7 @@ async def test_folders_full_workflow(
     )
     resp = await client.get(url)
     data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert FolderGet.parse_obj(data)
     assert data["folderId"] == added_folder["folderId"]
     assert data["name"] == "My first folder"
 
