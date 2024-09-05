@@ -25,6 +25,7 @@ from ..projects_ui import StudyUI
 from ..utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
+    null_or_none_str_to_none_validator,
 )
 from ..utils.pydantic_tools_extension import FieldNotRequired
 from ._base import EmptyModel, InputSchema, OutputSchema
@@ -45,8 +46,12 @@ class ProjectCreateNew(InputSchema):
     folder_id: FolderID | None = None
 
     _empty_is_none = validator(
-        "uuid", "thumbnail", "description", "workspace_id", allow_reuse=True, pre=True
+        "uuid", "thumbnail", "description", allow_reuse=True, pre=True
     )(empty_str_to_none_pre_validator)
+
+    _null_or_none_to_none = validator("workspace_id", "folder_id")(
+        null_or_none_str_to_none_validator
+    )
 
 
 # NOTE: based on OVERRIDABLE_DOCUMENT_KEYS
