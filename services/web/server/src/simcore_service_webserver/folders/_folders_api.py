@@ -225,7 +225,6 @@ async def update_folder(
         user_folder_access_rights = user_workspace_access_rights.my_access_rights
 
     # Check user has acces to the folder
-    # NOTE: MD: TODO check function!
     await folders_db.get_for_user_or_workspace(
         app,
         folder_id=folder_id,
