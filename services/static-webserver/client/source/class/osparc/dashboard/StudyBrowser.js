@@ -183,62 +183,57 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (this._loadingResourcesBtn.isFetching()) {
         return;
       }
+
       osparc.data.Resources.get("tasks")
         .then(tasks => {
           if (tasks && tasks.length) {
             this.__tasksReceived(tasks);
           }
         });
+
+      // Show "Contact Us" message if services.length === 0
+      // Most probably is a product-stranger user (it can also be that the catalog is down)
+      osparc.store.Services.getServicesLatest()
+        .then(services => {
+          if (Object.keys(services).length === 0) {
+            const noAccessText = new qx.ui.basic.Label().set({
+              selectable: true,
+              rich: true,
+              font: "text-18",
+              paddingTop: 20
+            });
+            let msg = this.tr("It seems you don't have access to this product.");
+            msg += "</br>";
+            msg += "</br>";
+            msg += this.tr("Please contact us:");
+            msg += "</br>";
+            const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+            noAccessText.setValue(msg + supportEmail);
+            this._addToLayout(noAccessText);
+          }
+        });
+
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
-      const request = this.__getNextRequest();
-      request
+      this.__getNextStudiesRequest()
         .then(resp => {
           const studies = resp["data"];
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           this.__addStudiesToList(studies);
 
-          // Show "Contact Us" message if studies.length === 0 && templates.length === 0 && services.length === 0
-          // Most probably is a product-stranger user (it can also be that the catalog is down)
-          const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
-          if (nStudies === 0) {
-            const promises = [
-              osparc.store.Store.getInstance().getTemplates(),
-              osparc.store.Services.getServicesLatest(),
-            ];
-            if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-              promises.push(osparc.store.Folders.getInstance().fetchFolders());
-            }
-            Promise.all(promises).then(values => {
-              const templates = values[0];
-              const services = values[1];
-              if (templates.length === 0 && Object.keys(services).length === 0) {
-                const noAccessText = new qx.ui.basic.Label().set({
-                  selectable: true,
-                  rich: true,
-                  font: "text-18",
-                  paddingTop: 20
-                });
-                let msg = this.tr("It seems you don't have access to this product.");
-                msg += "</br>";
-                msg += "</br>";
-                msg += this.tr("Please contact us:");
-                msg += "</br>";
-                const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
-                noAccessText.setValue(msg + supportEmail);
-                this._addAt(noAccessText, 2);
-              }
-            });
-          }
-
-          // Show Quick Start if studies.length === 0
+          // Show Quick Start if there are no studies in the root folder of the personal workspace
           const quickStart = osparc.product.quickStart.Utils.getQuickStart();
           if (quickStart) {
             const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(quickStart.localStorageStr);
             if (dontShow === "true") {
               return;
             }
-            if (nStudies === 0) {
+            const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
+            if (
+              nStudies === 0 &&
+              this.getWorkspaceId() === null &&
+              this.getCurrentFolderId() === null
+            ) {
               const tutorialWindow = quickStart.tutorial();
               tutorialWindow.center();
               tutorialWindow.open();
@@ -568,7 +563,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return null;
     },
 
-    __getNextRequest: function() {
+    __getNextStudiesRequest: function() {
       const params = {
         url: {
           offset: 0,
