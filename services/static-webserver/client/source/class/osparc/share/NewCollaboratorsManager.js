@@ -20,7 +20,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       showMaximize: false,
       autoDestroy: true,
       modal: true,
-      width: 262,
+      width: 300,
       maxHeight: 500,
       clickAwayClose: true
     });
@@ -60,6 +60,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     __renderLayout: function() {
       const introText = this.tr("In order to start sharing, you first need to belong to an organization.");
       const introLabel = this.__introLabel = new qx.ui.basic.Label(introText).set({
+        rich: true,
+        wrap: true,
         visibility: "excluded",
         padding: 8
       });
@@ -115,19 +117,15 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           potentialCollaborators = {};
           this.__visibleCollaborators = potentialCollaborators;
           const anyCollaborator = Object.keys(potentialCollaborators).length;
-          if (anyCollaborator) {
-            this.__introText.setVisibility(anyCollaborator ? "excluded" : "visible");
-            this.__orgsButton.setVisibility(anyCollaborator ? "excluded" : "visible");
-            this.__textFilter.setVisibility(anyCollaborator ? "visible" : "excluded");
-            this.__shareButton.setVisibility(anyCollaborator ? "visible" : "excluded");
-            this.__addEditors();
-          } else {
-            // tell the user that belonging to an organization is required to start sharing
-            this.__introText.setVisibility(anyCollaborator ? "visible" : "excluded");
-            this.__orgsButton.setVisibility(anyCollaborator ? "visible" : "excluded");
-            this.__textFilter.setVisibility(anyCollaborator ? "excluded" : "visible");
-            this.__shareButton.setVisibility(anyCollaborator ? "excluded" : "visible");
-          }
+          // tell the user that belonging to an organization is required to start sharing
+          this.__introLabel.setVisibility(anyCollaborator ? "excluded" : "visible");
+          this.__orgsButton.setVisibility(anyCollaborator ? "excluded" : "visible");
+
+          // or start sharing
+          this.__textFilter.setVisibility(anyCollaborator ? "visible" : "excluded");
+          this.__visibleCollaborators.setVisibility(anyCollaborator ? "visible" : "excluded");
+          this.__shareButton.setVisibility(anyCollaborator ? "visible" : "excluded");
+          this.__addEditors();
         });
     },
 
