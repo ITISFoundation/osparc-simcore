@@ -7,8 +7,10 @@ from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
 
 from ..projects._access_rights_api import get_user_project_access_rights
+from ..users.api import get_user
 from ..workspaces.api import check_user_workspace_access
 from . import _folders_db as project_to_folders_db
+from . import _groups_db as project_groups_db
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 
 _logger = logging.getLogger(__name__)
@@ -51,4 +53,16 @@ async def move_project_into_workspace(
     await project_api.patch_project(
         project_uuid=project_id,
         new_partial_project_data={"workspace_id": workspace_id},
+    )
+
+    # 5. Remove all project permissions, leave only the user who moved the project
+    user = await get_user(app, user_id=user_id)
+    await project_groups_db.delete_all_project_groups(app, project_id=project_id)
+    await project_groups_db.update_or_insert_project_group(
+        app,
+        project_id=project_id,
+        group_id=user["primary_gid"],
+        read=True,
+        write=True,
+        delete=True,
     )
