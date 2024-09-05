@@ -303,17 +303,18 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             if project_node_coro:
                 project_nodes = await project_node_coro
 
-                # 1.2 does project belong to some folder?
-                prj_to_folder_db = await project_to_folders_db.get_project_to_folder(
-                    request.app,
-                    project_id=new_project["uuid"],
-                    private_workspace_user_id_or_none=user_id
-                    if workspace_id is None
-                    else None,
-                )
-                if prj_to_folder_db:
-                    # As user has access to the project, it has implicitly access to the folder
-                    folder_id = prj_to_folder_db.folder_id
+            # 1.2 does project belong to some folder?
+            workspace_id = new_project["workspaceId"]
+            prj_to_folder_db = await project_to_folders_db.get_project_to_folder(
+                request.app,
+                project_id=from_study,
+                private_workspace_user_id_or_none=user_id
+                if workspace_id is None
+                else None,
+            )
+            if prj_to_folder_db:
+                # As user has access to the project, it has implicitly access to the folder
+                folder_id = prj_to_folder_db.folder_id
 
         if predefined_project:
             # 2. overrides with optional body and re-validate

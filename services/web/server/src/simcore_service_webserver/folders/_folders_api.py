@@ -3,6 +3,7 @@
 import logging
 
 from aiohttp import web
+from models_library.access_rights import AccessRights
 from models_library.api_schemas_webserver.folders_v2 import FolderGet, FolderGetPage
 from models_library.folders import FolderID
 from models_library.products import ProductName
@@ -35,8 +36,9 @@ async def create_folder(
     user = await get_user(app, user_id=user_id)
 
     workspace_is_private = True
+    user_folder_access_rights = AccessRights(read=True, write=True, delete=True)
     if workspace_id:
-        await check_user_workspace_access(
+        user_workspace_access_rights = await check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=workspace_id,
@@ -44,6 +46,7 @@ async def create_folder(
             permission="write",
         )
         workspace_is_private = False
+        user_folder_access_rights = user_workspace_access_rights.my_access_rights
 
         # Check parent_folder_id lives in the workspace
         if parent_folder_id:
@@ -87,6 +90,7 @@ async def create_folder(
         modified_at=folder_db.modified,
         owner=folder_db.created_by_gid,
         workspace_id=workspace_id,
+        my_access_rights=user_folder_access_rights,
     )
 
 
@@ -101,8 +105,9 @@ async def get_folder(
     )
 
     workspace_is_private = True
+    user_folder_access_rights = AccessRights(read=True, write=True, delete=True)
     if folder_db.workspace_id:
-        await check_user_workspace_access(
+        user_workspace_access_rights = await check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=folder_db.workspace_id,
@@ -110,6 +115,7 @@ async def get_folder(
             permission="read",
         )
         workspace_is_private = False
+        user_folder_access_rights = user_workspace_access_rights.my_access_rights
 
     folder_db = await folders_db.get_for_user_or_workspace(
         app,
@@ -126,6 +132,7 @@ async def get_folder(
         modified_at=folder_db.modified,
         owner=folder_db.created_by_gid,
         workspace_id=folder_db.workspace_id,
+        my_access_rights=user_folder_access_rights,
     )
 
 
@@ -140,9 +147,10 @@ async def list_folders(
     order_by: OrderBy,
 ) -> FolderGetPage:
     workspace_is_private = True
+    user_folder_access_rights = AccessRights(read=True, write=True, delete=True)
 
     if workspace_id:
-        await check_user_workspace_access(
+        user_workspace_access_rights = await check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=workspace_id,
@@ -150,6 +158,7 @@ async def list_folders(
             permission="read",
         )
         workspace_is_private = False
+        user_folder_access_rights = user_workspace_access_rights.my_access_rights
 
     if folder_id:
         # Check user access to folder
@@ -181,6 +190,7 @@ async def list_folders(
                 modified_at=folder.modified,
                 owner=folder.created_by_gid,
                 workspace_id=folder.workspace_id,
+                my_access_rights=user_folder_access_rights,
             )
             for folder in folders
         ],
@@ -202,8 +212,9 @@ async def update_folder(
     )
 
     workspace_is_private = True
+    user_folder_access_rights = AccessRights(read=True, write=True, delete=True)
     if folder_db.workspace_id:
-        await check_user_workspace_access(
+        user_workspace_access_rights = await check_user_workspace_access(
             app,
             user_id=user_id,
             workspace_id=folder_db.workspace_id,
@@ -211,6 +222,7 @@ async def update_folder(
             permission="write",
         )
         workspace_is_private = False
+        user_folder_access_rights = user_workspace_access_rights.my_access_rights
 
     # Check user has acces to the folder
     # NOTE: MD: TODO check function!
@@ -237,6 +249,7 @@ async def update_folder(
         modified_at=folder_db.modified,
         owner=folder_db.created_by_gid,
         workspace_id=folder_db.workspace_id,
+        my_access_rights=user_folder_access_rights,
     )
 
 

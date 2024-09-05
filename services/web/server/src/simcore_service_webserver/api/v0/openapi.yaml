@@ -3323,7 +3323,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -8031,6 +8031,7 @@ components:
       - createdAt
       - modifiedAt
       - owner
+      - myAccessRights
       type: object
       properties:
         folderId:
@@ -8064,6 +8065,8 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+        myAccessRights:
+          $ref: '#/components/schemas/models_library__access_rights__AccessRights'
     GenerateInvitation:
       title: GenerateInvitation
       required:
