@@ -417,6 +417,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         "updateWorkspace"
       ].forEach(e => {
         newWorkspaceCard.addListener(e, () => {
+          this._resourceFilter.reloadWorkspaces();
           this.__reloadWorkspaces();
         });
       });

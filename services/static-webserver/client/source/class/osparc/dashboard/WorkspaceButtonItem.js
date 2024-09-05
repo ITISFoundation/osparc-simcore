@@ -157,7 +157,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
         converter: thumbnail => thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(-1)
       });
       workspace.bind("accessRights", this, "accessRights");
-      workspace.bind("lastModified", this, "lastModified");
+      workspace.bind("modifiedAt", this, "modifiedAt");
       workspace.bind("myAccessRights", this, "myAccessRights");
     },
 
