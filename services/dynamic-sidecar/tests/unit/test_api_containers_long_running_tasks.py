@@ -3,12 +3,11 @@
 # pylint: disable=no-member
 
 import json
-from collections import namedtuple
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from inspect import getmembers, isfunction
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, NamedTuple
 from unittest.mock import AsyncMock
 
 import aiodocker
@@ -20,6 +19,10 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import AsyncClient
+from models_library.api_schemas_long_running_tasks.base import (
+    ProgressMessage,
+    ProgressPercent,
+)
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -48,7 +51,11 @@ FAST_STATUS_POLL: Final[float] = 0.1
 CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
 DEFAULT_COMMAND_TIMEOUT: Final[int] = 5
 
-ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at")
+
+class ContainerTimes(NamedTuple):
+    created: Any
+    started_at: Any
+    finished_at: Any
 
 
 # UTILS
@@ -264,6 +271,17 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
     )
 
 
+async def _get_task_id_pull_user_servcices_docker_images(
+    httpx_async_client: AsyncClient, *args, **kwargs
+) -> TaskId:
+    response = await httpx_async_client.post(
+        f"/{API_VTAG}/containers/user-services/images:pull"
+    )
+    task_id: TaskId = response.json()
+    assert isinstance(task_id, str)
+    return task_id
+
+
 async def _get_task_id_create_service_containers(
     httpx_async_client: AsyncClient,
     compose_spec: str,
@@ -358,7 +376,9 @@ async def _get_task_id_task_containers_restart(
     return task_id
 
 
-async def _debug_progress(message: str, percent: float, task_id: TaskId) -> None:
+async def _debug_progress(
+    message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId
+) -> None:
     print(f"{task_id} {percent} {message}")
 
 
@@ -391,6 +411,50 @@ async def test_create_containers_task(
     assert last_progress_message == ("finished", 1.0)
 
 
+async def test_pull_user_servcices_docker_images(
+    httpx_async_client: AsyncClient,
+    client: Client,
+    compose_spec: str,
+    mock_stop_heart_beat_task: AsyncMock,
+    mock_metrics_params: CreateServiceMetricsAdditionalParams,
+    shared_store: SharedStore,
+) -> None:
+    last_progress_message: tuple[ProgressMessage, ProgressPercent] | None = None
+
+    async def create_progress(
+        message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
+    ) -> None:
+        nonlocal last_progress_message
+        assert percent is not None
+        last_progress_message = (message, percent)
+        print(message, percent)
+
+    async with periodic_task_result(
+        client=client,
+        task_id=await _get_task_id_create_service_containers(
+            httpx_async_client, compose_spec, mock_metrics_params
+        ),
+        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=create_progress,
+    ) as result:
+        assert shared_store.container_names == result
+
+    assert last_progress_message == ("finished", 1.0)
+
+    async with periodic_task_result(
+        client=client,
+        task_id=await _get_task_id_pull_user_servcices_docker_images(
+            httpx_async_client, compose_spec, mock_metrics_params
+        ),
+        task_timeout=CREATE_SERVICE_CONTAINERS_TIMEOUT,
+        status_poll_interval=FAST_STATUS_POLL,
+        progress_callback=_debug_progress,
+    ) as result:
+        assert result is None
+    assert last_progress_message == ("finished", 1.0)
+
+
 async def test_create_containers_task_invalid_yaml_spec(
     httpx_async_client: AsyncClient,
     client: Client,
@@ -414,6 +478,7 @@ async def test_create_containers_task_invalid_yaml_spec(
 @pytest.mark.parametrize(
     "get_task_id_callable",
     [
+        _get_task_id_pull_user_servcices_docker_images,
         _get_task_id_create_service_containers,
         _get_task_id_docker_compose_down,
         _get_task_id_state_restore,

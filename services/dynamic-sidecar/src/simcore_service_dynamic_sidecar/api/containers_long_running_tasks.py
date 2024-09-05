@@ -22,6 +22,7 @@ from ..modules.long_running_tasks import (
     task_ports_inputs_pull,
     task_ports_outputs_pull,
     task_ports_outputs_push,
+    task_pull_user_servcices_docker_images,
     task_restore_state,
     task_runs_docker_compose_down,
     task_save_state,
@@ -39,6 +40,33 @@ from ._dependencies import (
 )
 
 router = APIRouter()
+
+
+@router.post(
+    "/containers/user-services/images:pull",
+    summary="Pulls all the docker container images for the user services",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=TaskId,
+)
+@cancel_on_disconnect
+async def pull_user_servcices_docker_images(
+    request: Request,
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
+    app: Annotated[FastAPI, Depends(get_application)],
+) -> TaskId:
+    assert request  # nosec
+
+    try:
+        return start_task(
+            tasks_manager,
+            task=task_pull_user_servcices_docker_images,
+            unique=True,
+            app=app,
+            shared_store=shared_store,
+        )
+    except TaskAlreadyRunningError as e:
+        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
 
 
 @router.post(

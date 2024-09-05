@@ -142,6 +142,20 @@ async def _reset_on_error(
         raise
 
 
+async def task_pull_user_servcices_docker_images(
+    progress: TaskProgress, shared_store: SharedStore, app: FastAPI
+) -> None:
+    assert shared_store.compose_spec  # nosec
+
+    progress.update(message="started pulling user services", percent=ProgressPercent(0))
+
+    await docker_compose_pull(app, shared_store.compose_spec)
+
+    progress.update(
+        message="finished pulling user services", percent=ProgressPercent(1)
+    )
+
+
 async def task_create_service_containers(
     progress: TaskProgress,
     settings: ApplicationSettings,
