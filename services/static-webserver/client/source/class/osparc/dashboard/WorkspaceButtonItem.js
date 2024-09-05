@@ -186,16 +186,19 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           const newWorkspace = false;
           const workspaceEditor = new osparc.editor.WorkspaceEditor(newWorkspace).set({
             label: workspace.getName(),
-            description: workspace.getDescription()
+            description: workspace.getDescription(),
+            thumbnail: workspace.getThumbnail(),
           });
           const title = this.tr("Edit Workspace");
           const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 300, 200);
           workspaceEditor.addListener("updateWorkspace", () => {
             const newName = workspaceEditor.getLabel();
             const newDescription = workspaceEditor.getDescription();
+            const newThumbnail = workspaceEditor.getThumbnail();
             const updateData = {
               "name": newName,
-              "description": newDescription
+              "description": newDescription,
+              "thumbnail": newThumbnail,
             };
             osparc.store.Workspaces.putWorkspace(this.getWorkspaceId(), updateData)
               .then(() => {
