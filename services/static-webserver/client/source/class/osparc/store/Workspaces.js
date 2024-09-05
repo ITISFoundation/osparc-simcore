@@ -29,6 +29,14 @@ qx.Class.define("osparc.store.Workspaces", {
       return source+iconsSize;
     },
 
+    createNewWorkspaceData: function(name, description = "", thumbnail = "") {
+      return {
+        name,
+        description,
+        thumbnail,
+      };
+    },
+
     fetchWorkspaces: function() {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
@@ -44,14 +52,6 @@ qx.Class.define("osparc.store.Workspaces", {
           });
           return this.workspacesCached;
         });
-    },
-
-    createNewWorkspaceData: function(name, description = "", thumbnail = "") {
-      return {
-        name,
-        description,
-        thumbnail,
-      };
     },
 
     postWorkspace: function(newWorkspaceData) {
