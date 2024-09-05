@@ -1007,7 +1007,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const title = osparc.utils.Utils.getUniqueStudyName(newStudyName, this._resourcesList);
       templateCopyData.name = title;
       this._showLoadingPage(this.tr("Creating ") + (newStudyName || osparc.product.Utils.getStudyAlias()));
-      osparc.study.Utils.createStudyFromTemplate(templateCopyData, this._loadingPage)
+      const contextProps = {
+        workspaceId: this.getCurrentWorkspaceId(),
+        folderId: this.getCurrentFolderId(),
+      };
+      osparc.study.Utils.createStudyFromTemplate(templateCopyData, this._loadingPage, contextProps)
         .then(studyId => this.__startStudyAfterCreating(studyId))
         .catch(err => {
           this._hideLoadingPage();
@@ -1019,7 +1023,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __newStudyFromServiceBtnClicked: function(button, key, version, newStudyLabel) {
       button.setValue(false);
       this._showLoadingPage(this.tr("Creating ") + osparc.product.Utils.getStudyAlias());
-      osparc.study.Utils.createStudyFromService(key, version, this._resourcesList, newStudyLabel)
+      const contextProps = {
+        workspaceId: this.getCurrentWorkspaceId(),
+        folderId: this.getCurrentFolderId(),
+      };
+      osparc.study.Utils.createStudyFromService(key, version, this._resourcesList, newStudyLabel, contextProps)
         .then(studyId => this.__startStudyAfterCreating(studyId))
         .catch(err => {
           this._hideLoadingPage();
