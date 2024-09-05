@@ -108,6 +108,10 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
     __fetchChildren: function(parentModel) {
       parentModel.setLoaded(true);
 
+      const myWorkspaceData = this.self().createNewEntry("My Workspace", null);
+      const myWorkspaceModel = qx.data.marshal.Json.createModel(myWorkspaceData, true);
+      parentModel.getChildren().append(myWorkspaceModel);
+
       osparc.store.Workspaces.fetchWorkspaces()
         .then(workspaces => {
           this.self().removeLoadingChild(parentModel);
