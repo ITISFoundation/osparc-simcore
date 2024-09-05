@@ -35,8 +35,11 @@ qx.Class.define("osparc.dashboard.MoveStudyToWorkspace", {
     workspacesTree.addListener("selectionChanged", e => {
       const workspaceId = e.getData();
       moveButton.setEnabled(this.__currentWorkspaceId !== workspaceId);
-      moveButton.addListenerOnce("execute", () => this.fireDataEvent("moveToWorkspace", workspaceId));
+      this.__selectedWorkspaceId = workspaceId;
     });
+    moveButton.addListener("execute", () => {
+      this.fireDataEvent("moveToWorkspace", this.__selectedWorkspaceId);
+    }, this);
   },
 
   events: {
