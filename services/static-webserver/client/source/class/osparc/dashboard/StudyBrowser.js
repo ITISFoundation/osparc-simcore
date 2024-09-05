@@ -983,10 +983,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __newStudyBtnClicked: function(button) {
       button.setValue(false);
-      const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+      const minStudyData = osparc.data.model.Study.createNewStudyObject();
       const title = osparc.utils.Utils.getUniqueStudyName(minStudyData.name, this._resourcesList);
+      const workspace = osparc.store.Workspaces.getWorkspaces(this.getCurrentWorkspaceId());
       minStudyData["name"] = title;
-      minStudyData["description"] = "";
+      minStudyData["workbench"] = {};
+      minStudyData["accessRights"] = workspace.getAccessRights();
+      minStudyData["workspaceId"] = workspace.getWorkspaceId();
+      minStudyData["folderId"] = this.getCurrentFolderId();
       this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
       const params = {
         data: minStudyData
@@ -1028,9 +1032,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __startStudyAfterCreating: function(studyId) {
-      if (this.getCurrentFolderId()) {
-        this.__moveStudyToFolder(studyId, this.getCurrentFolderId());
-      }
       const openCB = () => this._hideLoadingPage();
       const cancelCB = () => {
         this._hideLoadingPage();

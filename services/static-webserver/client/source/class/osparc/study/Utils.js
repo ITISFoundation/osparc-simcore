@@ -110,7 +110,7 @@ qx.Class.define("osparc.study.Utils", {
         osparc.store.Services.getService(key, version)
           .then(metadata => {
             const newUuid = osparc.utils.Utils.uuidV4();
-            const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+            const minStudyData = osparc.data.model.Study.createNewStudyObject();
             if (newStudyLabel === undefined) {
               newStudyLabel = metadata["name"];
             }
@@ -191,7 +191,7 @@ qx.Class.define("osparc.study.Utils", {
           });
           return;
         }
-        const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+        const minStudyData = osparc.data.model.Study.createNewStudyObject();
         minStudyData["name"] = templateData["name"];
         minStudyData["description"] = templateData["description"];
         minStudyData["thumbnail"] = templateData["thumbnail"];
