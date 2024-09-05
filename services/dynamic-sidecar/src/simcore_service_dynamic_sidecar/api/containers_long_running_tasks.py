@@ -22,6 +22,7 @@ from ..modules.long_running_tasks import (
     task_ports_inputs_pull,
     task_ports_outputs_pull,
     task_ports_outputs_push,
+    task_pull_user_servcices_docker_images,
     task_restore_state,
     task_runs_docker_compose_down,
     task_save_state,
@@ -42,12 +43,38 @@ router = APIRouter()
 
 
 @router.post(
+    "/containers/images:pull",
+    summary="Pulls all the docker container images for the user services",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=TaskId,
+)
+@cancel_on_disconnect
+async def pull_user_servcices_docker_images(
+    request: Request,
+    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
+    app: Annotated[FastAPI, Depends(get_application)],
+) -> TaskId:
+    assert request  # nosec
+
+    try:
+        return start_task(
+            tasks_manager,
+            task=task_pull_user_servcices_docker_images,
+            unique=True,
+            app=app,
+            shared_store=shared_store,
+        )
+    except TaskAlreadyRunningError as e:
+        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
+
+
+@router.post(
     "/containers",
     summary=dedent(
         """
         Starts the containers as defined in ContainerCreate by:
         - cleaning up resources from previous runs if any
-        - pulling the needed images
         - starting the containers
 
         Progress may be obtained through URL
@@ -66,7 +93,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     shared_store: Annotated[SharedStore, Depends(get_shared_store)],
     app: Annotated[FastAPI, Depends(get_application)],
     application_health: Annotated[ApplicationHealth, Depends(get_application_health)],
-    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
 ) -> TaskId:
     assert request  # nosec
 
@@ -78,7 +104,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
             settings=settings,
             containers_create=containers_create,
             shared_store=shared_store,
-            mounted_volumes=mounted_volumes,
             app=app,
             application_health=application_health,
         )
