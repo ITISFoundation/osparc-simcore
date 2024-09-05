@@ -49,9 +49,9 @@ class ProjectCreateNew(InputSchema):
         "uuid", "thumbnail", "description", allow_reuse=True, pre=True
     )(empty_str_to_none_pre_validator)
 
-    _null_or_none_to_none = validator("workspace_id", "folder_id")(
-        null_or_none_str_to_none_validator
-    )
+    _null_or_none_to_none = validator(
+        "workspace_id", "folder_id", allow_reuse=True, pre=True
+    )(null_or_none_str_to_none_validator)
 
 
 # NOTE: based on OVERRIDABLE_DOCUMENT_KEYS
