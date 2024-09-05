@@ -43,8 +43,6 @@ def _parse_computational(
         or state.computational_parser_primary.parse(name)
     ):
         assert isinstance(result, parse.Result)
-        # special handling for optional wallet
-        rich.print(result.named)
 
         last_heartbeat = utils.get_last_heartbeat(instance)
         return ComputationalInstance(
