@@ -85,10 +85,10 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       apply: "__applyAccessRights"
     },
 
-    lastModified: {
+    modifiedAt: {
       check: "Date",
       nullable: true,
-      apply: "__applyLastModified"
+      apply: "__applyModifiedAt"
     }
   },
 
@@ -234,7 +234,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       }
     },
 
-    __applyLastModified: function(value) {
+    __applyModifiedAt: function(value) {
       const label = this.getChildControl("modified-text");
       label.setValue(osparc.utils.Utils.formatDateAndTime(value));
     },
