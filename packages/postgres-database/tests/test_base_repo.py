@@ -28,7 +28,7 @@ class OneResourceRepoDemo:
         self.table = table
 
     async def create(self, connection: AsyncConnection | None = None, **kwargs) -> int:
-        async with get_or_create_connection(self.engine, connection) as conn:
+        async with transaction_context(self.engine, connection) as conn:
             result = await conn.execute(self.table.insert().values(**kwargs))
             await conn.commit()
             assert result  # nosec
@@ -63,7 +63,7 @@ class OneResourceRepoDemo:
     async def update(
         self, record_id: int, connection: AsyncConnection | None = None, **values
     ) -> bool:
-        async with get_or_create_connection(self.engine, connection) as conn:
+        async with transaction_context(self.engine, connection) as conn:
             result = await conn.execute(
                 self.table.update().where(self.table.c.id == record_id).values(**values)
             )
@@ -73,7 +73,7 @@ class OneResourceRepoDemo:
     async def delete(
         self, record_id: int, connection: AsyncConnection | None = None
     ) -> bool:
-        async with get_or_create_connection(self.engine, connection) as conn:
+        async with transaction_context(self.engine, connection) as conn:
             result = await conn.execute(
                 self.table.delete().where(self.table.c.id == record_id)
             )

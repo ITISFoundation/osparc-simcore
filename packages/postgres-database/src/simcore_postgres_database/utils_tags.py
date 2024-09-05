@@ -1,7 +1,6 @@
 """ Repository pattern, errors and data structures for models.tags
 """
 
-import itertools
 from typing import TypedDict
 
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -116,7 +115,7 @@ class TagsRepo:
             access = result.first()
             assert access
 
-            return TagDict(itertools.chain(tag, access))
+            return TagDict(**tag, **access)
 
     async def list_all(
         self,
@@ -153,7 +152,7 @@ class TagsRepo:
         tag_id: int,
         **fields,
     ) -> TagDict:
-        async with get_or_create_connection(self.engine, connection) as conn:
+        async with transaction_context(self.engine, connection) as conn:
             updates = {
                 name: value
                 for name, value in fields.items()
@@ -181,7 +180,7 @@ class TagsRepo:
         tag_id: int,
     ) -> None:
         stmt_delete = delete_tag_stmt(user_id=user_id, tag_id=tag_id)
-        async with get_or_create_connection(self.engine, connection) as conn:
+        async with transaction_context(self.engine, connection) as conn:
             deleted = await conn.scalar(stmt_delete)
             if not deleted:
                 msg = f"Could not delete {tag_id=}. Not found or insuficient access."
