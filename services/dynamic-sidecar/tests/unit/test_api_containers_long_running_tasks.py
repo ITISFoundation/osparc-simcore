@@ -274,9 +274,7 @@ def mock_node_missing(mocker: MockerFixture, missing_node_uuid: str) -> None:
 async def _get_task_id_pull_user_servcices_docker_images(
     httpx_async_client: AsyncClient, *args, **kwargs
 ) -> TaskId:
-    response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers/user-services/images:pull"
-    )
+    response = await httpx_async_client.post(f"/{API_VTAG}/containers/images:pull")
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)
     return task_id

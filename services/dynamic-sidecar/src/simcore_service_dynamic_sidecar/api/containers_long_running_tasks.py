@@ -43,7 +43,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/containers/user-services/images:pull",
+    "/containers/images:pull",
     summary="Pulls all the docker container images for the user services",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,

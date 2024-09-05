@@ -365,7 +365,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
     async def pull_user_services_images(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> None:
-        response = await self._thin_client.post_containers_user_services_images_pull(
+        response = await self._thin_client.post_containers_images_pull(
             dynamic_sidecar_endpoint
         )
         task_id: TaskId = response.json()

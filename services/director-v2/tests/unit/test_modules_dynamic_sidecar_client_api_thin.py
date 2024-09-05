@@ -296,8 +296,8 @@ async def test_put_volumes(
             id="down",
         ),
         pytest.param(
-            "post_containers_user_services_images_pull",
-            "/containers/user-services/images:pull",
+            "post_containers_images_pull",
+            "/containers/images:pull",
             {},
             id="user_servces_images_pull",
         ),
