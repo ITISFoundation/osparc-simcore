@@ -23,7 +23,10 @@ from servicelib.fastapi.long_running_tasks.client import (
 )
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_service_dynamic_sidecar._meta import API_VTAG
-from simcore_service_dynamic_sidecar.models.schemas.containers import ContainersCreate
+from simcore_service_dynamic_sidecar.models.schemas.containers import (
+    ContainersComposeSpec,
+    ContainersCreate,
+)
 from simcore_service_dynamic_sidecar.modules.prometheus_metrics import (
     _USER_SERVICES_NOT_STARTED,
     UserServicesMetrics,
@@ -101,9 +104,13 @@ async def _get_task_id_create_service_containers(
     compose_spec: str,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ) -> TaskId:
-    containers_create = ContainersCreate(
-        docker_compose_yaml=compose_spec, metrics_params=mock_metrics_params
+    ctontainers_compose_spec = ContainersComposeSpec(
+        docker_compose_yaml=compose_spec,
     )
+    await httpx_async_client.post(
+        f"/{API_VTAG}/containers/compose-spec", json=ctontainers_compose_spec.dict()
+    )
+    containers_create = ContainersCreate(metrics_params=mock_metrics_params)
     response = await httpx_async_client.post(
         f"/{API_VTAG}/containers", json=containers_create.dict()
     )

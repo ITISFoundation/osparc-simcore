@@ -32,9 +32,7 @@ from ._events_utils import get_director_v0_client
 _logger = logging.getLogger(__name__)
 
 
-async def create_user_services(  # pylint: disable=too-many-statements
-    app: FastAPI, scheduler_data: SchedulerData
-) -> None:
+async def submit_compose_sepc(app: FastAPI, scheduler_data: SchedulerData) -> None:
     _logger.debug(
         "Getting docker compose spec for service %s", scheduler_data.service_name
     )
@@ -105,10 +103,26 @@ async def create_user_services(  # pylint: disable=too-many-statements
     )
 
     _logger.debug(
-        "Starting containers %s with compose-specs:\n%s",
+        "Submitting to %s it's compose-specs:\n%s",
         scheduler_data.service_name,
         compose_spec,
     )
+    await sidecars_client.submit_docker_compose_spec(
+        dynamic_sidecar_endpoint, compose_spec=compose_spec
+    )
+    scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
+
+
+async def create_user_services(  # pylint: disable=too-many-statements
+    app: FastAPI, scheduler_data: SchedulerData
+) -> None:
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
+    )
+    sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
+    dynamic_sidecar_endpoint = scheduler_data.endpoint
+
+    _logger.debug("Starting containers %s", scheduler_data.service_name)
 
     async def progress_create_containers(
         message: str, percent: ProgressPercent | None, task_id: TaskId
@@ -159,7 +173,6 @@ async def create_user_services(  # pylint: disable=too-many-statements
     )
     await sidecars_client.create_containers(
         dynamic_sidecar_endpoint,
-        compose_spec,
         metrics_params,
         progress_create_containers,
     )
@@ -208,7 +221,5 @@ async def create_user_services(  # pylint: disable=too-many-statements
     )
 
     scheduler_data.dynamic_sidecar.were_containers_created = True
-
-    scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
 
     _logger.info("Internal state after creating user services %s", scheduler_data)

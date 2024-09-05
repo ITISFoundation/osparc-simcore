@@ -82,7 +82,7 @@ async def move_project_into_folder(
                 app,
                 project_id=project_id,
                 folder_id=folder_id,
-                private_workspace_user_id_or_none=user_id
-                if workspace_is_private
-                else None,
+                private_workspace_user_id_or_none=(
+                    user_id if workspace_is_private else None
+                ),
             )

@@ -132,9 +132,7 @@ async def list_workspaces_for_user(
             my_access_rights_subquery.c.my_access_rights,
         )
         .select_from(
-            workspaces.join(access_rights_subquery, isouter=True).join(
-                my_access_rights_subquery
-            )
+            workspaces.join(access_rights_subquery).join(my_access_rights_subquery)
         )
         .where(workspaces.c.product_name == product_name)
     )

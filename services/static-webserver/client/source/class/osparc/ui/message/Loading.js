@@ -51,7 +51,7 @@ qx.Class.define("osparc.ui.message.Loading", {
       check: "String",
       init: null,
       nullable: true,
-      event: "changeLogo"
+      apply: "__applyLogo"
     },
 
     header: {
@@ -76,8 +76,9 @@ qx.Class.define("osparc.ui.message.Loading", {
   },
 
   statics: {
-    LOGO_WIDTH: 190,
-    LOGO_HEIGHT: 220,
+    ICON_WIDTH: 190,
+    LOGO_HEIGHT: 100,
+    ICON_HEIGHT: 220,
     STATUS_ICON_SIZE: 20,
 
     GRID_POS: {
@@ -90,6 +91,7 @@ qx.Class.define("osparc.ui.message.Loading", {
 
   members: {
     __mainLayout: null,
+    __thumbnail: null,
     __header: null,
     __messages: null,
     __extraWidgets: null,
@@ -119,20 +121,23 @@ qx.Class.define("osparc.ui.message.Loading", {
       });
 
       const productLogoPath = osparc.product.Utils.getLogoPath();
-      const logo = new osparc.ui.basic.Thumbnail(productLogoPath, this.self().LOGO_WIDTH, this.self().LOGO_HEIGHT).set({
+      const thumbnail = this.__thumbnail = new osparc.ui.basic.Thumbnail(productLogoPath, this.self().ICON_WIDTH, this.self().LOGO_HEIGHT).set({
         alignX: "center"
       });
+      let logoHeight = this.self().LOGO_HEIGHT;
       if (qx.util.ResourceManager.getInstance().getImageFormat(productLogoPath) === "png") {
-        const height = osparc.ui.basic.Logo.getHeightKeepingAspectRatio(productLogoPath, this.self().LOGO_WIDTH)
-        logo.getChildControl("image").set({
-          width: this.self().LOGO_WIDTH,
-          height
+        logoHeight = osparc.ui.basic.Logo.getHeightKeepingAspectRatio(productLogoPath, this.self().ICON_WIDTH);
+        thumbnail.getChildControl("image").set({
+          width: this.self().ICON_WIDTH,
+          height: logoHeight
+        });
+      } else {
+        thumbnail.getChildControl("image").set({
+          width: this.self().ICON_WIDTH,
+          height: logoHeight
         });
       }
-      this.bind("logo", logo, "source", {
-        converter: newPath => newPath ? newPath : productLogoPath
-      });
-      mainLayout.addAt(logo, {
+      mainLayout.addAt(thumbnail, {
         column: 0,
         row: this.self().GRID_POS.LOGO
       });
@@ -194,6 +199,21 @@ qx.Class.define("osparc.ui.message.Loading", {
       this._add(maximizeLayout);
     },
 
+    __applyLogo: function(newLogo) {
+      const productLogoPath = osparc.product.Utils.getLogoPath();
+      if (newLogo !== productLogoPath) {
+        this.__thumbnail.set({
+          maxHeight: this.self().ICON_HEIGHT,
+          height: this.self().ICON_HEIGHT,
+        });
+        this.__thumbnail.getChildControl("image").set({
+          maxHeight: this.self().ICON_HEIGHT,
+          height: this.self().ICON_HEIGHT,
+        });
+      }
+      this.__thumbnail.setSource(newLogo);
+    },
+
     __applyHeader: function(value) {
       this.__header.setLabel(value);
       const words = value.split(" ");
@@ -207,8 +227,8 @@ qx.Class.define("osparc.ui.message.Loading", {
       }
     },
 
-    __applyMessages: function(msgs, old) {
-      this.__messages.removeAll();
+    __applyMessages: function(msgs) {
+      this.clearMessages();
       if (msgs) {
         msgs.forEach(msg => {
           const text = new qx.ui.basic.Label(msg.toString()).set({
@@ -222,6 +242,10 @@ qx.Class.define("osparc.ui.message.Loading", {
       } else {
         this.__messages.exclude();
       }
+    },
+
+    clearMessages: function() {
+      this.__messages.removeAll();
     },
 
     addWidgetToMessages: function(widget) {

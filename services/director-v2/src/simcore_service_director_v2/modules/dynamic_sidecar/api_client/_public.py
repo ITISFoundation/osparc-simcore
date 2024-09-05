@@ -280,6 +280,15 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             ]
         )
 
+    async def submit_docker_compose_spec(
+        self,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
+        compose_spec: str,
+    ) -> None:
+        await self._thin_client.post_containers_compose_spec(
+            dynamic_sidecar_endpoint, compose_spec=compose_spec
+        )
+
     def _get_client(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Client:
         return Client(
             app=self._app,
@@ -307,13 +316,11 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
     async def create_containers(
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
-        compose_spec: str,
         metrics_params: CreateServiceMetricsAdditionalParams,
         progress_callback: ProgressCallback | None = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks(
             dynamic_sidecar_endpoint,
-            compose_spec=compose_spec,
             metrics_params=metrics_params,
         )
         task_id: TaskId = response.json()
@@ -352,6 +359,21 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             task_id,
             dynamic_sidecar_endpoint,
             self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            _debug_progress_callback,
+        )
+
+    async def pull_user_services_images(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> None:
+        response = await self._thin_client.post_containers_images_pull(
+            dynamic_sidecar_endpoint
+        )
+        task_id: TaskId = response.json()
+
+        await self._await_for_result(
+            task_id,
+            dynamic_sidecar_endpoint,
+            self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_USER_SERVICES_PULLING_TIMEOUT,
             _debug_progress_callback,
         )
 

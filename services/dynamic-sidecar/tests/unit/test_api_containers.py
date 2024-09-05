@@ -95,11 +95,15 @@ async def _start_containers(
 ) -> list[str]:
     # start containers
     response = await test_client.post(
+        f"/{API_VTAG}/containers/compose-spec",
+        json={"docker_compose_yaml": compose_spec},
+    )
+    assert response.status_code == status.HTTP_202_ACCEPTED, response.text
+    assert response.json() is None
+
+    response = await test_client.post(
         f"/{API_VTAG}/containers",
-        json={
-            "docker_compose_yaml": compose_spec,
-            "metrics_params": mock_metrics_params.dict(),
-        },
+        json={"metrics_params": mock_metrics_params.dict()},
     )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     task_id: TaskId = response.json()

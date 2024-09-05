@@ -2,6 +2,9 @@ from models_library.services_creation import CreateServiceMetricsAdditionalParam
 from pydantic import BaseModel
 
 
-class ContainersCreate(BaseModel):
+class ContainersComposeSpec(BaseModel):
     docker_compose_yaml: str
+
+
+class ContainersCreate(BaseModel):
     metrics_params: CreateServiceMetricsAdditionalParams
