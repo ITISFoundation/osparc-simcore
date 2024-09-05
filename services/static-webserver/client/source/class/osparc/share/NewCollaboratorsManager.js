@@ -58,7 +58,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     },
 
     __renderLayout: function() {
-      const introText = this.tr("In order to start sharing, you first need to belong to an organization.");
+      const introText = this.tr("In order to start Sharing with other members, you first need to belong to an Organization.");
       const introLabel = this.__introLabel = new qx.ui.basic.Label(introText).set({
         rich: true,
         wrap: true,
@@ -85,7 +85,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         alignX: "right"
       }));
       const orgsButton = this.__orgsButton = new qx.ui.form.Button(this.tr("Check Organizations...")).set({
-        appearance: "form-button"
+        appearance: "form-button",
+        visibility: "excluded",
       });
       orgsButton.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
       buttons.add(orgsButton);
@@ -123,7 +124,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
           // or start sharing
           this.__textFilter.setVisibility(anyCollaborator ? "visible" : "excluded");
-          this.__visibleCollaborators.setVisibility(anyCollaborator ? "visible" : "excluded");
+          this.__collabButtonsContainer.setVisibility(anyCollaborator ? "visible" : "excluded");
           this.__shareButton.setVisibility(anyCollaborator ? "visible" : "excluded");
           this.__addEditors();
         });
