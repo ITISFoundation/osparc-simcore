@@ -14,6 +14,7 @@ from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
+from models_library.workspaces import UserWorkspaceAccessRightsDB
 from pydantic import parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -32,6 +33,7 @@ from ..storage.api import (
     get_project_total_size_simcore_s3,
 )
 from ..users.api import get_user_fullname
+from ..workspaces import _workspaces_db as workspaces_db
 from ..workspaces.api import check_user_workspace_access
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from . import _folders_db as project_to_folders_db
@@ -308,9 +310,9 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             prj_to_folder_db = await project_to_folders_db.get_project_to_folder(
                 request.app,
                 project_id=from_study,
-                private_workspace_user_id_or_none=user_id
-                if workspace_id is None
-                else None,
+                private_workspace_user_id_or_none=(
+                    user_id if workspace_id is None else None
+                ),
             )
             if prj_to_folder_db:
                 # As user has access to the project, it has implicitly access to the folder
@@ -387,6 +389,20 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         # Adds permalink
         await update_or_pop_permalink_in_project(request, new_project)
+
+        # Overwrite project access rights
+        if workspace_id:
+            workspace_db: UserWorkspaceAccessRightsDB = (
+                await workspaces_db.get_workspace_for_user(
+                    app=request.app,
+                    user_id=user_id,
+                    workspace_id=workspace_id,
+                    product_name=product_name,
+                )
+            )
+            new_project["accessRights"] = {
+                key: access.dict() for key, access in workspace_db.access_rights.items()
+            }
 
         # Ensures is like ProjectGet
         data = ProjectGet.parse_obj(new_project).data(exclude_unset=True)

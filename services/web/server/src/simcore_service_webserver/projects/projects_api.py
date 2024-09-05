@@ -62,6 +62,7 @@ from models_library.users import GroupID, UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
+from models_library.workspaces import UserWorkspaceAccessRightsDB
 from pydantic import ByteSize, parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
@@ -118,6 +119,7 @@ from ..users.preferences_api import (
 )
 from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
+from ..workspaces import _workspaces_db as workspaces_db
 from . import _crud_api_delete, _nodes_api
 from ._access_rights_api import (
     check_user_project_permission,
@@ -196,7 +198,18 @@ async def get_project_for_user(
             user_id, project, project_type is ProjectType.TEMPLATE, app
         )
 
-    # If from workspace -> hack workspace permissions
+    if project["workspaceId"] is not None:
+        workspace_db: UserWorkspaceAccessRightsDB = (
+            await workspaces_db.get_workspace_for_user(
+                app=app,
+                user_id=user_id,
+                workspace_id=project["workspaceId"],
+                product_name=product_name,
+            )
+        )
+        project["accessRights"] = {
+            key: access.dict() for key, access in workspace_db.access_rights.items()
+        }
 
     Project.parse_obj(project)  # NOTE: only validates
     return project
