@@ -20,8 +20,8 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.put(
-    f"/{API_VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}", name="add_project_tag"
+@routes.post(
+    f"/{API_VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}:add", name="add_project_tag"
 )
 @login_required
 @permission_required("project.tag.*")
@@ -45,8 +45,9 @@ async def add_project_tag(request: web.Request):
     return envelope_json_response(project)
 
 
-@routes.delete(
-    f"/{API_VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}", name="remove_project_tag"
+@routes.post(
+    f"/{API_VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}:remove",
+    name="remove_project_tag",
 )
 @login_required
 @permission_required("project.tag.*")

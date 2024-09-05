@@ -31,8 +31,8 @@ async def list_service_tags(request: web.Request):
     raise NotImplementedError
 
 
-@routes.put(
-    f"/{API_VTAG}/catalog/services/{{service_key}}/{{service_version}}/tags/{{tag_id}}",
+@routes.post(
+    f"/{API_VTAG}/catalog/services/{{service_key}}/{{service_version}}/tags/{{tag_id}}:add",
     name="add_service_tag",
 )
 @login_required
@@ -45,8 +45,8 @@ async def add_service_tag(request: web.Request):
     raise NotImplementedError
 
 
-@routes.delete(
-    f"/{API_VTAG}/catalog/services/{{service_key}}/{{service_version}}/tags/{{tag_id}}",
+@routes.post(
+    f"/{API_VTAG}/catalog/services/{{service_key}}/{{service_version}}/tags/{{tag_id}}:remove",
     name="remove_service_tag",
 )
 @login_required

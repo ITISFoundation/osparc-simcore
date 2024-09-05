@@ -35,8 +35,8 @@ def list_service_tags(
     ...
 
 
-@router.put(
-    "/catalog/services/{service_key}/{service_version}/tags/{tag_id}",
+@router.post(
+    "/catalog/services/{service_key}/{service_version}/tags/{tag_id}:add",
     response_model=Envelope[CatalogServiceGet],
 )
 def add_service_tag(
@@ -45,8 +45,8 @@ def add_service_tag(
     ...
 
 
-@router.delete(
-    "/catalog/services/{service_key}/{service_version}/tags/{tag_id}",
+@router.post(
+    "/catalog/services/{service_key}/{service_version}/tags/{tag_id}:remove",
     response_model=Envelope[CatalogServiceGet],
 )
 def remove_service_tag(

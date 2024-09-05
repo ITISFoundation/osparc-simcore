@@ -218,7 +218,7 @@ async def test_get_and_patch_service(
     assert mocked_rpc_catalog_service_api["update_service"].call_count == 1
 
 
-@pytest.xfail(reason="service tags entrypoints under development")
+@pytest.mark.xfail(reason="service tags entrypoints under development")
 @pytest.mark.parametrize(
     "user_role",
     [UserRole.USER],

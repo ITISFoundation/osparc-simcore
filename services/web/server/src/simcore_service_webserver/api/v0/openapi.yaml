@@ -2238,8 +2238,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags.schemas.TagGet__'
-  /v0/catalog/services/{service_key}/{service_version}/tags/{tag_id}:
-    put:
+  /v0/catalog/services/{service_key}/{service_version}/tags/{tag_id}:add:
+    post:
       tags:
       - catalog
       - tags
@@ -2275,7 +2275,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
-    delete:
+  /v0/catalog/services/{service_key}/{service_version}/tags/{tag_id}:remove:
+    post:
       tags:
       - catalog
       - tags
@@ -4257,7 +4258,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -4309,13 +4310,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectState_'
-  /v0/projects/{project_uuid}/tags/{tag_id}:
-    put:
+  /v0/projects/{project_uuid}/tags/{tag_id}:add:
+    post:
       tags:
       - projects
       - tags
       summary: Add Project Tag
-      description: Links an existing label with an existing study
+      description: 'Links an existing label with an existing study
+
+
+        NOTE: that the tag is not created here'
       operationId: add_project_tag
       parameters:
       - required: true
@@ -4338,12 +4342,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
-    delete:
+  /v0/projects/{project_uuid}/tags/{tag_id}:remove:
+    post:
       tags:
       - projects
       - tags
       summary: Remove Project Tag
-      description: Removes an existing link between a label and a study
+      description: 'Removes an existing link between a label and a study
+
+
+        NOTE: that the tag is not deleted here'
       operationId: remove_project_tag
       parameters:
       - required: true
