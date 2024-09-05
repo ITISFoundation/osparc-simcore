@@ -216,6 +216,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
+      if (this.__currentRequest) {
+        // cancel currentRequest
+      }
       const currentRequest = this.__currentRequest = this.__getNextStudiesRequest();
       currentRequest
         .then(resp => {
