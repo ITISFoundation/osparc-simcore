@@ -46,11 +46,7 @@ from ..core.rabbitmq import (
 )
 from ..core.settings import ApplicationSettings
 from ..core.utils import CommandResult
-from ..core.validation import (
-    ComposeSpecValidation,
-    parse_compose_spec,
-    validate_compose_spec,
-)
+from ..core.validation import parse_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
@@ -146,30 +142,29 @@ async def _reset_on_error(
         raise
 
 
+async def task_pull_user_servcices_docker_images(
+    progress: TaskProgress, shared_store: SharedStore, app: FastAPI
+) -> None:
+    assert shared_store.compose_spec  # nosec
+
+    progress.update(message="started pulling user services", percent=ProgressPercent(0))
+
+    await docker_compose_pull(app, shared_store.compose_spec)
+
+    progress.update(
+        message="finished pulling user services", percent=ProgressPercent(1)
+    )
+
+
 async def task_create_service_containers(
     progress: TaskProgress,
     settings: ApplicationSettings,
     containers_create: ContainersCreate,
     shared_store: SharedStore,
-    mounted_volumes: MountedVolumes,
     app: FastAPI,
     application_health: ApplicationHealth,
 ) -> list[str]:
     progress.update(message="validating service spec", percent=ProgressPercent(0))
-
-    async with shared_store:
-        compose_spec_validation: ComposeSpecValidation = await validate_compose_spec(
-            settings=settings,
-            compose_file_content=containers_create.docker_compose_yaml,
-            mounted_volumes=mounted_volumes,
-        )
-        shared_store.compose_spec = compose_spec_validation.compose_spec
-        shared_store.container_names = compose_spec_validation.current_container_names
-        shared_store.original_to_container_names = (
-            compose_spec_validation.original_to_current_container_names
-        )
-
-    _logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
 
     assert shared_store.compose_spec  # nosec
 
