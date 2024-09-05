@@ -36,7 +36,7 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
     this.setLabel(label);
 
     if ("login" in collaborator) {
-      this.setToolTipText(collaborator["login"]);
+      label += ` (${collaborator["login"]})`;
     }
 
     let iconPath = null;
