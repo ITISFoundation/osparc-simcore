@@ -299,7 +299,9 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}"
+            // Matus will fix it
+            // url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}"
+            url: statics.API + "/folders?&folder_id={folderId}&offset={offset}&limit={limit}"
           },
           getOne: {
             method: "GET",
@@ -323,7 +325,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/workspaces?workspace_id={workspaceId}&offset={offset}&limit={limit}"
+            url: statics.API + "/workspaces?&offset={offset}&limit={limit}"
           },
           getOne: {
             method: "GET",

@@ -578,7 +578,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      params.url.workspaceIdId = this.getCurrentWorkspaceId();
+      params.url.workspaceId = this.getCurrentWorkspaceId();
       params.url.folderId = this.getCurrentFolderId();
       if (params.url.orderBy) {
         return osparc.data.Resources.fetch("studies", "getPageSortBy", params, undefined, options);
@@ -983,13 +983,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __newStudyBtnClicked: function(button) {
       button.setValue(false);
-      const minStudyData = osparc.data.model.Study.createNewStudyObject();
+      const minStudyData = osparc.data.model.Study.createMinStudyObject();
       const title = osparc.utils.Utils.getUniqueStudyName(minStudyData.name, this._resourcesList);
       const workspace = osparc.store.Workspaces.getWorkspaces(this.getCurrentWorkspaceId());
       minStudyData["name"] = title;
       minStudyData["workbench"] = {};
-      minStudyData["accessRights"] = workspace.getAccessRights();
-      minStudyData["workspaceId"] = workspace.getWorkspaceId();
+      minStudyData["accessRights"] = workspace ? workspace.getAccessRights() : null;
+      minStudyData["workspaceId"] = workspace ? workspace.getWorkspaceId() : null;
       minStudyData["folderId"] = this.getCurrentFolderId();
       this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
       const params = {

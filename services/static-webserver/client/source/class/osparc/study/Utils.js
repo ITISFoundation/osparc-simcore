@@ -111,7 +111,7 @@ qx.Class.define("osparc.study.Utils", {
           .then(metadata => {
             const newUuid = osparc.utils.Utils.uuidV4();
             // Study will be created in the root folder of the personal workspace
-            const minStudyData = osparc.data.model.Study.createNewStudyObject();
+            const minStudyData = osparc.data.model.Study.createMinStudyObject();
             if (newStudyLabel === undefined) {
               newStudyLabel = metadata["name"];
             }
@@ -193,7 +193,7 @@ qx.Class.define("osparc.study.Utils", {
           return;
         }
         // Study will be created in the root folder of the personal workspace
-        const minStudyData = osparc.data.model.Study.createNewStudyObject();
+        const minStudyData = osparc.data.model.Study.createMinStudyObject();
         minStudyData["name"] = templateData["name"];
         minStudyData["description"] = templateData["description"];
         minStudyData["thumbnail"] = templateData["thumbnail"];

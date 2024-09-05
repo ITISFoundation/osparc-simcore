@@ -214,13 +214,11 @@ qx.Class.define("osparc.data.model.Study", {
       "workbench"
     ],
 
-    createNewStudyObject: function() {
+    createMinStudyObject: function() {
       const newStudyObject = {
         "name": "",
         "workbench": {},
         "accessRights": {},
-        "workspaceId": null,
-        "folderId": null,
       };
       return newStudyObject;
     },
