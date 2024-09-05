@@ -9,8 +9,6 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function(resourceData, showOrganizations = true) {
-    // OM remove this
-    showOrganizations = false;
     this.base(arguments, "collaboratorsManager", this.tr("Share with"));
     this.set({
       layout: new qx.ui.layout.VBox(),
@@ -91,7 +89,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       orgsButton.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
       buttons.add(orgsButton);
       const shareButton = this.__shareButton = new osparc.ui.form.FetchButton(this.tr("Share")).set({
-        appearance: "form-button"
+        appearance: "form-button",
+        enabled: false,
       });
       shareButton.addListener("execute", () => this.__shareClicked(), this);
       buttons.add(shareButton);
@@ -114,8 +113,6 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       }
       osparc.store.Store.getInstance().getPotentialCollaborators(false, includeProductEveryone)
         .then(potentialCollaborators => {
-          // OM remove this
-          potentialCollaborators = {};
           this.__visibleCollaborators = potentialCollaborators;
           const anyCollaborator = Object.keys(potentialCollaborators).length;
           // tell the user that belonging to an organization is required to start sharing
@@ -139,6 +136,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
         } else {
           this.__selectedCollaborators.remove(collaborator.gid);
         }
+        this.__shareButton.setEnabled(Boolean(this.__selectedCollaborators.length));
       }, this);
       collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
       return collaboratorButton;
