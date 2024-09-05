@@ -14,6 +14,10 @@ from aiohttp.test_utils import TestClient
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_parametrizations import (
+    ExpectedResponse,
+    standard_role_response,
+)
 from pytest_simcore.helpers.webserver_projects import create_project
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
@@ -38,6 +42,24 @@ def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
         spec=True,
         return_value=True,
     )
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_moving_between_workspaces_user_role_permissions(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: ExpectedResponse,
+    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
+    fake_project: ProjectDict,
+    workspaces_clean_db: None,
+):
+    # Move project from workspace to your private workspace
+    base_url = client.app.router["replace_project_workspace"].url_for(
+        project_id=fake_project["uuid"], workspace_id="null"
+    )
+    resp = await client.put(base_url)
+    await assert_status(resp, expected.no_content)
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
