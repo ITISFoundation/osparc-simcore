@@ -28,8 +28,8 @@ def file_size() -> ByteSize:
 
 
 @pytest.fixture
-def mock_copy_transfer_cb() -> Callable[[int], None]:
-    def copy_transfer_cb(copied_bytes: int) -> None:
+def mock_copy_transfer_cb() -> Callable[..., None]:
+    def copy_transfer_cb(total_bytes_copied: int, *, file_name: str) -> None:
         ...
 
     return copy_transfer_cb
@@ -43,7 +43,7 @@ async def test__copy_path_s3_s3(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
     user_id: UserID,
-    mock_copy_transfer_cb: Callable[[int], None],
+    mock_copy_transfer_cb: Callable[..., None],
     aiopg_engine: Engine,
 ):
     def _get_dest_file_id(src: SimcoreS3FileID) -> SimcoreS3FileID:
