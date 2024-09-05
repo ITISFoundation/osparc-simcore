@@ -77,7 +77,6 @@ def main(
     assert state.environment["EC2_INSTANCES_KEY_NAME"]
     dynamic_pattern = f"{state.environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
     state.dynamic_parser = parse.compile(dynamic_pattern)
-    rich.print(f"using dynamic-naming-regex: {dynamic_pattern}")
     if state.environment["CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX"]:
         state.computational_parser_primary = parse.compile(
             f"{state.environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX'].strip('-')}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT}",
@@ -87,12 +86,6 @@ def main(
             f"{state.environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX'].strip('-')}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT_WORKERS}",
             {"wallet_id_spec", wallet_id_spec},
         )
-    rich.print(
-        f"compuational-primary-naming-regex: {state.computational_parser_primary._expression}"  # noqa: SLF001
-    )
-    rich.print(
-        f"compuational-workers-naming-regex: {state.computational_parser_workers._expression}"  # noqa: SLF001
-    )
 
     # locate ssh key path
     for file_path in deploy_config.glob("**/*.pem"):
