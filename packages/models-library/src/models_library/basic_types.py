@@ -73,6 +73,9 @@ class IDStr(RootModel[str]):
         ),
     ]
 
+    def __hash__(self):
+        return hash(self.root)
+
     @staticmethod
     def concatenate(*args: "IDStr", link_char: str = " ") -> "IDStr":
         result = link_char.join([arg.root for arg in args]).strip()
