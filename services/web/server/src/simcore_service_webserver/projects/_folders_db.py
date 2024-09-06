@@ -98,3 +98,15 @@ async def delete_project_to_folder(
                 & (projects_to_folders.c.user_id == private_workspace_user_id_or_none)
             )
         )
+
+
+async def delete_all_project_to_folder_by_project_id(
+    app: web.Application,
+    project_id: ProjectID,
+) -> None:
+    async with get_database_engine(app).acquire() as conn:
+        await conn.execute(
+            projects_to_folders.delete().where(
+                projects_to_folders.c.project_uuid == f"{project_id}"
+            )
+        )
