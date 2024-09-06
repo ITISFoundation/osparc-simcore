@@ -530,28 +530,42 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
+    __showMoveToWorkspaceWarningMessage: function() {
+      const msg = this.tr("The permissions will be taken from the new workspace?");
+      const win = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Move"),
+      });
+      win.open();
+      return win;
+    },
+
     _moveFolderToWorkspaceRequested: function(folderId) {
       const moveFolderToWorkspace = new osparc.dashboard.MoveResourceToWorkspace(this.getCurrentWorkspaceId());
       const title = "Move to Workspace";
       const win = osparc.ui.window.Window.popUpInWindow(moveFolderToWorkspace, title, 350, 280);
       moveFolderToWorkspace.addListener("moveToWorkspace", e => {
         win.close();
-        const destWorkspaceId = e.getData();
-        const params = {
-          url: {
-            folderId,
-            workspaceId: destWorkspaceId,
+        const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
+        confirmationWin.addListener("close", () => {
+          if (win.getConfirmed()) {
+            const destWorkspaceId = e.getData();
+            const params = {
+              url: {
+                folderId,
+                workspaceId: destWorkspaceId,
+              }
+            };
+            osparc.data.Resources.fetch("folders", "moveToWorkspace", params)
+              .then(() => {
+                const folder = osparc.store.Folders.getInstance().getFolder(folderId);
+                if (folder) {
+                  folder.setWorkspaceId(destWorkspaceId);
+                }
+                this.__reloadFolders()
+              })
+              .catch(err => console.error(err));
           }
-        };
-        osparc.data.Resources.fetch("folders", "moveToWorkspace", params)
-          .then(() => {
-            const folder = osparc.store.Folders.getInstance().getFolder(folderId);
-            if (folder) {
-              folder.setWorkspaceId(destWorkspaceId);
-            }
-            this.__reloadFolders()
-          })
-          .catch(err => console.error(err));
+        }, this);
       });
     },
 
