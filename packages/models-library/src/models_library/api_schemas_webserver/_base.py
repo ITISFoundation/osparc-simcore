@@ -18,9 +18,7 @@ class InputSchemaWithoutCamelCase(BaseModel):
     # Added to tmp keep backwards compatibility
     # until all bodies are updated
     #
-    model_config = ConfigDict(
-        populate_by_name=False, extra="ignore", allow_mutations=False
-    )
+    model_config = ConfigDict(populate_by_name=False, extra="ignore", frozen=True)
 
 
 class InputSchema(BaseModel):
@@ -34,7 +32,7 @@ class OutputSchema(BaseModel):
         alias_generator=snake_to_camel,
         populate_by_name=True,
         extra="ignore",
-        allow_mutations=False,
+        frozen=True,
     )
 
     def data(

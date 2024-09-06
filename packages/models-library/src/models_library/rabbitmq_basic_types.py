@@ -1,27 +1,26 @@
-import re
-from typing import Final
+from typing import Annotated, Final, Self
 
-from pydantic import StringConstraints
+from pydantic import RootModel, StringConstraints
 
 REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS: Final[str] = r"^[\w\-\.]*$"
 
 
-class RPCNamespace(str, StringConstraints):
-    min_length: int = 1
-    max_length: int = 252
-    pattern: str | re.Pattern[str] | None = REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS
+RPCMethodName = Annotated[
+    str,
+    StringConstraints(
+        min_length=1, max_length=252, pattern=REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS
+    ),
+]
+
+
+class RPCNamespace(RootModel):
+    root: RPCMethodName
 
     @classmethod
-    def from_entries(cls, entries: dict[str, str]) -> "RPCNamespace":
+    def from_entries(cls, entries: dict[str, str]) -> Self:
         """
         Given a list of entries creates a namespace to be used in declaring the rabbitmq queue.
         Keeping this to a predefined length
         """
         composed_string = "-".join(f"{k}_{v}" for k, v in sorted(entries.items()))
-        return cls(composed_string)
-
-
-class RPCMethodName(str, StringConstraints):
-    min_length: int = 1
-    max_length: int = 252
-    pattern: str | re.Pattern[str] | None = REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS
+        return cls.model_validate(composed_string)

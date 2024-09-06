@@ -9,34 +9,34 @@ DictValue = TypeVar("DictValue")
 
 class DictModel(RootModel[dict[DictKey, DictValue]], Generic[DictKey, DictValue]):
     def __getitem__(self, k: DictKey) -> DictValue:
-        return self.__root__.__getitem__(k)
+        return self.root.__getitem__(k)
 
     def __setitem__(self, k: DictKey, v: DictValue) -> None:
-        self.__root__.__setitem__(k, v)
+        self.root.__setitem__(k, v)
 
     def items(self) -> ItemsView[DictKey, DictValue]:
-        return self.__root__.items()
+        return self.root.items()
 
     def keys(self) -> KeysView[DictKey]:
-        return self.__root__.keys()
+        return self.root.keys()
 
     def values(self) -> ValuesView[DictValue]:
-        return self.__root__.values()
+        return self.root.values()
 
     def update(self, *s: Iterable[tuple[DictKey, DictValue]]) -> None:
-        return self.__root__.update(*s)
+        return self.root.update(*s)
 
     def __iter__(self) -> Iterator[DictKey]:  # type: ignore
-        return self.__root__.__iter__()
+        return self.root.__iter__()
 
     def get(self, key: DictKey, default: DictValue | None = None):
-        return self.__root__.get(key, default)
+        return self.root.get(key, default)
 
     def setdefault(self, key: DictKey, default: DictValue):
-        return self.__root__.setdefault(key, default)
+        return self.root.setdefault(key, default)
 
     def __len__(self) -> int:
-        return self.__root__.__len__()
+        return self.root.__len__()
 
 
 DataT = TypeVar("DataT")
@@ -44,13 +44,13 @@ DataT = TypeVar("DataT")
 
 class ListModel(RootModel[list[DataT]], Generic[DataT]):
     def __iter__(self):
-        return iter(self.__root__)
+        return iter(self.root)
 
     def __getitem__(self, item):
-        return self.__root__[item]
+        return self.root[item]
 
     def __len__(self):
-        return len(self.__root__)
+        return len(self.root)
 
 
 class Envelope(BaseModel, Generic[DataT]):
