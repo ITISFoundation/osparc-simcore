@@ -865,6 +865,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     // LAYOUT //
     _createLayout: function() {
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        const workspaceHeader = new osparc.dashboard.WorkspaceHeader();
+        this.bind("currentWorkspaceId", workspaceHeader, "currentWorkspaceId");
+        this._addToLayout(workspaceHeader);
+      }
+
       this._createResourcesLayout();
 
       const containerHeader = this._resourcesContainer.getContainerHeader();
