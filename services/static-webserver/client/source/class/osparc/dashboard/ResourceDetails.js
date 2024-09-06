@@ -674,7 +674,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const resourceData = this.__resourceData;
       if (
         osparc.utils.Resources.isService(resourceData) ||
-        osparc.data.Permissions.getInstance().canDo("study.node.bootOptions.read")
+        !osparc.data.Permissions.getInstance().canDo("study.node.bootOptions.read")
       ) {
         return null;
       }
