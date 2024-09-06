@@ -190,3 +190,15 @@ async def delete_project_group(
                 & (project_to_groups.c.gid == group_id)
             )
         )
+
+
+async def delete_all_project_groups(
+    app: web.Application,
+    project_id: ProjectID,
+) -> None:
+    async with get_database_engine(app).acquire() as conn:
+        await conn.execute(
+            project_to_groups.delete().where(
+                project_to_groups.c.project_uuid == f"{project_id}"
+            )
+        )
