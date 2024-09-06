@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Generator
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Any, TypeAlias
 
 from aws_library.ec2 import EC2InstanceData, EC2InstanceType, Resources
@@ -212,3 +212,13 @@ class BufferPoolManager:
 
     def __repr__(self) -> str:
         return f"BufferPoolManager({dict(self.buffer_pools)})"
+
+    def flatten_buffer_pool(self) -> BufferPool:
+        """returns a flattened buffer pool with all the EC2InstanceData"""
+        flat_pool = BufferPool()
+
+        for buffer_pool in self.buffer_pools.values():
+            for f in fields(BufferPool):
+                getattr(flat_pool, f.name).update(getattr(buffer_pool, f.name))
+
+        return flat_pool
