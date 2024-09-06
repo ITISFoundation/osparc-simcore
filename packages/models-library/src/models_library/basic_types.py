@@ -2,7 +2,14 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Annotated, Final, TypeAlias
 
-from pydantic import AfterValidator, Field, HttpUrl, PositiveInt, StringConstraints
+from pydantic import (
+    AfterValidator,
+    Field,
+    HttpUrl,
+    PositiveInt,
+    RootModel,
+    StringConstraints,
+)
 
 from .basic_regex import (
     PROPERTY_KEY_RE,
@@ -45,7 +52,7 @@ SHA256Str = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{64}$")]
 MD5Str = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{32}$")]
 
 # env var
-EnvVarKey = Annotated[str, StringConstraints(pattern=r"[a-zA-Z]\w*")]
+EnvVarKey = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z]\w*")]
 
 # e.g. '5c833a78-1af3-43a7-9ed7-6a63b188f4d8'
 UUIDStr = Annotated[str, StringConstraints(pattern=UUID_RE)]
@@ -54,26 +61,31 @@ UUIDStr = Annotated[str, StringConstraints(pattern=UUID_RE)]
 # e.g. "123" or "name_123" or "fa327c73-52d8-462a-9267-84eeaf0f90e3" but NOT ""
 _ELLIPSIS_CHAR: Final[str] = "..."
 
+_MIN_LENGTH = 1
+_MAX_LENGTH = 100
 
-class IDStr(ConstrainedStr):
-    strip_whitespace = True
-    min_length = 1
-    max_length = 100
+
+class IDStr(RootModel[str]):
+    root: Annotated[
+        str,
+        StringConstraints(
+            strip_whitespace=True, min_length=_MIN_LENGTH, max_length=_MAX_LENGTH
+        ),
+    ]
 
     @staticmethod
     def concatenate(*args: "IDStr", link_char: str = " ") -> "IDStr":
-        result = link_char.join(args).strip()
-        assert IDStr.min_length  # nosec
-        assert IDStr.max_length  # nosec
-        if len(result) > IDStr.max_length:
-            if IDStr.max_length > len(_ELLIPSIS_CHAR):
+        result = link_char.join([arg.root for arg in args]).strip()
+
+        if len(result) > _MAX_LENGTH:
+            if _MAX_LENGTH > len(_ELLIPSIS_CHAR):
                 result = (
-                    result[: IDStr.max_length - len(_ELLIPSIS_CHAR)].rstrip()
+                    result[: _MAX_LENGTH - len(_ELLIPSIS_CHAR)].rstrip()
                     + _ELLIPSIS_CHAR
                 )
             else:
-                result = _ELLIPSIS_CHAR[0] * IDStr.max_length
-        if len(result) < IDStr.min_length:
+                result = _ELLIPSIS_CHAR[0] * _MAX_LENGTH
+        if len(result) < _MIN_LENGTH:
             msg = f"IDStr.concatenate: result is too short: {result}"
             raise ValueError(msg)
         return IDStr(result)
