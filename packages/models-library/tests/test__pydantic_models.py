@@ -70,7 +70,7 @@ def test_json_type():
         "loc": ("data_schema",),
         "msg": "JSON input should be string, bytes or bytearray",
         "type": "json_type",
-        "url": "https://errors.pydantic.dev/2.8/v/json_type",
+        "url": "https://errors.pydantic.dev/2.9/v/json_type",
     }
 
     with pytest.raises(ValidationError) as exc_info:
@@ -82,7 +82,7 @@ def test_json_type():
         "loc": ("data_schema",),
         "msg": "Invalid JSON: expected value at line 1 column 1",
         "type": "json_invalid",
-        "url": "https://errors.pydantic.dev/2.8/v/json_invalid",
+        "url": "https://errors.pydantic.dev/2.9/v/json_invalid",
     }
 
 
@@ -90,7 +90,7 @@ def test_union_types_coercion():
     # SEE https://pydantic-docs.helpmanual.io/usage/types/#unions
     class Func(BaseModel):
         input: InputTypes = Field(union_mode="left_to_right")
-        output: OutputTypes = Field(union_mode='left_to_right')
+        output: OutputTypes = Field(union_mode="left_to_right")
 
     assert get_origin(InputTypes) is Union
     assert get_origin(OutputTypes) is Union
@@ -166,7 +166,9 @@ def test_union_types_coercion():
     assert isinstance(model.output, SimCoreFileLink)
 
     # json array and objects
-    model = Func.model_validate({"input": {"w": 42, "z": False}, "output": [1, 2, 3, None]})
+    model = Func.model_validate(
+        {"input": {"w": 42, "z": False}, "output": [1, 2, 3, None]}
+    )
     print(model.model_dump_json(indent=1))
     assert model.input == {"w": 42, "z": False}
     assert model.output == [1, 2, 3, None]

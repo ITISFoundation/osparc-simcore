@@ -1,21 +1,21 @@
 """
     Models a study's project document
 """
-import re
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from typing import Annotated, Any, Final, TypeAlias
 from uuid import UUID
 
+from models_library.workspaces import WorkspaceID
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    RootModel,
     StringConstraints,
     field_validator,
 )
-from models_library.workspaces import WorkspaceID
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .basic_types import HttpUrlWithCustomMinLength
@@ -39,13 +39,14 @@ _DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%fZ"
 ProjectIDStr = Annotated[str, StringConstraints(UUID_RE_BASE)]
 
 
-class DateTimeStr(str, StringConstraints):
-    regex = re.compile(DATE_RE)
+class DateTimeStr(RootModel[str]):
+    root: Annotated[str, StringConstraints(pattern=DATE_RE)]
+
     model_config = ConfigDict(frozen=True)
 
     @classmethod
     def to_datetime(cls, s: "DateTimeStr"):
-        return datetime.strptime(s, _DATETIME_FORMAT)
+        return datetime.strptime(s.root, _DATETIME_FORMAT)
 
 
 # NOTE: careful this is in sync with packages/postgres-database/src/simcore_postgres_database/models/projects.py!!!
@@ -179,18 +180,18 @@ class Project(BaseProjectModel):
         description="To which workspace project belongs. If None, belongs to private user workspace.",
         alias="workspaceId",
     )
-    
+
     def __state_schema(self, schema):
         # Patch to allow jsonschema nullable
-            # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
+        # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
         state_pydantic_schema = deepcopy(schema["properties"]["state"])
         schema["properties"]["state"] = {
             "anyOf": [{"type": "null"}, state_pydantic_schema]
         }
 
     model_config = ConfigDict(
-        description = "Document that stores metadata, pipeline and UI setup of a study",
-        title = "osparc-simcore project",
-        extra = "forbid",
-        json_schema_extra=__state_schema
+        description="Document that stores metadata, pipeline and UI setup of a study",
+        title="osparc-simcore project",
+        extra="forbid",
+        json_schema_extra=__state_schema,
     )

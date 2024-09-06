@@ -9,13 +9,14 @@ import http
 
 import pytest
 from models_library.api_schemas__common.errors import DefaultApiError
+from models_library.basic_types import IDStr
 
 
 @pytest.mark.parametrize("code", [e.value for e in http.HTTPStatus if e.value >= 400])
 def test_create_default_api_error_from_status_code(code: int):
 
     error = DefaultApiError.from_status_code(code)
-    assert error.name == f"{code}"
+    assert error.name == IDStr(f"{code}")
     assert error.detail
 
     assert DefaultApiError.from_status_code(code, detail="FOO").detail == "FOO"

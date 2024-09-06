@@ -4,6 +4,7 @@ from typing import Annotated, Final, TypeAlias
 
 from pydantic import (
     AfterValidator,
+    ConfigDict,
     Field,
     HttpUrl,
     PositiveInt,
@@ -73,8 +74,7 @@ class IDStr(RootModel[str]):
         ),
     ]
 
-    def __hash__(self):
-        return hash(self.root)
+    model_config = ConfigDict(frozen=True)
 
     @staticmethod
     def concatenate(*args: "IDStr", link_char: str = " ") -> "IDStr":

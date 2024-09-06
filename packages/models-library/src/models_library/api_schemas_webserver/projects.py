@@ -42,9 +42,9 @@ class ProjectCreateNew(InputSchema):
     ui: StudyUI | None = None
     workspace_id: WorkspaceID | None = None
 
-    _empty_is_none = field_validator("uuid", "thumbnail", "description", "workspace_id", mode="before")(
-        empty_str_to_none_pre_validator
-    )
+    _empty_is_none = field_validator(
+        "uuid", "thumbnail", "description", "workspace_id", mode="before"
+    )(empty_str_to_none_pre_validator)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -76,11 +76,11 @@ class ProjectGet(OutputSchema):
     tags: list[int]
     classifiers: list[ClassifierID] = []
     state: ProjectState | None
-    ui: EmptyModel | StudyUI | None
+    ui: EmptyModel | StudyUI | None = None
     quality: dict[str, Any] = {}
-    dev: dict | None
+    dev: dict | None = None
     permalink: ProjectPermalink = FieldNotRequired()
-    workspace_id: WorkspaceID | None
+    workspace_id: WorkspaceID | None = None
 
     _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
