@@ -172,7 +172,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       moveToFolderButton.addListener("execute", () => this.fireDataEvent("moveFolderToFolderRequested", this.getFolderId()), this);
       menu.add(moveToFolderButton);
 
-      const moveToWorkspaceButton = new qx.ui.menu.Button(this.tr("Move to Workspace..."), "");
+      const moveToWorkspaceButton = new qx.ui.menu.Button(this.tr("Move to Workspace..."), osparc.store.Workspaces.iconPath(14));
       moveToWorkspaceButton.addListener("execute", () => this.fireDataEvent("moveFolderToWorkspaceRequested", this.getFolderId()), this);
       menu.add(moveToWorkspaceButton);
 
