@@ -58,6 +58,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       apply: "__applyFolder"
     },
 
+    workspaceId: {
+      check: "Number",
+      nullable: true,
+      apply: "__applyWorkspaceId"
+    },
+
     folderId: {
       check: "Number",
       nullable: false
@@ -87,8 +93,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/folder/26",
+          control = new osparc.dashboard.FolderWithSharedIcon().set({
             anonymous: true,
             height: 40,
             padding: 5
@@ -136,12 +141,29 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       this.set({
         cardKey: "folder-" + folder.getFolderId()
       });
+      folder.bind("workspaceId", this, "workspaceId");
       folder.bind("folderId", this, "folderId");
       folder.bind("parentId", this, "parentFolderId");
       folder.bind("name", this, "title");
       folder.bind("lastModified", this, "lastModified");
 
       this.__addMenuButton();
+    },
+
+    __applyWorkspaceId: function(workspaceId) {
+      const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
+      const accessRights = workspace ? workspace.getAccessRights() : {};
+      if (accessRights && Object.keys(accessRights).length) {
+        const shareIcon = this.getChildControl("icon").getChildControl("shared-icon");
+        // if it's not shared don't show the share icon
+        shareIcon.addListener("changeSource", e => {
+          const newSource = e.getData();
+          shareIcon.set({
+            visibility: newSource.includes(osparc.dashboard.CardBase.SHARE_ICON) ? "hidden" : "visible"
+          });
+        });
+        osparc.dashboard.CardBase.populateShareIcon(shareIcon, accessRights);
+      }
     },
 
     __applyTitle: function(value) {
