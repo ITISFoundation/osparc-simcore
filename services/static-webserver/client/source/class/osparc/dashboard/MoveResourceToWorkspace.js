@@ -18,10 +18,9 @@
 qx.Class.define("osparc.dashboard.MoveResourceToWorkspace", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyData, currentWorkspaceId) {
+  construct: function(currentWorkspaceId) {
     this.base(arguments);
 
-    this.__studyData = studyData;
     this.__currentWorkspaceId = currentWorkspaceId;
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -48,7 +47,6 @@ qx.Class.define("osparc.dashboard.MoveResourceToWorkspace", {
   },
 
   members: {
-    __studyData: null,
     __currentWorkspaceId: null,
 
     _createChildControlImpl: function(id) {

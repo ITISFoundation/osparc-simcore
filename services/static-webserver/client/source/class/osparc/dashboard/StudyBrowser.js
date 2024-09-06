@@ -490,6 +490,48 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__reloadFolders();
     },
 
+    _moveFolderToFolderRequested: function(folderId) {
+      const moveFolderToFolder = new osparc.dashboard.MoveResourceToFolder(this.getCurrentFolderId(), this.getCurrentWorkspaceId());
+      const title = "Move to Folder";
+      const win = osparc.ui.window.Window.popUpInWindow(moveFolderToFolder, title, 350, 280);
+      moveFolderToFolder.addListener("moveToFolder", e => {
+        win.close();
+        const destFolderId = e.getData();
+        const params = {
+          url: {
+            folderId,
+            destFolderId,
+          }
+        };
+        osparc.data.Resources.fetch("folders", "moveToFolder", params)
+          .then(() => {
+            this.__reloadFolders()
+          })
+          .catch(err => console.error(err));
+      });
+    },
+
+    _moveFolderToWorkspaceRequested: function(folderId) {
+      const moveFolderToWorkspace = new osparc.dashboard.MoveResourceToWorkspace(this.getCurrentWorkspaceId());
+      const title = "Move to Workspace";
+      const win = osparc.ui.window.Window.popUpInWindow(moveFolderToWorkspace, title, 350, 280);
+      moveFolderToWorkspace.addListener("moveToWorkspace", e => {
+        win.close();
+        const destWorkspaceId = e.getData();
+        const params = {
+          url: {
+            folderId,
+            workspaceId: destWorkspaceId,
+          }
+        };
+        osparc.data.Resources.fetch("folders", "moveToWorkspace", params)
+          .then(() => {
+            this.__reloadFolders()
+          })
+          .catch(err => console.error(err));
+      });
+    },
+
     _deleteFolderRequested: function(folderId) {
       osparc.store.Folders.getInstance().deleteFolder(folderId)
         .then(() => this.__reloadFolders())
@@ -1065,26 +1107,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 
-    __moveStudyToFolder: function(studyId, folderId) {
-      const params = {
-        url: {
-          studyId,
-          folderId
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "moveToFolder", params);
-    },
-
-    __moveStudyToWorkspace: function(studyId, workspaceId) {
-      const params = {
-        url: {
-          studyId,
-          workspaceId,
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "moveToWorkspace", params);
-    },
-
     _updateStudyData: function(studyData) {
       studyData["resourceType"] = "study";
       const studies = this._resourcesList;
@@ -1267,8 +1289,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const win = osparc.ui.window.Window.popUpInWindow(moveStudyToFolder, title, 350, 280);
         moveStudyToFolder.addListener("moveToFolder", e => {
           win.close();
-          const folderId = e.getData();
-          this.__moveStudyToFolder(studyData["uuid"], folderId)
+          const destFolderId = e.getData();
+          const params = {
+            url: {
+              studyId: studyData["uuid"],
+              folderId: destFolderId,
+            }
+          };
+          osparc.data.Resources.fetch("studies", "moveToFolder", params)
             .then(() => {
               this.__removeFromStudyList(studyData["uuid"]);
             })
@@ -1288,12 +1316,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       moveToWorkspaceButton["moveToWorkspaceButton"] = true;
       moveToWorkspaceButton.addListener("tap", () => {
         const title = this.tr("Move") + " " + studyData["name"];
-        const moveStudyToWorkspace = new osparc.dashboard.MoveResourceToWorkspace(studyData, this.getCurrentFolderId());
+        const moveStudyToWorkspace = new osparc.dashboard.MoveResourceToWorkspace(this.getCurrentFolderId());
         const win = osparc.ui.window.Window.popUpInWindow(moveStudyToWorkspace, title, 350, 280);
         moveStudyToWorkspace.addListener("moveToWorkspace", e => {
           win.close();
-          const workspaceId = e.getData();
-          this.__moveStudyToWorkspace(studyData["uuid"], workspaceId)
+          const destWorkspaceId = e.getData();
+          const params = {
+            url: {
+              studyId: studyData["uuid"],
+              workspaceId: destWorkspaceId,
+            }
+          };
+          osparc.data.Resources.fetch("studies", "moveToWorkspace", params)
             .then(() => {
               this.__removeFromStudyList(studyData["uuid"]);
             })
