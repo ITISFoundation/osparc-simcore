@@ -366,7 +366,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadCards("studies");
-      this.__configureCards(cards);
+      this.__configureStudyCards(cards);
 
       this.__addNewStudyButtons();
 
@@ -384,7 +384,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     _reloadNewCards: function() {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadNewCards();
-      this.__configureCards(cards);
+      this.__configureStudyCards(cards);
 
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
@@ -497,7 +497,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
     // /FOLDERS
 
-    __configureCards: function(cards) {
+    __configureStudyCards: function(cards) {
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", e => {
