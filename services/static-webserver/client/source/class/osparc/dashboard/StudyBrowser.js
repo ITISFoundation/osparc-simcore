@@ -1335,7 +1335,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       moveToWorkspaceButton["moveToWorkspaceButton"] = true;
       moveToWorkspaceButton.addListener("tap", () => {
         const title = this.tr("Move") + " " + studyData["name"];
-        const moveStudyToWorkspace = new osparc.dashboard.MoveResourceToWorkspace(this.getCurrentFolderId());
+        const moveStudyToWorkspace = new osparc.dashboard.MoveResourceToWorkspace(this.getCurrentWorkspaceId());
         const win = osparc.ui.window.Window.popUpInWindow(moveStudyToWorkspace, title, 350, 280);
         moveStudyToWorkspace.addListener("moveToWorkspace", e => {
           win.close();
