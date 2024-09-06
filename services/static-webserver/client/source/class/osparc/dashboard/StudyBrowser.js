@@ -520,6 +520,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         };
         osparc.data.Resources.fetch("folders", "moveToFolder", params)
           .then(() => {
+            const folder = osparc.store.Folders.getInstance().getFolder(folderId);
+            if (folder) {
+              folder.setFolderId(destFolderId);
+            }
             this.__reloadFolders()
           })
           .catch(err => console.error(err));
@@ -541,6 +545,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         };
         osparc.data.Resources.fetch("folders", "moveToWorkspace", params)
           .then(() => {
+            const folder = osparc.store.Folders.getInstance().getFolder(folderId);
+            if (folder) {
+              folder.setWorkspaceId(destWorkspaceId);
+            }
             this.__reloadFolders()
           })
           .catch(err => console.error(err));
@@ -1317,6 +1325,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           };
           osparc.data.Resources.fetch("studies", "moveToFolder", params)
             .then(() => {
+              studyData["folderId"] = destFolderId;
               this.__removeFromStudyList(studyData["uuid"]);
             })
             .catch(err => {
@@ -1348,6 +1357,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           };
           osparc.data.Resources.fetch("studies", "moveToWorkspace", params)
             .then(() => {
+              studyData["workspaceId"] = destWorkspaceId;
               this.__removeFromStudyList(studyData["uuid"]);
             })
             .catch(err => {
