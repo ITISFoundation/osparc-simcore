@@ -672,7 +672,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     __getServicesBootOptionsPage: function() {
       const resourceData = this.__resourceData;
-      if (osparc.utils.Resources.isService(resourceData)) {
+      if (
+        osparc.utils.Resources.isService(resourceData) ||
+        osparc.data.Permissions.getInstance().canDo("study.node.bootOptions.read")
+      ) {
         return null;
       }
 
