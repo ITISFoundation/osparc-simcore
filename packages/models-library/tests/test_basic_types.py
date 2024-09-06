@@ -50,7 +50,7 @@ _EXAMPLES = [
     [(p.constr, p.good) for p in _EXAMPLES],
 )
 def test_constrained_str_succeeds(
-    constraint_str_type: type[StringConstraints], sample: str
+    constraint_str_type: type[ConstrainedStr], sample: str
 ):
     assert parse_obj_as(constraint_str_type, sample) == sample
 
