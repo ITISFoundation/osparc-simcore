@@ -173,6 +173,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         const folderId = this.getCurrentFolderId();
         const workspaceId = this.getCurrentWorkspaceId();
+        if (workspaceId === -1) {
+          return;
+        }
         osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
           .then(folders => {
             this.__setFoldersToList(folders);
@@ -183,6 +186,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __reloadStudies: function() {
       if (this._loadingResourcesBtn.isFetching()) {
+        return;
+      }
+      const workspaceId = this.getCurrentWorkspaceId();
+      if (workspaceId === -1) {
         return;
       }
 
@@ -449,6 +456,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         const folderId = this.getCurrentFolderId();
         const workspaceId = this.getCurrentWorkspaceId();
+        if (workspaceId === -1) {
+          return;
+        }
         osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
           .then(() => {
             this._resourcesContainer.setResourcesToList([]);
@@ -472,14 +482,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         newFolderCard.subscribeToFilterGroup("searchBarFilter");
         newFolderCard.addListener("createFolder", e => {
           const data = e.getData();
-          const parentFolderId = currentFolder ? currentFolder.getFolderId() : null;
-          const currentWorkspaceId = this.getCurrentWorkspaceId();
-          osparc.store.Folders.getInstance().postFolder(data.name, parentFolderId, currentWorkspaceId)
-            .then(() => this.__reloadFolders())
-            .catch(err => console.error(err));
-        })
+          this.__createFolder(data);
+        }, this);
         this._resourcesContainer.addNewFolderCard(newFolderCard);
       }
+    },
+
+    __createFolder: function(data) {
+      const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId())
+      const parentFolderId = currentFolder ? currentFolder.getFolderId() : null;
+      const currentWorkspaceId = this.getCurrentWorkspaceId();
+      osparc.store.Folders.getInstance().postFolder(data.name, parentFolderId, currentWorkspaceId)
+        .then(() => this.__reloadFolders())
+        .catch(err => console.error(err));
     },
 
     _folderSelected: function(folderId) {
@@ -832,8 +847,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const containerHeader = this._resourcesContainer.getContainerHeader();
       if (containerHeader) {
-        this.bind("currentWorkspaceId", containerHeader, "currentWorkspaceId");
-        containerHeader.bind("currentWorkspaceId", this, "currentWorkspaceId");
+        this.bind("currentWorkspaceId", containerHeader, "currentWorkspaceId", {
+          onUpdate: () => containerHeader.setCurrentFolderId(null)
+        });
+        containerHeader.bind("currentWorkspaceId", this, "currentWorkspaceId", {
+          onUpdate: () => this.setCurrentFolderId(null)
+        });
         this.bind("currentFolderId", containerHeader, "currentFolderId");
         containerHeader.bind("currentFolderId", this, "currentFolderId");
       }
