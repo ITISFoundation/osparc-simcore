@@ -214,7 +214,7 @@ qx.Class.define("osparc.data.model.Study", {
       "workbench"
     ],
 
-    createMyNewStudyObject: function() {
+    createMinStudyObject: function() {
       let myNewStudyObject = {};
       const props = qx.util.PropertyUtil.getProperties(osparc.data.model.Study);
       for (let key in props) {

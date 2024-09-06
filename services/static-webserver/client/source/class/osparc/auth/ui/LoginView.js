@@ -99,7 +99,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
           this.fireEvent("toRegister");
         } else if (createAccountAction === "REQUEST_ACCOUNT_FORM") {
           this.fireEvent("toRequestAccount");
-        } else if (createAccountAction === "REQUEST_ACCOUNT_FORM") {
+        } else if (createAccountAction === "REQUEST_ACCOUNT_INSTRUCTIONS") {
           osparc.store.Support.openInvitationRequiredDialog();
         }
         createAccountBtn.setEnabled(true);
