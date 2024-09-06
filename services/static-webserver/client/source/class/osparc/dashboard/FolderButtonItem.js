@@ -163,32 +163,14 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       });
 
       const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
-      editButton.addListener("execute", () => {
-        const folder = this.getFolder();
-        const newFolder = false;
-        const folderEditor = new osparc.editor.FolderEditor(newFolder).set({
-          label: folder.getName(),
-        });
-        const title = this.tr("Edit Folder");
-        const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 150);
-        folderEditor.addListener("updateFolder", () => {
-          const newName = folderEditor.getLabel();
-          const updateData = {
-            "name": newName,
-          };
-          osparc.data.model.Folder.putFolder(this.getFolderId(), updateData)
-            .then(() => {
-              folder.set({
-                name: newName,
-              });
-              this.fireDataEvent("folderUpdated", folder.getFolderId());
-            })
-            .catch(err => console.error(err));
-          win.close();
-        });
-        folderEditor.addListener("cancel", () => win.close());
-      });
+      editButton.addListener("execute", () => this.__editFolder(), this);
       menu.add(editButton);
+
+      const moveToFolderButton = new qx.ui.menu.Button(this.tr("Move to Folder..."), "@FontAwesome5Solid/folder/12");
+      moveToFolderButton.addListener("execute", () => this.__moveToFolder(), this);
+      menu.add(moveToFolderButton);
+
+      menu.addSeparator();
 
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
       deleteButton.addListener("execute", () => this.__deleteStudyRequested(), this);
@@ -202,6 +184,44 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         this.fireDataEvent("folderSelected", this.getFolderId());
       }
       this.setValue(false);
+    },
+
+    __editFolder: function() {
+      const folder = this.getFolder();
+      const newFolder = false;
+      const folderEditor = new osparc.editor.FolderEditor(newFolder).set({
+        label: folder.getName(),
+      });
+      const title = this.tr("Edit Folder");
+      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 150);
+      folderEditor.addListener("updateFolder", () => {
+        const newName = folderEditor.getLabel();
+        const updateData = {
+          "name": newName,
+        };
+        osparc.data.model.Folder.putFolder(this.getFolderId(), updateData)
+          .then(() => {
+            folder.set({
+              name: newName,
+            });
+            this.fireDataEvent("folderUpdated", folder.getFolderId());
+          })
+          .catch(err => console.error(err));
+        win.close();
+      });
+      folderEditor.addListener("cancel", () => win.close());
+    },
+
+    __moveToFolder: function() {
+      const folder = this.getFolder();
+      const title = this.tr("Move") + " " + folder.getName();
+      const moveStudyToFolder = new osparc.dashboard.MoveResourceToFolder(this.getCurrentFolderId(), this.getCurrentWorkspaceId());
+      const win = osparc.ui.window.Window.popUpInWindow(moveStudyToFolder, title, 350, 280);
+      moveStudyToFolder.addListener("moveToFolder", e => {
+        win.close();
+        const folderId = e.getData();
+        console.log(folderId);
+      }, this);
     },
 
     __deleteStudyRequested: function() {

@@ -1258,12 +1258,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getMoveToFolderMenuButton: function(studyData) {
-      const text = osparc.utils.Utils.capitalize(this.tr("Move to Folder..."));
+      const text = this.tr("Move to Folder...");
       const moveToFolderButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/folder/12");
       moveToFolderButton["moveToFolderButton"] = true;
       moveToFolderButton.addListener("tap", () => {
         const title = this.tr("Move") + " " + studyData["name"];
-        const moveStudyToFolder = new osparc.dashboard.MoveStudyToFolder(studyData, this.getCurrentFolderId(), this.getCurrentWorkspaceId());
+        const moveStudyToFolder = new osparc.dashboard.MoveResourceToFolder(this.getCurrentFolderId(), this.getCurrentWorkspaceId());
         const win = osparc.ui.window.Window.popUpInWindow(moveStudyToFolder, title, 350, 280);
         moveStudyToFolder.addListener("moveToFolder", e => {
           win.close();
@@ -1283,12 +1283,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getMoveToWorkspaceMenuButton: function(studyData) {
-      const text = osparc.utils.Utils.capitalize(this.tr("Move to Workspace..."));
+      const text = this.tr("Move to Workspace...");
       const moveToWorkspaceButton = new qx.ui.menu.Button(text, osparc.store.Workspaces.iconPath(14));
       moveToWorkspaceButton["moveToWorkspaceButton"] = true;
       moveToWorkspaceButton.addListener("tap", () => {
         const title = this.tr("Move") + " " + studyData["name"];
-        const moveStudyToWorkspace = new osparc.dashboard.MoveStudyToWorkspace(studyData, this.getCurrentFolderId());
+        const moveStudyToWorkspace = new osparc.dashboard.MoveResourceToWorkspace(studyData, this.getCurrentFolderId());
         const win = osparc.ui.window.Window.popUpInWindow(moveStudyToWorkspace, title, 350, 280);
         moveStudyToWorkspace.addListener("moveToWorkspace", e => {
           win.close();

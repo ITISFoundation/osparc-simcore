@@ -15,55 +15,54 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.MoveStudyToFolder", {
+qx.Class.define("osparc.dashboard.MoveResourceToWorkspace", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyData, currentFolderId, currentWorkspaceId) {
+  construct: function(studyData, currentWorkspaceId) {
     this.base(arguments);
 
     this.__studyData = studyData;
-    this.__currentFolderId = currentFolderId;
     this.__currentWorkspaceId = currentWorkspaceId;
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.getChildControl("current-folder");
-    const foldersTree = this.getChildControl("folders-tree");
+    this.getChildControl("current-workspace");
+    const workspacesTree = this.getChildControl("workspaces-tree");
     this.getChildControl("cancel-btn");
     const moveButton = this.getChildControl("move-btn");
 
     moveButton.setEnabled(false)
-    foldersTree.addListener("selectionChanged", e => {
-      const folderId = e.getData();
-      moveButton.setEnabled(this.__currentFolderId !== folderId);
-      this.__selectedFolderId = folderId;
+    workspacesTree.addListener("selectionChanged", e => {
+      const workspaceId = e.getData();
+      moveButton.setEnabled(this.__currentWorkspaceId !== workspaceId);
+      this.__selectedWorkspaceId = workspaceId;
     });
     moveButton.addListener("execute", () => {
-      this.fireDataEvent("moveToFolder", this.__selectedFolderId);
-    });
+      this.fireDataEvent("moveToWorkspace", this.__selectedWorkspaceId);
+    }, this);
   },
 
   events: {
     "cancel": "qx.event.type.Event",
-    "moveToFolder": "qx.event.type.Data"
+    "moveToWorkspace": "qx.event.type.Data"
   },
 
   members: {
     __studyData: null,
-    __currentFolderId: null,
+    __currentWorkspaceId: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "current-folder": {
-          const folder = osparc.store.Folders.getInstance().getFolder(this.__currentFolderId);
-          const currentFolderName = folder ? folder["name"] : "Home";
-          control = new qx.ui.basic.Label(this.tr("Current location: ") + currentFolderName);
+        case "current-workspace": {
+          const workspace = osparc.store.Workspaces.getWorkspace(this.__currentWorkspaceId);
+          const currentWorkspaceName = workspace ? workspace.getName() : "My Workspace";
+          control = new qx.ui.basic.Label(this.tr("Current location: ") + currentWorkspaceName);
           this._add(control);
           break;
         }
-        case "folders-tree":
-          control = new osparc.dashboard.FoldersTree(this.__currentWorkspaceId);
+        case "workspaces-tree":
+          control = new osparc.dashboard.WorkspacesTree();
           this._add(control);
           break;
         case "buttons-layout":
