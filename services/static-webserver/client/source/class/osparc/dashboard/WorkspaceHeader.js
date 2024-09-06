@@ -26,15 +26,14 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.HBox(10);
-    this._setLayout(layout);
+    this._setLayout(new qx.ui.layout.HBox(10));
 
     this.set({
       minHeight: this.self().HEIGHT,
       maxHeight: this.self().HEIGHT,
       height: this.self().HEIGHT,
-      alignY: "middle"
-    })
+      alignY: "middle",
+    });
   },
 
   properties: {
@@ -55,33 +54,19 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "thumbnail":
-          control = new osparc.ui.basic.Thumbnail(null, this.self().HEIGHT * 2, this.self().HEIGHT);
-          control.getChildControl("image").set({
-            anonymous: true,
-            alignY: "middle",
-            alignX: "center",
-            allowGrowX: true,
-            allowGrowY: true
+        case "icon":
+          control = new osparc.ui.basic.Thumbnail(null, this.self().HEIGHT, this.self().HEIGHT).set({
+            minHeight: this.self().HEIGHT,
+            minWidth: this.self().HEIGHT
           });
-          control.getContentElement().setStyles({
-            "border-radius": "6px"
+          control.getChildControl("image").getContentElement().setStyles({
+            "border-radius": "4px"
           });
           this._add(control);
           break;
         case "title":
           control = new qx.ui.basic.Label().set({
             font: "text-16",
-            allowGrowY: true,
-            alignY: "middle",
-          });
-          this._add(control);
-          break;
-        case "subtitle-md":
-          control = new osparc.ui.markdown.Markdown().set({
-            font: "text-13",
-            noMargin: true,
-            maxHeight: 18,
             alignY: "middle",
           });
           this._add(control);
@@ -92,35 +77,16 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     },
 
     __buildLayout: function(workspaceId) {
-      const image = this.getChildControl("thumbnail").getChildControl("image");
+      const icon = this.getChildControl("icon");
       const title = this.getChildControl("title");
-      const description = this.getChildControl("subtitle-md");
 
       const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
       if (workspace) {
         const thumbnail = workspace.getThumbnail();
-        if (thumbnail) {
-          this.getChildControl("thumbnail").getContentElement().setStyles({
-            "background-image": `url(${thumbnail})`,
-            "background-repeat": "no-repeat",
-            "background-size": "cover", // auto width, 85% height
-            "background-position": "center center",
-            "background-origin": "border-box"
-          });
-          image.set({
-            visibility: "excluded",
-          });
-        } else {
-          image.set({
-            source: osparc.store.Workspaces.iconPath(32),
-            visibility: "visible",
-          });
-        }
-
+        icon.setSource(thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32));
         workspace.bind("name", title, "value");
-        workspace.bind("description", description, "value");
       } else {
-        image.setSource("@FontAwesome5Solid/home/30");
+        icon.setSource("@FontAwesome5Solid/home/30");
         title.setValue(this.tr("My Workspace"));
       }
     }
