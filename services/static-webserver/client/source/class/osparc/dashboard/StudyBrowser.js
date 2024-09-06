@@ -1164,12 +1164,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (writeAccess && osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         menu.addSeparator();
 
-        const moveToFolderButton = this.__getMoveToFolderMenuButton(studyData);
+        const moveToFolderButton = this.__getMoveStudyToFolderMenuButton(studyData);
         if (moveToFolderButton) {
           menu.add(moveToFolderButton);
         }
 
-        const moveToWorkspaceButton = this.__getMoveToWorkspaceMenuButton(studyData);
+        const moveToWorkspaceButton = this.__getMoveStudyToWorkspaceMenuButton(studyData);
         if (moveToWorkspaceButton) {
           menu.add(moveToWorkspaceButton);
         }
@@ -1257,7 +1257,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return studyBillingSettingsButton;
     },
 
-    __getMoveToFolderMenuButton: function(studyData) {
+    __getMoveStudyToFolderMenuButton: function(studyData) {
       const text = this.tr("Move to Folder...");
       const moveToFolderButton = new qx.ui.menu.Button(text, "@FontAwesome5Solid/folder/12");
       moveToFolderButton["moveToFolderButton"] = true;
@@ -1282,7 +1282,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return moveToFolderButton;
     },
 
-    __getMoveToWorkspaceMenuButton: function(studyData) {
+    __getMoveStudyToWorkspaceMenuButton: function(studyData) {
       const text = this.tr("Move to Workspace...");
       const moveToWorkspaceButton = new qx.ui.menu.Button(text, osparc.store.Workspaces.iconPath(14));
       moveToWorkspaceButton["moveToWorkspaceButton"] = true;
