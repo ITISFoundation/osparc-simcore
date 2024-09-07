@@ -8,6 +8,7 @@ from pydantic import (
     NonNegativeInt,
     PositiveInt,
     TypeAdapter,
+    ValidationInfo,
     field_validator,
 )
 
@@ -57,17 +58,17 @@ class PageMetaInfoLimitOffset(BaseModel):
 
     @field_validator("count")
     @classmethod
-    def _check_count(cls, v, values):
-        if v > values["limit"]:
-            msg = f"count {v} bigger than limit {values['limit']}, please check"
+    def _check_count(cls, v, info: ValidationInfo):
+        if v > info.data["limit"]:
+            msg = f"count {v} bigger than limit {info.data['limit']}, please check"
             raise ValueError(msg)
-        if v > values["total"]:
+        if v > info.data["total"]:
             msg = (
-                f"count {v} bigger than expected total {values['total']}, please check"
+                f"count {v} bigger than expected total {info.data['total']}, please check"
             )
             raise ValueError(msg)
-        if "offset" in values and (values["offset"] + v) > values["total"]:
-            msg = f"offset {values['offset']} + count {v} is bigger than allowed total {values['total']}, please check"
+        if "offset" in info.data and (info.data["offset"] + v) > info.data["total"]:
+            msg = f"offset {info.data['offset']} + count {v} is bigger than allowed total {info.data['total']}, please check"
             raise ValueError(msg)
         return v
 
@@ -115,13 +116,13 @@ class Page(BaseModel, Generic[ItemT]):
 
     @field_validator("data")
     @classmethod
-    def _check_data_compatible_with_meta(cls, v, values):
-        if "meta" not in values:
+    def _check_data_compatible_with_meta(cls, v, info: ValidationInfo):
+        if "meta" not in info.data:
             # if the validation failed in meta this happens
             msg = "meta not in values"
             raise ValueError(msg)
-        if len(v) != values["meta"].count:
-            msg = f"container size [{len(v)}] must be equal to count [{values['meta'].count}]"
+        if len(v) != info.data["meta"].count:
+            msg = f"container size [{len(v)}] must be equal to count [{info.data['meta'].count}]"
             raise ValueError(msg)
         return v
 
