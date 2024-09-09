@@ -221,7 +221,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         label: folder.getName(),
       });
       const title = this.tr("Edit Folder");
-      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 150);
+      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 120);
       folderEditor.addListener("updateFolder", () => {
         const newName = folderEditor.getLabel();
         const updateData = {
