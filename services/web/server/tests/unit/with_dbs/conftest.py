@@ -41,10 +41,7 @@ from models_library.services_enums import ServiceState
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.dict_tools import ConfigDict
-from pytest_simcore.helpers.monkeypatch_envs import (
-    setenvs_from_dict,
-    setenvs_from_envfile,
-)
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
