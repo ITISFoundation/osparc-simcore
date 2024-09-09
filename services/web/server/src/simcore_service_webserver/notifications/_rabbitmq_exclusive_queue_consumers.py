@@ -35,7 +35,7 @@ from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rab
 
 _logger = logging.getLogger(__name__)
 
-_APP_RABBITMQ_CONSUMERS_KEY: Final[str] = f"{__name__}.rabbit_consumers"
+_APP_RABBITMQ_EXCLUSIVE_CONSUMERS_KEY: Final[str] = f"{__name__}.rabbit_consumers"
 
 
 async def _convert_to_node_update_event(
@@ -181,7 +181,7 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
         await logged_gather(
             *(
                 rabbit_client.unsubscribe(queue_name)
-                for queue_name in app[_APP_RABBITMQ_CONSUMERS_KEY].values()
+                for queue_name in app[_APP_RABBITMQ_EXCLUSIVE_CONSUMERS_KEY].values()
             ),
         )
 
@@ -189,7 +189,7 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
 async def on_cleanup_ctx_rabbitmq_consumers(
     app: web.Application,
 ) -> AsyncIterator[None]:
-    app[_APP_RABBITMQ_CONSUMERS_KEY] = await subscribe_to_rabbitmq(
+    app[_APP_RABBITMQ_EXCLUSIVE_CONSUMERS_KEY] = await subscribe_to_rabbitmq(
         app, _EXCHANGE_TO_PARSER_CONFIG
     )
     yield

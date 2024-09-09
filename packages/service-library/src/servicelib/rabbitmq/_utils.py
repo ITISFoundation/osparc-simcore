@@ -1,5 +1,7 @@
 import logging
+import random
 import socket
+import string
 from typing import Any, Final
 
 import aio_pika
@@ -18,6 +20,9 @@ _logger = logging.getLogger(__file__)
 _MINUTE: Final[int] = 60
 
 RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS: Final[int] = 15 * _MINUTE * 1000
+
+CHARACTERS = string.ascii_letters + string.digits
+_GENERATE_RANDOM_STRING_LENGTH = 6
 
 
 class RabbitMQRetryPolicyUponInitialization:
@@ -51,7 +56,10 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
 
 
 def get_rabbitmq_client_unique_name(base_name: str) -> str:
-    return f"{base_name}_{socket.gethostname()}"
+    random_string = "".join(
+        random.choice(CHARACTERS) for _ in range(_GENERATE_RANDOM_STRING_LENGTH)
+    )
+    return f"{base_name}_{socket.gethostname()}_{random_string}"
 
 
 async def declare_queue(
