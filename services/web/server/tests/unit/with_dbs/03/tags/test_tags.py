@@ -5,7 +5,6 @@
 
 
 from collections.abc import AsyncIterator, Callable, Iterator
-from http import HTTPStatus
 from typing import Any
 
 import pytest
@@ -46,12 +45,16 @@ def fake_tags(faker: Faker) -> list[dict[str, Any]]:
     ]
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+@pytest.fixture
+def user_role() -> UserRole:
+    # All tests in test_tags assume USER's role
+    # i.e. Used in `logged_user` and `user_project`
+    return UserRole.USER
+
+
 async def test_tags_to_studies(
     client: TestClient,
-    logged_user: UserInfoDict,
     user_project: ProjectDict,
-    expected: HTTPStatus,
     fake_tags: dict[str, Any],
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
 ):
@@ -64,7 +67,7 @@ async def test_tags_to_studies(
     for tag in fake_tags:
         url = client.app.router["create_tag"].url_for()
         resp = await client.post(f"{url}", json=tag)
-        added_tag, _ = await assert_status(resp, expected)
+        added_tag, _ = await assert_status(resp, status.HTTP_200_OK)
         added_tags.append(added_tag)
 
         # Add tag to study
@@ -72,7 +75,7 @@ async def test_tags_to_studies(
             project_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id"))
         )
         resp = await client.post(f"{url}")
-        data, _ = await assert_status(resp, expected)
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
 
         # Tag is included in response
         assert added_tag["id"] in data["tags"]
@@ -86,7 +89,7 @@ async def test_tags_to_studies(
         ),
         exclude_unset=True,
     )
-    data = await assert_get_same_project(client, user_project, expected)
+    data = await assert_get_same_project(client, user_project, status.HTTP_200_OK)
 
     # Delete tag0
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[0].get("id")))
@@ -95,7 +98,7 @@ async def test_tags_to_studies(
 
     # Get project and check that tag is no longer there
     user_project["tags"].remove(added_tags[0]["id"])
-    data = await assert_get_same_project(client, user_project, expected)
+    data = await assert_get_same_project(client, user_project, status.HTTP_200_OK)
     assert added_tags[0].get("id") not in data.get("tags")
 
     # Remove tag1 from project
@@ -103,11 +106,11 @@ async def test_tags_to_studies(
         project_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id"))
     )
     resp = await client.post(f"{url}")
-    await assert_status(resp, expected)
+    await assert_status(resp, status.HTTP_200_OK)
 
     # Get project and check that tag is no longer there
     user_project["tags"].remove(added_tags[1]["id"])
-    data = await assert_get_same_project(client, user_project, expected)
+    data = await assert_get_same_project(client, user_project, status.HTTP_200_OK)
     assert added_tags[1].get("id") not in data.get("tags")
 
     # Delete tag1
@@ -137,11 +140,6 @@ async def everybody_tag_id(client: TestClient) -> AsyncIterator[int]:
         yield tag_id
 
         await delete_tag(conn, tag_id=tag_id)
-
-
-@pytest.fixture
-def user_role() -> UserRole:
-    return UserRole.USER
 
 
 async def test_read_tags(

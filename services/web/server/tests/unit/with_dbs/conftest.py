@@ -41,6 +41,10 @@ from models_library.services_enums import ServiceState
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.dict_tools import ConfigDict
+from pytest_simcore.helpers.monkeypatch_envs import (
+    setenvs_from_dict,
+    setenvs_from_envfile,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
@@ -127,6 +131,7 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 def app_environment(
     app_cfg: ConfigDict,
     monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
@@ -140,7 +145,12 @@ def app_environment(
     """
     print("+ web_server:")
     cfg = deepcopy(app_cfg)
-    return monkeypatch_setenv_from_app_config(cfg)
+
+    envs = monkeypatch_setenv_from_app_config(cfg)
+    # NOTE: this emulates hostname: "{{.Node.Hostname}}-{{.Task.Slot}}" in docker-compose that
+    # affects PostgresSettings.POSTGRES_CLIENT_NAME
+    extra = setenvs_from_dict(monkeypatch, {"HOSTNAME": "webserver_test_host.0"})
+    return envs | extra
 
 
 @pytest.fixture
