@@ -1,6 +1,5 @@
 # pylint: disable=unused-argument
 
-import asyncio
 import logging
 
 from aiohttp import web
@@ -13,7 +12,9 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
 from pydantic import NonNegativeInt
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.utils import fire_and_forget_task
 from simcore_service_webserver.workspaces._workspaces_api import (
     check_user_workspace_access,
 )
@@ -298,18 +299,18 @@ async def delete_folder(
         product_name=product_name,
     )
 
-    tasks = [
-        asyncio.create_task(
+    # fire and forget task for project deletion
+    for project_id in project_id_list:
+        fire_and_forget_task(
             submit_delete_project_task(
                 app,
                 project_uuid=project_id,
                 user_id=user_id,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-            )
+            ),
+            task_suffix_name=f"delete_project_task_{project_id}",
+            fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
-        for project_id in project_id_list
-    ]
-    await asyncio.gather(*tasks)
 
     # 1.2 Delete all child folders
     await folders_db.delete_recursively(

@@ -96,6 +96,8 @@ def fire_and_forget_task(
             _logger.warning("%s spawned as fire&forget was cancelled", fut)
         except Exception:  # pylint: disable=broad-except
             _logger.exception("Error occurred while running task %s!", task.get_name())
+        finally:
+            print("")
 
     task.add_done_callback(_log_exception_callback)
     task.add_done_callback(fire_and_forget_tasks_collection.discard)

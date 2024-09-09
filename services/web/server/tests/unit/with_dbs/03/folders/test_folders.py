@@ -1,9 +1,12 @@
+import asyncio
+
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
 from http import HTTPStatus
+from unittest import mock
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -16,6 +19,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
 )
 from servicelib.aiohttp import status
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._groups_db import update_or_insert_project_group
 from simcore_service_webserver.projects.models import ProjectDict
@@ -338,6 +342,26 @@ async def test_project_listing_inside_of_private_folder(
         assert data[0]["uuid"] == user_project["uuid"]
 
 
+@pytest.fixture
+def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.list_dynamic_services",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.remove_project_dynamic_services",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._crud_api_delete.api.delete_pipeline",
+        autospec=True,
+    )
+    return mocker.patch(
+        "simcore_service_webserver.projects._crud_api_delete.delete_data_folders_of_project",
+        return_value=None,
+    )
+
+
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_folders_deletion(
     client: TestClient,
@@ -345,6 +369,7 @@ async def test_folders_deletion(
     user_project: ProjectDict,
     expected: HTTPStatus,
     mock_catalog_api_get_services_for_user_in_product: MockerFixture,
+    mock_storage_delete_data_folders: mock.Mock,
 ):
     assert client.app
 
@@ -428,6 +453,12 @@ async def test_folders_deletion(
     )
     resp = await client.delete(url.path)
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    fire_and_forget_tasks = client.app[APP_FIRE_AND_FORGET_TASKS_KEY]
+    t: asyncio.Task = list(fire_and_forget_tasks)[0]
+    assert t.get_name().startswith("fire_and_forget_task_delete_project_task_")
+    await t
+    assert len(client.app[APP_FIRE_AND_FORGET_TASKS_KEY]) == 0
 
     # list root projects (The project should have been deleted)
     base_url = client.app.router["list_projects"].url_for()
