@@ -229,7 +229,7 @@ async def update_folder(
         workspace_is_private = False
         user_folder_access_rights = user_workspace_access_rights.my_access_rights
 
-    # Check user has acces to the folder
+    # Check user has access to the folder
     await folders_db.get_for_user_or_workspace(
         app,
         folder_id=folder_id,
