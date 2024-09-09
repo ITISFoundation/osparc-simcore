@@ -566,7 +566,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               .catch(err => console.error(err));
           }
         }, this);
-      });
+      }, this);
     },
 
     _deleteFolderRequested: function(folderId) {
@@ -1365,22 +1365,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const win = osparc.ui.window.Window.popUpInWindow(moveStudyToWorkspace, title, 350, 280);
         moveStudyToWorkspace.addListener("moveToWorkspace", e => {
           win.close();
-          const destWorkspaceId = e.getData();
-          const params = {
-            url: {
-              studyId: studyData["uuid"],
-              workspaceId: destWorkspaceId,
+          const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
+          confirmationWin.addListener("close", () => {
+            if (win.getConfirmed()) {
+              const destWorkspaceId = e.getData();
+              const params = {
+                url: {
+                  studyId: studyData["uuid"],
+                  workspaceId: destWorkspaceId,
+                }
+              };
+              osparc.data.Resources.fetch("studies", "moveToWorkspace", params)
+                .then(() => {
+                  studyData["workspaceId"] = destWorkspaceId;
+                  this.__removeFromStudyList(studyData["uuid"]);
+                })
+                .catch(err => {
+                  console.error(err);
+                  osparc.FlashMessenger.logAs(err.message, "ERROR");
+                });
             }
-          };
-          osparc.data.Resources.fetch("studies", "moveToWorkspace", params)
-            .then(() => {
-              studyData["workspaceId"] = destWorkspaceId;
-              this.__removeFromStudyList(studyData["uuid"]);
-            })
-            .catch(err => {
-              console.error(err);
-              osparc.FlashMessenger.logAs(err.message, "ERROR");
-            });
+          }, this);
         }, this);
         moveStudyToWorkspace.addListener("cancel", () => win.close());
       }, this);
