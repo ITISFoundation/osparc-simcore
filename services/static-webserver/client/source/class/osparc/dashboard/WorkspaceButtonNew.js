@@ -56,6 +56,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
         workspaceCreator.addListener("workspaceCreated", e => {
           win.close();
           const newWorkspace = e.getData();
+          this.fireDataEvent("createWorkspace", newWorkspace.getWorkspaceId(), this);
           const permissionsView = new osparc.share.CollaboratorsWorkspace(newWorkspace);
           const title2 = qx.locale.Manager.tr("Share Workspace");
           osparc.ui.window.Window.popUpInWindow(permissionsView, title2, 500, 500);

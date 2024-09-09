@@ -31,6 +31,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
     this.getChildControl("thumbnail");
     workspace ? this.getChildControl("save") : this.getChildControl("create");
     if (workspace) {
+      this.__workspaceId = workspace;
       this.set({
         label: workspace.getName(),
         description: workspace.getDescription(),
@@ -71,6 +72,8 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
   },
 
   members: {
+    __workspaceId: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -171,7 +174,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
         description: this.getDescription(),
         thumbnail: this.getThumbnail(),
       };
-      osparc.store.Workspaces.putWorkspace(this.getWorkspaceId(), updateData)
+      osparc.store.Workspaces.putWorkspace(this.__workspaceId, updateData)
         .then(() => this.fireEvent("workspaceUpdated"))
         .catch(console.error)
         .finally(() => editButton.setFetching(false));
