@@ -145,7 +145,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     reloadResources: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        this.__reloadFoldersAndStudies();
+        this.__reloadStudies();
       } else {
         this.__resetStudiesList();
       }
@@ -626,12 +626,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       osparc.store.Store.getInstance().addListener("changeTags", () => {
         this.invalidateStudies();
-        this.reloadResources();
+        this.__reloadStudies();
       }, this);
 
       qx.event.message.Bus.subscribe("reloadStudies", () => {
         this.invalidateStudies();
-        this.reloadResources();
+        this.__reloadStudies();
       }, this);
     },
 
