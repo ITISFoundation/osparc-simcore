@@ -19,27 +19,31 @@ router = APIRouter(
 )
 
 
-@router.put(
-    "/projects/{project_uuid}/tags/{tag_id}",
+@router.post(
+    "/projects/{project_uuid}/tags/{tag_id}:add",
     response_model=Envelope[ProjectGet],
 )
-def add_tag(
+def add_project_tag(
     project_uuid: ProjectID,
     tag_id: int,
 ):
     """
     Links an existing label with an existing study
+
+    NOTE: that the tag is not created here
     """
 
 
-@router.delete(
-    "/projects/{project_uuid}/tags/{tag_id}",
+@router.post(
+    "/projects/{project_uuid}/tags/{tag_id}:remove",
     response_model=Envelope[ProjectGet],
 )
-def remove_tag(
+def remove_project_tag(
     project_uuid: ProjectID,
     tag_id: int,
 ):
     """
     Removes an existing link between a label and a study
+
+    NOTE: that the tag is not deleted here
     """
