@@ -192,14 +192,18 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
 
     // overridden
     _applyIcon: function(value) {
+      const image = this.getChildControl("icon").getChildControl("image");
       if (
         value.includes("@FontAwesome5Solid/") ||
         value.includes("@MaterialIcons/")
       ) {
+        this.getContentElement().setStyles({
+          "background-image": "none",
+        });
         value += this.self().ICON_SIZE;
-        const image = this.getChildControl("icon").getChildControl("image");
         image.set({
-          source: value
+          source: value,
+          visibility: "visible",
         });
       } else {
         this.getContentElement().setStyles({
@@ -208,6 +212,9 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
           "background-size": "cover", // auto width, 85% height
           "background-position": "center center",
           "background-origin": "border-box"
+        });
+        image.set({
+          visibility: "excluded",
         });
       }
     },

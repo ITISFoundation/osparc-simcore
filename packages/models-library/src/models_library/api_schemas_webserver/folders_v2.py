@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import NamedTuple
 
+from models_library.access_rights import AccessRights
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.users import GroupID
@@ -18,6 +19,8 @@ class FolderGet(OutputSchema):
     created_at: datetime
     modified_at: datetime
     owner: GroupID
+    workspace_id: WorkspaceID | None
+    my_access_rights: AccessRights
 
 
 class FolderGetPage(NamedTuple):

@@ -14,7 +14,7 @@ from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
-from models_library.workspaces import WorkspaceID
+from models_library.workspaces import UserWorkspaceAccessRightsDB
 from pydantic import parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -27,13 +27,16 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
 from ..director_v2 import api
+from ..folders import _folders_db as folders_db
 from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )
 from ..users.api import get_user_fullname
-from ..workspaces.api import get_workspace
+from ..workspaces import _workspaces_db as workspaces_db
+from ..workspaces.api import check_user_workspace_access
 from ..workspaces.errors import WorkspaceAccessForbiddenError
+from . import _folders_db as project_to_folders_db
 from . import projects_api
 from ._metadata_api import set_project_ancestors
 from ._permalink_api import update_or_pop_permalink_in_project
@@ -233,7 +236,6 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     simcore_user_agent: str,
     parent_project_uuid: ProjectID | None,
     parent_node_id: NodeID | None,
-    workspace_id: WorkspaceID | None,
 ) -> None:
     """Implements TaskProtocol for 'create_projects' handler
 
@@ -264,8 +266,32 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     project_nodes = None
     try:
         task_progress.update(message="creating new study...")
+
+        workspace_id = None
+        folder_id = None
+        if predefined_project:
+            if workspace_id := predefined_project.get("workspaceId", None):
+                await check_user_workspace_access(
+                    request.app,
+                    user_id=user_id,
+                    workspace_id=workspace_id,
+                    product_name=product_name,
+                    permission="write",
+                )
+            if folder_id := predefined_project.get("folderId", None):
+                # Check user has access to folder
+                await folders_db.get_for_user_or_workspace(
+                    request.app,
+                    folder_id=folder_id,
+                    product_name=product_name,
+                    user_id=user_id if workspace_id is None else None,
+                    workspace_id=workspace_id,
+                )
+                # Folder ID is not part of the project resource
+                predefined_project.pop("folderId")
+
         if from_study:
-            # 1. prepare copy
+            # 1.1 prepare copy
             (
                 new_project,
                 project_node_coro,
@@ -281,6 +307,19 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             if project_node_coro:
                 project_nodes = await project_node_coro
 
+            # 1.2 does project belong to some folder?
+            workspace_id = new_project["workspaceId"]
+            prj_to_folder_db = await project_to_folders_db.get_project_to_folder(
+                request.app,
+                project_id=from_study,
+                private_workspace_user_id_or_none=(
+                    user_id if workspace_id is None else None
+                ),
+            )
+            if prj_to_folder_db:
+                # As user has access to the project, it has implicitly access to the folder
+                folder_id = prj_to_folder_db.folder_id
+
         if predefined_project:
             # 2. overrides with optional body and re-validate
             new_project, project_nodes = await _compose_project_data(
@@ -290,21 +329,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 predefined_project=predefined_project,
             )
 
-        # If user wants to create project in specific workspace
-        if workspace_id:
-            # Verify user access to the specified workspace; raise an error if access is denied
-            workspace = await get_workspace(
-                request.app,
-                user_id=user_id,
-                workspace_id=workspace_id,
-                product_name=product_name,
-            )
-            if workspace.my_access_rights.write is False:
-                raise WorkspaceAccessForbiddenError(
-                    reason=f"User {user_id} does not have write permission on workspace {workspace_id}."
-                )
-
-        # 3. save new project in DB
+        # 3.1 save new project in DB
         new_project = await db.insert_project(
             project=jsonable_encoder(new_project),
             user_id=user_id,
@@ -322,6 +347,17 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             parent_node_id=parent_node_id,
         )
         task_progress.update()
+
+        # 3.2 move project to proper folder
+        if folder_id:
+            await project_to_folders_db.insert_project_to_folder(
+                request.app,
+                project_id=new_project["uuid"],
+                folder_id=folder_id,
+                private_workspace_user_id_or_none=(
+                    user_id if workspace_id is None else None
+                ),
+            )
 
         # 4. deep copy source project's files
         if copy_file_coro:
@@ -355,6 +391,20 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         # Adds permalink
         await update_or_pop_permalink_in_project(request, new_project)
+
+        # Overwrite project access rights
+        if workspace_id:
+            workspace_db: UserWorkspaceAccessRightsDB = (
+                await workspaces_db.get_workspace_for_user(
+                    app=request.app,
+                    user_id=user_id,
+                    workspace_id=workspace_id,
+                    product_name=product_name,
+                )
+            )
+            new_project["accessRights"] = {
+                gid: access.dict() for gid, access in workspace_db.access_rights.items()
+            }
 
         # Ensures is like ProjectGet
         data = ProjectGet.parse_obj(new_project).data(exclude_unset=True)

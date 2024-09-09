@@ -29,126 +29,6 @@ qx.Class.define("osparc.store.Workspaces", {
       return source+iconsSize;
     },
 
-    FAKE_WORKSPACES: [{
-      workspaceId: 1,
-      name: "Workspace 1",
-      description: "Workspace 1 desc",
-      thumbnail: "https://images.ctfassets.net/hrltx12pl8hq/01rJn4TormMsGQs1ZRIpzX/16a1cae2440420d0fd0a7a9a006f2dcb/Artboard_Copy_231.jpg?fit=fill&w=600&h=600",
-      myAccessRights: {
-        read: true,
-        write: true,
-        delete: true,
-      },
-      accessRights: {
-        3: {
-          read: true,
-          write: true,
-          delete: true,
-        },
-        5: {
-          read: true,
-          write: true,
-          delete: false,
-        },
-        9: {
-          read: true,
-          write: false,
-          delete: false,
-        },
-      },
-      createdAt: "2024-03-04 15:59:51.579217",
-      lastModified: "2024-03-05 15:18:21.515403",
-    }, {
-      workspaceId: 2,
-      name: "Workspace 2",
-      description: "Workspace 2 desc",
-      thumbnail: "",
-      myAccessRights: {
-        read: true,
-        write: true,
-        delete: false,
-      },
-      accessRights: {
-        3: {
-          read: true,
-          write: true,
-          delete: false,
-        },
-        5: {
-          read: true,
-          write: true,
-          delete: true,
-        },
-        9: {
-          read: true,
-          write: false,
-          delete: false,
-        },
-      },
-      createdAt: "2024-03-05 15:18:21.515403",
-      lastModified: "2024-04-24 12:03:05.15249",
-    }, {
-      workspaceId: 3,
-      name: "Workspace 3",
-      description: "Workspace 3 desc",
-      thumbnail: "https://media.springernature.com/lw703/springer-static/image/art%3A10.1038%2F528452a/MediaObjects/41586_2015_Article_BF528452a_Figg_HTML.jpg",
-      myAccessRights: {
-        read: true,
-        write: false,
-        delete: false,
-      },
-      accessRights: {
-        3: {
-          read: true,
-          write: false,
-          delete: false,
-        },
-        5: {
-          read: true,
-          write: true,
-          delete: false,
-        },
-        9: {
-          read: true,
-          write: true,
-          delete: true,
-        },
-      },
-      createdAt: "2024-04-24 12:03:05.15249",
-      lastModified: "2024-06-21 13:00:40.33769",
-    }],
-
-    fetchWorkspaces: function() {
-      if (osparc.auth.Data.getInstance().isGuest()) {
-        return new Promise(resolve => {
-          resolve([]);
-        });
-      }
-
-      /*
-      return osparc.data.Resources.getInstance().getAllPages("workspaces", params)
-        .then(workspacesData => {
-          const workspaces = [];
-          workspacesData.forEach(workspaceData => {
-            const workspace = new osparc.data.model.Workspace(workspaceData);
-            this.__addToCache(workspace);
-            workspaces.push(workspace);
-          });
-          return workspaces;
-        });
-      */
-
-      return new Promise(resolve => {
-        if (this.workspacesCached.length === 0) {
-          this.self().FAKE_WORKSPACES.forEach(workspaceData => {
-            const workspace = new osparc.data.model.Workspace(workspaceData);
-            this.__addToCache(workspace);
-          });
-        }
-        resolve(this.workspacesCached);
-      });
-    },
-
     createNewWorkspaceData: function(name, description = "", thumbnail = "") {
       return {
         name,
@@ -157,8 +37,24 @@ qx.Class.define("osparc.store.Workspaces", {
       };
     },
 
+    fetchWorkspaces: function() {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          resolve([]);
+        });
+      }
+
+      return osparc.data.Resources.getInstance().getAllPages("workspaces")
+        .then(workspacesData => {
+          workspacesData.forEach(workspaceData => {
+            const workspace = new osparc.data.model.Workspace(workspaceData);
+            this.__addToCache(workspace);
+          });
+          return this.workspacesCached;
+        });
+    },
+
     postWorkspace: function(newWorkspaceData) {
-      /*
       const params = {
         data: newWorkspaceData
       };
@@ -168,30 +64,10 @@ qx.Class.define("osparc.store.Workspaces", {
           this.__addToCache(newWorkspace);
           return newWorkspace;
         });
-      */
-      const workspaceData = newWorkspaceData;
-      workspaceData["workspaceId"] = Math.floor(Math.random() * 100) + 100;
-      workspaceData["myAccessRights"] = osparc.share.CollaboratorsWorkspace.getOwnerAccessRight();
-      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      workspaceData["accessRights"] = {};
-      workspaceData["accessRights"][myGroupId] = osparc.share.CollaboratorsWorkspace.getOwnerAccessRight();
-      workspaceData["createdAt"] = new Date().toISOString();
-      workspaceData["lastModified"] = new Date().toISOString();
-      return new Promise(resolve => {
-        const workspace = new osparc.data.model.Workspace(workspaceData);
-        this.__addToCache(workspace);
-        resolve(workspace);
-      });
     },
 
     deleteWorkspace: function(workspaceId) {
       return new Promise((resolve, reject) => {
-        if (this.__deleteFromCache(workspaceId)) {
-          resolve();
-        } else {
-          reject();
-        }
-        /*
         const params = {
           "url": {
             workspaceId
@@ -206,7 +82,6 @@ qx.Class.define("osparc.store.Workspaces", {
             }
           })
           .catch(err => reject(err));
-        */
       });
     },
 
@@ -228,66 +103,81 @@ qx.Class.define("osparc.store.Workspaces", {
                 workspace[setter](updateData[propKey]);
               }
             });
-            workspace.setLastModified(new Date());
-            this.__deleteFromCache(workspaceId);
-            this.__addToCache(workspace);
-            resolve();
+            workspace.set({
+              modifiedAt: new Date()
+            });
+            resolve(workspace);
           })
           .catch(err => reject(err));
       });
     },
 
     addCollaborators: function(workspaceId, newCollaborators) {
-      return new Promise((resolve, reject) => {
-        const workspace = this.getWorkspace(workspaceId);
-        if (workspace) {
-          const accessRights = workspace.getAccessRights();
-          const newAccessRights = Object.assign(accessRights, newCollaborators);
+      const promises = [];
+      Object.keys(newCollaborators).forEach(groupId => {
+        const params = {
+          url: {
+            workspaceId,
+            groupId,
+          },
+          data: newCollaborators[groupId]
+        };
+        promises.push(osparc.data.Resources.fetch("workspaces", "postAccessRights", params));
+      });
+      return Promise.all(promises)
+        .then(() => {
+          const workspace = this.getWorkspace(workspaceId);
+          const newAccessRights = workspace.getAccessRights();
+          Object.keys(newCollaborators).forEach(gid => {
+            newAccessRights[gid] = newCollaborators[gid];
+          });
           workspace.set({
             accessRights: newAccessRights,
-            lastModified: new Date()
-          })
-          resolve();
-        } else {
-          reject();
-        }
-      });
+            modifiedAt: new Date()
+          });
+        })
+        .catch(console.error);
     },
 
-    removeCollaborator: function(workspaceId, gid) {
-      return new Promise((resolve, reject) => {
-        const workspace = this.getWorkspace(workspaceId);
-        if (workspace) {
-          const accessRights = workspace.getAccessRights();
-          delete accessRights[gid];
+    removeCollaborator: function(workspaceId, groupId) {
+      const params = {
+        url: {
+          workspaceId,
+          groupId,
+        }
+      };
+      return osparc.data.Resources.fetch("workspaces", "deleteAccessRights", params)
+        .then(() => {
+          const workspace = this.getWorkspace(workspaceId);
+          const newAccessRights = workspace.getAccessRights();
+          delete newAccessRights[groupId];
           workspace.set({
-            accessRights: accessRights,
-            lastModified: new Date()
-          })
-          resolve();
-        } else {
-          reject();
-        }
-      });
+            accessRights: newAccessRights,
+            modifiedAt: new Date()
+          });
+        })
+        .catch(console.error);
     },
 
-    updateCollaborator: function(workspaceId, gid, newPermissions) {
-      return new Promise((resolve, reject) => {
-        const workspace = this.getWorkspace(workspaceId);
-        if (workspace) {
-          const accessRights = workspace.getAccessRights();
-          if (gid in accessRights) {
-            accessRights[gid] = newPermissions;
-            workspace.set({
-              accessRights: accessRights,
-              lastModified: new Date()
-            })
-            resolve();
-            return;
-          }
-        }
-        reject();
-      });
+    updateCollaborator: function(workspaceId, groupId, newPermissions) {
+      const params = {
+        url: {
+          workspaceId,
+          groupId,
+        },
+        data: newPermissions
+      };
+      return osparc.data.Resources.fetch("workspaces", "putAccessRights", params)
+        .then(() => {
+          const workspace = this.getWorkspace(workspaceId);
+          const newAccessRights = workspace.getAccessRights();
+          newAccessRights[groupId] = newPermissions;
+          workspace.set({
+            accessRights: workspace.newAccessRights,
+            modifiedAt: new Date()
+          });
+        })
+        .catch(console.error);
     },
 
     getWorkspaces: function(parentId = null) {

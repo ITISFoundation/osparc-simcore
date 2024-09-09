@@ -166,7 +166,7 @@ async def test_is_healthy_api_error(
         "get_health",
         side_effect=side_effect,
     ) as client:
-        assert await client.is_healthy(dynamic_sidecar_endpoint) == False
+        assert await client.is_healthy(dynamic_sidecar_endpoint) is False
 
 
 async def test_containers_inspect(
@@ -282,11 +282,10 @@ async def test_get_entrypoint_container_name_api_not_found(
             ),
             expecting=status.HTTP_204_NO_CONTENT,
         ),
-    ) as client:
-        with pytest.raises(EntrypointContainerNotFoundError):
-            await client.get_entrypoint_container_name(
-                dynamic_sidecar_endpoint, dynamic_sidecar_network_name
-            )
+    ) as client, pytest.raises(EntrypointContainerNotFoundError):
+        await client.get_entrypoint_container_name(
+            dynamic_sidecar_endpoint, dynamic_sidecar_network_name
+        )
 
 
 @pytest.mark.parametrize("network_aliases", [[], ["an-alias"], ["alias-1", "alias-2"]])
@@ -301,7 +300,7 @@ async def test_attach_container_to_network(
     ) as client:
         assert (
             # pylint:disable=protected-access
-            await client._attach_container_to_network(
+            await client._attach_container_to_network(  # noqa: SLF001
                 dynamic_sidecar_endpoint,
                 container_id="container_id",
                 network_id="network_id",
@@ -321,7 +320,7 @@ async def test_detach_container_from_network(
     ) as client:
         assert (
             # pylint:disable=protected-access
-            await client._detach_container_from_network(
+            await client._detach_container_from_network(  # noqa: SLF001
                 dynamic_sidecar_endpoint,
                 container_id="container_id",
                 network_id="network_id",

@@ -7,7 +7,9 @@ import logging
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from models_library.workspaces import UserWorkspaceAccessRightsDB
 
+from ..workspaces import _workspaces_db as workspaces_db
 from ._access_rights_api import check_user_project_permission
 from .db import ProjectDBAPI
 from .models import ProjectDict
@@ -32,6 +34,20 @@ async def add_tag(
     project: ProjectDict = await db.add_tag(
         project_uuid=f"{project_uuid}", user_id=user_id, tag_id=int(tag_id)
     )
+
+    if project["workspaceId"] is not None:
+        workspace_db: UserWorkspaceAccessRightsDB = (
+            await workspaces_db.get_workspace_for_user(
+                app=app,
+                user_id=user_id,
+                workspace_id=project["workspaceId"],
+                product_name=product_name,
+            )
+        )
+        project["accessRights"] = {
+            gid: access.dict() for gid, access in workspace_db.access_rights.items()
+        }
+
     return project
 
 
@@ -52,4 +68,18 @@ async def remove_tag(
     project: ProjectDict = await db.remove_tag(
         project_uuid=f"{project_uuid}", user_id=user_id, tag_id=tag_id
     )
+
+    if project["workspaceId"] is not None:
+        workspace_db: UserWorkspaceAccessRightsDB = (
+            await workspaces_db.get_workspace_for_user(
+                app=app,
+                user_id=user_id,
+                workspace_id=project["workspaceId"],
+                product_name=product_name,
+            )
+        )
+        project["accessRights"] = {
+            gid: access.dict() for gid, access in workspace_db.access_rights.items()
+        }
+
     return project

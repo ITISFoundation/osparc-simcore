@@ -138,7 +138,6 @@ async def create_project(request: web.Request):
     # :create, :copy (w/ and w/o override)
     # NOTE: see clone_project
 
-    workspace_id = None
     if not request.can_read_body:
         # request w/o body
         predefined_project = None
@@ -158,10 +157,6 @@ async def create_project(request: web.Request):
             or None
         )
 
-        # # Manually include workspace after exclude
-        # workspace_id = project_create.dict(by_alias=True).get("workspaceId", None)
-        # predefined_project["workspaceId"] = workspace_id
-
     return await start_long_running_task(
         request,
         _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
@@ -179,7 +174,6 @@ async def create_project(request: web.Request):
         predefined_project=predefined_project,
         parent_project_uuid=header_params.parent_project_uuid,
         parent_node_id=header_params.parent_node_id,
-        workspace_id=workspace_id,
     )
 
 
@@ -631,12 +625,6 @@ async def clone_project(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    try:
-        project_db = await db.get_project_db(path_params.project_id)
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
-
     return await start_long_running_task(
         request,
         _crud_api_create.create_project,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
@@ -656,5 +644,4 @@ async def clone_project(request: web.Request):
         predefined_project=None,
         parent_project_uuid=None,
         parent_node_id=None,
-        workspace_id=project_db.workspace_id,
     )

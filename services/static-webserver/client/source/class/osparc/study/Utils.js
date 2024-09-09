@@ -105,12 +105,13 @@ qx.Class.define("osparc.study.Utils", {
       return isRetired;
     },
 
-    createStudyFromService: function(key, version, existingStudies, newStudyLabel) {
+    createStudyFromService: function(key, version, existingStudies, newStudyLabel, contextProps = {}) {
       return new Promise((resolve, reject) => {
         osparc.store.Services.getService(key, version)
           .then(metadata => {
             const newUuid = osparc.utils.Utils.uuidV4();
-            const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+            // context props, otherwise Study will be created in the root folder of my personal workspace
+            const minStudyData = Object.assign(osparc.data.model.Study.createMinStudyObject(), contextProps);
             if (newStudyLabel === undefined) {
               newStudyLabel = metadata["name"];
             }
@@ -181,7 +182,7 @@ qx.Class.define("osparc.study.Utils", {
       });
     },
 
-    createStudyFromTemplate: function(templateData, loadingPage) {
+    createStudyFromTemplate: function(templateData, loadingPage, contextProps = {}) {
       return new Promise((resolve, reject) => {
         const inaccessibleServices = this.getInaccessibleServices(templateData["workbench"]);
         if (inaccessibleServices.length) {
@@ -191,7 +192,8 @@ qx.Class.define("osparc.study.Utils", {
           });
           return;
         }
-        const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+        // context props, otherwise Study will be created in the root folder of my personal workspace
+        const minStudyData = Object.assign(osparc.data.model.Study.createMinStudyObject(), contextProps);
         minStudyData["name"] = templateData["name"];
         minStudyData["description"] = templateData["description"];
         minStudyData["thumbnail"] = templateData["thumbnail"];
@@ -206,16 +208,41 @@ qx.Class.define("osparc.study.Utils", {
         const interval = 1000;
         pollTasks.createPollingTask(fetchPromise, interval)
           .then(task => {
+            const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
+            const progressSequence = new osparc.widget.ProgressSequence(title).set({
+              minHeight: 180 // four tasks
+            });
+            progressSequence.addOverallProgressBar();
+            loadingPage.clearMessages();
+            loadingPage.addWidgetToMessages(progressSequence);
             task.addListener("updateReceived", e => {
               const updateData = e.getData();
               if ("task_progress" in updateData && loadingPage) {
                 const progress = updateData["task_progress"];
-                loadingPage.setMessages([progress["message"]]);
-                const pBar = new qx.ui.indicator.ProgressBar(progress["percent"], 1).set({
-                  width: osparc.ui.message.Loading.LOGO_WIDTH,
-                  maxWidth: osparc.ui.message.Loading.LOGO_WIDTH
-                });
-                loadingPage.addWidgetToMessages(pBar);
+                const message = progress["message"];
+                const percent = progress["percent"];
+                progressSequence.setOverallProgress(percent);
+                const existingTask = progressSequence.getTask(message);
+                if (existingTask) {
+                  // update task
+                  osparc.widget.ProgressSequence.updateTaskProgress(existingTask, {
+                    value: percent,
+                    progressLabel: percent*100 + "%"
+                  });
+                } else {
+                  // new task
+                  // all the previous steps to 100%
+                  progressSequence.getTasks().forEach(tsk => osparc.widget.ProgressSequence.updateTaskProgress(tsk, {
+                    value: 1,
+                    progressLabel: "100%"
+                  }));
+                  // and move to the next new task
+                  const subTask = progressSequence.addNewTask(message);
+                  osparc.widget.ProgressSequence.updateTaskProgress(subTask, {
+                    value: percent,
+                    progressLabel: "0%"
+                  });
+                }
               }
             }, this);
             task.addListener("resultReceived", e => {

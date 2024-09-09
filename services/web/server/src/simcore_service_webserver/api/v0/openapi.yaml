@@ -3482,6 +3482,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/projects/{project_id}/workspaces/{workspace_id}:
+    put:
+      tags:
+      - projects
+      - workspaces
+      summary: Move project to the workspace
+      operationId: replace_project_workspace
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/publications/service-submission:
     post:
       tags:
@@ -8031,6 +8057,7 @@ components:
       - createdAt
       - modifiedAt
       - owner
+      - myAccessRights
       type: object
       properties:
         folderId:
@@ -8059,6 +8086,13 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        myAccessRights:
+          $ref: '#/components/schemas/models_library__access_rights__AccessRights'
     GenerateInvitation:
       title: GenerateInvitation
       required:
@@ -8390,7 +8424,6 @@ components:
         issuer:
           title: Issuer
           type: string
-          format: email
         guest:
           title: Guest
           type: string
@@ -9822,6 +9855,11 @@ components:
           $ref: '#/components/schemas/StudyUI'
         workspaceId:
           title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        folderId:
+          title: Folderid
           exclusiveMinimum: true
           type: integer
           minimum: 0

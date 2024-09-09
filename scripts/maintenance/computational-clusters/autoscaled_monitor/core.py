@@ -43,8 +43,6 @@ def _parse_computational(
         or state.computational_parser_primary.parse(name)
     ):
         assert isinstance(result, parse.Result)
-        # special handling for optional wallet
-        rich.print(result.named)
 
         last_heartbeat = utils.get_last_heartbeat(instance)
         return ComputationalInstance(
@@ -450,7 +448,7 @@ async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -
 
 def _print_computational_tasks(
     user_id: int,
-    wallet_id: int,
+    wallet_id: int | None,
     tasks: list[tuple[ComputationalTask | None, DaskTask | None]],
 ) -> None:
     table = Table(
@@ -489,7 +487,7 @@ def _print_computational_tasks(
 
 
 async def _list_computational_clusters(
-    state: AppState, user_id: int, wallet_id: int
+    state: AppState, user_id: int, wallet_id: int | None
 ) -> list[ComputationalCluster]:
     assert state.ec2_resource_clusters_keeper
     computational_instances = await ec2.list_computational_instances_from_ec2(
@@ -501,7 +499,7 @@ async def _list_computational_clusters(
 
 
 async def cancel_jobs(  # noqa: C901, PLR0912
-    state: AppState, user_id: int, wallet_id: int, *, force: bool
+    state: AppState, user_id: int, wallet_id: int | None, *, force: bool
 ) -> None:
     # get the theory
     computational_tasks = await db.list_computational_tasks_from_db(state, user_id)
