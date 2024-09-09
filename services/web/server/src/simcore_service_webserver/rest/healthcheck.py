@@ -81,9 +81,7 @@ class HealthCheck:
         self._timeout: int | None = app[APP_SETTINGS_KEY].SC_HEALTHCHECK_TIMEOUT
 
     def __repr__(self):
-        return "<HealthCheck timeout={}, #on_healthcheck-slots={}>".format(
-            self._timeout, len(self._on_healthcheck)
-        )
+        return f"<HealthCheck timeout={self._timeout}, #on_healthcheck-slots={len(self._on_healthcheck)}>"
 
     @property
     def on_healthcheck(self) -> _HealthCheckSignal:
