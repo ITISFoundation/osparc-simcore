@@ -1,22 +1,28 @@
 import logging
+import time
+from datetime import timedelta
 
-from fastapi import FastAPI
+from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
+from servicelib.logging_utils import log_context
+from settings_library import PostgresSettings
 from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this on is unclear
-    get_pg_engine_stateinfo,
     raise_if_migration_not_ready,
 )
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from tenacity import retry
 
-from ..logging_utils import log_context
-from ..retry_policies import PostgresRetryPolicyUponInitialization
+from .logging_utils import log_context
+from .retry_policies import PostgresRetryPolicyUponInitialization
 
 _logger = logging.getLogger(__name__)
 
 
 @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
-async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
+async def create_async_engine_and_pg_database_ready(
+    settings: PostgresSettings,
+) -> AsyncEngine:
     with log_context(
         _logger, logging.DEBUG, f"connection to db {settings.dsn_with_async_sqlalchemy}"
     ):
@@ -39,14 +45,16 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
             await engine.dispose()
             raise
 
-    app.state.engine = engine
-    _logger.debug(
-        "Setup engine: %s",
-        await get_pg_engine_stateinfo(engine),
-    )
+    return engine
 
 
-async def close_db_connection(app: FastAPI) -> None:
-    with log_context(_logger, logging.DEBUG, f"db disconnect of {app.state.engine}"):
-        if engine := app.state.engine:
-            await engine.dispose()
+async def check_postgres_liveness(engine: AsyncEngine) -> LivenessResult:
+    try:
+        tic = time.time()
+        # test
+        async with engine.connect():
+            ...
+        elapsed_time = time.time() - tic
+        return IsResponsive(elapsed=timedelta(seconds=elapsed_time))
+    except SQLAlchemyError as err:
+        return IsNonResponsive(reason=f"{err}")
