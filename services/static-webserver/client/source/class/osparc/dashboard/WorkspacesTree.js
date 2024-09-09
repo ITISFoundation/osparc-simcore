@@ -74,7 +74,7 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
 
       this.setIconPath("icon");
       this.setIconOptions({
-        converter(value, model) {
+        converter(value) {
           if (value === "shared") {
             return osparc.store.Workspaces.iconPath(16);
           }
