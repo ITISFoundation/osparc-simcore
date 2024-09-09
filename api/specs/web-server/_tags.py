@@ -9,7 +9,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.tags._handlers import (
+from simcore_service_webserver.tags.schemas import (
     TagCreate,
     TagGet,
     TagPathParams,
