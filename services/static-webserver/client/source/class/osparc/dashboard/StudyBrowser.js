@@ -62,7 +62,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       nullable: true,
       init: null,
       event: "changeCurrentFolderId",
-      apply: "__applyCurrentFolderId"
+      apply: "__resetAndReloadAll"
     },
 
     multiSelection: {
@@ -403,12 +403,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._resourcesList = [];
 
           this.__reloadWorkspaces();
+        } else if (this.getCurrentFolderId()) {
+          // this will also trigger the __resetAndReloadAll
+          this.setCurrentFolderId(null);
         } else {
-          this._resourcesContainer.setResourcesToList([]);
-          this._resourcesList = [];
-          this.invalidateStudies();
-
-          this.__reloadFoldersAndStudies();
+          this.__resetAndReloadAll();
         }
       }
     },
@@ -451,26 +450,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
     // /WORKSPACES
 
-    // FOLDERS
-    __applyCurrentFolderId: function() {
+    __resetAndReloadAll: function() {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const folderId = this.getCurrentFolderId();
         const workspaceId = this.getCurrentWorkspaceId();
         if (workspaceId === -1) {
           return;
         }
-        osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
-          .then(() => {
-            this._resourcesContainer.setResourcesToList([]);
-            this._resourcesList = [];
-            this.invalidateStudies();
 
-            this.__reloadFoldersAndStudies();
-          })
-          .catch(console.error);
+        this._resourcesContainer.setResourcesToList([]);
+        this._resourcesList = [];
+        this.invalidateStudies();
+
+        this.__reloadFoldersAndStudies();
       }
     },
 
+    // FOLDERS
     __reloadFolderCards: function() {
       this._resourcesContainer.setFoldersToList(this.__foldersList);
       this._resourcesContainer.reloadFolders();
