@@ -35,7 +35,6 @@ class OneResourceRepoDemo:
     async def create(self, connection: AsyncConnection | None = None, **kwargs) -> int:
         async with transaction_context(self.engine, connection) as conn:
             result = await conn.execute(self.table.insert().values(**kwargs))
-            await conn.commit()
             assert result  # nosec
             return result.inserted_primary_key[0]
 
@@ -68,7 +67,7 @@ class OneResourceRepoDemo:
             # Fetch paginated results
             query = sa.select(self.table).limit(limit).offset(offset)
             result = await conn.execute(query)
-            records = [dict(row) for row in result.fetchall()]
+            records = [dict(**row) for row in result.fetchall()]
 
             return _PageDict(total_count=total_count or 0, rows=records)
 
@@ -83,7 +82,6 @@ class OneResourceRepoDemo:
             result = await conn.execute(
                 self.table.update().where(self.table.c.id == record_id).values(**values)
             )
-            await conn.commit()
             return result.rowcount > 0
 
     async def delete(
@@ -96,8 +94,14 @@ class OneResourceRepoDemo:
             result = await conn.execute(
                 self.table.delete().where(self.table.c.id == record_id)
             )
-            await conn.commit()
             return result.rowcount > 0
+
+
+# async def test_it(asyncpg_engine: AsyncEngine):
+
+#     async with asyncpg_engine.connect() as conn:
+#         async with conn.begin():
+#             conn.execute()
 
 
 async def test_transaction_context(asyncpg_engine: AsyncEngine):
@@ -113,27 +117,33 @@ async def test_transaction_context(asyncpg_engine: AsyncEngine):
     def _something_raises_here():
         raise RuntimeError(fake_error_msg)
 
-    async def _create_blue_like_tags(conn):
-        async with conn.begin():  # NOTE: embedded transaction here!
+    async def _create_blue_like_tags(connection):
+        # NOTE: embedded transaction here!!!
+        async with transaction_context(asyncpg_engine, connection) as conn:
             await tags_repo.create(conn, name="cyan tag", color="cyan")
             _something_raises_here()
             await tags_repo.create(conn, name="violet tag", color="violet")
 
-    async def _create_four_tags(conn):
-        await tags_repo.create(conn, name="red tag", color="red")
-        await _create_blue_like_tags(conn)
-        await tags_repo.create(conn, name="green tag", color="green")
+    async def _create_four_tags(connection):
+        await tags_repo.create(connection, name="red tag", color="red")
+        await _create_blue_like_tags(connection)
+        await tags_repo.create(connection, name="green tag", color="green")
 
     with pytest.raises(RuntimeError, match=fake_error_msg):
         async with transaction_context(asyncpg_engine) as conn:
-            await _create_four_tags(conn)
+            await tags_repo.create(conn, name="red tag", color="red")
+            _something_raises_here()
+            await tags_repo.create(conn, name="green tag", color="green")
+
+    print(asyncpg_engine.pool.status())
+    assert conn.closed
 
     page = await tags_repo.get_page(limit=50, offset=0)
     assert page["total_count"] == 0, "Transaction did not happen"
 
     # (2) using internal connections
     await tags_repo.create(name="blue tag", color="blue")
-    await tags_repo.create(conn, name="red tag", color="red")
+    await tags_repo.create(name="red tag", color="red")
     page = await tags_repo.get_page(limit=50, offset=0)
     assert page["total_count"] == 2
 
@@ -143,5 +153,5 @@ async def test_transaction_context(asyncpg_engine: AsyncEngine):
         assert page["total_count"] == 2
 
         # select a Result, which will be delivered with buffered results
-        result = await conn.execute(sa.select(tags).where(tags.c.name == "some name 1"))
+        result = await conn.execute(sa.select(tags).where(tags.c.name == "blue tag"))
         assert result.fetchall()

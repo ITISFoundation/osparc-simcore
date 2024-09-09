@@ -1,20 +1,23 @@
+import logging
 from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+
+_logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def get_or_create_connection(
     engine: AsyncEngine, connection: AsyncConnection | None = None
 ):
-    close_conn = False
-    if connection is None:
+    # creator is responsible of closing connection
+    is_connection_created = connection is None
+    if is_connection_created:
         connection = await engine.connect()
-        close_conn = True
     try:
         yield connection
     finally:
-        if close_conn:
+        if is_connection_created:
             await connection.close()
 
 
@@ -24,8 +27,12 @@ async def transaction_context(
 ):
     async with get_or_create_connection(engine, connection) as conn:
         if conn.in_transaction():
-            async with conn.begin_nested():
-                yield conn
+            # async with conn.begin_nested():
+            yield conn
         else:
-            async with conn.begin():
-                yield conn
+            try:
+                async with conn.begin():
+                    yield conn
+            finally:
+                assert not conn.closed  # nosec
+                assert not conn.in_transaction()  # nosec
