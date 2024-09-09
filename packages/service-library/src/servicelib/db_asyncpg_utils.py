@@ -4,7 +4,6 @@ from datetime import timedelta
 
 from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
 from servicelib.logging_utils import log_context
-from settings_library import PostgresSettings
 from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this on is unclear
     raise_if_migration_not_ready,
