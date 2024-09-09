@@ -113,21 +113,24 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     },
 
     __buildLayout: function(workspaceId) {
-      const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
-
       this.getChildControl("icon");
       const title = this.getChildControl("title");
-      let source = null;
-      if (workspace) {
-        workspace.bind("name", title, "value");
+
+      const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
+      if (workspaceId === -1) {
+        this.__setIcon(osparc.store.Workspaces.iconPath(32));
+        title.setValue(this.tr("Shared Workspaces"));
+        this.resetAccessRights();
+      } else if (workspace) {
         const thumbnail = workspace.getThumbnail();
-        source = thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32);
+        this.__setIcon(thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32));
+        workspace.bind("name", title, "value");
         workspace.bind("accessRights", this, "accessRights");
       } else {
+        this.__setIcon("@FontAwesome5Solid/home/30");
         title.setValue(this.tr("My Workspace"));
-        source = "@FontAwesome5Solid/home/30";
+        this.resetAccessRights();
       }
-      this.__setIcon(source);
     },
 
     __addSpacer: function() {
@@ -162,12 +165,16 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     },
 
     __applyAccessRights: function(value) {
+      const shareIcon = this.getChildControl("share-icon");
+      const shareText = this.getChildControl("share-text");
       if (value && Object.keys(value).length) {
-        const shareIcon = this.getChildControl("share-icon");
         osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
-
-        const shareText = this.getChildControl("share-text");
         shareText.setValue(Object.keys(value).length + " members");
+        shareIcon.show();
+        shareText.show();
+      } else {
+        shareIcon.exclude();
+        shareText.exclude();
       }
     },
   }
