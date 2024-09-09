@@ -7,6 +7,7 @@
 # pylint: disable=too-many-arguments
 
 
+from enum import Enum
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
@@ -214,12 +215,14 @@ async def replace_wallet_autorecharge(
 
 
 ### Wallets groups
+_extra_tags: list[str | Enum] = ["groups"]
 
 
 @router.post(
     "/wallets/{wallet_id}/groups/{group_id}",
     response_model=Envelope[WalletGroupGet],
     status_code=status.HTTP_201_CREATED,
+    tags=_extra_tags,
 )
 async def create_wallet_group(
     wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsBodyParams
@@ -230,6 +233,7 @@ async def create_wallet_group(
 @router.get(
     "/wallets/{wallet_id}/groups",
     response_model=Envelope[list[WalletGroupGet]],
+    tags=_extra_tags,
 )
 async def list_wallet_groups(wallet_id: WalletID):
     ...
@@ -238,6 +242,7 @@ async def list_wallet_groups(wallet_id: WalletID):
 @router.put(
     "/wallets/{wallet_id}/groups/{group_id}",
     response_model=Envelope[WalletGroupGet],
+    tags=_extra_tags,
 )
 async def update_wallet_group(
     wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsBodyParams
@@ -248,6 +253,7 @@ async def update_wallet_group(
 @router.delete(
     "/wallets/{wallet_id}/groups/{group_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    tags=_extra_tags,
 )
 async def delete_wallet_group(wallet_id: WalletID, group_id: GroupID):
     ...
