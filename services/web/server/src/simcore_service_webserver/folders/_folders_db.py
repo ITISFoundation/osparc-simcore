@@ -306,20 +306,19 @@ async def get_projects_recursively_only_if_user_is_owner(
 
         folder_ids = [item[0] for item in rows]
 
-        result = await conn.execute(
+        query = (
             select(projects_to_folders.c.project_uuid)
             .join(projects)
             .where(
                 (projects_to_folders.c.folder_id.in_(folder_ids))
                 & (projects_to_folders.c.user_id == private_workspace_user_id_or_none)
-                & (
-                    projects.c.prj_owner == user_id
-                    if private_workspace_user_id_or_none is not None
-                    else None
-                )
             )
         )
+        if private_workspace_user_id_or_none is not None:
+            query = query.where(projects.c.prj_owner == user_id)
+
+        result = await conn.execute(query)
 
         rows = await result.fetchall() or []
-        results: list[UserID] = [ProjectID(row[0]) for row in rows]
+        results = [ProjectID(row[0]) for row in rows]
         return results
