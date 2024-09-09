@@ -46,6 +46,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       event: "changeCurrentWorkspaceId",
       apply: "__buildLayout"
     },
+
     accessRights: {
       check: "Object",
       nullable: false,
@@ -53,6 +54,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       event: "changeAccessRights",
       apply: "__applyAccessRights"
     },
+
     myAccessRights: {
       check: "Object",
       nullable: false,
@@ -88,6 +90,23 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
           control = new qx.ui.basic.Label().set({
             font: "text-16",
             alignY: "middle",
+          });
+          this._add(control);
+          break;
+        case "edit-button":
+          control = new qx.ui.form.MenuButton().set({
+            appearance: "form-button-outlined",
+            backgroundColor: "transparent",
+            padding: [0, 8],
+            maxWidth: 22,
+            maxHeight: 22,
+            icon: "@FontAwesome5Solid/ellipsis-v/8",
+            focusable: false,
+            alignY: "middle",
+          });
+          // make it circular
+          control.getContentElement().setStyles({
+            "border-radius": `${22 / 2}px`
           });
           this._add(control);
           break;
@@ -145,6 +164,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     __buildLayout: function(workspaceId) {
       this.getChildControl("icon");
       const title = this.getChildControl("title");
+      this.getChildControl("edit-button").exclude();
 
       const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
       if (workspaceId === -1) {
@@ -219,19 +239,40 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     },
 
     __applyMyAccessRights: function(value) {
+      const editButton = this.getChildControl("edit-button");
       const roleText = this.getChildControl("role-text");
       const roleIcon = this.getChildControl("role-icon");
       if (value && Object.keys(value).length) {
+        editButton.show();
+        const menu = new qx.ui.menu.Menu().set({
+          position: "bottom-right"
+        });
+        const edit = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesome5Solid/pencil-alt/12");
+        edit.addListener("execute", () => this.__editFolder(), this);
+        menu.add(edit);
+        const share = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
+        share.addListener("execute", () => this.__openShareWith(), this);
+        menu.add(share);
+        editButton.setMenu(menu);
         const val = value["read"] + value["write"] + value["delete"];
         roleText.setValue(osparc.data.Roles.STUDY[val].label);
         roleText.show();
         roleIcon.show();
         this.__showSpacers(true);
       } else {
+        editButton.exclude();
         roleText.exclude();
         roleIcon.exclude();
         this.__showSpacers(false);
       }
+    },
+
+    __openShareWith: function() {
+      const workspace = osparc.store.Workspaces.getWorkspace(this.getCurrentWorkspaceId());
+      const permissionsView = new osparc.share.CollaboratorsWorkspace(workspace);
+      const title = this.tr("Share Workspace");
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);
+      permissionsView.addListener("updateAccessRights", () => this.__applyAccessRights(workspace.getAccessRights()), this);
     },
   }
 });
