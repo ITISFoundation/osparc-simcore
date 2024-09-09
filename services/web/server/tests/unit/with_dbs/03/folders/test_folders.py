@@ -429,7 +429,7 @@ async def test_folders_deletion(
     resp = await client.delete(url.path)
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # list root projects (The project shows up in root after folder was deleted)
+    # list root projects (The project should have been deleted)
     base_url = client.app.router["list_projects"].url_for()
     resp = await client.get(base_url)
     data, _ = await assert_status(resp, status.HTTP_200_OK)
