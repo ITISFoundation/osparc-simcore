@@ -113,9 +113,17 @@ class TagsRepo:
             )
             result = await conn.execute(access_stmt)
             access = result.first()
-            assert access
+            assert access  # nosec
 
-            return TagDict(**tag, **access)
+            return TagDict(
+                id=tag.id,
+                name=tag.name,
+                description=tag.description,
+                color=tag.color,
+                read=access.read,
+                write=access.write,
+                delete=access.delete,
+            )
 
     async def list_all(
         self,
@@ -126,7 +134,18 @@ class TagsRepo:
         async with get_or_create_connection(self.engine, connection) as conn:
             stmt_list = list_tags_stmt(user_id=user_id)
             result = await conn.stream(stmt_list)
-            return [TagDict(**row) async for row in result]
+            return [
+                TagDict(
+                    id=row.id,
+                    name=row.name,
+                    description=row.description,
+                    color=row.color,
+                    read=row.read,
+                    write=row.write,
+                    delete=row.delete,
+                )
+                async for row in result
+            ]
 
     async def get(
         self,
@@ -142,7 +161,15 @@ class TagsRepo:
             if not row:
                 msg = f"{tag_id=} not found: either no access or does not exists"
                 raise TagNotFoundError(msg)
-            return TagDict(**row)
+            return TagDict(
+                id=row.id,
+                name=row.name,
+                description=row.description,
+                color=row.color,
+                read=row.read,
+                write=row.write,
+                delete=row.delete,
+            )
 
     async def update(
         self,
@@ -170,7 +197,15 @@ class TagsRepo:
                 msg = f"{tag_id=} not updated: either no access or not found"
                 raise TagOperationNotAllowedError(msg)
 
-            return TagDict(**row)
+            return TagDict(
+                id=row.id,
+                name=row.name,
+                description=row.description,
+                color=row.color,
+                read=row.read,
+                write=row.write,
+                delete=row.delete,
+            )
 
     async def delete(
         self,
