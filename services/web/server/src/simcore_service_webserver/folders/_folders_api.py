@@ -1,5 +1,6 @@
 # pylint: disable=unused-argument
 
+import asyncio
 import logging
 
 from aiohttp import web
@@ -7,14 +8,17 @@ from models_library.access_rights import AccessRights
 from models_library.api_schemas_webserver.folders_v2 import FolderGet, FolderGetPage
 from models_library.folders import FolderID
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
 from pydantic import NonNegativeInt
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_service_webserver.workspaces._workspaces_api import (
     check_user_workspace_access,
 )
 
+from ..projects.projects_api import submit_delete_project_task
 from ..users.api import get_user
 from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,
@@ -282,11 +286,32 @@ async def delete_folder(
         workspace_id=folder_db.workspace_id,
     )
 
-    # 1. Delete folder
-    # 1.1 Delete all child projects that I am an owner?
-    # NOTE: not yet implemented needs to be discussed
+    # 1. Delete folder content
+    # 1.1 Delete all child projects that I am an owner
+    project_id_list: list[
+        ProjectID
+    ] = await folders_db.get_projects_recursively_only_if_user_is_owner(
+        app,
+        folder_id=folder_id,
+        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+        user_id=user_id,
+        product_name=product_name,
+    )
+
+    tasks = [
+        asyncio.create_task(
+            submit_delete_project_task(
+                app,
+                project_uuid=project_id,
+                user_id=user_id,
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+            )
+        )
+        for project_id in project_id_list
+    ]
+    await asyncio.gather(*tasks)
 
     # 1.2 Delete all child folders
-    await folders_db.delete_with_all_children(
+    await folders_db.delete_recursively(
         app, folder_id=folder_id, product_name=product_name
     )

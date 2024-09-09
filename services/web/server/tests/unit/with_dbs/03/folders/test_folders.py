@@ -433,4 +433,4 @@ async def test_folders_deletion(
     base_url = client.app.router["list_projects"].url_for()
     resp = await client.get(base_url)
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert len(data) == 1
+    assert len(data) == 0
