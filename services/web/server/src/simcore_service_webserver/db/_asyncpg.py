@@ -32,4 +32,7 @@ async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
     await close_db_connection(app)
 
 
-__all__: tuple[str, ...] = ("postgres_cleanup_ctx", "get_async_engine")
+__all__: tuple[str, ...] = (
+    "get_async_engine",
+    "postgres_cleanup_ctx",
+)
