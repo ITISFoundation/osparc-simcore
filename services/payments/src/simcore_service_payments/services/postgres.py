@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from fastapi import FastAPI
 from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
-from servicelib.db_async_engine import close_db_connection, connect_to_db
+from servicelib.fastapi.db_async_engine import close_db_connection, connect_to_db
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 

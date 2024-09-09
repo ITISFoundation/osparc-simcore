@@ -9,8 +9,8 @@ from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[impo
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from tenacity import retry
 
-from .logging_utils import log_context
-from .retry_policies import PostgresRetryPolicyUponInitialization
+from ..logging_utils import log_context
+from ..retry_policies import PostgresRetryPolicyUponInitialization
 
 _logger = logging.getLogger(__name__)
 
