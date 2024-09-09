@@ -40,7 +40,7 @@ def test_enums_pre_validator():
 
 def test_empty_str_to_none_pre_validator():
     class Model(BaseModel):
-        nullable_message: str | None
+        nullable_message: str | None = None
 
         _empty_is_none = validator("nullable_message", allow_reuse=True, pre=True)(
             empty_str_to_none_pre_validator
@@ -64,7 +64,7 @@ def test_none_to_empty_str_pre_validator():
 
 def test_null_or_none_str_to_none_validator():
     class Model(BaseModel):
-        message: str | None
+        message: str | None = None
 
         _null_or_none_str_to_none_validator = validator(
             "message", allow_reuse=True, pre=True

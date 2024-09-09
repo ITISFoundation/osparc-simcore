@@ -2,16 +2,16 @@ import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 from enum import IntEnum, auto
-from typing import Any, ClassVar, NamedTuple, TypeAlias
+from typing import NamedTuple, TypeAlias
 
 from pydantic import (
     BaseModel,
     ByteSize,
-    Extra,
+    ConfigDict,
     Field,
     NonNegativeInt,
     PositiveInt,
-    validator,
+    field_validator,
 )
 
 from .products import ProductName
@@ -58,27 +58,15 @@ class PricingInfo(BaseModel):
     pricing_plan_id: PricingPlanId
     pricing_unit_id: PricingUnitId
     pricing_unit_cost_id: PricingUnitCostId
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"pricing_plan_id": 1, "pricing_unit_id": 1, "pricing_unit_cost_id": 1}
-            ]
-        }
+    model_config = ConfigDict()
 
 
 class HardwareInfo(BaseModel):
     aws_ec2_instances: list[str]
+    model_config = ConfigDict()
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"aws_ec2_instances": ["c6a.4xlarge"]},
-                {"aws_ec2_instances": []},
-            ]
-        }
-
-    @validator("aws_ec2_instances")
+    @field_validator("aws_ec2_instances")
+    @classmethod
     @classmethod
     def warn_if_too_many_instances_are_present(cls, v: list[str]) -> list[str]:
         if len(v) > 1:
@@ -105,11 +93,10 @@ class PricingPlanAndUnitIdsTuple(NamedTuple):
 class StartedAt(BaseModel):
     from_: datetime | None = Field(None, alias="from")
     until: datetime | None = Field(None)
+    model_config = ConfigDict(populate_by_name=True)
 
-    class Config:
-        allow_population_by_field_name = True
-
-    @validator("from_", pre=True)
+    @field_validator("from_", mode="before")
+    @classmethod
     @classmethod
     def parse_from_filter(cls, v):
         """Parse the filters field."""
@@ -124,7 +111,8 @@ class StartedAt(BaseModel):
             return from_
         return v
 
-    @validator("until", pre=True)
+    @field_validator("until", mode="before")
+    @classmethod
     @classmethod
     def parse_until_filter(cls, v):
         """Parse the filters field."""
@@ -153,19 +141,7 @@ class PricingPlanCreate(BaseModel):
     description: str
     classification: PricingPlanClassification
     pricing_plan_key: str
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "product_name": "osparc",
-                    "display_name": "My pricing plan",
-                    "description": "This is general pricing plan",
-                    "classification": PricingPlanClassification.TIER,
-                    "pricing_plan_key": "my-unique-pricing-plan",
-                }
-            ]
-        }
+    model_config = ConfigDict()
 
 
 class PricingPlanUpdate(BaseModel):
@@ -173,18 +149,7 @@ class PricingPlanUpdate(BaseModel):
     display_name: str
     description: str
     is_active: bool
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "pricing_plan_id": 1,
-                    "display_name": "My pricing plan",
-                    "description": "This is general pricing plan",
-                    "is_active": True,
-                }
-            ]
-        }
+    model_config = ConfigDict()
 
 
 ## Pricing Units
@@ -201,21 +166,7 @@ class UnitExtraInfo(BaseModel):
     CPU: NonNegativeInt
     RAM: ByteSize
     VRAM: ByteSize
-
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.allow
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "CPU": 32,
-                    "RAM": 64,
-                    "VRAM": 0,
-                    "SSD": 600,
-                    "custom key": "custom value",
-                }
-            ]
-        }
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
 
 class PricingUnitWithCostCreate(BaseModel):
@@ -226,21 +177,7 @@ class PricingUnitWithCostCreate(BaseModel):
     specific_info: SpecificInfo
     cost_per_unit: Decimal
     comment: str
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "pricing_plan_id": 1,
-                    "unit_name": "My pricing plan",
-                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
-                    "default": True,
-                    "specific_info": {"aws_ec2_instances": ["t3.medium"]},
-                    "cost_per_unit": 10,
-                    "comment": "This pricing unit was create by Foo",
-                }
-            ]
-        }
+    model_config = ConfigDict()
 
 
 class PricingUnitCostUpdate(BaseModel):
@@ -255,34 +192,8 @@ class PricingUnitWithCostUpdate(BaseModel):
     unit_extra_info: UnitExtraInfo
     default: bool
     specific_info: SpecificInfo
-    pricing_unit_cost_update: None | PricingUnitCostUpdate
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "pricing_plan_id": 1,
-                    "pricing_unit_id": 1,
-                    "unit_name": "My pricing plan",
-                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
-                    "default": True,
-                    "specific_info": {"aws_ec2_instances": ["t3.medium"]},
-                    "pricing_unit_cost_update": {
-                        "cost_per_unit": 10,
-                        "comment": "This pricing unit was updated by Foo",
-                    },
-                },
-                {
-                    "pricing_plan_id": 1,
-                    "pricing_unit_id": 1,
-                    "unit_name": "My pricing plan",
-                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
-                    "default": True,
-                    "specific_info": {"aws_ec2_instances": ["t3.medium"]},
-                    "pricing_unit_cost_update": None,
-                },
-            ]
-        }
+    pricing_unit_cost_update: None | PricingUnitCostUpdate = None
+    model_config = ConfigDict()
 
 
 class ServicesAggregatedUsagesType(StrAutoEnum):

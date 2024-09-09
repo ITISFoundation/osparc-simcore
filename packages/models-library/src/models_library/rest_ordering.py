@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .basic_types import IDStr
 
@@ -15,6 +15,4 @@ class OrderBy(BaseModel):
 
     field: IDStr = Field()
     direction: OrderDirection = Field(default=OrderDirection.ASC)
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")

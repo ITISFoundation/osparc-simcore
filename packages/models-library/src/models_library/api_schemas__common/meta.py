@@ -1,6 +1,4 @@
-from typing import Any, ClassVar
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..basic_types import VersionStr
 
@@ -11,12 +9,4 @@ class BaseMeta(BaseModel):
     released: dict[str, VersionStr] | None = Field(
         default=None, description="Maps every route's path tag with a released version"
     )
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {
-                "name": "simcore_service_foo",
-                "version": "2.4.45",
-                "released": {"v1": "1.3.4", "v2": "2.4.45"},
-            }
-        }
+    model_config = ConfigDict()

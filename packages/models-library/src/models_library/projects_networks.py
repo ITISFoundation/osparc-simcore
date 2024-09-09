@@ -1,7 +1,7 @@
 import re
-from typing import Any, ClassVar, Final
+from typing import Final
 
-from pydantic import BaseModel, ConstrainedStr, Field
+from pydantic import BaseModel, ConfigDict, ConstrainedStr, Field
 
 from .generics import DictModel
 from .projects import ProjectID
@@ -25,17 +25,7 @@ class ContainerAliases(DictModel[NodeIDStr, DockerNetworkAlias]):
 
 
 class NetworksWithAliases(DictModel[DockerNetworkName, ContainerAliases]):
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "network_one": {
-                        "00000000-0000-0000-0000-000000000001": "an_alias_for_container_1_in_network_one",
-                        "00000000-0000-0000-0000-000000000002": "some_other_alias_for_container_2_in_network_one",
-                    }
-                },
-            ]
-        }
+    model_config = ConfigDict()
 
 
 class ProjectsNetworks(BaseModel):
@@ -47,17 +37,4 @@ class ProjectsNetworks(BaseModel):
             "is given a user defined alias by which it is identified on the network."
         ),
     )
-
-    class Config:
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "example": {
-                "project_uuid": "ec5cdfea-f24e-4aa1-83b8-6dccfdc8cf4d",
-                "networks_with_aliases": {
-                    "network_one": {
-                        "00000000-0000-0000-0000-000000000001": "an_alias_for_container_1_in_network_one",
-                        "00000000-0000-0000-0000-000000000002": "some_other_alias_for_container_2_in_network_one",
-                    }
-                },
-            }
-        }
+    model_config = ConfigDict(from_attributes=True)

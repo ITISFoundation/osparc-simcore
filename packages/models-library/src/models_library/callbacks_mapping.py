@@ -1,7 +1,7 @@
 from collections.abc import Sequence
-from typing import Any, ClassVar, Final
+from typing import Final
 
-from pydantic import BaseModel, Extra, Field, NonNegativeFloat, validator
+from pydantic import BaseModel, ConfigDict, Field, NonNegativeFloat, field_validator
 
 INACTIVITY_TIMEOUT_CAP: Final[NonNegativeFloat] = 5
 TIMEOUT_MIN: Final[NonNegativeFloat] = 1
@@ -15,15 +15,7 @@ class UserServiceCommand(BaseModel):
     timeout: NonNegativeFloat = Field(
         ..., description="after this interval the command will be timed-out"
     )
-
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"service": "rt-web", "command": "ls", "timeout": 1},
-                {"service": "s4l-core", "command": ["ls", "-lah"], "timeout": 1},
-            ]
-        }
+    model_config = ConfigDict(extra="forbid")
 
 
 class CallbacksMapping(BaseModel):
@@ -47,7 +39,8 @@ class CallbacksMapping(BaseModel):
         ),
     )
 
-    @validator("inactivity")
+    @field_validator("inactivity")
+    @classmethod
     @classmethod
     def ensure_inactivity_timeout_is_capped(
         cls, v: UserServiceCommand
@@ -62,32 +55,4 @@ class CallbacksMapping(BaseModel):
             raise ValueError(msg)
         return v
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    # empty validates
-                },
-                {
-                    "metrics": None,
-                    "before_shutdown": [],
-                },
-                {"metrics": UserServiceCommand.Config.schema_extra["examples"][0]},
-                {
-                    "metrics": UserServiceCommand.Config.schema_extra["examples"][0],
-                    "before_shutdown": [
-                        UserServiceCommand.Config.schema_extra["examples"][0],
-                        UserServiceCommand.Config.schema_extra["examples"][1],
-                    ],
-                },
-                {
-                    "metrics": UserServiceCommand.Config.schema_extra["examples"][0],
-                    "before_shutdown": [
-                        UserServiceCommand.Config.schema_extra["examples"][0],
-                        UserServiceCommand.Config.schema_extra["examples"][1],
-                    ],
-                    "inactivity": UserServiceCommand.Config.schema_extra["examples"][0],
-                },
-            ]
-        }
+    model_config = ConfigDict(extra="forbid")

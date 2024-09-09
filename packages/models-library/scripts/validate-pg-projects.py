@@ -4,11 +4,13 @@ from pathlib import Path
 
 import typer
 from models_library.projects import ProjectAtDB
-from pydantic import Json, ValidationError, validator
+from pydantic import Json, ValidationError, field_validator
 from pydantic.main import Extra
 
 
 class ProjectFromCsv(ProjectAtDB):
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(ProjectAtDB.Config):
         extra = Extra.forbid
 
@@ -24,7 +26,8 @@ class ProjectFromCsv(ProjectAtDB):
 
     # NOTE: validators introduced to parse CSV
 
-    @validator("published", "hidden", pre=True, check_fields=False)
+    @field_validator("published", "hidden", mode="before", check_fields=False)
+    @classmethod
     @classmethod
     def empty_str_as_false(cls, v):
         # See booleans for >v1.0  https://pydantic-docs.helpmanual.io/usage/types/#booleans
@@ -32,7 +35,8 @@ class ProjectFromCsv(ProjectAtDB):
             return False
         return v
 
-    @validator("workbench", pre=True, check_fields=False)
+    @field_validator("workbench", mode="before", check_fields=False)
+    @classmethod
     @classmethod
     def jsonstr_to_dict(cls, v):
         if isinstance(v, str):

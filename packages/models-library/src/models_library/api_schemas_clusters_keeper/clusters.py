@@ -20,6 +20,6 @@ class OnDemandCluster(BaseModel):
     authentication: ClusterAuthentication
     state: ClusterState
     user_id: UserID
-    wallet_id: WalletID | None
+    wallet_id: WalletID | None = None
     dask_scheduler_ready: bool
     eta: datetime.timedelta

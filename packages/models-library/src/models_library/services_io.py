@@ -3,12 +3,13 @@ from typing import Any, ClassVar
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     ConstrainedStr,
-    Extra,
     Field,
     StrictBool,
     StrictFloat,
     StrictInt,
+    field_validator,
     validator,
 )
 
@@ -25,9 +26,7 @@ from .utils.json_schema import (
 
 class PropertyTypeStr(ConstrainedStr):
     regex = re.compile(PROPERTY_TYPE_RE)
-
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class BaseServiceIOModel(BaseModel):
@@ -45,11 +44,11 @@ class BaseServiceIOModel(BaseModel):
         description="DEPRECATED: new display order is taken from the item position. This will be removed.",
     )
 
-    label: str = Field(..., description="short name for the property", example="Age")
+    label: str = Field(..., description="short name for the property", examples=["Age"])
     description: str = Field(
         ...,
         description="description of the property",
-        example="Age in seconds since 1970",
+        examples=["Age in seconds since 1970"],
     )
 
     # mathematical and physics descriptors
@@ -91,10 +90,10 @@ class BaseServiceIOModel(BaseModel):
         description="Units, when it refers to a physical quantity",
         deprecated=True,  # add x_unit in content_schema instead
     )
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        extra = Extra.forbid
-
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("content_schema")
     @classmethod
     def _check_type_is_set_to_schema(cls, v, values):
@@ -103,7 +102,8 @@ class BaseServiceIOModel(BaseModel):
             raise ValueError(msg)
         return v
 
-    @validator("content_schema")
+    @field_validator("content_schema")
+    @classmethod
     @classmethod
     def _check_valid_json_schema(cls, v):
         if v is not None:
@@ -151,6 +151,8 @@ class ServiceInput(BaseServiceIOModel):
         description="custom widget to use instead of the default one determined from the data-type",
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseServiceIOModel.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
@@ -222,6 +224,8 @@ class ServiceOutput(BaseServiceIOModel):
         deprecated=True,
     )
 
+    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config(BaseServiceIOModel.Config):
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [

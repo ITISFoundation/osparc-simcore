@@ -7,7 +7,7 @@ from models_library.folders import FolderID
 from models_library.users import GroupID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from models_library.workspaces import WorkspaceID
-from pydantic import Extra, PositiveInt, validator
+from pydantic import ConfigDict, PositiveInt, validator
 
 from ._base import InputSchema, OutputSchema
 
@@ -19,7 +19,7 @@ class FolderGet(OutputSchema):
     created_at: datetime
     modified_at: datetime
     owner: GroupID
-    workspace_id: WorkspaceID | None
+    workspace_id: WorkspaceID | None = None
     my_access_rights: AccessRights
 
 
@@ -32,9 +32,7 @@ class CreateFolderBodyParams(InputSchema):
     name: IDStr
     parent_folder_id: FolderID | None = None
     workspace_id: WorkspaceID | None = None
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     _null_or_none_str_to_none_validator = validator(
         "parent_folder_id", allow_reuse=True, pre=True
@@ -47,10 +45,8 @@ class CreateFolderBodyParams(InputSchema):
 
 class PutFolderBodyParams(InputSchema):
     name: IDStr
-    parent_folder_id: FolderID | None
-
-    class Config:
-        extra = Extra.forbid
+    parent_folder_id: FolderID | None = None
+    model_config = ConfigDict(extra="forbid")
 
     _null_or_none_str_to_none_validator = validator(
         "parent_folder_id", allow_reuse=True, pre=True

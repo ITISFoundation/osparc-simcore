@@ -1,7 +1,7 @@
 from decimal import Decimal
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .emails import LowerCaseEmailStr
 from .products import StripePriceID, StripeTaxRateID
@@ -19,25 +19,15 @@ class UserInvoiceAddress(BaseModel):
         description="Currently validated in webserver via pycountry library. Two letter country code alpha_2 expected.",
     )
 
-    @validator("*", pre=True)
+    @field_validator("*", mode="before")
+    @classmethod
     @classmethod
     def parse_empty_string_as_null(cls, v):
         if isinstance(v, str) and len(v.strip()) == 0:
             return None
         return v
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "line1": None,
-                    "state": None,
-                    "postal_code": None,
-                    "city": None,
-                    "country": "CH",
-                },
-            ]
-        }
+    model_config = ConfigDict()
 
 
 class InvoiceDataGet(BaseModel):
@@ -47,19 +37,4 @@ class InvoiceDataGet(BaseModel):
     user_invoice_address: UserInvoiceAddress
     user_display_name: str
     user_email: LowerCaseEmailStr
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "credit_amount": Decimal(15.5),
-                    "stripe_price_id": "stripe-price-id",
-                    "stripe_tax_rate_id": "stripe-tax-rate-id",
-                    "user_invoice_address": UserInvoiceAddress.Config.schema_extra[
-                        "examples"
-                    ][0],
-                    "user_display_name": "My Name",
-                    "user_email": LowerCaseEmailStr("email@example.itis"),
-                },
-            ]
-        }
+    model_config = ConfigDict()

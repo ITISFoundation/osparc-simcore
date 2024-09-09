@@ -1,9 +1,9 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import auto
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 from .utils.enums import StrAutoEnum
 
@@ -19,17 +19,7 @@ class WalletInfo(BaseModel):
     wallet_id: WalletID
     wallet_name: str
     wallet_credit_amount: Decimal
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "wallet_id": 1,
-                    "wallet_name": "My Wallet",
-                    "wallet_credit_amount": Decimal(10),
-                }
-            ]
-        }
+    model_config = ConfigDict()
 
 
 ZERO_CREDITS = Decimal(0)
@@ -42,12 +32,12 @@ ZERO_CREDITS = Decimal(0)
 class WalletDB(BaseModel):
     wallet_id: WalletID
     name: str
-    description: str | None
+    description: str | None = None
     owner: PositiveInt = Field(
         ...,
         description="GID of the group that owns this wallet",
     )
-    thumbnail: str | None
+    thumbnail: str | None = None
     status: WalletStatus = Field(
         ...,
         description="Wallet status (ACTIVE or INACTIVE)",

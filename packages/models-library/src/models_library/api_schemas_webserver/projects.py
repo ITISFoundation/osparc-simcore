@@ -35,8 +35,8 @@ from .permalinks import ProjectPermalink
 class ProjectCreateNew(InputSchema):
     uuid: ProjectID | None = None  # NOTE: suggested uuid! but could be different!
     name: str
-    description: str | None
-    thumbnail: HttpUrlWithCustomMinLength | None
+    description: str | None = None
+    thumbnail: HttpUrlWithCustomMinLength | None = None
     workbench: NodesDict
     access_rights: dict[GroupIDStr, AccessRights]
     tags: list[int] = Field(default_factory=list)
@@ -57,8 +57,8 @@ class ProjectCreateNew(InputSchema):
 # NOTE: based on OVERRIDABLE_DOCUMENT_KEYS
 class ProjectCopyOverride(InputSchema):
     name: str
-    description: str | None
-    thumbnail: HttpUrlWithCustomMinLength | None
+    description: str | None = None
+    thumbnail: HttpUrlWithCustomMinLength | None = None
     prj_owner: LowerCaseEmailStr
 
     _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
@@ -78,12 +78,12 @@ class ProjectGet(OutputSchema):
     access_rights: dict[GroupIDStr, AccessRights]
     tags: list[int]
     classifiers: list[ClassifierID] = []
-    state: ProjectState | None
-    ui: EmptyModel | StudyUI | None
+    state: ProjectState | None = None
+    ui: EmptyModel | StudyUI | None = None
     quality: dict[str, Any] = {}
-    dev: dict | None
+    dev: dict | None = None
     permalink: ProjectPermalink = FieldNotRequired()
-    workspace_id: WorkspaceID | None
+    workspace_id: WorkspaceID | None = None
 
     _empty_description = validator("description", allow_reuse=True, pre=True)(
         none_to_empty_str_pre_validator
@@ -101,7 +101,7 @@ class ProjectReplace(InputSchema):
     uuid: ProjectID
     name: ShortTruncatedStr
     description: LongTruncatedStr
-    thumbnail: HttpUrlWithCustomMinLength | None
+    thumbnail: HttpUrlWithCustomMinLength | None = None
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
     workbench: NodesDict

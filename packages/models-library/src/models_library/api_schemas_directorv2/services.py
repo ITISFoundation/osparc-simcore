@@ -1,6 +1,4 @@
-from typing import Any, ClassVar
-
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, validator
 from pydantic.types import ByteSize, NonNegativeInt
 
 from ..service_settings_labels import ContainerSpec
@@ -35,6 +33,8 @@ class NodeRequirements(BaseModel):
         alias="VRAM",
     )
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("vram", "gpu", always=True, pre=True)
     @classmethod
     def check_0_is_none(cls, v):
@@ -42,51 +42,11 @@ class NodeRequirements(BaseModel):
             v = None
         return v
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"CPU": 1.0, "RAM": 4194304},
-                {"CPU": 1.0, "GPU": 1, "RAM": 4194304},
-                {
-                    "CPU": 1.0,
-                    "RAM": 4194304,
-                },
-            ]
-        }
+    model_config = ConfigDict()
 
 
 class ServiceExtras(BaseModel):
     node_requirements: NodeRequirements
     service_build_details: ServiceBuildDetails | None = None
     container_spec: ContainerSpec | None = None
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {"node_requirements": node_example}
-                for node_example in NodeRequirements.Config.schema_extra["examples"]
-            ]
-            + [
-                {
-                    "node_requirements": node_example,
-                    "service_build_details": {
-                        "build_date": "2021-08-13T12:56:28Z",
-                        "vcs_ref": "8251ade",
-                        "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
-                    },
-                }
-                for node_example in NodeRequirements.Config.schema_extra["examples"]
-            ]
-            + [
-                {
-                    "node_requirements": node_example,
-                    "service_build_details": {
-                        "build_date": "2021-08-13T12:56:28Z",
-                        "vcs_ref": "8251ade",
-                        "vcs_url": "git@github.com:ITISFoundation/osparc-simcore.git",
-                    },
-                    "container_spec": {"Command": ["run", "subcommand"]},
-                }
-                for node_example in NodeRequirements.Config.schema_extra["examples"]
-            ]
-        }
+    model_config = ConfigDict()

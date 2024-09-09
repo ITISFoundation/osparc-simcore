@@ -1,6 +1,4 @@
-from typing import Any, ClassVar
-
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ConfigDict, validator
 from typing_extensions import TypedDict
 
 from .basic_types import EnvVarKey
@@ -17,6 +15,8 @@ class BootOption(BaseModel):
     default: str
     items: dict[str, BootChoice]
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("items")
     @classmethod
     def ensure_default_included(cls, v, values):
@@ -26,41 +26,7 @@ class BootOption(BaseModel):
             raise ValueError(msg)
         return v
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [
-                {
-                    "label": "Boot mode",
-                    "description": "Start it in web page mode",
-                    "default": "0",
-                    "items": {
-                        "0": {
-                            "label": "Non Voila",
-                            "description": "Tooltip for non Voila boot mode",
-                        },
-                        "1": {
-                            "label": "Voila",
-                            "description": "Tooltip for Voila boot mode",
-                        },
-                    },
-                },
-                {
-                    "label": "Application theme",
-                    "description": "Select a theme for the application",
-                    "default": "b",
-                    "items": {
-                        "a": {
-                            "label": "Clear",
-                            "description": "Using white background",
-                        },
-                        "b": {
-                            "label": "Dark",
-                            "description": "Using black and gray tones",
-                        },
-                    },
-                },
-            ]
-        }
+    model_config = ConfigDict()
 
 
 BootOptions = dict[EnvVarKey, BootOption]

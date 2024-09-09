@@ -9,7 +9,15 @@ from typing import Any, Final, TypeAlias
 from uuid import UUID
 
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    ConstrainedStr,
+    Extra,
+    Field,
+    field_validator,
+    validator,
+)
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .basic_types import HttpUrlWithCustomMinLength
@@ -33,16 +41,12 @@ _DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 class ProjectIDStr(ConstrainedStr):
     regex = re.compile(UUID_RE_BASE)
-
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class DateTimeStr(ConstrainedStr):
     regex = re.compile(DATE_RE)
-
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
     @classmethod
     def to_datetime(cls, s: "DateTimeStr"):
@@ -108,17 +112,17 @@ class ProjectAtDB(BaseProjectModel):
         False, description="Defines if a study is available publicly"
     )
 
-    @validator("project_type", pre=True)
+    @field_validator("project_type", mode="before")
+    @classmethod
     @classmethod
     def convert_sql_alchemy_enum(cls, v):
         if isinstance(v, Enum):
             return v.value
         return v
 
-    class Config:
-        orm_mode = True
-        use_enum_values = True
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        from_attributes=True, use_enum_values=True, populate_by_name=True
+    )
 
 
 class Project(BaseProjectModel):
@@ -180,6 +184,8 @@ class Project(BaseProjectModel):
         alias="workspaceId",
     )
 
+    # TODO[pydantic]: We couldn't refactor this class, please create the `model_config` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"
         title = "osparc-simcore project"

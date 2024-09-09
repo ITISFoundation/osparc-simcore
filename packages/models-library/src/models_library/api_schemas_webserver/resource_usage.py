@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
@@ -28,8 +28,8 @@ class ServiceRunGet(
     BaseModel
 ):  # NOTE: this is already in use so I didnt modidy inheritance from OutputSchema
     service_run_id: ServiceRunId
-    wallet_id: WalletID | None
-    wallet_name: str | None
+    wallet_id: WalletID | None = None
+    wallet_name: str | None = None
     user_id: UserID
     project_id: ProjectID
     project_name: str
@@ -41,7 +41,7 @@ class ServiceRunGet(
     service_version: ServiceVersion
     service_type: str
     started_at: datetime
-    stopped_at: datetime | None
+    stopped_at: datetime | None = None
     service_run_status: ServiceRunStatus
 
 
@@ -78,7 +78,7 @@ class PricingPlanAdminGet(OutputSchema):
     classification: PricingPlanClassification
     created_at: datetime
     pricing_plan_key: str
-    pricing_units: list[PricingUnitGet] | None
+    pricing_units: list[PricingUnitGet] | None = None
     is_active: bool
 
 
@@ -94,20 +94,14 @@ class CreatePricingPlanBodyParams(InputSchema):
     description: str
     classification: PricingPlanClassification
     pricing_plan_key: str
-
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 
 
 class UpdatePricingPlanBodyParams(InputSchema):
     display_name: str
     description: str
     is_active: bool
-
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 
 
 class CreatePricingUnitBodyParams(InputSchema):
@@ -117,10 +111,7 @@ class CreatePricingUnitBodyParams(InputSchema):
     specific_info: SpecificInfo
     cost_per_unit: Decimal
     comment: str
-
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 
 
 class UpdatePricingUnitBodyParams(InputSchema):
@@ -128,17 +119,11 @@ class UpdatePricingUnitBodyParams(InputSchema):
     unit_extra_info: UnitExtraInfo
     default: bool
     specific_info: SpecificInfo
-    pricing_unit_cost_update: PricingUnitCostUpdate | None
-
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    pricing_unit_cost_update: PricingUnitCostUpdate | None = None
+    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 
 
 class ConnectServiceToPricingPlanBodyParams(InputSchema):
     service_key: ServiceKey
     service_version: ServiceVersion
-
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 200
+    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
