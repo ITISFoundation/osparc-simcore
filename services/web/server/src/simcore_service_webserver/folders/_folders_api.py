@@ -273,7 +273,7 @@ async def delete_folder(
         )
         workspace_is_private = False
 
-    # Check user has acces to the folder
+    # Check user has access to the folder
     await folders_db.get_for_user_or_workspace(
         app,
         folder_id=folder_id,
@@ -282,4 +282,11 @@ async def delete_folder(
         workspace_id=folder_db.workspace_id,
     )
 
-    await folders_db.delete(app, folder_id=folder_id, product_name=product_name)
+    # 1. Delete folder
+    # 1.1 Delete all child projects that I am an owner?
+    # NOTE: not yet implemented needs to be discussed
+
+    # 1.2 Delete all child folders
+    await folders_db.delete_with_all_children(
+        app, folder_id=folder_id, product_name=product_name
+    )

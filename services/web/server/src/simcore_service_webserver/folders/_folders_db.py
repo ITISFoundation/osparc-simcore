@@ -16,6 +16,7 @@ from models_library.workspaces import WorkspaceID
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from sqlalchemy import func
+from sqlalchemy.orm import aliased
 from sqlalchemy.sql import asc, desc, select
 
 from ..db.plugin import get_database_engine
@@ -212,16 +213,45 @@ async def update(
         return FolderDB.from_orm(row)
 
 
-async def delete(
+async def delete_with_all_children(
     app: web.Application,
     *,
     folder_id: FolderID,
     product_name: ProductName,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn:
-        await conn.execute(
-            folders_v2.delete().where(
-                (folders_v2.c.folder_id == folder_id)
-                & (folders_v2.c.product_name == product_name)
+    async with get_database_engine(app).acquire() as conn, conn.begin():
+        # Step 1: Define the base case for the recursive CTE
+        base_query = select(
+            folders_v2.c.folder_id, folders_v2.c.parent_folder_id
+        ).where(
+            (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
+            & (folders_v2.c.product_name == product_name)
+        )
+        folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
+        # Step 2: Define the recursive case
+        folder_alias = aliased(folders_v2)
+        recursive_query = select(
+            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
+        ).select_from(
+            folder_alias.join(
+                folder_hierarchy_cte,
+                folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
             )
+        )
+        # Step 3: Combine base and recursive cases into a CTE
+        folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
+        # Step 4: Execute the query to get all descendants
+        final_query = select(folder_hierarchy_cte)
+        result = await conn.execute(final_query)
+        rows = (  # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
+            await result.fetchall() or []
+        )
+
+        # Sort folders so that child folders come first
+        sorted_folders = sorted(
+            rows, key=lambda x: (x[1] is not None, x[1]), reverse=True
+        )
+        folder_ids = [item[0] for item in sorted_folders]
+        await conn.execute(
+            folders_v2.delete().where(folders_v2.c.folder_id.in_(folder_ids))
         )

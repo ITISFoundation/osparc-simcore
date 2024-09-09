@@ -336,3 +336,101 @@ async def test_project_listing_inside_of_private_folder(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1
         assert data[0]["uuid"] == user_project["uuid"]
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+async def test_folders_deletion(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
+):
+    assert client.app
+
+    # create a new folder
+    url = client.app.router["create_folder"].url_for()
+    resp = await client.post(url.path, json={"name": "My first folder"})
+    root_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    assert FolderGet.parse_obj(root_folder)
+
+    # create a subfolder folder
+    url = client.app.router["create_folder"].url_for()
+    resp = await client.post(
+        url.path,
+        json={
+            "name": "My subfolder 1",
+            "parentFolderId": root_folder["folderId"],
+        },
+    )
+    subfolder_1, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    # create a subfolder folder
+    url = client.app.router["create_folder"].url_for()
+    resp = await client.post(
+        url.path,
+        json={
+            "name": "My subfolder 2",
+            "parentFolderId": root_folder["folderId"],
+        },
+    )
+    subfolder_2, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    # add project to the sub folder
+    url = client.app.router["replace_project_folder"].url_for(
+        folder_id=f"{subfolder_2['folderId']}",
+        project_id=f"{user_project['uuid']}",
+    )
+    resp = await client.put(url.path)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # create a sub sub folder folder
+    url = client.app.router["create_folder"].url_for()
+    resp = await client.post(
+        url.path,
+        json={
+            "name": "My sub sub folder",
+            "parentFolderId": subfolder_1["folderId"],
+        },
+    )
+    await assert_status(resp, status.HTTP_201_CREATED)
+
+    # list user folders
+    url = client.app.router["list_folders"].url_for()
+    resp = await client.get(url.path)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+
+    # list subfolder projects
+    base_url = client.app.router["list_projects"].url_for()
+    url = base_url.with_query({"folder_id": f"{subfolder_2['folderId']}"})
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+    assert data[0]["uuid"] == user_project["uuid"]
+
+    # list root projects
+    base_url = client.app.router["list_projects"].url_for()
+    resp = await client.get(base_url)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 0
+
+    # delete a subfolder
+    url = client.app.router["delete_folder"].url_for(
+        folder_id=f"{subfolder_1['folderId']}"
+    )
+    resp = await client.delete(url.path)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # delete a root folder
+    url = client.app.router["delete_folder"].url_for(
+        folder_id=f"{root_folder['folderId']}"
+    )
+    resp = await client.delete(url.path)
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # list root projects (The project shows up in root after folder was deleted)
+    base_url = client.app.router["list_projects"].url_for()
+    resp = await client.get(base_url)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
