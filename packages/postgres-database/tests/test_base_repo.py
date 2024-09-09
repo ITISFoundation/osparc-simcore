@@ -16,6 +16,59 @@ from simcore_postgres_database.models.tags import tags
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
+async def test_sa_transactions(asyncpg_engine: AsyncEngine):
+    #
+    # SEE https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#synopsis-core
+    #
+
+    total_count_query = sa.select(sa.func.count()).select_from(tags)
+
+    # WRITE queries
+    query1 = tags.insert().values(name="query1", color="blue")
+    query11 = tags.insert().values(name="query11", color="blue")
+    query111 = tags.insert().values(name="query111", color="blue")
+    query1111 = tags.insert().values(name="query1111", color="blue")
+    query112 = tags.insert().values(name="query112", color="blue")
+    query12 = tags.insert().values(name="query12", color="blue")
+    query2 = tags.insert().values(name="query2", color="blue")
+
+    # to make it fail, just repeat query since `id` is unique
+    # TODO: query1111 = tags.insert().values(id=1, name="query1111", color="blue")
+    # TODO: await conn.commit()  # explicit commit !
+
+    # TODO: if this is true, then the order of execution is NOT preserved?
+    async with asyncpg_engine.connect() as conn:
+
+        await conn.execute(query1)
+
+        async with conn.begin():  # savepoint
+            await conn.execute(query11)
+
+            async with conn.begin_nested():  # savepoint
+                await conn.execute(query111)
+
+                async with conn.begin_nested():  # savepoint
+                    await conn.execute(query1111)
+
+                await conn.execute(query112)
+
+                total_count = (await conn.execute(total_count_query)).scalar()
+                assert total_count == 1  #  (query1111)
+
+            await conn.execute(query12)
+
+            total_count = (await conn.execute(total_count_query)).scalar()
+            assert total_count == 3  #  query111, (query1111), query112
+
+        await conn.execute(query2)
+
+        total_count = (await conn.execute(total_count_query)).scalar()
+        assert total_count == 5  #  query11, (query111, (query1111), query112), query2
+
+    total_count = (await conn.execute(total_count_query)).scalar()
+    assert total_count == 7  # includes query1, query2
+
+
 class _PageDict(TypedDict):
     total_count: int
     rows: list[dict[str, Any]]
@@ -97,17 +150,7 @@ class OneResourceRepoDemo:
             return result.rowcount > 0
 
 
-# async def test_it(asyncpg_engine: AsyncEngine):
-
-#     async with asyncpg_engine.connect() as conn:
-#         async with conn.begin():
-#             conn.execute()
-
-
 async def test_transaction_context(asyncpg_engine: AsyncEngine):
-    #
-    # Similar to example in https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#synopsis-core
-    # using tags
 
     tags_repo = OneResourceRepoDemo(engine=asyncpg_engine, table=tags)
 
