@@ -1,9 +1,8 @@
 import functools
 
 from aiohttp import web
-from aiopg.sa.engine import Engine
 from pydantic import parse_obj_as
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -15,6 +14,7 @@ from simcore_postgres_database.utils_tags import (
     TagOperationNotAllowedError,
     TagsRepo,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
@@ -55,21 +55,21 @@ routes = web.RouteTableDef()
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def create_tag(request: web.Request):
-    engine: Engine = request.app[APP_DB_ENGINE_KEY]
+    assert request.app  # nosec
+    engine: AsyncEngine = get_async_engine(request.app)
     req_ctx = TagRequestContext.parse_obj(request)
     new_tag = await parse_request_body_as(TagCreate, request)
 
-    repo = TagsRepo(user_id=req_ctx.user_id)
-    async with engine.acquire() as conn:
-        tag = await repo.create(
-            conn,
-            read=True,
-            write=True,
-            delete=True,
-            **new_tag.dict(exclude_unset=True),
-        )
-        model = TagGet.from_db(tag)
-        return envelope_json_response(model)
+    repo = TagsRepo(engine)
+    tag = await repo.create(
+        user_id=req_ctx.user_id,
+        read=True,
+        write=True,
+        delete=True,
+        **new_tag.dict(exclude_unset=True),
+    )
+    model = TagGet.from_db(tag)
+    return envelope_json_response(model)
 
 
 @routes.get(f"/{VTAG}/tags", name="list_tags")
@@ -77,15 +77,12 @@ async def create_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def list_tags(request: web.Request):
-    engine: Engine = request.app[APP_DB_ENGINE_KEY]
+    engine: AsyncEngine = get_async_engine(request.app)
     req_ctx = TagRequestContext.parse_obj(request)
 
-    repo = TagsRepo(user_id=req_ctx.user_id)
-    async with engine.acquire() as conn:
-        tags = await repo.list_all(conn)
-        return envelope_json_response(
-            [TagGet.from_db(t).dict(by_alias=True) for t in tags]
-        )
+    repo = TagsRepo(engine)
+    tags = await repo.list_all(user_id=req_ctx.user_id)
+    return envelope_json_response([TagGet.from_db(t).dict(by_alias=True) for t in tags])
 
 
 @routes.patch(f"/{VTAG}/tags/{{tag_id}}", name="update_tag")
@@ -93,18 +90,19 @@ async def list_tags(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def update_tag(request: web.Request):
-    engine: Engine = request.app[APP_DB_ENGINE_KEY]
+    engine: AsyncEngine = get_async_engine(request.app)
     req_ctx = TagRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
     tag_updates = await parse_request_body_as(TagUpdate, request)
 
-    repo = TagsRepo(user_id=req_ctx.user_id)
-    async with engine.acquire() as conn:
-        tag = await repo.update(
-            conn, path_params.tag_id, **tag_updates.dict(exclude_unset=True)
-        )
-        model = TagGet.from_db(tag)
-        return envelope_json_response(model)
+    repo = TagsRepo(engine)
+    tag = await repo.update(
+        user_id=req_ctx.user_id,
+        tag_id=path_params.tag_id,
+        **tag_updates.dict(exclude_unset=True),
+    )
+    model = TagGet.from_db(tag)
+    return envelope_json_response(model)
 
 
 @routes.delete(f"/{VTAG}/tags/{{tag_id}}", name="delete_tag")
@@ -112,13 +110,12 @@ async def update_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def delete_tag(request: web.Request):
-    engine: Engine = request.app[APP_DB_ENGINE_KEY]
+    engine: AsyncEngine = get_async_engine(request.app)
     req_ctx = TagRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
 
-    repo = TagsRepo(user_id=req_ctx.user_id)
-    async with engine.acquire() as conn:
-        await repo.delete(conn, tag_id=path_params.tag_id)
+    repo = TagsRepo(engine)
+    await repo.delete(user_id=req_ctx.user_id, tag_id=path_params.tag_id)
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
