@@ -878,9 +878,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.bind("currentWorkspaceId", containerHeader, "currentWorkspaceId", {
           onUpdate: () => containerHeader.setCurrentFolderId(null)
         });
-        containerHeader.bind("currentWorkspaceId", this, "currentWorkspaceId", {
-          onUpdate: () => this.setCurrentFolderId(null)
-        });
         this.bind("currentFolderId", containerHeader, "currentFolderId");
         containerHeader.bind("currentFolderId", this, "currentFolderId");
       }
