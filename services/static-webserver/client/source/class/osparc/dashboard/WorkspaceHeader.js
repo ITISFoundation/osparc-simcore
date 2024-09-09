@@ -279,7 +279,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 300, 200);
       permissionsView.addListener("workspaceUpdated", () => {
         win.close();
-        this.__buildLayout();
+        this.__buildLayout(this.getCurrentWorkspaceId());
       }, this);
     },
 
