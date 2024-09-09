@@ -12,6 +12,7 @@ from simcore_postgres_database.base_repo import (
     get_or_create_connection,
     transaction_context,
 )
+from simcore_postgres_database.models.tags import tags
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
@@ -24,8 +25,12 @@ class OneResourceRepoDemo:
     # This is a PROTOTYPE of how one could implement a generic
     # repo that provides CRUD operations providing a given table
     def __init__(self, engine: AsyncEngine, table: sa.Table):
-        self.engine = engine
+        if "id" not in table.columns:
+            msg = "id column expected"
+            raise ValueError(msg)
         self.table = table
+
+        self.engine = engine
 
     async def create(self, connection: AsyncConnection | None = None, **kwargs) -> int:
         async with transaction_context(self.engine, connection) as conn:
@@ -35,7 +40,10 @@ class OneResourceRepoDemo:
             return result.inserted_primary_key[0]
 
     async def get_by_id(
-        self, record_id: int, connection: AsyncConnection | None = None
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        record_id: int,
     ) -> dict[str, Any] | None:
         async with get_or_create_connection(self.engine, connection) as conn:
             result = await conn.execute(
@@ -45,7 +53,11 @@ class OneResourceRepoDemo:
             return dict(record) if record else None
 
     async def get_page(
-        self, limit: int, offset: int, connection: AsyncConnection | None = None
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        limit: int,
+        offset: int,
     ) -> _PageDict:
         async with get_or_create_connection(self.engine, connection) as conn:
             # Compute total count
@@ -61,7 +73,11 @@ class OneResourceRepoDemo:
             return _PageDict(total_count=total_count or 0, rows=records)
 
     async def update(
-        self, record_id: int, connection: AsyncConnection | None = None, **values
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        record_id: int,
+        **values,
     ) -> bool:
         async with transaction_context(self.engine, connection) as conn:
             result = await conn.execute(
@@ -71,7 +87,10 @@ class OneResourceRepoDemo:
             return result.rowcount > 0
 
     async def delete(
-        self, record_id: int, connection: AsyncConnection | None = None
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        record_id: int,
     ) -> bool:
         async with transaction_context(self.engine, connection) as conn:
             result = await conn.execute(
@@ -81,30 +100,48 @@ class OneResourceRepoDemo:
             return result.rowcount > 0
 
 
-@pytest.mark.skip()
-async def test_sqlachemy_asyncio_example(asyncpg_engine: AsyncEngine):
+async def test_transaction_context(asyncpg_engine: AsyncEngine):
     #
-    # Same example as in https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#synopsis-core
-    # but using `t1_repo`
-    #
-    meta = sa.MetaData()
-    t1 = sa.Table("t1", meta, sa.Column("name", sa.String(50), primary_key=True))
+    # Similar to example in https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#synopsis-core
+    # using tags
 
-    t1_repo = OneResourceRepoDemo(engine=asyncpg_engine, table=t1)
+    tags_repo = OneResourceRepoDemo(engine=asyncpg_engine, table=tags)
 
+    # (1) Using transaction_context and fails
+    fake_error_msg = "some error"
+
+    def _something_raises_here():
+        raise RuntimeError(fake_error_msg)
+
+    async def _create_blue_like_tags(conn):
+        async with conn.begin():  # NOTE: embedded transaction here!
+            await tags_repo.create(conn, name="cyan tag", color="cyan")
+            _something_raises_here()
+            await tags_repo.create(conn, name="violet tag", color="violet")
+
+    async def _create_four_tags(conn):
+        await tags_repo.create(conn, name="red tag", color="red")
+        await _create_blue_like_tags(conn)
+        await tags_repo.create(conn, name="green tag", color="green")
+
+    with pytest.raises(RuntimeError, match=fake_error_msg):
+        async with transaction_context(asyncpg_engine) as conn:
+            await _create_four_tags(conn)
+
+    page = await tags_repo.get_page(limit=50, offset=0)
+    assert page["total_count"] == 0, "Transaction did not happen"
+
+    # (2) using internal connections
+    await tags_repo.create(name="blue tag", color="blue")
+    await tags_repo.create(conn, name="red tag", color="red")
+    page = await tags_repo.get_page(limit=50, offset=0)
+    assert page["total_count"] == 2
+
+    # (3) using external embedded
     async with transaction_context(asyncpg_engine) as conn:
-
-        await conn.run_sync(meta.drop_all)
-        await conn.run_sync(meta.create_all)
-
-        await t1_repo.create(conn, name="some name 1")
-        await t1_repo.create(conn, name="some name 2")
-
-    async with transaction_context(asyncpg_engine) as conn:
-        page = await t1_repo.get_page(limit=50, offset=0, connection=conn)
-
+        page = await tags_repo.get_page(conn, limit=50, offset=0)
         assert page["total_count"] == 2
 
         # select a Result, which will be delivered with buffered results
-        result = await conn.execute(sa.select(t1).where(t1.c.name == "some name 1"))
+        result = await conn.execute(sa.select(tags).where(tags.c.name == "some name 1"))
         assert result.fetchall()
