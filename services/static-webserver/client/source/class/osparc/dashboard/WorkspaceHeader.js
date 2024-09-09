@@ -227,12 +227,12 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       this.__spacers.forEach(spacer => spacer.setVisibility(show ? "visible" : "excluded"));
     },
 
-    __applyAccessRights: function(value) {
+    __applyAccessRights: function(accessRights) {
       const shareIcon = this.getChildControl("share-icon");
       const shareText = this.getChildControl("share-text");
-      if (value && Object.keys(value).length) {
-        osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
-        shareText.setValue(Object.keys(value).length + " members");
+      if (accessRights && Object.keys(accessRights).length) {
+        osparc.dashboard.CardBase.populateShareIcon(shareIcon, accessRights);
+        shareText.setValue(Object.keys(accessRights).length + " members");
         shareIcon.show();
         shareText.show();
         this.__showSpacers(true);
