@@ -38,6 +38,11 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     this.__spacers = [];
   },
 
+  events: {
+    "workspaceUpdated": "qx.event.type.Data",
+    "deleteWorkspaceRequested": "qx.event.type.Data"
+  },
+
   properties: {
     currentWorkspaceId: {
       check: "Number",
@@ -248,7 +253,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
           position: "bottom-right"
         });
         const edit = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesome5Solid/pencil-alt/12");
-        edit.addListener("execute", () => this.__editFolder(), this);
+        edit.addListener("execute", () => this.__editWorkspace(), this);
         menu.add(edit);
         const share = new qx.ui.menu.Button(this.tr("Share..."), "@FontAwesome5Solid/share-alt/12");
         share.addListener("execute", () => this.__openShareWith(), this);
@@ -267,12 +272,26 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       }
     },
 
+    __editWorkspace: function() {
+      const workspace = osparc.store.Workspaces.getWorkspace(this.getCurrentWorkspaceId());
+      const permissionsView = new osparc.editor.WorkspaceEditor(workspace);
+      const title = this.tr("Edit Workspace");
+      const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 300, 200);
+      permissionsView.addListener("workspaceUpdated", () => {
+        win.close();
+        this.__buildLayout();
+      }, this);
+    },
+
     __openShareWith: function() {
       const workspace = osparc.store.Workspaces.getWorkspace(this.getCurrentWorkspaceId());
       const permissionsView = new osparc.share.CollaboratorsWorkspace(workspace);
       const title = this.tr("Share Workspace");
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);
-      permissionsView.addListener("updateAccessRights", () => this.__applyAccessRights(workspace.getAccessRights()), this);
+      const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);
+      permissionsView.addListener("updateAccessRights", () => {
+        win.close();
+        this.__applyAccessRights(workspace.getAccessRights());
+      }, this);
     },
   }
 });

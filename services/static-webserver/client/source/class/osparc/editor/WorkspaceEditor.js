@@ -31,7 +31,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
     this.getChildControl("thumbnail");
     workspace ? this.getChildControl("save") : this.getChildControl("create");
     if (workspace) {
-      this.__workspaceId = workspace;
+      this.__workspaceId = workspace.getWorkspaceId();
       this.set({
         label: workspace.getName(),
         description: workspace.getDescription(),

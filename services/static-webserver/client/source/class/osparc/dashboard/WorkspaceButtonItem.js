@@ -188,7 +188,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 300, 200);
           workspaceEditor.addListener("workspaceUpdated", () => {
             win.close();
-            this.fireDataEvent("workspaceUpdated", workspace.getWorkspaceId())
+            this.fireDataEvent("workspaceUpdated", workspace.getWorkspaceId());
           });
           workspaceEditor.addListener("cancel", () => win.close());
         });
