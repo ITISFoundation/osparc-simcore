@@ -26,7 +26,21 @@ class ServicePortGet(BaseModel):
         None,
         description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
     )
-    model_config = ConfigDict()
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "key": "input_1",
+                "kind": "input",
+                "content_schema": {
+                    "title": "Sleep interval",
+                    "type": "integer",
+                    "x_unit": "second",
+                    "minimum": 0,
+                    "maximum": 5,
+                },
+            }
+        }
+    )
 
     @classmethod
     def from_service_io(

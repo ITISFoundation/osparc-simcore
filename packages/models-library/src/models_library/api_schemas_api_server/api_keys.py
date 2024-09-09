@@ -14,4 +14,5 @@ class ApiKeyInDB(BaseModel):
     display_name: str
     user_id: int
     product_name: str
+
     model_config = ConfigDict(from_attributes=True)
