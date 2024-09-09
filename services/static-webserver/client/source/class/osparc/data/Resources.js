@@ -119,19 +119,19 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user"
           },
-          getPageFolder: {
+          getPage: {
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}"
           },
-          getPageFolderSearch: {
+          getPageSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}&search={text}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}&search={text}"
           },
-          getPageFolderSortBy: {
+          getPageSortBy: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}&order_by={orderBy}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}&order_by={orderBy}"
           },
           getOne: {
             useCache: false,
@@ -276,7 +276,11 @@ qx.Class.define("osparc.data.Resources", {
           moveToFolder: {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/folders/{folderId}"
-          }
+          },
+          moveToWorkspace: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/workspaces/{workspaceId}"
+          },
         }
       },
       "studyComments": {
@@ -299,7 +303,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/folders?folder_id={folderId}&offset={offset}&limit={limit}"
+            url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}"
           },
           getOne: {
             method: "GET",
@@ -316,14 +320,22 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/folders/{folderId}"
-          }
+          },
+          moveToFolder: {
+            method: "PUT",
+            url: statics.API + "/folders/{folderId}/folders/{destFolderId}"
+          },
+          moveToWorkspace: {
+            method: "PUT",
+            url: statics.API + "/folders/{folderId}/folders/{workspaceId}"
+          },
         }
       },
       "workspaces": {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/workspaces?workspace_id={workspaceId}&offset={offset}&limit={limit}"
+            url: statics.API + "/workspaces?&offset={offset}&limit={limit}"
           },
           getOne: {
             method: "GET",
