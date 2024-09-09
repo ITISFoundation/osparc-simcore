@@ -545,10 +545,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const win = osparc.ui.window.Window.popUpInWindow(moveFolderToWorkspace, title, 350, 280);
       moveFolderToWorkspace.addListener("moveToWorkspace", e => {
         win.close();
+        const destWorkspaceId = e.getData();
         const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
         confirmationWin.addListener("close", () => {
           if (confirmationWin.getConfirmed()) {
-            const destWorkspaceId = e.getData();
             const params = {
               url: {
                 folderId,
@@ -1365,10 +1365,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const win = osparc.ui.window.Window.popUpInWindow(moveStudyToWorkspace, title, 350, 280);
         moveStudyToWorkspace.addListener("moveToWorkspace", e => {
           win.close();
+          const destWorkspaceId = e.getData();
           const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
           confirmationWin.addListener("close", () => {
             if (confirmationWin.getConfirmed()) {
-              const destWorkspaceId = e.getData();
               const params = {
                 url: {
                   studyId: studyData["uuid"],
