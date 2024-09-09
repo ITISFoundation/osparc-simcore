@@ -34,16 +34,6 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
 
     this.base(arguments, root, "label", "children");
 
-    this.setIconPath("icon");
-    this.setIconOptions({
-      converter(value, _) {
-        if (value === "loading") {
-          return "@FontAwesome5Solid/circle-notch/12";
-        }
-        return "@FontAwesome5Solid/folder/12";
-      },
-    });
-
     this.__initTree();
   },
 
@@ -59,7 +49,6 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
       this.setDelegate({
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
-          c.bindProperty("icon", "icon", null, item, id);
           c.bindProperty("", "open", {
             converter(value, model, source, target) {
               const isOpen = target.isOpen();
@@ -72,29 +61,27 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
             },
           }, item, id);
         },
+        configureItem: item => {
+          item.addListener("tap", () => this.fireDataEvent("selectionChanged", item.getModel().getFolderId()), this);
+        },
       });
     },
 
     __populateFolder: function(parent) {
-      // tree.setAutoScrollIntoView(false);
-      parent.getChildren().removeAll();
-      // tree.setAutoScrollIntoView(true);
-
       osparc.store.Folders.getInstance().fetchFolders(parent.getFolderId(), this.__currentWorkspaceId)
         .then(folders => {
+          parent.getChildren().removeAll();
           folders.forEach(folder => {
             const folderData = {
               label: folder.getName(),
               folderId: folder.getFolderId(),
-              icon: "default",
               loaded: false,
               children: [{
-                label: "Loading",
-                icon: "loading",
+                label: "Loading...",
               }]
             };
             parent.getChildren().push(qx.data.marshal.Json.createModel(folderData, true));
-          })
+          });
         });
     },
   }
