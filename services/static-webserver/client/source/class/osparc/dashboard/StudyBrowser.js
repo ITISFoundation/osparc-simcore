@@ -547,7 +547,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         win.close();
         const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
         confirmationWin.addListener("close", () => {
-          if (win.getConfirmed()) {
+          if (confirmationWin.getConfirmed()) {
             const destWorkspaceId = e.getData();
             const params = {
               url: {
@@ -1367,7 +1367,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           win.close();
           const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
           confirmationWin.addListener("close", () => {
-            if (win.getConfirmed()) {
+            if (confirmationWin.getConfirmed()) {
               const destWorkspaceId = e.getData();
               const params = {
                 url: {
