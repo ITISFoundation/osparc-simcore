@@ -23,6 +23,7 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr, HttpUrl, parse_obj_as
 from servicelib.logging_utils import log_decorator
+from servicelib.rabbitmq import RPC_REQUEST_DEFAULT_TIMEOUT_S
 
 from ..rabbitmq import get_rabbitmq_rpc_client
 
@@ -64,6 +65,7 @@ async def init_payment(  # pylint: disable=too-many-arguments
         stripe_price_id=stripe_price_id,
         stripe_tax_rate_id=stripe_tax_rate_id,
         comment=comment,
+        timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, WalletPaymentInitiated)  # nosec
     return result
@@ -85,6 +87,7 @@ async def cancel_payment(
         payment_id=payment_id,
         user_id=user_id,
         wallet_id=wallet_id,
+        timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
 
 
@@ -106,6 +109,7 @@ async def get_payments_page(
         product_name=product_name,
         limit=limit,
         offset=offset,
+        timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert (  # nosec
         parse_obj_as(tuple[int, list[PaymentTransaction]], result) is not None
@@ -129,6 +133,7 @@ async def get_payment_invoice_url(
         user_id=user_id,
         wallet_id=wallet_id,
         payment_id=payment_id,
+        timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     return result
 
@@ -153,6 +158,7 @@ async def init_creation_of_payment_method(
         user_id=user_id,
         user_name=user_name,
         user_email=user_email,
+        timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, PaymentMethodInitiated)  # nosec
     return result
@@ -174,6 +180,7 @@ async def cancel_creation_of_payment_method(
         payment_method_id=payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
+        timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert result is None  # nosec
 
@@ -192,6 +199,7 @@ async def list_payment_methods(
         parse_obj_as(RPCMethodName, "list_payment_methods"),
         user_id=user_id,
         wallet_id=wallet_id,
+        timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, list)  # nosec
     return result
@@ -213,6 +221,7 @@ async def get_payment_method(
         payment_method_id=payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
+        timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, PaymentMethodGet)  # nosec
     return result
@@ -234,6 +243,7 @@ async def delete_payment_method(
         payment_method_id=payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
+        timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert result is None  # nosec
 
@@ -274,6 +284,7 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
         stripe_price_id=stripe_price_id,
         stripe_tax_rate_id=stripe_tax_rate_id,
         comment=comment,
+        timeout_s=3 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
 
     assert isinstance(result, PaymentTransaction)  # nosec
