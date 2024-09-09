@@ -4,6 +4,7 @@
 # pylint: disable=unused-variable
 
 import uuid
+import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
 
@@ -178,7 +179,16 @@ async def aiopg_engine(
     """
     Return an aiopg.sa engine connected to a responsive and migrated pg database
     """
+
     aiopg_sa_engine = await make_engine(is_async=True)
+
+    warnings.warn(
+        "The 'aiopg_engine' is deprecated since we are replacing `aiopg` library by `sqlalchemy.ext.asyncio`."
+        "SEE https://github.com/ITISFoundation/osparc-simcore/issues/4529. "
+        "Please use 'asyncpg_engine' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     yield aiopg_sa_engine
 
