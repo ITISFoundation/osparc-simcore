@@ -26,7 +26,13 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
     let label = null;
     if (collaborator["first_name"]) {
       // user
-      label = `${collaborator["first_name"]} ${"last_name" in collaborator && collaborator["last_name"] != null ? collaborator["last_name"] : ""}`;
+      label = collaborator["first_name"];
+      if (collaborator["last_name"]) {
+        label += ` ${collaborator["last_name"]}`;
+      }
+      if (collaborator["login"]) {
+        label += ` (${collaborator["login"]})`;
+      }
     } else if ("login" in collaborator) {
       label = collaborator["login"];
     } else {
@@ -35,7 +41,7 @@ qx.Class.define("osparc.filter.CollaboratorToggleButton", {
     }
     this.setLabel(label);
 
-    if ("login" in collaborator) {
+    if (collaborator["login"]) {
       this.setToolTipText(collaborator["login"]);
     }
 
