@@ -23,6 +23,10 @@ from .settings import DiagnosticsSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
+async def _on_healthcheck_async_adapter(app: web.Application) -> None:
+    assert_healthy_app(app)
+
+
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
@@ -47,12 +51,7 @@ def setup_diagnostics(
     setup_monitoring(app)
 
     if settings.DIAGNOSTICS_HEALTHCHECK_ENABLED:
-        # injects healthcheck
         healthcheck: HealthCheck = app[HealthCheck.__name__]
-
-        async def _on_healthcheck_async_adapter(app: web.Application) -> None:
-            assert_healthy_app(app)
-
         healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
 
     # adds other diagnostic routes: healthcheck, etc
