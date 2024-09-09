@@ -68,10 +68,10 @@ async def test_tags_to_studies(
         added_tags.append(added_tag)
 
         # Add tag to study
-        url = client.app.router["add_tag"].url_for(
+        url = client.app.router["add_project_tag"].url_for(
             project_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id"))
         )
-        resp = await client.put(f"{url}")
+        resp = await client.post(f"{url}")
         data, _ = await assert_status(resp, expected)
 
         # Tag is included in response
@@ -99,11 +99,12 @@ async def test_tags_to_studies(
     assert added_tags[0].get("id") not in data.get("tags")
 
     # Remove tag1 from project
-    url = client.app.router["remove_tag"].url_for(
+    url = client.app.router["remove_project_tag"].url_for(
         project_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id"))
     )
-    resp = await client.delete(f"{url}")
+    resp = await client.post(f"{url}")
     await assert_status(resp, expected)
+
     # Get project and check that tag is no longer there
     user_project["tags"].remove(added_tags[1]["id"])
     data = await assert_get_same_project(client, user_project, expected)

@@ -260,13 +260,13 @@ qx.Class.define("osparc.data.Resources", {
           },
           addTag: {
             useCache: false,
-            method: "PUT",
-            url: statics.API + "/projects/{studyId}/tags/{tagId}"
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/tags/{tagId}:add"
           },
           removeTag: {
             useCache: false,
-            method: "DELETE",
-            url: statics.API + "/projects/{studyId}/tags/{tagId}"
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/tags/{tagId}:remove"
           },
           getInactivity: {
             useCache: false,
