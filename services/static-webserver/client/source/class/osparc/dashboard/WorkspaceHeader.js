@@ -34,6 +34,8 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       height: this.self().HEIGHT,
       alignY: "middle",
     });
+
+    this.__spacers = [];
   },
 
   properties: {
@@ -50,6 +52,13 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       init: {},
       event: "changeAccessRights",
       apply: "__applyAccessRights"
+    },
+    myAccessRights: {
+      check: "Object",
+      nullable: false,
+      init: {},
+      event: "changeMyAccessRights",
+      apply: "__applyMyAccessRights"
     }
   },
 
@@ -105,8 +114,29 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
           });
           const layout = this.getChildControl("share-layout");
           layout.addAt(control, 1);
-        }
           break;
+        }
+        case "role-layout":
+          this.__addSpacer();
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignY: "middle"
+          }));
+          this._add(control);
+          break;
+        case "role-text": {
+          control = new qx.ui.basic.Label().set({
+            font: "text-14"
+          });
+          const layout = this.getChildControl("role-layout");
+          layout.addAt(control, 0);
+          break;
+        }
+        case "role-icon": {
+          control = osparc.data.Roles.createRolesWorkspaceInfo(false);
+          const layout = this.getChildControl("role-layout");
+          layout.addAt(control, 1);
+          break;
+        }
       }
 
       return control || this.base(arguments, id);
@@ -121,15 +151,18 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
         this.__setIcon(osparc.store.Workspaces.iconPath(32));
         title.setValue(this.tr("Shared Workspaces"));
         this.resetAccessRights();
+        this.resetMyAccessRights();
       } else if (workspace) {
         const thumbnail = workspace.getThumbnail();
         this.__setIcon(thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32));
         workspace.bind("name", title, "value");
         workspace.bind("accessRights", this, "accessRights");
+        workspace.bind("myAccessRights", this, "myAccessRights");
       } else {
         this.__setIcon("@FontAwesome5Solid/home/30");
         title.setValue(this.tr("My Workspace"));
         this.resetAccessRights();
+        this.resetMyAccessRights();
       }
     },
 
@@ -138,6 +171,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
         font: "text-16",
         alignY: "middle",
       });
+      this.__spacers.push(spacer);
       this._add(spacer);
     },
 
@@ -164,6 +198,10 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       }
     },
 
+    __showSpacers: function(show) {
+      this.__spacers.forEach(spacer => spacer.setVisibility(show ? "visible" : "excluded"));
+    },
+
     __applyAccessRights: function(value) {
       const shareIcon = this.getChildControl("share-icon");
       const shareText = this.getChildControl("share-text");
@@ -172,9 +210,27 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
         shareText.setValue(Object.keys(value).length + " members");
         shareIcon.show();
         shareText.show();
+        this.__showSpacers(true);
       } else {
         shareIcon.exclude();
         shareText.exclude();
+        this.__showSpacers(false);
+      }
+    },
+
+    __applyMyAccessRights: function(value) {
+      const roleText = this.getChildControl("role-text");
+      const roleIcon = this.getChildControl("role-icon");
+      if (value && Object.keys(value).length) {
+        const val = value["read"] + value["write"] + value["delete"];
+        roleText.setValue(osparc.data.Roles.STUDY[val].label);
+        roleText.show();
+        roleIcon.show();
+        this.__showSpacers(true);
+      } else {
+        roleText.exclude();
+        roleIcon.exclude();
+        this.__showSpacers(false);
       }
     },
   }
