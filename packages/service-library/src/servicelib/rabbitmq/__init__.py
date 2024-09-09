@@ -2,7 +2,7 @@ from models_library.rabbitmq_basic_types import RPCNamespace
 
 from ._client import RabbitMQClient
 from ._client_rpc import RabbitMQRPCClient
-from ._constants import BIND_TO_ALL_TOPICS
+from ._constants import BIND_TO_ALL_TOPICS, RPC_REQUEST_DEFAULT_TIMEOUT_S
 from ._errors import (
     RemoteMethodNotRegisteredError,
     RPCNotInitializedError,
@@ -17,6 +17,7 @@ __all__: tuple[str, ...] = (
     "RabbitMQClient",
     "RabbitMQRPCClient",
     "RemoteMethodNotRegisteredError",
+    "RPC_REQUEST_DEFAULT_TIMEOUT_S",
     "RPCNamespace",
     "RPCNotInitializedError",
     "RPCRouter",
