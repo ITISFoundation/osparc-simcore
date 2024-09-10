@@ -233,20 +233,20 @@ async def _make_pending_buffer_ec2s_join_cluster(
             log=_logger,
             limit=20,
         )
-        buffer_ec2_ready_for_command = [
+        if buffer_ec2_ready_for_command := [
             i
             for i, r in zip(
                 buffer_ec2_connected_to_ssm_server, buffer_ec2_initialized, strict=True
             )
             if r is True
-        ]
-        await ssm_client.send_command(
-            [i.id for i in buffer_ec2_ready_for_command],
-            command=await utils_docker.get_docker_swarm_join_bash_command(
-                join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
-            ),
-            command_name="docker swarm join",
-        )
+        ]:
+            await ssm_client.send_command(
+                [i.id for i in buffer_ec2_ready_for_command],
+                command=await utils_docker.get_docker_swarm_join_bash_command(
+                    join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
+                ),
+                command_name="docker swarm join",
+            )
     return cluster
 
 
