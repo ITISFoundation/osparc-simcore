@@ -272,6 +272,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "but a docker node label named osparc-services-ready is attached",
     )
 
+    AUTOSCALING_DOCKER_JOIN_DRAINED: bool = Field(
+        default=True,
+        description="If true, new nodes join the swarm as drained. If false as active.",
+    )
+
     @cached_property
     def LOG_LEVEL(self):  # noqa: N802
         return self.AUTOSCALING_LOGLEVEL
