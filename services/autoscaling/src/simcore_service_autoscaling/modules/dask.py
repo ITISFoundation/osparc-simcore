@@ -11,6 +11,7 @@ import distributed
 import distributed.scheduler
 from aws_library.ec2 import EC2InstanceData, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
+from distributed.core import Status
 from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
 from pydantic import AnyUrl, ByteSize, parse_obj_as
 
@@ -122,6 +123,24 @@ async def is_worker_connected(
         async with _scheduler_client(scheduler_url, authentication) as client:
             _dask_worker_from_ec2_instance(client, worker_ec2_instance)
             return True
+    return False
+
+
+async def is_worker_retired(
+    scheduler_url: AnyUrl,
+    authentication: InternalClusterAuthentication,
+    worker_ec2_instance: EC2InstanceData,
+) -> bool:
+    with contextlib.suppress(DaskNoWorkersError, DaskWorkerNotFoundError):
+        async with _scheduler_client(scheduler_url, authentication) as client:
+            _, worker_details = _dask_worker_from_ec2_instance(
+                client, worker_ec2_instance
+            )
+            return Status(worker_details["status"]) in {
+                Status.closed,
+                Status.closing,
+                Status.closing_gracefully,
+            }
     return False
 
 

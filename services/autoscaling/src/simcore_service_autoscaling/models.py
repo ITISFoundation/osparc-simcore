@@ -98,6 +98,11 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             "description": "This is a EC2-backed docker node which is docker drained and waiting for termination"
         }
     )
+    retired_nodes: list[AssociatedInstance] = field(
+        metadata={
+            "description": "This is a EC2-backed docker node which was retired and waiting to be drained and eventually terminated or re-used"
+        }
+    )
     terminated_instances: list[NonAssociatedInstance]
 
     def can_scale_down(self) -> bool:
