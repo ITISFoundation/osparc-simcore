@@ -992,11 +992,35 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    // Function that checks if tab was duplicated
     getClientSessionID: function() {
-      // https://stackoverflow.com/questions/11896160/any-way-to-identify-browser-tab-in-javascript
-      const clientSessionID = sessionStorage.getItem("clientsessionid") ? sessionStorage.getItem("clientsessionid") : osparc.utils.Utils.uuidV4();
-      sessionStorage.setItem("clientsessionid", clientSessionID);
-      return clientSessionID;
+      let uniqueTabId = sessionStorage.getItem("tabId");
+      let storedIds = [];
+      const storedIdsStr = localStorage.getItem("lastTabIds");
+      if (storedIdsStr) {
+        // Only strings can be stored
+        storedIds = JSON.parse(storedIdsStr);
+      }
+
+      if (uniqueTabId) {
+        // Check if the tab was duplicated
+        if (storedIds.includes(uniqueTabId)) {
+          // Tab has been duplicated, generate a new uniqueId for the duplicated tab
+          uniqueTabId = osparc.utils.Utils.uuidV4();
+          sessionStorage.setItem("tabId", uniqueTabId);
+        }
+      } else {
+        // If no tabId exists in sessionStorage, generate one
+        uniqueTabId = osparc.utils.Utils.uuidV4();
+        sessionStorage.setItem("tabId", uniqueTabId);
+      }
+
+      // Store the current tab's ID in localStorage to detect future duplicates
+      storedIds.push(uniqueTabId);
+      // Only strings can be stored
+      localStorage.setItem("lastTabIds", JSON.stringify(storedIds));
+
+      return uniqueTabId;
     },
 
     getFreeDistanceToWindowEdges: function(layoutItem) {
