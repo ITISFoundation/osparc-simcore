@@ -224,22 +224,27 @@ async def _make_pending_buffer_ec2s_join_cluster(
             )
             if c is True
         ]
-        buffer_ec2_initialized = await limited_gather(
-            *[
-                ssm_client.wait_for_has_instance_completed_cloud_init(i.id)
-                for i in buffer_ec2_connected_to_ssm_server
-            ],
-            reraise=False,
-            log=_logger,
-            limit=20,
-        )
-        if buffer_ec2_ready_for_command := [
-            i
-            for i, r in zip(
-                buffer_ec2_connected_to_ssm_server, buffer_ec2_initialized, strict=True
+        buffer_ec2_ready_for_command = buffer_ec2_connected_to_ssm_server
+        if app_settings.AUTOSCALING_WAIT_FOR_CLOUD_INIT_BEFORE_WARM_BUFFER_ACTIVATION:
+            buffer_ec2_initialized = await limited_gather(
+                *[
+                    ssm_client.wait_for_has_instance_completed_cloud_init(i.id)
+                    for i in buffer_ec2_connected_to_ssm_server
+                ],
+                reraise=False,
+                log=_logger,
+                limit=20,
             )
-            if r is True
-        ]:
+            buffer_ec2_ready_for_command = [
+                i
+                for i, r in zip(
+                    buffer_ec2_connected_to_ssm_server,
+                    buffer_ec2_initialized,
+                    strict=True,
+                )
+                if r is True
+            ]
+        if buffer_ec2_ready_for_command:
             await ssm_client.send_command(
                 [i.id for i in buffer_ec2_ready_for_command],
                 command=await utils_docker.get_docker_swarm_join_bash_command(
