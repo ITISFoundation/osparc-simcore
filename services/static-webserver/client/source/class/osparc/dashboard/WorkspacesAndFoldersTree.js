@@ -30,7 +30,10 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     this.base(arguments, rootModel, "label", "children");
 
     this.set({
-      hideRoot: true
+      decorator: "no-border",
+      font: "text-14",
+      hideRoot: true,
+      paddingLeft: -10,
     });
 
     this.__addMyWorkspace(rootModel);
@@ -72,9 +75,11 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       this.setIconOptions({
         converter(value) {
           if (value === "shared") {
-            return osparc.store.Workspaces.iconPath(16);
+            return osparc.store.Workspaces.iconPath(18);
+          } else if (value === "home") {
+            return "@FontAwesome5Solid/home/16";
           }
-          return "@FontAwesome5Solid/folder/14";
+          return "@FontAwesome5Solid/folder/16";
         },
       });
     },
@@ -82,7 +87,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     __addMyWorkspace: function(rootModel) {
       const myWorkspaceData = {
         label: "My Workspace",
-        icon: "folder",
+        icon: "home",
         workspaceId: null,
         folderId: null,
         loaded: false,

@@ -76,6 +76,10 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     __createWorkspacesAndFoldersTree: function() {
       const workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();
+      workspacesAndFoldersTree.set({
+        allowGrowY: true,
+        maxHeight: 300,
+      });
       workspacesAndFoldersTree.addListener("selectionChanged", e => {
         const newContext = e.getData();
         console.log("newContext", newContext);
