@@ -33,8 +33,12 @@ qx.Class.define("osparc.dashboard.MoveResourceToWorkspace", {
     moveButton.setEnabled(false)
     workspacesTree.addListener("selectionChanged", e => {
       const workspaceId = e.getData();
-      moveButton.setEnabled(this.__currentWorkspaceId !== workspaceId);
-      this.__selectedWorkspaceId = workspaceId;
+      if (this.__currentWorkspaceId !== workspaceId && workspaceId !== -1) {
+        moveButton.setEnabled(true);
+        this.__selectedWorkspaceId = workspaceId;
+      } else {
+        moveButton.setEnabled(false);
+      }
     });
     moveButton.addListener("execute", () => {
       this.fireDataEvent("moveToWorkspace", this.__selectedWorkspaceId);
@@ -48,6 +52,7 @@ qx.Class.define("osparc.dashboard.MoveResourceToWorkspace", {
 
   members: {
     __currentWorkspaceId: null,
+    __selectedWorkspaceId: null,
 
     _createChildControlImpl: function(id) {
       let control;
