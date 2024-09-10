@@ -80,7 +80,7 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
         const newFolder = true;
         const folderEditor = new osparc.editor.FolderEditor(newFolder);
         const title = this.tr("New Folder");
-        const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 150);
+        const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 120);
         folderEditor.addListener("createFolder", () => {
           const name = folderEditor.getLabel();
           this.fireDataEvent("createFolder", {

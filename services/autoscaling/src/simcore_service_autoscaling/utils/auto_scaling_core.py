@@ -80,7 +80,11 @@ async def ec2_startup_script(
     ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
 ) -> str:
     startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
-    startup_commands.append(await utils_docker.get_docker_swarm_join_bash_command())
+    startup_commands.append(
+        await utils_docker.get_docker_swarm_join_bash_command(
+            join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
+        )
+    )
     if app_settings.AUTOSCALING_REGISTRY:  # noqa: SIM102
         if pull_image_cmd := utils_docker.get_docker_pull_images_on_start_bash_command(
             ec2_boot_specific.pre_pull_images
