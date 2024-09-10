@@ -33,10 +33,6 @@ from aws_library.ssm import (
 from fastapi import FastAPI
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
-from simcore_service_autoscaling.modules.instrumentation import (
-    get_instrumentation,
-    has_instrumentation,
-)
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..constants import (
@@ -55,6 +51,7 @@ from ..utils.buffer_machines_pool_core import (
 )
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
+from .instrumentation import get_instrumentation, has_instrumentation
 from .ssm import get_ssm_client
 
 _logger = logging.getLogger(__name__)
