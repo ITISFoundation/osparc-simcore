@@ -206,6 +206,7 @@ async def _make_pending_buffer_ec2s_join_cluster(
         if is_buffer_machine(i.ec2_instance.tags)
     ]:
         # started buffer instance shall be asked to join the cluster once they are running
+        app_settings = get_application_settings(app)
         ssm_client = get_ssm_client(app)
         buffer_ec2_connection_state = await limited_gather(
             *[
@@ -241,7 +242,9 @@ async def _make_pending_buffer_ec2s_join_cluster(
         ]
         await ssm_client.send_command(
             [i.id for i in buffer_ec2_ready_for_command],
-            command=await utils_docker.get_docker_swarm_join_bash_command(),
+            command=await utils_docker.get_docker_swarm_join_bash_command(
+                join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
+            ),
             command_name="docker swarm join",
         )
     return cluster
