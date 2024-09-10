@@ -1,7 +1,6 @@
 from typing import Any
 
 from models_library.errors_classes import OsparcErrorMixin
-from simcore_service_webserver.catalog.exceptions import BaseCatalogError
 
 
 class CatalogBaseError(OsparcErrorMixin, Exception):
@@ -17,7 +16,7 @@ class UninitializedGroupError(RepositoryError):
     msg_tempalte = "{group} groups was never initialized"
 
 
-class BaseDirectorError(BaseCatalogError):
+class BaseDirectorError(CatalogBaseError):
     ...
 
 
