@@ -78,10 +78,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     __createWorkspacesAndFoldersTree: function() {
       const workspacesAndFoldersTree = this.__workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();
-      workspacesAndFoldersTree.set({
-        allowGrowY: true,
-        maxHeight: 400,
-      });
       return workspacesAndFoldersTree;
     },
 
