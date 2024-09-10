@@ -54,7 +54,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(40));
 
       if (this.__resourceType === "study") {
-        layout.add(this.__createWorkspacesAndFoldersTree());
+        layout.add(this.__createWorkspacesAndFoldersTree(), {
+          flex: 1
+        });
       } else {
         layout.add(this.__createSharedWithFilterLayout());
       }
@@ -78,7 +80,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       const workspacesAndFoldersTree = this.__workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();
       workspacesAndFoldersTree.set({
         allowGrowY: true,
-        maxHeight: 300,
+        maxHeight: 400,
       });
       return workspacesAndFoldersTree;
     },

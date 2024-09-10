@@ -35,7 +35,6 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       font: "text-14",
       hideRoot: true,
       paddingLeft: -10,
-      paddingTop: -10,
     });
 
     this.__addMyWorkspace(rootModel);
