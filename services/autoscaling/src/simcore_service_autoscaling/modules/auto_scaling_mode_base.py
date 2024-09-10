@@ -89,8 +89,3 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     @staticmethod
     def is_instance_drained(instance: AssociatedInstance) -> bool:
         return not utils_docker.is_node_osparc_ready(instance.node)
-
-    @staticmethod
-    @abstractmethod
-    async def try_retire_nodes(app: FastAPI) -> None:
-        ...

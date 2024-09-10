@@ -21,9 +21,9 @@ from models_library.generated_models.docker_rest_api import Node, NodeState
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_gather
 from servicelib.utils_formatting import timedelta_as_minute_second
-from ..constants import DOCKER_JOIN_COMMAND_EC2_TAG_KEY, DOCKER_JOIN_COMMAND_NAME
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
+from ..constants import DOCKER_JOIN_COMMAND_EC2_TAG_KEY, DOCKER_JOIN_COMMAND_NAME
 from ..core.errors import (
     Ec2InvalidDnsNameError,
     TaskBestFittingInstanceNotFoundError,
@@ -329,14 +329,14 @@ async def sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     ec2_client = get_ec2_client(app)
 
     # some instances might be able to run several tasks
-    allowed_instance_types: list[EC2InstanceType] = (
-        await ec2_client.get_ec2_instance_capabilities(
-            cast(
-                set[InstanceTypeType],
-                set(
-                    app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
-                ),
-            )
+    allowed_instance_types: list[
+        EC2InstanceType
+    ] = await ec2_client.get_ec2_instance_capabilities(
+        cast(
+            set[InstanceTypeType],
+            set(
+                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
+            ),
         )
     )
 
@@ -1132,7 +1132,6 @@ async def _autoscale_cluster(
             len(queued_or_missing_instance_tasks),
         )
         # NOTE: we only scale down in case we did not just scale up. The swarm needs some time to adjust
-        await auto_scaling_mode.try_retire_nodes(app)
         cluster = await _deactivate_empty_nodes(app, cluster)
         cluster = await _try_scale_down_cluster(app, cluster)
 
