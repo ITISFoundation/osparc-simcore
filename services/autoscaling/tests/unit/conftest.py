@@ -147,6 +147,30 @@ def with_labelize_drain_nodes(
     )
 
 
+@pytest.fixture(
+    params=[
+        "with_AUTOSCALING_DOCKER_JOIN_DRAINED",
+        "without_AUTOSCALING_DOCKER_JOIN_DRAINED",
+    ]
+)
+def with_docker_join_drained(request: pytest.FixtureRequest) -> bool:
+    return bool(request.param == "with_AUTOSCALING_DOCKER_JOIN_DRAINED")
+
+
+@pytest.fixture
+def app_with_docker_join_drained(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    with_docker_join_drained: bool,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "AUTOSCALING_DOCKER_JOIN_DRAINED": f"{with_docker_join_drained}",
+        },
+    )
+
+
 @pytest.fixture(scope="session")
 def fake_ssm_settings() -> SSMSettings:
     return SSMSettings(**SSMSettings.Config.schema_extra["examples"][0])

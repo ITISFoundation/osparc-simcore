@@ -70,6 +70,7 @@ def local_dask_scheduler_server_envs(
 @pytest.fixture
 def minimal_configuration(
     with_labelize_drain_nodes: EnvVarsDict,
+    app_with_docker_join_drained: EnvVarsDict,
     docker_swarm: None,
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_ssm_server_envs: EnvVarsDict,
