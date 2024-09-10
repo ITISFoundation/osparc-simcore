@@ -36,7 +36,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
   events: {
     "changeSharedWith": "qx.event.type.Data",
-    "changeWorkspace": "qx.event.type.Data",
     "changeSelectedTags": "qx.event.type.Data",
     "changeServiceType": "qx.event.type.Data"
   },
@@ -45,6 +44,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __resourceType: null,
     __contextLayout: null,
     __contextRadioGroup: null,
+    __workspacesAndFoldersTree: null,
     __sharedWithButtons: null,
     __workspaceButtons: null,
     __tagButtons: null,
@@ -55,9 +55,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
       if (this.__resourceType === "study") {
         layout.add(this.__createWorkspacesAndFoldersTree());
+      } else {
+        layout.add(this.__createSharedWithFilterLayout());
       }
-
-      layout.add(this.__createSharedWithFilterLayout());
 
       if (this.__resourceType !== "service") {
         layout.add(this.__createTagsFilterLayout());
@@ -75,17 +75,16 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     },
 
     __createWorkspacesAndFoldersTree: function() {
-      const workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();
+      const workspacesAndFoldersTree = this.__workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();
       workspacesAndFoldersTree.set({
         allowGrowY: true,
         maxHeight: 300,
       });
-      workspacesAndFoldersTree.addListener("selectionChanged", e => {
-        const newContext = e.getData();
-        console.log("newContext", newContext);
-        this.fireDataEvent("changeWorkspace", newContext.workspaceId);
-      });
       return workspacesAndFoldersTree;
+    },
+
+    getWorkspacesAndFoldersTree: function() {
+      return this.__workspacesAndFoldersTree;
     },
 
     /* SHARED WITH */
@@ -138,10 +137,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
         this.__sharedWithButtons.push(button);
       });
-
-      if (this.__resourceType === "study") {
-        this.__addWorkspaceButtons();
-      }
 
       return layout;
     },

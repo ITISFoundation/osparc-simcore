@@ -34,6 +34,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       font: "text-14",
       hideRoot: true,
       paddingLeft: -10,
+      paddingTop: -10,
     });
 
     this.__addMyWorkspace(rootModel);
@@ -42,8 +43,22 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     this.__initTree();
   },
 
-  events: {
-    "selectionChanged": "qx.event.type.Data" // tap
+  properties: {
+    currentWorkspaceId: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeCurrentWorkspaceId",
+      // apply: "__applyCurrentWorkspaceId"
+    },
+
+    currentFolderId: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeCurrentFolderId",
+      // apply: "__resetAndReloadAll"
+    },
   },
 
   members: {
@@ -64,10 +79,12 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
           }, item, id);
         },
         configureItem: item => {
-          item.addListener("tap", () => this.fireDataEvent("selectionChanged", {
-            workspaceId: item.getModel().getWorkspaceId(),
-            folderId: item.getModel().getFolderId(),
-          }), this);
+          item.addListener("tap", () => {
+            this.set({
+              currentWorkspaceId: item.getModel().getWorkspaceId(),
+              currentFolderId: item.getModel().getFolderId(),
+            })
+          }, this);
         },
       });
 

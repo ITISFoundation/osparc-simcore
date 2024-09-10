@@ -372,6 +372,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
       }, this);
 
+      if (this._resourceType === "study") {
+        const workspacesAndFoldersTree = resourceFilter.getWorkspacesAndFoldersTree();
+        workspacesAndFoldersTree.bind("currentWorkspaceId", this, "currentWorkspaceId");
+        workspacesAndFoldersTree.bind("currentFolderId", this, "currentFolderId");
+        this.bind("currentWorkspaceId", workspacesAndFoldersTree, "currentWorkspaceId");
+        this.bind("currentFolderId", workspacesAndFoldersTree, "currentFolderId");
+      }
+
       resourceFilter.addListener("changeWorkspace", e => {
         const workspaceId = e.getData();
         this.setCurrentWorkspaceId(workspaceId);
