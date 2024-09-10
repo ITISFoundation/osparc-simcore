@@ -178,5 +178,15 @@ class ComputationalAutoscaling(BaseAutoscaling):
         )
 
     @staticmethod
+    async def is_instance_retired(app: FastAPI, instance: AssociatedInstance) -> bool:
+        # NOTE: we assume the node is active
+        assert (
+            ComputationalAutoscaling.is_instance_active(app, instance) is True
+        )  # nosec
+        return await dask.is_worker_retired(
+            _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
+        )
+
+    @staticmethod
     async def try_retire_nodes(app: FastAPI) -> None:
         await dask.try_retire_nodes(_scheduler_url(app), _scheduler_auth(app))
