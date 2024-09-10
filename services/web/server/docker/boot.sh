@@ -40,6 +40,7 @@ echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 # NOTE: the number of workers ```(2 x $num_cores) + 1``` is
 # the official recommendation [https://docs.gunicorn.org/en/latest/design.html#how-many-workers]
 # For now we set it to 1 to check what happens with websockets
+# SEE also https://docs.aiohttp.org/en/stable/deployment.html#start-gunicorn
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: ptvsd is programmatically enabled inside of the service
