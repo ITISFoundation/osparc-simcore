@@ -1,7 +1,7 @@
 from typing import Any, TypeAlias
 
 from models_library.basic_types import IDStr
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, validator
+from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, field_validator
 
 from ..clusters import ClusterID
 from ..projects import ProjectID
@@ -49,9 +49,7 @@ class ComputationCreate(BaseModel):
         description="contains information about the wallet used to bill the running service",
     )
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("product_name", always=True)
+    @field_validator("product_name", mode="before")
     @classmethod
     def ensure_product_name_defined_if_computation_starts(cls, v, values):
         if "start_pipeline" in values and values["start_pipeline"] and v is None:
@@ -59,9 +57,7 @@ class ComputationCreate(BaseModel):
             raise ValueError(msg)
         return v
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("use_on_demand_clusters", always=True)
+    @field_validator("use_on_demand_clusters", mode="before")
     @classmethod
     def ensure_expected_options(cls, v, values):
         if v is True and ("cluster_id" in values and values["cluster_id"] is not None):

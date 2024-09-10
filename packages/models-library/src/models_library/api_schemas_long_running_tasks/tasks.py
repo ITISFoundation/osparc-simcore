@@ -14,8 +14,8 @@ class TaskStatus(BaseModel):
 
 
 class TaskResult(BaseModel):
-    result: Any | None = None
-    error: Any | None = None
+    result: Any | None
+    error: Any | None
 
 
 class TaskGet(BaseModel):
@@ -26,7 +26,6 @@ class TaskGet(BaseModel):
     abort_href: str
 
     @field_validator("task_name")
-    @classmethod
     @classmethod
     def unquote_str(cls, v) -> str:
         return urllib.parse.unquote(v)

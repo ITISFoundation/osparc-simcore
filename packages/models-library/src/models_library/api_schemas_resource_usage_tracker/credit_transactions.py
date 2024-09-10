@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 from ..products import ProductName
 from ..resource_tracker import CreditTransactionId
@@ -13,9 +13,7 @@ class WalletTotalCredits(BaseModel):
     wallet_id: WalletID
     available_osparc_credits: Decimal
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("available_osparc_credits", always=True)
+    @field_validator("available_osparc_credits")
     @classmethod
     def ensure_rounded(cls, v):
         return round(v, 2)

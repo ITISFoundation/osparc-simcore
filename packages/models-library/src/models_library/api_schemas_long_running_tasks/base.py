@@ -1,13 +1,7 @@
 import logging
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
 
-from pydantic import (
-    BaseModel,
-    ConstrainedFloat,
-    Field,
-    field_validator,
-    validate_arguments,
-)
+from pydantic import BaseModel, Field, field_validator, validate_call
 
 _logger = logging.getLogger(__name__)
 
@@ -15,10 +9,7 @@ TaskId = str
 
 ProgressMessage: TypeAlias = str
 
-
-class ProgressPercent(ConstrainedFloat):
-    ge = 0.0
-    le = 1.0
+ProgressPercent = Annotated[float, Field(ge=0.0, le=1.0)]
 
 
 class TaskProgress(BaseModel):
@@ -31,7 +22,7 @@ class TaskProgress(BaseModel):
     message: ProgressMessage = Field(default="")
     percent: ProgressPercent = Field(default=0.0)
 
-    @validate_arguments
+    @validate_call
     def update(
         self,
         *,
@@ -54,7 +45,6 @@ class TaskProgress(BaseModel):
         return cls(task_id=task_id)
 
     @field_validator("percent")
-    @classmethod
     @classmethod
     def round_value_to_3_digit(cls, v):
         return round(v, 3)

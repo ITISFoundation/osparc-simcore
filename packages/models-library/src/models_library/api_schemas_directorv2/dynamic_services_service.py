@@ -1,6 +1,5 @@
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -39,7 +38,19 @@ class ServiceDetails(CommonServiceDetails):
         description="predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
         alias="service_basepath",
     )
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
+            "example": {
+                "key": "simcore/services/dynamic/3dviewer",
+                "version": "2.4.5",
+                "user_id": 234,
+                "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+            }
+        },
+    )
 
 
 class RunningDynamicServiceDetails(ServiceDetails):
@@ -77,15 +88,9 @@ class RunningDynamicServiceDetails(ServiceDetails):
         alias="service_message",
     )
 
-    @cached_property
-    def legacy_service_url(self) -> str:
-        return f"http://{self.host}:{self.internal_port}{self.basepath}"  # NOSONAR
-
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(ServiceDetails.Config):
-        keep_untouched = (cached_property,)
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        ignored_types=(cached_property,),
+        json_schema_extra={
             "examples": [
                 {
                     "boot_type": "V0",
@@ -115,4 +120,9 @@ class RunningDynamicServiceDetails(ServiceDetails):
                     "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 },
             ]
-        }
+        },
+    )
+
+    @cached_property
+    def legacy_service_url(self) -> str:
+        return f"http://{self.host}:{self.internal_port}{self.basepath}"  # NOSONAR

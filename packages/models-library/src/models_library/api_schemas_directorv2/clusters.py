@@ -1,13 +1,14 @@
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
+    ConfigDict,
     Field,
     HttpUrl,
     NonNegativeFloat,
+    field_validator,
     model_validator,
-    validator,
 )
 from pydantic.networks import AnyUrl
 from pydantic.types import ByteSize, PositiveFloat
@@ -46,7 +47,6 @@ AvailableResources: TypeAlias = DictModel[str, PositiveFloat]
 class UsedResources(DictModel[str, NonNegativeFloat]):
     @model_validator(mode="before")
     @classmethod
-    @classmethod
     def ensure_negative_value_is_zero(cls, values):
         # dasks adds/remove resource values and sometimes
         # they end up being negative instead of 0
@@ -73,9 +73,7 @@ class Scheduler(BaseModel):
     status: str = Field(..., description="The running status of the scheduler")
     workers: WorkersDict | None = Field(default_factory=dict)
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("workers", pre=True, always=True)
+    @field_validator("workers", mode="before")
     @classmethod
     def ensure_workers_is_empty_dict(cls, v):
         if v is None:
@@ -98,13 +96,9 @@ class ClusterGet(Cluster):
         alias="accessRights", default_factory=dict
     )
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(Cluster.Config):
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")
-    @classmethod
     @classmethod
     def ensure_access_rights_converted(cls, values):
         if "access_rights" in values:
@@ -118,31 +112,14 @@ class ClusterDetailsGet(ClusterDetails):
 
 
 class ClusterCreate(BaseCluster):
-    owner: GroupID | None = None  # type: ignore[assignment]
+    owner: GroupID | None  # type: ignore[assignment]
     authentication: ExternalClusterAuthentication
     access_rights: dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
     )
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("thumbnail", always=True, pre=True)
-    @classmethod
-    def set_default_thumbnail_if_empty(cls, v, values):
-        if v is None:
-            cluster_type = values["type"]
-            default_thumbnails = {
-                ClusterTypeInModel.AWS.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
-                ClusterTypeInModel.ON_PREMISE.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Crystal_Clear_app_network_local.png/120px-Crystal_Clear_app_network_local.png",
-                ClusterTypeInModel.ON_DEMAND.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
-            }
-            return default_thumbnails[cluster_type]
-        return v
-
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(BaseCluster.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "name": "My awesome cluster",
@@ -173,24 +150,36 @@ class ClusterCreate(BaseCluster):
                 },
             ]
         }
+    )
+
+    @field_validator("thumbnail", mode="before")
+    @classmethod
+    def set_default_thumbnail_if_empty(cls, v, values):
+        if v is None:
+            cluster_type = values["type"]
+            default_thumbnails = {
+                ClusterTypeInModel.AWS.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
+                ClusterTypeInModel.ON_PREMISE.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Crystal_Clear_app_network_local.png/120px-Crystal_Clear_app_network_local.png",
+                ClusterTypeInModel.ON_DEMAND.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
+            }
+            return default_thumbnails[cluster_type]
+        return v
 
 
 class ClusterPatch(BaseCluster):
-    name: str | None = None  # type: ignore[assignment]
-    description: str | None = None
-    type: ClusterTypeInModel | None = None  # type: ignore[assignment]
-    owner: GroupID | None = None  # type: ignore[assignment]
-    thumbnail: HttpUrl | None = None
-    endpoint: AnyUrl | None = None  # type: ignore[assignment]
-    authentication: ExternalClusterAuthentication | None = None  # type: ignore[assignment]
+    name: str | None  # type: ignore[assignment]
+    description: str | None
+    type: ClusterTypeInModel | None  # type: ignore[assignment]
+    owner: GroupID | None  # type: ignore[assignment]
+    thumbnail: HttpUrl | None
+    endpoint: AnyUrl | None  # type: ignore[assignment]
+    authentication: ExternalClusterAuthentication | None  # type: ignore[assignment]
     access_rights: dict[GroupID, ClusterAccessRights] | None = Field(  # type: ignore[assignment]
-        None, alias="accessRights"
+        alias="accessRights"
     )
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(BaseCluster.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "name": "Changing the name of my cluster",
@@ -207,6 +196,7 @@ class ClusterPatch(BaseCluster):
                 },
             ]
         }
+    )
 
 
 class ClusterPing(BaseModel):
