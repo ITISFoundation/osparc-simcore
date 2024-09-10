@@ -18,7 +18,7 @@
 qx.Class.define("osparc.editor.WorkspaceEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newWorkspace = true) {
+  construct: function(workspace) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(8));
@@ -29,7 +29,15 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
     manager.add(title);
     this.getChildControl("description");
     this.getChildControl("thumbnail");
-    newWorkspace ? this.getChildControl("create") : this.getChildControl("save");
+    workspace ? this.getChildControl("save") : this.getChildControl("create");
+    if (workspace) {
+      this.__workspaceId = workspace.getWorkspaceId();
+      this.set({
+        label: workspace.getName(),
+        description: workspace.getDescription(),
+        thumbnail: workspace.getThumbnail(),
+      });
+    }
 
     this.addListener("appear", this.__onAppear, this);
   },
@@ -55,23 +63,17 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
       nullable: false,
       event: "changeThumbnail"
     },
-
-    accessRights: {
-      check: "Object",
-      init: {},
-      nullable: false,
-      event: "changeAccessRights",
-      apply: "applyAccessRights"
-    }
   },
 
   events: {
-    "createWorkspace": "qx.event.type.Event",
-    "updateWorkspace": "qx.event.type.Event",
+    "workspaceCreated": "qx.event.type.Data",
+    "workspaceUpdated": "qx.event.type.Event",
     "cancel": "qx.event.type.Event"
   },
 
   members: {
+    __workspaceId: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -80,6 +82,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
             font: "text-14",
             backgroundColor: "background-main",
             placeholder: this.tr("Title"),
+            minHeight: 27
           });
           this.bind("label", control, "value");
           control.bind("value", this, "label");
@@ -115,8 +118,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           });
           control.addListener("execute", () => {
             if (this.__validator.validate()) {
-              control.setFetching(true);
-              this.fireEvent("createWorkspace");
+              this.__createWorkspace(control);
             }
           }, this);
           buttons.addAt(control, 1);
@@ -129,8 +131,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           });
           control.addListener("execute", () => {
             if (this.__validator.validate()) {
-              control.setFetching(true);
-              this.fireEvent("updateWorkspace");
+              this.__editWorkspace(control);
             }
           }, this);
           buttons.addAt(control, 1);
@@ -151,6 +152,32 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __createWorkspace: function(createButton) {
+      createButton.setFetching(true);
+      const newWorkspaceData = {
+        name: this.getLabel(),
+        description: this.getDescription(),
+        thumbnail: this.getThumbnail(),
+      };
+      osparc.store.Workspaces.postWorkspace(newWorkspaceData)
+        .then(newWorkspace => this.fireDataEvent("workspaceCreated", newWorkspace))
+        .catch(console.error)
+        .finally(() => createButton.setFetching(false));
+    },
+
+    __editWorkspace: function(editButton) {
+      editButton.setFetching(true);
+      const updateData = {
+        name: this.getLabel(),
+        description: this.getDescription(),
+        thumbnail: this.getThumbnail(),
+      };
+      osparc.store.Workspaces.putWorkspace(this.__workspaceId, updateData)
+        .then(() => this.fireEvent("workspaceUpdated"))
+        .catch(console.error)
+        .finally(() => editButton.setFetching(false));
     },
 
     __onAppear: function() {
