@@ -197,8 +197,9 @@ async def _terminate_instances_with_invalid_pre_pulled_images(
         ].pre_pulled_instances()
 
         for instance in all_pre_pulled_instances:
+            pre_pulled_images = load_pre_pulled_images_from_tags(instance.tags)
             if (
-                pre_pulled_images := load_pre_pulled_images_from_tags(instance.tags)
+                pre_pulled_images is not None
             ) and pre_pulled_images != ec2_boot_config.pre_pull_images:
                 _logger.info(
                     "%s",
