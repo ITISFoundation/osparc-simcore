@@ -403,7 +403,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         resourceFilter.filterChanged(filterData);
       });
 
-      this.__leftFilters.add(resourceFilter);
+      this.__leftFilters.add(resourceFilter, {
+        flex: 1
+      });
     },
 
     /**
