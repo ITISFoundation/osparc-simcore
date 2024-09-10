@@ -29,6 +29,7 @@ class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attribut
     buffer_ec2s: TrackedGauge = field(init=False)
     disconnected_nodes: TrackedGauge = field(init=False)
     terminating_nodes: TrackedGauge = field(init=False)
+    retired_nodes: TrackedGauge = field(init=False)
     terminated_instances: TrackedGauge = field(init=False)
 
     def __post_init__(self) -> None:

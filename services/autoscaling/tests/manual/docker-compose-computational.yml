@@ -1,8 +1,9 @@
 services:
   autoscaling:
     environment:
+      - AUTOSCALING_DASK={}
       - DASK_MONITORING_URL=tcp://dask-scheduler:8786
-      - DASK_SCHEDULER_AUTH='{}'
+      - DASK_SCHEDULER_AUTH={}
   dask-sidecar:
     image: itisfoundation/dask-sidecar:master-github-latest
     init: true
