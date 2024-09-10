@@ -19,8 +19,10 @@ from fastapi import FastAPI, HTTPException
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
+from pydantic import ValidationError
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.services import manifest
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db.repositories.groups import GroupsRepository
@@ -62,6 +64,7 @@ async def _create_services_in_database(
     sorted_services = sorted(service_keys, key=_by_version)
 
     for service_key, service_version in sorted_services:
+
         service_metadata: ServiceMetaDataPublished = services_in_registry[
             (service_key, service_version)
         ]
@@ -90,11 +93,15 @@ async def _create_services_in_database(
                 service_access_rights,
             )
 
-        except HTTPException as err:
-            # calls to director migh fail but this should not stop the background task from running.
+        except (HTTPException, ValidationError, SQLAlchemyError) as err:
+            # Resilient to single failures: errors in individual (service,key) should not affect the wholse serices
+            # and stop the background task from running.
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/6318
             _logger.warning(
-                "Skipping '%s:%s'. Reason: %s", service_key, service_version, err
+                "Skipping '%s:%s' due to %s",
+                service_key,
+                service_version,
+                err,
             )
 
 
