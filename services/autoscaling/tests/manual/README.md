@@ -109,8 +109,9 @@ make up-devel # this will deploy the autoscaling stack
 docker service create \
 --name=test-service \
 --reserve-cpu=1 \
---reserve-memory=1GiB \
+--reserve-memory=512MiB \
 --constraint=node.labels.testing.monitored-node==true \
+--constraint=node.labels.io.simcore.osparc-services-ready==true \
 --label=testing.monitored-service=true \
 --container-label=io.simcore.runtime.user-id=99 \
 --container-label=io.simcore.runtime.project-id='5054a589-3ba4-46c3-829d-2e3d1a6a043f' \
@@ -120,5 +121,5 @@ docker service create \
 --container-label=io.simcore.runtime.swarm-stack-name=thestack \
 --container-label=io.simcore.runtime.memory-limit=1GB \
 --container-label=io.simcore.runtime.cpu-limit=1 \
-redis # will create a redis service reserving 4 CPUs and 1GiB of RAM
+redis # will create a redis service reserving 1 CPUs and 512MiB of RAM
 ```

@@ -15,11 +15,13 @@ from aws_library.ec2 import (
     Resources,
 )
 from aws_library.ec2._errors import EC2TooManyInstancesError
+from aws_library.ec2._models import AWSTagValue
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import Node, NodeState
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_gather
 from servicelib.utils_formatting import timedelta_as_minute_second
+from ..constants import DOCKER_JOIN_COMMAND_EC2_TAG_KEY, DOCKER_JOIN_COMMAND_NAME
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.errors import (
@@ -200,13 +202,17 @@ async def _make_pending_buffer_ec2s_join_cluster(
     app: FastAPI,
     cluster: Cluster,
 ) -> Cluster:
+    ec2_client = get_ec2_client(app)
     if buffer_ec2s_pending := [
         i.ec2_instance
         for i in cluster.pending_ec2s
         if is_buffer_machine(i.ec2_instance.tags)
+        and (DOCKER_JOIN_COMMAND_EC2_TAG_KEY not in i.ec2_instance.tags)
     ]:
         # started buffer instance shall be asked to join the cluster once they are running
+        app_settings = get_application_settings(app)
         ssm_client = get_ssm_client(app)
+
         buffer_ec2_connection_state = await limited_gather(
             *[
                 ssm_client.is_instance_connected_to_ssm_server(i.id)
@@ -223,27 +229,42 @@ async def _make_pending_buffer_ec2s_join_cluster(
             )
             if c is True
         ]
-        buffer_ec2_initialized = await limited_gather(
-            *[
-                ssm_client.wait_for_has_instance_completed_cloud_init(i.id)
-                for i in buffer_ec2_connected_to_ssm_server
-            ],
-            reraise=False,
-            log=_logger,
-            limit=20,
-        )
-        buffer_ec2_ready_for_command = [
-            i
-            for i, r in zip(
-                buffer_ec2_connected_to_ssm_server, buffer_ec2_initialized, strict=True
+        buffer_ec2_ready_for_command = buffer_ec2_connected_to_ssm_server
+        if app_settings.AUTOSCALING_WAIT_FOR_CLOUD_INIT_BEFORE_WARM_BUFFER_ACTIVATION:
+            buffer_ec2_initialized = await limited_gather(
+                *[
+                    ssm_client.wait_for_has_instance_completed_cloud_init(i.id)
+                    for i in buffer_ec2_connected_to_ssm_server
+                ],
+                reraise=False,
+                log=_logger,
+                limit=20,
             )
-            if r is True
-        ]
-        await ssm_client.send_command(
-            [i.id for i in buffer_ec2_ready_for_command],
-            command=await utils_docker.get_docker_swarm_join_bash_command(),
-            command_name="docker swarm join",
-        )
+            buffer_ec2_ready_for_command = [
+                i
+                for i, r in zip(
+                    buffer_ec2_connected_to_ssm_server,
+                    buffer_ec2_initialized,
+                    strict=True,
+                )
+                if r is True
+            ]
+        if buffer_ec2_ready_for_command:
+            ssm_command = await ssm_client.send_command(
+                [i.id for i in buffer_ec2_ready_for_command],
+                command=await utils_docker.get_docker_swarm_join_bash_command(
+                    join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
+                ),
+                command_name=DOCKER_JOIN_COMMAND_NAME,
+            )
+            await ec2_client.set_instances_tags(
+                buffer_ec2_ready_for_command,
+                tags={
+                    DOCKER_JOIN_COMMAND_EC2_TAG_KEY: AWSTagValue(
+                        ssm_command.command_id
+                    ),
+                },
+            )
     return cluster
 
 
@@ -308,14 +329,14 @@ async def sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     ec2_client = get_ec2_client(app)
 
     # some instances might be able to run several tasks
-    allowed_instance_types: list[
-        EC2InstanceType
-    ] = await ec2_client.get_ec2_instance_capabilities(
-        cast(
-            set[InstanceTypeType],
-            set(
-                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
-            ),
+    allowed_instance_types: list[EC2InstanceType] = (
+        await ec2_client.get_ec2_instance_capabilities(
+            cast(
+                set[InstanceTypeType],
+                set(
+                    app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
+                ),
+            )
         )
     )
 
