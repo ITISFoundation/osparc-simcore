@@ -73,7 +73,7 @@ qx.Class.define("osparc.Application", {
       const webSocket = osparc.wrapper.WebSocket.getInstance();
       webSocket.addListener("connect", () => osparc.WatchDog.getInstance().setOnline(true));
       webSocket.addListener("disconnect", () => osparc.WatchDog.getInstance().setOnline(false));
-      webSocket.addListener("logout", () => this.logout());
+      webSocket.addListener("logout", () => this.logout(qx.locale.Manager.tr("You were logged out")));
       // alert the users that they are about to navigate away
       // from osparc. unfortunately it is not possible
       // to provide our own message here
@@ -96,8 +96,8 @@ qx.Class.define("osparc.Application", {
       });
 
       // Setting up auth manager
-      osparc.auth.Manager.getInstance().addListener("logout", () => {
-        qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You were logged out"));
+      osparc.auth.Manager.getInstance().addListener("loggedOut", () => {
+        this.logout(qx.locale.Manager.tr("You were logged out"));
       }, this);
 
       this.__initRouting();
