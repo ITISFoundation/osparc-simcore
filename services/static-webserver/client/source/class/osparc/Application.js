@@ -96,7 +96,9 @@ qx.Class.define("osparc.Application", {
       });
 
       // Setting up auth manager
-      osparc.auth.Manager.getInstance().addListener("logout", () => this.__loggedOut(), this);
+      osparc.auth.Manager.getInstance().addListener("logout", () => {
+        qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You were logged out"));
+      }, this);
 
       this.__initRouting();
       this.__startupChecks();
@@ -629,21 +631,21 @@ qx.Class.define("osparc.Application", {
      * Resets session and restarts
     */
     logout: function(forcedReason) {
-      const isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
-      if (!isLoggedIn) {
-        return;
+      if (forcedReason) {
+        osparc.FlashMessenger.getInstance().logAs(forcedReason, "WARNING", 0);
+      } else {
+        osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out"), "INFO");
       }
-      osparc.auth.Manager.getInstance().logout()
-        .then(() => {
-          if (forcedReason) {
-            osparc.FlashMessenger.getInstance().logAs(forcedReason, "WARNING", 0);
-          } else {
-            osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out"), "INFO");
-          }
-        });
+      const isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
+      if (isLoggedIn) {
+        osparc.auth.Manager.getInstance().logout()
+          .finally(() => this.__closeAllAndToLoginPage());
+      } else {
+        this.__closeAllAndToLoginPage();
+      }
     },
 
-    __loggedOut: function() {
+    __closeAllAndToLoginPage: function() {
       osparc.data.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.CookieExpirationTracker.getInstance().stopTracker();
