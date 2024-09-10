@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Any, ClassVar
+from typing import Annotated
 
-from pydantic import ConstrainedInt, Field, HttpUrl, NonNegativeInt, PositiveInt
+from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt, PositiveInt
 
 from ..basic_types import IDStr, NonNegativeDecimal
 from ..emails import LowerCaseEmailStr
@@ -22,10 +22,8 @@ class GetCreditPrice(OutputSchema):
         "Can be None if this product's price is UNDEFINED",
     )
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "productName": "osparc",
@@ -39,6 +37,7 @@ class GetCreditPrice(OutputSchema):
                 },
             ]
         }
+    )
 
 
 class GetProductTemplate(OutputSchema):
@@ -67,9 +66,9 @@ class GetProduct(OutputSchema):
     )
 
     login_settings: dict
-    max_open_studies_per_user: PositiveInt | None = None
+    max_open_studies_per_user: PositiveInt | None
     is_payment_enabled: bool
-    credits_per_usd: NonNegativeDecimal | None = None
+    credits_per_usd: NonNegativeDecimal | None
 
     templates: list[GetProductTemplate] = Field(
         default_factory=list,
@@ -77,9 +76,7 @@ class GetProduct(OutputSchema):
     )
 
 
-class ExtraCreditsUsdRangeInt(ConstrainedInt):
-    ge = 0
-    lt = 500
+ExtraCreditsUsdRangeInt = Annotated[int, Field(ge=0, lt=500)]
 
 
 class GenerateInvitation(InputSchema):
@@ -97,10 +94,8 @@ class InvitationGenerated(OutputSchema):
     created: datetime
     invitation_link: HttpUrl
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "productName": "osparc",
@@ -121,3 +116,4 @@ class InvitationGenerated(OutputSchema):
                 },
             ]
         }
+    )

@@ -20,7 +20,7 @@ __all__: tuple[str, ...] = ("ServiceResourcesDict",)
 class NodeCreate(InputSchemaWithoutCamelCase):
     service_key: ServiceKey
     service_version: ServiceVersion
-    service_id: str | None = None
+    service_id: str | None
 
 
 BootOptions: TypeAlias = dict
@@ -92,7 +92,23 @@ class NodeGet(OutputSchema):
         description="the service message",
     )
     user_id: str = Field(..., description="the user that started the service")
-    model_config = ConfigDict()
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "published_port": 30000,
+                "entrypoint": "/the/entry/point/is/here",
+                "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "service_key": "simcore/services/comp/itis/sleeper",
+                "service_version": "1.2.3",
+                "service_host": "jupyter_E1O2E-LAH",
+                "service_port": 8081,
+                "service_basepath": "/x/E1O2E-LAH",
+                "service_state": "pending",
+                "service_message": "no suitable node (insufficient resources on 1 node)",
+                "user_id": 123,
+            }
+        }
+    )
 
 
 class NodeGetIdle(OutputSchema):
@@ -103,18 +119,32 @@ class NodeGetIdle(OutputSchema):
     def from_node_id(cls, node_id: NodeID) -> "NodeGetIdle":
         return cls(service_state="idle", service_uuid=node_id)
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "service_state": "idle",
+            }
+        }
+    )
 
 
 class NodeGetUnknown(OutputSchema):
     service_state: Literal["unknown"]
     service_uuid: NodeID
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "service_state": "unknown",
+            }
+        }
+    )
+
     @classmethod
     def from_node_id(cls, node_id: NodeID) -> "NodeGetUnknown":
         return cls(service_state="unknown", service_uuid=node_id)
-
-    model_config = ConfigDict()
 
 
 class NodeOutputs(InputSchemaWithoutCamelCase):
@@ -126,7 +156,4 @@ class NodeRetrieve(InputSchemaWithoutCamelCase):
 
 
 class NodeRetrieved(RetrieveDataOut):
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(OutputSchema.Config):
-        ...
+    model_config = OutputSchema.model_config

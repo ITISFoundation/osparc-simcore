@@ -16,23 +16,24 @@ class EmptyModel(BaseModel):
 
 class InputSchemaWithoutCamelCase(BaseModel):
     model_config = ConfigDict(
-        populate_by_name=False, extra="ignore", allow_mutations=False
+        populate_by_name=False,
+        extra="ignore",  # Non-strict inputs policy: Used to prune extra field
+        frozen=True,
     )
 
 
 class InputSchema(BaseModel):
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(InputSchemaWithoutCamelCase.Config):
-        alias_generator = snake_to_camel
+    model_config = ConfigDict(
+        **InputSchemaWithoutCamelCase.model_config, alias_generator=snake_to_camel
+    )
 
 
 class OutputSchema(BaseModel):
     model_config = ConfigDict(
         alias_generator=snake_to_camel,
         populate_by_name=True,
-        extra="ignore",
-        allow_mutations=False,
+        extra="ignore",  # Used to prune extra fields from internal data
+        frozen=True,
         alias_generator=snake_to_camel,
     )
 
@@ -45,7 +46,7 @@ class OutputSchema(BaseModel):
         **kwargs
     ) -> dict[str, Any]:
         """Helper function to get envelope's data as a dict"""
-        return self.dict(
+        return self.model_dump(
             by_alias=True,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
@@ -62,7 +63,7 @@ class OutputSchema(BaseModel):
         **kwargs
     ) -> str:
         """Helper function to get envelope's data as a json str"""
-        return self.json(
+        return self.model_dump_json(
             by_alias=True,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,

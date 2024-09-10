@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, TypeAlias
+from typing import Any, TypeAlias
 
 from pydantic import ConfigDict, Field
 from pydantic.main import BaseModel
@@ -41,10 +41,8 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
         ..., description="Unique name identifier for this input"
     )
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(_BaseCommonApiExtension.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "displayOrder": 2,
                 "label": "Sleep Time",
@@ -74,6 +72,7 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
                 }
             ],
         }
+    )
 
 
 class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
@@ -83,10 +82,8 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
         ..., description="Unique name identifier for this input"
     )
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(_BaseCommonApiExtension.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "displayOrder": 2,
                 "label": "Time Slept",
@@ -98,6 +95,7 @@ class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
                 "keyId": "output_2",
             }
         }
+    )
 
 
 ServiceInputsGetDict: TypeAlias = dict[ServicePortKey, ServiceInputGet]
@@ -230,19 +228,14 @@ class ServiceGet(api_schemas_catalog_services.ServiceGet):
         ..., description="outputs with extended information"
     )
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]
-        }
+    model_config = ConfigDict(
+        **OutputSchema.model_config,
+        json_schema_extra={"examples": [_EXAMPLE_FILEPICKER, _EXAMPLE_SLEEPER]},
+    )
 
 
 class ServiceResourcesGet(api_schemas_catalog_services.ServiceResourcesGet):
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(OutputSchema.Config):
-        ...
+    model_config = OutputSchema.model_config
 
 
 class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
@@ -256,10 +249,9 @@ class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
         ..., description="outputs with extended information"
     )
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        **OutputSchema.model_config,
+        json_schema_extra={
             "example": {
                 **api_schemas_catalog_services.ServiceGetV2.Config.schema_extra[
                     "examples"
@@ -272,11 +264,9 @@ class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
                 },
                 "outputs": {"outFile": ServiceOutputGet.Config.schema_extra["example"]},
             }
-        }
+        },
+    )
 
 
 class CatalogServiceUpdate(api_schemas_catalog_services.ServiceUpdateV2):
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(InputSchema.Config):
-        ...
+    model_config = InputSchema.model_config
