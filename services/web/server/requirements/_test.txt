@@ -114,7 +114,7 @@ openapi-spec-validator==0.4.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-packaging==23.1
+packaging==24.1
     # via
     #   -c requirements/_base.txt
     #   pytest
