@@ -15,7 +15,7 @@ from contextlib import suppress
 from pprint import pformat
 from typing import Final
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
@@ -65,29 +65,37 @@ async def _create_services_in_database(
         service_metadata: ServiceMetaDataPublished = services_in_registry[
             (service_key, service_version)
         ]
-        ## Set deprecation date to null (is valid date value for postgres)
+        try:
+            ## Set deprecation date to null (is valid date value for postgres)
 
-        # DEFAULT policies
-        (
-            owner_gid,
-            service_access_rights,
-        ) = await access_rights.evaluate_default_policy(app, service_metadata)
+            # DEFAULT policies
+            (
+                owner_gid,
+                service_access_rights,
+            ) = await access_rights.evaluate_default_policy(app, service_metadata)
 
-        # AUTO-UPGRADE PATCH policy
-        inherited_access_rights = await access_rights.evaluate_auto_upgrade_policy(
-            service_metadata, services_repo
-        )
+            # AUTO-UPGRADE PATCH policy
+            inherited_access_rights = await access_rights.evaluate_auto_upgrade_policy(
+                service_metadata, services_repo
+            )
 
-        service_access_rights += inherited_access_rights
-        service_access_rights = access_rights.reduce_access_rights(
-            service_access_rights
-        )
+            service_access_rights += inherited_access_rights
+            service_access_rights = access_rights.reduce_access_rights(
+                service_access_rights
+            )
 
-        # set the service in the DB
-        await services_repo.create_or_update_service(
-            ServiceMetaDataAtDB(**service_metadata.dict(), owner=owner_gid),
-            service_access_rights,
-        )
+            # set the service in the DB
+            await services_repo.create_or_update_service(
+                ServiceMetaDataAtDB(**service_metadata.dict(), owner=owner_gid),
+                service_access_rights,
+            )
+
+        except HTTPException as err:
+            # calls to director migh fail but this should not stop the background task from running.
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/6318
+            _logger.warning(
+                "Skipping '%s:%s'. Reason: %s", service_key, service_version, err
+            )
 
 
 async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:

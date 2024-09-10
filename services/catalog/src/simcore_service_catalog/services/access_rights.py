@@ -35,6 +35,8 @@ def _is_frontend_service(service: ServiceMetaDataPublished) -> bool:
 
 
 async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bool:
+
+    # FIXME: MUST NOT raise
     # NOTE: https://github.com/ITISFoundation/osparc-simcore/pull/6003#discussion_r1658200909
     # get service build date
     client = get_director_api(app)
