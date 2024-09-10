@@ -88,7 +88,6 @@ async-timeout==4.0.3
     # via
     #   aiohttp
     #   aiopg
-    #   redis
 asyncpg==0.27.0
     # via
     #   -r requirements/_base.in
@@ -167,7 +166,7 @@ frozenlist==1.4.1
     #   aiosignal
 greenlet==2.0.2
     # via sqlalchemy
-gunicorn==20.1.0
+gunicorn==23.0.0
     # via -r requirements/_base.in
 idna==3.3
     # via
@@ -276,6 +275,7 @@ packaging==23.1
     # via
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
+    #   gunicorn
 pamqp==3.2.1
     # via aiormq
 passlib==1.7.4
@@ -403,7 +403,6 @@ setproctitle==1.2.3
     # via gunicorn
 setuptools==69.1.1
     # via
-    #   gunicorn
     #   jsonschema
     #   openapi-spec-validator
 shellingham==1.5.4
