@@ -113,7 +113,7 @@ async def _analyze_current_cluster(
     ]
 
     # analyse attached ec2s
-    active_nodes, pending_nodes, all_drained_nodes = [], [], []
+    active_nodes, pending_nodes, all_drained_nodes, retired_nodes = [], [], [], []
     for instance in attached_ec2s:
         if await auto_scaling_mode.is_instance_active(app, instance):
             node_used_resources = await auto_scaling_mode.compute_node_used_resources(
@@ -128,6 +128,9 @@ async def _analyze_current_cluster(
             )
         elif auto_scaling_mode.is_instance_drained(instance):
             all_drained_nodes.append(instance)
+        elif await auto_scaling_mode.is_instance_retired(app, instance):
+            # it should be drained, but it is not, so we force it to be drained such that it might be re-used if needed
+            retired_nodes.append(instance)
         else:
             pending_nodes.append(instance)
 
@@ -149,6 +152,7 @@ async def _analyze_current_cluster(
             NonAssociatedInstance(ec2_instance=i) for i in terminated_ec2_instances
         ],
         disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
+        retired_nodes=retired_nodes,
     )
     _logger.info("current state: %s", f"{cluster!r}")
     return cluster
@@ -969,6 +973,43 @@ async def _notify_machine_creation_progress(
     )
 
 
+async def _drain_retired_nodes(
+    app: FastAPI,
+    cluster: Cluster,
+) -> Cluster:
+    if not cluster.retired_nodes:
+        return cluster
+
+    app_settings = get_application_settings(app)
+    docker_client = get_docker_client(app)
+    # drain this empty nodes
+    updated_nodes: list[Node] = await asyncio.gather(
+        *(
+            utils_docker.set_node_osparc_ready(
+                app_settings,
+                docker_client,
+                node.node,
+                ready=False,
+            )
+            for node in cluster.retired_nodes
+        )
+    )
+    if updated_nodes:
+        _logger.info(
+            "following nodes were set to drain: '%s'",
+            f"{[node.Description.Hostname for node in updated_nodes if node.Description]}",
+        )
+    newly_drained_instances = [
+        AssociatedInstance(node=node, ec2_instance=instance.ec2_instance)
+        for instance, node in zip(cluster.retired_nodes, updated_nodes, strict=True)
+    ]
+    return dataclasses.replace(
+        cluster,
+        retired_nodes=[],
+        drained_nodes=cluster.drained_nodes + newly_drained_instances,
+    )
+
+
 async def _autoscale_cluster(
     app: FastAPI,
     cluster: Cluster,
@@ -1071,6 +1112,7 @@ async def auto_scale_cluster(
     cluster = await _try_attach_pending_ec2s(
         app, cluster, auto_scaling_mode, allowed_instance_types
     )
+    cluster = await _drain_retired_nodes(app, cluster)
 
     cluster = await _autoscale_cluster(
         app, cluster, auto_scaling_mode, allowed_instance_types
