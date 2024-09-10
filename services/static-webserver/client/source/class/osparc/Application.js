@@ -96,9 +96,7 @@ qx.Class.define("osparc.Application", {
       });
 
       // Setting up auth manager
-      osparc.auth.Manager.getInstance().addListener("loggedOut", () => {
-        this.logout(qx.locale.Manager.tr("You were logged out"));
-      }, this);
+      osparc.auth.Manager.getInstance().addListener("loggedOut", () => this.__closeAllAndToLoginPage(), this);
 
       this.__initRouting();
       this.__startupChecks();
