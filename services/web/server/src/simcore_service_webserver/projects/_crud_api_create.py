@@ -320,6 +320,12 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 # As user has access to the project, it has implicitly access to the folder
                 folder_id = prj_to_folder_db.folder_id
 
+            if as_template:
+                # For template we do not care about workspace/folder
+                workspace_id = None
+                new_project["workspaceId"] = workspace_id
+                folder_id = None
+
         if predefined_project:
             # 2. overrides with optional body and re-validate
             new_project, project_nodes = await _compose_project_data(
