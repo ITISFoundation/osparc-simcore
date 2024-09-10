@@ -1,8 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, ClassVar, Literal, TypeAlias
+from typing import Literal, TypeAlias
 
-from pydantic import Field, HttpUrl, validator
+from pydantic import ConfigDict, Field, HttpUrl, field_validator
 
 from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
 from ..users import GroupID
@@ -14,9 +14,9 @@ from ._base import InputSchema, OutputSchema
 class WalletGet(OutputSchema):
     wallet_id: WalletID
     name: IDStr
-    description: str | None = None
+    description: str | None
     owner: GroupID
-    thumbnail: str | None = None
+    thumbnail: str | None
     status: WalletStatus
     created: datetime
     modified: datetime
@@ -40,8 +40,8 @@ class CreateWalletBodyParams(OutputSchema):
 
 class PutWalletBodyParams(OutputSchema):
     name: str
-    description: str | None = None
-    thumbnail: str | None = None
+    description: str | None
+    thumbnail: str | None
     status: WalletStatus
 
 
@@ -75,7 +75,7 @@ class PaymentTransaction(OutputSchema):
     osparc_credits: Decimal
     comment: str = FieldNotRequired()
     created_at: datetime
-    completed_at: datetime | None = None
+    completed_at: datetime | None
     # SEE PaymentTransactionState enum
     state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"] = Field(
         ..., alias="completedStatus"
@@ -91,10 +91,8 @@ class PaymentMethodInitiated(OutputSchema):
         ..., description="Link to external site that holds the payment submission form"
     )
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "wallet_id": 1,
@@ -103,6 +101,7 @@ class PaymentMethodInitiated(OutputSchema):
                 }
             ]
         }
+    )
 
 
 class PaymentMethodTransaction(OutputSchema):
@@ -111,10 +110,8 @@ class PaymentMethodTransaction(OutputSchema):
     payment_method_id: PaymentMethodID
     state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"]
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "walletId": 1,
@@ -123,6 +120,7 @@ class PaymentMethodTransaction(OutputSchema):
                 }
             ]
         }
+    )
 
 
 class PaymentMethodGet(OutputSchema):
@@ -139,10 +137,8 @@ class PaymentMethodGet(OutputSchema):
         description="If true, this payment-method is used for auto-recharge",
     )
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "idr": "pm_1234567890",
@@ -163,6 +159,7 @@ class PaymentMethodGet(OutputSchema):
                 },
             ],
         }
+    )
 
 
 #
@@ -198,11 +195,9 @@ class ReplaceWalletAutoRecharge(InputSchema):
     enabled: bool
     payment_method_id: PaymentMethodID
     top_up_amount_in_usd: NonNegativeDecimal
-    monthly_limit_in_usd: NonNegativeDecimal | None = None
+    monthly_limit_in_usd: NonNegativeDecimal | None
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("monthly_limit_in_usd")
+    @field_validator("monthly_limit_in_usd")
     @classmethod
     def _monthly_limit_greater_than_top_up(cls, v, values):
         top_up = values["top_up_amount_in_usd"]

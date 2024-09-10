@@ -13,8 +13,8 @@ from ._base import InputSchema, OutputSchema
 class WorkspaceGet(OutputSchema):
     workspace_id: WorkspaceID
     name: str
-    description: str | None = None
-    thumbnail: str | None = None
+    description: str | None
+    thumbnail: str | None
     created_at: datetime
     modified_at: datetime
     my_access_rights: AccessRights
@@ -30,6 +30,7 @@ class CreateWorkspaceBodyParams(InputSchema):
     name: str
     description: str | None = None
     thumbnail: str | None = None
+
     model_config = ConfigDict(extra="forbid")
 
 
@@ -37,4 +38,5 @@ class PutWorkspaceBodyParams(InputSchema):
     name: IDStr
     description: str | None = None
     thumbnail: str | None = None
+
     model_config = ConfigDict(extra="forbid")

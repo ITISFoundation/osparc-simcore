@@ -15,7 +15,7 @@ AggregatedPreferences: TypeAlias = dict[PreferenceIdentifier, Preference]
 
 
 class PatchRequestBody(InputSchema):
-    value: Any = None
+    value: Any
 
 
 class PatchPathParams(BaseModel):

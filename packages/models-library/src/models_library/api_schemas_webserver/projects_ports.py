@@ -15,25 +15,16 @@ class _ProjectIOBase(BaseModel):
 
 
 class ProjectInputUpdate(_ProjectIOBase):
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(InputSchemaWithoutCamelCase):
-        ...
+    model_config = InputSchemaWithoutCamelCase.model_config
 
 
 class ProjectInputGet(OutputSchema, _ProjectIOBase):
     label: str
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(InputSchemaWithoutCamelCase):
-        ...
+    model_config = InputSchemaWithoutCamelCase.model_config
 
 
 class ProjectOutputGet(_ProjectIOBase):
     label: str
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(OutputSchema):
-        ...
+    model_config = OutputSchema.model_config
