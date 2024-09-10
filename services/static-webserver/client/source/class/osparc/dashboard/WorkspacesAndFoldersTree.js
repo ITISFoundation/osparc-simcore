@@ -40,7 +40,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
   },
 
   events: {
-    "selectionChanged": "qx.event.type.Event" // tap
+    "selectionChanged": "qx.event.type.Data" // tap
   },
 
   members: {
@@ -61,9 +61,20 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
           }, item, id);
         },
         configureItem: item => {
-          item.addListener("tap", () => this.fireDataEvent("selectionChanged", () => {
-            console.log(item.getModel().getFolderId());
+          item.addListener("tap", () => this.fireDataEvent("selectionChanged", {
+            workspaceId: item.getModel().getWorkspaceId(),
+            folderId: item.getModel().getFolderId(),
           }), this);
+        },
+      });
+
+      this.setIconPath("icon");
+      this.setIconOptions({
+        converter(value) {
+          if (value === "shared") {
+            return osparc.store.Workspaces.iconPath(16);
+          }
+          return "@FontAwesome5Solid/folder/14";
         },
       });
     },
@@ -71,7 +82,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     __addMyWorkspace: function(rootModel) {
       const myWorkspaceData = {
         label: "My Workspace",
-        // icon: "folder",
+        icon: "folder",
         workspaceId: null,
         folderId: null,
         loaded: false,
@@ -86,7 +97,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     __addSharedWorkspaces: function(rootModel) {
       const sharedWorkspaceData = {
         label: "Shared Workspace",
-        // icon: "shared",
+        icon: "shared",
         workspaceId: -1,
         folderId: null,
         loaded: true,
@@ -100,7 +111,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
           workspaces.forEach(workspace => {
             const workspaceData = {
               label: workspace.getName(),
-              // icon: "shared",
+              icon: "shared",
               workspaceId: workspace.getWorkspaceId(),
               folderId: null,
               loaded: false,
@@ -123,6 +134,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
           folders.forEach(folder => {
             const folderData = {
               label: folder.getName(),
+              icon: workspaceId ? "shared" : "folder",
               workspaceId,
               folderId: folder.getFolderId(),
               loaded: false,
