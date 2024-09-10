@@ -994,8 +994,15 @@ qx.Class.define("osparc.utils.Utils", {
 
     // Function that create unique tabId even for duplicated tabs
     getClientSessionID: function() {
-      console.log("sessionId window.name", window.name);
       let uniqueTabId = sessionStorage.getItem("tabId");
+
+      const getUniqueTabId = () => {
+        const uniqueId = osparc.utils.Utils.uuidV4();
+        // Set window.name. This property is persistent on window reloads, but it doesn't get copied in a duplicated tab
+        window.name = uniqueId;
+        sessionStorage.setItem("tabId", uniqueId);
+        return uniqueId;
+      };
 
       if (uniqueTabId) {
         // Check if the tab was duplicated
@@ -1003,22 +1010,15 @@ qx.Class.define("osparc.utils.Utils", {
         const storedId = localStorage.getItem("lastTabId");
         if (storedId === uniqueTabId && window.name !== uniqueTabId) {
           // Tab has been duplicated, generate a new uniqueId for the duplicated tab
-          uniqueTabId = osparc.utils.Utils.uuidV4();
-          window.name = uniqueTabId;
-          sessionStorage.setItem("tabId", uniqueTabId);
+          uniqueTabId = getUniqueTabId();
         }
       } else {
         // If no tabId exists in sessionStorage, generate one
-        uniqueTabId = osparc.utils.Utils.uuidV4();
-        // Set window.name. This property is persistent on window reloads, but it doesn't get copied in a duplicated tab
-        window.name = uniqueTabId;
-        sessionStorage.setItem("tabId", uniqueTabId);
+        uniqueTabId = getUniqueTabId();
       }
 
       // Store the current tab's ID in localStorage to detect future duplicates
       localStorage.setItem("lastTabId", uniqueTabId);
-
-      console.log("sessionId uniqueTabId", uniqueTabId);
 
       return uniqueTabId;
     },
