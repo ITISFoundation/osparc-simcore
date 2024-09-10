@@ -994,28 +994,28 @@ qx.Class.define("osparc.utils.Utils", {
 
     // Function that creates a unique tabId even for duplicated tabs
     getClientSessionID: function() {
-      const getUniqueTabId = () => {
+      const getUniqueSessionId = () => {
         const uuid = osparc.utils.Utils.uuidV4();
         // Set window.name. This property is persistent on window reloads, but it doesn't get copied in a duplicated tab
         window.name = uuid;
-        sessionStorage.setItem("tabId", uuid);
+        sessionStorage.setItem("clientsessionid", uuid);
         return uuid;
       };
 
-      let uniqueTabId = sessionStorage.getItem("tabId");
-      if (uniqueTabId) {
+      let uniqueSessionId = sessionStorage.getItem("clientsessionid");
+      if (uniqueSessionId) {
         // Check if the tab was duplicated
         // window.name is one of the few things it doesn't get copied, but persists on window reload
-        if (window.name !== uniqueTabId) {
+        if (window.name !== uniqueSessionId) {
           // Tab has been duplicated, generate a new uniqueId for the duplicated tab
-          uniqueTabId = getUniqueTabId();
+          uniqueSessionId = getUniqueSessionId();
         }
       } else {
         // If no tabId exists in sessionStorage, generate one
-        uniqueTabId = getUniqueTabId();
+        uniqueSessionId = getUniqueSessionId();
       }
 
-      return uniqueTabId;
+      return uniqueSessionId;
     },
 
     getFreeDistanceToWindowEdges: function(layoutItem) {
