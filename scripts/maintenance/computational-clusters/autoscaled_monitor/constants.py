@@ -4,11 +4,24 @@ from typing import Final
 import parse
 from pydantic import ByteSize
 
+
+@parse.with_pattern(r"None|\d+")
+def wallet_id_spec(text) -> None | int:
+    if text == "None":
+        return None
+    return int(text)
+
+
 DEFAULT_COMPUTATIONAL_EC2_FORMAT: Final[
     str
-] = r"osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:d}"
+] = r"osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:wallet_id_spec}"
+DEFAULT_COMPUTATIONAL_EC2_FORMAT_WORKERS: Final[
+    str
+] = r"osparc-computational-cluster-{role}-{swarm_stack_name}-user_id:{user_id:d}-wallet_id:{wallet_id:wallet_id_spec}-{key_name}"
 DEFAULT_DYNAMIC_EC2_FORMAT: Final[str] = r"osparc-dynamic-autoscaled-worker-{key_name}"
-DEPLOY_SSH_KEY_PARSER: Final[parse.Parser] = parse.compile(r"osparc-{random_name}.pem")
+DEPLOY_SSH_KEY_PARSER: Final[parse.Parser] = parse.compile(
+    r"{prefix}-{random_name}.pem"
+)
 
 MINUTE: Final[int] = 60
 HOUR: Final[int] = 60 * MINUTE

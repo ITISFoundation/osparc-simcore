@@ -18,8 +18,11 @@
 qx.Class.define("osparc.dashboard.FoldersTree", {
   extend: qx.ui.tree.VirtualTree,
 
-  construct: function() {
-    const rootFolder = this.self().createNewEntry(null);
+  construct: function(currentWorkspaceId) {
+    this.__currentWorkspaceId = currentWorkspaceId;
+    const workspace = osparc.store.Workspaces.getWorkspace(currentWorkspaceId);
+    const rootLabel = workspace ? workspace.getName() : "My Workspace";
+    const rootFolder = this.self().createNewEntry(rootLabel, null);
     const root = qx.data.marshal.Json.createModel(rootFolder, true);
     this.__fetchChildren(root);
 
@@ -41,10 +44,10 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
   },
 
   statics: {
-    createNewEntry: function(folder) {
+    createNewEntry: function(label, folderId) {
       return {
-        folderId: folder ? folder.getFolderId() : null,
-        label: folder ? folder.getName() : "Home",
+        label,
+        folderId,
         children: [
           this.self().getLoadingData()
         ],
@@ -77,6 +80,8 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
   },
 
   members: {
+    __currentWorkspaceId:null,
+
     __initTree: function() {
       const that = this;
       this.setDelegate({
@@ -116,11 +121,11 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
       parentModel.setLoaded(true);
 
       const folderId = parentModel.getFolderId ? parentModel.getFolderId() : parentModel.getModel();
-      osparc.store.Folders.getInstance().fetchFolders(folderId)
+      osparc.store.Folders.getInstance().fetchFolders(folderId, this.__currentWorkspaceId)
         .then(folders => {
           this.self().removeLoadingChild(parentModel);
           folders.forEach(folder => {
-            const folderData = this.self().createNewEntry(folder);
+            const folderData = this.self().createNewEntry(folder.getName(), folder.getFolderId());
             const folderModel = qx.data.marshal.Json.createModel(folderData, true);
             parentModel.getChildren().append(folderModel);
           });

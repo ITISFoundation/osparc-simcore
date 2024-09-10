@@ -6,8 +6,8 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library.folders import FolderID
 from models_library.users import GroupID, UserID
+from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, Extra, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -23,9 +23,9 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
-from ._folders_handlers import FoldersPathParams
-from ._groups_api import FolderGroupGet
-from .errors import FolderAccessForbiddenError, FolderGroupNotFoundError
+from ._groups_api import WorkspaceGroupGet
+from ._workspaces_handlers import WorkspacesPathParams
+from .errors import WorkspaceAccessForbiddenError, WorkspaceGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
 
@@ -35,37 +35,37 @@ class _RequestContext(BaseModel):
     product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
-def _handle_folders_groups_exceptions(handler: Handler):
+def _handle_workspaces_groups_exceptions(handler: Handler):
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
             return await handler(request)
 
-        except FolderGroupNotFoundError as exc:
+        except WorkspaceGroupNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-        except FolderAccessForbiddenError as exc:
+        except WorkspaceAccessForbiddenError as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper
 
 
 #
-# folders groups COLLECTION -------------------------
+# workspaces groups COLLECTION -------------------------
 #
 
 routes = web.RouteTableDef()
 
 
-class _FoldersGroupsPathParams(BaseModel):
-    folder_id: FolderID
+class _WorkspacesGroupsPathParams(BaseModel):
+    workspace_id: WorkspaceID
     group_id: GroupID
 
     class Config:
         extra = Extra.forbid
 
 
-class _FoldersGroupsBodyParams(BaseModel):
+class _WorkspacesGroupsBodyParams(BaseModel):
     read: bool
     write: bool
     delete: bool
@@ -75,20 +75,21 @@ class _FoldersGroupsBodyParams(BaseModel):
 
 
 @routes.post(
-    f"/{VTAG}/folders/{{folder_id}}/groups/{{group_id}}", name="create_folder_group"
+    f"/{VTAG}/workspaces/{{workspace_id}}/groups/{{group_id}}",
+    name="create_workspace_group",
 )
 @login_required
-@permission_required("folder.access_rights.update")
-@_handle_folders_groups_exceptions
-async def create_folder_group(request: web.Request):
+@permission_required("workspaces.*")
+@_handle_workspaces_groups_exceptions
+async def create_workspace_group(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_FoldersGroupsPathParams, request)
-    body_params = await parse_request_body_as(_FoldersGroupsBodyParams, request)
+    path_params = parse_request_path_parameters_as(_WorkspacesGroupsPathParams, request)
+    body_params = await parse_request_body_as(_WorkspacesGroupsBodyParams, request)
 
-    folder_groups: FolderGroupGet = await _groups_api.create_folder_group_by_user(
+    workspace_groups: WorkspaceGroupGet = await _groups_api.create_workspace_group(
         request.app,
         user_id=req_ctx.user_id,
-        folder_id=path_params.folder_id,
+        workspace_id=path_params.workspace_id,
         group_id=path_params.group_id,
         read=body_params.read,
         write=body_params.write,
@@ -96,43 +97,45 @@ async def create_folder_group(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    return envelope_json_response(folder_groups, web.HTTPCreated)
+    return envelope_json_response(workspace_groups, web.HTTPCreated)
 
 
-@routes.get(f"/{VTAG}/folders/{{folder_id}}/groups", name="list_folder_groups")
+@routes.get(f"/{VTAG}/workspaces/{{workspace_id}}/groups", name="list_workspace_groups")
 @login_required
-@permission_required("folder.read")
-@_handle_folders_groups_exceptions
-async def list_folder_groups(request: web.Request):
+@permission_required("workspaces.*")
+@_handle_workspaces_groups_exceptions
+async def list_workspace_groups(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(FoldersPathParams, request)
+    path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
-    folders: list[FolderGroupGet] = await _groups_api.list_folder_groups_by_user(
+    workspaces: list[
+        WorkspaceGroupGet
+    ] = await _groups_api.list_workspace_groups_by_user_and_workspace(
         request.app,
         user_id=req_ctx.user_id,
-        folder_id=path_params.folder_id,
+        workspace_id=path_params.workspace_id,
         product_name=req_ctx.product_name,
     )
 
-    return envelope_json_response(folders, web.HTTPOk)
+    return envelope_json_response(workspaces, web.HTTPOk)
 
 
 @routes.put(
-    f"/{VTAG}/folders/{{folder_id}}/groups/{{group_id}}",
-    name="replace_folder_group",
+    f"/{VTAG}/workspaces/{{workspace_id}}/groups/{{group_id}}",
+    name="replace_workspace_group",
 )
 @login_required
-@permission_required("folder.access_rights.update")
-@_handle_folders_groups_exceptions
-async def replace_folder_group(request: web.Request):
+@permission_required("workspaces.*")
+@_handle_workspaces_groups_exceptions
+async def replace_workspace_group(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_FoldersGroupsPathParams, request)
-    body_params = await parse_request_body_as(_FoldersGroupsBodyParams, request)
+    path_params = parse_request_path_parameters_as(_WorkspacesGroupsPathParams, request)
+    body_params = await parse_request_body_as(_WorkspacesGroupsBodyParams, request)
 
-    return await _groups_api.update_folder_group_by_user(
+    return await _groups_api.update_workspace_group(
         app=request.app,
         user_id=req_ctx.user_id,
-        folder_id=path_params.folder_id,
+        workspace_id=path_params.workspace_id,
         group_id=path_params.group_id,
         read=body_params.read,
         write=body_params.write,
@@ -142,20 +145,20 @@ async def replace_folder_group(request: web.Request):
 
 
 @routes.delete(
-    f"/{VTAG}/folders/{{folder_id}}/groups/{{group_id}}",
-    name="delete_folder_group",
+    f"/{VTAG}/workspaces/{{workspace_id}}/groups/{{group_id}}",
+    name="delete_workspace_group",
 )
 @login_required
-@permission_required("folder.access_rights.update")
-@_handle_folders_groups_exceptions
-async def delete_folder_group(request: web.Request):
+@permission_required("workspaces.*")
+@_handle_workspaces_groups_exceptions
+async def delete_workspace_group(request: web.Request):
     req_ctx = _RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(_FoldersGroupsPathParams, request)
+    path_params = parse_request_path_parameters_as(_WorkspacesGroupsPathParams, request)
 
-    await _groups_api.delete_folder_group_by_user(
+    await _groups_api.delete_workspace_group(
         app=request.app,
         user_id=req_ctx.user_id,
-        folder_id=path_params.folder_id,
+        workspace_id=path_params.workspace_id,
         group_id=path_params.group_id,
         product_name=req_ctx.product_name,
     )

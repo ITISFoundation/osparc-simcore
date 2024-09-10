@@ -9,7 +9,6 @@
 import filecmp
 import os
 import tempfile
-import threading
 from asyncio import gather
 from collections.abc import Awaitable, Callable, Iterable
 from pathlib import Path
@@ -37,6 +36,7 @@ from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue, PortLink
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 from simcore_sdk.node_ports_v2.port import Port
+from utils_port_v2 import CONSTANT_UUID
 
 pytest_simcore_core_services_selection = [
     "migration",
@@ -273,6 +273,7 @@ async def test_port_file_accessors(
     e_tag: str,
     option_r_clone_settings: RCloneSettings | None,
     request: pytest.FixtureRequest,
+    constant_uuid4: None,
 ):
 
     if item_value == "symlink_path":
@@ -307,7 +308,7 @@ async def test_port_file_accessors(
     await (await PORTS.outputs)[ServicePortKey("out_34")].set(item_value)
     # this is the link to S3 storage
     value = (await PORTS.outputs)[ServicePortKey("out_34")].value
-    assert isinstance(value, (DownloadLink, PortLink, BaseFileLink))
+    assert isinstance(value, DownloadLink | PortLink | BaseFileLink)
     received_file_link = value.dict(by_alias=True, exclude_unset=True)
     assert received_file_link["store"] == s3_simcore_location
     assert (
@@ -331,7 +332,7 @@ async def test_port_file_accessors(
             Path(
                 tempfile.gettempdir(),
                 "simcorefiles",
-                f"{threading.get_ident()}",
+                f"{CONSTANT_UUID}",
                 "out_34",
             )
         )
@@ -495,6 +496,7 @@ async def test_get_file_from_previous_node(
     item_value: str,
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
+    constant_uuid4: None,
 ):
     config_dict, _, _ = create_2nodes_configuration(
         prev_node_inputs=None,
@@ -519,7 +521,7 @@ async def test_get_file_from_previous_node(
     assert file_path == Path(
         tempfile.gettempdir(),
         "simcorefiles",
-        f"{threading.get_ident()}",
+        f"{CONSTANT_UUID}",
         "in_15",
         Path(item_value).name,
     )
@@ -551,6 +553,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     item_alias: str,
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
+    constant_uuid4: None,
 ):
     config_dict, _, this_node_uuid = create_2nodes_configuration(
         prev_node_inputs=None,
@@ -579,7 +582,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     assert file_path == Path(
         tempfile.gettempdir(),
         "simcorefiles",
-        f"{threading.get_ident()}",
+        f"{CONSTANT_UUID}",
         "in_15",
         item_alias,
     )
@@ -612,6 +615,7 @@ async def test_file_mapping(
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
+    constant_uuid4: None,
 ):
     config_dict, project_id, node_uuid = create_special_configuration(
         inputs=[("in_1", item_type, await create_store_link(item_value))],
@@ -638,7 +642,7 @@ async def test_file_mapping(
     assert file_path == Path(
         tempfile.gettempdir(),
         "simcorefiles",
-        f"{threading.get_ident()}",
+        f"{CONSTANT_UUID}",
         "in_1",
         item_alias,
     )
@@ -649,7 +653,7 @@ async def test_file_mapping(
     assert file_path == Path(
         tempfile.gettempdir(),
         "simcorefiles",
-        f"{threading.get_ident()}",
+        f"{CONSTANT_UUID}",
         "in_1",
         item_alias,
     )
@@ -662,7 +666,7 @@ async def test_file_mapping(
     await PORTS.set_file_by_keymap(file_path)
     file_id = create_valid_file_uuid("out_1", file_path)
     value = (await PORTS.outputs)[ServicePortKey("out_1")].value
-    assert isinstance(value, (DownloadLink, PortLink, BaseFileLink))
+    assert isinstance(value, DownloadLink | PortLink | BaseFileLink)
     received_file_link = value.dict(by_alias=True, exclude_unset=True)
     assert received_file_link["store"] == s3_simcore_location
     assert received_file_link["path"] == file_id
@@ -734,7 +738,7 @@ async def test_regression_concurrent_port_update_fails(
 
     # since a race condition was created when uploading values in parallel
     # it is expected to find at least one mismatching value here
-    with pytest.raises(AssertionError) as exc_info:
+    with pytest.raises(AssertionError) as exc_info:  # noqa: PT012
         for item_key, _, _ in outputs:
             assert (await PORTS.outputs)[
                 ServicePortKey(item_key)

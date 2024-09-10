@@ -344,6 +344,7 @@ class ServicesRepository(BaseRepository):
                 # display
                 name=row.name,
                 description=row.description,
+                description_ui=row.description_ui,
                 thumbnail=row.thumbnail,
                 version_display=row.version_display,
                 # ownership
@@ -401,6 +402,7 @@ class ServicesRepository(BaseRepository):
                 # display
                 name=r.name,
                 description=r.description,
+                description_ui=r.description_ui,
                 thumbnail=r.thumbnail,
                 version_display=r.version_display,
                 # ownership

@@ -44,12 +44,15 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from .._meta import API_VTAG as VTAG
 from ..catalog.client import get_services_for_user_in_product
 from ..director_v2 import api
+from ..folders.errors import FolderAccessForbiddenError, FolderNotFoundError
 from ..login.decorators import login_required
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ..security.api import check_user_permission
 from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
+from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 from . import _crud_api_create, _crud_api_read, projects_api
+from ._access_rights_api import check_user_project_permission
 from ._common_models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveParams,
@@ -91,11 +94,19 @@ def _handle_projects_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except ProjectNotFoundError as exc:
+        except (
+            ProjectNotFoundError,
+            FolderNotFoundError,
+            WorkspaceNotFoundError,
+        ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except ProjectOwnerNotFoundInTheProjectAccessRightsError as exc:
             raise web.HTTPBadRequest(reason=f"{exc}") from exc
-        except ProjectInvalidRightsError as exc:
+        except (
+            ProjectInvalidRightsError,
+            FolderAccessForbiddenError,
+            WorkspaceAccessForbiddenError,
+        ) as exc:
             raise web.HTTPUnauthorized(reason=f"{exc}") from exc
 
     return _wrapper
@@ -173,6 +184,7 @@ async def create_project(request: web.Request):
 @routes.get(f"/{VTAG}/projects", name="list_projects")
 @login_required
 @permission_required("project.read")
+@_handle_projects_exceptions
 async def list_projects(request: web.Request):
     """
 
@@ -196,6 +208,7 @@ async def list_projects(request: web.Request):
         search=query_params.search,
         order_by=parse_obj_as(OrderBy, query_params.order_by),
         folder_id=query_params.folder_id,
+        workspace_id=query_params.workspace_id,
     )
 
     page = Page[ProjectDict].parse_obj(
@@ -386,6 +399,7 @@ async def replace_project(request: web.Request):
         "project.update | project.workbench.node.inputs.update",
         context={
             "dbapi": db,
+            "app": request.app,
             "project_id": f"{path_params.project_id}",
             "user_id": req_ctx.user_id,
             "new_data": new_project,
@@ -429,6 +443,14 @@ async def replace_project(request: web.Request):
             raise web.HTTPConflict(
                 reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
             )
+
+        await check_user_project_permission(
+            request.app,
+            project_id=path_params.project_id,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            permission="write",
+        )
 
         new_project = await db.replace_project(
             new_project,

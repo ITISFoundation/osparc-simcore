@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.42.0
+  version: 0.43.0
 servers:
 - url: ''
   description: webserver
@@ -14,58 +14,6 @@ servers:
     port:
       default: '8001'
 paths:
-  /v0/activity/status:
-    get:
-      tags:
-      - tasks
-      summary: Get Activity Status
-      operationId: get_activity_status
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__models_library.api_schemas_webserver.activity.Activity__'
-  /v0/email:test:
-    post:
-      tags:
-      - admin
-      summary: Test Email
-      operationId: test_email
-      parameters:
-      - required: false
-        schema:
-          title: X-Simcore-Products-Name
-          type: string
-        name: x-simcore-products-name
-        in: header
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TestEmail'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Union_EmailTestFailed__EmailTestPassed__'
-  /v0/announcements:
-    get:
-      tags:
-      - announcements
-      summary: List Announcements
-      operationId: list_announcements
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.announcements._models.Announcement__'
   /v0/auth/request-account:
     post:
       tags:
@@ -485,6 +433,1407 @@ paths:
             application/json:
               schema: {}
             image/png: {}
+  /v0/groups:
+    get:
+      tags:
+      - groups
+      summary: List Groups
+      operationId: list_groups
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_AllUsersGroups_'
+    post:
+      tags:
+      - groups
+      summary: Create Group
+      operationId: create_group
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_UsersGroup_'
+  /v0/groups/{gid}:
+    get:
+      tags:
+      - groups
+      summary: Get Group
+      operationId: get_group
+      parameters:
+      - required: true
+        schema:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: gid
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_UsersGroup_'
+    delete:
+      tags:
+      - groups
+      summary: Delete Group
+      operationId: delete_group
+      parameters:
+      - required: true
+        schema:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: gid
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+    patch:
+      tags:
+      - groups
+      summary: Update Group
+      operationId: update_group
+      parameters:
+      - required: true
+        schema:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: gid
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsersGroup'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_UsersGroup_'
+  /v0/groups/{gid}/users:
+    get:
+      tags:
+      - groups
+      summary: Get Group Users
+      operationId: get_group_users
+      parameters:
+      - required: true
+        schema:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: gid
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.groups.GroupUserGet__'
+    post:
+      tags:
+      - groups
+      summary: Add Group User
+      operationId: add_group_user
+      parameters:
+      - required: true
+        schema:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: gid
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupUserGet'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+  /v0/groups/{gid}/users/{uid}:
+    get:
+      tags:
+      - groups
+      summary: Get Group User
+      operationId: get_group_user
+      parameters:
+      - required: true
+        schema:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: gid
+        in: path
+      - required: true
+        schema:
+          title: Uid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: uid
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GroupUserGet_'
+    delete:
+      tags:
+      - groups
+      summary: Delete Group User
+      operationId: delete_group_user
+      parameters:
+      - required: true
+        schema:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: gid
+        in: path
+      - required: true
+        schema:
+          title: Uid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: uid
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+    patch:
+      tags:
+      - groups
+      summary: Update Group User
+      operationId: update_group_user
+      parameters:
+      - required: true
+        schema:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: gid
+        in: path
+      - required: true
+        schema:
+          title: Uid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: uid
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupUserGet'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GroupUserGet_'
+  /v0/groups/{gid}/classifiers:
+    get:
+      tags:
+      - groups
+      summary: Get Group Classifiers
+      operationId: get_group_classifiers
+      parameters:
+      - required: true
+        schema:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: gid
+        in: path
+      - required: false
+        schema:
+          title: Tree View
+          enum:
+          - std
+          type: string
+          default: std
+        name: tree_view
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_str__Any__'
+  /v0/groups/sparc/classifiers/scicrunch-resources/{rrid}:
+    get:
+      tags:
+      - groups
+      summary: Get Scicrunch Resource
+      operationId: get_scicrunch_resource
+      parameters:
+      - required: true
+        schema:
+          title: Rrid
+          type: string
+        name: rrid
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ResearchResource_'
+    post:
+      tags:
+      - groups
+      summary: Add Scicrunch Resource
+      operationId: add_scicrunch_resource
+      parameters:
+      - required: true
+        schema:
+          title: Rrid
+          type: string
+        name: rrid
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ResearchResource_'
+  /v0/groups/sparc/classifiers/scicrunch-resources:search:
+    get:
+      tags:
+      - groups
+      summary: Search Scicrunch Resources
+      operationId: search_scicrunch_resources
+      parameters:
+      - required: true
+        schema:
+          title: Guess Name
+          type: string
+        name: guess_name
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.scicrunch.models.ResourceHit__'
+  /v0/tags:
+    get:
+      tags:
+      - tags
+      summary: List Tags
+      operationId: list_tags
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags.schemas.TagGet__'
+    post:
+      tags:
+      - tags
+      summary: Create Tag
+      operationId: create_tag
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagCreate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TagGet_'
+  /v0/tags/{tag_id}:
+    delete:
+      tags:
+      - tags
+      summary: Delete Tag
+      operationId: delete_tag
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: tag_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+    patch:
+      tags:
+      - tags
+      summary: Update Tag
+      operationId: update_tag
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: tag_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TagGet_'
+  /v0/tags/{tag_id}/groups:
+    get:
+      tags:
+      - tags
+      - groups
+      summary: List Tag Groups
+      operationId: list_tag_groups
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: tag_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags.schemas.TagGroupGet__'
+  /v0/tags/{tag_id}/groups/{group_id}:
+    put:
+      tags:
+      - tags
+      - groups
+      summary: Replace Tag Groups
+      operationId: replace_tag_groups
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: tag_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagGroupCreate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags.schemas.TagGroupGet__'
+    post:
+      tags:
+      - tags
+      - groups
+      summary: Create Tag Group
+      operationId: create_tag_group
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: tag_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagGroupCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TagGet_'
+    delete:
+      tags:
+      - tags
+      - groups
+      summary: Delete Tag Group
+      operationId: delete_tag_group
+      parameters:
+      - required: true
+        schema:
+          title: Tag Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: tag_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/credits-price:
+    get:
+      tags:
+      - products
+      summary: Get Current Product Price
+      operationId: get_current_product_price
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetCreditPrice_'
+  /v0/products/{product_name}:
+    get:
+      tags:
+      - products
+      - po
+      summary: Get Product
+      operationId: get_product
+      parameters:
+      - required: true
+        schema:
+          title: Product Name
+          anyOf:
+          - maxLength: 100
+            minLength: 1
+            type: string
+          - enum:
+            - current
+            type: string
+        name: product_name
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetProduct_'
+  /v0/products/{product_name}/templates/{template_id}:
+    put:
+      tags:
+      - products
+      - po
+      summary: Update Product Template
+      operationId: update_product_template
+      parameters:
+      - required: true
+        schema:
+          title: Product Name
+          anyOf:
+          - maxLength: 100
+            minLength: 1
+            type: string
+          - enum:
+            - current
+            type: string
+        name: product_name
+        in: path
+      - required: true
+        schema:
+          title: Template Id
+          maxLength: 100
+          minLength: 1
+          type: string
+        name: template_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductTemplate'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+  /v0/invitation:generate:
+    post:
+      tags:
+      - products
+      - po
+      summary: Generate Invitation
+      operationId: generate_invitation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateInvitation'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_InvitationGenerated_'
+  /v0/me:
+    get:
+      tags:
+      - user
+      summary: Get My Profile
+      operationId: get_my_profile
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProfileGet_'
+    put:
+      tags:
+      - user
+      summary: Update My Profile
+      operationId: update_my_profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdate'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+  /v0/me/preferences/{preference_id}:
+    patch:
+      tags:
+      - user
+      summary: Set Frontend Preference
+      operationId: set_frontend_preference
+      parameters:
+      - required: true
+        schema:
+          title: Preference Id
+          type: string
+        name: preference_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchRequestBody'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+  /v0/me/tokens:
+    get:
+      tags:
+      - user
+      summary: List Tokens
+      operationId: list_tokens
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users.schemas.ThirdPartyToken__'
+    post:
+      tags:
+      - user
+      summary: Create Token
+      operationId: create_token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
+  /v0/me/tokens/{service}:
+    get:
+      tags:
+      - user
+      summary: Get Token
+      operationId: get_token
+      parameters:
+      - required: true
+        schema:
+          title: Service
+          type: string
+        name: service
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
+    delete:
+      tags:
+      - user
+      summary: Delete Token
+      operationId: delete_token
+      parameters:
+      - required: true
+        schema:
+          title: Service
+          type: string
+        name: service
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/me/notifications:
+    get:
+      tags:
+      - user
+      summary: List User Notifications
+      operationId: list_user_notifications
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users._notifications.UserNotification__'
+    post:
+      tags:
+      - user
+      summary: Create User Notification
+      operationId: create_user_notification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNotificationCreate'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+  /v0/me/notifications/{notification_id}:
+    patch:
+      tags:
+      - user
+      summary: Mark Notification As Read
+      operationId: mark_notification_as_read
+      parameters:
+      - required: true
+        schema:
+          title: Notification Id
+          type: string
+        name: notification_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNotificationPatch'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+  /v0/me/permissions:
+    get:
+      tags:
+      - user
+      summary: List User Permissions
+      operationId: list_user_permissions
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users.schemas.PermissionGet__'
+  /v0/users:search:
+    get:
+      tags:
+      - user
+      - po
+      summary: Search Users
+      operationId: search_users
+      parameters:
+      - required: true
+        schema:
+          title: Email
+          maxLength: 200
+          minLength: 3
+          type: string
+        name: email
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users._schemas.UserProfile__'
+  /v0/users:pre-register:
+    post:
+      tags:
+      - user
+      - po
+      summary: Pre Register User
+      operationId: pre_register_user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreUserProfile'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_UserProfile_'
+  /v0/wallets:
+    get:
+      tags:
+      - wallets
+      summary: List Wallets
+      operationId: list_wallets
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.WalletGetWithAvailableCredits__'
+    post:
+      tags:
+      - wallets
+      summary: Create Wallet
+      operationId: create_wallet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalletBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/wallets/default:
+    get:
+      tags:
+      - wallets
+      summary: Get Default Wallet
+      operationId: get_default_wallet
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGetWithAvailableCredits_'
+  /v0/wallets/{wallet_id}:
+    get:
+      tags:
+      - wallets
+      summary: Get Wallet
+      operationId: get_wallet
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGetWithAvailableCredits_'
+    put:
+      tags:
+      - wallets
+      summary: Update Wallet
+      operationId: update_wallet
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutWalletBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/wallets/{wallet_id}/payments:
+    post:
+      tags:
+      - wallets
+      summary: Create Payment
+      description: Creates payment to wallet `wallet_id`
+      operationId: create_payment
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalletPayment'
+        required: true
+      responses:
+        '202':
+          description: Payment initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletPaymentInitiated_'
+  /v0/wallets/-/payments:
+    get:
+      tags:
+      - wallets
+      summary: List All Payments
+      description: Lists all user payments to his/her wallets (only the ones he/she
+        created)
+      operationId: list_all_payments
+      parameters:
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_PaymentTransaction_'
+  /v0/wallets/{wallet_id}/payments/{payment_id}/invoice-link:
+    get:
+      tags:
+      - wallets
+      summary: Get Payment Invoice Link
+      operationId: get_payment_invoice_link
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Id
+          maxLength: 100
+          minLength: 1
+          type: string
+        name: payment_id
+        in: path
+      responses:
+        '302':
+          description: redirection to invoice download link
+          content:
+            application/json:
+              schema: {}
+  /v0/wallets/{wallet_id}/payments/{payment_id}:cancel:
+    post:
+      tags:
+      - wallets
+      summary: Cancel Payment
+      operationId: cancel_payment
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Id
+          maxLength: 100
+          minLength: 1
+          type: string
+        name: payment_id
+        in: path
+      responses:
+        '204':
+          description: Successfully cancelled
+  /v0/wallets/{wallet_id}/payments-methods:init:
+    post:
+      tags:
+      - wallets
+      summary: Init Creation Of Payment Method
+      operationId: init_creation_of_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '202':
+          description: Successfully initialized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PaymentMethodInitiated_'
+  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:cancel:
+    post:
+      tags:
+      - wallets
+      summary: Cancel Creation Of Payment Method
+      operationId: cancel_creation_of_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Method Id
+          maxLength: 100
+          minLength: 1
+          type: string
+        name: payment_method_id
+        in: path
+      responses:
+        '204':
+          description: Successfully cancelled
+  /v0/wallets/{wallet_id}/payments-methods:
+    get:
+      tags:
+      - wallets
+      summary: List Payments Methods
+      description: Lists all payments method associated to `wallet_id`
+      operationId: list_payments_methods
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.PaymentMethodGet__'
+  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:
+    get:
+      tags:
+      - wallets
+      summary: Get Payment Method
+      operationId: get_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Method Id
+          maxLength: 100
+          minLength: 1
+          type: string
+        name: payment_method_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_PaymentMethodGet_'
+    delete:
+      tags:
+      - wallets
+      summary: Delete Payment Method
+      operationId: delete_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Method Id
+          maxLength: 100
+          minLength: 1
+          type: string
+        name: payment_method_id
+        in: path
+      responses:
+        '204':
+          description: Successfully deleted
+  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:pay:
+    post:
+      tags:
+      - wallets
+      summary: Pay With Payment Method
+      operationId: pay_with_payment_method
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Payment Method Id
+          maxLength: 100
+          minLength: 1
+          type: string
+        name: payment_method_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalletPayment'
+        required: true
+      responses:
+        '202':
+          description: Pay with payment-method
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletPaymentInitiated_'
+  /v0/wallets/{wallet_id}/auto-recharge:
+    get:
+      tags:
+      - wallets
+      summary: Get Wallet Autorecharge
+      operationId: get_wallet_autorecharge
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetWalletAutoRecharge_'
+    put:
+      tags:
+      - wallets
+      summary: Replace Wallet Autorecharge
+      operationId: replace_wallet_autorecharge
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceWalletAutoRecharge'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_GetWalletAutoRecharge_'
+  /v0/wallets/{wallet_id}/groups/{group_id}:
+    put:
+      tags:
+      - wallets
+      - groups
+      summary: Update Wallet Group
+      operationId: update_wallet_group
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_WalletsGroupsBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGroupGet_'
+    post:
+      tags:
+      - wallets
+      - groups
+      summary: Create Wallet Group
+      operationId: create_wallet_group
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_WalletsGroupsBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_WalletGroupGet_'
+    delete:
+      tags:
+      - wallets
+      - groups
+      summary: Delete Wallet Group
+      operationId: delete_wallet_group
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      - required: true
+        schema:
+          title: Group Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: group_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/wallets/{wallet_id}/groups:
+    get:
+      tags:
+      - wallets
+      - groups
+      summary: List Wallet Groups
+      operationId: list_wallet_groups
+      parameters:
+      - required: true
+        schema:
+          title: Wallet Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: wallet_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.wallets._groups_api.WalletGroupGet__'
+  /v0/activity/status:
+    get:
+      tags:
+      - tasks
+      summary: Get Activity Status
+      operationId: get_activity_status
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_uuid.UUID__models_library.api_schemas_webserver.activity.Activity__'
+  /v0/announcements:
+    get:
+      tags:
+      - announcements
+      summary: List Announcements
+      operationId: list_announcements
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.announcements._models.Announcement__'
   /v0/catalog/services/-/latest:
     get:
       tags:
@@ -860,6 +2209,109 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ServicePricingPlanGet_'
+  /v0/catalog/services/{service_key}/{service_version}/tags:
+    get:
+      tags:
+      - catalog
+      - tags
+      summary: List Service Tags
+      operationId: list_service_tags
+      parameters:
+      - required: true
+        schema:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        name: service_key
+        in: path
+      - required: true
+        schema:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name: service_version
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags.schemas.TagGet__'
+  /v0/catalog/services/{service_key}/{service_version}/tags/{tag_id}:add:
+    post:
+      tags:
+      - catalog
+      - tags
+      summary: Add Service Tag
+      operationId: add_service_tag
+      parameters:
+      - required: true
+        schema:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        name: service_key
+        in: path
+      - required: true
+        schema:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name: service_version
+        in: path
+      - required: true
+        schema:
+          title: Tag Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: tag_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
+  /v0/catalog/services/{service_key}/{service_version}/tags/{tag_id}:remove:
+    post:
+      tags:
+      - catalog
+      - tags
+      summary: Remove Service Tag
+      operationId: remove_service_tag
+      parameters:
+      - required: true
+        schema:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        name: service_key
+        in: path
+      - required: true
+        schema:
+          title: Service Version
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          type: string
+        name: service_version
+        in: path
+      - required: true
+        schema:
+          title: Tag Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: tag_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_CatalogServiceGet_'
   /v0/clusters:
     get:
       tags:
@@ -1089,114 +2541,6 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/:
-    get:
-      tags:
-      - maintenance
-      summary: Healthcheck Readiness Probe
-      description: 'Readiness probe: check if the container is ready to receive traffic'
-      operationId: healthcheck_readiness_probe
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_HealthInfoDict_'
-  /v0/health:
-    get:
-      tags:
-      - maintenance
-      summary: Healthcheck Liveness Probe
-      description: 'Liveness probe: check if the container is alive'
-      operationId: healthcheck_liveness_probe
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_dict_str__Any__'
-  /v0/config:
-    get:
-      tags:
-      - maintenance
-      summary: Front end runtime configuration
-      description: Returns app and products configs
-      operationId: get_config
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_dict_str__Any__'
-  /v0/scheduled_maintenance:
-    get:
-      tags:
-      - maintenance
-      summary: Get Scheduled Maintenance
-      operationId: get_scheduled_maintenance
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_str_'
-  /v0/status:
-    get:
-      tags:
-      - maintenance
-      summary: checks status of self and connected services
-      operationId: get_app_status
-      responses:
-        '200':
-          description: Returns app status check
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_AppStatusCheck_'
-  /v0/status/diagnostics:
-    get:
-      tags:
-      - maintenance
-      summary: Get App Diagnostics
-      operationId: get_app_diagnostics
-      parameters:
-      - required: false
-        schema:
-          title: Top Tracemalloc
-          type: integer
-        name: top_tracemalloc
-        in: query
-      responses:
-        '200':
-          description: Returns app diagnostics report
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_StatusDiagnosticsGet_'
-  /v0/status/{service_name}:
-    get:
-      tags:
-      - maintenance
-      summary: Get Service Status
-      operationId: get_service_status
-      parameters:
-      - required: true
-        schema:
-          title: Service Name
-          type: string
-        name: service_name
-        in: path
-      responses:
-        '200':
-          description: Returns app status check
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_AppStatusCheck_'
   /v0/projects/{project_id}:xport:
     post:
       tags:
@@ -1222,6 +2566,22 @@ paths:
       summary: List Folders
       operationId: list_folders
       parameters:
+      - required: false
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: query
+      - required: false
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: query
       - description: Order by field (modified_at|name|description) and direction (asc|desc).
           The default sorting order is ascending.
         required: false
@@ -1257,7 +2617,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.folders.FolderGet__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.folders_v2.FolderGet__'
     post:
       tags:
       - folders
@@ -1342,440 +2702,6 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/folders/{folder_id}/groups/{group_id}:
-    put:
-      tags:
-      - folders
-      summary: Replace Folder Group
-      operationId: replace_folder_group
-      parameters:
-      - required: true
-        schema:
-          title: Folder Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: folder_id
-        in: path
-      - required: true
-        schema:
-          title: Group Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: group_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_FoldersGroupsBodyParams'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_FolderGroupGet_'
-    post:
-      tags:
-      - folders
-      summary: Create Folder Group
-      operationId: create_folder_group
-      parameters:
-      - required: true
-        schema:
-          title: Folder Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: folder_id
-        in: path
-      - required: true
-        schema:
-          title: Group Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: group_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_FoldersGroupsBodyParams'
-        required: true
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_FolderGroupGet_'
-    delete:
-      tags:
-      - folders
-      summary: Delete Folder Group
-      operationId: delete_folder_group
-      parameters:
-      - required: true
-        schema:
-          title: Folder Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: folder_id
-        in: path
-      - required: true
-        schema:
-          title: Group Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: group_id
-        in: path
-      responses:
-        '204':
-          description: Successful Response
-  /v0/folders/{folder_id}/groups:
-    get:
-      tags:
-      - folders
-      summary: List Folder Groups
-      operationId: list_folder_groups
-      parameters:
-      - required: true
-        schema:
-          title: Folder Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: folder_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.folders._groups_api.FolderGroupGet__'
-  /v0/groups:
-    get:
-      tags:
-      - groups
-      summary: List Groups
-      operationId: list_groups
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_AllUsersGroups_'
-    post:
-      tags:
-      - groups
-      summary: Create Group
-      operationId: create_group
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_UsersGroup_'
-  /v0/groups/{gid}:
-    get:
-      tags:
-      - groups
-      summary: Get Group
-      operationId: get_group
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_UsersGroup_'
-    delete:
-      tags:
-      - groups
-      summary: Delete Group
-      operationId: delete_group
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      responses:
-        '204':
-          description: Successful Response
-    patch:
-      tags:
-      - groups
-      summary: Update Group
-      operationId: update_group
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UsersGroup'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_UsersGroup_'
-  /v0/groups/{gid}/users:
-    get:
-      tags:
-      - groups
-      summary: Get Group Users
-      operationId: get_group_users
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.groups.GroupUserGet__'
-    post:
-      tags:
-      - groups
-      summary: Add Group User
-      operationId: add_group_user
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupUserGet'
-        required: true
-      responses:
-        '204':
-          description: Successful Response
-  /v0/groups/{gid}/users/{uid}:
-    get:
-      tags:
-      - groups
-      summary: Get Group User
-      operationId: get_group_user
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      - required: true
-        schema:
-          title: Uid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: uid
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_GroupUserGet_'
-    delete:
-      tags:
-      - groups
-      summary: Delete Group User
-      operationId: delete_group_user
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      - required: true
-        schema:
-          title: Uid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: uid
-        in: path
-      responses:
-        '204':
-          description: Successful Response
-    patch:
-      tags:
-      - groups
-      summary: Update Group User
-      operationId: update_group_user
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      - required: true
-        schema:
-          title: Uid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: uid
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GroupUserGet'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_GroupUserGet_'
-  /v0/groups/{gid}/classifiers:
-    get:
-      tags:
-      - groups
-      summary: Get Group Classifiers
-      operationId: get_group_classifiers
-      parameters:
-      - required: true
-        schema:
-          title: Gid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: gid
-        in: path
-      - required: false
-        schema:
-          title: Tree View
-          enum:
-          - std
-          type: string
-          default: std
-        name: tree_view
-        in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_dict_str__Any__'
-  /v0/groups/sparc/classifiers/scicrunch-resources/{rrid}:
-    get:
-      tags:
-      - groups
-      summary: Get Scicrunch Resource
-      operationId: get_scicrunch_resource
-      parameters:
-      - required: true
-        schema:
-          title: Rrid
-          type: string
-        name: rrid
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ResearchResource_'
-    post:
-      tags:
-      - groups
-      summary: Add Scicrunch Resource
-      operationId: add_scicrunch_resource
-      parameters:
-      - required: true
-        schema:
-          title: Rrid
-          type: string
-        name: rrid
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ResearchResource_'
-  /v0/groups/sparc/classifiers/scicrunch-resources:search:
-    get:
-      tags:
-      - groups
-      summary: Search Scicrunch Resources
-      operationId: search_scicrunch_resources
-      parameters:
-      - required: true
-        schema:
-          title: Guess Name
-          type: string
-        name: guess_name
-        in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.scicrunch.models.ResourceHit__'
   /v0/tasks:
     get:
       tags:
@@ -1935,78 +2861,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_ProjectIterationResultItem_'
-  /view:
-    get:
-      tags:
-      - nih-sparc
-      summary: Get Redirection To Viewer
-      description: Opens a viewer in osparc for data in the NIH-sparc portal
-      operationId: get_redirection_to_viewer
-      parameters:
-      - required: true
-        schema:
-          title: File Type
-          type: string
-        name: file_type
-        in: query
-      - required: true
-        schema:
-          title: Viewer Key
-          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
-          type: string
-        name: viewer_key
-        in: query
-      - required: true
-        schema:
-          title: File Size
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: file_size
-        in: query
-      - required: true
-        schema:
-          title: Download Link
-          maxLength: 2083
-          minLength: 1
-          type: string
-          format: uri
-        name: download_link
-        in: query
-      - required: false
-        schema:
-          title: File Name
-          type: string
-          default: unknown
-        name: file_name
-        in: query
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ServiceKeyVersion'
-        required: true
-      responses:
-        '302':
-          description: Opens osparc and starts viewer for selected data
-  /study/{id}:
-    get:
-      tags:
-      - nih-sparc
-      summary: Get Redirection To Study Page
-      description: Opens a study published in osparc
-      operationId: get_redirection_to_study_page
-      parameters:
-      - required: true
-        schema:
-          title: Id
-          type: string
-          format: uuid
-        name: id
-        in: path
-      responses:
-        '302':
-          description: Opens osparc and opens a copy of publised study
   /v0/services:
     get:
       tags:
@@ -2079,328 +2933,78 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.studies_dispatcher._rest_handlers.Viewer__'
-  /v0/credits-price:
+  /view:
     get:
       tags:
-      - products
-      summary: Get Current Product Price
-      operationId: get_current_product_price
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_GetCreditPrice_'
-  /v0/products/{product_name}:
-    get:
-      tags:
-      - products
-      - po
-      summary: Get Product
-      operationId: get_product
+      - nih-sparc
+      summary: Get Redirection To Viewer
+      description: Opens a viewer in osparc for data in the NIH-sparc portal
+      operationId: get_redirection_to_viewer
       parameters:
       - required: true
         schema:
-          title: Product Name
-          anyOf:
-          - maxLength: 100
-            minLength: 1
-            type: string
-          - enum:
-            - current
-            type: string
-        name: product_name
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_GetProduct_'
-  /v0/products/{product_name}/templates/{template_id}:
-    put:
-      tags:
-      - products
-      - po
-      summary: Update Product Template
-      operationId: update_product_template
-      parameters:
+          title: File Type
+          type: string
+        name: file_type
+        in: query
       - required: true
         schema:
-          title: Product Name
-          anyOf:
-          - maxLength: 100
-            minLength: 1
-            type: string
-          - enum:
-            - current
-            type: string
-        name: product_name
-        in: path
+          title: Viewer Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        name: viewer_key
+        in: query
       - required: true
         schema:
-          title: Template Id
-          maxLength: 100
+          title: File Size
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: file_size
+        in: query
+      - required: true
+        schema:
+          title: Download Link
+          maxLength: 2083
           minLength: 1
           type: string
-        name: template_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateProductTemplate'
-        required: true
-      responses:
-        '204':
-          description: Successful Response
-  /v0/invitation:generate:
-    post:
-      tags:
-      - products
-      - po
-      summary: Generate Invitation
-      operationId: generate_invitation
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GenerateInvitation'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_InvitationGenerated_'
-  /v0/projects/{project_id}/nodes/{node_id}/pricing-unit:
-    get:
-      tags:
-      - projects
-      summary: Get currently connected pricing unit to the project node.
-      operationId: get_project_node_pricing_unit
-      parameters:
-      - required: true
-        schema:
-          title: Project Id
-          type: string
-          format: uuid
-        name: project_id
-        in: path
-      - required: true
-        schema:
-          title: Node Id
-          type: string
-          format: uuid
-        name: node_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_Union_PricingUnitGet__NoneType__'
-  /v0/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan_id}/pricing-unit/{pricing_unit_id}:
-    put:
-      tags:
-      - projects
-      summary: Connect pricing unit to the project node (Project node can have only
-        one pricing unit)
-      operationId: connect_pricing_unit_to_project_node
-      parameters:
-      - required: true
-        schema:
-          title: Project Id
-          type: string
-          format: uuid
-        name: project_id
-        in: path
-      - required: true
-        schema:
-          title: Node Id
-          type: string
-          format: uuid
-        name: node_id
-        in: path
-      - required: true
-        schema:
-          title: Pricing Plan Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: pricing_plan_id
-        in: path
-      - required: true
-        schema:
-          title: Pricing Unit Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: pricing_unit_id
-        in: path
-      responses:
-        '204':
-          description: Successful Response
-  /v0/projects/{project_uuid}/comments:
-    get:
-      tags:
-      - projects
-      - comments
-      summary: Retrieve all comments for a specific project.
-      operationId: list_project_comments
-      parameters:
-      - required: true
-        schema:
-          title: Project Uuid
-          type: string
-          format: uuid
-        name: project_uuid
-        in: path
-      - required: false
-        schema:
-          title: Limit
-          type: integer
-          default: 20
-        name: limit
+          format: uri
+        name: download_link
         in: query
       - required: false
         schema:
-          title: Offset
-          minimum: 0
-          type: integer
-          default: 0
-        name: offset
-        in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.projects_comments.ProjectsCommentsAPI__'
-    post:
-      tags:
-      - projects
-      - comments
-      summary: Create a new comment for a specific project. The request body should
-        contain the comment contents and user information.
-      operationId: create_project_comment
-      parameters:
-      - required: true
-        schema:
-          title: Project Uuid
+          title: File Name
           type: string
-          format: uuid
-        name: project_uuid
-        in: path
+          default: unknown
+        name: file_name
+        in: query
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_ProjectCommentsBodyParams'
+              $ref: '#/components/schemas/ServiceKeyVersion'
         required: true
       responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_dict_Literal__comment_id____pydantic.types.PositiveInt__'
-  /v0/projects/{project_uuid}/comments/{comment_id}:
+        '302':
+          description: Opens osparc and starts viewer for selected data
+  /study/{id}:
     get:
       tags:
-      - projects
-      - comments
-      summary: Retrieve a specific comment by its ID within a project.
-      operationId: get_project_comment
+      - nih-sparc
+      summary: Get Redirection To Study Page
+      description: Opens a study published in osparc
+      operationId: get_redirection_to_study_page
       parameters:
       - required: true
         schema:
-          title: Project Uuid
+          title: Id
           type: string
           format: uuid
-        name: project_uuid
-        in: path
-      - required: true
-        schema:
-          title: Comment Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: comment_id
+        name: id
         in: path
       responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectsCommentsAPI_'
-    put:
-      tags:
-      - projects
-      - comments
-      summary: Update the contents of a specific comment for a project. The request
-        body should contain the updated comment contents.
-      operationId: update_project_comment
-      parameters:
-      - required: true
-        schema:
-          title: Project Uuid
-          type: string
-          format: uuid
-        name: project_uuid
-        in: path
-      - required: true
-        schema:
-          title: Comment Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: comment_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_ProjectCommentsBodyParams'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectsCommentsAPI_'
-    delete:
-      tags:
-      - projects
-      - comments
-      summary: Delete a specific comment associated with a project.
-      operationId: delete_project_comment
-      parameters:
-      - required: true
-        schema:
-          title: Project Uuid
-          type: string
-          format: uuid
-        name: project_uuid
-        in: path
-      - required: true
-        schema:
-          title: Comment Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: comment_id
-        in: path
-      responses:
-        '204':
-          description: Successful Response
+        '302':
+          description: Opens osparc and opens a copy of publised study
   /v0/projects:
     get:
       tags:
@@ -2465,6 +3069,14 @@ paths:
           type: integer
           minimum: 0
         name: folder_id
+        in: query
+      - required: false
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
         in: query
       responses:
         '200':
@@ -2700,10 +3312,193 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_GetProjectInactivityResponse_'
+  /v0/projects/{project_uuid}/comments:
+    get:
+      tags:
+      - projects
+      - comments
+      summary: Retrieve all comments for a specific project.
+      operationId: list_project_comments
+      parameters:
+      - required: true
+        schema:
+          title: Project Uuid
+          type: string
+          format: uuid
+        name: project_uuid
+        in: path
+      - required: false
+        schema:
+          title: Limit
+          type: integer
+          default: 20
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_models_library.projects_comments.ProjectsCommentsAPI__'
+    post:
+      tags:
+      - projects
+      - comments
+      summary: Create a new comment for a specific project. The request body should
+        contain the comment contents and user information.
+      operationId: create_project_comment
+      parameters:
+      - required: true
+        schema:
+          title: Project Uuid
+          type: string
+          format: uuid
+        name: project_uuid
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectCommentsBodyParams'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_Literal__comment_id____pydantic.types.PositiveInt__'
+  /v0/projects/{project_uuid}/comments/{comment_id}:
+    get:
+      tags:
+      - projects
+      - comments
+      summary: Retrieve a specific comment by its ID within a project.
+      operationId: get_project_comment
+      parameters:
+      - required: true
+        schema:
+          title: Project Uuid
+          type: string
+          format: uuid
+        name: project_uuid
+        in: path
+      - required: true
+        schema:
+          title: Comment Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: comment_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectsCommentsAPI_'
+    put:
+      tags:
+      - projects
+      - comments
+      summary: Update the contents of a specific comment for a project. The request
+        body should contain the updated comment contents.
+      operationId: update_project_comment
+      parameters:
+      - required: true
+        schema:
+          title: Project Uuid
+          type: string
+          format: uuid
+        name: project_uuid
+        in: path
+      - required: true
+        schema:
+          title: Comment Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: comment_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ProjectCommentsBodyParams'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ProjectsCommentsAPI_'
+    delete:
+      tags:
+      - projects
+      - comments
+      summary: Delete a specific comment associated with a project.
+      operationId: delete_project_comment
+      parameters:
+      - required: true
+        schema:
+          title: Project Uuid
+          type: string
+          format: uuid
+        name: project_uuid
+        in: path
+      - required: true
+        schema:
+          title: Comment Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: comment_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/projects/{project_id}/folders/{folder_id}:
+    put:
+      tags:
+      - projects
+      - folders
+      summary: Move project to the folder
+      operationId: replace_project_folder
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/projects/{project_id}/groups/{group_id}:
     put:
       tags:
       - projects
+      - groups
       summary: Replace Project Group
       operationId: replace_project_group
       parameters:
@@ -2738,6 +3533,7 @@ paths:
     post:
       tags:
       - projects
+      - groups
       summary: Create Project Group
       operationId: create_project_group
       parameters:
@@ -2772,6 +3568,7 @@ paths:
     delete:
       tags:
       - projects
+      - groups
       summary: Delete Project Group
       operationId: delete_project_group
       parameters:
@@ -2797,6 +3594,7 @@ paths:
     get:
       tags:
       - projects
+      - groups
       summary: List Project Groups
       operationId: list_project_groups
       parameters:
@@ -2814,32 +3612,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.projects._groups_api.ProjectGroupGet__'
-  /v0/projects/{project_id}/folders/{folder_id}:
-    put:
-      tags:
-      - projects
-      - folders
-      summary: Move project to the folder
-      operationId: replace_project_folder
-      parameters:
-      - required: true
-        schema:
-          title: Project Id
-          type: string
-          format: uuid
-        name: project_id
-        in: path
-      - required: true
-        schema:
-          title: Folder Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: folder_id
-        in: path
-      responses:
-        '204':
-          description: Successful Response
   /v0/projects/{project_id}/metadata:
     get:
       tags:
@@ -3275,6 +4047,75 @@ paths:
                 $ref: '#/components/schemas/Envelope__ProjectNodePreview_'
         '404':
           description: Node has no preview
+  /v0/projects/{project_id}/nodes/{node_id}/pricing-unit:
+    get:
+      tags:
+      - projects
+      summary: Get currently connected pricing unit to the project node.
+      operationId: get_project_node_pricing_unit
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+          format: uuid
+        name: node_id
+        in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Union_PricingUnitGet__NoneType__'
+  /v0/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan_id}/pricing-unit/{pricing_unit_id}:
+    put:
+      tags:
+      - projects
+      summary: Connect pricing unit to the project node (Project node can have only
+        one pricing unit)
+      operationId: connect_pricing_unit_to_project_node
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Node Id
+          type: string
+          format: uuid
+        name: node_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Plan Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_plan_id
+        in: path
+      - required: true
+        schema:
+          title: Pricing Unit Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: pricing_unit_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/projects/{project_id}/inputs:
     get:
       tags:
@@ -3417,7 +4258,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -3469,14 +4310,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectState_'
-  /v0/projects/{project_uuid}/tags/{tag_id}:
-    put:
+  /v0/projects/{project_uuid}/tags/{tag_id}:add:
+    post:
       tags:
       - projects
       - tags
-      summary: Add Tag
-      description: Links an existing label with an existing study
-      operationId: add_tag
+      summary: Add Project Tag
+      description: 'Links an existing label with an existing study
+
+
+        NOTE: that the tag is not created here'
+      operationId: add_project_tag
       parameters:
       - required: true
         schema:
@@ -3498,13 +4342,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
-    delete:
+  /v0/projects/{project_uuid}/tags/{tag_id}:remove:
+    post:
       tags:
       - projects
       - tags
-      summary: Remove Tag
-      description: Removes an existing link between a label and a study
-      operationId: remove_tag
+      summary: Remove Project Tag
+      description: 'Removes an existing link between a label and a study
+
+
+        NOTE: that the tag is not deleted here'
+      operationId: remove_project_tag
       parameters:
       - required: true
         schema:
@@ -3576,6 +4424,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_WalletGet_'
+  /v0/projects/{project_id}/workspaces/{workspace_id}:
+    put:
+      tags:
+      - projects
+      - workspaces
+      summary: Move project to the workspace
+      operationId: replace_project_workspace
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/publications/service-submission:
     post:
       tags:
@@ -4408,302 +5282,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
-  /v0/tags:
-    get:
-      tags:
-      - tags
-      summary: List Tags
-      operationId: list_tags
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.tags._handlers.TagGet__'
-    post:
-      tags:
-      - tags
-      summary: Create Tag
-      operationId: create_tag
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TagCreate'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_TagGet_'
-  /v0/tags/{tag_id}:
-    delete:
-      tags:
-      - tags
-      summary: Delete Tag
-      operationId: delete_tag
-      parameters:
-      - required: true
-        schema:
-          title: Tag Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: tag_id
-        in: path
-      responses:
-        '204':
-          description: Successful Response
-    patch:
-      tags:
-      - tags
-      summary: Update Tag
-      operationId: update_tag
-      parameters:
-      - required: true
-        schema:
-          title: Tag Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: tag_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TagUpdate'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_TagGet_'
-  /v0/me:
-    get:
-      tags:
-      - user
-      summary: Get My Profile
-      operationId: get_my_profile
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProfileGet_'
-    put:
-      tags:
-      - user
-      summary: Update My Profile
-      operationId: update_my_profile
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProfileUpdate'
-        required: true
-      responses:
-        '204':
-          description: Successful Response
-  /v0/me/preferences/{preference_id}:
-    patch:
-      tags:
-      - user
-      summary: Set Frontend Preference
-      operationId: set_frontend_preference
-      parameters:
-      - required: true
-        schema:
-          title: Preference Id
-          type: string
-        name: preference_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchRequestBody'
-        required: true
-      responses:
-        '204':
-          description: Successful Response
-  /v0/me/tokens:
-    get:
-      tags:
-      - user
-      summary: List Tokens
-      operationId: list_tokens
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users.schemas.ThirdPartyToken__'
-    post:
-      tags:
-      - user
-      summary: Create Token
-      operationId: create_token
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TokenCreate'
-        required: true
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
-  /v0/me/tokens/{service}:
-    get:
-      tags:
-      - user
-      summary: Get Token
-      operationId: get_token
-      parameters:
-      - required: true
-        schema:
-          title: Service
-          type: string
-        name: service
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ThirdPartyToken_'
-    delete:
-      tags:
-      - user
-      summary: Delete Token
-      operationId: delete_token
-      parameters:
-      - required: true
-        schema:
-          title: Service
-          type: string
-        name: service
-        in: path
-      responses:
-        '204':
-          description: Successful Response
-  /v0/me/notifications:
-    get:
-      tags:
-      - user
-      summary: List User Notifications
-      operationId: list_user_notifications
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users._notifications.UserNotification__'
-    post:
-      tags:
-      - user
-      summary: Create User Notification
-      operationId: create_user_notification
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserNotificationCreate'
-        required: true
-      responses:
-        '204':
-          description: Successful Response
-  /v0/me/notifications/{notification_id}:
-    patch:
-      tags:
-      - user
-      summary: Mark Notification As Read
-      operationId: mark_notification_as_read
-      parameters:
-      - required: true
-        schema:
-          title: Notification Id
-          type: string
-        name: notification_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserNotificationPatch'
-        required: true
-      responses:
-        '204':
-          description: Successful Response
-  /v0/me/permissions:
-    get:
-      tags:
-      - user
-      summary: List User Permissions
-      operationId: list_user_permissions
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users.schemas.PermissionGet__'
-  /v0/users:search:
-    get:
-      tags:
-      - user
-      - po
-      summary: Search Users
-      operationId: search_users
-      parameters:
-      - required: true
-        schema:
-          title: Email
-          maxLength: 200
-          minLength: 3
-          type: string
-        name: email
-        in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.users._schemas.UserProfile__'
-  /v0/users:pre-register:
-    post:
-      tags:
-      - user
-      - po
-      summary: Pre Register User
-      operationId: pre_register_user
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PreUserProfile'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_UserProfile_'
   /v0/repos/projects:
     get:
       tags:
@@ -4926,29 +5504,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_CheckpointApiModel_'
-  /v0/wallets:
+  /v0/workspaces:
     get:
       tags:
-      - wallets
-      summary: List Wallets
-      operationId: list_wallets
+      - workspaces
+      summary: List Workspaces
+      operationId: list_workspaces
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.WalletGetWithAvailableCredits__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.workspaces.WorkspaceGet__'
     post:
       tags:
-      - wallets
-      summary: Create Wallet
-      operationId: create_wallet
+      - workspaces
+      summary: Create Workspace
+      operationId: create_workspace
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateWalletBodyParams'
+              $ref: '#/components/schemas/CreateWorkspaceBodyParams'
         required: true
       responses:
         '201':
@@ -4956,34 +5534,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_WalletGet_'
-  /v0/wallets/default:
+                $ref: '#/components/schemas/Envelope_WorkspaceGet_'
+  /v0/workspaces/{workspace_id}:
     get:
       tags:
-      - wallets
-      summary: Get Default Wallet
-      operationId: get_default_wallet
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_WalletGetWithAvailableCredits_'
-  /v0/wallets/{wallet_id}:
-    get:
-      tags:
-      - wallets
-      summary: Get Wallet
-      operationId: get_wallet
+      - workspaces
+      summary: Get Workspace
+      operationId: get_workspace
       parameters:
       - required: true
         schema:
-          title: Wallet Id
+          title: Workspace Id
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        name: wallet_id
+        name: workspace_id
         in: path
       responses:
         '200':
@@ -4991,26 +5556,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_WalletGetWithAvailableCredits_'
+                $ref: '#/components/schemas/Envelope_WorkspaceGet_'
     put:
       tags:
-      - wallets
-      summary: Update Wallet
-      operationId: update_wallet
+      - workspaces
+      summary: Replace Workspace
+      operationId: replace_workspace
       parameters:
       - required: true
         schema:
-          title: Wallet Id
+          title: Workspace Id
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        name: wallet_id
+        name: workspace_id
         in: path
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PutWalletBodyParams'
+              $ref: '#/components/schemas/PutWorkspaceBodyParams'
         required: true
       responses:
         '200':
@@ -5018,350 +5583,39 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_WalletGet_'
-  /v0/wallets/{wallet_id}/payments:
-    post:
-      tags:
-      - wallets
-      summary: Create Payment
-      description: Creates payment to wallet `wallet_id`
-      operationId: create_payment
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateWalletPayment'
-        required: true
-      responses:
-        '202':
-          description: Payment initialized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_WalletPaymentInitiated_'
-  /v0/wallets/-/payments:
-    get:
-      tags:
-      - wallets
-      summary: List All Payments
-      description: Lists all user payments to his/her wallets (only the ones he/she
-        created)
-      operationId: list_all_payments
-      parameters:
-      - required: false
-        schema:
-          title: Limit
-          exclusiveMaximum: true
-          minimum: 1
-          type: integer
-          default: 20
-          maximum: 50
-        name: limit
-        in: query
-      - required: false
-        schema:
-          title: Offset
-          minimum: 0
-          type: integer
-          default: 0
-        name: offset
-        in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Page_PaymentTransaction_'
-  /v0/wallets/{wallet_id}/payments/{payment_id}/invoice-link:
-    get:
-      tags:
-      - wallets
-      summary: Get Payment Invoice Link
-      operationId: get_payment_invoice_link
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      - required: true
-        schema:
-          title: Payment Id
-          maxLength: 100
-          minLength: 1
-          type: string
-        name: payment_id
-        in: path
-      responses:
-        '302':
-          description: redirection to invoice download link
-          content:
-            application/json:
-              schema: {}
-  /v0/wallets/{wallet_id}/payments/{payment_id}:cancel:
-    post:
-      tags:
-      - wallets
-      summary: Cancel Payment
-      operationId: cancel_payment
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      - required: true
-        schema:
-          title: Payment Id
-          maxLength: 100
-          minLength: 1
-          type: string
-        name: payment_id
-        in: path
-      responses:
-        '204':
-          description: Successfully cancelled
-  /v0/wallets/{wallet_id}/payments-methods:init:
-    post:
-      tags:
-      - wallets
-      summary: Init Creation Of Payment Method
-      operationId: init_creation_of_payment_method
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      responses:
-        '202':
-          description: Successfully initialized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_PaymentMethodInitiated_'
-  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:cancel:
-    post:
-      tags:
-      - wallets
-      summary: Cancel Creation Of Payment Method
-      operationId: cancel_creation_of_payment_method
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      - required: true
-        schema:
-          title: Payment Method Id
-          maxLength: 100
-          minLength: 1
-          type: string
-        name: payment_method_id
-        in: path
-      responses:
-        '204':
-          description: Successfully cancelled
-  /v0/wallets/{wallet_id}/payments-methods:
-    get:
-      tags:
-      - wallets
-      summary: List Payments Methods
-      description: Lists all payments method associated to `wallet_id`
-      operationId: list_payments_methods
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.wallets.PaymentMethodGet__'
-  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:
-    get:
-      tags:
-      - wallets
-      summary: Get Payment Method
-      operationId: get_payment_method
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      - required: true
-        schema:
-          title: Payment Method Id
-          maxLength: 100
-          minLength: 1
-          type: string
-        name: payment_method_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_PaymentMethodGet_'
+                $ref: '#/components/schemas/Envelope_WorkspaceGet_'
     delete:
       tags:
-      - wallets
-      summary: Delete Payment Method
-      operationId: delete_payment_method
+      - workspaces
+      summary: Delete Workspace
+      operationId: delete_workspace
       parameters:
       - required: true
         schema:
-          title: Wallet Id
+          title: Workspace Id
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        name: wallet_id
-        in: path
-      - required: true
-        schema:
-          title: Payment Method Id
-          maxLength: 100
-          minLength: 1
-          type: string
-        name: payment_method_id
+        name: workspace_id
         in: path
       responses:
         '204':
-          description: Successfully deleted
-  /v0/wallets/{wallet_id}/payments-methods/{payment_method_id}:pay:
-    post:
-      tags:
-      - wallets
-      summary: Pay With Payment Method
-      operationId: pay_with_payment_method
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      - required: true
-        schema:
-          title: Payment Method Id
-          maxLength: 100
-          minLength: 1
-          type: string
-        name: payment_method_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateWalletPayment'
-        required: true
-      responses:
-        '202':
-          description: Pay with payment-method
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_WalletPaymentInitiated_'
-  /v0/wallets/{wallet_id}/auto-recharge:
-    get:
-      tags:
-      - wallets
-      summary: Get Wallet Autorecharge
-      operationId: get_wallet_autorecharge
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
-        in: path
-      responses:
-        '200':
           description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_GetWalletAutoRecharge_'
+  /v0/workspaces/{workspace_id}/groups/{group_id}:
     put:
       tags:
-      - wallets
-      summary: Replace Wallet Autorecharge
-      operationId: replace_wallet_autorecharge
+      - workspaces
+      - groups
+      summary: Replace Workspace Group
+      operationId: replace_workspace_group
       parameters:
       - required: true
         schema:
-          title: Wallet Id
+          title: Workspace Id
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        name: wallet_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReplaceWalletAutoRecharge'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_GetWalletAutoRecharge_'
-  /v0/wallets/{wallet_id}/groups/{group_id}:
-    put:
-      tags:
-      - wallets
-      summary: Update Wallet Group
-      operationId: update_wallet_group
-      parameters:
-      - required: true
-        schema:
-          title: Wallet Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: wallet_id
+        name: workspace_id
         in: path
       - required: true
         schema:
@@ -5375,7 +5629,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_WalletsGroupsBodyParams'
+              $ref: '#/components/schemas/_WorkspacesGroupsBodyParams'
         required: true
       responses:
         '200':
@@ -5383,20 +5637,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_WalletGroupGet_'
+                $ref: '#/components/schemas/Envelope_WorkspaceGroupGet_'
     post:
       tags:
-      - wallets
-      summary: Create Wallet Group
-      operationId: create_wallet_group
+      - workspaces
+      - groups
+      summary: Create Workspace Group
+      operationId: create_workspace_group
       parameters:
       - required: true
         schema:
-          title: Wallet Id
+          title: Workspace Id
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        name: wallet_id
+        name: workspace_id
         in: path
       - required: true
         schema:
@@ -5410,7 +5665,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_WalletsGroupsBodyParams'
+              $ref: '#/components/schemas/_WorkspacesGroupsBodyParams'
         required: true
       responses:
         '201':
@@ -5418,20 +5673,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_WalletGroupGet_'
+                $ref: '#/components/schemas/Envelope_WorkspaceGroupGet_'
     delete:
       tags:
-      - wallets
-      summary: Delete Wallet Group
-      operationId: delete_wallet_group
+      - workspaces
+      - groups
+      summary: Delete Workspace Group
+      operationId: delete_workspace_group
       parameters:
       - required: true
         schema:
-          title: Wallet Id
+          title: Workspace Id
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        name: wallet_id
+        name: workspace_id
         in: path
       - required: true
         schema:
@@ -5444,20 +5700,21 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/wallets/{wallet_id}/groups:
+  /v0/workspaces/{workspace_id}/groups:
     get:
       tags:
-      - wallets
-      summary: List Wallet Groups
-      operationId: list_wallet_groups
+      - workspaces
+      - groups
+      summary: List Workspace Groups
+      operationId: list_workspace_groups
       parameters:
       - required: true
         schema:
-          title: Wallet Id
+          title: Workspace Id
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        name: wallet_id
+        name: workspace_id
         in: path
       responses:
         '200':
@@ -5465,7 +5722,141 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.wallets._groups_api.WalletGroupGet__'
+                $ref: '#/components/schemas/Envelope_list_simcore_service_webserver.workspaces._groups_api.WorkspaceGroupGet__'
+  /v0/email:test:
+    post:
+      tags:
+      - admin
+      summary: Test Email
+      operationId: test_email
+      parameters:
+      - required: false
+        schema:
+          title: X-Simcore-Products-Name
+          type: string
+        name: x-simcore-products-name
+        in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestEmail'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Union_EmailTestFailed__EmailTestPassed__'
+  /v0/:
+    get:
+      tags:
+      - maintenance
+      summary: Healthcheck Readiness Probe
+      description: 'Readiness probe: check if the container is ready to receive traffic'
+      operationId: healthcheck_readiness_probe
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_HealthInfoDict_'
+  /v0/health:
+    get:
+      tags:
+      - maintenance
+      summary: Healthcheck Liveness Probe
+      description: 'Liveness probe: check if the container is alive'
+      operationId: healthcheck_liveness_probe
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_str__Any__'
+  /v0/config:
+    get:
+      tags:
+      - maintenance
+      summary: Front end runtime configuration
+      description: Returns app and products configs
+      operationId: get_config
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_str__Any__'
+  /v0/scheduled_maintenance:
+    get:
+      tags:
+      - maintenance
+      summary: Get Scheduled Maintenance
+      operationId: get_scheduled_maintenance
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_str_'
+  /v0/status:
+    get:
+      tags:
+      - maintenance
+      summary: checks status of self and connected services
+      operationId: get_app_status
+      responses:
+        '200':
+          description: Returns app status check
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_AppStatusCheck_'
+  /v0/status/diagnostics:
+    get:
+      tags:
+      - maintenance
+      summary: Get App Diagnostics
+      operationId: get_app_diagnostics
+      parameters:
+      - required: false
+        schema:
+          title: Top Tracemalloc
+          type: integer
+        name: top_tracemalloc
+        in: query
+      responses:
+        '200':
+          description: Returns app diagnostics report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_StatusDiagnosticsGet_'
+  /v0/status/{service_name}:
+    get:
+      tags:
+      - maintenance
+      summary: Get Service Status
+      operationId: get_service_status
+      parameters:
+      - required: true
+        schema:
+          title: Service Name
+          type: string
+        name: service_name
+        in: path
+      responses:
+        '200':
+          description: Returns app status check
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_AppStatusCheck_'
 components:
   schemas:
     AccessEnum:
@@ -5476,27 +5867,6 @@ components:
       - ReadOnly
       type: string
       description: An enumeration.
-    AccessRights:
-      title: AccessRights
-      required:
-      - read
-      - write
-      - delete
-      type: object
-      properties:
-        read:
-          title: Read
-          type: boolean
-          description: has read access
-        write:
-          title: Write
-          type: boolean
-          description: has write access
-        delete:
-          title: Delete
-          type: boolean
-          description: has deletion rights
-      additionalProperties: false
     AccountRequestInfo:
       title: AccountRequestInfo
       required:
@@ -5842,6 +6212,10 @@ components:
         description:
           title: Description
           type: string
+        descriptionUi:
+          title: Descriptionui
+          type: boolean
+          default: false
         versionDisplay:
           title: Versiondisplay
           type: string
@@ -5908,6 +6282,7 @@ components:
       example:
         name: sleeper
         description: A service which awaits for time to pass, two times.
+        description_ui: true
         classifiers: []
         quality: {}
         accessRights:
@@ -5986,6 +6361,10 @@ components:
         description:
           title: Description
           type: string
+        descriptionUi:
+          title: Descriptionui
+          type: boolean
+          default: false
         versionDisplay:
           title: Versiondisplay
           type: string
@@ -6416,7 +6795,6 @@ components:
       title: CreateFolderBodyParams
       required:
       - name
-      - description
       type: object
       properties:
         name:
@@ -6424,11 +6802,13 @@ components:
           maxLength: 100
           minLength: 1
           type: string
-        description:
-          title: Description
-          type: string
         parentFolderId:
           title: Parentfolderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        workspaceId:
+          title: Workspaceid
           exclusiveMinimum: true
           type: integer
           minimum: 0
@@ -6512,6 +6892,22 @@ components:
           title: Comment
           maxLength: 100
           type: string
+    CreateWorkspaceBodyParams:
+      title: CreateWorkspaceBodyParams
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+      additionalProperties: false
     DatCoreFileLink:
       title: DatCoreFileLink
       required:
@@ -6749,14 +7145,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/FolderGet'
-        error:
-          title: Error
-    Envelope_FolderGroupGet_:
-      title: Envelope[FolderGroupGet]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/FolderGroupGet'
         error:
           title: Error
     Envelope_GetCreditPrice_:
@@ -7136,6 +7524,22 @@ components:
           $ref: '#/components/schemas/WorkbenchViewApiModel'
         error:
           title: Error
+    Envelope_WorkspaceGet_:
+      title: Envelope[WorkspaceGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WorkspaceGet'
+        error:
+          title: Error
+    Envelope_WorkspaceGroupGet_:
+      title: Envelope[WorkspaceGroupGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/WorkspaceGroupGet'
+        error:
+          title: Error
     Envelope__ComputationStarted_:
       title: Envelope[_ComputationStarted]
       type: object
@@ -7281,8 +7685,8 @@ components:
             $ref: '#/components/schemas/ClusterGet'
         error:
           title: Error
-    Envelope_list_models_library.api_schemas_webserver.folders.FolderGet__:
-      title: Envelope[list[models_library.api_schemas_webserver.folders.FolderGet]]
+    Envelope_list_models_library.api_schemas_webserver.folders_v2.FolderGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.folders_v2.FolderGet]]
       type: object
       properties:
         data:
@@ -7358,6 +7762,17 @@ components:
             $ref: '#/components/schemas/WalletGetWithAvailableCredits'
         error:
           title: Error
+    Envelope_list_models_library.api_schemas_webserver.workspaces.WorkspaceGet__:
+      title: Envelope[list[models_library.api_schemas_webserver.workspaces.WorkspaceGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceGet'
+        error:
+          title: Error
     Envelope_list_models_library.projects_comments.ProjectsCommentsAPI__:
       title: Envelope[list[models_library.projects_comments.ProjectsCommentsAPI]]
       type: object
@@ -7390,17 +7805,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Announcement'
-        error:
-          title: Error
-    Envelope_list_simcore_service_webserver.folders._groups_api.FolderGroupGet__:
-      title: Envelope[list[simcore_service_webserver.folders._groups_api.FolderGroupGet]]
-      type: object
-      properties:
-        data:
-          title: Data
-          type: array
-          items:
-            $ref: '#/components/schemas/FolderGroupGet'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.projects._groups_api.ProjectGroupGet__:
@@ -7480,8 +7884,8 @@ components:
             $ref: '#/components/schemas/Viewer'
         error:
           title: Error
-    Envelope_list_simcore_service_webserver.tags._handlers.TagGet__:
-      title: Envelope[list[simcore_service_webserver.tags._handlers.TagGet]]
+    Envelope_list_simcore_service_webserver.tags.schemas.TagGet__:
+      title: Envelope[list[simcore_service_webserver.tags.schemas.TagGet]]
       type: object
       properties:
         data:
@@ -7489,6 +7893,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TagGet'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.tags.schemas.TagGroupGet__:
+      title: Envelope[list[simcore_service_webserver.tags.schemas.TagGroupGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/TagGroupGet'
         error:
           title: Error
     Envelope_list_simcore_service_webserver.users._notifications.UserNotification__:
@@ -7544,6 +7959,17 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WalletGroupGet'
+        error:
+          title: Error
+    Envelope_list_simcore_service_webserver.workspaces._groups_api.WorkspaceGroupGet__:
+      title: Envelope[list[simcore_service_webserver.workspaces._groups_api.WorkspaceGroupGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceGroupGet'
         error:
           title: Error
     Envelope_str_:
@@ -7883,12 +8309,10 @@ components:
       required:
       - folderId
       - name
-      - description
       - createdAt
       - modifiedAt
       - owner
       - myAccessRights
-      - accessRights
       type: object
       properties:
         folderId:
@@ -7904,9 +8328,6 @@ components:
         name:
           title: Name
           type: string
-        description:
-          title: Description
-          type: string
         createdAt:
           title: Createdat
           type: string
@@ -7920,46 +8341,13 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        myAccessRights:
-          $ref: '#/components/schemas/AccessRights'
-        accessRights:
-          title: Accessrights
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
-    FolderGroupGet:
-      title: FolderGroupGet
-      required:
-      - gid
-      - read
-      - write
-      - delete
-      - created
-      - modified
-      type: object
-      properties:
-        gid:
-          title: Gid
+        workspaceId:
+          title: Workspaceid
           exclusiveMinimum: true
           type: integer
           minimum: 0
-        read:
-          title: Read
-          type: boolean
-        write:
-          title: Write
-          type: boolean
-        delete:
-          title: Delete
-          type: boolean
-        created:
-          title: Created
-          type: string
-          format: date-time
-        modified:
-          title: Modified
-          type: string
-          format: date-time
+        myAccessRights:
+          $ref: '#/components/schemas/models_library__access_rights__AccessRights'
     GenerateInvitation:
       title: GenerateInvitation
       required:
@@ -8291,7 +8679,6 @@ components:
         issuer:
           title: Issuer
           type: string
-          format: email
         guest:
           title: Guest
           type: string
@@ -9708,7 +10095,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         tags:
           title: Tags
           type: array
@@ -9721,6 +10108,16 @@ components:
             type: string
         ui:
           $ref: '#/components/schemas/StudyUI'
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        folderId:
+          title: Folderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     ProjectGet:
       title: ProjectGet
       required:
@@ -9777,7 +10174,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         tags:
           title: Tags
           type: array
@@ -9805,6 +10202,11 @@ components:
           type: object
         permalink:
           $ref: '#/components/schemas/ProjectPermalink'
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     ProjectGroupGet:
       title: ProjectGroupGet
       required:
@@ -10007,7 +10409,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         tags:
           title: Tags
           type: array
@@ -10035,6 +10437,11 @@ components:
           type: object
         permalink:
           $ref: '#/components/schemas/ProjectPermalink'
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     ProjectLocked:
       title: ProjectLocked
       required:
@@ -10154,7 +10561,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         classifiers:
           title: Classifiers
           type: array
@@ -10229,7 +10636,7 @@ components:
           title: Accessrights
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/AccessRights'
+            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
         tags:
           title: Tags
           type: array
@@ -10341,7 +10748,6 @@ components:
       title: PutFolderBodyParams
       required:
       - name
-      - description
       type: object
       properties:
         name:
@@ -10349,9 +10755,11 @@ components:
           maxLength: 100
           minLength: 1
           type: string
-        description:
-          title: Description
-          type: string
+        parentFolderId:
+          title: Parentfolderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
       additionalProperties: false
     PutWalletBodyParams:
       title: PutWalletBodyParams
@@ -10371,6 +10779,24 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/WalletStatus'
+    PutWorkspaceBodyParams:
+      title: PutWorkspaceBodyParams
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          title: Name
+          maxLength: 100
+          minLength: 1
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+      additionalProperties: false
     RegisterBody:
       title: RegisterBody
       required:
@@ -11463,6 +11889,56 @@ components:
           type: string
         accessRights:
           $ref: '#/components/schemas/TagAccessRights'
+    TagGroupCreate:
+      title: TagGroupCreate
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+    TagGroupGet:
+      title: TagGroupGet
+      required:
+      - gid
+      - read
+      - write
+      - delete
+      - created
+      - modified
+      type: object
+      properties:
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
     TagUpdate:
       title: TagUpdate
       type: object
@@ -12303,6 +12779,79 @@ components:
           allOf:
           - $ref: '#/components/schemas/TaskCounts'
           description: task details
+    WorkspaceGet:
+      title: WorkspaceGet
+      required:
+      - workspaceId
+      - name
+      - createdAt
+      - modifiedAt
+      - myAccessRights
+      - accessRights
+      type: object
+      properties:
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name:
+          title: Name
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          type: string
+        createdAt:
+          title: Createdat
+          type: string
+          format: date-time
+        modifiedAt:
+          title: Modifiedat
+          type: string
+          format: date-time
+        myAccessRights:
+          $ref: '#/components/schemas/models_library__access_rights__AccessRights'
+        accessRights:
+          title: Accessrights
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/models_library__access_rights__AccessRights'
+    WorkspaceGroupGet:
+      title: WorkspaceGroupGet
+      required:
+      - gid
+      - read
+      - write
+      - delete
+      - created
+      - modified
+      type: object
+      properties:
+        gid:
+          title: Gid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+        created:
+          title: Created
+          type: string
+          format: date-time
+        modified:
+          title: Modified
+          type: string
+          format: date-time
     _ComputationStarted:
       title: _ComputationStarted
       required:
@@ -12320,24 +12869,6 @@ components:
           items:
             type: integer
           description: Checkpoints IDs for created pipeline
-    _FoldersGroupsBodyParams:
-      title: _FoldersGroupsBodyParams
-      required:
-      - read
-      - write
-      - delete
-      type: object
-      properties:
-        read:
-          title: Read
-          type: boolean
-        write:
-          title: Write
-          type: boolean
-        delete:
-          title: Delete
-          type: boolean
-      additionalProperties: false
     _PageParams:
       title: _PageParams
       type: object
@@ -12432,4 +12963,64 @@ components:
         delete:
           title: Delete
           type: boolean
+      additionalProperties: false
+    _WorkspacesGroupsBodyParams:
+      title: _WorkspacesGroupsBodyParams
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+      additionalProperties: false
+    models_library__access_rights__AccessRights:
+      title: AccessRights
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+          description: has read access
+        write:
+          title: Write
+          type: boolean
+          description: has write access
+        delete:
+          title: Delete
+          type: boolean
+          description: has deletion rights
+      additionalProperties: false
+    models_library__projects_access__AccessRights:
+      title: AccessRights
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+          description: has read access
+        write:
+          title: Write
+          type: boolean
+          description: has write access
+        delete:
+          title: Delete
+          type: boolean
+          description: has deletion rights
       additionalProperties: false

@@ -1,11 +1,8 @@
 import functools
-import re
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
-from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
-from models_library.users import UserID
-from pydantic import BaseModel, ConstrainedStr, Field, PositiveInt
+from pydantic import parse_obj_as
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -13,9 +10,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_tags import (
-    TagDict,
     TagNotFoundError,
     TagOperationNotAllowedError,
     TagsRepo,
@@ -25,6 +20,16 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
+from .schemas import (
+    TagCreate,
+    TagGet,
+    TagGroupCreate,
+    TagGroupGet,
+    TagGroupPathParams,
+    TagPathParams,
+    TagRequestContext,
+    TagUpdate,
+)
 
 
 def _handle_tags_exceptions(handler: Handler):
@@ -42,71 +47,6 @@ def _handle_tags_exceptions(handler: Handler):
     return wrapper
 
 
-#
-# API components/schemas
-#
-
-
-class _RequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-
-
-class ColorStr(ConstrainedStr):
-    regex = re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
-
-
-class TagPathParams(BaseModel):
-    tag_id: PositiveInt
-
-
-class TagUpdate(InputSchema):
-    name: str | None = None
-    description: str | None = None
-    color: ColorStr | None = None
-
-
-class TagCreate(InputSchema):
-    name: str
-    description: str | None = None
-    color: ColorStr
-
-
-class TagAccessRights(OutputSchema):
-    # NOTE: analogous to GroupAccessRights
-    read: bool
-    write: bool
-    delete: bool
-
-
-class TagGet(OutputSchema):
-    id: PositiveInt
-    name: str
-    description: str | None = None
-    color: str
-
-    # analogous to UsersGroup
-    access_rights: TagAccessRights = Field(..., alias="accessRights")
-
-    @classmethod
-    def from_db(cls, tag: TagDict) -> "TagGet":
-        # NOTE: cls(access_rights=tag, **tag) would also work because of Config
-        return cls(
-            id=tag["id"],
-            name=tag["name"],
-            description=tag["description"],
-            color=tag["color"],
-            access_rights=TagAccessRights(  # type: ignore[call-arg]
-                read=tag["read"],
-                write=tag["write"],
-                delete=tag["delete"],
-            ),
-        )
-
-
-#
-# API handlers
-#
-
 routes = web.RouteTableDef()
 
 
@@ -116,7 +56,7 @@ routes = web.RouteTableDef()
 @_handle_tags_exceptions
 async def create_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = TagRequestContext.parse_obj(request)
     new_tag = await parse_request_body_as(TagCreate, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
@@ -138,7 +78,7 @@ async def create_tag(request: web.Request):
 @_handle_tags_exceptions
 async def list_tags(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = TagRequestContext.parse_obj(request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
     async with engine.acquire() as conn:
@@ -154,7 +94,7 @@ async def list_tags(request: web.Request):
 @_handle_tags_exceptions
 async def update_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = TagRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
     tag_updates = await parse_request_body_as(TagUpdate, request)
 
@@ -173,7 +113,7 @@ async def update_tag(request: web.Request):
 @_handle_tags_exceptions
 async def delete_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = TagRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
@@ -181,3 +121,56 @@ async def delete_tag(request: web.Request):
         await repo.delete(conn, tag_id=path_params.tag_id)
 
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+
+
+@routes.get(f"/{VTAG}/tags/{{tag_id}}/groups", name="list_tag_groups")
+@login_required
+@permission_required("tag.crud.*")
+@_handle_tags_exceptions
+async def list_tag_groups(request: web.Request):
+    path_params = parse_request_path_parameters_as(TagPathParams, request)
+
+    assert path_params  # nosec
+    assert envelope_json_response(parse_obj_as(list[TagGroupGet], []))
+
+    raise NotImplementedError
+
+
+@routes.post(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="create_tag_group")
+@login_required
+@permission_required("tag.crud.*")
+@_handle_tags_exceptions
+async def create_tag_group(request: web.Request):
+    path_params = parse_request_path_parameters_as(TagGroupPathParams, request)
+    new_tag_group = await parse_request_body_as(TagGroupCreate, request)
+
+    assert path_params  # nosec
+    assert new_tag_group  # nosec
+
+    raise NotImplementedError
+
+
+@routes.put(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="replace_tag_groups")
+@login_required
+@permission_required("tag.crud.*")
+@_handle_tags_exceptions
+async def replace_tag_groups(request: web.Request):
+    path_params = parse_request_path_parameters_as(TagGroupPathParams, request)
+    new_tag_group = await parse_request_body_as(TagGroupCreate, request)
+
+    assert path_params  # nosec
+    assert new_tag_group  # nosec
+
+    raise NotImplementedError
+
+
+@routes.delete(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="delete_tag_group")
+@login_required
+@permission_required("tag.crud.*")
+@_handle_tags_exceptions
+async def delete_tag_group(request: web.Request):
+    path_params = parse_request_path_parameters_as(TagGroupPathParams, request)
+
+    assert path_params  # nosec
+    assert web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    raise NotImplementedError

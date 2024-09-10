@@ -159,6 +159,7 @@ async def test_rpc_catalog_client(
             "name": "foo",
             "description": "bar",
             "version_display": "this is a nice version",
+            "description_ui": True,  # owner activates wiki view
         },
     )
 
@@ -166,6 +167,7 @@ async def test_rpc_catalog_client(
     assert updated.version == got.version
     assert updated.name == "foo"
     assert updated.description == "bar"
+    assert updated.description_ui
     assert updated.version_display == "this is a nice version"
     assert not updated.classifiers
 

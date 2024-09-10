@@ -6,10 +6,10 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import GroupID, UserID
 from pydantic import BaseModel, parse_obj_as
-from simcore_service_webserver.projects.models import UserProjectAccessRights
 
 from ..users import api as users_api
 from . import _groups_db as projects_groups_db
+from ._access_rights_api import check_user_project_permission
 from ._groups_db import ProjectGroupGetDB
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
@@ -35,21 +35,15 @@ async def create_project_group(
     read: bool,
     write: bool,
     delete: bool,
-    product_name: ProductName,  # pylint: disable=unused-argument
+    product_name: ProductName,
 ) -> ProjectGroupGet:
-    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-
-    project_access_rights: UserProjectAccessRights = (
-        await project_db.get_project_access_rights_for_user(
-            user_id=user_id, project_uuid=project_id
-        )
+    await check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",
     )
-    if project_access_rights.write is False:
-        raise ProjectInvalidRightsError(
-            user_id=user_id,
-            project_uuid=project_id,
-            reason=f"User does not have write access to project {project_id}",
-        )
 
     project_group_db: ProjectGroupGetDB = await projects_groups_db.create_project_group(
         app=app,
@@ -69,21 +63,15 @@ async def list_project_groups_by_user_and_project(
     *,
     user_id: UserID,
     project_id: ProjectID,
-    product_name: ProductName,  # pylint: disable=unused-argument
+    product_name: ProductName,
 ) -> list[ProjectGroupGet]:
-    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-
-    project_access_rights: UserProjectAccessRights = (
-        await project_db.get_project_access_rights_for_user(
-            user_id=user_id, project_uuid=project_id
-        )
+    await check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="read",
     )
-    if project_access_rights.read is False:
-        raise ProjectInvalidRightsError(
-            user_id=user_id,
-            project_uuid=project_id,
-            reason=f"User does not have read access to project {project_id}",
-        )
 
     project_groups_db: list[
         ProjectGroupGetDB
@@ -105,22 +93,17 @@ async def replace_project_group(
     read: bool,
     write: bool,
     delete: bool,
-    product_name: ProductName,  # pylint: disable=unused-argument
+    product_name: ProductName,
 ) -> ProjectGroupGet:
-    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-
-    project_access_rights: UserProjectAccessRights = (
-        await project_db.get_project_access_rights_for_user(
-            user_id=user_id, project_uuid=project_id
-        )
+    await check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",
     )
-    if project_access_rights.write is False:
-        raise ProjectInvalidRightsError(
-            user_id=user_id,
-            project_uuid=project_id,
-            reason=f"User does not have write access to project {project_id}",
-        )
 
+    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     project = await project_db.get_project_db(project_id)
     project_owner_user: dict = await users_api.get_user(app, project.prj_owner)
     if project_owner_user["primary_gid"] == group_id:
@@ -154,21 +137,17 @@ async def delete_project_group(
     user_id: UserID,
     project_id: ProjectID,
     group_id: GroupID,
-    product_name: ProductName,  # pylint: disable=unused-argument
+    product_name: ProductName,
 ) -> None:
-    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-
-    project_access_rights: UserProjectAccessRights = (
-        await project_db.get_project_access_rights_for_user(
-            user_id=user_id, project_uuid=project_id  # add product_name
-        )
+    await check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="delete",
     )
-    if project_access_rights.delete is False:
-        raise ProjectInvalidRightsError(
-            user_id=user_id,
-            project_uuid=project_id,
-            reason=f"User does not have delete access to project {project_id}",
-        )
+
+    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     project = await project_db.get_project_db(project_id)
     project_owner_user: dict = await users_api.get_user(app, project.prj_owner)
     if project_owner_user["primary_gid"] == group_id:

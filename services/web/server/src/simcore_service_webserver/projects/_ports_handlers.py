@@ -30,6 +30,7 @@ from servicelib.aiohttp.requests_validation import (
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
+from ..projects._access_rights_api import check_user_project_permission
 from ..security.decorators import permission_required
 from . import _ports_api, projects_api
 from ._common_models import ProjectPathParams, RequestContext
@@ -152,6 +153,14 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         )
 
     # patch workbench
+    await check_user_project_permission(
+        request.app,
+        project_id=path_params.project_id,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        permission="write",
+    )
+
     assert db  # nosec
     updated_project, _ = await db.update_project_multiple_node_data(
         user_id=req_ctx.user_id,

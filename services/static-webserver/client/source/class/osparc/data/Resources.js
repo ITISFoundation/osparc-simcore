@@ -118,19 +118,19 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user"
           },
-          getPageFolder: {
+          getPage: {
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}"
           },
-          getPageFolderSearch: {
+          getPageSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}&search={text}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}&search={text}"
           },
-          getPageFolderSortBy: {
+          getPageSortBy: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}&order_by={orderBy}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}&order_by={orderBy}"
           },
           getOne: {
             useCache: false,
@@ -259,13 +259,13 @@ qx.Class.define("osparc.data.Resources", {
           },
           addTag: {
             useCache: false,
-            method: "PUT",
-            url: statics.API + "/projects/{studyId}/tags/{tagId}"
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/tags/{tagId}:add"
           },
           removeTag: {
             useCache: false,
-            method: "DELETE",
-            url: statics.API + "/projects/{studyId}/tags/{tagId}"
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/tags/{tagId}:remove"
           },
           getInactivity: {
             useCache: false,
@@ -275,7 +275,11 @@ qx.Class.define("osparc.data.Resources", {
           moveToFolder: {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/folders/{folderId}"
-          }
+          },
+          moveToWorkspace: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/workspaces/{workspaceId}"
+          },
         }
       },
       "studyComments": {
@@ -298,7 +302,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/folders?folder_id={folderId}&offset={offset}&limit={limit}"
+            url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}"
           },
           getOne: {
             method: "GET",
@@ -315,7 +319,51 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/folders/{folderId}"
-          }
+          },
+          moveToFolder: {
+            method: "PUT",
+            url: statics.API + "/folders/{folderId}/folders/{destFolderId}"
+          },
+          moveToWorkspace: {
+            method: "PUT",
+            url: statics.API + "/folders/{folderId}/folders/{workspaceId}"
+          },
+        }
+      },
+      "workspaces": {
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/workspaces?&offset={offset}&limit={limit}"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/workspaces/{workspaceId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/workspaces"
+          },
+          update: {
+            method: "PUT",
+            url: statics.API + "/workspaces/{workspaceId}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/workspaces/{workspaceId}"
+          },
+          postAccessRights: {
+            method: "POST",
+            url: statics.API + "/workspaces/{workspaceId}/groups/{groupId}"
+          },
+          putAccessRights: {
+            method: "PUT",
+            url: statics.API + "/workspaces/{workspaceId}/groups/{groupId}"
+          },
+          deleteAccessRights: {
+            method: "DELETE",
+            url: statics.API + "/workspaces/{workspaceId}/groups/{groupId}"
+          },
         }
       },
       "resourceUsage": {
@@ -469,7 +517,7 @@ qx.Class.define("osparc.data.Resources", {
        * SERVICES V2 (web-api >=0.42.0)
        */
       "servicesV2": {
-        useCache: false, // handled in osparc.service.Store
+        useCache: false, // handled in osparc.store.Services
         idField: ["key", "version"],
         endpoints: {
           get: {

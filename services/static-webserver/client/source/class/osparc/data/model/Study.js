@@ -214,7 +214,7 @@ qx.Class.define("osparc.data.model.Study", {
       "workbench"
     ],
 
-    createMyNewStudyObject: function() {
+    createMinStudyObject: function() {
       let myNewStudyObject = {};
       const props = qx.util.PropertyUtil.getProperties(osparc.data.model.Study);
       for (let key in props) {
@@ -299,7 +299,7 @@ qx.Class.define("osparc.data.model.Study", {
       let nCompNodes = 0;
       let overallProgress = 0;
       Object.values(nodes).forEach(node => {
-        const metadata = osparc.service.Store.getMetadata(node["key"], node["version"]);
+        const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
         if (metadata && osparc.data.model.Node.isComputational(metadata)) {
           const progress = "progress" in node ? node["progress"] : 0;
           overallProgress += progress;

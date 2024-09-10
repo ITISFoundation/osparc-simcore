@@ -189,7 +189,11 @@ qx.Class.define("osparc.share.Collaborators", {
       return control || this.base(arguments, id);
     },
 
-    __amIOwner: function() {
+    __canIChangePermissions: function() {
+      if (this._resourceType === "study" && this._serializedDataCopy["workspaceId"]) {
+        // Access Rights are set at workspace level
+        return false;
+      }
       let fullOptions = false;
       switch (this._resourceType) {
         case "study":
@@ -199,8 +203,8 @@ qx.Class.define("osparc.share.Collaborators", {
         case "service":
           fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
-        case "folder":
-          fullOptions = osparc.share.CollaboratorsFolder.canIDelete(this._serializedDataCopy["myAccessRights"]);
+        case "workspace":
+          fullOptions = osparc.share.CollaboratorsWorkspace.canIDelete(this._serializedDataCopy["myAccessRights"]);
           break;
       }
       return fullOptions;
@@ -212,8 +216,8 @@ qx.Class.define("osparc.share.Collaborators", {
         case "service":
           rolesLayout = osparc.data.Roles.createRolesServicesInfo();
           break;
-        case "folder":
-          rolesLayout = osparc.data.Roles.createRolesFolderInfo();
+        case "workspace":
+          rolesLayout = osparc.data.Roles.createRolesWorkspaceInfo();
           break;
         default:
           rolesLayout = osparc.data.Roles.createRolesStudyInfo();
@@ -223,7 +227,7 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __buildLayout: function() {
-      if (this.__amIOwner()) {
+      if (this.__canIChangePermissions()) {
         this.__addCollaborators = this._createChildControlImpl("add-collaborator");
       }
       this._createChildControlImpl("collaborators-list");
@@ -382,7 +386,7 @@ qx.Class.define("osparc.share.Collaborators", {
       ];
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
-      const showOptions = this.__amIOwner();
+      const showOptions = this.__canIChangePermissions();
       Object.keys(accessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
           const collab = this.__collaborators[gid];

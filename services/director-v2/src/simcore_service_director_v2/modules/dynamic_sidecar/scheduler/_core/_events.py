@@ -19,7 +19,7 @@ from ...api_client import get_dynamic_sidecar_service_health, get_sidecars_clien
 from ...errors import UnexpectedContainerStatusError
 from ._abc import DynamicSchedulerEvent
 from ._event_create_sidecars import CreateSidecars
-from ._events_user_services import create_user_services
+from ._events_user_services import create_user_services, submit_compose_sepc
 from ._events_utils import (
     are_all_user_services_containers_running,
     attach_project_networks,
@@ -139,10 +139,32 @@ class GetStatus(DynamicSchedulerEvent):
             )
 
 
-class PrepareServicesEnvironment(DynamicSchedulerEvent):
+class SendUserServicesSpec(DynamicSchedulerEvent):
     """
     Triggered when the dynamic-sidecar is responding to http requests.
     This step runs before CreateUserServices.
+
+    Sends over the configuration that is used for all docker compose commands.
+    """
+
+    @classmethod
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        assert app  # nose
+        return (
+            scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
+            and scheduler_data.dynamic_sidecar.is_ready
+            and not scheduler_data.dynamic_sidecar.was_compose_spec_submitted
+        )
+
+    @classmethod
+    async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        await submit_compose_sepc(app, scheduler_data)
+
+
+class PrepareServicesEnvironment(DynamicSchedulerEvent):
+    """
+    Triggered when the dynamic-sidecar has it's docker-copose spec loaded.
+    This step runs before SendUserServicesSpec.
 
     Sets up the environment on the host required by the service.
     - restores service state
@@ -174,7 +196,8 @@ class CreateUserServices(DynamicSchedulerEvent):
         assert app  # nose
         return (
             scheduler_data.dynamic_sidecar.is_service_environment_ready
-            and not scheduler_data.dynamic_sidecar.compose_spec_submitted
+            and not scheduler_data.dynamic_sidecar.were_containers_created
+            and scheduler_data.dynamic_sidecar.compose_spec_submitted
         )
 
     @classmethod
@@ -236,6 +259,7 @@ REGISTERED_EVENTS: list[type[DynamicSchedulerEvent]] = [
     WaitForSidecarAPI,
     UpdateHealth,
     GetStatus,
+    SendUserServicesSpec,
     PrepareServicesEnvironment,
     CreateUserServices,
     AttachProjectsNetworks,

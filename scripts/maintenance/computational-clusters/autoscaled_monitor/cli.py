@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
 import parse
 import rich
@@ -10,15 +10,22 @@ from dotenv import dotenv_values
 from . import core as api
 from .constants import (
     DEFAULT_COMPUTATIONAL_EC2_FORMAT,
+    DEFAULT_COMPUTATIONAL_EC2_FORMAT_WORKERS,
     DEFAULT_DYNAMIC_EC2_FORMAT,
     DEPLOY_SSH_KEY_PARSER,
+    wallet_id_spec,
 )
 from .ec2 import autoscaling_ec2_client, cluster_keeper_ec2_client
 from .models import AppState
 
 state: AppState = AppState(
     dynamic_parser=parse.compile(DEFAULT_DYNAMIC_EC2_FORMAT),
-    computational_parser=parse.compile(DEFAULT_COMPUTATIONAL_EC2_FORMAT),
+    computational_parser_primary=parse.compile(
+        DEFAULT_COMPUTATIONAL_EC2_FORMAT, {"wallet_id_spec": wallet_id_spec}
+    ),
+    computational_parser_workers=parse.compile(
+        DEFAULT_COMPUTATIONAL_EC2_FORMAT_WORKERS, {"wallet_id_spec": wallet_id_spec}
+    ),
 )
 
 app = typer.Typer()
@@ -26,25 +33,14 @@ app = typer.Typer()
 
 def _parse_environment(deploy_config: Path) -> dict[str, str | None]:
     repo_config = deploy_config / "repo.config"
-    assert repo_config.exists()
-    environment = dotenv_values(repo_config)
-    if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
+    if not repo_config.exists():
         rich.print(
-            "Terraform variables detected, looking for repo.config.frozen as alternative."
-            " TIP: you are responsible for them being up to date!!"
+            f"[red]{repo_config} does not exist! Please run OPS code to generate it[/red]"
         )
-        repo_config = deploy_config / "repo.config.frozen"
-        assert repo_config.exists()
-        environment = dotenv_values(repo_config)
+        raise typer.Exit(1)
 
-        if environment["AUTOSCALING_EC2_ACCESS_KEY_ID"] == "":
-            error_msg = (
-                "Terraform is necessary in order to check into that deployment!\n"
-                f"install terraform (check README.md in {state.deploy_config} for instructions)"
-                "then run make repo.config.frozen, then re-run this code"
-            )
-            rich.print(error_msg)
-            raise typer.Abort(error_msg)
+    environment = dotenv_values(repo_config)
+
     assert environment
     return environment
 
@@ -68,19 +64,23 @@ def main(
     state.ec2_resource_clusters_keeper = cluster_keeper_ec2_client(state)
 
     assert state.environment["EC2_INSTANCES_KEY_NAME"]
-    state.dynamic_parser = parse.compile(
-        f"{state.environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
-    )
+    dynamic_pattern = f"{state.environment['EC2_INSTANCES_NAME_PREFIX']}-{{key_name}}"
+    state.dynamic_parser = parse.compile(dynamic_pattern)
     if state.environment["CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX"]:
-        state.computational_parser = parse.compile(
-            f"{state.environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX']}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT}"
+        state.computational_parser_primary = parse.compile(
+            rf"{state.environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX'].strip('-')}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT}",
+            {"wallet_id_spec": wallet_id_spec},
+        )
+        state.computational_parser_workers = parse.compile(
+            rf"{state.environment['CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX'].strip('-')}-{DEFAULT_COMPUTATIONAL_EC2_FORMAT_WORKERS}",
+            {"wallet_id_spec": wallet_id_spec},
         )
 
     # locate ssh key path
     for file_path in deploy_config.glob("**/*.pem"):
-        if "license" in file_path.name:
+        if any(_ in file_path.name for _ in ["license", "pkcs8"]):
             continue
-        # very bad HACK
+        # very bad HACK where the license file contain openssh in the name
         if (
             any(_ in f"{file_path}" for _ in ("sim4life.io", "osparc-master"))
             and "openssh" not in f"{file_path}"
@@ -94,6 +94,11 @@ def main(
             )
             state.ssh_key_path = file_path
             break
+    if not state.ssh_key_path:
+        rich.print(
+            f"[red]could not find ssh key in {deploy_config}! Please run OPS code to generate it[/red]"
+        )
+        raise typer.Exit(1)
 
 
 @app.command()
@@ -117,7 +122,10 @@ def summary(
 @app.command()
 def cancel_jobs(
     user_id: Annotated[int, typer.Option(help="the user ID")],
-    wallet_id: Annotated[int, typer.Option(help="the wallet ID")],
+    wallet_id: Annotated[
+        Optional[int | None],  # noqa: UP007 # typer does not understand | syntax
+        typer.Option(help="the wallet ID"),
+    ] = None,
     *,
     force: Annotated[
         bool,

@@ -7,6 +7,8 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 from typing import Any, Literal, TypeAlias
 
+from models_library.folders import FolderID
+from models_library.workspaces import WorkspaceID
 from pydantic import Field, validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
@@ -23,6 +25,7 @@ from ..projects_ui import StudyUI
 from ..utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
+    null_or_none_str_to_none_validator,
 )
 from ..utils.pydantic_tools_extension import FieldNotRequired
 from ._base import EmptyModel, InputSchema, OutputSchema
@@ -39,10 +42,16 @@ class ProjectCreateNew(InputSchema):
     tags: list[int] = Field(default_factory=list)
     classifiers: list[ClassifierID] = Field(default_factory=list)
     ui: StudyUI | None = None
+    workspace_id: WorkspaceID | None = None
+    folder_id: FolderID | None = None
 
     _empty_is_none = validator(
         "uuid", "thumbnail", "description", allow_reuse=True, pre=True
     )(empty_str_to_none_pre_validator)
+
+    _null_or_none_to_none = validator(
+        "workspace_id", "folder_id", allow_reuse=True, pre=True
+    )(null_or_none_str_to_none_validator)
 
 
 # NOTE: based on OVERRIDABLE_DOCUMENT_KEYS
@@ -74,6 +83,7 @@ class ProjectGet(OutputSchema):
     quality: dict[str, Any] = {}
     dev: dict | None
     permalink: ProjectPermalink = FieldNotRequired()
+    workspace_id: WorkspaceID | None
 
     _empty_description = validator("description", allow_reuse=True, pre=True)(
         none_to_empty_str_pre_validator

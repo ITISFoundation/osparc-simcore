@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.FolderWithSharedIcon", {
+qx.Class.define("osparc.dashboard.WorkspaceWithSharedIcon", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

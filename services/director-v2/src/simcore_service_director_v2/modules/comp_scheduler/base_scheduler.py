@@ -30,7 +30,7 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
-from servicelib.utils import logged_gather
+from servicelib.utils import limited_gather
 
 from ...constants import UNDEFINED_STR_METADATA
 from ...core.errors import (
@@ -220,7 +220,7 @@ class BaseCompScheduler(ABC):
     async def schedule_all_pipelines(self) -> None:
         self.wake_up_event.clear()
         # if one of the task throws, the other are NOT cancelled which is what we want
-        await logged_gather(
+        await limited_gather(
             *(
                 self._schedule_pipeline(
                     user_id=user_id,
@@ -234,8 +234,10 @@ class BaseCompScheduler(ABC):
                     iteration,
                 ), pipeline_params in self.scheduled_pipelines.items()
             ),
+            reraise=False,
             log=_logger,
-            max_concurrency=40,
+            limit=40,
+            tasks_group_prefix="computational-scheduled-pipeline",
         )
 
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:

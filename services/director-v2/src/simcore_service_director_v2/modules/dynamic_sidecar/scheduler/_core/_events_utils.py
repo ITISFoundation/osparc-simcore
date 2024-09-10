@@ -27,7 +27,7 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
-from servicelib.utils import logged_gather
+from servicelib.utils import limited_gather, logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import RetryError, TryAgain
 from tenacity.asyncio import AsyncRetrying
@@ -460,13 +460,16 @@ async def prepare_services_environment(
         )
     )
 
-    tasks = [sidecars_client.pull_service_output_ports(dynamic_sidecar_endpoint)]
+    tasks = [
+        sidecars_client.pull_user_services_images(dynamic_sidecar_endpoint),
+        sidecars_client.pull_service_output_ports(dynamic_sidecar_endpoint),
+    ]
     # When enabled no longer downloads state via nodeports
     # S3 is used to store state paths
     if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
         tasks.append(sidecars_client.restore_service_state(dynamic_sidecar_endpoint))
 
-    await logged_gather(*tasks, max_concurrency=2)
+    await limited_gather(*tasks, limit=3)
 
     # inside this directory create the missing dirs, fetch those form the labels
     director_v0_client: DirectorV0Client = get_director_v0_client(app)

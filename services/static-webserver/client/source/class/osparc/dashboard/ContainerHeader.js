@@ -20,7 +20,7 @@
  *
  */
 
-qx.Class.define("osparc.dashboard.FolderHeader", {
+qx.Class.define("osparc.dashboard.ContainerHeader", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -31,17 +31,21 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
     }));
   },
 
-  events: {
-    "changeCurrentFolderId": "qx.event.type.Data"
-  },
-
   properties: {
+    currentWorkspaceId: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeCurrentWorkspaceId",
+      apply: "__buildBreadcrumbs"
+    },
+
     currentFolderId: {
       check: "Number",
       nullable: true,
       init: null,
       event: "changeCurrentFolderId",
-      apply: "__applyCurrentFolderId"
+      apply: "__buildBreadcrumbs"
     }
   },
 
@@ -55,22 +59,8 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
           }));
           this._addAt(control, 0, {flex: 1});
           break;
-        case "permissions-info": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-            alignY: "middle"
-          })).set({
-            paddingRight: 14
-          });
-          this._addAt(control, 1);
-          break;
-        }
       }
       return control || this.base(arguments, id);
-    },
-
-    __applyCurrentFolderId: function() {
-      this.__buildBreadcrumbs();
-      this.__populatePermissions();
     },
 
     __buildBreadcrumbs: function() {
@@ -110,14 +100,38 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
       return this.__createFolderButton(currentFolder);
     },
 
+    __createRootButton: function(workspaceId) {
+      let rootButton = null;
+      if (workspaceId) {
+        if (workspaceId === -1) {
+          rootButton = new qx.ui.form.Button(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath());
+        } else {
+          const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
+          rootButton = new qx.ui.form.Button(workspace.getName(), osparc.store.Workspaces.iconPath());
+        }
+        rootButton.addListener("execute", () => this.set({
+          currentWorkspaceId: workspaceId,
+          currentFolderId: null,
+        }));
+      } else {
+        rootButton = new qx.ui.form.Button(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
+        rootButton.addListener("execute", () => this.set({
+          currentWorkspaceId: null,
+          currentFolderId: null,
+        }));
+      }
+      return rootButton;
+    },
+
     __createFolderButton: function(folder) {
       let folderButton = null;
       if (folder) {
         folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14");
+        folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder ? folder.getFolderId() : null), this);
       } else {
-        folderButton = new qx.ui.form.Button(this.tr("Home"), "@FontAwesome5Solid/home/14");
+        const workspaceId = this.getCurrentWorkspaceId();
+        folderButton = this.__createRootButton(workspaceId);
       }
-      folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder ? folder.getFolderId() : null), this);
       folderButton.set({
         backgroundColor: "transparent",
         textColor: "text",
@@ -128,22 +142,6 @@ qx.Class.define("osparc.dashboard.FolderHeader", {
 
     __createArrow: function() {
       return new qx.ui.basic.Label("/");
-    },
-
-    __populatePermissions: function() {
-      const permissionsLayout = this.getChildControl("permissions-info");
-      permissionsLayout.removeAll();
-
-      if (this.getCurrentFolderId()) {
-        const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
-        const ar = currentFolder.getMyAccessRights();
-        const permissions = ar["read"] + ar["write"] + ar["delete"];
-        const roleTitle = new qx.ui.basic.Label().set({
-          value: osparc.data.Roles.FOLDERS[permissions].label
-        });
-        permissionsLayout.add(roleTitle);
-        permissionsLayout.add(osparc.data.Roles.createRolesFolderInfo(false));
-      }
     }
   }
 });
