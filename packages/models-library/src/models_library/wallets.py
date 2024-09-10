@@ -19,7 +19,18 @@ class WalletInfo(BaseModel):
     wallet_id: WalletID
     wallet_name: str
     wallet_credit_amount: Decimal
-    model_config = ConfigDict()
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "wallet_id": 1,
+                    "wallet_name": "My Wallet",
+                    "wallet_credit_amount": Decimal(10),
+                }
+            ]
+        }
+    )
 
 
 ZERO_CREDITS = Decimal(0)
@@ -32,12 +43,12 @@ ZERO_CREDITS = Decimal(0)
 class WalletDB(BaseModel):
     wallet_id: WalletID
     name: str
-    description: str | None = None
+    description: str | None
     owner: PositiveInt = Field(
         ...,
         description="GID of the group that owns this wallet",
     )
-    thumbnail: str | None = None
+    thumbnail: str | None
     status: WalletStatus = Field(
         ...,
         description="Wallet status (ACTIVE or INACTIVE)",

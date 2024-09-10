@@ -4,7 +4,7 @@
 
 from enum import Enum, unique
 
-from pydantic import BaseModel, ConfigDict, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .projects_access import Owner
 
@@ -61,9 +61,7 @@ class ProjectLocked(BaseModel):
     status: ProjectStatus = Field(..., description="The status of the project")
     model_config = ConfigDict(extra="forbid", use_enum_values=True)
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("owner", pre=True, always=True)
+    @field_validator("owner", mode="before")
     @classmethod
     def check_not_null(cls, v, values):
         if values["value"] is True and v is None:
@@ -71,9 +69,7 @@ class ProjectLocked(BaseModel):
             raise ValueError(msg)
         return v
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("status", always=True)
+    @field_validator("status")
     @classmethod
     def check_status_compatible(cls, v, values):
         if values["value"] is False and v not in ["CLOSED", "OPENED"]:
@@ -89,10 +85,12 @@ class ProjectRunningState(BaseModel):
     value: RunningState = Field(
         ..., description="The running state of the project", examples=["STARTED"]
     )
+
     model_config = ConfigDict(extra="forbid")
 
 
 class ProjectState(BaseModel):
     locked: ProjectLocked = Field(..., description="The project lock state")
     state: ProjectRunningState = Field(..., description="The project running state")
+
     model_config = ConfigDict(extra="forbid")

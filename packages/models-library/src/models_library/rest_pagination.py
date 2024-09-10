@@ -8,8 +8,8 @@ from pydantic import (
     Field,
     NonNegativeInt,
     PositiveInt,
+    field_validator,
     parse_obj_as,
-    validator,
 )
 
 from .utils.common_validators import none_to_empty_list_pre_validator
@@ -46,9 +46,7 @@ class PageMetaInfoLimitOffset(BaseModel):
     offset: NonNegativeInt = 0
     count: NonNegativeInt
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("offset")
+    @field_validator("offset")
     @classmethod
     def _check_offset(cls, v, values):
         if v > 0 and v >= values["total"]:
@@ -56,9 +54,7 @@ class PageMetaInfoLimitOffset(BaseModel):
             raise ValueError(msg)
         return v
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("count")
+    @field_validator("count")
     @classmethod
     def _check_count(cls, v, values):
         if v > values["limit"]:
@@ -74,7 +70,14 @@ class PageMetaInfoLimitOffset(BaseModel):
             raise ValueError(msg)
         return v
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "examples": [
+                {"total": 7, "count": 4, "limit": 4, "offset": 0},
+            ]
+        },
+    )
 
 
 RefT = TypeVar("RefT")
@@ -83,9 +86,10 @@ RefT = TypeVar("RefT")
 class PageRefs(BaseModel, Generic[RefT]):
     self: RefT
     first: RefT
-    prev: RefT | None = None
-    next: RefT | None = None
+    prev: RefT | None
+    next: RefT | None
     last: RefT
+
     model_config = ConfigDict(extra="forbid")
 
 
@@ -105,13 +109,11 @@ class Page(BaseModel, Generic[ItemT]):
     links: PageLinks = Field(alias="_links")
     data: list[ItemT]
 
-    _none_is_empty = validator("data", allow_reuse=True, pre=True)(
+    _none_is_empty = field_validator("data", mode="before")(
         none_to_empty_list_pre_validator
     )
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("data")
+    @field_validator("data")
     @classmethod
     def _check_data_compatible_with_meta(cls, v, values):
         if "meta" not in values:
@@ -123,4 +125,34 @@ class Page(BaseModel, Generic[ItemT]):
             raise ValueError(msg)
         return v
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "examples": [
+                # first page Page[str]
+                {
+                    "_meta": {"total": 7, "count": 4, "limit": 4, "offset": 0},
+                    "_links": {
+                        "self": "https://osparc.io/v2/listing?offset=0&limit=4",
+                        "first": "https://osparc.io/v2/listing?offset=0&limit=4",
+                        "prev": None,
+                        "next": "https://osparc.io/v2/listing?offset=1&limit=4",
+                        "last": "https://osparc.io/v2/listing?offset=1&limit=4",
+                    },
+                    "data": ["data 1", "data 2", "data 3", "data 4"],
+                },
+                # second and last page
+                {
+                    "_meta": {"total": 7, "count": 3, "limit": 4, "offset": 1},
+                    "_links": {
+                        "self": "https://osparc.io/v2/listing?offset=1&limit=4",
+                        "first": "https://osparc.io/v2/listing?offset=0&limit=4",
+                        "prev": "https://osparc.io/v2/listing?offset=0&limit=4",
+                        "next": None,
+                        "last": "https://osparc.io/v2/listing?offset=1&limit=4",
+                    },
+                    "data": ["data 5", "data 6", "data 7"],
+                },
+            ]
+        },
+    )

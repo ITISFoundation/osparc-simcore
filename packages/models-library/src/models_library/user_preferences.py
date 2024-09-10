@@ -77,9 +77,9 @@ class _BaseUserPreferenceModel(_ExtendedBaseModel):
     @classmethod
     def get_default_value(cls) -> Any:
         return (
-            cls.__fields__["value"].default_factory()
-            if cls.__fields__["value"].default_factory
-            else cls.__fields__["value"].default
+            cls.model_fields["value"].default_factory()
+            if cls.model_fields["value"].default_factory
+            else cls.model_fields["value"].default
         )
 
 
@@ -90,14 +90,14 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
         ..., description="used by the frontend"
     )
 
-    value: Any = None
+    value: Any
 
     def to_db(self) -> dict:
         return self.dict(exclude={"preference_identifier", "preference_type"})
 
     @classmethod
     def update_preference_default_value(cls, new_default: Any) -> None:
-        expected_type = cls.__fields__["value"].type_
+        expected_type = cls.model_fields["value"].type_
         detected_type = type(new_default)
         if expected_type != detected_type:
             msg = (
@@ -105,10 +105,10 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
             )
             raise TypeError(msg)
 
-        if cls.__fields__["value"].default is None:
-            cls.__fields__["value"].default_factory = lambda: new_default
+        if cls.model_fields["value"].default is None:
+            cls.model_fields["value"].default_factory = lambda: new_default
         else:
-            cls.__fields__["value"].default = new_default
+            cls.model_fields["value"].default = new_default
 
 
 class UserServiceUserPreference(_BaseUserPreferenceModel):
@@ -122,7 +122,7 @@ class UserServiceUserPreference(_BaseUserPreferenceModel):
     )
 
     def to_db(self) -> dict:
-        return self.dict(exclude={"preference_type"})
+        return self.model_dump(exclude={"preference_type"})
 
 
 AnyUserPreference: TypeAlias = Annotated[

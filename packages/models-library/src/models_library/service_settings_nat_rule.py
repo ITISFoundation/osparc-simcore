@@ -1,7 +1,7 @@
 from collections.abc import Generator
 from typing import Final
 
-from pydantic import BaseModel, ConfigDict, Field, parse_obj_as, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, parse_obj_as
 
 from .basic_types import PortInt
 from .osparc_variable_identifier import OsparcVariableIdentifier, raise_if_unresolved
@@ -17,9 +17,7 @@ class _PortRange(BaseModel):
     lower: PortInt | OsparcVariableIdentifier
     upper: PortInt | OsparcVariableIdentifier
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("upper")
+    @field_validator("upper")
     @classmethod
     def lower_less_than_upper(cls, v, values) -> PortInt:
         if isinstance(v, OsparcVariableIdentifier):
@@ -44,8 +42,17 @@ class DNSResolver(BaseModel):
         ..., description="this is not an url address is derived from IP address"
     )
     port: PortInt | OsparcVariableIdentifier
+
     model_config = ConfigDict(
-        arbitrary_types_allowed=True, validate_assignment=True, extra="allow"
+        arbitrary_types_allowed=True,
+        validate_assignment=True,
+        extra="allow",
+        json_schema_extra={
+            "examples": [
+                {"address": "1.1.1.1", "port": 53},  # NOSONAR
+                {"address": "ns1.example.com", "port": 53},
+            ]
+        },
     )
 
 
@@ -61,6 +68,8 @@ class NATRule(BaseModel):
         description="specify a DNS resolver address and port",
     )
 
+    model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
+
     def iter_tcp_ports(self) -> Generator[PortInt, None, None]:
         for port in self.tcp_ports:
             if isinstance(port, _PortRange):
@@ -73,5 +82,3 @@ class NATRule(BaseModel):
                 )
             else:
                 yield raise_if_unresolved(port)
-
-    model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)

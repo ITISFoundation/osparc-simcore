@@ -18,9 +18,9 @@ assert ServiceVersion  # nosec
 
 class ServiceMetaDataEditable(ServiceBaseDisplay):
     # Overrides ServiceBaseDisplay fields to Optional for a partial update
-    name: str | None = None  # type: ignore[assignment]
-    thumbnail: HttpUrl | None = None
-    description: str | None = None  # type: ignore[assignment]
+    name: str | None  # type: ignore[assignment]
+    thumbnail: HttpUrl | None
+    description: str | None  # type: ignore[assignment]
     description_ui: bool = False
     version_display: str | None = None
 
@@ -32,6 +32,34 @@ class ServiceMetaDataEditable(ServiceBaseDisplay):
         "If now<deprecated the service is marked as deprecated;"
         "If now>=deprecated, the service is retired",
     )
-    classifiers: list[str] | None = None
+    classifiers: list[str] | None
     quality: dict[str, Any] = {}
-    model_config = ConfigDict()
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "key": "simcore/services/dynamic/sim4life",
+                "version": "1.0.9",
+                "name": "sim4life",
+                "description": "s4l web",
+                "thumbnail": "https://thumbnailit.org/image",
+                "quality": {
+                    "enabled": True,
+                    "tsr_target": {
+                        f"r{n:02d}": {"level": 4, "references": ""}
+                        for n in range(1, 11)
+                    },
+                    "annotations": {
+                        "vandv": "",
+                        "limitations": "",
+                        "certificationLink": "",
+                        "certificationStatus": "Uncertified",
+                    },
+                    "tsr_current": {
+                        f"r{n:02d}": {"level": 0, "references": ""}
+                        for n in range(1, 11)
+                    },
+                },
+            }
+        }
+    )

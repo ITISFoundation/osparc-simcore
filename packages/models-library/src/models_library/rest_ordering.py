@@ -15,4 +15,5 @@ class OrderBy(BaseModel):
 
     field: IDStr = Field()
     direction: OrderDirection = Field(default=OrderDirection.ASC)
+
     model_config = ConfigDict(extra="forbid")

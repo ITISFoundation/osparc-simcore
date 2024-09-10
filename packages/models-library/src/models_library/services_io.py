@@ -1,5 +1,5 @@
 import re
-from typing import Any, ClassVar
+from typing import Any
 
 from pydantic import (
     BaseModel,
@@ -10,7 +10,6 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     field_validator,
-    validator,
 )
 
 from .services_constants import ANY_FILETYPE
@@ -90,11 +89,10 @@ class BaseServiceIOModel(BaseModel):
         description="Units, when it refers to a physical quantity",
         deprecated=True,  # add x_unit in content_schema instead
     )
+
     model_config = ConfigDict(extra="forbid")
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("content_schema")
+    @field_validator("content_schema")
     @classmethod
     def _check_type_is_set_to_schema(cls, v, values):
         if v is not None and (ptype := values["property_type"]) != "ref_contentSchema":
@@ -103,7 +101,6 @@ class BaseServiceIOModel(BaseModel):
         return v
 
     @field_validator("content_schema")
-    @classmethod
     @classmethod
     def _check_valid_json_schema(cls, v):
         if v is not None:
@@ -151,10 +148,9 @@ class ServiceInput(BaseServiceIOModel):
         description="custom widget to use instead of the default one determined from the data-type",
     )
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(BaseServiceIOModel.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        **BaseServiceIOModel.model_config,
+        json_schema_extra={
             "examples": [
                 # file-wo-widget:
                 {
@@ -208,7 +204,8 @@ class ServiceInput(BaseServiceIOModel):
                     },
                 },
             ],
-        }
+        },
+    )
 
     @classmethod
     def from_json_schema(cls, port_schema: dict[str, Any]) -> "ServiceInput":
@@ -224,10 +221,9 @@ class ServiceOutput(BaseServiceIOModel):
         deprecated=True,
     )
 
-    # TODO[pydantic]: The `Config` class inherits from another class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config(BaseServiceIOModel.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        **BaseServiceIOModel.model_config,
+        json_schema_extra={
             "examples": [
                 {
                     "displayOrder": 2,
@@ -255,7 +251,8 @@ class ServiceOutput(BaseServiceIOModel):
                     "type": ANY_FILETYPE,
                 },
             ]
-        }
+        },
+    )
 
     @classmethod
     def from_json_schema(cls, port_schema: dict[str, Any]) -> "ServiceOutput":

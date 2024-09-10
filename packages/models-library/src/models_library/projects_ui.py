@@ -4,7 +4,7 @@
 
 from typing import Literal, TypedDict
 
-from pydantic import BaseModel, ConfigDict, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic_extra_types.color import Color
 
 from .projects_nodes_io import NodeID, NodeIDStr
@@ -30,7 +30,35 @@ class Annotation(BaseModel):
     type: Literal["note", "rect", "text"] = Field(...)
     color: Color = Field(...)
     attributes: dict = Field(..., description="svg attributes")
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "examples": [
+                {
+                    "type": "note",
+                    "color": "#FFFF00",
+                    "attributes": {
+                        "x": 415,
+                        "y": 100,
+                        "width": 117,
+                        "height": 26,
+                        "destinataryGid": 4,
+                        "text": "ToDo",
+                    },
+                },
+                {
+                    "type": "rect",
+                    "color": "#FF0000",
+                    "attributes": {"x": 415, "y": 100, "width": 117, "height": 26},
+                },
+                {
+                    "type": "text",
+                    "color": "#0000FF",
+                    "attributes": {"x": 415, "y": 100, "text": "Hey!"},
+                },
+            ]
+        },
+    )
 
 
 class StudyUI(BaseModel):
@@ -38,8 +66,9 @@ class StudyUI(BaseModel):
     slideshow: dict[NodeIDStr, Slideshow] | None = None
     current_node_id: NodeID | None = Field(default=None, alias="currentNodeId")
     annotations: dict[NodeIDStr, Annotation] | None = None
+
     model_config = ConfigDict(extra="allow")
 
-    _empty_is_none = validator("*", allow_reuse=True, pre=True)(
+    _empty_is_none = field_validator("*", mode="before")(
         empty_str_to_none_pre_validator
     )

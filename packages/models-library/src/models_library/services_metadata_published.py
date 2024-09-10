@@ -159,9 +159,22 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBaseDisplay):
         None,
         description="Image manifest digest. Note that this is NOT injected as an image label",
     )
+
     model_config = ConfigDict(
-        description="Description of a simcore node 'class' with input and output",
         extra="forbid",
         frozen=False,
         populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                _EXAMPLE,
+                _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,
+                # latest
+                {
+                    **_EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,
+                    "version_display": "Matterhorn Release",
+                    "description_ui": True,
+                    "release_date": "2024-05-31T13:45:30",
+                },
+            ]
+        },
     )

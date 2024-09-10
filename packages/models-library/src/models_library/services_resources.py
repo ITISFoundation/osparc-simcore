@@ -43,7 +43,6 @@ class ResourceValue(BaseModel):
 
     @model_validator()
     @classmethod
-    @classmethod
     def _ensure_limits_are_equal_or_above_reservations(cls, values):
         if isinstance(values["reservation"], str):
             # in case of string, the limit is the same as the reservation
@@ -93,7 +92,23 @@ class ImageResources(BaseModel):
         for resource in self.resources.values():
             resource.set_reservation_same_as_limit()
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "image": "simcore/service/dynamic/pretty-intense:1.0.0",
+                "resources": {
+                    "CPU": {"limit": 4, "reservation": 0.1},
+                    "RAM": {"limit": 103079215104, "reservation": 536870912},
+                    "VRAM": {"limit": 1, "reservation": 1},
+                    "AIRAM": {"limit": 1, "reservation": 1},
+                    "ANY_resource": {
+                        "limit": "some_value",
+                        "reservation": "some_value",
+                    },
+                },
+            }
+        }
+    )
 
 
 ServiceResourcesDict: TypeAlias = dict[DockerGenericTag, ImageResources]

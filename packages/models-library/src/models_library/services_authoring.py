@@ -16,7 +16,15 @@ class Badge(BaseModel):
         ...,
         description="Link to the status",
     )
-    model_config = ConfigDict()
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "osparc.io",
+                "image": "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation",
+                "url": "https://itisfoundation.github.io/",
+            }
+        }
+    )
 
 
 class Author(BaseModel):
@@ -29,4 +37,18 @@ class Author(BaseModel):
         description="Email address",
     )
     affiliation: str | None = Field(None)
-    model_config = ConfigDict()
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "name": "Jim Knopf",
+                    "email": "deleen@minbar.bab",
+                    "affiliation": "Babylon 5",
+                },
+                {
+                    "name": "John Smith",
+                    "email": "smith@acme.com",
+                },
+            ]
+        }
+    )

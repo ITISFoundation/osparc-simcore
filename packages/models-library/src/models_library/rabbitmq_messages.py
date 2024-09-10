@@ -35,7 +35,7 @@ class RabbitMessageBase(BaseModel):
     @classmethod
     def get_channel_name(cls) -> str:
         # NOTE: this returns the channel type name
-        name: str = cls.__fields__["channel_name"].default
+        name: str = cls.model_fields["channel_name"].default
         return name
 
     @abstractmethod
@@ -60,7 +60,7 @@ class NodeMessageBase(ProjectMessageBase):
 
 class LoggerRabbitMessage(RabbitMessageBase, NodeMessageBase):
     channel_name: Literal["simcore.services.logs.v2"] = "simcore.services.logs.v2"
-    node_id: NodeID | None = None  # type: ignore[assignment]
+    node_id: NodeID | None  # type: ignore[assignment]
     messages: list[LogMessageStr]
     log_level: LogLevelInt = logging.INFO
 
@@ -194,12 +194,12 @@ class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
         RabbitResourceTrackingMessageType.TRACKING_STARTED
     ] = RabbitResourceTrackingMessageType.TRACKING_STARTED
 
-    wallet_id: WalletID | None = None
-    wallet_name: str | None = None
+    wallet_id: WalletID | None
+    wallet_name: str | None
 
-    pricing_plan_id: int | None = None
-    pricing_unit_id: int | None = None
-    pricing_unit_cost_id: int | None = None
+    pricing_plan_id: int | None
+    pricing_unit_id: int | None
+    pricing_unit_cost_id: int | None
 
     product_name: str
     simcore_user_agent: str

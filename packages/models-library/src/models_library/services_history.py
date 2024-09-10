@@ -20,6 +20,7 @@ class Compatibility(BaseModel):
     can_update_to: CompatibleService = Field(
         ..., description="Latest compatible service at this moment"
     )
+
     model_config = ConfigDict(alias_generator=snake_to_camel, populate_by_name=True)
 
 
@@ -42,7 +43,32 @@ class ServiceRelease(BaseModel):
     compatibility: Compatibility | None = Field(
         default=None, description="Compatibility with other releases at this moment"
     )
-    model_config = ConfigDict(alias_generator=snake_to_camel, populate_by_name=True)
+
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                # minimal
+                {
+                    "version": "0.9.0",
+                },
+                # complete
+                {
+                    "version": "0.9.1",
+                    "version_display": "Matterhorn",
+                    "released": "2024-06-20T18:49:17",
+                    "retired": "2034-06-20T00:00:00",
+                    "compatibility": {
+                        "can_update_to": {
+                            "version": "0.9.10",
+                            "service": "simcore/services/comp/foo",
+                        }
+                    },
+                },
+            ]
+        },
+    )
 
 
 ReleaseHistory: TypeAlias = list[ServiceRelease]

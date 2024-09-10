@@ -16,12 +16,12 @@ WorkspaceID: TypeAlias = PositiveInt
 class WorkspaceDB(BaseModel):
     workspace_id: WorkspaceID
     name: str
-    description: str | None = None
+    description: str | None
     owner_primary_gid: PositiveInt = Field(
         ...,
         description="GID of the group that owns this wallet",
     )
-    thumbnail: str | None = None
+    thumbnail: str | None
     created: datetime = Field(
         ...,
         description="Timestamp on creation",
@@ -30,10 +30,12 @@ class WorkspaceDB(BaseModel):
         ...,
         description="Timestamp of last modification",
     )
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class UserWorkspaceAccessRightsDB(WorkspaceDB):
     my_access_rights: AccessRights
     access_rights: dict[GroupID, AccessRights]
+
     model_config = ConfigDict(from_attributes=True)
