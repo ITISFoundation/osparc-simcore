@@ -992,7 +992,7 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
-    // Function that create unique tabId even for duplicated tabs
+    // Function that creates a unique tabId even for duplicated tabs
     getClientSessionID: function() {
       let uniqueTabId = sessionStorage.getItem("tabId");
 
