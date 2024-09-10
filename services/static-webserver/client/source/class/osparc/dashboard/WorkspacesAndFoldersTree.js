@@ -30,6 +30,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     this.base(arguments, rootModel, "label", "children");
 
     this.set({
+      openMode: "dbltap",
       decorator: "no-border",
       font: "text-14",
       hideRoot: true,
