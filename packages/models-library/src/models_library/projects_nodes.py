@@ -3,18 +3,18 @@
 """
 
 from copy import deepcopy
-from typing import Any, TypeAlias, Union
+from typing import Annotated, Any, TypeAlias, Union
 
 from pydantic import (
     BaseModel,
     ConfigDict,
-    ConstrainedStr,
     Extra,
     Field,
     Json,
     StrictBool,
     StrictFloat,
     StrictInt,
+    StringConstraints,
     field_validator,
 )
 
@@ -62,9 +62,7 @@ OutputID: TypeAlias = KeyIDStr
 InputsDict: TypeAlias = dict[InputID, InputTypes]
 OutputsDict: TypeAlias = dict[OutputID, OutputTypes]
 
-
-class UnitStr(ConstrainedStr):
-    strip_whitespace = True
+UnitStr = Annotated[str, StringConstraints(strip_whitespace=True)]
 
 
 class NodeState(BaseModel):
@@ -86,7 +84,28 @@ class NodeState(BaseModel):
         le=1.0,
         description="current progress of the task if available (None if not started or not a computational task)",
     )
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "examples": [
+                {
+                    "modified": True,
+                    "dependencies": [],
+                    "currentStatus": "NOT_STARTED",
+                },
+                {
+                    "modified": True,
+                    "dependencies": ["42838344-03de-4ce2-8d93-589a5dcdfd05"],
+                    "currentStatus": "ABORTED",
+                },
+                {
+                    "modified": False,
+                    "dependencies": [],
+                    "currentStatus": "SUCCESS",
+                },
+            ]
+        },
+    )
 
 
 class Node(BaseModel):
@@ -190,7 +209,6 @@ class Node(BaseModel):
 
     @field_validator("thumbnail", mode="before")
     @classmethod
-    @classmethod
     def convert_empty_str_to_none(cls, v):
         if isinstance(v, str) and v == "":
             return None
@@ -203,7 +221,6 @@ class Node(BaseModel):
         return RunningState(v)
 
     @field_validator("state", mode="before")
-    @classmethod
     @classmethod
     def convert_from_enum(cls, v):
         if isinstance(v, str):

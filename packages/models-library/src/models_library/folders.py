@@ -16,7 +16,7 @@ FolderID: TypeAlias = PositiveInt
 class FolderDB(BaseModel):
     folder_id: FolderID
     name: str
-    parent_folder_id: FolderID | None = None
+    parent_folder_id: FolderID | None
     created_by_gid: GroupID = Field(
         ...,
         description="GID of the group that owns this wallet",
@@ -29,6 +29,7 @@ class FolderDB(BaseModel):
         ...,
         description="Timestamp of last modification",
     )
-    user_id: UserID | None = None
-    workspace_id: WorkspaceID | None = None
+    user_id: UserID | None
+    workspace_id: WorkspaceID | None
+
     model_config = ConfigDict(from_attributes=True)

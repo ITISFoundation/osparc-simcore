@@ -37,7 +37,6 @@ class InvitationInputs(BaseModel):
 
     @field_validator("issuer", mode="before")
     @classmethod
-    @classmethod
     def trim_long_issuers_to_max_length(cls, v):
         if v and isinstance(v, str):
             return v[:_MAX_LEN]
@@ -58,7 +57,7 @@ class InvitationContent(InvitationInputs):
         cls, invitation_inputs: InvitationInputs, default_product: ProductName
     ) -> "InvitationContent":
 
-        kwargs = invitation_inputs.dict(exclude_none=True)
+        kwargs = invitation_inputs.model_dump(exclude_none=True)
         kwargs.setdefault("product", default_product)
         return cls(
             created=datetime.now(tz=timezone.utc),

@@ -44,4 +44,15 @@ class Owner(BaseModel):
     )
     first_name: FirstNameStr | None = Field(..., description="Owner's first name")
     last_name: LastNameStr | None = Field(..., description="Owner's last name")
-    model_config = ConfigDict(extra="forbid")
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "examples": [
+                # NOTE: None and empty string are both defining an undefined value
+                {"user_id": 1, "first_name": None, "last_name": None},
+                {"user_id": 2, "first_name": "", "last_name": ""},
+                {"user_id": 3, "first_name": "John", "last_name": "Smith"},
+            ]
+        },
+    )

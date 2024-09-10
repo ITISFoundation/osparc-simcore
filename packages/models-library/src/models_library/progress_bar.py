@@ -14,7 +14,35 @@ class ProgressStructuredMessage(BaseModel):
     total: int
     unit: str | None = None
     sub: "ProgressStructuredMessage | None"
-    model_config = ConfigDict()
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "description": "some description",
+                    "current": 12.2,
+                    "total": 123,
+                },
+                {
+                    "description": "some description",
+                    "current": 12.2,
+                    "total": 123,
+                    "unit": "Byte",
+                },
+                {
+                    "description": "downloading",
+                    "current": 2.0,
+                    "total": 5,
+                    "sub": {
+                        "description": "port 2",
+                        "current": 12.2,
+                        "total": 123,
+                        "unit": "Byte",
+                    },
+                },
+            ]
+        }
+    )
 
 
 UNITLESS = None
@@ -50,4 +78,29 @@ class ProgressReport(BaseModel):
 
         return msg
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(
+        frozen=True,
+        json_schema_extra={
+            "examples": [
+                # typical percent progress (no units)
+                {
+                    "actual_value": 0.3,
+                    "total": 1.0,
+                },
+                # typical byte progress
+                {
+                    "actual_value": 128.5,
+                    "total": 1024.0,
+                    "unit": "Byte",
+                },
+                # typical progress with sub progresses
+                {
+                    "actual_value": 0.3,
+                    "total": 1.0,
+                    "message": ProgressStructuredMessage.Config.schema_extra[
+                        "examples"
+                    ][2],
+                },
+            ]
+        },
+    )

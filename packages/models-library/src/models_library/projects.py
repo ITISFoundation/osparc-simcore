@@ -16,7 +16,6 @@ from pydantic import (
     Extra,
     Field,
     field_validator,
-    validator,
 )
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
@@ -41,11 +40,13 @@ _DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 class ProjectIDStr(ConstrainedStr):
     regex = re.compile(UUID_RE_BASE)
+
     model_config = ConfigDict(frozen=True)
 
 
 class DateTimeStr(ConstrainedStr):
     regex = re.compile(DATE_RE)
+
     model_config = ConfigDict(frozen=True)
 
     @classmethod
@@ -90,11 +91,11 @@ class BaseProjectModel(BaseModel):
     workbench: NodesDict = Field(..., description="Project's pipeline")
 
     # validators
-    _empty_thumbnail_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+    _empty_thumbnail_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )
 
-    _none_description_is_empty = validator("description", allow_reuse=True, pre=True)(
+    _none_description_is_empty = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
     )
 
@@ -113,7 +114,6 @@ class ProjectAtDB(BaseProjectModel):
     )
 
     @field_validator("project_type", mode="before")
-    @classmethod
     @classmethod
     def convert_sql_alchemy_enum(cls, v):
         if isinstance(v, Enum):
