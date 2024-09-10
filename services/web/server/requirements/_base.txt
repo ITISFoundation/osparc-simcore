@@ -175,7 +175,7 @@ greenlet==2.0.2
     # via sqlalchemy
 grpcio==1.66.0
     # via opentelemetry-exporter-otlp-proto-grpc
-gunicorn==20.1.0
+gunicorn==23.0.0
     # via -r requirements/_base.in
 idna==3.3
     # via
@@ -352,10 +352,11 @@ orjson==3.10.0
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
-packaging==23.1
+packaging==24.1
     # via
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
+    #   gunicorn
 pamqp==3.2.1
     # via aiormq
 passlib==1.7.4
@@ -485,11 +486,10 @@ rich==13.4.2
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-setproctitle==1.2.3
+setproctitle==1.3.3
     # via gunicorn
 setuptools==69.1.1
     # via
-    #   gunicorn
     #   jsonschema
     #   openapi-spec-validator
     #   opentelemetry-instrumentation
