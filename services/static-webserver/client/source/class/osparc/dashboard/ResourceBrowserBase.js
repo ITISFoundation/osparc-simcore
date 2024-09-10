@@ -83,7 +83,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   statics: {
     PAGINATED_STUDIES: 10,
     MIN_GRID_CARDS_PER_ROW: 3,
-    SIDE_SPACER_WIDTH: 180,
+    SIDE_SPACER_WIDTH: 200,
 
     checkLoggedIn: function() {
       const isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
