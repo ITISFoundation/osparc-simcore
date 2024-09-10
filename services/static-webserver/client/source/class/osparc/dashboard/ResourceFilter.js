@@ -157,7 +157,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       osparc.store.Workspaces.fetchWorkspaces()
         .then(workspaces => {
           workspaces.forEach(workspace => {
-            const workspaceButton = new qx.ui.toolbar.RadioButton(workspace.getName(), osparc.store.Workspaces.iconPath(22));
+            const workspaceButton = new qx.ui.toolbar.RadioButton(null, osparc.store.Workspaces.iconPath(22));
+            workspace.bind("name", workspaceButton, "label");
             workspaceButton.workspaceId = workspace.getWorkspaceId();
             this.__workspaceButtons.push(workspaceButton);
             workspaceButton.set({

@@ -56,7 +56,7 @@ qx.Class.define("osparc.editor.FolderEditor", {
             font: "text-14",
             backgroundColor: "background-main",
             placeholder: this.tr("Title"),
-            height: 35
+            height: 27
           });
           this.bind("label", control, "value");
           control.bind("value", this, "label");
