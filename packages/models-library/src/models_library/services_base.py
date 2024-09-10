@@ -15,6 +15,7 @@ class ServiceKeyVersion(BaseModel):
         ...,
         description="service version number",
     )
+
     model_config = ConfigDict(frozen=True)
 
 

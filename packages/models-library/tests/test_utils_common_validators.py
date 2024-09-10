@@ -7,7 +7,7 @@ from models_library.utils.common_validators import (
     none_to_empty_str_pre_validator,
     null_or_none_str_to_none_validator,
 )
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, ValidationError, field_validator
 
 
 def test_enums_pre_validator():
@@ -20,7 +20,7 @@ def test_enums_pre_validator():
     class ModelWithPreValidator(BaseModel):
         color: Enum1
 
-        _from_equivalent_enums = validator("color", allow_reuse=True, pre=True)(
+        _from_equivalent_enums = field_validator("color", mode="before")(
             create_enums_pre_validator(Enum1)
         )
 
@@ -40,9 +40,9 @@ def test_enums_pre_validator():
 
 def test_empty_str_to_none_pre_validator():
     class Model(BaseModel):
-        nullable_message: str | None = None
+        nullable_message: str | None
 
-        _empty_is_none = validator("nullable_message", allow_reuse=True, pre=True)(
+        _empty_is_none = field_validator("nullable_message", mode="before")(
             empty_str_to_none_pre_validator
         )
 
@@ -54,7 +54,7 @@ def test_none_to_empty_str_pre_validator():
     class Model(BaseModel):
         message: str
 
-        _none_is_empty = validator("message", allow_reuse=True, pre=True)(
+        _none_is_empty = field_validator("message", mode="before")(
             none_to_empty_str_pre_validator
         )
 
@@ -64,11 +64,11 @@ def test_none_to_empty_str_pre_validator():
 
 def test_null_or_none_str_to_none_validator():
     class Model(BaseModel):
-        message: str | None = None
+        message: str | None
 
-        _null_or_none_str_to_none_validator = validator(
-            "message", allow_reuse=True, pre=True
-        )(null_or_none_str_to_none_validator)
+        _null_or_none_str_to_none_validator = field_validator("message", mode="before")(
+            null_or_none_str_to_none_validator
+        )
 
     model = Model.parse_obj({"message": "none"})
     assert model == Model.parse_obj({"message": None})

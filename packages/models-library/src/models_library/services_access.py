@@ -21,6 +21,7 @@ class ServiceGroupAccessRights(BaseModel):
 class ServiceGroupAccessRightsV2(BaseModel):
     execute: bool = False
     write: bool = False
+
     model_config = ConfigDict(
         alias_generator=snake_to_camel, populate_by_name=True, extra="forbid"
     )
