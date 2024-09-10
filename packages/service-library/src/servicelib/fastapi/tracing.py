@@ -33,7 +33,7 @@ def setup_tracing(
         or not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
     ):
         raise RuntimeError(
-            f"Variable opentelemetry_collector_endpoint [{tracing_settings.opentelemetry_collector_endpoint}] or opentelemetry_collector_port [{tracing_settings.opentelemetry_collector_port}] unset. Tracing options incomplete."
+            f"Variable opentelemetry_collector_endpoint [{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}] or opentelemetry_collector_port [{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT}] unset. Tracing options incomplete."
         )
     # Set up the tracer provider
     resource = Resource(attributes={"service.name": service_name})

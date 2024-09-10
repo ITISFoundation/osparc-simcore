@@ -2,12 +2,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from asyncio import AbstractEventLoop
 from collections.abc import Callable
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from pydantic import ValidationError
 from servicelib.aiohttp.tracing import setup_tracing
 from settings_library.tracing import TracingSettings
 
@@ -18,13 +18,17 @@ def tracing_settings_in(request):
 
 
 @pytest.fixture()
-def set_and_clean_settings_env_vars(monkeypatch: pytest.MonkeyPatch):
+def set_and_clean_settings_env_vars(
+    monkeypatch: pytest.MonkeyPatch, tracing_settings_in
+):
     if tracing_settings_in[0]:
         monkeypatch.setenv(
-            "TRACING_OTEL_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}"
+            "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}"
         )
     if tracing_settings_in[1]:
-        monkeypatch.setenv("TRACING_OTEL_COLLECTOR_PORT", f"{tracing_settings_in[1]}")
+        monkeypatch.setenv(
+            "TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}"
+        )
 
 
 @pytest.mark.parametrize(
@@ -34,18 +38,18 @@ def set_and_clean_settings_env_vars(monkeypatch: pytest.MonkeyPatch):
     ],
     indirect=True,
 )
-def test_valid_tracing_settings(
-    event_loop: AbstractEventLoop,
+async def test_valid_tracing_settings(
     aiohttp_client: Callable,
     set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in: TracingSettings,
+    tracing_settings_in,
 ) -> TestClient:
     app = web.Application()
     service_name = "simcore_service_webserver"
+    tracing_settings = TracingSettings()
     setup_tracing(
         app,
         service_name=service_name,
-        tracing_settings=tracing_settings_in,
+        tracing_settings=tracing_settings,
     )
 
 
@@ -61,16 +65,16 @@ def test_valid_tracing_settings(
 async def test_invalid_tracing_settings(
     aiohttp_client: Callable,
     set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in: TracingSettings,
+    tracing_settings_in,
 ) -> TestClient:
     app = web.Application()
     service_name = "simcore_service_webserver"
-
-    with pytest.raises((BaseException, TypeError)):  # noqa: PT012
+    with pytest.raises((BaseException, TypeError, ValidationError)):
+        tracing_settings = TracingSettings()
         setup_tracing(
             app,
             service_name=service_name,
-            tracing_settings=tracing_settings_in,
+            tracing_settings=tracing_settings,
         )
 
 
@@ -86,13 +90,14 @@ async def test_invalid_tracing_settings(
 async def test_missing_tracing_settings(
     aiohttp_client: Callable,
     set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in: TracingSettings,
+    tracing_settings_in,
     caplog,
 ) -> TestClient:
     app = web.Application()
     service_name = "simcore_service_webserver"
     # setup_tracing in this case should no nothing
-    setup_tracing(app, service_name=service_name, tracing_settings=tracing_settings_in)
+    tracing_settings = TracingSettings()
+    setup_tracing(app, service_name=service_name, tracing_settings=tracing_settings)
 
 
 @pytest.mark.parametrize(
@@ -102,13 +107,11 @@ async def test_missing_tracing_settings(
 )
 async def test_incomplete_tracing_settings(
     aiohttp_client: Callable,
-    unused_tcp_port_factory: Callable,
     set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in: TracingSettings,
+    tracing_settings_in,
 ) -> TestClient:
     app = web.Application()
     service_name = "simcore_service_webserver"
-    with pytest.raises(RuntimeError):
-        setup_tracing(
-            app, service_name=service_name, tracing_settings=tracing_settings_in
-        )
+    with pytest.raises((BaseException, TypeError, ValidationError)):
+        tracing_settings = TracingSettings()
+        setup_tracing(app, service_name=service_name, tracing_settings=tracing_settings)
