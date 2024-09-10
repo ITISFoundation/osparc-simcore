@@ -1085,6 +1085,43 @@ async def _notify_machine_creation_progress(
     )
 
 
+async def _drain_retired_nodes(
+    app: FastAPI,
+    cluster: Cluster,
+) -> Cluster:
+    if not cluster.retired_nodes:
+        return cluster
+
+    app_settings = get_application_settings(app)
+    docker_client = get_docker_client(app)
+    # drain this empty nodes
+    updated_nodes: list[Node] = await asyncio.gather(
+        *(
+            utils_docker.set_node_osparc_ready(
+                app_settings,
+                docker_client,
+                node.node,
+                ready=False,
+            )
+            for node in cluster.retired_nodes
+        )
+    )
+    if updated_nodes:
+        _logger.info(
+            "following nodes were set to drain: '%s'",
+            f"{[node.Description.Hostname for node in updated_nodes if node.Description]}",
+        )
+    newly_drained_instances = [
+        AssociatedInstance(node=node, ec2_instance=instance.ec2_instance)
+        for instance, node in zip(cluster.retired_nodes, updated_nodes, strict=True)
+    ]
+    return dataclasses.replace(
+        cluster,
+        retired_nodes=[],
+        drained_nodes=cluster.drained_nodes + newly_drained_instances,
+    )
+
+
 async def _autoscale_cluster(
     app: FastAPI,
     cluster: Cluster,
@@ -1191,6 +1228,7 @@ async def auto_scale_cluster(
     cluster = await _try_attach_pending_ec2s(
         app, cluster, auto_scaling_mode, allowed_instance_types
     )
+    cluster = await _drain_retired_nodes(app, cluster)
 
     cluster = await _autoscale_cluster(
         app, cluster, auto_scaling_mode, allowed_instance_types
