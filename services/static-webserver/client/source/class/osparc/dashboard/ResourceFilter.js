@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     this.__tagButtons = [];
     this.__serviceTypeButtons = [];
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(30));
     this.__buildLayout();
   },
 
@@ -51,29 +51,21 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __serviceTypeButtons: null,
 
     __buildLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(30));
-
       if (this.__resourceType === "study") {
-        layout.add(this.__createWorkspacesAndFoldersTree(), {
+        this._add(this.__createWorkspacesAndFoldersTree(), {
           flex: 1
         });
       } else {
-        layout.add(this.__createSharedWithFilterLayout());
+        this._add(this.__createSharedWithFilterLayout());
       }
 
       if (this.__resourceType !== "service") {
-        layout.add(this.__createTagsFilterLayout());
+        this._add(this.__createTagsFilterLayout());
       }
 
       if (this.__resourceType === "service") {
-        layout.add(this.__createServiceTypeFilterLayout());
+        this._add(this.__createServiceTypeFilterLayout());
       }
-
-      const scrollContainer = new qx.ui.container.Scroll();
-      scrollContainer.add(layout);
-      this._add(scrollContainer, {
-        flex: 1
-      });
     },
 
     __createWorkspacesAndFoldersTree: function() {
