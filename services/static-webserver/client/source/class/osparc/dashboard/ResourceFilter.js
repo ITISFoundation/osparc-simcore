@@ -51,7 +51,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __serviceTypeButtons: null,
 
     __buildLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(40));
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(30));
 
       if (this.__resourceType === "study") {
         layout.add(this.__createWorkspacesAndFoldersTree(), {
