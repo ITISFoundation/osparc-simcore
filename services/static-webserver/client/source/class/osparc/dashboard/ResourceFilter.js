@@ -83,6 +83,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       workspacesAndFoldersTree.addListener("selectionChanged", e => {
         const newContext = e.getData();
         console.log("newContext", newContext);
+        this.fireDataEvent("changeWorkspace", newContext.workspaceId);
       });
       return workspacesAndFoldersTree;
     },
