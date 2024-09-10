@@ -1,6 +1,6 @@
 import logging
 from enum import auto
-from typing import Any, ClassVar, Final, TypeAlias
+from typing import Any, Final, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -9,8 +9,8 @@ from pydantic import (
     Field,
     StrictFloat,
     StrictInt,
+    TypeAdapter,
     model_validator,
-    parse_obj_as,
 )
 
 from .docker import DockerGenericTag
@@ -24,13 +24,13 @@ ResourceName = str
 
 # NOTE: replace hard coded `container` with function which can
 # extract the name from the `service_key` or `registry_address/service_key`
-DEFAULT_SINGLE_SERVICE_NAME: Final[DockerGenericTag] = parse_obj_as(
-    DockerGenericTag, "container"
-)
+DEFAULT_SINGLE_SERVICE_NAME: Final[DockerGenericTag] = TypeAdapter(
+    DockerGenericTag
+).validate_python("container")
 
-MEMORY_50MB: Final[int] = parse_obj_as(ByteSize, "50mib")
-MEMORY_250MB: Final[int] = parse_obj_as(ByteSize, "250mib")
-MEMORY_1GB: Final[int] = parse_obj_as(ByteSize, "1gib")
+MEMORY_50MB: Final[int] = TypeAdapter(ByteSize).validate_python("50mib")
+MEMORY_250MB: Final[int] = TypeAdapter(ByteSize).validate_python("250mib")
+MEMORY_1GB: Final[int] = TypeAdapter(ByteSize).validate_python("1gib")
 
 GIGA: Final[float] = 1e9
 CPU_10_PERCENT: Final[int] = int(0.1 * GIGA)
@@ -123,8 +123,7 @@ class ServiceResourcesDictHelpers:
     ) -> ServiceResourcesDict:
         if boot_modes is None:
             boot_modes = [BootMode.CPU]
-        return parse_obj_as(
-            ServiceResourcesDict,
+        return TypeAdapter(ServiceResourcesDict).validate_python(
             {
                 DEFAULT_SINGLE_SERVICE_NAME: {
                     "image": image,
@@ -141,8 +140,8 @@ class ServiceResourcesDictHelpers:
         output: dict[DockerGenericTag, Any] = jsonable_encoder(service_resources)
         return output
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 # no compose spec (majority of services)
                 {
@@ -151,8 +150,10 @@ class ServiceResourcesDictHelpers:
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": parse_obj_as(ByteSize, "2Gib"),
-                                "reservation": parse_obj_as(ByteSize, "2Gib"),
+                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
+                                "reservation": TypeAdapter(ByteSize).validate_python(
+                                    "2Gib"
+                                ),
                             },
                         },
                         "boot_modes": [BootMode.CPU],
@@ -182,8 +183,10 @@ class ServiceResourcesDictHelpers:
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": parse_obj_as(ByteSize, "2Gib"),
-                                "reservation": parse_obj_as(ByteSize, "2Gib"),
+                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
+                                "reservation": TypeAdapter(ByteSize).validate_python(
+                                    "2Gib"
+                                ),
                             },
                         },
                         "boot_modes": [BootMode.CPU],
@@ -196,8 +199,10 @@ class ServiceResourcesDictHelpers:
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": parse_obj_as(ByteSize, "2Gib"),
-                                "reservation": parse_obj_as(ByteSize, "2Gib"),
+                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
+                                "reservation": TypeAdapter(ByteSize).validate_python(
+                                    "2Gib"
+                                ),
                             },
                         },
                         "boot_modes": [BootMode.CPU],
@@ -207,8 +212,10 @@ class ServiceResourcesDictHelpers:
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": parse_obj_as(ByteSize, "2Gib"),
-                                "reservation": parse_obj_as(ByteSize, "2Gib"),
+                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
+                                "reservation": TypeAdapter(ByteSize).validate_python(
+                                    "2Gib"
+                                ),
                             },
                         },
                         "boot_modes": [BootMode.CPU],
@@ -216,3 +223,4 @@ class ServiceResourcesDictHelpers:
                 },
             ]
         }
+    )

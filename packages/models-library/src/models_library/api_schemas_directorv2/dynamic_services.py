@@ -4,7 +4,7 @@ from pydantic import BaseModel, ByteSize, ConfigDict, Field
 
 from ..resource_tracker import HardwareInfo, PricingInfo
 from ..services import ServicePortKey
-from ..services_resources import ServiceResourcesDict
+from ..services_resources import ServiceResourcesDict, ServiceResourcesDictHelpers
 from ..wallets import WalletInfo
 from .dynamic_services_service import RunningDynamicServiceDetails, ServiceDetails
 
@@ -65,12 +65,18 @@ class DynamicServiceCreate(ServiceDetails):
                 "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "product_name": "osparc",
                 "can_save": True,
-                "service_resources": ServiceResourcesDictHelpers.Config.schema_extra[
+                "service_resources": ServiceResourcesDictHelpers.model_config[
+                    "json_schema_extra"
+                ]["examples"][0],
+                "wallet_info": WalletInfo.model_config["json_schema_extra"]["examples"][
+                    0
+                ],
+                "pricing_info": PricingInfo.model_config["json_schema_extra"][
                     "examples"
                 ][0],
-                "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
-                "pricing_info": PricingInfo.Config.schema_extra["examples"][0],
-                "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
+                "hardware_info": HardwareInfo.model_config["json_schema_extra"][
+                    "examples"
+                ][0],
             }
         }
     )
