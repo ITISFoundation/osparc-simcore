@@ -277,6 +277,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="If true, new nodes join the swarm as drained. If false as active.",
     )
 
+    AUTOSCALING_WAIT_FOR_CLOUD_INIT_BEFORE_WARM_BUFFER_ACTIVATION: bool = Field(
+        default=False,
+        description="If True, then explicitely wait for cloud-init process to be completed before issuing commands. "
+        "TIP: might be useful when cheap machines are used",
+    )
+
     @cached_property
     def LOG_LEVEL(self):  # noqa: N802
         return self.AUTOSCALING_LOGLEVEL
