@@ -22,6 +22,12 @@ _logger = logging.getLogger(__name__)
 async def create_async_engine_and_pg_database_ready(
     settings: PostgresSettings,
 ) -> AsyncEngine:
+    """
+    - creates asynio engine
+    - waits until db service is up
+    - waits until db data is migrated (i.e. ready to use)
+    - returns engine
+    """
     with log_context(
         _logger, logging.DEBUG, f"connection to db {settings.dsn_with_async_sqlalchemy}"
     ):
