@@ -27,10 +27,8 @@ async def transaction_context(
 ):
     async with get_or_create_connection(engine, connection) as conn:
         if conn.in_transaction():
-            # FIXME: should not extend nested? async with conn.begin_nested():
-            # depends on the analysis of test_sa_transactions
-            # might need another function that produces a transaction ONLY
-            yield conn
+            async with conn.begin_nested():  # savepoint
+                yield conn
         else:
             try:
                 async with conn.begin():
