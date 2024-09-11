@@ -3,8 +3,7 @@ from enum import StrEnum
 from re import Pattern
 from typing import Annotated, Final, TypeAlias
 
-from annotated_types import Ge, Gt, Lt
-from pydantic import HttpUrl, PositiveInt, StringConstraints
+from pydantic import Field, HttpUrl, PositiveInt, StringConstraints
 from pydantic_core import core_schema
 
 from .basic_regex import (
@@ -14,18 +13,18 @@ from .basic_regex import (
     UUID_RE,
 )
 
-NonNegativeDecimal = Annotated[Decimal, Ge(0)]
+NonNegativeDecimal = Annotated[Decimal, Field(ge=0)]
 
-PositiveDecimal = Annotated[Decimal, Gt(0)]
+PositiveDecimal = Annotated[Decimal, Field(gt=0)]
 
 # Used for amounts like credits or dollars
 # NOTE: upper limit to avoid https://github.com/ITISFoundation/appmotion-exchange/issues/2
 # NOTE: do not contraint in decimal places. Too strong validation error rather Decimal.quantize
 # before passing the value
-AmountDecimal = Annotated[Decimal, Gt(0), Lt(1e6)]
+AmountDecimal = Annotated[Decimal, Field(gt=0, lt=1e6)]
 
 # port number range
-PortInt = Annotated[int, Gt(0), Lt(65535)]
+PortInt = Annotated[int, Field(gt=0, lt=65535)]
 
 # e.g. 'v5'
 VersionTag = Annotated[str, StringConstraints(pattern=r"^v\d$")]
