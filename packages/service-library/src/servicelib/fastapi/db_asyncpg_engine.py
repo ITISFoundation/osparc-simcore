@@ -13,7 +13,13 @@ _logger = logging.getLogger(__name__)
 
 
 async def connect_to_db(app: FastAPI, settings: PostgresSettings) -> None:
-    engine = await create_async_engine_and_pg_database_ready(settings)
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        f"Connecting and migraging {settings.dsn_with_async_sqlalchemy}",
+    ):
+        engine = await create_async_engine_and_pg_database_ready(settings)
+
     app.state.engine = engine
     _logger.debug(
         "Setup engine: %s",
