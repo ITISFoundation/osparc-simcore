@@ -5,7 +5,7 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from . import _aiopg, _asyncpg
@@ -22,7 +22,7 @@ _logger = logging.getLogger(__name__)
 def setup_db(app: web.Application):
 
     # ensures keys exist
-    app[APP_DB_ENGINE_KEY] = None
+    app[APP_AIOPG_ENGINE_KEY] = None
 
     # async connection to db
     app.cleanup_ctx.append(_aiopg.postgres_cleanup_ctx)

@@ -29,7 +29,7 @@ async def create_async_engine_and_pg_database_ready(
     - returns engine
     """
     with log_context(
-        _logger, logging.DEBUG, f"connection to db {settings.dsn_with_async_sqlalchemy}"
+        _logger, logging.DEBUG, f"Connecting to {settings.dsn_with_async_sqlalchemy}"
     ):
         engine: AsyncEngine = create_async_engine(
             settings.dsn_with_async_sqlalchemy,
@@ -42,7 +42,9 @@ async def create_async_engine_and_pg_database_ready(
             future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
         )
 
-    with log_context(_logger, logging.DEBUG, "migration"):
+    with log_context(
+        _logger, logging.DEBUG, f"Migrating db {settings.dsn_with_async_sqlalchemy}"
+    ):
         try:
             await raise_if_migration_not_ready(engine)
         except Exception:

@@ -53,7 +53,7 @@ async def connect_to_db(app: web.Application, settings: PostgresSettings) -> Non
     _set_async_engine_to_app_state(app, engine)
 
     _logger.debug(
-        "Setup engine: %s",
+        "Setup asyncpg engine: %s",
         await get_pg_engine_stateinfo(engine),
     )
 
