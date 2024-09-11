@@ -82,7 +82,7 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
     for model_name, model_cls in inspect.getmembers(module, _is_model_cls):
         assert model_name  # nosec
         if (
-            (config_cls := model_cls.Config)
+            (config_cls := model_cls.model_config)
             and inspect.isclass(config_cls)
             and is_strict_inner(model_cls, config_cls)
             and (schema_extra := getattr(config_cls, "schema_extra", {}))

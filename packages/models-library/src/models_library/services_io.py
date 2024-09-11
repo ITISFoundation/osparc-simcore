@@ -8,6 +8,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StringConstraints,
+    ValidationInfo,
     field_validator,
 )
 
@@ -90,8 +91,11 @@ class BaseServiceIOModel(BaseModel):
 
     @field_validator("content_schema")
     @classmethod
-    def _check_type_is_set_to_schema(cls, v, values):
-        if v is not None and (ptype := values["property_type"]) != "ref_contentSchema":
+    def _check_type_is_set_to_schema(cls, v, info: ValidationInfo):
+        if (
+            v is not None
+            and (ptype := info.data["property_type"]) != "ref_contentSchema"
+        ):
             msg = f"content_schema is defined but set the wrong type. Expected type=ref_contentSchema but got ={ptype}."
             raise ValueError(msg)
         return v

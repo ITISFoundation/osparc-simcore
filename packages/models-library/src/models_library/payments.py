@@ -56,11 +56,11 @@ class InvoiceDataGet(BaseModel):
                     "credit_amount": Decimal(15.5),
                     "stripe_price_id": "stripe-price-id",
                     "stripe_tax_rate_id": "stripe-tax-rate-id",
-                    "user_invoice_address": UserInvoiceAddress.Config.schema_extra[
-                        "examples"
-                    ][0],
+                    "user_invoice_address": UserInvoiceAddress.model_config[
+                        "json_schema_extra"
+                    ]["examples"][0],
                     "user_display_name": "My Name",
-                    "user_email": LowerCaseEmailStr("email@example.itis"),
+                    "user_email": "email@example.itis",
                 },
             ]
         }

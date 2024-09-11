@@ -8,7 +8,7 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageProject,
     ProgressType,
 )
-from pydantic import parse_raw_as
+from pydantic import TypeAdapter
 
 faker = Faker()
 
@@ -40,8 +40,7 @@ faker = Faker()
     ],
 )
 async def test_raw_message_parsing(raw_data: str, class_type: type):
-    result = parse_raw_as(
-        Union[ProgressRabbitMessageNode, ProgressRabbitMessageProject],
-        raw_data,
-    )
+    result = TypeAdapter(
+        Union[ProgressRabbitMessageNode, ProgressRabbitMessageProject]
+    ).validate_json(raw_data)
     assert type(result) == class_type

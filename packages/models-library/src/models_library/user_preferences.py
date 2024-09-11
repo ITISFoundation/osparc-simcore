@@ -2,13 +2,10 @@ from enum import auto
 from typing import Annotated, Any, ClassVar, Literal, TypeAlias
 
 from pydantic import BaseModel, Field
-from pydantic.main import ModelMetaclass
+from pydantic._internal._model_construction import ModelMetaclass
 
 from .services import ServiceKey, ServiceVersion
 from .utils.enums import StrAutoEnum
-
-# NOTE: for pydantic-2 from pydantic._internal.import _model_construction
-# use _model_construction.ModelMetaclass instead!
 
 
 class _AutoRegisterMeta(ModelMetaclass):
