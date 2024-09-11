@@ -2,7 +2,7 @@ import logging
 from collections import deque
 from collections.abc import Coroutine
 from functools import cached_property
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -364,18 +364,19 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     async def pull_user_services_images(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> None:
+    ) -> int:
         response = await self._thin_client.post_containers_images_pull(
             dynamic_sidecar_endpoint
         )
         task_id: TaskId = response.json()
 
-        await self._await_for_result(
+        result: Any | None = await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
             self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_USER_SERVICES_PULLING_TIMEOUT,
             _debug_progress_callback,
         )
+        return cast(int, result)
 
     async def save_service_state(
         self,
@@ -416,18 +417,19 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: list[str] | None = None,
-    ) -> None:
+    ) -> int:
         response = await self._thin_client.post_containers_tasks_ports_outputs_pull(
             dynamic_sidecar_endpoint, port_keys
         )
         task_id: TaskId = response.json()
 
-        await self._await_for_result(
+        result: Any | None = await self._await_for_result(
             task_id,
             dynamic_sidecar_endpoint,
             self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             _debug_progress_callback,
         )
+        return cast(int, result)
 
     async def push_service_output_ports(
         self,

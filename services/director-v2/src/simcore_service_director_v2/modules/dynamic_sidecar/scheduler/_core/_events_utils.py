@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import time
 from typing import TYPE_CHECKING, Any, cast
 
 from fastapi import FastAPI
@@ -45,7 +46,10 @@ from .....models.dynamic_services_scheduler import (
     SchedulerData,
 )
 from .....modules.instrumentation._setup import get_instrumentation
-from .....modules.instrumentation._utils import get_start_stop_labels
+from .....modules.instrumentation._utils import (
+    get_label_from_size,
+    get_start_stop_labels,
+)
 from .....utils.db import get_repository
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
@@ -381,13 +385,9 @@ async def attempt_pod_removal_and_data_saving(
 
     stop_duration = scheduler_data.dynamic_sidecar.metrics_timers.get_stop_duration()
     if stop_duration:
-        get_instrumentation(
-            app
-        ).dynamic_sidecar_metrics.dy_sidecar_stop_time_seconds.labels(
+        get_instrumentation(app).dynamic_sidecar_metrics.stop_time_seconds.labels(
             **get_start_stop_labels(scheduler_data)
-        ).observe(
-            stop_duration
-        )
+        ).observe(stop_duration)
 
 
 async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -> None:
@@ -474,9 +474,37 @@ async def prepare_services_environment(
         )
     )
 
+    async def _pull_output_ports_with_metrics() -> None:
+        start_time = time.time()
+        size: int = await sidecars_client.pull_service_output_ports(
+            dynamic_sidecar_endpoint
+        )
+        duration = time.time() - start_time
+
+        get_instrumentation(
+            app
+        ).dynamic_sidecar_metrics.output_ports_pull_seconds.labels(
+            **get_label_from_size(size)
+        ).observe(
+            duration
+        )
+
+    async def _pull_user_services_images_with_metrics() -> None:
+        start_time = time.time()
+        size = await sidecars_client.pull_user_services_images(dynamic_sidecar_endpoint)
+        duration = time.time() - start_time
+
+        get_instrumentation(
+            app
+        ).dynamic_sidecar_metrics.pull_user_services_images_seconds.labels(
+            **get_label_from_size(size)
+        ).observe(
+            duration
+        )
+
     tasks = [
-        sidecars_client.pull_user_services_images(dynamic_sidecar_endpoint),
-        sidecars_client.pull_service_output_ports(dynamic_sidecar_endpoint),
+        _pull_user_services_images_with_metrics(),
+        _pull_output_ports_with_metrics(),
     ]
     # When enabled no longer downloads state via nodeports
     # S3 is used to store state paths
