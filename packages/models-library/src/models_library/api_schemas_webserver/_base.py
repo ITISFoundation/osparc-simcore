@@ -34,7 +34,6 @@ class OutputSchema(BaseModel):
         populate_by_name=True,
         extra="ignore",  # Used to prune extra fields from internal data
         frozen=True,
-        alias_generator=snake_to_camel,
     )
 
     def data(
