@@ -244,7 +244,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
             if (
               nStudies === 0 &&
-              this.getWorkspaceId() === null &&
+              this.getCurrentWorkspaceId() === null &&
               this.getCurrentFolderId() === null
             ) {
               const tutorialWindow = quickStart.tutorial();
