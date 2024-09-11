@@ -17,6 +17,7 @@ from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[impo
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db_asyncpg_utils import create_async_engine_and_pg_database_ready
+from ..logging_utils import log_context
 
 APP_DB_ASYNC_ENGINE_KEY: Final[str] = f"{__name__ }.AsyncEngine"
 
@@ -49,8 +50,14 @@ async def connect_to_db(app: web.Application, settings: PostgresSettings) -> Non
             update={"POSTGRES_CLIENT_NAME": settings.POSTGRES_CLIENT_NAME + "-asyncpg"}
         )
 
-    engine = await create_async_engine_and_pg_database_ready(settings)
-    _set_async_engine_to_app_state(app, engine)
+    with log_context(
+        _logger,
+        logging.INFO,
+        "Connecting app[APP_DB_ASYNC_ENGINE_KEY] to postgres with %s",
+        f"{settings=}",
+    ):
+        engine = await create_async_engine_and_pg_database_ready(settings)
+        _set_async_engine_to_app_state(app, engine)
 
     _logger.info(
         "app[APP_DB_ASYNC_ENGINE_KEY] ready : %s",
@@ -60,6 +67,8 @@ async def connect_to_db(app: web.Application, settings: PostgresSettings) -> Non
 
 async def close_db_connection(app: web.Application) -> None:
     engine = get_async_engine(app)
-    with log_context(_logger, logging.DEBUG, f"db disconnect of {engine}"):
+    with log_context(
+        _logger, logging.DEBUG, f"app[APP_DB_ASYNC_ENGINE_KEY] disconnect of {engine}"
+    ):
         if engine:
             await engine.dispose()

@@ -13,6 +13,7 @@ from aiopg.sa import Engine, create_engine
 from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.aiopg_utils import is_pg_responsive
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
+from servicelib.logging_utils import log_context
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from simcore_postgres_database.errors import DBAPIError
 from simcore_postgres_database.utils_aiopg import (
@@ -30,8 +31,6 @@ _logger = logging.getLogger(__name__)
 
 @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
 async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
-
-    _logger.info("Connecting to postgres with %s", f"{settings=}")
     engine: Engine = await create_engine(
         settings.dsn,
         application_name=settings.POSTGRES_CLIENT_NAME,
@@ -45,15 +44,21 @@ async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
         await close_engine(engine)
         raise
 
-    _logger.info("Connection to postgres with %s succeeded", f"{settings=}")
     return engine  # tenacity rules guarantee exit with exc
 
 
 async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
 
     settings = get_plugin_settings(app)
-    aiopg_engine = await _ensure_pg_ready(settings)
-    app[APP_AIOPG_ENGINE_KEY] = aiopg_engine
+
+    with log_context(
+        _logger,
+        logging.INFO,
+        "Connecting app[APP_AIOPG_ENGINE_KEY] to postgres with %s",
+        f"{settings=}",
+    ):
+        aiopg_engine = await _ensure_pg_ready(settings)
+        app[APP_AIOPG_ENGINE_KEY] = aiopg_engine
 
     _logger.info(
         "app[APP_AIOPG_ENGINE_KEY] created %s",
