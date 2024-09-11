@@ -65,7 +65,7 @@
       "category": "precomputed",
       "idToWidget": "newTIPlanButton"
     }, {
-      "disabled": true,
+      "showDisabled": true,
       "expectedTemplateLabel": "mcTI Planning Tool",
       "title": "Multichannel TI",
       "description": "",
@@ -73,7 +73,7 @@
       "category": "precomputed",
       "idToWidget": "newMTIPlanButton"
     }, {
-      "disabled": true,
+      "showDisabled": true,
       "expectedTemplateLabel": "pmTI Planning Tool",
       "title": "Phase-modulation TI",
       "description": "",
@@ -81,7 +81,7 @@
       "category": "precomputed",
       "idToWidget": "newPMTIPlanButton"
     }, {
-      "disabled": true,
+      "showDisabled": true,
       "expectedTemplateLabel": "personalized TI Planning Tool",
       "title": "Personalized<br>Classic TI",
       "description": "",
@@ -90,7 +90,7 @@
       "idToWidget": "personalizationNewTIPlanButton",
       "billable": true
     }, {
-      "disabled": true,
+      "showDisabled": true,
       "expectedTemplateLabel": "personalized mcTI Planning Tool",
       "title": "Personalized<br>Multichannel TI",
       "description": "",
@@ -99,7 +99,7 @@
       "idToWidget": "personalizationNewMTIPlanButton",
       "billable": true
     }, {
-      "disabled": true,
+      "showDisabled": true,
       "expectedTemplateLabel": "personalized pmTI Planning Tool",
       "title": "Personalized<br>Phase-modulation TI",
       "description": "",
