@@ -57,7 +57,6 @@
 
 qx.Class.define("osparc.data.Resources", {
   extend: qx.core.Object,
-
   type: "singleton",
 
   defer: function(statics) {
@@ -1320,6 +1319,21 @@ qx.Class.define("osparc.data.Resources", {
             status = req.getStatus();
           }
           res.dispose();
+
+          // If a 401 is received, make a call to the /me endpoint.
+          // If the backend responds with yet another 401, assume that the backend logged the user out
+          if (status === 401 && resource !== "profile" && osparc.auth.Manager.getInstance().isLoggedIn()) {
+            console.warn("Checking if user is logged in the backend");
+            this.fetch("profile", "getOne")
+              .catch(err => {
+                if ("status" in err && err.status === 401) {
+                  // Unauthorized again, the cookie might have expired.
+                  // We can assume that all calls after this will respond with 401, so bring the user ot the login page.
+                  qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You were logged out"));
+                }
+              });
+          }
+
           if ([404, 503].includes(status)) {
             message += "<br>Please try again later and/or contact support";
           }
