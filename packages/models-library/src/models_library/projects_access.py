@@ -28,20 +28,8 @@ class AccessRights(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class PositiveIntWithExclusiveMinimumRemoved(PositiveInt):
-    # As we are trying to match this Pydantic model to a historical json schema "project-v0.0.1" we need to remove this
-    # Pydantic does not support exclusiveMinimum boolean https://github.com/pydantic/pydantic/issues/4108
-    @classmethod
-    # TODO[pydantic]: We couldn't refactor `__modify_schema__`, please create the `__get_pydantic_json_schema__` manually.
-    # Check https://docs.pydantic.dev/latest/migration/#defining-custom-types for more information.
-    def __modify_schema__(cls, field_schema):
-        field_schema.pop("exclusiveMinimum", None)
-
-
 class Owner(BaseModel):
-    user_id: PositiveIntWithExclusiveMinimumRemoved = Field(
-        ..., description="Owner's user id"
-    )
+    user_id: PositiveInt = Field(..., description="Owner's user id")
     first_name: FirstNameStr | None = Field(..., description="Owner's first name")
     last_name: LastNameStr | None = Field(..., description="Owner's last name")
 

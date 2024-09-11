@@ -1,22 +1,15 @@
 """
     Models a study's project document
 """
-import re
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from typing import Any, Final, TypeAlias
 from uuid import UUID
 
+from models_library.basic_types import ConstrainedStr
 from models_library.workspaces import WorkspaceID
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    ConstrainedStr,
-    Extra,
-    Field,
-    field_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
 from .basic_types import HttpUrlWithCustomMinLength
@@ -39,15 +32,11 @@ _DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 class ProjectIDStr(ConstrainedStr):
-    regex = re.compile(UUID_RE_BASE)
-
-    model_config = ConfigDict(frozen=True)
+    pattern = UUID_RE_BASE
 
 
 class DateTimeStr(ConstrainedStr):
-    regex = re.compile(DATE_RE)
-
-    model_config = ConfigDict(frozen=True)
+    pattern = DATE_RE
 
     @classmethod
     def to_datetime(cls, s: "DateTimeStr"):
@@ -184,20 +173,16 @@ class Project(BaseProjectModel):
         alias="workspaceId",
     )
 
-    # TODO[pydantic]: We couldn't refactor this class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config:
-        description = "Document that stores metadata, pipeline and UI setup of a study"
-        title = "osparc-simcore project"
-        extra = Extra.forbid
+    def _patch_json_schema_extra(self, schema: dict) -> None:
+        # Patch to allow jsonschema nullable
+        # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
+        state_pydantic_schema = deepcopy(schema["properties"]["state"])
+        schema["properties"]["state"] = {
+            "anyOf": [{"type": "null"}, state_pydantic_schema]
+        }
 
-        @staticmethod
-        def schema_extra(schema: dict, _model: "Project"):
-            # pylint: disable=unsubscriptable-object
-
-            # Patch to allow jsonschema nullable
-            # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
-            state_pydantic_schema = deepcopy(schema["properties"]["state"])
-            schema["properties"]["state"] = {
-                "anyOf": [{"type": "null"}, state_pydantic_schema]
-            }
+    model_config = ConfigDict(
+        title="osparc-simcore project",
+        extra="forbid",
+        json_schema_extra=_patch_json_schema_extra,
+    )
