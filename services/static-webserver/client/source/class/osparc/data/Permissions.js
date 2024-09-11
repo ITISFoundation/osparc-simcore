@@ -115,6 +115,7 @@ qx.Class.define("osparc.data.Permissions", {
           "study.node.data.push",
           "study.node.data.delete",
           "study.node.export",
+          "study.node.bootOptions.read",
           "study.edge.create",
           "study.edge.delete",
           "study.classifier",
@@ -153,6 +154,7 @@ qx.Class.define("osparc.data.Permissions", {
         fromUserToTester = [
           "dashboard.templates.read",
           "dashboard.services.read",
+          "study.node.bootOptions.read",
           "study.slides.edit",
           "study.slides.stop"
         ];

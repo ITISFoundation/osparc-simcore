@@ -1,25 +1,34 @@
-.DEFAULT_GOAL := install
+.DEFAULT_GOAL := help
 
 SHELL := /bin/bash
 
+PYTHON_VERSION := $(or $(PYTHON), 3.11)
+
+
+.PHONY: hel%
+# thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
+hel%:
+	@echo "usage: make [target] ..."
+	@echo ""
+	@echo "Targets for '$(notdir $(CURDIR))':"
+	@echo ""
+	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+
 .venv:
 	# creating python virtual environment
-	@uv venv .venv
-	# installing python dependencies
-	@uv pip install --upgrade pip setuptools wheel
+	@uv venv --python=$(PYTHON_VERSION)
 
-
-install: .venv
-	# activating python virtual environment
-	@source .venv/bin/activate
+install: .venv ## installs using $PYTHON_VERSION or uses defaults
 	# installing package
-	@uv pip install .
+	@uv pip install --python=$(PYTHON_VERSION) .
 	# now you can call the maintenance scripts
 	# source .venv/bin/activate
 	# autoscaled-monitor --deploy-config PATH/TO/REPO.CONFIG summary
 
-install-dev: .venv
-	# activating python virtual environment
-	@source .venv/bin/activate
+install-dev: .venv ## installs in devel mode using PYTHON_VERSION or uses defaults
 	# installing package
 	@uv pip install -e .
+	# now you can call the maintenance scripts
+	# source .venv/bin/activate
+	# autoscaled-monitor --deploy-config PATH/TO/REPO.CONFIG summary

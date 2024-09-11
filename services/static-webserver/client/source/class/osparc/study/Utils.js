@@ -105,12 +105,13 @@ qx.Class.define("osparc.study.Utils", {
       return isRetired;
     },
 
-    createStudyFromService: function(key, version, existingStudies, newStudyLabel) {
+    createStudyFromService: function(key, version, existingStudies, newStudyLabel, contextProps = {}) {
       return new Promise((resolve, reject) => {
         osparc.store.Services.getService(key, version)
           .then(metadata => {
             const newUuid = osparc.utils.Utils.uuidV4();
-            const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+            // context props, otherwise Study will be created in the root folder of my personal workspace
+            const minStudyData = Object.assign(osparc.data.model.Study.createMinStudyObject(), contextProps);
             if (newStudyLabel === undefined) {
               newStudyLabel = metadata["name"];
             }
@@ -181,7 +182,7 @@ qx.Class.define("osparc.study.Utils", {
       });
     },
 
-    createStudyFromTemplate: function(templateData, loadingPage) {
+    createStudyFromTemplate: function(templateData, loadingPage, contextProps = {}) {
       return new Promise((resolve, reject) => {
         const inaccessibleServices = this.getInaccessibleServices(templateData["workbench"]);
         if (inaccessibleServices.length) {
@@ -191,7 +192,8 @@ qx.Class.define("osparc.study.Utils", {
           });
           return;
         }
-        const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+        // context props, otherwise Study will be created in the root folder of my personal workspace
+        const minStudyData = Object.assign(osparc.data.model.Study.createMinStudyObject(), contextProps);
         minStudyData["name"] = templateData["name"];
         minStudyData["description"] = templateData["description"];
         minStudyData["thumbnail"] = templateData["thumbnail"];
@@ -218,7 +220,7 @@ qx.Class.define("osparc.study.Utils", {
               if ("task_progress" in updateData && loadingPage) {
                 const progress = updateData["task_progress"];
                 const message = progress["message"];
-                const percent = progress["percent"];
+                const percent = progress["percent"] ? progress["percent"].toFixed(3) : progress["percent"];
                 progressSequence.setOverallProgress(percent);
                 const existingTask = progressSequence.getTask(message);
                 if (existingTask) {

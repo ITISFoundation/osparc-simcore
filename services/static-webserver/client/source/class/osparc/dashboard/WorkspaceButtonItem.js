@@ -85,10 +85,10 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       apply: "__applyAccessRights"
     },
 
-    lastModified: {
+    modifiedAt: {
       check: "Date",
       nullable: true,
-      apply: "__applyLastModified"
+      apply: "__applyModifiedAt"
     }
   },
 
@@ -157,7 +157,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
         converter: thumbnail => thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(-1)
       });
       workspace.bind("accessRights", this, "accessRights");
-      workspace.bind("lastModified", this, "lastModified");
+      workspace.bind("modifiedAt", this, "modifiedAt");
       workspace.bind("myAccessRights", this, "myAccessRights");
     },
 
@@ -180,33 +180,15 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           position: "bottom-right"
         });
 
-        const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
+        const editButton = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesome5Solid/pencil-alt/12");
         editButton.addListener("execute", () => {
           const workspace = this.getWorkspace();
-          const newWorkspace = false;
-          const workspaceEditor = new osparc.editor.WorkspaceEditor(newWorkspace).set({
-            label: workspace.getName(),
-            description: workspace.getDescription()
-          });
+          const workspaceEditor = new osparc.editor.WorkspaceEditor(workspace);
           const title = this.tr("Edit Workspace");
           const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 300, 200);
-          workspaceEditor.addListener("updateWorkspace", () => {
-            const newName = workspaceEditor.getLabel();
-            const newDescription = workspaceEditor.getDescription();
-            const updateData = {
-              "name": newName,
-              "description": newDescription
-            };
-            osparc.data.model.Workspace.putWorkspace(this.getWorkspaceId(), updateData)
-              .then(() => {
-                workspace.set({
-                  name: newName,
-                  description: newDescription
-                });
-                this.fireDataEvent("workspaceUpdated", workspace.getWorkspaceId());
-              })
-              .catch(err => console.error(err));
+          workspaceEditor.addListener("workspaceUpdated", () => {
             win.close();
+            this.fireDataEvent("workspaceUpdated", workspace.getWorkspaceId());
           });
           workspaceEditor.addListener("cancel", () => win.close());
         });
@@ -238,7 +220,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       }
     },
 
-    __applyLastModified: function(value) {
+    __applyModifiedAt: function(value) {
       const label = this.getChildControl("modified-text");
       label.setValue(osparc.utils.Utils.formatDateAndTime(value));
     },

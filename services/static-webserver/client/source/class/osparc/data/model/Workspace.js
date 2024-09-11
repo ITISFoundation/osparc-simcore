@@ -36,7 +36,7 @@ qx.Class.define("osparc.data.model.Workspace", {
       myAccessRights: workspaceData.myAccessRights,
       accessRights: workspaceData.accessRights,
       createdAt: new Date(workspaceData.createdAt),
-      lastModified: new Date(workspaceData.lastModified),
+      modifiedAt: new Date(workspaceData.modifiedAt),
     });
   },
 
@@ -90,19 +90,15 @@ qx.Class.define("osparc.data.model.Workspace", {
       event: "changeCreatedAt"
     },
 
-    lastModified: {
+    modifiedAt: {
       check: "Date",
       nullable: true,
       init: null,
-      event: "changeLastModified"
+      event: "changeModifiedAt"
     }
   },
 
   statics: {
-    putWorkspace: function(workspaceId, propKey, value) {
-      return osparc.store.Workspaces.putWorkspace(workspaceId, propKey, value);
-    },
-
     getProperties: function() {
       return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Workspace));
     }

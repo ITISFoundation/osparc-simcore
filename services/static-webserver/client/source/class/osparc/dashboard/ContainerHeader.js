@@ -109,17 +109,12 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
           const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
           rootButton = new qx.ui.form.Button(workspace.getName(), osparc.store.Workspaces.iconPath());
         }
-        rootButton.addListener("execute", () => this.set({
-          currentWorkspaceId: workspaceId,
-          currentFolderId: null,
-        }));
       } else {
         rootButton = new qx.ui.form.Button(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
-        rootButton.addListener("execute", () => this.set({
-          currentWorkspaceId: null,
-          currentFolderId: null,
-        }));
       }
+      rootButton.addListener("execute", () => this.set({
+        currentFolderId: null,
+      }));
       return rootButton;
     },
 

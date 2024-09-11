@@ -28,7 +28,7 @@ _S4L_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _S4L_DOCKER_PULLING_MAX_TIME + _S4L_MAX_STARTUP_TIME
 )
 _S4L_STARTUP_SCREEN_MAX_TIME: Final[int] = 45 * SECOND
-
+_S4L_COPY_WORKSPACE_TIME: Final[int] = 60 * SECOND
 
 @dataclass(kw_only=True)
 class S4LWaitForWebsocket:
@@ -84,7 +84,7 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
         return False
 
 
-def launch_S4L(page: Page, node_id, log_in_and_out: WebSocket, autoscaled: bool) -> Dict[str, Union[WebSocket, FrameLocator]]:
+def launch_S4L(page: Page, node_id, log_in_and_out: WebSocket, autoscaled: bool, copy_workspace: bool = False) -> Dict[str, Union[WebSocket, FrameLocator]]:
     with log_context(logging.INFO, "launch S4L") as ctx:
         predicate = S4LWaitForWebsocket(logger=ctx.logger)
         with page.expect_websocket(
@@ -94,6 +94,11 @@ def launch_S4L(page: Page, node_id, log_in_and_out: WebSocket, autoscaled: bool)
                 _S4L_AUTOSCALED_MAX_STARTUP_TIME
                 if autoscaled
                 else _S4L_MAX_STARTUP_TIME
+            )
+            + (
+                _S4L_COPY_WORKSPACE_TIME
+                if copy_workspace
+                else 0
             )
             + 10 * SECOND,
         ) as ws_info:
@@ -105,6 +110,11 @@ def launch_S4L(page: Page, node_id, log_in_and_out: WebSocket, autoscaled: bool)
                     _S4L_AUTOSCALED_MAX_STARTUP_TIME
                     if autoscaled
                     else _S4L_MAX_STARTUP_TIME
+                )
+                + (
+                    _S4L_COPY_WORKSPACE_TIME
+                    if copy_workspace
+                    else 0
                 ),
                 press_start_button=False,
             )

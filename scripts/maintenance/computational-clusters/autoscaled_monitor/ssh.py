@@ -164,7 +164,9 @@ async def get_dask_ip(
             if exit_status != 0:
                 error_message = stderr.read().decode().strip()
                 _logger.error(
-                    "Command failed with exit status %s: %s", exit_status, error_message
+                    "Inspecting dask IP Command failed with exit status %s: %s",
+                    exit_status,
+                    error_message,
                 )
                 return "Not Found / Drained / Not Ready"
 

@@ -29,6 +29,7 @@ class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attribut
     buffer_ec2s: TrackedGauge = field(init=False)
     disconnected_nodes: TrackedGauge = field(init=False)
     terminating_nodes: TrackedGauge = field(init=False)
+    retired_nodes: TrackedGauge = field(init=False)
     terminated_instances: TrackedGauge = field(init=False)
 
     def __post_init__(self) -> None:
@@ -154,13 +155,14 @@ class BufferPoolsMetrics(MetricsBase):
     def update_from_buffer_pool_manager(
         self, buffer_pool_manager: BufferPoolManager
     ) -> None:
-        for buffer_pool in buffer_pool_manager.buffer_pools.values():
-            for field_name in BUFFER_POOLS_METRICS_DEFINITIONS:
-                tracked_gauge = getattr(self, field_name)
-                assert isinstance(tracked_gauge, TrackedGauge)  # nosec
-                instances = getattr(buffer_pool, field_name)
-                assert isinstance(instances, set)  # nosec
-                tracked_gauge.update_from_instances(instances)
+        flat_pool = buffer_pool_manager.flatten_buffer_pool()
+
+        for field_name in BUFFER_POOLS_METRICS_DEFINITIONS:
+            tracked_gauge = getattr(self, field_name)
+            assert isinstance(tracked_gauge, TrackedGauge)  # nosec
+            instances = getattr(flat_pool, field_name)
+            assert isinstance(instances, set)  # nosec
+            tracked_gauge.update_from_instances(instances)
 
 
 @dataclass(slots=True, kw_only=True)

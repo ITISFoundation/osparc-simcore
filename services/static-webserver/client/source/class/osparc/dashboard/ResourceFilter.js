@@ -43,6 +43,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
   members: {
     __resourceType: null,
+    __contextLayout: null,
+    __contextRadioGroup: null,
     __sharedWithButtons: null,
     __workspaceButtons: null,
     __tagButtons: null,
@@ -70,9 +72,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     /* SHARED WITH */
     __createSharedWithFilterLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const layout = this.__contextLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const radioGroup = new qx.ui.form.RadioGroup();
+      const radioGroup = this.__contextRadioGroup = new qx.ui.form.RadioGroup();
       radioGroup.setAllowEmptySelection(false);
 
       const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
@@ -90,7 +92,15 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
             button.set({
               label: this.tr("My Workspace")
             });
-          } else {
+          } else if (option.id === "shared-with-me") {
+            button.set({
+              label: this.tr("Shared") + " " + osparc.product.Utils.getStudyAlias({
+                firstUpperCase: true,
+                plural: true,
+              })
+            });
+          }
+          if (option.id !== "show-all") {
             button.set({
               marginLeft: 15
             });
@@ -112,7 +122,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       });
 
       if (this.__resourceType === "study") {
-        this.__addWorkspaceButtons(layout, radioGroup);
+        this.__addWorkspaceButtons();
       }
 
       return layout;
@@ -120,31 +130,43 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     /* /SHARED WITH */
 
     /* WORKSPACES */
-    __addWorkspaceButtons: function(layout, radioGroup) {
-      layout.add(new qx.ui.core.Spacer());
+    __addWorkspaceButtons: function() {
+      this.__contextLayout.add(new qx.ui.core.Spacer());
       const workspacesButton = new qx.ui.toolbar.RadioButton(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath(22));
       workspacesButton.workspaceId = -1;
       workspacesButton.set({
         appearance: "filter-toggle-button"
       });
-      layout.add(workspacesButton);
-      radioGroup.add(workspacesButton);
+      this.__contextLayout.add(workspacesButton);
+      this.__contextRadioGroup.add(workspacesButton);
       workspacesButton.addListener("execute", () => {
         this.fireDataEvent("changeWorkspace", workspacesButton.workspaceId);
       });
 
+      this.reloadWorkspaceButtons();
+    },
+
+    reloadWorkspaceButtons: function() {
+      // remove first the workspaces
+      for (let i=this.__workspaceButtons.length-1; i >= 0; i--) {
+        const workspaceButton = this.__workspaceButtons[i];
+        this.__contextLayout.remove(workspaceButton);
+        this.__contextRadioGroup.remove(workspaceButton);
+      }
+      this.__workspaceButtons = [];
       osparc.store.Workspaces.fetchWorkspaces()
         .then(workspaces => {
           workspaces.forEach(workspace => {
-            const workspaceButton = new qx.ui.toolbar.RadioButton(workspace.getName(), osparc.store.Workspaces.iconPath(22));
+            const workspaceButton = new qx.ui.toolbar.RadioButton(null, osparc.store.Workspaces.iconPath(22));
+            workspace.bind("name", workspaceButton, "label");
             workspaceButton.workspaceId = workspace.getWorkspaceId();
             this.__workspaceButtons.push(workspaceButton);
             workspaceButton.set({
               appearance: "filter-toggle-button",
               marginLeft: 15,
             });
-            layout.add(workspaceButton);
-            radioGroup.add(workspaceButton);
+            this.__contextLayout.add(workspaceButton);
+            this.__contextRadioGroup.add(workspaceButton);
             workspaceButton.addListener("execute", () => {
               this.fireDataEvent("changeWorkspace", workspaceButton.workspaceId);
             }, this);
