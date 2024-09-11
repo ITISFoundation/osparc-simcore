@@ -103,11 +103,15 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         this._add(this.__flatList);
       }
 
-      let cards = [];
+      const newCards = [];
       this.__newStudies.forEach(resourceData => {
-        Array.prototype.push.apply(cards, this.__resourceToCards(resourceData));
+        const cards = this.__resourceToCards(resourceData);
+        cards.forEach(newCard => {
+          newCard.setEnabled(!(resourceData.showDisabled));
+          newCards.push(newCard);
+        });
       });
-      return cards;
+      return newCards;
     },
 
     __resourceToCards: function(resourceData) {
