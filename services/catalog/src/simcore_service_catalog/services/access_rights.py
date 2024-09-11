@@ -5,7 +5,7 @@
 import logging
 import operator
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, cast
 from urllib.parse import quote_plus
 
@@ -25,9 +25,7 @@ from ..utils.versioning import as_version, is_patch_release
 
 _logger = logging.getLogger(__name__)
 
-_LEGACY_SERVICES_DATE: datetime = datetime(
-    year=2020, month=8, day=19, tzinfo=timezone.utc
-)
+_LEGACY_SERVICES_DATE: datetime = datetime(year=2020, month=8, day=19, tzinfo=UTC)
 
 
 def _is_frontend_service(service: ServiceMetaDataPublished) -> bool:
@@ -46,9 +44,6 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
     )
     if not data or "build_date" not in data:
         return True
-
-    _logger.debug("retrieved service extras are %s", data)
-
     service_build_data = arrow.get(data["build_date"]).datetime
     return bool(service_build_data < _LEGACY_SERVICES_DATE)
 
@@ -63,6 +58,12 @@ async def evaluate_default_policy(
         1. All services published in osparc prior 19.08.2020 will be visible to everyone (refered as 'old service').
         2. Services published after 19.08.2020 will be visible ONLY to his/her owner
         3. Front-end services are have execute-access to everyone
+
+
+    Raises:
+        HTTPException: from calls to director's rest API. Maps director errors into catalog's server error
+        SQLAlchemyError: from access to pg database
+        ValidationError: from pydantic model errors
     """
     db_engine: AsyncEngine = app.state.engine
 
