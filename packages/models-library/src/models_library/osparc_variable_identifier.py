@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Any, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
 from pydantic.errors import PydanticErrorMixin
 
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
@@ -9,21 +9,21 @@ from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
 T = TypeVar("T")
 
 
-class OsparcVariableIdentifier(BaseModel):
+class OsparcVariableIdentifier(RootModel[str]):
     # NOTE: To allow parametrized value, set the type to Union[OsparcVariableIdentifier, ...]
     # NOTE: When dealing with str types, to avoid unexpected behavior, the following
     # order is suggested `OsparcVariableIdentifier | str`
-    __root__: str = Field(
+    root: str = Field(
         ...,
         # NOTE: in below regex `{`` and `}` are respectively escaped with `{{` and `}}`
         pattern=rf"^\${{1,2}}(?:\{{)?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+(?:\}})?(:-.+)?$",
     )
 
     def __hash__(self):
-        return hash(str(self.__root__))
+        return hash(str(self.root))
 
     def __eq__(self, other):
-        return self.__root__ == other.__root__
+        return self.root == other.root
 
     def _get_without_template_markers(self) -> str:
         # $VAR
@@ -32,7 +32,7 @@ class OsparcVariableIdentifier(BaseModel):
         # ${VAR:-default}
         # ${VAR:-{}}
         return (
-            self.__root__.removeprefix("$$")
+            self.root.removeprefix("$$")
             .removeprefix("$")
             .removeprefix("{")
             .removesuffix("}")
