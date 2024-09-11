@@ -194,7 +194,7 @@ async def list_projects_access_rights(
     shared_workspace_query = (
         sa.select(
             projects.c.uuid,
-            access_rights_subquery.c.access_rights,
+            workspace_access_rights_subquery.c.access_rights,
         )
         .select_from(
             projects.join(
@@ -264,7 +264,7 @@ async def get_project_access_rights(
     shared_workspace_query = (
         sa.select(
             projects.c.prj_owner,
-            access_rights_subquery.c.access_rights,
+            workspace_access_rights_subquery.c.access_rights,
         )
         .select_from(
             projects.join(

@@ -352,7 +352,6 @@ class ProjectDBAPI(BaseProjectDB):
 
         async with self.engine.acquire() as conn:
 
-            # if workspace_is_private:
             access_rights_subquery = (
                 sa.select(
                     project_to_groups.c.project_uuid,
@@ -373,29 +372,6 @@ class ProjectDBAPI(BaseProjectDB):
                     .label("access_rights"),
                 ).group_by(project_to_groups.c.project_uuid)
             ).subquery("access_rights_subquery")
-            # else:
-            #     access_rights_subquery = (
-            #         sa.select(
-            #             workspaces_access_rights.c.workspace_id,
-            #             sa.func.jsonb_object_agg(
-            #                 workspaces_access_rights.c.gid,
-            #                 sa.func.jsonb_build_object(
-            #                     "read",
-            #                     workspaces_access_rights.c.read,
-            #                     "write",
-            #                     workspaces_access_rights.c.write,
-            #                     "delete",
-            #                     workspaces_access_rights.c.delete,
-            #                 ),
-            #             )
-            #             .filter(
-            #                 workspaces_access_rights.c.read  # Filters out entries where "read" is False
-            #             )
-            #             .label("access_rights"),
-            #         )
-            #         .where(workspaces_access_rights.c.workspace_id == workspace_id)
-            #         .group_by(workspaces_access_rights.c.workspace_id)
-            #     ).subquery("access_rights_subquery")
 
             _join_query = (
                 projects.join(projects_to_products, isouter=True)
