@@ -157,6 +157,7 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
         case "osparc":
           return this.self().osparcTemplates;
         case "tis":
+        case "tiplite":
           return this.self().tipTemplates;
         default:
           return this.self().defaultTemplates.sort();

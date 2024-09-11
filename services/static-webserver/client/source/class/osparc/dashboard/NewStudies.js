@@ -18,11 +18,12 @@
 qx.Class.define("osparc.dashboard.NewStudies", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newStudies, groups) {
+  construct: function(newStudiesData) {
     this.base(arguments);
 
-    this.__newStudies = newStudies;
-    this.__groups = groups || [];
+    const newButtonsInfo = newStudiesData.resources;
+    this.__groups = newStudiesData.categories || [];
+    this.__groupedContainers = [];
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
@@ -35,7 +36,18 @@ qx.Class.define("osparc.dashboard.NewStudies", {
     });
     this._add(this.__flatList);
 
-    this.__groupedContainers = [];
+    osparc.data.Resources.get("templates")
+      .then(templates => {
+        const displayTemplates = newButtonsInfo.filter(newButtonInfo => {
+          if (newButtonInfo.showDisabled) {
+            return true;
+          }
+          return templates.find(t => t.name === newButtonInfo.expectedTemplateLabel);
+        });
+        this.__newStudies = displayTemplates;
+      })
+      .catch(console.error)
+      .finally(() => this.fireEvent("templatesLoaded"));
   },
 
   properties: {
@@ -48,7 +60,8 @@ qx.Class.define("osparc.dashboard.NewStudies", {
   },
 
   events: {
-    "newStudyClicked": "qx.event.type.Data"
+    "templatesLoaded": "qx.event.type.Event",
+    "newStudyClicked": "qx.event.type.Data",
   },
 
   statics: {
@@ -89,11 +102,15 @@ qx.Class.define("osparc.dashboard.NewStudies", {
         this._add(this.__flatList);
       }
 
-      let cards = [];
+      const newCards = [];
       this.__newStudies.forEach(resourceData => {
-        Array.prototype.push.apply(cards, this.__resourceToCards(resourceData));
+        const cards = this.__resourceToCards(resourceData);
+        cards.forEach(newCard => {
+          newCard.setEnabled(!(resourceData.showDisabled));
+          newCards.push(newCard);
+        });
       });
-      return cards;
+      return newCards;
     },
 
     __resourceToCards: function(resourceData) {
