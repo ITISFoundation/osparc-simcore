@@ -124,7 +124,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
         let text = "";
         if (osparc.product.Utils.isProduct("tiplite")) {
-          text = "1) The TIP tool is designed for research purposes only and is not intended for clinical use."
+          text = "The TIP tool is designed for research purposes only and is not intended for clinical use."
         } else {
           text = `
             1) The TIP tool is designed for research purposes only and is not intended for clinical use.
