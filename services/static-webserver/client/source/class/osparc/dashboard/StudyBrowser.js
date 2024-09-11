@@ -795,8 +795,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                   newStudyBtn.addListener("execute", () => {
                     newStudyBtn.setValue(false);
 
-                    const newStudies = new osparc.dashboard.NewStudies(newStudiesData[product]);
-                    newStudies.setGroupBy("category");
+                    const groupBy = "category";
+                    const newStudies = new osparc.dashboard.NewStudies(newStudiesData[product], groupBy);
                     const winTitle = this.tr("New Plan");
                     const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
                       clickAwayClose: false,

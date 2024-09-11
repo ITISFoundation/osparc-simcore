@@ -18,7 +18,7 @@
 qx.Class.define("osparc.dashboard.NewStudies", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newStudiesData) {
+  construct: function(newStudiesData, groupBy) {
     this.base(arguments);
 
     this.__newStudiesData = newStudiesData;
@@ -48,6 +48,12 @@ qx.Class.define("osparc.dashboard.NewStudies", {
           flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
         });
         this._add(this.__flatList);
+
+        if (groupBy) {
+          this.setGroupBy(groupBy);
+        } else {
+          this.reloadCards();
+        }
       });
   },
 
