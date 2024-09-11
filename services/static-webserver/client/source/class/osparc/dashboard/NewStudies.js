@@ -18,14 +18,23 @@
 qx.Class.define("osparc.dashboard.NewStudies", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newStudiesData, groupBy) {
+  construct: function(newStudiesData) {
     this.base(arguments);
 
-    this.__newStudiesData = newStudiesData;
     const newButtonsInfo = newStudiesData.resources;
-    const groups = newStudiesData.categories;
-
+    this.__groups = newStudiesData.categories || [];
     this.__groupedContainers = [];
+
+    this._setLayout(new qx.ui.layout.VBox(10));
+
+    const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+    [
+      "changeSelection",
+      "changeVisibility"
+    ].forEach(signalName => {
+      flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
+    });
+    this._add(this.__flatList);
 
     osparc.data.Resources.get("templates")
       .then(templates => {
@@ -36,25 +45,9 @@ qx.Class.define("osparc.dashboard.NewStudies", {
           return templates.find(t => t.name === newButtonInfo.expectedTemplateLabel);
         });
         this.__newStudies = displayTemplates;
-        this.__groups = groups || [];
-
-        this._setLayout(new qx.ui.layout.VBox(10));
-
-        const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
-        [
-          "changeSelection",
-          "changeVisibility"
-        ].forEach(signalName => {
-          flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
-        });
-        this._add(this.__flatList);
-
-        if (groupBy) {
-          this.setGroupBy(groupBy);
-        } else {
-          this.reloadCards();
-        }
-      });
+      })
+      .catch(console.error)
+      .finally(() => this.fireEvent("templatesLoaded"));
   },
 
   properties: {
@@ -67,7 +60,8 @@ qx.Class.define("osparc.dashboard.NewStudies", {
   },
 
   events: {
-    "newStudyClicked": "qx.event.type.Data"
+    "templatesLoaded": "qx.event.type.Event",
+    "newStudyClicked": "qx.event.type.Data",
   },
 
   statics: {
@@ -75,7 +69,6 @@ qx.Class.define("osparc.dashboard.NewStudies", {
   },
 
   members: {
-    __newStudiesData: null,
     __newStudies: null,
     __groups: null,
     __flatList: null,
