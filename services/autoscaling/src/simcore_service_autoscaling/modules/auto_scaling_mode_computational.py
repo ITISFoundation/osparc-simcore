@@ -178,5 +178,13 @@ class ComputationalAutoscaling(BaseAutoscaling):
         )
 
     @staticmethod
+    async def is_instance_retired(app: FastAPI, instance: AssociatedInstance) -> bool:
+        if not utils_docker.is_node_osparc_ready(instance.node):
+            return False
+        return await dask.is_worker_retired(
+            _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
+        )
+
+    @staticmethod
     async def try_retire_nodes(app: FastAPI) -> None:
         await dask.try_retire_nodes(_scheduler_url(app), _scheduler_auth(app))
