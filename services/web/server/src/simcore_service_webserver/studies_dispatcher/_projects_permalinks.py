@@ -8,7 +8,7 @@ from pydantic import HttpUrl, parse_obj_as
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import ProjectType, projects
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_aiopg_engine
 from ..projects.api import ProjectPermalink, register_permalink_factory
 from ..projects.exceptions import PermalinkNotAllowedError, ProjectNotFoundError
 from ..utils_aiohttp import create_url_for_function
@@ -77,7 +77,7 @@ async def permalink_factory(
 
     """
     # NOTE: next iterations will mobe this as part of the project repository pattern
-    engine = get_database_engine(request.app)
+    engine = get_aiopg_engine(request.app)
     async with engine.acquire() as conn:
         access_rights_subquery = (
             sa.select(

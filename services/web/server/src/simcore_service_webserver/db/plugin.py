@@ -30,10 +30,10 @@ def setup_db(app: web.Application):
 
 
 # aiopg helpers
-get_database_engine = _aiopg.get_database_engine
-get_engine_state = _aiopg.get_engine_state
+get_aiopg_engine = _aiopg.get_database_engine
+get_aiopg_engine_state = _aiopg.get_engine_state
 is_service_responsive = _aiopg.is_service_responsive
 is_service_enabled = _aiopg.is_service_enabled
 
 # asyncpg helpers
-get_async_engine = _asyncpg.get_async_engine
+get_asyncpg_engine = _asyncpg.get_async_engine

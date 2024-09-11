@@ -26,7 +26,7 @@ from pytest_simcore.helpers.webserver_projects import assert_get_same_project
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.tags import tags
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.db.plugin import get_database_engine
+from simcore_service_webserver.db.plugin import get_aiopg_engine
 from simcore_service_webserver.projects.models import ProjectDict
 
 
@@ -122,7 +122,7 @@ async def test_tags_to_studies(
 @pytest.fixture
 async def everybody_tag_id(client: TestClient) -> AsyncIterator[int]:
     assert client.app
-    engine = get_database_engine(client.app)
+    engine = get_aiopg_engine(client.app)
     assert engine
 
     async with engine.acquire() as conn:

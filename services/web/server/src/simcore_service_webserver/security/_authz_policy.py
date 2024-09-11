@@ -15,7 +15,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.errors import DatabaseError
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_aiopg_engine
 from ._authz_access_model import (
     AuthContextDict,
     OptionalContext,
@@ -58,7 +58,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             web.HTTPServiceUnavailable: if database raises an exception
         """
         with _handle_exceptions_as_503():
-            return await get_active_user_or_none(get_database_engine(self._app), email)
+            return await get_active_user_or_none(get_aiopg_engine(self._app), email)
 
     @cached(
         ttl=_AUTHZ_BURST_CACHE_TTL,
@@ -74,7 +74,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         """
         with _handle_exceptions_as_503():
             return await is_user_in_product_name(
-                get_database_engine(self._app), user_id, product_name
+                get_aiopg_engine(self._app), user_id, product_name
             )
 
     @property

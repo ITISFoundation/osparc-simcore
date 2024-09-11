@@ -8,7 +8,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import parse_obj_as
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_aiopg_engine
 from . import _metadata_db
 from ._access_rights_api import validate_project_ownership
 
@@ -21,7 +21,7 @@ async def get_project_custom_metadata(
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
     return await _metadata_db.get_project_custom_metadata(
-        engine=get_database_engine(app), project_uuid=project_uuid
+        engine=get_aiopg_engine(app), project_uuid=project_uuid
     )
 
 
@@ -34,7 +34,7 @@ async def set_project_custom_metadata(
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
     return await _metadata_db.set_project_custom_metadata(
-        engine=get_database_engine(app),
+        engine=get_aiopg_engine(app),
         project_uuid=project_uuid,
         custom_metadata=value,
     )
@@ -49,7 +49,7 @@ async def _project_has_ancestors(
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
     return await _metadata_db.project_has_ancestors(
-        engine=get_database_engine(app), project_uuid=project_uuid
+        engine=get_aiopg_engine(app), project_uuid=project_uuid
     )
 
 
@@ -74,11 +74,11 @@ async def set_project_ancestors_from_custom_metadata(
 
         # let's try to get the parent project UUID
         parent_project_uuid = await _metadata_db.get_project_id_from_node_id(
-            get_database_engine(app), node_id=parent_node_id
+            get_aiopg_engine(app), node_id=parent_node_id
         )
 
         await _metadata_db.set_project_ancestors(
-            get_database_engine(app),
+            get_aiopg_engine(app),
             project_uuid=project_uuid,
             parent_project_uuid=parent_project_uuid,
             parent_node_id=parent_node_id,
@@ -95,7 +95,7 @@ async def set_project_ancestors(
     await validate_project_ownership(app, user_id=user_id, project_uuid=project_uuid)
 
     await _metadata_db.set_project_ancestors(
-        get_database_engine(app),
+        get_aiopg_engine(app),
         project_uuid=project_uuid,
         parent_project_uuid=parent_project_uuid,
         parent_node_id=parent_node_id,

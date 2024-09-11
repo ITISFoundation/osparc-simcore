@@ -20,7 +20,7 @@ from simcore_postgres_database.utils_users import UsersRepo
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 
 from ..db.models import user_to_groups
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_aiopg_engine
 from .exceptions import BillingDetailsNotFoundError
 from .schemas import Permission
 
@@ -67,7 +67,7 @@ async def list_user_permissions(
         allowed=False,
     )
     with contextlib.suppress(GroupExtraPropertiesNotFoundError):
-        async with get_database_engine(app).acquire() as conn:
+        async with get_aiopg_engine(app).acquire() as conn:
             user_group_extra_properties = (
                 await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
                     conn, user_id=user_id, product_name=product_name

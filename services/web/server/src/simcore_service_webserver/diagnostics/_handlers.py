@@ -116,7 +116,7 @@ async def get_app_status(request: web.Request):
     async def _check_pg():
         check.services["postgres"] = {
             "healthy": await plugin.is_service_responsive(request.app),
-            "pool": plugin.get_engine_state(request.app),
+            "pool": plugin.get_aiopg_engine_state(request.app),
         }
 
     async def _check_storage():

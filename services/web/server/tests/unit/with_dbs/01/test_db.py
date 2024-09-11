@@ -5,6 +5,7 @@
 
 from pathlib import Path
 
+import aiopg.sa
 import yaml
 from aiohttp.test_utils import TestServer
 from simcore_service_webserver.application_settings import (
@@ -12,14 +13,15 @@ from simcore_service_webserver.application_settings import (
     get_application_settings,
 )
 from simcore_service_webserver.db.plugin import (
-    get_async_engine,
+    get_aiopg_engine,
+    get_asyncpg_engine,
     is_service_enabled,
     is_service_responsive,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
-def test_async_engine_in_app_state(web_server: TestServer):
+def test_engines_in_app_state(web_server: TestServer):
     app = web_server.app
     assert app
     settings: ApplicationSettings = get_application_settings(app)
@@ -28,8 +30,13 @@ def test_async_engine_in_app_state(web_server: TestServer):
     assert settings.WEBSERVER_DB
     assert settings.WEBSERVER_DB.POSTGRES_CLIENT_NAME
 
-    engine: AsyncEngine = get_async_engine(app)
+    engine: AsyncEngine = get_asyncpg_engine(app)
     assert engine
+    assert isinstance(engine, AsyncEngine)
+
+    aiopg_engine = get_aiopg_engine(app)
+    assert aiopg_engine
+    assert isinstance(aiopg_engine, aiopg.sa.Engine)
 
 
 def test_uses_same_postgres_version(

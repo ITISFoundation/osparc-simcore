@@ -16,7 +16,7 @@ from simcore_postgres_database.models.workspaces_access_rights import (
 from sqlalchemy import func, literal_column
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_aiopg_engine
 from .errors import WorkspaceGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ async def create_workspace_group(
     write: bool,
     delete: bool,
 ) -> WorkspaceGroupGetDB:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         result = await conn.execute(
             workspaces_access_rights.insert()
             .values(
@@ -83,7 +83,7 @@ async def list_workspace_groups(
         .where(workspaces_access_rights.c.workspace_id == workspace_id)
     )
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
         rows = await result.fetchall() or []
         return [WorkspaceGroupGetDB.from_orm(row) for row in rows]
@@ -110,7 +110,7 @@ async def get_workspace_group(
         )
     )
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
         row = await result.first()
         if row is None:
@@ -129,7 +129,7 @@ async def update_workspace_group(
     write: bool,
     delete: bool,
 ) -> WorkspaceGroupGetDB:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         result = await conn.execute(
             workspaces_access_rights.update()
             .values(
@@ -156,7 +156,7 @@ async def delete_workspace_group(
     workspace_id: WorkspaceID,
     group_id: GroupID,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         await conn.execute(
             workspaces_access_rights.delete().where(
                 (workspaces_access_rights.c.workspace_id == workspace_id)

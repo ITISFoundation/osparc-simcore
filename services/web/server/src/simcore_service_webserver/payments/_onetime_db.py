@@ -21,7 +21,7 @@ from simcore_postgres_database.utils_payments import (
     update_payment_transaction_state,
 )
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_aiopg_engine
 from .errors import PaymentCompletedError, PaymentNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ async def list_user_payment_transactions(
 
     Sorted by newest-first
     """
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         total_number_of_items, rows = await get_user_payments_transactions(
             conn, user_id=user_id, offset=offset, limit=limit
         )
@@ -69,7 +69,7 @@ async def list_user_payment_transactions(
 
 
 async def get_pending_payment_transactions_ids(app: web.Application) -> list[PaymentID]:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         result = await conn.execute(
             sa.select(payments_transactions.c.payment_id)
             .where(payments_transactions.c.completed_at == None)  # noqa: E711
@@ -97,7 +97,7 @@ async def complete_payment_transaction(
     if invoice_url:
         optional_kwargs["invoice_url"] = invoice_url
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         row = await update_payment_transaction_state(
             conn,
             payment_id=payment_id,

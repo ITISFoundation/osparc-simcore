@@ -26,7 +26,7 @@ from sqlalchemy import asc, desc, func
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.sql import Subquery, select
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_aiopg_engine
 from .errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ async def create_workspace(
     description: str | None,
     thumbnail: str | None,
 ) -> WorkspaceDB:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         result = await conn.execute(
             workspaces.insert()
             .values(
@@ -148,7 +148,7 @@ async def list_workspaces_for_user(
         list_query = base_query.order_by(desc(getattr(workspaces.c, order_by.field)))
     list_query = list_query.offset(offset).limit(limit)
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         count_result = await conn.execute(count_query)
         total_count = await count_result.scalar()
 
@@ -184,7 +184,7 @@ async def get_workspace_for_user(
         )
     )
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         result = await conn.execute(base_query)
         row = await result.first()
         if row is None:
@@ -202,7 +202,7 @@ async def update_workspace(
     thumbnail: str | None,
     product_name: ProductName,
 ) -> WorkspaceDB:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         result = await conn.execute(
             workspaces.update()
             .values(
@@ -228,7 +228,7 @@ async def delete_workspace(
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         await conn.execute(
             workspaces.delete().where(
                 (workspaces.c.workspace_id == workspace_id)
