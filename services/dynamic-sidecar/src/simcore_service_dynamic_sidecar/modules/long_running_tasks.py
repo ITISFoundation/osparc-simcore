@@ -339,12 +339,20 @@ async def _restore_state_folder(
     )
 
 
+def _get_folder_size(path: Path) -> int:
+    total_size: int = 0
+    for file in path.rglob("*"):
+        if file.is_file():
+            total_size += file.stat().st_size
+    return total_size
+
+
 async def task_restore_state(
     progress: TaskProgress,
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
-) -> None:
+) -> int:
     # NOTE: the legacy data format was a zip file
     # this method will maintain retro compatibility.
     # The legacy archive is always downloaded and decompressed
@@ -386,6 +394,8 @@ async def task_restore_state(
         app, "Finished state downloading", log_level=logging.INFO
     )
     progress.update(message="state restored", percent=ProgressPercent(0.99))
+
+    return sum(_get_folder_size(p) for p in state_paths)
 
 
 async def _save_state_folder(

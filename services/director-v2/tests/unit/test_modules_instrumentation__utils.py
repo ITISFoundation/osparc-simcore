@@ -1,7 +1,10 @@
+import time
+
 import pytest
 from pydantic import ByteSize, parse_obj_as
 from simcore_service_director_v2.modules.instrumentation._utils import (
     get_label_from_size,
+    track_duration,
 )
 
 
@@ -30,3 +33,10 @@ def test_get_label_from_size(size: ByteSize | int, expected_bucket_name: str):
     assert (
         result == expected_bucket_name
     ), f"size={size}, file_size={file_size}, result_size={result_size}, expected_size={expected_bucket_size}"
+
+
+def test_track_duration():
+    with track_duration() as duration:
+        time.sleep(0.1)
+
+    assert duration.to_flaot() > 0.1

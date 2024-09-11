@@ -1,4 +1,7 @@
 import bisect
+import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Final
 
 from pydantic import ByteSize, parse_obj_as
@@ -48,3 +51,33 @@ def get_start_stop_labels(scheduler_data: "SchedulerData") -> dict[str, str]:
         "service_key": scheduler_data.key,
         "service_version": scheduler_data.version,
     }
+
+
+class DeferredFloat:
+    def __init__(self):
+        self._value: float | None = None
+
+    def set_value(self, value):
+        if not isinstance(value, float | int):
+            msg = "Value must be a float or an int."
+            raise TypeError(msg)
+
+        self._value = float(value)
+
+    def to_flaot(self) -> float:
+        if not isinstance(self._value, float):
+            msg = "Value must be a float or an int."
+            raise TypeError(msg)
+
+        return self._value
+
+
+@contextmanager
+def track_duration() -> Iterator[DeferredFloat]:
+    duration = DeferredFloat()
+    start_time = time.time()
+
+    yield duration
+
+    end_time = time.time()
+    duration.set_value(end_time - start_time)

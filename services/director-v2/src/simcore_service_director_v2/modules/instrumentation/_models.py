@@ -38,6 +38,7 @@ class DynamiSidecarMetrics:
     output_ports_pull_seconds: Histogram = field(init=False)
     input_ports_pull_seconds: Histogram = field(init=False)
     pull_user_services_images_seconds: Histogram = field(init=False)
+    restore_service_state_seconds: Histogram = field(init=False)
 
     def __post_init__(self) -> None:
         self.start_time_seconds = Histogram(
@@ -76,6 +77,14 @@ class DynamiSidecarMetrics:
         self.pull_user_services_images_seconds = Histogram(
             "pull_user_services_images_duration_seconds",
             "time used to pull user services docker images",
+            labelnames=_SIZE_TIME_LABLES,
+            namespace=_NAMESPACE_METRICS,
+            buckets=_TIME_BUCKETS,
+            subsystem=_SUBSYSTEM_DYNAMIC_SIDECAR,
+        )
+        self.restore_service_state_seconds = Histogram(
+            "restore_service_state_duration_seconds",
+            "time used to restore the state of the user services",
             labelnames=_SIZE_TIME_LABLES,
             namespace=_NAMESPACE_METRICS,
             buckets=_TIME_BUCKETS,
