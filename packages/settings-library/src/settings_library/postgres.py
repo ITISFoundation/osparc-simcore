@@ -69,7 +69,7 @@ class PostgresSettings(BaseCustomSettings):
             port=f"{self.POSTGRES_PORT}",
             path=f"/{self.POSTGRES_DB}",
         )
-        return self._update_query(dsn)
+        return dsn
 
     @cached_property
     def dsn_with_query(self) -> str:

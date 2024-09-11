@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 
-from urllib.parse import parse_qsl, urlparse
+from urllib.parse import urlparse
 
 import pytest
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -63,7 +63,6 @@ def test_dsn_with_async_sqlalchemy_has_query(
     settings = PostgresSettings()
 
     parsed_url = urlparse(settings.dsn_with_async_sqlalchemy)
-    query = dict(parse_qsl(parsed_url.query))
+    assert parsed_url.scheme.split("+") == ("postgres", "asyncpg")
 
-    assert query
-    assert query["application_name"] == settings.POSTGRES_CLIENT_NAME
+    assert not parsed_url.query
