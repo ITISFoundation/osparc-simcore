@@ -182,7 +182,7 @@ qx.Class.define("osparc.product.Utils", {
           logosPath = lightLogo ? "osparc/tip_itis-white.svg" : "osparc/tip_itis-black.svg";
           break;
         case "tiplite":
-          logosPath = lightLogo ? "osparc/tip_lite_itis-white.svg" : "osparc/tip_lite_itis-black.svg";
+          logosPath = lightLogo ? "osparc/tip_lite_itis-white.png" : "osparc/tip_lite_itis-black.png";
           break;
         default:
           logosPath = lightLogo ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
