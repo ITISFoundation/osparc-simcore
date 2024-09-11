@@ -110,14 +110,15 @@ erd-ServiceInput.svg: _erdantic
 DOWNLOADED_TEST_DATA_DIR = "$(CURDIR)/tests/data/.downloaded-ignore"
 
 .PHONY: _httpx
-_httpx: _check_venv_active
+_ensure_httpx: _check_venv_active
 	# ensures requirements installed
 	@python3 -c "import httpx" 2>/dev/null || uv pip install httpx
 
-PHONY: pull_test_data
-pull_test_data: $(DOT_ENV_FILE) _httpx ## downloads tests data from registry (this can take some time!)
-	# downloading all metadata files
+PHONY: tests-data
+tests-data: $(DOT_ENV_FILE) _ensure_httpx ## downloads tests data from registry defined in .env (time-intensive!)
+	# Downloading all metadata files ...
 	@set -o allexport; \
 	source $<; \
 	set +o allexport; \
 	python3 "$(PACKAGES_DIR)/pytest-simcore/src/pytest_simcore/helpers/docker_registry.py" $(DOWNLOADED_TEST_DATA_DIR)
+	@echo "Run now 'pytest -vv -m diagnostics tests'"
