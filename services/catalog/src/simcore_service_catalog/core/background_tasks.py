@@ -94,7 +94,7 @@ async def _create_services_in_database(
             )
 
         except (HTTPException, ValidationError, SQLAlchemyError) as err:
-            # Resilient to single failures: errors in individual (service,key) should not affect the wholse serices
+            # Resilient to single failures: errors in individual (service,key) should not prevent the evaluation of the rest
             # and stop the background task from running.
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/6318
             _logger.warning(
