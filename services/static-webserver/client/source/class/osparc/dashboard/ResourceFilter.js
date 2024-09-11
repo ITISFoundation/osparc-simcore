@@ -30,13 +30,12 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     this.__tagButtons = [];
     this.__serviceTypeButtons = [];
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(30));
     this.__buildLayout();
   },
 
   events: {
     "changeSharedWith": "qx.event.type.Data",
-    "changeWorkspace": "qx.event.type.Data",
     "changeSelectedTags": "qx.event.type.Data",
     "changeServiceType": "qx.event.type.Data"
   },
@@ -45,29 +44,39 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __resourceType: null,
     __contextLayout: null,
     __contextRadioGroup: null,
+    __workspacesAndFoldersTree: null,
     __sharedWithButtons: null,
     __workspaceButtons: null,
     __tagButtons: null,
     __serviceTypeButtons: null,
 
     __buildLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(40));
-
-      layout.add(this.__createSharedWithFilterLayout());
+      if (this.__resourceType === "study") {
+        this._add(this.__createWorkspacesAndFoldersTree());
+      } else {
+        this._add(this.__createSharedWithFilterLayout());
+      }
 
       if (this.__resourceType !== "service") {
-        layout.add(this.__createTagsFilterLayout());
+        this._add(this.__createTagsFilterLayout());
       }
 
       if (this.__resourceType === "service") {
-        layout.add(this.__createServiceTypeFilterLayout());
+        this._add(this.__createServiceTypeFilterLayout());
       }
+    },
 
-      const scrollContainer = new qx.ui.container.Scroll();
-      scrollContainer.add(layout);
-      this._add(scrollContainer, {
-        flex: 1
-      });
+    __createWorkspacesAndFoldersTree: function() {
+      const workspacesAndFoldersTree = this.__workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();
+      // play with the height of:
+      // osparc.dashboard.WorkspacesAndFoldersTree
+      //   Pane
+      //     1st child
+      return workspacesAndFoldersTree;
+    },
+
+    getWorkspacesAndFoldersTree: function() {
+      return this.__workspacesAndFoldersTree;
     },
 
     /* SHARED WITH */
@@ -120,10 +129,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
         this.__sharedWithButtons.push(button);
       });
-
-      if (this.__resourceType === "study") {
-        this.__addWorkspaceButtons();
-      }
 
       return layout;
     },

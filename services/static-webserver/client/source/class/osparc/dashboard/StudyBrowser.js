@@ -105,6 +105,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __currentRequest: null,
     __workspacesList: null,
     __foldersList: null,
+    __reloadFoldersAndStudiesTimeout: null,
 
     // overridden
     initResources: function() {
@@ -144,7 +145,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     reloadResources: function() {
-      if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
+      if (
+        osparc.data.Permissions.getInstance().canDo("studies.user.read") &&
+        osparc.auth.Manager.getInstance().isLoggedIn()
+      ) {
         this.__reloadStudies();
       } else {
         this.__resetStudiesList();
@@ -401,11 +405,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (workspaceId === -1) {
           this._resourcesContainer.setResourcesToList([]);
           this._resourcesList = [];
-
           this.__reloadWorkspaces();
-        } else if (this.getCurrentFolderId()) {
-          // this will also trigger the __resetAndReloadAll
-          this.setCurrentFolderId(null);
         } else {
           this.__resetAndReloadAll();
         }
@@ -461,7 +461,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._resourcesList = [];
         this.invalidateStudies();
 
-        this.__reloadFoldersAndStudies();
+        // It can be triggered by a change of context: workspace and folder,
+        // delay it to make just one call
+        if (this.__reloadFoldersAndStudiesTimeout) {
+          clearTimeout(this.__reloadFoldersAndStudiesTimeout);
+        }
+        this.__reloadFoldersAndStudiesTimeout = setTimeout(() => {
+          this.__reloadFoldersAndStudiesTimeout = null;
+          this.__reloadFoldersAndStudies();
+        }, 50);
       }
     },
 
