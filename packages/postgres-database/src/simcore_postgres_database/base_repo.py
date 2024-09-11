@@ -1,4 +1,5 @@
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -9,15 +10,17 @@ _logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def get_or_create_connection(
     engine: AsyncEngine, connection: AsyncConnection | None = None
-):
-    # creator is responsible of closing connection
+) -> AsyncIterator[AsyncConnection]:
+    # NOTE: When connection is passed, the engine is actually not needed
+    # NOTE: Creator is responsible of closing connection
     is_connection_created = connection is None
     if is_connection_created:
         connection = await engine.connect()
     try:
         yield connection
     finally:
-        if is_connection_created:
+        assert connection  # nosec
+        if is_connection_created and connection:
             await connection.close()
 
 
@@ -27,11 +30,11 @@ async def transaction_context(
 ):
     async with get_or_create_connection(engine, connection) as conn:
         if conn.in_transaction():
-            async with conn.begin_nested():  # savepoint
+            async with conn.begin_nested():  # inner transaction (savepoint)
                 yield conn
         else:
             try:
-                async with conn.begin():
+                async with conn.begin():  # outer transaction (savepoint)
                     yield conn
             finally:
                 assert not conn.closed  # nosec
