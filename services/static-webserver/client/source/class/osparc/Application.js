@@ -246,7 +246,7 @@ qx.Class.define("osparc.Application", {
         const maskIcon = osparc.product.Utils.getManifestIconUrl("safari-pinned-tab.png", "apple-icon-fallback.png")
         Promise.resolve(maskIcon)
           .then(resolvedUrl => {
-            // Crteate the manifest data object with resolved URLs
+            // Create the manifest data object with resolved URLs
             maskIconMeta.setAttribute("color", productColor);
             maskIconMeta.setAttribute("href", resolvedUrl);
           })
