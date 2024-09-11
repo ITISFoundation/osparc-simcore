@@ -73,7 +73,7 @@ qx.Class.define("osparc.Application", {
       const webSocket = osparc.wrapper.WebSocket.getInstance();
       webSocket.addListener("connect", () => osparc.WatchDog.getInstance().setOnline(true));
       webSocket.addListener("disconnect", () => osparc.WatchDog.getInstance().setOnline(false));
-      webSocket.addListener("logout", () => this.logout());
+      webSocket.addListener("logout", () => this.logout(qx.locale.Manager.tr("You were logged out")));
       // alert the users that they are about to navigate away
       // from osparc. unfortunately it is not possible
       // to provide our own message here
@@ -96,7 +96,7 @@ qx.Class.define("osparc.Application", {
       });
 
       // Setting up auth manager
-      osparc.auth.Manager.getInstance().addListener("logout", () => this.__restart(), this);
+      osparc.auth.Manager.getInstance().addListener("loggedOut", () => this.__closeAllAndToLoginPage(), this);
 
       this.__initRouting();
       this.__startupChecks();
@@ -491,7 +491,6 @@ qx.Class.define("osparc.Application", {
 
     __restart: function() {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
-
       if (isLogged) {
         this.__loadMainPage();
       } else {
@@ -636,13 +635,21 @@ qx.Class.define("osparc.Application", {
       } else {
         osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out"), "INFO");
       }
+      const isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
+      if (isLoggedIn) {
+        osparc.auth.Manager.getInstance().logout()
+          .finally(() => this.__closeAllAndToLoginPage());
+      } else {
+        this.__closeAllAndToLoginPage();
+      }
+    },
 
+    __closeAllAndToLoginPage: function() {
       osparc.data.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.CookieExpirationTracker.getInstance().stopTracker();
       osparc.NewUITracker.getInstance().stopTracker();
       osparc.announcement.Tracker.getInstance().stopTracker();
-      osparc.auth.Manager.getInstance().logout();
       if ("closeEditor" in this.__mainPage) {
         this.__mainPage.closeEditor();
       }
