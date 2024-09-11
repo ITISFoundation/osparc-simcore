@@ -58,21 +58,21 @@ class CallbacksMapping(BaseModel):
                     "metrics": None,
                     "before_shutdown": [],
                 },
-                {"metrics": UserServiceCommand.Config.schema_extra["examples"][0]},
+                {"metrics": UserServiceCommand.model_config["json_schema_extra"]["examples"][0]},
                 {
-                    "metrics": UserServiceCommand.Config.schema_extra["examples"][0],
+                    "metrics": UserServiceCommand.model_config["json_schema_extra"]["examples"][0],
                     "before_shutdown": [
-                        UserServiceCommand.Config.schema_extra["examples"][0],
-                        UserServiceCommand.Config.schema_extra["examples"][1],
+                        UserServiceCommand.model_config["json_schema_extra"]["examples"][0],
+                        UserServiceCommand.model_config["json_schema_extra"]["examples"][1],
                     ],
                 },
                 {
-                    "metrics": UserServiceCommand.Config.schema_extra["examples"][0],
+                    "metrics": UserServiceCommand.model_config["json_schema_extra"]["examples"][0],
                     "before_shutdown": [
-                        UserServiceCommand.Config.schema_extra["examples"][0],
-                        UserServiceCommand.Config.schema_extra["examples"][1],
+                        UserServiceCommand.model_config["json_schema_extra"]["examples"][0],
+                        UserServiceCommand.model_config["json_schema_extra"]["examples"][1],
                     ],
-                    "inactivity": UserServiceCommand.Config.schema_extra["examples"][0],
+                    "inactivity": UserServiceCommand.model_config["json_schema_extra"]["examples"][0],
                 },
             ]
         },
