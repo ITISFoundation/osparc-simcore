@@ -469,7 +469,7 @@ qx.Class.define("osparc.Application", {
         let title = this.tr("Privacy Policy");
         let height = 160;
         if (osparc.product.Utils.showLicenseExtra()) {
-          // "tis" and "s4llite" include the license terms
+          // "tis", "tiplite" and "s4llite" include the license terms
           title = this.tr("Privacy Policy and License Terms");
           height = 210;
         }
@@ -519,6 +519,7 @@ qx.Class.define("osparc.Application", {
           view = new osparc.auth.LoginPageS4L();
           break;
         case "tis":
+        case "tiplite":
           view = new osparc.auth.LoginPageTI();
           break;
         default: {

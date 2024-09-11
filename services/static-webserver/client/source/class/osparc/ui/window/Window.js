@@ -110,7 +110,9 @@ qx.Class.define("osparc.ui.window.Window", {
         setTimeout(() => {
           if (this) {
             this.center();
-            this.setOpacity(1);
+            if (this.getContentElement()) {
+              this.setOpacity(1);
+            }
           }
         }, 1);
       } else {
