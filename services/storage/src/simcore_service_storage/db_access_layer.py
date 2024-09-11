@@ -257,6 +257,7 @@ async def get_project_access_rights(
                     f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_group_ids)})"
                 )
             )
+            & (projects.c.workspace_id.is_(None))
         )
     )
 
