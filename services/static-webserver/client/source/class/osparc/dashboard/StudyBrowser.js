@@ -743,6 +743,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__addEmptyStudyPlusButton();
           break;
         case "tis":
+        case "tiplite":
           this.__addTIPPlusButtons();
           break;
         case "s4l":

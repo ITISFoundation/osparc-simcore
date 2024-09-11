@@ -121,7 +121,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
       this.add(grp);
 
-      if (osparc.product.Utils.isProduct("tis")) {
+      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
         const text = `
         1) The TIP tool is designed for research purposes only and is not intended for clinical use.
         </br>

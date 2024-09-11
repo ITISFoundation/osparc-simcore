@@ -176,6 +176,9 @@ qx.Class.define("osparc.product.Utils", {
         case "tis":
           logosPath = lightLogo ? "osparc/tip_itis-white.svg" : "osparc/tip_itis-black.svg";
           break;
+        case "tiplite":
+          logosPath = lightLogo ? "osparc/tip_lite_itis-white.svg" : "osparc/tip_lite_itis-black.svg";
+          break;
         default:
           logosPath = lightLogo ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
           break;
@@ -185,7 +188,7 @@ qx.Class.define("osparc.product.Utils", {
 
     forceNullCreditsColor: function(wallet) {
       // TIP is a product that can be used for free, so allow making 0 credits scenario more friendly.
-      if (osparc.product.Utils.isProduct("tis")) {
+      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
         // Ideally, check if there was ever a transaction. If not, keep the indicator gray.
         // Note: Since we can't fetch payments per wallet, for now rely on the available credits.
         const credits = wallet.getCreditsAvailable();
@@ -229,7 +232,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showStudyPreview: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis")) {
+      if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
         return false;
       }
       return true;
@@ -240,21 +243,21 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showPreferencesTokens: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis")) {
+      if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
         return false;
       }
       return true;
     },
 
     showPreferencesExperimental: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis")) {
+      if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
         return false;
       }
       return true;
     },
 
     showClusters: function() {
-      if (this.isProduct("s4llite") || this.isProduct("tis")) {
+      if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
         return false;
       }
       return true;
@@ -289,6 +292,7 @@ qx.Class.define("osparc.product.Utils", {
           url = `${base}/oSparc/${asset}`;
           break;
         case "tis":
+        case "tiplite":
           url = `${base}/TIP/${asset}`;
           break;
         default:
@@ -306,6 +310,7 @@ qx.Class.define("osparc.product.Utils", {
           url = `${base}/oSparc/${asset}`;
           break;
         case "tis":
+        case "tiplite":
           url = `${base}/TIP/${asset}`;
           break;
         default:
