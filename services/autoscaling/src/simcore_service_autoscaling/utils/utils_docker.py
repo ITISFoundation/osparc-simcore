@@ -392,7 +392,7 @@ _DOCKER_SWARM_JOIN_RE = r"(?P<command>docker swarm join)\s+(?P<token>--token\s+[
 _DOCKER_SWARM_JOIN_PATTERN = re.compile(_DOCKER_SWARM_JOIN_RE)
 
 
-async def get_docker_swarm_join_bash_command() -> str:
+async def get_docker_swarm_join_bash_command(*, join_as_drained: bool) -> str:
     """this assumes we are on a manager node"""
     command = ["docker", "swarm", "join-token", "worker"]
     process = await asyncio.create_subprocess_exec(
@@ -409,7 +409,7 @@ async def get_docker_swarm_join_bash_command() -> str:
     decoded_stdout = stdout.decode()
     if match := re.search(_DOCKER_SWARM_JOIN_PATTERN, decoded_stdout):
         capture = match.groupdict()
-        return f"{capture['command']} --availability=drain {capture['token']} {capture['address']}"
+        return f"{capture['command']} --availability={'drain' if join_as_drained  else 'active'} {capture['token']} {capture['address']}"
     msg = f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
     raise RuntimeError(msg)
 

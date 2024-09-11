@@ -35,7 +35,7 @@ def test_template(
     node_ids: list[str] = list(project_data["workbench"])
     assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 
-    resp = launch_S4L(page, node_ids[0], log_in_and_out, autoscaled)
+    resp = launch_S4L(page, node_ids[0], log_in_and_out, autoscaled, copy_workspace=True)
     s4l_websocket = resp["websocket"]
     s4l_iframe = resp["iframe"]
     interact_with_S4L(page, s4l_iframe)
