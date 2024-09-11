@@ -780,7 +780,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               .then(newStudiesData => {
                 const product = osparc.product.Utils.getProductName()
                 if (product in newStudiesData) {
-                  const newButtonsInfo = newStudiesData[product].resources;
                   const mode = this._resourcesContainer.getMode();
                   const title = this.tr("New Plan");
                   const desc = this.tr("Choose Plan in pop-up");
@@ -796,9 +795,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                   newStudyBtn.addListener("execute", () => {
                     newStudyBtn.setValue(false);
 
-                    const foundTemplates = newButtonsInfo.filter(newButtonInfo => templates.find(t => t.name === newButtonInfo.expectedTemplateLabel));
-                    const groups = newStudiesData[product].categories;
-                    const newStudies = new osparc.dashboard.NewStudies(foundTemplates, groups);
+                    const newStudies = new osparc.dashboard.NewStudies(newStudiesData[product]);
                     newStudies.setGroupBy("category");
                     const winTitle = this.tr("New Plan");
                     const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({

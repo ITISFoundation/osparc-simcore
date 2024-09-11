@@ -18,24 +18,37 @@
 qx.Class.define("osparc.dashboard.NewStudies", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newStudies, groups) {
+  construct: function(newStudiesData) {
     this.base(arguments);
 
-    this.__newStudies = newStudies;
-    this.__groups = groups || [];
-
-    this._setLayout(new qx.ui.layout.VBox(10));
-
-    const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
-    [
-      "changeSelection",
-      "changeVisibility"
-    ].forEach(signalName => {
-      flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
-    });
-    this._add(this.__flatList);
+    this.__newStudiesData = newStudiesData;
+    const newButtonsInfo = newStudiesData.resources;
+    const groups = newStudiesData.categories;
 
     this.__groupedContainers = [];
+
+    osparc.data.Resources.get("templates")
+      .then(templates => {
+        const displayTemplates = newButtonsInfo.filter(newButtonInfo => {
+          if (newButtonInfo.showDisabled) {
+            return true;
+          }
+          return templates.find(t => t.name === newButtonInfo.expectedTemplateLabel);
+        });
+        this.__newStudies = displayTemplates;
+        this.__groups = groups || [];
+
+        this._setLayout(new qx.ui.layout.VBox(10));
+
+        const flatList = this.__flatList = new osparc.dashboard.ToggleButtonContainer();
+        [
+          "changeSelection",
+          "changeVisibility"
+        ].forEach(signalName => {
+          flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
+        });
+        this._add(this.__flatList);
+      });
   },
 
   properties: {
@@ -56,6 +69,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
   },
 
   members: {
+    __newStudiesData: null,
     __newStudies: null,
     __groups: null,
     __flatList: null,
