@@ -235,9 +235,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__addStudiesToList(studies);
 
           // Show Quick Start if there are no studies in the root folder of the personal workspace
-          const quickStart = osparc.product.quickStart.Utils.getQuickStart();
-          if (quickStart) {
-            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(quickStart.localStorageStr);
+          const quickStartInfo = osparc.product.quickStart.Utils.getQuickStart();
+          if (quickStartInfo) {
+            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(quickStartInfo.localStorageStr);
             if (dontShow === "true") {
               return;
             }
@@ -247,9 +247,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               this.getCurrentWorkspaceId() === null &&
               this.getCurrentFolderId() === null
             ) {
-              const tutorialWindow = quickStart.tutorial();
-              tutorialWindow.center();
-              tutorialWindow.open();
+              const quickStartWindow = quickStartInfo.tutorial();
+              quickStartWindow.center();
+              quickStartWindow.open();
             }
           }
         })
