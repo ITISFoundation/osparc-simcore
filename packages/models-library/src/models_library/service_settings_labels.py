@@ -449,7 +449,7 @@ class DynamicSidecarServiceLabels(BaseModel):
                 raise ValueError(msg)
         return v
 
-    @model_validator()
+    @model_validator(mode="before")
     @classmethod
     def _not_allowed_in_both_specs(cls, values):
         match_keys = {
@@ -516,8 +516,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
         ),
     )
 
-    model_config = ConfigDict(
-        **_BaseConfig,
+    model_config = _BaseConfig | ConfigDict(
         extra="allow",
         json_schema_extra={
             "examples": [
