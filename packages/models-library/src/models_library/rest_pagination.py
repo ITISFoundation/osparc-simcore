@@ -1,15 +1,14 @@
-from typing import Final, Generic, TypeVar
+from typing import Annotated, Final, Generic, TypeVar
 
 from pydantic import (
     AnyHttpUrl,
     BaseModel,
     ConfigDict,
-    ConstrainedInt,
     Field,
     NonNegativeInt,
     PositiveInt,
+    TypeAdapter,
     field_validator,
-    parse_obj_as,
 )
 
 from .utils.common_validators import none_to_empty_list_pre_validator
@@ -20,19 +19,20 @@ from .utils.common_validators import none_to_empty_list_pre_validator
 MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
 
 
-class PageLimitInt(ConstrainedInt):
-    ge = 1
-    lt = MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+PageLimitInt = Annotated[int, Field(ge=1, lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE)]
 
-
-DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = parse_obj_as(PageLimitInt, 20)
+DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(
+    PageLimitInt
+).validate_python(20)
 
 
 class PageQueryParameters(BaseModel):
     """Use as pagination options in query parameters"""
 
     limit: PageLimitInt = Field(
-        default=parse_obj_as(PageLimitInt, DEFAULT_NUMBER_OF_ITEMS_PER_PAGE),
+        default=TypeAdapter(PageLimitInt).validate_python(
+            DEFAULT_NUMBER_OF_ITEMS_PER_PAGE
+        ),
         description="maximum number of items to return (pagination)",
     )
     offset: NonNegativeInt = Field(

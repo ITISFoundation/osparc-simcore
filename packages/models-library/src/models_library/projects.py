@@ -9,10 +9,9 @@ from uuid import UUID
 
 from models_library.basic_types import ConstrainedStr
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
-from .basic_types import HttpUrlWithCustomMinLength
 from .emails import LowerCaseEmailStr
 from .projects_access import AccessRights, GroupIDStr
 from .projects_nodes import Node
@@ -67,7 +66,7 @@ class BaseProjectModel(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    thumbnail: HttpUrlWithCustomMinLength | None = Field(
+    thumbnail: HttpUrl | None = Field(
         ...,
         description="url of the project thumbnail",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],

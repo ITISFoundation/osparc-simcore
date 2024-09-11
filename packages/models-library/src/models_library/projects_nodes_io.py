@@ -11,16 +11,15 @@ from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
-from models_library.basic_types import KeyIDStr
+from models_library.basic_types import ConstrainedStr, KeyIDStr
 from pydantic import (
     AnyUrl,
     BaseModel,
     ConfigDict,
-    ConstrainedStr,
     Field,
     StringConstraints,
+    TypeAdapter,
     field_validator,
-    parse_obj_as,
 )
 
 from .basic_regex import (
@@ -41,7 +40,7 @@ LocationName = str
 
 
 class SimcoreS3FileID(ConstrainedStr):
-    regex: re.Pattern[str] | None = re.compile(SIMCORE_S3_FILE_ID_RE)
+    pattern: re.Pattern[str] | None = re.compile(SIMCORE_S3_FILE_ID_RE)
 
 
 class SimcoreS3DirectoryID(ConstrainedStr):
@@ -84,7 +83,7 @@ class SimcoreS3DirectoryID(ConstrainedStr):
     @classmethod
     def from_simcore_s3_object(cls, s3_object: str) -> "SimcoreS3DirectoryID":
         parent_path: str = cls._get_parent(s3_object, parent_index=4)
-        return parse_obj_as(cls, f"{parent_path}/")
+        return TypeAdapter(cls).validate_python(f"{parent_path}/")
 
 
 class DatCoreFileID(ConstrainedStr):

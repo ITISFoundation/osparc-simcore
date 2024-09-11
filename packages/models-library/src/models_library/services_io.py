@@ -1,14 +1,13 @@
-import re
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import (
     BaseModel,
     ConfigDict,
-    ConstrainedStr,
     Field,
     StrictBool,
     StrictFloat,
     StrictInt,
+    StringConstraints,
     field_validator,
 )
 
@@ -22,10 +21,7 @@ from .utils.json_schema import (
     jsonschema_validate_schema,
 )
 
-
-class PropertyTypeStr(ConstrainedStr):
-    regex = re.compile(PROPERTY_TYPE_RE)
-    model_config = ConfigDict(frozen=True)
+PropertyTypeStr = Annotated[str, StringConstraints(pattern=PROPERTY_TYPE_RE)]
 
 
 class BaseServiceIOModel(BaseModel):
