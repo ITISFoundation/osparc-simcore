@@ -52,8 +52,8 @@ async def connect_to_db(app: web.Application, settings: PostgresSettings) -> Non
     engine = await create_async_engine_and_pg_database_ready(settings)
     _set_async_engine_to_app_state(app, engine)
 
-    _logger.debug(
-        "Setup asyncpg engine: %s",
+    _logger.info(
+        "app[APP_DB_ASYNC_ENGINE_KEY] ready : %s",
         await get_pg_engine_stateinfo(engine),
     )
 
