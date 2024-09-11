@@ -36,6 +36,7 @@ class DynamiSidecarMetrics:
     stop_time_seconds: Histogram = field(init=False)
 
     output_ports_pull_seconds: Histogram = field(init=False)
+    input_ports_pull_seconds: Histogram = field(init=False)
     pull_user_services_images_seconds: Histogram = field(init=False)
 
     def __post_init__(self) -> None:
@@ -59,6 +60,14 @@ class DynamiSidecarMetrics:
         self.output_ports_pull_seconds = Histogram(
             "output_ports_pull_duration_seconds",
             "time used to pull output ports",
+            labelnames=_SIZE_TIME_LABLES,
+            namespace=_NAMESPACE_METRICS,
+            buckets=_TIME_BUCKETS,
+            subsystem=_SUBSYSTEM_DYNAMIC_SIDECAR,
+        )
+        self.input_ports_pull_seconds = Histogram(
+            "input_ports_pull_duration_seconds",
+            "time used to pull input ports",
             labelnames=_SIZE_TIME_LABLES,
             namespace=_NAMESPACE_METRICS,
             buckets=_TIME_BUCKETS,

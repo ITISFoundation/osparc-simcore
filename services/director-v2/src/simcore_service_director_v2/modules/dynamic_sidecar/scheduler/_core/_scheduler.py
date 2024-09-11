@@ -17,6 +17,7 @@ import asyncio
 import contextlib
 import functools
 import logging
+import time
 from asyncio import Lock, Queue, Task
 from dataclasses import dataclass, field
 from typing import Final
@@ -55,6 +56,7 @@ from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from .....models.dynamic_services_scheduler import SchedulerData, ServiceName
+from .....modules.instrumentation import get_instrumentation, get_label_from_size
 from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import update_scheduler_data_label
 from ...errors import DynamicSidecarError, DynamicSidecarNotFoundError
@@ -463,8 +465,18 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
         sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_uuid)
 
+        started = time.time()
         transferred_bytes = await sidecars_client.pull_service_input_ports(
             dynamic_sidecar_endpoint, port_keys
+        )
+        duration = time.time() - started
+
+        get_instrumentation(
+            self.app
+        ).dynamic_sidecar_metrics.input_ports_pull_seconds.labels(
+            **get_label_from_size(transferred_bytes)
+        ).observe(
+            duration
         )
 
         if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
