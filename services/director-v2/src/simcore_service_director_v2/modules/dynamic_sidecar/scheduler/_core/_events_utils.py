@@ -44,6 +44,8 @@ from .....models.dynamic_services_scheduler import (
     DockerStatus,
     SchedulerData,
 )
+from .....modules.instrumentation._setup import get_instrumentation
+from .....modules.instrumentation._utils import get_start_stop_labels
 from .....utils.db import get_repository
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
@@ -374,6 +376,18 @@ async def attempt_pod_removal_and_data_saving(
     )
     rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
     await rabbitmq_client.publish(message.channel_name, message)
+
+    # metrics
+
+    stop_duration = scheduler_data.dynamic_sidecar.metrics_timers.get_stop_duration()
+    if stop_duration:
+        get_instrumentation(
+            app
+        ).dynamic_sidecar_metrics.dy_sidecar_stop_time_seconds.labels(
+            **get_start_stop_labels(scheduler_data)
+        ).observe(
+            stop_duration
+        )
 
 
 async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -> None:

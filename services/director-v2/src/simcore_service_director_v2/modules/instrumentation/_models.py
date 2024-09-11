@@ -19,17 +19,33 @@ _TIMING_BUCKETS: Final[tuple[float, ...]] = (
 
 _SUBSYSTEM_DYNAMIC_SIDECAR: Final[str] = "dynamic_sidecar"
 
+_START_STOP_LABELS: Final[tuple[str, ...]] = (
+    "user_id",
+    "wallet_id",
+    "service_key",
+    "service_version",
+)
+
 
 @dataclass(slots=True, kw_only=True)
 class DynamiSidecarMetrics:
 
-    # TODO: add a test for hystograms here
     dy_sidecar_start_time_seconds: Histogram = field(init=False)
+    dy_sidecar_stop_time_seconds: Histogram = field(init=False)
 
     def __post_init__(self) -> None:
         self.dy_sidecar_start_time_seconds = Histogram(
             "dy_sidecar_start_time_duration_seconds",
-            "Time taken for dynamic-sde",
+            "Time taken for dynamic-sidecar to start",
+            labelnames=_START_STOP_LABELS,
+            namespace=_NAMESPACE_METRICS,
+            buckets=_TIMING_BUCKETS,
+            subsystem=_SUBSYSTEM_DYNAMIC_SIDECAR,
+        )
+        self.dy_sidecar_stop_time_seconds = Histogram(
+            "dy_sidecar_stop_time_duration_seconds",
+            "Time taken for dynamic-sidecar to stop",
+            labelnames=_START_STOP_LABELS,
             namespace=_NAMESPACE_METRICS,
             buckets=_TIMING_BUCKETS,
             subsystem=_SUBSYSTEM_DYNAMIC_SIDECAR,

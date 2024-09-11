@@ -21,6 +21,7 @@ from asyncio import Lock, Queue, Task
 from dataclasses import dataclass, field
 from typing import Final
 
+import arrow
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceCreate,
@@ -255,6 +256,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             request_simcore_user_agent=request_simcore_user_agent,
             can_save=can_save,
         )
+        scheduler_data.dynamic_sidecar.metrics_timers.start_duration_of_service_starting = (
+            arrow.utcnow().datetime
+        )
         await self.add_service_from_scheduler_data(scheduler_data)
 
     async def add_service_from_scheduler_data(
@@ -352,6 +356,10 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                     node_uuid,
                 )
                 return
+
+            current.dynamic_sidecar.metrics_timers.start_duration_of_service_closing = (
+                arrow.utcnow().datetime
+            )
 
             # PC-> ANE: could you please review what to do when can_save=None
             assert can_save is not None  # nosec

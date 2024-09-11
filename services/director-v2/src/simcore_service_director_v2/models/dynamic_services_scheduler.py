@@ -2,12 +2,14 @@ import json
 import logging
 import re
 from collections.abc import Mapping
+from datetime import datetime
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
 from typing import Any, TypeAlias
 from uuid import UUID
 
+import arrow
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     CommonServiceDetails,
@@ -170,6 +172,32 @@ class ServiceRemovalState(BaseModel):
         self.was_removed = True
 
 
+class MetricsTimers(BaseModel):
+    start_duration_of_service_starting: datetime | None = Field(
+        None,
+        description="moment in which the process of starting the service was requested",
+    )
+    start_duration_of_service_closing: datetime | None = Field(
+        None,
+        description="moment in which the process of stopping the service was requested",
+    )
+
+    def get_start_duration(self) -> float | None:
+        if self.start_duration_of_service_starting is None:
+            return None
+
+        return (
+            arrow.utcnow().datetime - self.start_duration_of_service_starting
+        ).total_seconds()
+
+    def get_stop_duration(self) -> float | None:
+        if self.start_duration_of_service_closing is None:
+            return None
+        return (
+            arrow.utcnow().datetime - self.start_duration_of_service_closing
+        ).total_seconds()
+
+
 class DynamicSidecar(BaseModel):
     status: Status = Field(
         Status.create_as_initially_ok(),
@@ -252,6 +280,11 @@ class DynamicSidecar(BaseModel):
     were_state_and_outputs_saved: bool = Field(
         default=False,
         description="set True if the dy-sidecar saves the state and uploads the outputs",
+    )
+
+    metrics_timers: MetricsTimers = Field(
+        default_factory=lambda: MetricsTimers.parse_obj({}),
+        description="keeps track of start times for various operations",
     )
 
     # below had already been validated and
