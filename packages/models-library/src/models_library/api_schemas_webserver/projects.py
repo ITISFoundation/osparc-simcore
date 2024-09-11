@@ -9,14 +9,10 @@ from typing import Any, Literal, TypeAlias
 
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
-from pydantic import Field, field_validator
+from pydantic import Field, HttpUrl, field_validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
-from ..basic_types import (
-    HttpUrlWithCustomMinLength,
-    LongTruncatedStr,
-    ShortTruncatedStr,
-)
+from ..basic_types import LongTruncatedStr, ShortTruncatedStr
 from ..emails import LowerCaseEmailStr
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
@@ -36,7 +32,7 @@ class ProjectCreateNew(InputSchema):
     uuid: ProjectID | None = None  # NOTE: suggested uuid! but could be different!
     name: str
     description: str | None
-    thumbnail: HttpUrlWithCustomMinLength | None
+    thumbnail: HttpUrl | None
     workbench: NodesDict
     access_rights: dict[GroupIDStr, AccessRights]
     tags: list[int] = Field(default_factory=list)
@@ -58,7 +54,7 @@ class ProjectCreateNew(InputSchema):
 class ProjectCopyOverride(InputSchema):
     name: str
     description: str | None
-    thumbnail: HttpUrlWithCustomMinLength | None
+    thumbnail: HttpUrl | None
     prj_owner: LowerCaseEmailStr
 
     _empty_is_none = field_validator("thumbnail", mode="before")(
@@ -70,7 +66,7 @@ class ProjectGet(OutputSchema):
     uuid: ProjectID
     name: str
     description: str
-    thumbnail: HttpUrlWithCustomMinLength | Literal[""]
+    thumbnail: HttpUrl | Literal[""]
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
     workbench: NodesDict
@@ -101,7 +97,7 @@ class ProjectReplace(InputSchema):
     uuid: ProjectID
     name: ShortTruncatedStr
     description: LongTruncatedStr
-    thumbnail: HttpUrlWithCustomMinLength | None
+    thumbnail: HttpUrl | None
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
     workbench: NodesDict
@@ -123,7 +119,7 @@ class ProjectReplace(InputSchema):
 class ProjectUpdate(InputSchema):
     name: ShortTruncatedStr = FieldNotRequired()
     description: LongTruncatedStr = FieldNotRequired()
-    thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
+    thumbnail: HttpUrl = FieldNotRequired()
     workbench: NodesDict = FieldNotRequired()
     access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
     tags: list[int] = FieldNotRequired()
@@ -135,7 +131,7 @@ class ProjectUpdate(InputSchema):
 class ProjectPatch(InputSchema):
     name: ShortTruncatedStr = FieldNotRequired()
     description: LongTruncatedStr = FieldNotRequired()
-    thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
+    thumbnail: HttpUrl = FieldNotRequired()
     access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
     classifiers: list[ClassifierID] = FieldNotRequired()
     dev: dict | None = FieldNotRequired()
