@@ -1,5 +1,6 @@
 from decimal import Decimal
 from enum import StrEnum
+from re import Pattern
 from typing import Annotated, Final, TypeAlias
 
 from annotated_types import Ge, Gt, Lt
@@ -59,9 +60,10 @@ _ELLIPSIS_CHAR: Final[str] = "..."
 
 
 class ConstrainedStr(str):
-    strip_whitespace: bool = False
+    pattern: str | Pattern[str] | None = None
     min_length: int | None = None
     max_length: int | None = None
+    strip_whitespace: bool = False
     curtail_length: int | None = None
 
     @classmethod
@@ -69,9 +71,10 @@ class ConstrainedStr(str):
         return core_schema.no_info_before_validator_function(
             cls.validate,
             core_schema.str_schema(
-                strip_whitespace=cls.strip_whitespace,
-                max_length=cls.max_length,
+                pattern=cls.pattern,
                 min_length=cls.min_length,
+                max_length=cls.max_length,
+                strip_whitespace=cls.strip_whitespace,
             ),
         )
 
