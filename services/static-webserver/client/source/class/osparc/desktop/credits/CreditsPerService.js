@@ -77,10 +77,10 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
               });
             });
             datas.sort((a, b) => {
-              if (b.percentageCredits !== a.percentageCredits) {
-                return b.percentageCredits - a.percentageCredits;
+              if (b.credits !== a.credits) {
+                return b.credits - a.credits;
               }
-              return a.percentageHours - b.percentageHours;
+              return b.hours - a.hours;
             });
             // top 5 services
             datas = datas.slice(0, 5);
