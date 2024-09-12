@@ -77,7 +77,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       workspacesAndFoldersTree.addListener("openChanged", () => {
         const rowConfig = workspacesAndFoldersTree.getPane().getRowConfig();
         const totalHeight = rowConfig.itemCount * rowConfig.defaultItemSize;
-        console.log("totalHeight", totalHeight);
         workspacesAndFoldersTree.setHeight(totalHeight + 10);
       });
       return workspacesAndFoldersTree;
