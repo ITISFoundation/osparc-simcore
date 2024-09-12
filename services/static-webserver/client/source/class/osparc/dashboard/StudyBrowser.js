@@ -53,16 +53,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeCurrentWorkspaceId",
-      apply: "__applyCurrentWorkspaceId"
+      event: "changeCurrentWorkspaceId"
     },
 
     currentFolderId: {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeCurrentFolderId",
-      apply: "__resetAndReloadAll"
+      event: "changeCurrentFolderId"
     },
 
     multiSelection: {
@@ -105,7 +103,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __currentRequest: null,
     __workspacesList: null,
     __foldersList: null,
-    __reloadFoldersAndStudiesTimeout: null,
 
     // overridden
     initResources: function() {
@@ -400,18 +397,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
-    __applyCurrentWorkspaceId: function(workspaceId) {
-      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        if (workspaceId === -1) {
-          this._resourcesContainer.setResourcesToList([]);
-          this._resourcesList = [];
-          this.__reloadWorkspaces();
-        } else {
-          this.__resetAndReloadAll();
-        }
-      }
-    },
-
     // WORKSPACES
     __reloadWorkspaceCards: function() {
       this._resourcesContainer.setWorkspacesToList(this.__workspacesList);
@@ -450,26 +435,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
     // /WORKSPACES
 
-    __resetAndReloadAll: function() {
+    _changeContext: function() {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const workspaceId = this.getCurrentWorkspaceId();
-        if (workspaceId === -1) {
-          return;
-        }
-
         this._resourcesContainer.setResourcesToList([]);
         this._resourcesList = [];
-        this.invalidateStudies();
 
-        // It can be triggered by a change of context: workspace and folder,
-        // delay it to make just one call
-        if (this.__reloadFoldersAndStudiesTimeout) {
-          clearTimeout(this.__reloadFoldersAndStudiesTimeout);
-        }
-        this.__reloadFoldersAndStudiesTimeout = setTimeout(() => {
-          this.__reloadFoldersAndStudiesTimeout = null;
+        const workspaceId = this.getCurrentWorkspaceId();
+        if (workspaceId === -1) {
+          this.__reloadWorkspaces();
+        } else {
+          this.invalidateStudies();
           this.__reloadFoldersAndStudies();
-        }, 50);
+        }
       }
     },
 

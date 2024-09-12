@@ -43,6 +43,10 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     this.__initTree();
   },
 
+  events: {
+    "changeContext": "qx.event.type.Data"
+  },
+
   properties: {
     currentWorkspaceId: {
       check: "Number",
@@ -80,10 +84,16 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
         },
         configureItem: item => {
           item.addListener("tap", () => {
+            const workspaceId = item.getModel().getWorkspaceId();
+            const folderId = item.getModel().getFolderId();
             this.set({
-              currentWorkspaceId: item.getModel().getWorkspaceId(),
-              currentFolderId: item.getModel().getFolderId(),
-            })
+              currentWorkspaceId: workspaceId,
+              currentFolderId: folderId,
+            });
+            this.fireDataEvent("changeContext", {
+              workspaceId,
+              folderId,
+            });
           }, this);
         },
       });
