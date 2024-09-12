@@ -39,7 +39,7 @@ qx.Class.define("osparc.dashboard.MoveResourceToWorkspace", {
       } else {
         moveButton.setEnabled(false);
       }
-    });
+    }, this);
     moveButton.addListener("execute", () => {
       this.fireDataEvent("moveToWorkspace", this.__selectedWorkspaceId);
     }, this);
