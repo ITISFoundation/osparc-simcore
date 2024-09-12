@@ -4258,7 +4258,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -4579,7 +4579,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_resource_usage_tracker.service_runs.OsparcCreditsAggregatedByServiceGet__'
   /v0/services/-/usage-report:
     get:
       tags:
@@ -7641,6 +7641,17 @@ components:
             $ref: '#/components/schemas/TaskGet'
         error:
           title: Error
+    Envelope_list_models_library.api_schemas_resource_usage_tracker.service_runs.OsparcCreditsAggregatedByServiceGet__:
+      title: Envelope[list[models_library.api_schemas_resource_usage_tracker.service_runs.OsparcCreditsAggregatedByServiceGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/OsparcCreditsAggregatedByServiceGet'
+        error:
+          title: Error
     Envelope_list_models_library.api_schemas_storage.FileMetaDataGet__:
       title: Envelope[list[models_library.api_schemas_storage.FileMetaDataGet]]
       type: object
@@ -9339,6 +9350,24 @@ components:
       - WALLET_SHARED
       type: string
       description: An enumeration.
+    OsparcCreditsAggregatedByServiceGet:
+      title: OsparcCreditsAggregatedByServiceGet
+      required:
+      - osparc_credits
+      - service_key
+      - running_time_in_hours
+      type: object
+      properties:
+        osparc_credits:
+          title: Osparc Credits
+          type: number
+        service_key:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        running_time_in_hours:
+          title: Running Time In Hours
+          type: number
     Owner:
       title: Owner
       required:
