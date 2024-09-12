@@ -35,13 +35,15 @@ def test_pydantic_error_dict():
         return {k: v for k, v in d.items() if k not in exclude}
 
     assert _copy(errors[0], exclude={"msg"}) == {
+        "ctx": {"ge": 2},
+        "input": -1,
         "loc": ("x",),
-        # "msg": "ensure this value is...equal to 2",
-        "type": "value_error.number.not_ge",
-        "ctx": {"limit_value": 2},
+        "type": "greater_than_equal",
+        "url": "https://errors.pydantic.dev/2.9/v/greater_than_equal",
     }
     assert _copy(errors[1], exclude={"msg"}) == {
+        "input": "wrong",
         "loc": ("b", "y", 1),
-        # "msg": "value is not a valid integer",
-        "type": "type_error.integer",
+        "type": "int_parsing",
+        "url": "https://errors.pydantic.dev/2.9/v/int_parsing",
     }

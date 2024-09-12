@@ -124,15 +124,15 @@ def test_union_types_coercion():
     model = Func.model_validate({"input": "0", "output": 1})
     print(model.model_dump_json(indent=1))
 
-    assert model.input == 0
+    assert model.input == "0"
     assert model.output == 1
 
     # numbers and bool ------------------------
     model = Func.model_validate({"input": "0.5", "output": "false"})
     print(model.model_dump_json(indent=1))
 
-    assert model.input == 0.5
-    assert model.output is False
+    assert model.input == "0.5"
+    assert model.output == "false"
 
     # (undefined) json string vs string ------------------------
     model = Func.model_validate(
@@ -143,30 +143,32 @@ def test_union_types_coercion():
     )
     print(model.model_dump_json(indent=1))
 
-    assert model.input == {"w": 42, "z": False}
+    assert model.input == '{"w": 42, "z": false}'
     assert model.output == "some/path/or/string"
 
     # (undefined) json string vs SimCoreFileLink.dict() ------------
     MINIMAL = 2  # <--- index of the example with the minimum required fields
     assert SimCoreFileLink in get_args(OutputTypes)
-    example = SimCoreFileLink.parse_obj(
-        SimCoreFileLink.Config.schema_extra["examples"][MINIMAL]
+    example = SimCoreFileLink.model_validate(
+        SimCoreFileLink.model_config["json_schema_extra"]["examples"][MINIMAL]
     )
-    model = Func.parse_obj(
+    model = Func.model_validate(
         {
             "input": '{"w": 42, "z": false}',
-            "output": example.dict(
+            "output": example.model_dump(
                 exclude_unset=True
             ),  # NOTE: this is NOT a raw json string
         }
     )
-    print(model.json(indent=1))
-    assert model.input == {"w": 42, "z": False}
+    print(model.model_dump_json(indent=1))
+    assert model.input == '{"w": 42, "z": false}'
     assert model.output == example
     assert isinstance(model.output, SimCoreFileLink)
 
     # json array and objects
-    model = Func.parse_obj({"input": {"w": 42, "z": False}, "output": [1, 2, 3, None]})
-    print(model.json(indent=1))
+    model = Func.model_validate(
+        {"input": {"w": 42, "z": False}, "output": [1, 2, 3, None]}
+    )
+    print(model.model_dump_json(indent=1))
     assert model.input == {"w": 42, "z": False}
     assert model.output == [1, 2, 3, None]

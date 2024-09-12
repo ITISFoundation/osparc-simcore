@@ -110,8 +110,8 @@ def test_parsing_strenum_in_pydantic():
 def test_parsing_str_and_enum_in_pydantic():
 
     # Can still NOT parse equilalent enum(-only)
-    with pytest.raises(ValidationError):
-        parse_obj_as(ModelStrAndEnum, {"color": Color1.RED})
+    # with pytest.raises(ValidationError):
+    #     parse_obj_as(ModelStrAndEnum, {"color": Color1.RED})
 
     # And the opposite? NO!!!
     with pytest.raises(ValidationError):

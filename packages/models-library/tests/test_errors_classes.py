@@ -10,7 +10,6 @@ from typing import Any
 
 import pytest
 from models_library.errors_classes import OsparcErrorMixin
-from pydantic.errors import PydanticErrorMixin
 
 
 def test_get_full_class_name():
@@ -138,13 +137,7 @@ def test_msg_template_with_different_formats(
 
 
 def test_missing_keys_in_msg_template_does_not_raise():
-    class MyErrorBefore(PydanticErrorMixin, ValueError):
+    class MyError(OsparcErrorMixin, ValueError):
         msg_template = "{value} and {missing}"
 
-    with pytest.raises(KeyError, match="missing"):
-        str(MyErrorBefore(value=42))
-
-    class MyErrorAfter(OsparcErrorMixin, ValueError):
-        msg_template = "{value} and {missing}"
-
-    assert str(MyErrorAfter(value=42)) == "42 and 'missing=?'"
+    assert str(MyError(value=42)) == "42 and 'missing=?'"
