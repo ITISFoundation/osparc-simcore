@@ -18,7 +18,7 @@
 qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
   extend: osparc.ui.list.ListItem,
 
-  construct: function(serviceKey, credits, percentage) {
+  construct: function(serviceKey, credits, hours, percentage) {
     this.base(arguments);
 
     const layout = this._getLayout();
@@ -26,6 +26,7 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
     layout.setSpacingY(4);
     layout.setColumnFlex(this.self().GRID.ICON.column, 0);
     layout.setColumnFlex(this.self().GRID.NAME.column, 1);
+    layout.setColumnFlex(this.self().GRID.TIME.column, 0);
     layout.setColumnFlex(this.self().GRID.CREDITS.column, 0);
 
     const icon = this.getChildControl("icon");
@@ -43,6 +44,7 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
       maximum: 100,
       value: percentage
     });
+    this.getChildControl("time").setValue(hours + "h");
     this.getChildControl("credits").setValue(credits + " used");
   },
 
@@ -61,8 +63,13 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
         column: 1,
         row: 1
       },
-      CREDITS: {
+      TIME: {
         column: 2,
+        row: 0,
+        rowSpan: 2
+      },
+      CREDITS: {
+        column: 3,
         row: 0,
         rowSpan: 2
       }
@@ -109,8 +116,17 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
           });
           this._add(control, this.self().GRID.PERCENTAGE);
           break;
+        case "time":
+          control = new qx.ui.basic.Atom().set({
+            icon: "@FontAwesome5Solid/clock/14",
+            font: "text-14",
+            alignY: "middle"
+          });
+          this._add(control, this.self().GRID.TIME);
+          break;
         case "credits":
-          control = new qx.ui.basic.Label().set({
+          control = new qx.ui.basic.Atom().set({
+            source: "osparc/coins-solid.svg",
             font: "text-14",
             alignY: "middle"
           });

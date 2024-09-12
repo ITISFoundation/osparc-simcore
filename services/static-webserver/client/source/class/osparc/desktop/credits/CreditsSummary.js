@@ -26,7 +26,8 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
     this.set({
       appearance: "floating-menu",
       padding: 8,
-      maxWidth: this.self().WIDTH
+      maxWidth: this.self().WIDTH,
+      zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
     });
     osparc.utils.Utils.setIdToWidget(this, "creditsSummary");
 
