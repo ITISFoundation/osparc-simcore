@@ -117,16 +117,14 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
           this._add(control, this.self().GRID.PERCENTAGE);
           break;
         case "time":
-          control = new qx.ui.basic.Atom().set({
-            icon: "@FontAwesome5Solid/clock/14",
+          control = new qx.ui.basic.Label().set({
             font: "text-14",
             alignY: "middle"
           });
           this._add(control, this.self().GRID.TIME);
           break;
         case "credits":
-          control = new qx.ui.basic.Atom().set({
-            source: "osparc/coins-solid.svg",
+          control = new qx.ui.basic.Label().set({
             font: "text-14",
             alignY: "middle"
           });
