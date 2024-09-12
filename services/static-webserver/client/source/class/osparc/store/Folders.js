@@ -69,35 +69,26 @@ qx.Class.define("osparc.store.Folders", {
       return osparc.data.Resources.getInstance().fetch("folders", "post", params)
         .then(folderData => {
           const folder = this.__addToCache(folderData);
-          this.fireDataEvent("folderAdded", {
-            workspaceId: folderData["workspaceId"],
-            folderId: folderData["folderId"],
-          });
+          this.fireDataEvent("folderAdded", folder);
           return folder;
         });
     },
 
     deleteFolder: function(folderId, workspaceId) {
-      return new Promise((resolve, reject) => {
-        const params = {
-          "url": {
-            folderId
+      const params = {
+        "url": {
+          folderId
+        }
+      };
+      return osparc.data.Resources.getInstance().fetch("folders", "delete", params)
+        .then(() => {
+          const folder = this.getFolder(folderId);
+          if (folder) {
+            this.__deleteFromCache(folderId, workspaceId);
+            this.fireDataEvent("folderRemoved", folder);
           }
-        };
-        osparc.data.Resources.getInstance().fetch("folders", "delete", params)
-          .then(() => {
-            if (this.__deleteFromCache(folderId, workspaceId)) {
-              resolve();
-              this.fireDataEvent("folderRemoved", {
-                workspaceId,
-                folderId,
-              });
-            } else {
-              reject();
-            }
-          })
-          .catch(err => reject(err));
-      });
+        })
+        .catch(console.error);
     },
 
     putFolder: function(folderId, updateData) {
