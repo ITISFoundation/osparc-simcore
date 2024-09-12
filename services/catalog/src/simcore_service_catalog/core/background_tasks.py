@@ -15,12 +15,14 @@ from contextlib import suppress
 from pprint import pformat
 from typing import Final
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
+from pydantic import ValidationError
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.services import manifest
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..db.repositories.groups import GroupsRepository
@@ -62,32 +64,45 @@ async def _create_services_in_database(
     sorted_services = sorted(service_keys, key=_by_version)
 
     for service_key, service_version in sorted_services:
+
         service_metadata: ServiceMetaDataPublished = services_in_registry[
             (service_key, service_version)
         ]
-        ## Set deprecation date to null (is valid date value for postgres)
+        try:
+            ## Set deprecation date to null (is valid date value for postgres)
 
-        # DEFAULT policies
-        (
-            owner_gid,
-            service_access_rights,
-        ) = await access_rights.evaluate_default_policy(app, service_metadata)
+            # DEFAULT policies
+            (
+                owner_gid,
+                service_access_rights,
+            ) = await access_rights.evaluate_default_policy(app, service_metadata)
 
-        # AUTO-UPGRADE PATCH policy
-        inherited_access_rights = await access_rights.evaluate_auto_upgrade_policy(
-            service_metadata, services_repo
-        )
+            # AUTO-UPGRADE PATCH policy
+            inherited_access_rights = await access_rights.evaluate_auto_upgrade_policy(
+                service_metadata, services_repo
+            )
 
-        service_access_rights += inherited_access_rights
-        service_access_rights = access_rights.reduce_access_rights(
-            service_access_rights
-        )
+            service_access_rights += inherited_access_rights
+            service_access_rights = access_rights.reduce_access_rights(
+                service_access_rights
+            )
 
-        # set the service in the DB
-        await services_repo.create_or_update_service(
-            ServiceMetaDataAtDB(**service_metadata.dict(), owner=owner_gid),
-            service_access_rights,
-        )
+            # set the service in the DB
+            await services_repo.create_or_update_service(
+                ServiceMetaDataAtDB(**service_metadata.dict(), owner=owner_gid),
+                service_access_rights,
+            )
+
+        except (HTTPException, ValidationError, SQLAlchemyError) as err:
+            # Resilient to single failures: errors in individual (service,key) should not prevent the evaluation of the rest
+            # and stop the background task from running.
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/6318
+            _logger.warning(
+                "Skipping '%s:%s' due to %s",
+                service_key,
+                service_version,
+                err,
+            )
 
 
 async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:

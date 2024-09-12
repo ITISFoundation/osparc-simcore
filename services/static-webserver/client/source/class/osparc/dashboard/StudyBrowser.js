@@ -236,21 +236,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__addStudiesToList(studies);
 
           // Show Quick Start if there are no studies in the root folder of the personal workspace
-          const quickStart = osparc.product.quickStart.Utils.getQuickStart();
-          if (quickStart) {
-            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(quickStart.localStorageStr);
+          const quickStartInfo = osparc.product.quickStart.Utils.getQuickStart();
+          if (quickStartInfo) {
+            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(quickStartInfo.localStorageStr);
             if (dontShow === "true") {
               return;
             }
             const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
             if (
               nStudies === 0 &&
-              this.getWorkspaceId() === null &&
+              this.getCurrentWorkspaceId() === null &&
               this.getCurrentFolderId() === null
             ) {
-              const tutorialWindow = quickStart.tutorial();
-              tutorialWindow.center();
-              tutorialWindow.open();
+              const quickStartWindow = quickStartInfo.tutorial();
+              quickStartWindow.center();
+              quickStartWindow.open();
             }
           }
         })
@@ -734,6 +734,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__addEmptyStudyPlusButton();
           break;
         case "tis":
+        case "tiplite":
           this.__addTIPPlusButtons();
           break;
         case "s4l":
@@ -770,7 +771,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               .then(newStudiesData => {
                 const product = osparc.product.Utils.getProductName()
                 if (product in newStudiesData) {
-                  const newButtonsInfo = newStudiesData[product].resources;
                   const mode = this._resourcesContainer.getMode();
                   const title = this.tr("New Plan");
                   const desc = this.tr("Choose Plan in pop-up");
@@ -786,24 +786,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                   newStudyBtn.addListener("execute", () => {
                     newStudyBtn.setValue(false);
 
-                    const foundTemplates = newButtonsInfo.filter(newButtonInfo => templates.find(t => t.name === newButtonInfo.expectedTemplateLabel));
-                    const groups = newStudiesData[product].categories;
-                    const newStudies = new osparc.dashboard.NewStudies(foundTemplates, groups);
-                    newStudies.setGroupBy("category");
-                    const winTitle = this.tr("New Plan");
-                    const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
-                      clickAwayClose: false,
-                      resizable: true
+                    const newStudies = new osparc.dashboard.NewStudies(newStudiesData[product]);
+                    newStudies.addListener("templatesLoaded", () => {
+                      newStudies.setGroupBy("category");
+                      const winTitle = this.tr("New Plan");
+                      const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
+                        clickAwayClose: false,
+                        resizable: true
+                      });
+                      newStudies.addListener("newStudyClicked", e => {
+                        win.close();
+                        const templateInfo = e.getData();
+                        const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
+                        if (templateData) {
+                          this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
+                        }
+                      });
+                      osparc.utils.Utils.setIdToWidget(win, "newStudiesWindow");
                     });
-                    newStudies.addListener("newStudyClicked", e => {
-                      win.close();
-                      const templateInfo = e.getData();
-                      const templateData = templates.find(t => t.name === templateInfo.expectedTemplateLabel);
-                      if (templateData) {
-                        this.__newPlanBtnClicked(templateData, templateInfo.newStudyLabel);
-                      }
-                    });
-                    osparc.utils.Utils.setIdToWidget(win, "newStudiesWindow");
                   });
                 }
               });
