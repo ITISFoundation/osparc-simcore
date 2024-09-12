@@ -177,7 +177,7 @@ async def task_create_service_containers(
             app,
             ProgressType.SERVICE_CONTAINERS_STARTING,
         ),
-        description=IDStr("installing software"),
+        description=IDStr("starting software"),
     ) as progress_bar:
 
         with log_context(_logger, logging.INFO, "load user services preferences"):
