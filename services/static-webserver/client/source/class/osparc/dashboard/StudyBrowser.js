@@ -496,19 +496,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const win = osparc.ui.window.Window.popUpInWindow(moveFolderToFolder, title, 350, 280);
       moveFolderToFolder.addListener("moveToFolder", e => {
         win.close();
+        const folder = osparc.store.Folders.getInstance().getFolder(folderId);
         const destFolderId = e.getData();
-        const params = {
-          url: {
-            folderId,
-            destFolderId,
-          }
+        const updatedData = {
+          name: folder.getName(),
+          parentFolderId: destFolderId,
         };
-        osparc.data.Resources.fetch("folders", "moveToFolder", params)
+        osparc.store.Folders.getInstance().putFolder(folderId, updatedData)
           .then(() => {
-            const folder = osparc.store.Folders.getInstance().getFolder(folderId);
-            if (folder) {
-              folder.setFolderId(destFolderId);
-            }
+            folder.setParentFolderId(destFolderId);
             this.__reloadFolders()
           })
           .catch(err => console.error(err));

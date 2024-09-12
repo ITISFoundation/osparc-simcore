@@ -36,10 +36,10 @@ qx.Class.define("osparc.dashboard.MoveResourceToFolder", {
       const folderId = e.getData();
       moveButton.setEnabled(this.__currentFolderId !== folderId);
       this.__selectedFolderId = folderId;
-    });
+    }, this);
     moveButton.addListener("execute", () => {
       this.fireDataEvent("moveToFolder", this.__selectedFolderId);
-    });
+    }, this);
   },
 
   events: {
@@ -55,7 +55,7 @@ qx.Class.define("osparc.dashboard.MoveResourceToFolder", {
       switch (id) {
         case "current-folder": {
           const folder = osparc.store.Folders.getInstance().getFolder(this.__currentFolderId);
-          const currentFolderName = folder ? folder["name"] : "Home";
+          const currentFolderName = folder ? folder.getName() : "Home";
           control = new qx.ui.basic.Label(this.tr("Current location: ") + currentFolderName);
           this._add(control);
           break;
