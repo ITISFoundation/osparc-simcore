@@ -143,7 +143,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       });
       folder.bind("workspaceId", this, "workspaceId");
       folder.bind("folderId", this, "folderId");
-      folder.bind("parentId", this, "parentFolderId");
+      folder.bind("parentFolderId", this, "parentFolderId");
       folder.bind("name", this, "title");
       folder.bind("lastModified", this, "lastModified");
 

@@ -31,7 +31,7 @@ qx.Class.define("osparc.data.model.Folder", {
     this.set({
       workspaceId: folderData.workspaceId,
       folderId: folderData.folderId,
-      parentId: folderData.parentFolderId,
+      parentFolderId: folderData.parentFolderId,
       name: folderData.name,
       myAccessRights: folderData.myAccessRights,
       owner: folderData.owner,
@@ -55,11 +55,11 @@ qx.Class.define("osparc.data.model.Folder", {
       event: "changeFolderId"
     },
 
-    parentId: {
+    parentFolderId: {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeParentId"
+      event: "changeParentFolderId"
     },
 
     name: {
