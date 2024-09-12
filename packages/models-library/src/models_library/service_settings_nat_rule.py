@@ -1,7 +1,14 @@
 from collections.abc import Generator
 from typing import Final
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, parse_obj_as
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    parse_obj_as,
+)
 
 from .basic_types import PortInt
 from .osparc_variable_identifier import OsparcVariableIdentifier, raise_if_unresolved
@@ -19,12 +26,12 @@ class _PortRange(BaseModel):
 
     @field_validator("upper")
     @classmethod
-    def lower_less_than_upper(cls, v, values) -> PortInt:
+    def lower_less_than_upper(cls, v, info: ValidationInfo) -> PortInt:
         if isinstance(v, OsparcVariableIdentifier):
             return v  # type: ignore # bypass validation if unresolved
 
         upper = v
-        lower: PortInt | OsparcVariableIdentifier | None = values.get("lower")
+        lower: PortInt | OsparcVariableIdentifier | None = info.data.get("lower")
 
         if lower and isinstance(lower, OsparcVariableIdentifier):
             return v  # type: ignore # bypass validation if unresolved

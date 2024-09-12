@@ -31,7 +31,7 @@ from models_library.service_settings_nat_rule import (
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.utils.string_substitution import TextTemplate
-from pydantic import BaseModel, ValidationError, parse_obj_as, parse_raw_as
+from pydantic import BaseModel, TypeAdapter, ValidationError, parse_obj_as
 from pydantic.json import pydantic_encoder
 
 
@@ -43,17 +43,17 @@ class _Parametrization(NamedTuple):
 
 SIMCORE_SERVICE_EXAMPLES = {
     "legacy": _Parametrization(
-        example=SimcoreServiceLabels.Config.schema_extra["examples"][0],
+        example=SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][0],
         items=1,
         uses_dynamic_sidecar=False,
     ),
     "dynamic-service": _Parametrization(
-        example=SimcoreServiceLabels.Config.schema_extra["examples"][1],
+        example=SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][1],
         items=5,
         uses_dynamic_sidecar=True,
     ),
     "dynamic-service-with-compose-spec": _Parametrization(
-        example=SimcoreServiceLabels.Config.schema_extra["examples"][2],
+        example=SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2],
         items=6,
         uses_dynamic_sidecar=True,
     ),
@@ -75,11 +75,11 @@ def test_simcore_service_labels(example: dict, items: int, uses_dynamic_sidecar:
 
 def test_service_settings():
     simcore_settings_settings_label = SimcoreServiceSettingsLabel.parse_obj(
-        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
+        SimcoreServiceSettingLabelEntry.model_config["json_schema_extra"]["examples"]
     )
     assert simcore_settings_settings_label
     assert len(simcore_settings_settings_label) == len(
-        SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
+        SimcoreServiceSettingLabelEntry.model_config["json_schema_extra"]["examples"]
     )
     assert simcore_settings_settings_label[0]
 
@@ -580,7 +580,7 @@ def test_resolving_some_service_labels_at_load_time(
         )
         assert template.is_valid()
         resolved_label: str = template.safe_substitute(vendor_environments)
-        to_restore = parse_raw_as(pydantic_model, resolved_label)
+        to_restore = TypeAdapter(pydantic_model).validate_json(resolved_label)
         setattr(service_meta, attribute_name, to_restore)
 
     print(json.dumps(service_labels, indent=1))

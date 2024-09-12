@@ -946,6 +946,7 @@ CREATE_FROM_TEMPLATE__TASK_RESULT = HttpApiCallCapture(
                 "locked": {"value": False, "status": "CLOSED"},
                 "state": {"value": "NOT_STARTED"},
             },
+            "workspaceId": 42,
         }
     },
     status_code=HTTPStatus.CREATED,  # 201

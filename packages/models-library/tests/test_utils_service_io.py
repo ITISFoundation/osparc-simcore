@@ -20,10 +20,10 @@ from models_library.utils.services_io import get_service_io_json_schema
 from pydantic import parse_obj_as
 
 example_inputs_labels = [
-    e for e in ServiceInput.Config.schema_extra["examples"] if e["label"]
+    e for e in ServiceInput.model_config["json_schema_extra"]["examples"] if e["label"]
 ]
 example_outputs_labels = [
-    e for e in ServiceOutput.Config.schema_extra["examples"] if e["label"]
+    e for e in ServiceOutput.model_config["json_schema_extra"]["examples"] if e["label"]
 ]
 
 
@@ -31,11 +31,11 @@ example_outputs_labels = [
 def service_port(request: pytest.FixtureRequest) -> ServiceInput | ServiceOutput:
     try:
         index = example_inputs_labels.index(request.param)
-        example = ServiceInput.Config.schema_extra["examples"][index]
+        example = ServiceInput.model_config["json_schema_extra"]["examples"][index]
         return ServiceInput.parse_obj(example)
     except ValueError:
         index = example_outputs_labels.index(request.param)
-        example = ServiceOutput.Config.schema_extra["examples"][index]
+        example = ServiceOutput.model_config["json_schema_extra"]["examples"][index]
         return ServiceOutput.parse_obj(example)
 
 
