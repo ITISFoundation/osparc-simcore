@@ -436,12 +436,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
     // /WORKSPACES
 
-    _changeContext: function() {
+    _changeContext: function(workspaceId, folderId) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        this.set({
+          currentWorkspaceId: workspaceId,
+          currentFolderId: folderId,
+        });
         this._resourcesContainer.setResourcesToList([]);
         this._resourcesList = [];
 
-        const workspaceId = this.getCurrentWorkspaceId();
         if (workspaceId === -1) {
           this.__reloadWorkspaces();
         } else {
