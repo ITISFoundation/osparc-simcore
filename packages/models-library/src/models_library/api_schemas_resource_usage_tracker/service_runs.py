@@ -43,6 +43,7 @@ class ServiceRunPage(NamedTuple):
 class OsparcCreditsAggregatedByServiceGet(BaseModel):
     osparc_credits: Decimal
     service_key: ServiceKey
+    running_time_in_hours: Decimal
 
 
 class OsparcCreditsAggregatedUsagesPage(NamedTuple):
