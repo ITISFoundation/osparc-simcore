@@ -19,21 +19,21 @@ faker = Faker()
         pytest.param(
             ProgressRabbitMessageNode(
                 project_id=faker.uuid4(cast_to=None),
-                user_id=faker.uuid4(cast_to=None),
+                user_id=faker.pyint(min_value=1),
                 node_id=faker.uuid4(cast_to=None),
                 progress_type=ProgressType.SERVICE_OUTPUTS_PULLING,
                 report=ProgressReport(actual_value=0.4, total=1),
-            ).json(),
+            ).model_dump_json(),
             ProgressRabbitMessageNode,
             id="node_progress",
         ),
         pytest.param(
             ProgressRabbitMessageProject(
                 project_id=faker.uuid4(cast_to=None),
-                user_id=faker.uuid4(cast_to=None),
+                user_id=faker.pyint(min_value=1),
                 progress_type=ProgressType.PROJECT_CLOSING,
                 report=ProgressReport(actual_value=0.4, total=1),
-            ).json(),
+            ).model_dump_json(),
             ProgressRabbitMessageProject,
             id="project_progress",
         ),
