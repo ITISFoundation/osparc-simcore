@@ -180,23 +180,19 @@ qx.Class.define("osparc.store.Workspaces", {
         .catch(console.error);
     },
 
-    getWorkspaces: function(parentId = null) {
-      return this.workspacesCached.filter(f => f.getParentId() === parentId);
-    },
-
     getWorkspace: function(workspaceId = null) {
-      return this.workspacesCached.find(f => f.getWorkspaceId() === workspaceId);
+      return this.workspacesCached.find(w => w.getWorkspaceId() === workspaceId);
     },
 
     __addToCache: function(workspace) {
-      const found = this.workspacesCached.find(f => f.getWorkspaceId() === workspace.getWorkspaceId());
+      const found = this.workspacesCached.find(w => w.getWorkspaceId() === workspace.getWorkspaceId());
       if (!found) {
         this.workspacesCached.unshift(workspace);
       }
     },
 
     __deleteFromCache: function(workspaceId) {
-      const idx = this.workspacesCached.findIndex(f => f.getWorkspaceId() === workspaceId);
+      const idx = this.workspacesCached.findIndex(w => w.getWorkspaceId() === workspaceId);
       if (idx > -1) {
         this.workspacesCached.splice(idx, 1);
         return true;
