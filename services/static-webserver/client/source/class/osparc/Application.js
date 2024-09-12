@@ -243,7 +243,7 @@ qx.Class.define("osparc.Application", {
           });
       }
       if (maskIconMeta) {
-        const maskIcon = osparc.product.Utils.getManifestIconUrl("safari-pinned-tab.svg")
+        const maskIcon = osparc.product.Utils.getManifestIconUrl("safari-pinned-tab.png", "apple-icon-fallback.png")
         Promise.resolve(maskIcon)
           .then(resolvedUrl => {
             // Create the manifest data object with resolved URLs
@@ -268,15 +268,15 @@ qx.Class.define("osparc.Application", {
     __updateAppIcons: function() {
       // Array of promises to resolve icon URLs for Apple Touch Icons
       const appleIconUrls = [
-        osparc.product.Utils.getManifestIconUrl("apple-icon-57x57.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-60x60.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-72x72.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-76x76.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-114x114.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-120x120.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-144x144.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-152x152.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-180x180.png")
+        osparc.product.Utils.getManifestIconUrl("apple-icon-57x57.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-60x60.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-72x72.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-76x76.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-114x114.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-120x120.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-144x144.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-152x152.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-180x180.png", "apple-icon-fallback.png")
       ];
 
       // Array of promises to resolve icon URLs for Favicons
