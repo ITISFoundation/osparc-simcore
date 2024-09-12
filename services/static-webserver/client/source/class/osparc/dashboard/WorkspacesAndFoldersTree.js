@@ -41,6 +41,22 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     this.__addSharedWorkspaces(rootModel);
 
     this.__initTree();
+
+    osparc.store.Folders.getInstance().addListener("folderAdded", e => {
+      const {
+        workspaceId,
+        folderId,
+      } = e.getData()
+      this.__folderAdded(workspaceId, folderId);
+    }, this);
+
+    osparc.store.Folders.getInstance().addListener("folderRemoved", e => {
+      const {
+        workspaceId,
+        folderId,
+      } = e.getData()
+      this.__folderRemoved(workspaceId, folderId);
+    }, this);
   },
 
   events: {
@@ -185,6 +201,14 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
             model.getChildren().push(folderModel);
           });
         });
-    }
+    },
+
+    __folderAdded: function() {
+
+    },
+
+    __folderRemoved: function() {
+
+    },
   }
 });

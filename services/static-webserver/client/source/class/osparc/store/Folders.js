@@ -25,6 +25,11 @@ qx.Class.define("osparc.store.Folders", {
     this.foldersCached = [];
   },
 
+  events: {
+    "folderAdded": "qx.event.type.Data",
+    "folderRemoved": "qx.event.type.Data",
+  },
+
   members: {
     foldersCached: null,
 
@@ -64,6 +69,10 @@ qx.Class.define("osparc.store.Folders", {
       return osparc.data.Resources.getInstance().fetch("folders", "post", params)
         .then(folderData => {
           const folder = this.__addToCache(folderData);
+          this.fireDataEvent("folderAdded", {
+            workspaceId: folderData["workspaceId"],
+            folderId: folderData["folderId"],
+          });
           return folder;
         });
     },
@@ -79,6 +88,10 @@ qx.Class.define("osparc.store.Folders", {
           .then(() => {
             if (this.__deleteFromCache(folderId, workspaceId)) {
               resolve();
+              this.fireDataEvent("folderRemoved", {
+                workspaceId,
+                folderId,
+              });
             } else {
               reject();
             }
