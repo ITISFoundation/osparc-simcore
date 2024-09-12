@@ -207,7 +207,6 @@ async def test_iterators_workflow(
         side_effect=_mock_catalog_get,
         autospec=True,
     )
-    # 781a93e9-4f89-306d-a24a-82defcc4b385
     # extract outputs
     for i, prj_iter in enumerate(first_iterlist):
         assert prj_iter.workcopy_project_url.path
