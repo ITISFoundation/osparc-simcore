@@ -206,11 +206,6 @@ qx.Class.define("osparc.product.Utils", {
      * @returns {String} ["REGISTER", "REQUEST_ACCOUNT_FORM", "REQUEST_ACCOUNT_INSTRUCTIONS"]
      */
     getCreateAccountAction: function() {
-      if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        // Allow registering in Development Platform
-        return "REGISTER";
-      }
-
       const config = osparc.store.Store.getInstance().get("config");
       if (config["invitation_required"]) {
         const vendor = osparc.store.VendorInfo.getInstance().getVendor();
