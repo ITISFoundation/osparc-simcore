@@ -226,6 +226,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         const newName = folderEditor.getLabel();
         const updateData = {
           "name": newName,
+          "parentFolderId": folder.getParentFolderId(),
         };
         osparc.store.Folders.getInstance().putFolder(this.getFolderId(), updateData)
           .then(() => {
