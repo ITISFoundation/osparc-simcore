@@ -61,6 +61,8 @@ import-db-from-docker-volume import-db-from-folder: scripts/copy_database_volume
 		$(if $(findstring -from-folder, $@),--folder $(host_folder),--volume $(host_volume)) \
 		--target $(local_volume)
 
+# make import-db-from-docker-volume host= host_volume= local_volume=staging-simcore_postgres_data
+
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
 #
