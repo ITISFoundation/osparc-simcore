@@ -68,10 +68,18 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     __createWorkspacesAndFoldersTree: function() {
       const workspacesAndFoldersTree = this.__workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();
-      // play with the height of:
-      // osparc.dashboard.WorkspacesAndFoldersTree
-      //   Pane
-      //     1st child
+      // Height needs to be calculated manually to make it flexible
+      workspacesAndFoldersTree.set({
+        minHeight: 100,
+        maxHeight: 400,
+        height: 100,
+      });
+      workspacesAndFoldersTree.addListener("openChanged", () => {
+        const rowConfig = workspacesAndFoldersTree.getPane().getRowConfig();
+        const totalHeight = rowConfig.itemCount * rowConfig.defaultItemSize;
+        console.log("totalHeight", totalHeight);
+        workspacesAndFoldersTree.setHeight(totalHeight + 10);
+      });
       return workspacesAndFoldersTree;
     },
 

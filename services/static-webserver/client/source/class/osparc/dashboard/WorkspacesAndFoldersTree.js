@@ -44,7 +44,8 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
   },
 
   events: {
-    "changeContext": "qx.event.type.Data"
+    "changeContext": "qx.event.type.Data",
+    "openChanged": "qx.event.type.Event",
   },
 
   properties: {
@@ -78,6 +79,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
                 // eslint-disable-next-line no-underscore-dangle
                 that.__populateFolder(value, value.getWorkspaceId(), value.getFolderId());
               }
+              that.fireEvent("openChanged");
               return isOpen;
             },
           }, item, id);
@@ -95,6 +97,9 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
               folderId,
             });
           }, this);
+          item.set({
+            indent: 12, // defaults to 19
+          });
         },
       });
 
