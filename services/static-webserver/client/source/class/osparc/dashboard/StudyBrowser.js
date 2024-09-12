@@ -543,6 +543,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _moveFolderToWorkspaceRequested: function(folderId) {
+      const folderToWorkspaceRequested = false;
+      if (!folderToWorkspaceRequested) {
+        const msg = this.tr("Coming soon");
+        osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+        return;
+      }
       const moveFolderToWorkspace = new osparc.dashboard.MoveResourceToWorkspace(this.getCurrentWorkspaceId());
       const title = "Move to Workspace";
       const win = osparc.ui.window.Window.popUpInWindow(moveFolderToWorkspace, title, 350, 280);
