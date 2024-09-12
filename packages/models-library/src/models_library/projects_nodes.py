@@ -8,7 +8,6 @@ from typing import Annotated, Any, TypeAlias, Union
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Extra,
     Field,
     HttpUrl,
     Json,
@@ -230,18 +229,16 @@ class Node(BaseModel):
             return NodeState(currentStatus=running_state_value)
         return v
 
-    # TODO[pydantic]: We couldn't refactor this class, please create the `model_config` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    class Config:
-        extra = Extra.forbid
-
+    def _patch_json_schema_extra(self, schema: dict) -> None:
         # NOTE: exporting without this trick does not make runHash as nullable.
         # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
-        @staticmethod
-        def schema_extra(schema, _model: "Node"):
-            # SEE https://swagger.io/docs/specification/data-models/data-types/#Null
-            for prop_name in ["parent", "runHash"]:
-                if prop_name in schema.get("properties", {}):
-                    prop = deepcopy(schema["properties"][prop_name])
-                    prop["nullable"] = True
-                    schema["properties"][prop_name] = prop
+        for prop_name in ["parent", "runHash"]:
+            if prop_name in schema.get("properties", {}):
+                prop = deepcopy(schema["properties"][prop_name])
+                prop["nullable"] = True
+                schema["properties"][prop_name] = prop
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra=_patch_json_schema_extra,
+    )
