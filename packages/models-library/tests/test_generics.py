@@ -107,7 +107,7 @@ def test_enveloped_data_dict():
             "loc": ("data",),
             "msg": "Input should be a valid dictionary",
             "type": "dict_type",
-            "url": f"https://errors.pydantic.dev/{version_short()}/v/dict_type"
+            "url": f"https://errors.pydantic.dev/{version_short()}/v/dict_type",
         }
     ]
 

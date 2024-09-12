@@ -153,9 +153,7 @@ class BaseFileLink(BaseModel):
     )
 
     label: str | None = Field(
-        default=None,
-        description="The real file name",
-        validate_default=True
+        default=None, description="The real file name", validate_default=True
     )
 
     e_tag: str | None = Field(
