@@ -228,7 +228,6 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     __folderRemoved: function(folder) {
       const parentModel = this.__getModel(folder.getWorkspaceId(), folder.getParentFolderId());
       if (parentModel) {
-        console.log(parentModel);
         const idx = parentModel.getChildren().toArray().findIndex(c => folder.getWorkspaceId() === c.getWorkspaceId() && folder.getFolderId() === c.getFolderId());
         if (idx > -1) {
           parentModel.getChildren().toArray().splice(idx, 1);
