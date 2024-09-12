@@ -99,10 +99,6 @@ qx.Class.define("osparc.data.model.Folder", {
   },
 
   statics: {
-    putFolder: function(folderId, propKey, value) {
-      return osparc.store.Folders.getInstance().putFolder(folderId, propKey, value);
-    },
-
     getProperties: function() {
       return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Folder));
     }

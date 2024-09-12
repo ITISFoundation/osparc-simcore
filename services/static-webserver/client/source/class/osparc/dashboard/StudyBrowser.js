@@ -560,7 +560,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _deleteFolderRequested: function(folderId) {
-      osparc.store.Folders.getInstance().deleteFolder(folderId)
+      osparc.store.Folders.getInstance().deleteFolder(folderId, this.getCurrentWorkspaceId())
         .then(() => this.__reloadFolders())
         .catch(err => console.error(err));
     },

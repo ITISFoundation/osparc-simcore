@@ -227,7 +227,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         const updateData = {
           "name": newName,
         };
-        osparc.data.model.Folder.putFolder(this.getFolderId(), updateData)
+        osparc.store.Folders.getInstance().putFolder(this.getFolderId(), updateData)
           .then(() => {
             folder.set({
               name: newName,

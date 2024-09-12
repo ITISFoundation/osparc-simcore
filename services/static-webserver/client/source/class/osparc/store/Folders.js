@@ -45,8 +45,7 @@ qx.Class.define("osparc.store.Folders", {
         .then(foldersData => {
           const folders = [];
           foldersData.forEach(folderData => {
-            const folder = new osparc.data.model.Folder(folderData);
-            this.__addToCache(folder);
+            const folder = this.__addToCache(folderData);
             folders.push(folder);
           });
           return folders;
@@ -64,13 +63,12 @@ qx.Class.define("osparc.store.Folders", {
       };
       return osparc.data.Resources.getInstance().fetch("folders", "post", params)
         .then(folderData => {
-          const newFolder = new osparc.data.model.Folder(folderData);
-          this.__addToCache(newFolder);
-          return newFolder;
+          const folder = this.__addToCache(folderData);
+          return folder;
         });
     },
 
-    deleteFolder: function(folderId) {
+    deleteFolder: function(folderId, workspaceId) {
       return new Promise((resolve, reject) => {
         const params = {
           "url": {
@@ -79,7 +77,7 @@ qx.Class.define("osparc.store.Folders", {
         };
         osparc.data.Resources.getInstance().fetch("folders", "delete", params)
           .then(() => {
-            if (this.__deleteFromCache(folderId)) {
+            if (this.__deleteFromCache(folderId, workspaceId)) {
               resolve();
             } else {
               reject();
@@ -98,41 +96,41 @@ qx.Class.define("osparc.store.Folders", {
           data: updateData
         };
         osparc.data.Resources.getInstance().fetch("folders", "update", params)
-          .then(() => {
-            const folder = this.getFolder(folderId);
-            Object.keys(updateData).forEach(propKey => {
-              const upKey = qx.lang.String.firstUp(propKey);
-              const setter = "set" + upKey;
-              if (folder && setter in folder) {
-                folder[setter](updateData[propKey]);
-              }
-            });
-            folder.setLastModified(new Date());
-            this.__deleteFromCache(folderId);
-            this.__addToCache(folder);
+          .then(folderData => {
+            this.__addToCache(folderData);
             resolve();
           })
           .catch(err => reject(err));
       });
     },
 
-    getFolders: function(parentId = null) {
-      return this.foldersCached.filter(f => f.getParentId() === parentId);
-    },
-
     getFolder: function(folderId = null) {
       return this.foldersCached.find(f => f.getFolderId() === folderId);
     },
 
-    __addToCache: function(folder) {
-      const found = this.foldersCached.find(f => f.getFolderId() === folder.getFolderId());
-      if (!found) {
+    __addToCache: function(folderData) {
+      let folder = this.foldersCached.find(f => f.getFolderId() === folderData["folderId"] && f.getWorkspaceId() === folderData["workspaceId"]);
+      if (folder) {
+        // put
+        Object.keys(folderData).forEach(key => {
+          if (key === "createdAt") {
+            folder.set("createdAt", new Date(folderData["createdAt"]));
+          } else if (key === "modifiedAt") {
+            folder.set("lastModified", new Date(folderData["modifiedAt"]));
+          } else {
+            folder.set(key, folderData[key]);
+          }
+        });
+      } else {
+        // get and post
+        folder = new osparc.data.model.Folder(folderData);
         this.foldersCached.unshift(folder);
       }
+      return folder;
     },
 
-    __deleteFromCache: function(folderId) {
-      const idx = this.foldersCached.findIndex(f => f.getFolderId() === folderId);
+    __deleteFromCache: function(folderId, workspaceId) {
+      const idx = this.foldersCached.findIndex(f => f.getFolderId() === folderId && f.getWorkspaceId() === workspaceId);
       if (idx > -1) {
         this.foldersCached.splice(idx, 1);
         return true;
