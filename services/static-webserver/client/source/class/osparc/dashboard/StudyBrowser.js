@@ -118,6 +118,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const isStudyCreation = false;
             this._startStudyById(loadStudyId, null, cancelCB, isStudyCreation);
           } else {
+            this.__reloadFolders();
             this.reloadResources();
           }
           // "Starting..." page
