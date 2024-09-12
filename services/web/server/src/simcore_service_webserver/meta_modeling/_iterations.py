@@ -211,7 +211,6 @@ async def get_or_create_runnable_projects(
     vc_repo = VersionControlForMetaModeling.create_from_request(request)
     assert vc_repo.user_id  # nosec
     product_name = request[RQ_PRODUCT_KEY]
-    app = request.app
 
     try:
         project: ProjectDict = await vc_repo.get_project(str(project_uuid))
