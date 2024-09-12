@@ -27,6 +27,8 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     };
     const rootModel = qx.data.marshal.Json.createModel(rootData, true);
 
+    this.__models = [];
+
     this.base(arguments, rootModel, "label", "children");
 
     this.set({
@@ -41,6 +43,21 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     this.__addSharedWorkspaces(rootModel);
 
     this.__initTree();
+
+    osparc.store.Folders.getInstance().addListener("folderAdded", e => {
+      const folder = e.getData()
+      this.__folderAdded(folder);
+    }, this);
+
+    osparc.store.Folders.getInstance().addListener("folderRemoved", e => {
+      const folder = e.getData()
+      this.__folderRemoved(folder);
+    }, this);
+  },
+
+  events: {
+    "changeContext": "qx.event.type.Data",
+    "openChanged": "qx.event.type.Event",
   },
 
   properties: {
@@ -62,6 +79,8 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
   },
 
   members: {
+    __models: null,
+
     __initTree: function() {
       const that = this;
       this.setDelegate({
@@ -74,17 +93,27 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
                 // eslint-disable-next-line no-underscore-dangle
                 that.__populateFolder(value, value.getWorkspaceId(), value.getFolderId());
               }
+              that.fireEvent("openChanged");
               return isOpen;
             },
           }, item, id);
         },
         configureItem: item => {
           item.addListener("tap", () => {
+            const workspaceId = item.getModel().getWorkspaceId();
+            const folderId = item.getModel().getFolderId();
             this.set({
-              currentWorkspaceId: item.getModel().getWorkspaceId(),
-              currentFolderId: item.getModel().getFolderId(),
-            })
+              currentWorkspaceId: workspaceId,
+              currentFolderId: folderId,
+            });
+            this.fireDataEvent("changeContext", {
+              workspaceId,
+              folderId,
+            });
           }, this);
+          item.set({
+            indent: 12, // defaults to 19
+          });
         },
       });
 
@@ -113,12 +142,13 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
         }],
       }
       const myWorkspaceModel = qx.data.marshal.Json.createModel(myWorkspaceData, true);
+      this.__models.push(myWorkspaceModel);
       rootModel.getChildren().append(myWorkspaceModel);
     },
 
     __addSharedWorkspaces: function(rootModel) {
       const sharedWorkspaceData = {
-        label: "Shared Workspace",
+        label: "Shared Workspaces",
         icon: "shared",
         workspaceId: -1,
         folderId: null,
@@ -126,26 +156,51 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
         children: [],
       }
       const sharedWorkspaceModel = qx.data.marshal.Json.createModel(sharedWorkspaceData, true);
+      this.__models.push(sharedWorkspaceModel);
       rootModel.getChildren().append(sharedWorkspaceModel);
 
       osparc.store.Workspaces.fetchWorkspaces()
         .then(workspaces => {
           workspaces.forEach(workspace => {
-            const workspaceData = {
-              label: workspace.getName(),
-              icon: "shared",
-              workspaceId: workspace.getWorkspaceId(),
-              folderId: null,
-              loaded: false,
-              children: [{
-                label: "Loading...",
-              }],
-            };
-            const workspaceModel = qx.data.marshal.Json.createModel(workspaceData, true);
-            sharedWorkspaceModel.getChildren().append(workspaceModel);
+            this.__addWorkspace(workspace, sharedWorkspaceModel);
           });
         })
         .catch(console.error);
+    },
+
+    __addWorkspace: function(workspace, parentModel) {
+      const workspaceData = {
+        label: "",
+        icon: "shared",
+        workspaceId: workspace.getWorkspaceId(),
+        folderId: null,
+        loaded: false,
+        children: [{
+          label: "Loading...",
+        }],
+      };
+      const workspaceModel = qx.data.marshal.Json.createModel(workspaceData, true);
+      this.__models.push(workspaceModel);
+      workspace.bind("name", workspaceModel, "label");
+      parentModel.getChildren().append(workspaceModel);
+    },
+
+    __addFolder: function(folder, parentModel) {
+      const workspaceId = folder.getWorkspaceId();
+      const folderData = {
+        label: "",
+        icon: workspaceId ? "shared" : "folder",
+        workspaceId,
+        folderId: folder.getFolderId(),
+        loaded: false,
+        children: [{
+          label: "Loading...",
+        }]
+      };
+      const folderModel = qx.data.marshal.Json.createModel(folderData, true);
+      this.__models.push(folderModel);
+      folder.bind("name", folderModel, "label");
+      parentModel.getChildren().push(folderModel);
     },
 
     __populateFolder: function(model, workspaceId, folderId) {
@@ -154,19 +209,30 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
           model.setLoaded(true);
           model.getChildren().removeAll();
           folders.forEach(folder => {
-            const folderData = {
-              label: folder.getName(),
-              icon: workspaceId ? "shared" : "folder",
-              workspaceId,
-              folderId: folder.getFolderId(),
-              loaded: false,
-              children: [{
-                label: "Loading...",
-              }]
-            };
-            model.getChildren().push(qx.data.marshal.Json.createModel(folderData, true));
+            this.__addFolder(folder, model);
           });
         });
-    }
+    },
+
+    __getModel: function(workspaceId, folderId) {
+      return this.__models.find(mdl => mdl.getWorkspaceId() === workspaceId && mdl.getFolderId() === folderId);
+    },
+
+    __folderAdded: function(folder) {
+      const parentModel = this.__getModel(folder.getWorkspaceId(), folder.getParentFolderId());
+      if (parentModel) {
+        this.__addFolder(folder, parentModel);
+      }
+    },
+
+    __folderRemoved: function(folder) {
+      const parentModel = this.__getModel(folder.getWorkspaceId(), folder.getParentFolderId());
+      if (parentModel) {
+        const idx = parentModel.getChildren().toArray().findIndex(c => folder.getWorkspaceId() === c.getWorkspaceId() && folder.getFolderId() === c.getFolderId());
+        if (idx > -1) {
+          parentModel.getChildren().toArray().splice(idx, 1);
+        }
+      }
+    },
   }
 });
