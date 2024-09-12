@@ -42,7 +42,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
 
   statics: {
     BILLING_CENTER_BUTTON_SIZE: 26,
-    WIDTH: 300,
+    WIDTH: 350,
     TIME_RANGES: [{
       key: 1,
       label: "Today"
