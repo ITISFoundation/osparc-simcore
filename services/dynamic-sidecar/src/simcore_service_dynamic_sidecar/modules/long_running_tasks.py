@@ -171,7 +171,7 @@ async def task_create_service_containers(
     async with event_propagation_disabled(app), _reset_on_error(
         shared_store
     ), ProgressBarData(
-        num_steps=5,
+        num_steps=4,
         progress_report_cb=functools.partial(
             post_progress_message,
             app,
@@ -189,16 +189,6 @@ async def task_create_service_containers(
         progress.update(message="cleanup previous used resources")
         result = await docker_compose_rm(shared_store.compose_spec, settings)
         _raise_for_errors(result, "rm")
-        await progress_bar.update()
-
-        progress.update(message="pulling images", percent=ProgressPercent(0.01))
-        await post_sidecar_log_message(
-            app, "pulling service images", log_level=logging.INFO
-        )
-        await docker_compose_pull(app, shared_store.compose_spec)
-        await post_sidecar_log_message(
-            app, "service images ready", log_level=logging.INFO
-        )
         await progress_bar.update()
 
         progress.update(
