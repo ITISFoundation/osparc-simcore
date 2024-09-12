@@ -1,8 +1,8 @@
 from copy import deepcopy
 from typing import Any, TypeVar
 
+from models_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, Field, RootModel
-from pydantic.errors import PydanticErrorMixin
 
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
 
@@ -48,7 +48,7 @@ class OsparcVariableIdentifier(RootModel[str]):
         return parts[1] if len(parts) > 1 else None
 
 
-class UnresolvedOsparcVariableIdentifierError(PydanticErrorMixin, TypeError):
+class UnresolvedOsparcVariableIdentifierError(OsparcErrorMixin, TypeError):
     msg_template = "Provided argument is unresolved: value={value}"
 
 

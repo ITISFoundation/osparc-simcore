@@ -48,7 +48,7 @@ def test_create_minimal_node_with_new_data_type(
 
     node = Node(**old_node_data)
     assert (
-        node.thumbnail
+        str(node.thumbnail)
         == "https://www.google.com/imgres?imgurl=https%3A%2F%2Fregtechassociation.org%2Fwp-content%2Fuploads%2F2018%2F10%2FStandards-stock-image-1400x650.jpg&imgrefurl=https%3A%2F%2Fregtechassociation.org%2Fnews%2Firta-launches-new-open-standard-principles-for-regtech-firms-in-support-of-key-initiatives-for-2018-19%2Fstandards-stock-image-1400x650%2F&tbnid=se_y-TktvwvEMM&vet=12ahUKEwjmsNDs66ruAhWEtqQKHSLRBT8QMygBegUIARCEAQ..i&docid=UiHvpBPeE3G8KM&w=1400&h=650&q=standard%20image&ved=2ahUKEwjmsNDs66ruAhWEtqQKHSLRBT8QMygBegUIARCEAQ"
     )
 

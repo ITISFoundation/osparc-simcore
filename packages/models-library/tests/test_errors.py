@@ -6,6 +6,7 @@
 import pytest
 from models_library.errors import ErrorDict
 from pydantic import BaseModel, Field, ValidationError
+from pydantic.version import version_short
 from typing_extensions import Annotated
 
 
@@ -39,11 +40,11 @@ def test_pydantic_error_dict():
         "input": -1,
         "loc": ("x",),
         "type": "greater_than_equal",
-        "url": "https://errors.pydantic.dev/2.9/v/greater_than_equal",
+        "url": f"https://errors.pydantic.dev/{version_short()}/v/greater_than_equal",
     }
     assert _copy(errors[1], exclude={"msg"}) == {
         "input": "wrong",
         "loc": ("b", "y", 1),
         "type": "int_parsing",
-        "url": "https://errors.pydantic.dev/2.9/v/int_parsing",
+        "url": f"https://errors.pydantic.dev/{version_short()}/v/int_parsing",
     }

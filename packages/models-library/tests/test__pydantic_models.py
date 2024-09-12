@@ -13,6 +13,7 @@ from models_library.projects_nodes import InputTypes, OutputTypes
 from models_library.projects_nodes_io import SimCoreFileLink
 from pydantic import BaseModel, ValidationError, schema_json_of
 from pydantic.types import Json
+from pydantic.version import version_short
 
 # NOTE: pydantic at a glance (just a few key features):
 #
@@ -70,7 +71,7 @@ def test_json_type():
         "loc": ("data_schema",),
         "msg": "JSON input should be string, bytes or bytearray",
         "type": "json_type",
-        "url": "https://errors.pydantic.dev/2.9/v/json_type",
+        "url": f"https://errors.pydantic.dev/{version_short()}/v/json_type",
     }
 
     with pytest.raises(ValidationError) as exc_info:
@@ -82,7 +83,7 @@ def test_json_type():
         "loc": ("data_schema",),
         "msg": "Invalid JSON: expected value at line 1 column 1",
         "type": "json_invalid",
-        "url": "https://errors.pydantic.dev/2.9/v/json_invalid",
+        "url": f"https://errors.pydantic.dev/{version_short()}/v/json_invalid",
     }
 
 
