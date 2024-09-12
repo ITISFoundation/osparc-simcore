@@ -168,15 +168,28 @@ async def task_create_service_containers(
 
     assert shared_store.compose_spec  # nosec
 
-    async with event_propagation_disabled(app), _reset_on_error(shared_store):
+    async with event_propagation_disabled(app), _reset_on_error(
+        shared_store
+    ), ProgressBarData(
+        num_steps=5,
+        progress_report_cb=functools.partial(
+            post_progress_message,
+            app,
+            ProgressType.SERVICE_CONTAINERS_STARTING,
+        ),
+        description=IDStr("installing software"),
+    ) as progress_bar:
+
         with log_context(_logger, logging.INFO, "load user services preferences"):
             if user_services_preferences.is_feature_enabled(app):
                 await user_services_preferences.load_user_services_preferences(app)
+        await progress_bar.update()
 
         # removes previous pending containers
         progress.update(message="cleanup previous used resources")
         result = await docker_compose_rm(shared_store.compose_spec, settings)
         _raise_for_errors(result, "rm")
+        await progress_bar.update()
 
         progress.update(message="pulling images", percent=ProgressPercent(0.01))
         await post_sidecar_log_message(
@@ -186,6 +199,7 @@ async def task_create_service_containers(
         await post_sidecar_log_message(
             app, "service images ready", log_level=logging.INFO
         )
+        await progress_bar.update()
 
         progress.update(
             message="creating and starting containers", percent=ProgressPercent(0.90)
@@ -194,6 +208,7 @@ async def task_create_service_containers(
             app, "starting service containers", log_level=logging.INFO
         )
         await _retry_docker_compose_create(shared_store.compose_spec, settings)
+        await progress_bar.update()
 
         progress.update(
             message="ensure containers are started", percent=ProgressPercent(0.95)
@@ -201,6 +216,7 @@ async def task_create_service_containers(
         compose_start_result = await _retry_docker_compose_start(
             shared_store.compose_spec, settings
         )
+        await progress_bar.update()
 
     await send_service_started(app, metrics_params=containers_create.metrics_params)
 
