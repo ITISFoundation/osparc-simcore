@@ -320,10 +320,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/folders/{folderId}"
           },
-          moveToFolder: {
-            method: "PUT",
-            url: statics.API + "/folders/{folderId}/folders/{destFolderId}"
-          },
           moveToWorkspace: {
             method: "PUT",
             url: statics.API + "/folders/{folderId}/folders/{workspaceId}"
