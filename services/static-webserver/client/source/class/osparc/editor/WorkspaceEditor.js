@@ -23,6 +23,10 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
 
     this._setLayout(new qx.ui.layout.VBox(8));
 
+    if (!workspace) {
+      this.getChildControl("intro-text");
+    }
+
     const manager = this.__validator = new qx.ui.form.validation.Manager();
     const title = this.getChildControl("title");
     title.setRequired(true);
@@ -77,6 +81,17 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "intro-text": {
+          const studies = osparc.product.Utils.getStudyAlias({ plural: true });
+          const text = this.tr(`A Shared Workspace is the context where all the ${studies} and folders are shared among its members.`);
+          control = new qx.ui.basic.Label(text).set({
+            font: "text-14",
+            rich: true,
+            wrap: true
+          });
+          this._add(control);
+          break;
+        }
         case "title": {
           control = new qx.ui.form.TextField().set({
             font: "text-14",

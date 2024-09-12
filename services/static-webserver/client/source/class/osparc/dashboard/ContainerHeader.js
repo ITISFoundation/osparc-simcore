@@ -81,7 +81,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
     __createUpstreamButtons: function(childFolder) {
       if (childFolder) {
         const breadcrumbsLayout = this.getChildControl("breadcrumbs-layout");
-        const parentFolder = osparc.store.Folders.getInstance().getFolder(childFolder.getParentId());
+        const parentFolder = osparc.store.Folders.getInstance().getFolder(childFolder.getParentFolderId());
         if (parentFolder) {
           breadcrumbsLayout.addAt(this.__createArrow(), 0);
           const upstreamButton = this.__createFolderButton(parentFolder);
