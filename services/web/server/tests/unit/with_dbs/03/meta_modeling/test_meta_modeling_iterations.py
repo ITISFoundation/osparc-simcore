@@ -68,9 +68,6 @@ async def context_with_logged_user(client: TestClient, logged_user: UserInfoDict
         await conn.execute(projects.delete())
 
 
-@pytest.mark.skip(
-    "Test failing because `create_workcopy_and_branch_from_commit` is not inserting to projects_to_products table"
-)
 @pytest.mark.acceptance_test()
 async def test_iterators_workflow(
     client: TestClient,
