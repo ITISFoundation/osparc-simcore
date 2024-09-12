@@ -44,7 +44,7 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
       maximum: 100,
       value: percentage
     });
-    this.getChildControl("time").setValue(hours + "h");
+    this.getChildControl("time").setValue(hours + " h");
     this.getChildControl("credits").setValue(credits + " used");
   },
 

@@ -72,15 +72,15 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
                 service: entry["service_key"],
                 credits: -1*entry["osparc_credits"],
                 hours: entry["running_time_in_hours"],
-                percentageHours: 100*entry["osparc_credits"]/totalHours,
-                percentageCredits: 100*entry["osparc_credits"]/totalCredits,
+                percentageHours: totalHours ? 100*entry["running_time_in_hours"]/totalHours : 0,
+                percentageCredits: totalCredits ? 100*entry["osparc_credits"]/totalCredits : 0,
               });
             });
             datas.sort((a, b) => {
               if (b.percentageCredits !== a.percentageCredits) {
                 return b.percentageCredits - a.percentageCredits;
               }
-              return b.percentageHours - a.percentageHours;
+              return a.percentageHours - b.percentageHours;
             });
             // top 5 services
             datas = datas.slice(0, 5);
