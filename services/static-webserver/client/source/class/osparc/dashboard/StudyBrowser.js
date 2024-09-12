@@ -483,6 +483,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _folderSelected: function(folderId) {
       this.setCurrentFolderId(folderId);
+      this._changeContext(this.getCurrentWorkspaceId(), folderId);
     },
 
     _folderUpdated: function() {
