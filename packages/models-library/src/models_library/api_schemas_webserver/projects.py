@@ -74,12 +74,12 @@ class ProjectGet(OutputSchema):
     access_rights: dict[GroupIDStr, AccessRights]
     tags: list[int]
     classifiers: list[ClassifierID] = []
-    state: ProjectState | None
-    ui: EmptyModel | StudyUI | None
+    state: ProjectState | None = None
+    ui: EmptyModel | StudyUI | None = None
     quality: dict[str, Any] = {}
-    dev: dict | None
+    dev: dict | None = None
     permalink: ProjectPermalink = FieldNotRequired()
-    workspace_id: WorkspaceID | None
+    workspace_id: WorkspaceID | None = None
 
     _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator

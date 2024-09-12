@@ -63,8 +63,8 @@ class ProjectLocked(BaseModel):
 
     @field_validator("owner", mode="before")
     @classmethod
-    def check_not_null(cls, v, values):
-        if values["value"] is True and v is None:
+    def check_not_null(cls, v, info: ValidationInfo):
+        if info.data["value"] is True and v is None:
             msg = "value cannot be None when project is locked"
             raise ValueError(msg)
         return v
