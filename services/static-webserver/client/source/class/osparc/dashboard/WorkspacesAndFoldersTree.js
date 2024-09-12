@@ -118,7 +118,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
 
     __addSharedWorkspaces: function(rootModel) {
       const sharedWorkspaceData = {
-        label: "Shared Workspace",
+        label: "Shared Workspaces",
         icon: "shared",
         workspaceId: -1,
         folderId: null,
@@ -132,7 +132,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
         .then(workspaces => {
           workspaces.forEach(workspace => {
             const workspaceData = {
-              label: workspace.getName(),
+              label: "",
               icon: "shared",
               workspaceId: workspace.getWorkspaceId(),
               folderId: null,
@@ -142,6 +142,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
               }],
             };
             const workspaceModel = qx.data.marshal.Json.createModel(workspaceData, true);
+            workspace.bind("name", workspaceModel, "label");
             sharedWorkspaceModel.getChildren().append(workspaceModel);
           });
         })
@@ -155,7 +156,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
           model.getChildren().removeAll();
           folders.forEach(folder => {
             const folderData = {
-              label: folder.getName(),
+              label: "",
               icon: workspaceId ? "shared" : "folder",
               workspaceId,
               folderId: folder.getFolderId(),
@@ -164,7 +165,9 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
                 label: "Loading...",
               }]
             };
-            model.getChildren().push(qx.data.marshal.Json.createModel(folderData, true));
+            const folderModel = qx.data.marshal.Json.createModel(folderData, true);
+            folder.bind("name", folderModel, "label");
+            model.getChildren().push(folderModel);
           });
         });
     }
