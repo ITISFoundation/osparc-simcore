@@ -104,7 +104,7 @@ def test_correctly_detect_dynamic_sidecar_boot(
 
 def test_raises_error_if_http_entrypoint_is_missing():
     simcore_service_labels: dict[str, Any] = deepcopy(
-        SimcoreServiceLabels.Config.schema_extra["examples"][2]
+        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
     )
     del simcore_service_labels["simcore.service.container-http-entrypoint"]
 

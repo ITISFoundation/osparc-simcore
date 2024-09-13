@@ -13,6 +13,7 @@ from pydantic import (
     Json,
     PrivateAttr,
     ValidationError,
+    ValidationInfo,
     field_validator,
     model_validator,
     parse_obj_as,
@@ -345,23 +346,27 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @field_validator("container_http_entry")
     @classmethod
-    def compose_spec_requires_container_http_entry(cls, v, values) -> str | None:
+    def compose_spec_requires_container_http_entry(
+        cls, v, info: ValidationInfo
+    ) -> str | None:
         v = None if v == "" else v
-        if v is None and values.get("compose_spec") is not None:
+        if v is None and info.data.get("compose_spec") is not None:
             msg = "Field `container_http_entry` must be defined but is missing"
             raise ValueError(msg)
-        if v is not None and values.get("compose_spec") is None:
+        if v is not None and info.data.get("compose_spec") is None:
             msg = "`container_http_entry` not allowed if `compose_spec` is missing"
             raise ValueError(msg)
         return f"{v}" if v else v
 
     @field_validator("containers_allowed_outgoing_permit_list")
     @classmethod
-    def _containers_allowed_outgoing_permit_list_in_compose_spec(cls, v, values):
+    def _containers_allowed_outgoing_permit_list_in_compose_spec(
+        cls, v, info: ValidationInfo
+    ):
         if v is None:
             return v
 
-        compose_spec: dict | None = values.get("compose_spec")
+        compose_spec: dict | None = info.data.get("compose_spec")
         if compose_spec is None:
             keys = set(v.keys())
             if len(keys) != 1 or DEFAULT_SINGLE_SERVICE_NAME not in keys:
@@ -400,7 +405,7 @@ class DynamicSidecarServiceLabels(BaseModel):
     @field_validator("callbacks_mapping")
     @classmethod
     def _ensure_callbacks_mapping_container_names_defined_in_compose_spec(
-        cls, v: CallbacksMapping, values
+        cls, v: CallbacksMapping, info: ValidationInfo
     ):
         if v is None:
             return {}
@@ -412,7 +417,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         if len(defined_services) == 0:
             return v
 
-        compose_spec: dict | None = values.get("compose_spec")
+        compose_spec: dict | None = info.data.get("compose_spec")
         if compose_spec is None:
             if {DEFAULT_SINGLE_SERVICE_NAME} != defined_services:
                 err_msg = f"Expected only 1 entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{defined_services}'"
@@ -433,9 +438,9 @@ class DynamicSidecarServiceLabels(BaseModel):
     @field_validator("user_preferences_path")
     @classmethod
     def _user_preferences_path_no_included_in_other_volumes(
-        cls, v: CallbacksMapping, values
+        cls, v: CallbacksMapping, info: ValidationInfo
     ):
-        paths_mapping: PathMappingsLabel | None = values.get("paths_mapping", None)
+        paths_mapping: PathMappingsLabel | None = info.data.get("paths_mapping", None)
         if paths_mapping is None:
             return v
 
@@ -449,33 +454,24 @@ class DynamicSidecarServiceLabels(BaseModel):
                 raise ValueError(msg)
         return v
 
-    @model_validator(mode="before")
-    @classmethod
-    def _not_allowed_in_both_specs(cls, values):
+    @model_validator(mode="after")
+    def _not_allowed_in_both_specs(self):
         match_keys = {
             "containers_allowed_outgoing_internet",
             "containers_allowed_outgoing_permit_list",
         }
-        if match_keys & set(values.keys()) != match_keys:
-            err_msg = (
-                f"Expected the following keys {match_keys} to be present {values=}"
-            )
+        if match_keys & set(self.model_fields) != match_keys:
+            err_msg = f"Expected the following keys {match_keys} to be present {self.model_fields=}"
             raise ValueError(err_msg)
 
-        containers_allowed_outgoing_internet = values[
-            "containers_allowed_outgoing_internet"
-        ]
-        containers_allowed_outgoing_permit_list = values[
-            "containers_allowed_outgoing_permit_list"
-        ]
         if (
-            containers_allowed_outgoing_internet is None
-            or containers_allowed_outgoing_permit_list is None
+            self.containers_allowed_outgoing_internet is None
+            or self.containers_allowed_outgoing_permit_list is None
         ):
-            return values
+            return self
 
-        common_containers = set(containers_allowed_outgoing_internet) & set(
-            containers_allowed_outgoing_permit_list.keys()
+        common_containers = set(self.containers_allowed_outgoing_internet) & set(
+            self.containers_allowed_outgoing_permit_list.keys()
         )
         if len(common_containers) > 0:
             err_msg = (
@@ -485,7 +481,7 @@ class DynamicSidecarServiceLabels(BaseModel):
             )
             raise ValueError(err_msg)
 
-        return values
+        return self
 
     model_config = _BaseConfig
 
