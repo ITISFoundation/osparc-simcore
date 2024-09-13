@@ -242,7 +242,7 @@ async def basic_db_funs_mocked(client: TestClient, mocker: MockerFixture) -> Non
     await clean_auth_policy_cache(client.app)
 
     mocker.patch(
-        "simcore_service_webserver.security._authz_policy.get_database_engine",
+        "simcore_service_webserver.security._authz_policy.get_aiopg_engine",
         autospec=True,
     )
 
