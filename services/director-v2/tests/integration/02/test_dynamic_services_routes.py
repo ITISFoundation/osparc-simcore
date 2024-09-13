@@ -187,6 +187,7 @@ async def director_v2_client(
             "REDIS_HOST": redis_settings.REDIS_HOST,
             "REDIS_PORT": f"{redis_settings.REDIS_PORT}",
             "REDIS_PASSWORD": f"{redis_settings.REDIS_PASSWORD.get_secret_value()}",
+            "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
         },
     )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)

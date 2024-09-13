@@ -80,6 +80,7 @@ def mock_env(
         "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
         "COMPUTATIONAL_BACKEND_ENABLED": "false",
         "R_CLONE_PROVIDER": "MINIO",
+        "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
     }
     setenvs_from_dict(monkeypatch, env_vars)
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
