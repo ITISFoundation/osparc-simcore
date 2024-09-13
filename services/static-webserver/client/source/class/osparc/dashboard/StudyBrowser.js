@@ -178,7 +178,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (workspaceId === -1) {
           return;
         }
-        osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
+        this.__setFoldersToList([]);
           .then(folders => {
             this.__setFoldersToList(folders);
           })
