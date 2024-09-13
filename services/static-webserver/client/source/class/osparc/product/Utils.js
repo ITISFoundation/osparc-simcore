@@ -131,7 +131,7 @@ qx.Class.define("osparc.product.Utils", {
       });
     },
 
-    getManifestIconUrl: function(icon) {
+    getManifestIconUrl: function(icon, fbIcon = "favicon-osparc.png") {
       let productName = osparc.product.Utils.getProductName();
       if (this.isS4LProduct() || this.isProduct("s4llite")) {
         productName = "s4l";
@@ -139,7 +139,7 @@ qx.Class.define("osparc.product.Utils", {
         productName = "tis";
       }
       const iconPath = `https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/${productName}/icons/${icon}`;
-      const fallbackIcon = `/resource/osparc/${productName}/favicon-96x96.png`;
+      const fallbackIcon = `/resource/osparc/${fbIcon}`;
       return this.__linkExists(iconPath)
         .then(() => iconPath)
         .catch(() => fallbackIcon);
@@ -206,11 +206,6 @@ qx.Class.define("osparc.product.Utils", {
      * @returns {String} ["REGISTER", "REQUEST_ACCOUNT_FORM", "REQUEST_ACCOUNT_INSTRUCTIONS"]
      */
     getCreateAccountAction: function() {
-      if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        // Allow registering in Development Platform
-        return "REGISTER";
-      }
-
       const config = osparc.store.Store.getInstance().get("config");
       if (config["invitation_required"]) {
         const vendor = osparc.store.VendorInfo.getInstance().getVendor();

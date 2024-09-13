@@ -374,8 +374,13 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       if (this._resourceType === "study") {
         const workspacesAndFoldersTree = resourceFilter.getWorkspacesAndFoldersTree();
-        workspacesAndFoldersTree.bind("currentWorkspaceId", this, "currentWorkspaceId");
-        workspacesAndFoldersTree.bind("currentFolderId", this, "currentFolderId");
+        workspacesAndFoldersTree.addListener("changeContext", e => {
+          const {
+            workspaceId,
+            folderId,
+          } = e.getData();
+          this._changeContext(workspaceId, folderId);
+        });
         this.bind("currentWorkspaceId", workspacesAndFoldersTree, "currentWorkspaceId");
         this.bind("currentFolderId", workspacesAndFoldersTree, "currentFolderId");
       }
@@ -475,6 +480,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _deleteResourceRequested: function(resourceId) {
+      throw new Error("Abstract method called!");
+    },
+
+    _changeContext: function(workspaceId, folderId) {
       throw new Error("Abstract method called!");
     },
 
