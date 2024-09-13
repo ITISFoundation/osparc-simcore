@@ -49,7 +49,7 @@ async def _get_primary_ec2_params(
     ec2_instance_types: list[
         EC2InstanceType
     ] = await ec2_client.get_ec2_instance_capabilities(
-        instance_type_names=[ec2_type_name]
+        instance_type_names={ec2_type_name}
     )
     assert ec2_instance_types  # nosec
     assert len(ec2_instance_types) == 1  # nosec

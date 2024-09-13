@@ -42,8 +42,8 @@ _WALLET_ID_TAG_KEY: Final[AWSTagKey] = parse_obj_as(AWSTagKey, "wallet_id")
 async def _get_all_associated_worker_instances(
     app: FastAPI,
     primary_instances: Iterable[EC2InstanceData],
-) -> list[EC2InstanceData]:
-    worker_instances = []
+) -> set[EC2InstanceData]:
+    worker_instances: set[EC2InstanceData] = set()
     for instance in primary_instances:
         assert "user_id" in instance.tags  # nosec
         user_id = UserID(instance.tags[_USER_ID_TAG_KEY])
@@ -55,7 +55,7 @@ async def _get_all_associated_worker_instances(
             else None
         )
 
-        worker_instances.extend(
+        worker_instances.update(
             await get_cluster_workers(app, user_id=user_id, wallet_id=wallet_id)
         )
     return worker_instances
@@ -63,12 +63,12 @@ async def _get_all_associated_worker_instances(
 
 async def _find_terminateable_instances(
     app: FastAPI, instances: Iterable[EC2InstanceData]
-) -> list[EC2InstanceData]:
+) -> set[EC2InstanceData]:
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
 
     # get the corresponding ec2 instance data
-    terminateable_instances: list[EC2InstanceData] = []
+    terminateable_instances: set[EC2InstanceData] = set()
 
     time_to_wait_before_termination = (
         app_settings.CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION
@@ -82,7 +82,7 @@ async def _find_terminateable_instances(
             elapsed_time_since_heartbeat = arrow.utcnow().datetime - last_heartbeat
             allowed_time_to_wait = time_to_wait_before_termination
             if elapsed_time_since_heartbeat >= allowed_time_to_wait:
-                terminateable_instances.append(instance)
+                terminateable_instances.add(instance)
             else:
                 _logger.info(
                     "%s has still %ss before being terminateable",
@@ -93,14 +93,14 @@ async def _find_terminateable_instances(
             elapsed_time_since_startup = arrow.utcnow().datetime - instance.launch_time
             allowed_time_to_wait = startup_delay
             if elapsed_time_since_startup >= allowed_time_to_wait:
-                terminateable_instances.append(instance)
+                terminateable_instances.add(instance)
 
     # get all terminateable instances associated worker instances
     worker_instances = await _get_all_associated_worker_instances(
         app, terminateable_instances
     )
 
-    return terminateable_instances + worker_instances
+    return terminateable_instances.union(worker_instances)
 
 
 async def check_clusters(app: FastAPI) -> None:
