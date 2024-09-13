@@ -189,7 +189,7 @@ async def get_workspace_for_user(
         row = await result.first()
         if row is None:
             raise WorkspaceAccessForbiddenError(
-                reason=f"User does not have access to the workspace {workspace_id}. Or workspace does not exist.",
+                reason=f"User {user_id} does not have access to the workspace {workspace_id}. Or workspace does not exist.",
             )
         return UserWorkspaceAccessRightsDB.from_orm(row)
 

@@ -697,9 +697,9 @@ class ProjectDBAPI(BaseProjectDB):
     async def get_project_product(self, project_uuid: ProjectID) -> ProductName:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
-                sa.select(projects_to_products.c.product_name).where(
-                    projects.c.uuid == f"{project_uuid}"
-                )
+                sa.select(projects_to_products.c.product_name)
+                .join(projects)
+                .where(projects.c.uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
             if row is None:
