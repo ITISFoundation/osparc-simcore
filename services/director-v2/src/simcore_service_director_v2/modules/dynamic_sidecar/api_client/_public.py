@@ -2,7 +2,7 @@ import logging
 from collections import deque
 from collections.abc import Coroutine
 from functools import cached_property
-from typing import Any, Final, cast
+from typing import Any, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -361,7 +361,8 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             _debug_progress_callback,
         )
-        return cast(int, result)
+        assert isinstance(result, int)  # nosec
+        return result
 
     async def pull_user_services_images(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
@@ -377,7 +378,8 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_USER_SERVICES_PULLING_TIMEOUT,
             _debug_progress_callback,
         )
-        return cast(int, result)
+        assert isinstance(result, int)  # nosec
+        return result
 
     async def save_service_state(
         self,
@@ -430,7 +432,8 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             self._dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             _debug_progress_callback,
         )
-        return cast(int, result)
+        assert isinstance(result, int)  # nosec
+        return result
 
     async def push_service_output_ports(
         self,
