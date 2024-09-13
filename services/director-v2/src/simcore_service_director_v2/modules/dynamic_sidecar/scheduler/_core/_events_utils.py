@@ -168,7 +168,7 @@ async def service_save_state(
         size = await sidecars_client.save_service_state(
             scheduler_data.endpoint, progress_callback=progress_callback
         )
-    get_instrumentation(app).dynamic_sidecar_metrics.save_service_state_rate.labels(
+    get_instrumentation(app).dynamic_sidecar_metrics.push_service_state_rate.labels(
         **get_metrics_labels(scheduler_data)
     ).observe(get_rate(size, duration.to_flaot()))
 
@@ -508,13 +508,9 @@ async def prepare_services_environment(
         with track_duration() as duration:
             size = await sidecars_client.restore_service_state(dynamic_sidecar_endpoint)
 
-        get_instrumentation(
-            app
-        ).dynamic_sidecar_metrics.recover_service_state_rate.labels(
+        get_instrumentation(app).dynamic_sidecar_metrics.pull_service_state_rate.labels(
             **get_metrics_labels(scheduler_data)
-        ).observe(
-            get_rate(size, duration.to_flaot())
-        )
+        ).observe(get_rate(size, duration.to_flaot()))
 
     tasks = [
         _pull_user_services_images_with_metrics(),
