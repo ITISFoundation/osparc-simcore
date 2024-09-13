@@ -45,13 +45,19 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     this.__initTree();
 
     osparc.store.Folders.getInstance().addListener("folderAdded", e => {
-      const folder = e.getData()
+      const folder = e.getData();
       this.__folderAdded(folder);
     }, this);
 
     osparc.store.Folders.getInstance().addListener("folderRemoved", e => {
-      const folder = e.getData()
+      const folder = e.getData();
       this.__folderRemoved(folder);
+    }, this);
+
+    osparc.store.Workspaces.addListener("workspaceAdded", e => {
+      const workspace = e.getData();
+      const sharedWorkspaceModel = this.__getModel(-1, null);
+      this.__addWorkspace(workspace, sharedWorkspaceModel);
     }, this);
   },
 

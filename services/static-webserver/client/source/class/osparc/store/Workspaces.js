@@ -18,6 +18,10 @@
 qx.Class.define("osparc.store.Workspaces", {
   type: "static",
 
+  events: {
+    "workspaceAdded": "qx.event.type.Data",
+  },
+
   statics: {
     workspacesCached: [],
 
@@ -62,6 +66,7 @@ qx.Class.define("osparc.store.Workspaces", {
         .then(workspaceData => {
           const newWorkspace = new osparc.data.model.Workspace(workspaceData);
           this.__addToCache(newWorkspace);
+          this.fireDataEvent("workspaceAdded", newWorkspace);
           return newWorkspace;
         });
     },
