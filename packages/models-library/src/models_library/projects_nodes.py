@@ -59,8 +59,9 @@ OutputTypes = Union[
 InputID: TypeAlias = KeyIDStr
 OutputID: TypeAlias = KeyIDStr
 
-InputsDict: TypeAlias = dict[InputID, InputTypes]
-OutputsDict: TypeAlias = dict[OutputID, OutputTypes]
+ # union_mode="smart" by default for Pydantic>=2: https://docs.pydantic.dev/latest/concepts/unions/#union-modes
+InputsDict: TypeAlias = dict[InputID, Annotated[InputTypes, Field(union_mode="left_to_right")]]
+OutputsDict: TypeAlias = dict[OutputID, Annotated[OutputTypes, Field(union_mode="left_to_right")]]
 
 UnitStr = Annotated[str, StringConstraints(strip_whitespace=True)]
 
