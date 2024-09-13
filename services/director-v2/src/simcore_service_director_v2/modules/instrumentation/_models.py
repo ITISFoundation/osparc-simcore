@@ -53,16 +53,17 @@ class DynamiSidecarMetrics:
 
     start_time_duration: Histogram = field(init=False)
     stop_time_duration: Histogram = field(init=False)
+    pull_user_services_images_duration: Histogram = field(init=False)
 
     output_ports_pull_rate: Histogram = field(init=False)
     input_ports_pull_rate: Histogram = field(init=False)
-    pull_user_services_images_rate: Histogram = field(init=False)
+
     recover_service_state_rate: Histogram = field(init=False)
 
     def __post_init__(self) -> None:
         self.start_time_duration = Histogram(
             "start_time_duration_seconds",
-            "Time taken for dynamic-sidecar to start",
+            "time to start dynamic-sidecar",
             labelnames=_INSTRUMENTATION_LABELS,
             namespace=_NAMESPACE_METRICS,
             buckets=_BUCKETS_TIME_S,
@@ -70,10 +71,18 @@ class DynamiSidecarMetrics:
         )
         self.stop_time_duration = Histogram(
             "stop_time_duration_seconds",
-            "Time taken for dynamic-sidecar to stop",
+            "time to stop dynamic-sidecar",
             labelnames=_INSTRUMENTATION_LABELS,
             namespace=_NAMESPACE_METRICS,
             buckets=_BUCKETS_TIME_S,
+            subsystem=_SUBSYSTEM_NAME,
+        )
+        self.pull_user_services_images_duration = Histogram(
+            "pull_user_services_images_duration_seconds",
+            "time to pull docker images",
+            labelnames=_INSTRUMENTATION_LABELS,
+            namespace=_NAMESPACE_METRICS,
+            buckets=_BUCKETS_RATE_BPS,
             subsystem=_SUBSYSTEM_NAME,
         )
 
@@ -93,14 +102,7 @@ class DynamiSidecarMetrics:
             buckets=_BUCKETS_RATE_BPS,
             subsystem=_SUBSYSTEM_NAME,
         )
-        self.pull_user_services_images_rate = Histogram(
-            "pull_user_services_images_rate_bps",
-            "rate at which user services were pulled",
-            labelnames=_INSTRUMENTATION_LABELS,
-            namespace=_NAMESPACE_METRICS,
-            buckets=_BUCKETS_RATE_BPS,
-            subsystem=_SUBSYSTEM_NAME,
-        )
+
         self.recover_service_state_rate = Histogram(
             "restore_service_state_rate_bps",
             "rate at which service states were recovered",

@@ -93,7 +93,7 @@ async def docker_compose_config(
     return result
 
 
-async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> int:
+async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> None:
     """
     Pulls all images required by the service.
 
@@ -111,7 +111,7 @@ async def docker_compose_pull(app: FastAPI, compose_spec_yaml: str) -> int:
     async def _log_cb(msg: LogMessageStr, log_level: LogLevelInt) -> None:
         await post_sidecar_log_message(app, msg, log_level=log_level)
 
-    return await pull_images(list_of_images, registry_settings, _progress_cb, _log_cb)
+    await pull_images(list_of_images, registry_settings, _progress_cb, _log_cb)
 
 
 async def docker_compose_create(

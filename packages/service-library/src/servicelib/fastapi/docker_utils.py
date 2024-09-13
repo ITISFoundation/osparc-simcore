@@ -108,7 +108,7 @@ async def pull_images(
     registry_settings: RegistrySettings,
     progress_cb: AsyncReportCB,
     log_cb: LogCB,
-) -> int:
+) -> None:
     images_layer_information = await asyncio.gather(
         *[
             retrieve_image_layer_information(image, registry_settings)
@@ -147,4 +147,3 @@ async def pull_images(
                 )
             ]
         )
-    return images_total_size

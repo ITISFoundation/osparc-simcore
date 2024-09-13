@@ -488,16 +488,14 @@ async def prepare_services_environment(
 
     async def _pull_user_services_images_with_metrics() -> None:
         with track_duration() as duration:
-            size = await sidecars_client.pull_user_services_images(
-                dynamic_sidecar_endpoint
-            )
+            await sidecars_client.pull_user_services_images(dynamic_sidecar_endpoint)
 
         get_instrumentation(
             app
-        ).dynamic_sidecar_metrics.pull_user_services_images_rate.labels(
+        ).dynamic_sidecar_metrics.pull_user_services_images_duration.labels(
             **get_metrics_labels(scheduler_data)
         ).observe(
-            get_rate(size, duration.to_flaot())
+            duration.to_flaot()
         )
 
     async def _restore_service_state_with_metrics() -> None:
