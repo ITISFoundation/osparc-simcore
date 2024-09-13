@@ -188,7 +188,8 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     resource_usage_tracker_client.setup(app)
 
-    instrumentation.setup(app)
+    if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
+        instrumentation.setup(app)
 
     if settings.DIRECTOR_V2_PROFILING:
         app.add_middleware(ProfilerMiddleware)

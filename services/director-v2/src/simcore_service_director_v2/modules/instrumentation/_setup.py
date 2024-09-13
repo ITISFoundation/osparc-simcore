@@ -6,15 +6,10 @@ from servicelib.fastapi.prometheus_instrumentation import (
 )
 
 from ...core.errors import ConfigurationError
-from ...core.settings import AppSettings
 from ._models import DirectorV2Instrumentation
 
 
 def setup(app: FastAPI) -> None:
-    app_settings: AppSettings = app.state.settings
-    if not app_settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        return
-
     instrumentator = setup_prometheus_instrumentation(app)
 
     async def on_startup() -> None:
