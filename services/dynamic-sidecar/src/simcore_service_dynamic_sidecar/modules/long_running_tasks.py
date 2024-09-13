@@ -179,7 +179,6 @@ async def task_create_service_containers(
         ),
         description=IDStr("starting software"),
     ) as progress_bar:
-
         with log_context(_logger, logging.INFO, "load user services preferences"):
             if user_services_preferences.is_feature_enabled(app):
                 await user_services_preferences.load_user_services_preferences(app)
@@ -206,7 +205,6 @@ async def task_create_service_containers(
         compose_start_result = await _retry_docker_compose_start(
             shared_store.compose_spec, settings
         )
-        await progress_bar.update()
 
     await send_service_started(app, metrics_params=containers_create.metrics_params)
 

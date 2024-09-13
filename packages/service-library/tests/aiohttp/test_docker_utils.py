@@ -110,11 +110,7 @@ def _assert_progress_report_values(
 
 @pytest.mark.parametrize(
     "image",
-    [
-        "itisfoundation/sleeper:1.0.0",
-        "nginx:latest",
-        # "registry.osparc-master.speag.com/simcore/services/dynamic/jupyter-math:3.0.3",
-    ],
+    ["itisfoundation/sleeper:1.0.0", "nginx:latest"],
 )
 async def test_pull_image(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
