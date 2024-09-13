@@ -163,7 +163,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadWorkspaces: function() {
-      osparc.store.Workspaces.fetchWorkspaces()
+      osparc.store.Workspaces.getInstance().fetchWorkspaces()
         .then(workspaces => {
           this.__workspacesList = workspaces;
           workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
@@ -411,7 +411,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         "updateWorkspace"
       ].forEach(e => {
         newWorkspaceCard.addListener(e, () => {
-          this._resourceFilter.reloadWorkspaceButtons();
           this.__reloadWorkspaces();
         });
       });
@@ -420,6 +419,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _workspaceSelected: function(workspaceId) {
       this.setCurrentWorkspaceId(workspaceId);
+      this._changeContext(this.getCurrentWorkspaceId(), null);
     },
 
     _workspaceUpdated: function() {
@@ -427,9 +427,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _deleteWorkspaceRequested: function(workspaceId) {
-      osparc.store.Workspaces.deleteWorkspace(workspaceId)
+      osparc.store.Workspaces.getInstance().deleteWorkspace(workspaceId)
         .then(() => {
-          this._resourceFilter.reloadWorkspaceButtons();
           this.__reloadWorkspaces();
         })
         .catch(err => console.error(err));

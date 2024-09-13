@@ -28,6 +28,7 @@ qx.Class.define("osparc.store.Folders", {
   events: {
     "folderAdded": "qx.event.type.Data",
     "folderRemoved": "qx.event.type.Data",
+    "folderMoved": "qx.event.type.Data",
   },
 
   members: {
@@ -92,20 +93,25 @@ qx.Class.define("osparc.store.Folders", {
     },
 
     putFolder: function(folderId, updateData) {
-      return new Promise((resolve, reject) => {
-        const params = {
-          "url": {
-            folderId
-          },
-          data: updateData
-        };
-        osparc.data.Resources.getInstance().fetch("folders", "update", params)
-          .then(folderData => {
-            this.__addToCache(folderData);
-            resolve();
-          })
-          .catch(err => reject(err));
-      });
+      const folder = this.getFolder(folderId);
+      const oldParentFolderId = folder.getParentFolderId();
+      const params = {
+        "url": {
+          folderId
+        },
+        data: updateData
+      };
+      return osparc.data.Resources.getInstance().fetch("folders", "update", params)
+        .then(folderData => {
+          this.__addToCache(folderData);
+          if (updateData.parentFolderId !== oldParentFolderId) {
+            this.fireDataEvent("folderMoved", {
+              folder,
+              oldParentFolderId,
+            });
+          }
+        })
+        .catch(console.error);
     },
 
     getFolder: function(folderId = null) {
