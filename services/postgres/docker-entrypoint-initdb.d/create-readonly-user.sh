@@ -23,10 +23,10 @@ schema=${SCHEMA:-public}
 echo "Creating read-only user: $readonly_user for $database.$schema ..."
 # NOTE: tabs only on <<
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$database" <<-EOSQL
-  CREATE USER $readonly_user WITH PASSWORD '$readonly_password';
-  GRANT CONNECT ON DATABASE $database TO $readonly_user;
-  GRANT USAGE ON SCHEMA $schema TO $readonly_user;
-  GRANT SELECT ON ALL TABLES IN SCHEMA $schema TO $readonly_user;
-  GRANT SELECT ON ALL SEQUENCES IN SCHEMA $schema TO $readonly_user;
-  ALTER DEFAULT PRIVILEGES IN SCHEMA $schema GRANT SELECT ON TABLES TO $readonly_user;
+  CREATE USER "$readonly_user" WITH PASSWORD '$readonly_password';
+  GRANT CONNECT ON DATABASE $database TO "$readonly_user";
+  GRANT USAGE ON SCHEMA $schema TO "$readonly_user";
+  GRANT SELECT ON ALL TABLES IN SCHEMA $schema TO "$readonly_user";
+  GRANT SELECT ON ALL SEQUENCES IN SCHEMA $schema TO "$readonly_user";
+  ALTER DEFAULT PRIVILEGES IN SCHEMA $schema GRANT SELECT ON TABLES TO "$readonly_user";
 EOSQL
