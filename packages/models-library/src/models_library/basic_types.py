@@ -3,6 +3,7 @@ from enum import StrEnum
 from re import Pattern
 from typing import Annotated, Final, TypeAlias
 
+import pydantic
 from pydantic import Field, HttpUrl, PositiveInt, StringConstraints
 from pydantic_core import core_schema
 
@@ -129,6 +130,8 @@ class LongTruncatedStr(ConstrainedStr):
 IdInt: TypeAlias = PositiveInt
 PrimaryKeyInt: TypeAlias = PositiveInt
 
+
+AnyHttpUrl = Annotated[str, pydantic.AnyHttpUrl]
 
 # https e.g. https://techterms.com/definition/https
 class HttpSecureUrl(HttpUrl):

@@ -1,7 +1,6 @@
 from typing import Annotated, Final, Generic, TypeVar
 
 from pydantic import (
-    AnyHttpUrl,
     BaseModel,
     ConfigDict,
     Field,
@@ -12,6 +11,7 @@ from pydantic import (
     field_validator,
 )
 
+from .basic_types import AnyHttpUrl
 from .utils.common_validators import none_to_empty_list_pre_validator
 
 # Default limit values

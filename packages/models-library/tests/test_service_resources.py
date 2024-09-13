@@ -13,7 +13,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import TypeAdapter, parse_obj_as
+from pydantic import TypeAdapter
 
 
 @pytest.mark.parametrize(
@@ -27,19 +27,19 @@ from pydantic import TypeAdapter, parse_obj_as
     ),
 )
 def test_compose_image(example: str) -> None:
-    parse_obj_as(DockerGenericTag, example)
+    TypeAdapter(DockerGenericTag).validate_python(example)
 
 
 @pytest.fixture
 def resources_dict() -> ResourcesDict:
-    return parse_obj_as(
-        ResourcesDict, ImageResources.Config.schema_extra["example"]["resources"]
+    return TypeAdapter(ResourcesDict).validate_python(
+        ImageResources.model_config["json_schema_extra"]["example"]["resources"]
     )
 
 
 @pytest.fixture
 def compose_image() -> DockerGenericTag:
-    return parse_obj_as(DockerGenericTag, "image:latest")
+    return TypeAdapter(DockerGenericTag).validate_python("image:latest")
 
 
 def _ensure_resource_value_is_an_object(data: ResourcesDict) -> None:
@@ -84,9 +84,9 @@ def test_service_resource_parsed_as_expected(
         for image_resources in service_resources_dict.values():
             _ensure_resource_value_is_an_object(image_resources.resources)
 
-    service_resources_dict: ServiceResourcesDict = parse_obj_as(
-        ServiceResourcesDict, example
-    )
+    service_resources_dict: ServiceResourcesDict = TypeAdapter(
+        ServiceResourcesDict
+    ).validate_python(example)
     _assert_service_resources_dict(service_resources_dict)
 
     for image_resources in example.values():

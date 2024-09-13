@@ -66,7 +66,7 @@ SIMCORE_SERVICE_EXAMPLES = {
     ids=list(SIMCORE_SERVICE_EXAMPLES.keys()),
 )
 def test_simcore_service_labels(example: dict, items: int, uses_dynamic_sidecar: bool):
-    simcore_service_labels = SimcoreServiceLabels.parse_obj(example)
+    simcore_service_labels = SimcoreServiceLabels.model_validate(example)
 
     assert simcore_service_labels
     assert len(simcore_service_labels.dict(exclude_unset=True)) == items
@@ -95,7 +95,7 @@ def test_correctly_detect_dynamic_sidecar_boot(
 ):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
-        model_instance = parse_obj_as(model_cls, example)
+        model_instance = TypeAdapter(model_cls).validate_python(example)
         assert model_instance.callbacks_mapping is not None
         assert model_instance.needs_dynamic_sidecar == (
             "simcore.service.paths-mapping" in example
@@ -113,22 +113,27 @@ def test_raises_error_if_http_entrypoint_is_missing():
 
 
 def test_path_mappings_none_state_paths():
-    sample_data = deepcopy(PathMappingsLabel.Config.schema_extra["examples"][0])
+    sample_data = deepcopy(
+        PathMappingsLabel.model_config["json_schema_extra"]["examples"][0]
+    )
     sample_data["state_paths"] = None
     with pytest.raises(ValidationError):
         PathMappingsLabel(**sample_data)
 
 
 def test_path_mappings_json_encoding():
-    for example in PathMappingsLabel.Config.schema_extra["examples"]:
-        path_mappings = PathMappingsLabel.parse_obj(example)
+    for example in PathMappingsLabel.model_config["json_schema_extra"]["examples"]:
+        path_mappings = PathMappingsLabel.model_validate(example)
         print(path_mappings)
-        assert PathMappingsLabel.parse_raw(path_mappings.json()) == path_mappings
+        assert (
+            PathMappingsLabel.parse_raw(path_mappings.model_dump_json())
+            == path_mappings
+        )
 
 
 def test_simcore_services_labels_compose_spec_null_container_http_entry_provided():
     sample_data: dict[str, Any] = deepcopy(
-        SimcoreServiceLabels.Config.schema_extra["examples"][2]
+        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
     )
 
     assert sample_data["simcore.service.container-http-entrypoint"]
@@ -140,7 +145,7 @@ def test_simcore_services_labels_compose_spec_null_container_http_entry_provided
 
 def test_raises_error_wrong_restart_policy():
     simcore_service_labels: dict[str, Any] = deepcopy(
-        SimcoreServiceLabels.Config.schema_extra["examples"][2]
+        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
     )
     simcore_service_labels["simcore.service.restart-policy"] = "__not_a_valid_policy__"
 
@@ -150,7 +155,7 @@ def test_raises_error_wrong_restart_policy():
 
 def test_path_mappings_label_unsupported_size_constraints():
     with pytest.raises(ValidationError) as exec_into:
-        PathMappingsLabel.parse_obj(
+        PathMappingsLabel.model_validate(
             {
                 "outputs_path": "/ok_input_path",
                 "inputs_path": "/ok_output_path",
@@ -163,7 +168,7 @@ def test_path_mappings_label_unsupported_size_constraints():
 
 def test_path_mappings_label_defining_constraing_on_missing_path():
     with pytest.raises(ValidationError) as exec_into:
-        PathMappingsLabel.parse_obj(
+        PathMappingsLabel.model_validate(
             {
                 "outputs_path": "/ok_input_path",
                 "inputs_path": "/ok_output_path",
@@ -177,10 +182,10 @@ def test_path_mappings_label_defining_constraing_on_missing_path():
     )
 
 
-PORT_1: Final[PortInt] = parse_obj_as(PortInt, 1)
-PORT_3: Final[PortInt] = parse_obj_as(PortInt, 3)
-PORT_20: Final[PortInt] = parse_obj_as(PortInt, 20)
-PORT_99: Final[PortInt] = parse_obj_as(PortInt, 99)
+PORT_1: Final[PortInt] = TypeAdapter(PortInt).validate_python(1)
+PORT_3: Final[PortInt] = TypeAdapter(PortInt).validate_python(3)
+PORT_20: Final[PortInt] = TypeAdapter(PortInt).validate_python(20)
+PORT_99: Final[PortInt] = TypeAdapter(PortInt).validate_python(99)
 
 
 def test_port_range():
