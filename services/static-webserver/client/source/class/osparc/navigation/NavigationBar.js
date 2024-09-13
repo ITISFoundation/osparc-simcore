@@ -233,7 +233,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         }
         case "tip-lite-button":
           control = new qx.ui.form.Button(this.tr("Access TIP")).set({
-            appearance: "strong-button",
             marginRight: 30,
             ...this.self().BUTTON_OPTIONS,
           });

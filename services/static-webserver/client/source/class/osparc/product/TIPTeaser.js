@@ -63,7 +63,7 @@ qx.Class.define("osparc.product.TIPTeaser", {
             <br>
             Click here to learn more about EAP and apply today!<br>
             <br>
-            ${link1}   ${link2}
+            ${link1}&nbsp&nbsp&nbsp${link2}
           `);
           control = new qx.ui.basic.Label(text).set({
             font: "text-14",
