@@ -17,6 +17,7 @@ async def get_or_create_connection(
     if is_connection_created:
         connection = await engine.connect()
     try:
+        assert connection  # nosec
         yield connection
     finally:
         assert connection  # nosec
