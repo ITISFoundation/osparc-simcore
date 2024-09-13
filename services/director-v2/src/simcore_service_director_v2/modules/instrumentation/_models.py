@@ -7,7 +7,7 @@ from pydantic import ByteSize, parse_obj_as
 from ...meta import PROJECT_NAME
 
 _NAMESPACE_METRICS: Final[str] = PROJECT_NAME.replace("-", "_")
-_SUBSYSTEM_DYNAMIC_SIDECAR: Final[str] = "dynamic_sidecar"
+_SUBSYSTEM_NAME: Final[str] = "dynamic_services"
 _INSTRUMENTATION_LABELS: Final[tuple[str, ...]] = (
     "user_id",
     "wallet_id",
@@ -66,7 +66,7 @@ class DynamiSidecarMetrics:
             labelnames=_INSTRUMENTATION_LABELS,
             namespace=_NAMESPACE_METRICS,
             buckets=_BUCKETS_TIME_S,
-            subsystem=_SUBSYSTEM_DYNAMIC_SIDECAR,
+            subsystem=_SUBSYSTEM_NAME,
         )
         self.stop_time_duration = Histogram(
             "stop_time_duration_seconds",
@@ -74,7 +74,7 @@ class DynamiSidecarMetrics:
             labelnames=_INSTRUMENTATION_LABELS,
             namespace=_NAMESPACE_METRICS,
             buckets=_BUCKETS_TIME_S,
-            subsystem=_SUBSYSTEM_DYNAMIC_SIDECAR,
+            subsystem=_SUBSYSTEM_NAME,
         )
 
         self.output_ports_pull_rate = Histogram(
@@ -83,7 +83,7 @@ class DynamiSidecarMetrics:
             labelnames=_INSTRUMENTATION_LABELS,
             namespace=_NAMESPACE_METRICS,
             buckets=_BUCKETS_RATE_BPS,
-            subsystem=_SUBSYSTEM_DYNAMIC_SIDECAR,
+            subsystem=_SUBSYSTEM_NAME,
         )
         self.input_ports_pull_rate = Histogram(
             "input_ports_pull_rate_bps",
@@ -91,7 +91,7 @@ class DynamiSidecarMetrics:
             labelnames=_INSTRUMENTATION_LABELS,
             namespace=_NAMESPACE_METRICS,
             buckets=_BUCKETS_RATE_BPS,
-            subsystem=_SUBSYSTEM_DYNAMIC_SIDECAR,
+            subsystem=_SUBSYSTEM_NAME,
         )
         self.pull_user_services_images_rate = Histogram(
             "pull_user_services_images_rate_bps",
@@ -99,7 +99,7 @@ class DynamiSidecarMetrics:
             labelnames=_INSTRUMENTATION_LABELS,
             namespace=_NAMESPACE_METRICS,
             buckets=_BUCKETS_RATE_BPS,
-            subsystem=_SUBSYSTEM_DYNAMIC_SIDECAR,
+            subsystem=_SUBSYSTEM_NAME,
         )
         self.recover_service_state_rate = Histogram(
             "restore_service_state_rate_bps",
@@ -107,7 +107,7 @@ class DynamiSidecarMetrics:
             labelnames=_INSTRUMENTATION_LABELS,
             namespace=_NAMESPACE_METRICS,
             buckets=_BUCKETS_RATE_BPS,
-            subsystem=_SUBSYSTEM_DYNAMIC_SIDECAR,
+            subsystem=_SUBSYSTEM_NAME,
         )
 
 
