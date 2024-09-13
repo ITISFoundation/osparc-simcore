@@ -595,8 +595,8 @@ def test_resolving_some_service_labels_at_load_time(
     # NOTE: vendor values are in the database and therefore are available at this point
     labels = SimcoreServiceLabels.parse_obj(service_labels)
 
-    print("After", labels.json(indent=1))
-    formatted_json = service_meta.json(indent=1)
+    print("After", labels.model_dump_json(indent=1))
+    formatted_json = service_meta.model_dump_json(indent=1)
     print("After", formatted_json)
     for entry in vendor_environments:
         print(entry)
@@ -606,7 +606,7 @@ def test_resolving_some_service_labels_at_load_time(
 def test_user_preferences_path_is_part_of_exiting_volume():
     labels_data = {
         "simcore.service.paths-mapping": json.dumps(
-            PathMappingsLabel.Config.schema_extra["examples"][0]
+            PathMappingsLabel.model_config["json_schema_extra"]["examples"][0]
         ),
         "simcore.service.user-preferences-path": json.dumps(
             "/tmp/outputs"  # noqa: S108

@@ -196,7 +196,7 @@ class PathMappingsLabel(BaseModel):
 
     @field_validator("volume_size_limits")
     @classmethod
-    def validate_volume_limits(cls, v, values) -> str | None:
+    def validate_volume_limits(cls, v, info: ValidationInfo) -> str | None:
         if v is None:
             return v
 
@@ -208,9 +208,9 @@ class PathMappingsLabel(BaseModel):
                 msg = f"Provided size='{size_str}' contains invalid charactes: {e!s}"
                 raise ValueError(msg) from e
 
-            inputs_path: Path | None = values.get("inputs_path")
-            outputs_path: Path | None = values.get("outputs_path")
-            state_paths: list[Path] | None = values.get("state_paths")
+            inputs_path: Path | None = info.data.get("inputs_path")
+            outputs_path: Path | None = info.data.get("outputs_path")
+            state_paths: list[Path] | None = info.data.get("state_paths")
             path = Path(path_str)
             if not (
                 path in (inputs_path, outputs_path)
@@ -297,6 +297,7 @@ class DynamicSidecarServiceLabels(BaseModel):
             "specified. Required by dynamic-sidecar when "
             "compose_spec is set."
         ),
+        validate_default=True,
     )
 
     user_preferences_path: Path | None = Field(
@@ -383,11 +384,13 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @field_validator("containers_allowed_outgoing_internet")
     @classmethod
-    def _containers_allowed_outgoing_internet_in_compose_spec(cls, v, values):
+    def _containers_allowed_outgoing_internet_in_compose_spec(
+        cls, v, info: ValidationInfo
+    ):
         if v is None:
             return v
 
-        compose_spec: dict | None = values.get("compose_spec")
+        compose_spec: dict | None = info.data.get("compose_spec")
         if compose_spec is None:
             if {DEFAULT_SINGLE_SERVICE_NAME} != v:
                 err_msg = (
