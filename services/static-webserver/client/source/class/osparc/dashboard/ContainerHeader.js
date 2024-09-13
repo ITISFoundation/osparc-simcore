@@ -106,7 +106,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
         if (workspaceId === -1) {
           rootButton = new qx.ui.form.Button(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath());
         } else {
-          const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
+          const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
           rootButton = new qx.ui.form.Button(workspace.getName(), osparc.store.Workspaces.iconPath());
         }
       } else {

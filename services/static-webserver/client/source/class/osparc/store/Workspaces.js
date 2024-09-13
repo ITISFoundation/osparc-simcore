@@ -16,11 +16,21 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.store.Workspaces", {
-  type: "static",
+  extend: qx.core.Object,
+  type: "singleton",
+
+  construct: function() {
+    this.base(arguments);
+
+    this.workspacesCached = [];
+  },
+
+  events: {
+    "workspaceAdded": "qx.event.type.Data",
+    "workspaceRemoved": "qx.event.type.Data",
+  },
 
   statics: {
-    workspacesCached: [],
-
     iconPath: function(iconsSize = 18) {
       const source = "@MaterialIcons/folder_shared/";
       if (iconsSize === -1) {
@@ -36,6 +46,10 @@ qx.Class.define("osparc.store.Workspaces", {
         thumbnail,
       };
     },
+  },
+
+  members: {
+    workspacesCached: null,
 
     fetchWorkspaces: function() {
       if (osparc.auth.Data.getInstance().isGuest()) {
@@ -62,27 +76,26 @@ qx.Class.define("osparc.store.Workspaces", {
         .then(workspaceData => {
           const newWorkspace = new osparc.data.model.Workspace(workspaceData);
           this.__addToCache(newWorkspace);
+          this.fireDataEvent("workspaceAdded", newWorkspace);
           return newWorkspace;
         });
     },
 
     deleteWorkspace: function(workspaceId) {
-      return new Promise((resolve, reject) => {
-        const params = {
-          "url": {
-            workspaceId
+      const params = {
+        "url": {
+          workspaceId
+        }
+      };
+      return osparc.data.Resources.getInstance().fetch("workspaces", "delete", params)
+        .then(() => {
+          const workspace = this.getWorkspace(workspaceId);
+          if (workspace) {
+            this.__deleteFromCache(workspaceId);
+            this.fireDataEvent("workspaceRemoved", workspace);
           }
-        };
-        osparc.data.Resources.getInstance().fetch("workspaces", "delete", params)
-          .then(() => {
-            if (this.__deleteFromCache(workspaceId)) {
-              resolve();
-            } else {
-              reject();
-            }
-          })
-          .catch(err => reject(err));
-      });
+        })
+        .catch(console.error);
     },
 
     putWorkspace: function(workspaceId, updateData) {
