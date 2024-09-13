@@ -420,6 +420,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _workspaceSelected: function(workspaceId) {
       this.setCurrentWorkspaceId(workspaceId);
+      this._changeContext(this.getCurrentWorkspaceId(), null);
     },
 
     _workspaceUpdated: function() {
