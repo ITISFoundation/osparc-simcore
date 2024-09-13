@@ -21,6 +21,7 @@ async def get_or_create_connection(
         yield connection
     finally:
         assert connection  # nosec
+        assert not connection.closed  # nosec
         if is_connection_created and connection:
             await connection.close()
 
