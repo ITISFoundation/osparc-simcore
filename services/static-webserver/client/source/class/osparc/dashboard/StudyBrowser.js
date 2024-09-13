@@ -163,7 +163,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadWorkspaces: function() {
-      osparc.store.Workspaces.fetchWorkspaces()
+      osparc.store.Workspaces.getInstance().fetchWorkspaces()
         .then(workspaces => {
           this.__workspacesList = workspaces;
           workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
@@ -427,7 +427,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _deleteWorkspaceRequested: function(workspaceId) {
-      osparc.store.Workspaces.deleteWorkspace(workspaceId)
+      osparc.store.Workspaces.getInstance().deleteWorkspace(workspaceId)
         .then(() => {
           this.__reloadWorkspaces();
         })

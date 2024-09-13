@@ -54,12 +54,12 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       this.__folderRemoved(folder);
     }, this);
 
-    osparc.store.Workspaces.addListener("workspaceAdded", e => {
+    osparc.store.Workspaces.getInstance().addListener("workspaceAdded", e => {
       const workspace = e.getData();
       this.__addWorkspace(workspace);
     }, this);
 
-    osparc.store.Workspaces.addListener("workspaceRemoved", e => {
+    osparc.store.Workspaces.getInstance().addListener("workspaceRemoved", e => {
       const workspace = e.getData();
       this.__removeWorkspace(workspace);
     }, this);
@@ -169,7 +169,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       this.__models.push(sharedWorkspaceModel);
       rootModel.getChildren().append(sharedWorkspaceModel);
 
-      osparc.store.Workspaces.fetchWorkspaces()
+      osparc.store.Workspaces.getInstance().fetchWorkspaces()
         .then(workspaces => {
           workspaces.forEach(workspace => {
             this.__addWorkspace(workspace);

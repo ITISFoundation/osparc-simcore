@@ -171,7 +171,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       const title = this.getChildControl("title");
       this.getChildControl("edit-button").exclude();
 
-      const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
+      const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
       if (workspaceId === -1) {
         this.__setIcon(osparc.store.Workspaces.iconPath(32));
         title.setValue(this.tr("Shared Workspaces"));
@@ -273,7 +273,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     },
 
     __editWorkspace: function() {
-      const workspace = osparc.store.Workspaces.getWorkspace(this.getCurrentWorkspaceId());
+      const workspace = osparc.store.Workspaces.getInstance().getWorkspace(this.getCurrentWorkspaceId());
       const permissionsView = new osparc.editor.WorkspaceEditor(workspace);
       const title = this.tr("Edit Workspace");
       const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 300, 200);
@@ -284,7 +284,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     },
 
     __openShareWith: function() {
-      const workspace = osparc.store.Workspaces.getWorkspace(this.getCurrentWorkspaceId());
+      const workspace = osparc.store.Workspaces.getInstance().getWorkspace(this.getCurrentWorkspaceId());
       const permissionsView = new osparc.share.CollaboratorsWorkspace(workspace);
       const title = this.tr("Share Workspace");
       const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 500, 400);

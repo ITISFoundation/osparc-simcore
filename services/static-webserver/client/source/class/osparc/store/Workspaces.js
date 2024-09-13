@@ -16,7 +16,14 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.store.Workspaces", {
-  type: "static",
+  extend: qx.core.Object,
+  type: "singleton",
+
+  construct: function() {
+    this.base(arguments);
+
+    this.workspacesCached = [];
+  },
 
   events: {
     "workspaceAdded": "qx.event.type.Data",
@@ -24,8 +31,6 @@ qx.Class.define("osparc.store.Workspaces", {
   },
 
   statics: {
-    workspacesCached: [],
-
     iconPath: function(iconsSize = 18) {
       const source = "@MaterialIcons/folder_shared/";
       if (iconsSize === -1) {
@@ -41,6 +46,10 @@ qx.Class.define("osparc.store.Workspaces", {
         thumbnail,
       };
     },
+  },
+
+  members: {
+    workspacesCached: null,
 
     fetchWorkspaces: function() {
       if (osparc.auth.Data.getInstance().isGuest()) {
