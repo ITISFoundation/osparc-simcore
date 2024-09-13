@@ -226,8 +226,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
-      this.__getNextStudiesRequest()
+      const requestId = osparc.utils.Utils.uuidV4();
+      const {
+        request,
+        params,
+      } = this.__getNextStudiesRequest(requestId);
+      const lastParams = params;
+      request
         .then(resp => {
+          if (resp["params"] !== lastParams) {
+            // another call has been made and this response can be ignored
+            return;
+          }
+
           const studies = resp["data"];
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           this.__addStudiesToList(studies);
@@ -654,12 +665,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       params.url.workspaceId = this.getCurrentWorkspaceId();
       params.url.folderId = this.getCurrentFolderId();
+      let request = null;
       if (params.url.orderBy) {
-        return osparc.data.Resources.fetch("studies", "getPageSortBy", params, undefined, options);
+        request = osparc.data.Resources.fetch("studies", "getPageSortBy", params, undefined, options);
       } else if (params.url.search) {
-        return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
+        request = osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
       }
-      return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
+      request = osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
+      return {
+        request,
+        params,
+      };
     },
 
     __getTextFilteredNextRequest: function(text) {
