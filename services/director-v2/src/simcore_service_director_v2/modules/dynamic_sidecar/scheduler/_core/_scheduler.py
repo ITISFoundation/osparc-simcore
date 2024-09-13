@@ -258,7 +258,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             request_simcore_user_agent=request_simcore_user_agent,
             can_save=can_save,
         )
-        scheduler_data.dynamic_sidecar.metrics_timers.start_duration_of_service_starting = (
+        scheduler_data.dynamic_sidecar.instrumentation.start_requested_at = (
             arrow.utcnow().datetime
         )
         await self.add_service_from_scheduler_data(scheduler_data)
@@ -359,7 +359,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                 )
                 return
 
-            current.dynamic_sidecar.metrics_timers.start_duration_of_service_closing = (
+            current.dynamic_sidecar.instrumentation.close_requested_at = (
                 arrow.utcnow().datetime
             )
 

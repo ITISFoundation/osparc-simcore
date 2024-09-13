@@ -383,7 +383,9 @@ async def attempt_pod_removal_and_data_saving(
 
     # metrics
 
-    stop_duration = scheduler_data.dynamic_sidecar.metrics_timers.get_stop_duration()
+    stop_duration = (
+        scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_close_request()
+    )
     if stop_duration:
         get_instrumentation(app).dynamic_sidecar_metrics.stop_time_seconds.labels(
             **get_start_stop_labels(scheduler_data)

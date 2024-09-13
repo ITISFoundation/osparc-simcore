@@ -172,30 +172,26 @@ class ServiceRemovalState(BaseModel):
         self.was_removed = True
 
 
-class MetricsTimers(BaseModel):
-    start_duration_of_service_starting: datetime | None = Field(
+class ServicesInstrumentation(BaseModel):
+    start_requested_at: datetime | None = Field(
         None,
         description="moment in which the process of starting the service was requested",
     )
-    start_duration_of_service_closing: datetime | None = Field(
+    close_requested_at: datetime | None = Field(
         None,
         description="moment in which the process of stopping the service was requested",
     )
 
-    def get_start_duration(self) -> float | None:
-        if self.start_duration_of_service_starting is None:
+    def elapsed_since_start_request(self) -> float | None:
+        if self.start_requested_at is None:
             return None
 
-        return (
-            arrow.utcnow().datetime - self.start_duration_of_service_starting
-        ).total_seconds()
+        return (arrow.utcnow().datetime - self.start_requested_at).total_seconds()
 
-    def get_stop_duration(self) -> float | None:
-        if self.start_duration_of_service_closing is None:
+    def elapsed_since_close_request(self) -> float | None:
+        if self.close_requested_at is None:
             return None
-        return (
-            arrow.utcnow().datetime - self.start_duration_of_service_closing
-        ).total_seconds()
+        return (arrow.utcnow().datetime - self.close_requested_at).total_seconds()
 
 
 class DynamicSidecar(BaseModel):
@@ -282,9 +278,9 @@ class DynamicSidecar(BaseModel):
         description="set True if the dy-sidecar saves the state and uploads the outputs",
     )
 
-    metrics_timers: MetricsTimers = Field(
-        default_factory=lambda: MetricsTimers.parse_obj({}),
-        description="keeps track of start times for various operations",
+    instrumentation: ServicesInstrumentation = Field(
+        default_factory=lambda: ServicesInstrumentation.parse_obj({}),
+        description="keeps track times for various operations",
     )
 
     # below had already been validated and

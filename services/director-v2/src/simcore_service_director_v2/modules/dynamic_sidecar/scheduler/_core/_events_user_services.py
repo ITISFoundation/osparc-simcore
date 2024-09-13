@@ -224,7 +224,9 @@ async def create_user_services(  # pylint: disable=too-many-statements
 
     scheduler_data.dynamic_sidecar.were_containers_created = True
 
-    start_duration = scheduler_data.dynamic_sidecar.metrics_timers.get_start_duration()
+    start_duration = (
+        scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_start_request()
+    )
     if start_duration:
         get_instrumentation(app).dynamic_sidecar_metrics.start_time_seconds.labels(
             **get_start_stop_labels(scheduler_data)
