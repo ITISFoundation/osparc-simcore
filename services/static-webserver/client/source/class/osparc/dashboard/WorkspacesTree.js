@@ -95,7 +95,7 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
       const myWorkspaceModel = qx.data.marshal.Json.createModel(myWorkspaceData, true);
       parent.getChildren().append(myWorkspaceModel);
 
-      osparc.store.Workspaces.fetchWorkspaces()
+      osparc.store.Workspaces.getInstance().fetchWorkspaces()
         .then(workspaces => {
           workspaces.forEach(workspace => {
             const workspaceData = {
