@@ -50,7 +50,7 @@ class SimcoreS3DirectoryID(ConstrainedStr):
         `{project_id}/{node_id}/simcore-dir-name/`
     """
 
-    regex: re.Pattern[str] | None = re.compile(SIMCORE_S3_DIRECTORY_ID_RE)
+    pattern: re.Pattern[str] | None = re.compile(SIMCORE_S3_DIRECTORY_ID_RE)
 
     @staticmethod
     def _get_parent(s3_object: str, *, parent_index: int) -> str:
@@ -70,8 +70,8 @@ class SimcoreS3DirectoryID(ConstrainedStr):
             raise ValueError(msg) from err
 
     @classmethod
-    def validate(cls, value: str) -> str:
-        value = super().validate(value)
+    def _validate(cls, __input_value: str) -> str:
+        value = super()._validate(__input_value)
         value = value.rstrip("/")
         parent = cls._get_parent(value, parent_index=3)
 

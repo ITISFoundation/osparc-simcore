@@ -66,9 +66,15 @@ class ConstrainedStr(str):
     curtail_length: int | None = None
 
     @classmethod
+    def _validate(cls, __input_value: str) -> str:
+        if cls.curtail_length and len(__input_value) > cls.curtail_length:
+            __input_value = __input_value[: cls.curtail_length]
+        return cls(__input_value)
+
+    @classmethod
     def __get_pydantic_core_schema__(cls, _source_type, _handler):
-        return core_schema.no_info_before_validator_function(
-            cls.validate,
+        return core_schema.no_info_after_validator_function(
+            cls._validate,
             core_schema.str_schema(
                 pattern=cls.pattern,
                 min_length=cls.min_length,
@@ -76,16 +82,6 @@ class ConstrainedStr(str):
                 strip_whitespace=cls.strip_whitespace,
             ),
         )
-
-    @classmethod
-    def validate(cls, value: str) -> str:
-        if not isinstance(value, str):
-            raise TypeError(f"Expected string, got {type(value).__name__}")
-
-        if cls.curtail_length and len(value) > cls.curtail_length:
-            value = value[: cls.curtail_length]
-
-        return value
 
 
 class IDStr(ConstrainedStr):
