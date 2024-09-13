@@ -1,10 +1,13 @@
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import Final
 
 from pydantic import NonNegativeFloat
 
 from ...models.dynamic_services_scheduler import SchedulerData
+
+_EPSILON: Final[NonNegativeFloat] = 1e9
 
 
 def get_metrics_labels(scheduler_data: "SchedulerData") -> dict[str, str]:
@@ -20,7 +23,11 @@ def get_metrics_labels(scheduler_data: "SchedulerData") -> dict[str, str]:
     }
 
 
-def get_rate(size: NonNegativeFloat, duration: NonNegativeFloat) -> NonNegativeFloat:
+def get_rate(
+    size: NonNegativeFloat | None, duration: NonNegativeFloat
+) -> NonNegativeFloat:
+    if size is None or size <= 0:
+        size = _EPSILON
     return size / duration
 
 
