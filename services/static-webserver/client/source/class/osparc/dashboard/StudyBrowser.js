@@ -100,7 +100,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
-    __currentRequest: null,
     __workspacesList: null,
     __foldersList: null,
 
@@ -179,7 +178,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
         this.__setFoldersToList([]);
+        const lastFoldersRequest = osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
+        lastFoldersRequest
           .then(folders => {
+            console.log("lastFoldersRequest", lastFoldersRequest);
             this.__setFoldersToList(folders);
           })
           .catch(console.error);
@@ -226,11 +228,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
-      if (this.__currentRequest) {
-        // cancel currentRequest
-      }
-      const currentRequest = this.__currentRequest = this.__getNextStudiesRequest();
-      currentRequest
+      this.__getNextStudiesRequest()
         .then(resp => {
           const studies = resp["data"];
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
@@ -257,7 +255,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         })
         .catch(err => console.error(err))
         .finally(() => {
-          this.__currentRequest = null;
           this._loadingResourcesBtn.setFetching(false);
           this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
           this._moreResourcesRequired();
