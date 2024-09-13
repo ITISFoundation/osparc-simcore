@@ -56,8 +56,12 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
 
     osparc.store.Workspaces.addListener("workspaceAdded", e => {
       const workspace = e.getData();
-      const sharedWorkspaceModel = this.__getModel(-1, null);
-      this.__addWorkspace(workspace, sharedWorkspaceModel);
+      this.__addWorkspace(workspace);
+    }, this);
+
+    osparc.store.Workspaces.addListener("workspaceRemoved", e => {
+      const workspace = e.getData();
+      this.__removeWorkspace(workspace);
     }, this);
   },
 
@@ -168,13 +172,13 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       osparc.store.Workspaces.fetchWorkspaces()
         .then(workspaces => {
           workspaces.forEach(workspace => {
-            this.__addWorkspace(workspace, sharedWorkspaceModel);
+            this.__addWorkspace(workspace);
           });
         })
         .catch(console.error);
     },
 
-    __addWorkspace: function(workspace, parentModel) {
+    __addWorkspace: function(workspace) {
       const workspaceData = {
         label: "",
         icon: "shared",
@@ -188,7 +192,17 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const workspaceModel = qx.data.marshal.Json.createModel(workspaceData, true);
       this.__models.push(workspaceModel);
       workspace.bind("name", workspaceModel, "label");
-      parentModel.getChildren().append(workspaceModel);
+
+      const sharedWorkspaceModel = this.__getModel(-1, null);
+      sharedWorkspaceModel.getChildren().append(workspaceModel);
+    },
+
+    __removeWorkspace: function(workspace) {
+      const sharedWorkspaceModel = this.__getModel(-1, null);
+      const idx = sharedWorkspaceModel.getChildren().toArray().findIndex(w => workspace.getWorkspaceId() === w.getWorkspaceId());
+      if (idx > -1) {
+        sharedWorkspaceModel.getChildren().toArray().splice(idx, 1);
+      }
     },
 
     __addFolder: function(folder, parentModel) {

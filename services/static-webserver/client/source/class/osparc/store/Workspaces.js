@@ -20,6 +20,7 @@ qx.Class.define("osparc.store.Workspaces", {
 
   events: {
     "workspaceAdded": "qx.event.type.Data",
+    "workspaceRemoved": "qx.event.type.Data",
   },
 
   statics: {
@@ -72,22 +73,20 @@ qx.Class.define("osparc.store.Workspaces", {
     },
 
     deleteWorkspace: function(workspaceId) {
-      return new Promise((resolve, reject) => {
-        const params = {
-          "url": {
-            workspaceId
+      const params = {
+        "url": {
+          workspaceId
+        }
+      };
+      return osparc.data.Resources.getInstance().fetch("workspaces", "delete", params)
+        .then(() => {
+          const workspace = this.getWorkspace(workspaceId);
+          if (workspace) {
+            this.__deleteFromCache(workspaceId);
+            this.fireDataEvent("workspaceRemoved", workspace);
           }
-        };
-        osparc.data.Resources.getInstance().fetch("workspaces", "delete", params)
-          .then(() => {
-            if (this.__deleteFromCache(workspaceId)) {
-              resolve();
-            } else {
-              reject();
-            }
-          })
-          .catch(err => reject(err));
-      });
+        })
+        .catch(console.error);
     },
 
     putWorkspace: function(workspaceId, updateData) {
