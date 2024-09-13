@@ -63,6 +63,6 @@ def test_dsn_with_async_sqlalchemy_has_query(
     settings = PostgresSettings()
 
     parsed_url = urlparse(settings.dsn_with_async_sqlalchemy)
-    assert parsed_url.scheme.split("+") == ("postgres", "asyncpg")
+    assert parsed_url.scheme.split("+") == ("postgresql", "asyncpg")
 
     assert not parsed_url.query
