@@ -19,8 +19,7 @@ from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from .....models.dynamic_services_scheduler import SchedulerData
-from .....modules.instrumentation._setup import get_instrumentation
-from .....modules.instrumentation._utils import get_start_stop_labels
+from .....modules.instrumentation import get_instrumentation, get_metrics_labels
 from .....utils.db import get_repository
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
@@ -229,7 +228,7 @@ async def create_user_services(  # pylint: disable=too-many-statements
     )
     assert start_duration is not None  # nosec
     get_instrumentation(app).dynamic_sidecar_metrics.start_time_seconds.labels(
-        **get_start_stop_labels(scheduler_data)
+        **get_metrics_labels(scheduler_data)
     ).observe(start_duration)
 
     _logger.info("Internal state after creating user services %s", scheduler_data)

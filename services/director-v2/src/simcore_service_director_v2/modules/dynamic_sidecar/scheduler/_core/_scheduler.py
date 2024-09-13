@@ -56,7 +56,11 @@ from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from .....models.dynamic_services_scheduler import SchedulerData, ServiceName
-from .....modules.instrumentation import get_instrumentation, get_label_from_size
+from .....modules.instrumentation import (
+    get_instrumentation,
+    get_metrics_labels,
+    get_rate,
+)
 from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import update_scheduler_data_label
 from ...errors import DynamicSidecarError, DynamicSidecarNotFoundError
@@ -474,9 +478,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         get_instrumentation(
             self.app
         ).dynamic_sidecar_metrics.input_ports_pull_seconds.labels(
-            **get_label_from_size(transferred_bytes)
+            **get_metrics_labels(scheduler_data)
         ).observe(
-            duration
+            get_rate(transferred_bytes, duration)
         )
 
         if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:

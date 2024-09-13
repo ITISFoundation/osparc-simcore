@@ -46,8 +46,8 @@ from .....models.dynamic_services_scheduler import (
 )
 from .....modules.instrumentation import (
     get_instrumentation,
-    get_label_from_size,
-    get_start_stop_labels,
+    get_metrics_labels,
+    get_rate,
     track_duration,
 )
 from .....utils.db import get_repository
@@ -388,7 +388,7 @@ async def attempt_pod_removal_and_data_saving(
     )
     assert stop_duration is not None  # nosec
     get_instrumentation(app).dynamic_sidecar_metrics.stop_time_seconds.labels(
-        **get_start_stop_labels(scheduler_data)
+        **get_metrics_labels(scheduler_data)
     ).observe(stop_duration)
 
 
@@ -485,9 +485,9 @@ async def prepare_services_environment(
         get_instrumentation(
             app
         ).dynamic_sidecar_metrics.output_ports_pull_seconds.labels(
-            **get_label_from_size(size)
+            **get_metrics_labels(scheduler_data)
         ).observe(
-            duration.to_flaot()
+            get_rate(size, duration.to_flaot())
         )
 
     async def _pull_user_services_images_with_metrics() -> None:
@@ -499,9 +499,9 @@ async def prepare_services_environment(
         get_instrumentation(
             app
         ).dynamic_sidecar_metrics.pull_user_services_images_seconds.labels(
-            **get_label_from_size(size)
+            **get_metrics_labels(scheduler_data)
         ).observe(
-            duration.to_flaot()
+            get_rate(size, duration.to_flaot())
         )
 
     async def _restore_service_state_with_metrics() -> None:
@@ -511,9 +511,9 @@ async def prepare_services_environment(
         get_instrumentation(
             app
         ).dynamic_sidecar_metrics.restore_service_state_seconds.labels(
-            **get_label_from_size(size)
+            **get_metrics_labels(scheduler_data)
         ).observe(
-            duration.to_flaot()
+            get_rate(size, duration.to_flaot())
         )
 
     tasks = [

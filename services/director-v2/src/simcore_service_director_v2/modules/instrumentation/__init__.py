@@ -1,10 +1,10 @@
 from ._setup import get_instrumentation, setup
-from ._utils import get_label_from_size, get_start_stop_labels, track_duration
+from ._utils import get_metrics_labels, get_rate, track_duration
 
 __all__: tuple[str, ...] = (
     "get_instrumentation",
-    "get_label_from_size",
-    "get_start_stop_labels",
+    "get_metrics_labels",
+    "get_rate",
     "setup",
     "track_duration",
 )
