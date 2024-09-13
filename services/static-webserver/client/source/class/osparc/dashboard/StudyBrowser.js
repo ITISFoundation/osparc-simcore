@@ -178,10 +178,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
         this.__setFoldersToList([]);
-        const lastFoldersRequest = osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
-        lastFoldersRequest
+        osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
           .then(folders => {
-            console.log("lastFoldersRequest", lastFoldersRequest);
             this.__setFoldersToList(folders);
           })
           .catch(console.error);
