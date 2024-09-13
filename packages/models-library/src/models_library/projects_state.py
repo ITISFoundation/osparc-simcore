@@ -56,10 +56,29 @@ class ProjectStatus(str, Enum):
 class ProjectLocked(BaseModel):
     value: bool = Field(..., description="True if the project is locked")
     owner: Owner | None = Field(
-        default=None, description="If locked, the user that owns the lock"
+        default=None,
+        description="If locked, the user that owns the lock",
+        validate_default=True,
     )
     status: ProjectStatus = Field(..., description="The status of the project")
-    model_config = ConfigDict(extra="forbid", use_enum_values=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        use_enum_values=True,
+        json_schema_extra={
+            "examples": [
+                {"value": False, "status": ProjectStatus.CLOSED},
+                {
+                    "value": True,
+                    "status": ProjectStatus.OPENED,
+                    "owner": {
+                        "user_id": 123,
+                        "first_name": "Johnny",
+                        "last_name": "Cash",
+                    },
+                },
+            ]
+        },
+    )
 
     @field_validator("owner", mode="before")
     @classmethod
