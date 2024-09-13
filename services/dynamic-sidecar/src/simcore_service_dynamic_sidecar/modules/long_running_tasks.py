@@ -317,6 +317,15 @@ async def task_runs_docker_compose_down(
     progress.update(message="done", percent=ProgressPercent(0.99))
 
 
+def _get_satate_folders_size(paths: list[Path]) -> int:
+    total_size: int = 0
+    for path in paths:
+        for file in path.rglob("*"):
+            if file.is_file():
+                total_size += file.stat().st_size
+    return total_size
+
+
 async def _restore_state_folder(
     app: FastAPI,
     *,
@@ -336,14 +345,6 @@ async def _restore_state_folder(
         progress_bar=progress_bar,
         aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
     )
-
-
-def _get_folder_size(path: Path) -> int:
-    total_size: int = 0
-    for file in path.rglob("*"):
-        if file.is_file():
-            total_size += file.stat().st_size
-    return total_size
 
 
 async def task_restore_state(
@@ -394,7 +395,7 @@ async def task_restore_state(
     )
     progress.update(message="state restored", percent=ProgressPercent(0.99))
 
-    return sum(_get_folder_size(p) for p in state_paths)
+    return _get_satate_folders_size(state_paths)
 
 
 async def _save_state_folder(
@@ -459,7 +460,7 @@ async def task_save_state(
     await post_sidecar_log_message(app, "Finished state saving", log_level=logging.INFO)
     progress.update(message="finished state saving", percent=ProgressPercent(0.99))
 
-    return sum(_get_folder_size(p) for p in state_paths)
+    return _get_satate_folders_size(state_paths)
 
 
 async def task_ports_inputs_pull(
