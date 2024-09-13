@@ -163,9 +163,15 @@ async def service_save_state(
     progress_callback: ProgressCallback | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
-    await sidecars_client.save_service_state(
-        scheduler_data.endpoint, progress_callback=progress_callback
-    )
+
+    with track_duration() as duration:
+        size = await sidecars_client.save_service_state(
+            scheduler_data.endpoint, progress_callback=progress_callback
+        )
+    get_instrumentation(app).dynamic_sidecar_metrics.save_service_state_rate.labels(
+        **get_metrics_labels(scheduler_data)
+    ).observe(get_rate(size, duration.to_flaot()))
+
     await sidecars_client.update_volume_state(
         scheduler_data.endpoint,
         volume_category=VolumeCategory.STATES,

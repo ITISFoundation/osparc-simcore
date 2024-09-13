@@ -425,7 +425,7 @@ async def task_save_state(
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
-) -> None:
+) -> int:
     """
     Saves the states of the service.
     If a legacy archive is detected, it will be removed after
@@ -458,6 +458,8 @@ async def task_save_state(
 
     await post_sidecar_log_message(app, "Finished state saving", log_level=logging.INFO)
     progress.update(message="finished state saving", percent=ProgressPercent(0.99))
+
+    return sum(_get_folder_size(p) for p in state_paths)
 
 
 async def task_ports_inputs_pull(

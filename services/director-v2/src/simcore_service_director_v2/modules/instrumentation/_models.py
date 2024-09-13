@@ -56,10 +56,15 @@ class DynamiSidecarMetrics:
     stop_time_duration: Histogram = field(init=False)
     pull_user_services_images_duration: Histogram = field(init=False)
 
+    # ingress rates
     output_ports_pull_rate: Histogram = field(init=False)
     input_ports_pull_rate: Histogram = field(init=False)
-
     recover_service_state_rate: Histogram = field(init=False)
+
+    # egress rates
+    # NOTE: input ports are never pushed
+    # NOTE: output ports are pushed by the dy-sidecar, upon change making recovering the metric very complicated
+    save_service_state_rate: Histogram = field(init=False)
 
     def __post_init__(self) -> None:
         self.start_time_duration = Histogram(
@@ -103,10 +108,18 @@ class DynamiSidecarMetrics:
             buckets=_BUCKETS_RATE_BPS,
             subsystem=_SUBSYSTEM_NAME,
         )
-
         self.recover_service_state_rate = Histogram(
             "restore_service_state_rate_bps",
             "rate at which service states were recovered",
+            labelnames=_INSTRUMENTATION_LABELS,
+            namespace=_NAMESPACE_METRICS,
+            buckets=_BUCKETS_RATE_BPS,
+            subsystem=_SUBSYSTEM_NAME,
+        )
+
+        self.save_service_state_rate = Histogram(
+            "save_service_state_rate_bps",
+            "rate at which service states were saved",
             labelnames=_INSTRUMENTATION_LABELS,
             namespace=_NAMESPACE_METRICS,
             buckets=_BUCKETS_RATE_BPS,
