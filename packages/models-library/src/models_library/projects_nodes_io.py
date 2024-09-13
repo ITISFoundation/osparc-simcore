@@ -13,6 +13,7 @@ from uuid import UUID
 
 from models_library.basic_types import ConstrainedStr, KeyIDStr
 from pydantic import (
+    AfterValidator,
     AnyUrl,
     BaseModel,
     ConfigDict,
@@ -30,7 +31,7 @@ from .basic_regex import (
     UUID_RE,
 )
 
-NodeID = UUID
+NodeID = Annotated[str, AfterValidator(UUID)]
 
 UUIDStr = Annotated[str, StringConstraints(pattern=UUID_RE)]
 
