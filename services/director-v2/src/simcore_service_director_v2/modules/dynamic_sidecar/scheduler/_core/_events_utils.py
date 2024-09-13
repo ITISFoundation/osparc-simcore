@@ -387,7 +387,7 @@ async def attempt_pod_removal_and_data_saving(
         scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_close_request()
     )
     assert stop_duration is not None  # nosec
-    get_instrumentation(app).dynamic_sidecar_metrics.stop_time_seconds.labels(
+    get_instrumentation(app).dynamic_sidecar_metrics.stop_time_duration.labels(
         **get_metrics_labels(scheduler_data)
     ).observe(stop_duration)
 
@@ -482,13 +482,9 @@ async def prepare_services_environment(
                 dynamic_sidecar_endpoint
             )
 
-        get_instrumentation(
-            app
-        ).dynamic_sidecar_metrics.output_ports_pull_seconds.labels(
+        get_instrumentation(app).dynamic_sidecar_metrics.output_ports_pull_rate.labels(
             **get_metrics_labels(scheduler_data)
-        ).observe(
-            get_rate(size, duration.to_flaot())
-        )
+        ).observe(get_rate(size, duration.to_flaot()))
 
     async def _pull_user_services_images_with_metrics() -> None:
         with track_duration() as duration:
@@ -498,7 +494,7 @@ async def prepare_services_environment(
 
         get_instrumentation(
             app
-        ).dynamic_sidecar_metrics.pull_user_services_images_seconds.labels(
+        ).dynamic_sidecar_metrics.pull_user_services_images_rate.labels(
             **get_metrics_labels(scheduler_data)
         ).observe(
             get_rate(size, duration.to_flaot())
@@ -510,7 +506,7 @@ async def prepare_services_environment(
 
         get_instrumentation(
             app
-        ).dynamic_sidecar_metrics.restore_service_state_seconds.labels(
+        ).dynamic_sidecar_metrics.recover_service_state_rate.labels(
             **get_metrics_labels(scheduler_data)
         ).observe(
             get_rate(size, duration.to_flaot())

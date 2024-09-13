@@ -227,7 +227,7 @@ async def create_user_services(  # pylint: disable=too-many-statements
         scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_start_request()
     )
     assert start_duration is not None  # nosec
-    get_instrumentation(app).dynamic_sidecar_metrics.start_time_seconds.labels(
+    get_instrumentation(app).dynamic_sidecar_metrics.start_time_duration.labels(
         **get_metrics_labels(scheduler_data)
     ).observe(start_duration)
 

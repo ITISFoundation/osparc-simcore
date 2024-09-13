@@ -477,7 +477,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
         get_instrumentation(
             self.app
-        ).dynamic_sidecar_metrics.input_ports_pull_seconds.labels(
+        ).dynamic_sidecar_metrics.input_ports_pull_rate.labels(
             **get_metrics_labels(scheduler_data)
         ).observe(
             get_rate(transferred_bytes, duration)
