@@ -112,6 +112,7 @@ async def check_clusters(app: FastAPI) -> None:
         if await ping_scheduler(get_scheduler_url(instance), get_scheduler_auth(app))
     }
 
+    # set intance heartbeat if scheduler is busy
     for instance in connected_intances:
         with log_catch(_logger, reraise=False):
             # NOTE: some connected instance could in theory break between these 2 calls, therefore this is silenced and will
@@ -124,6 +125,7 @@ async def check_clusters(app: FastAPI) -> None:
                     f"{instance.id=} for {instance.tags=}",
                 )
                 await set_instance_heartbeat(app, instance=instance)
+    # clean any cluster that is not doing anything
     if terminateable_instances := await _find_terminateable_instances(
         app, connected_intances
     ):
@@ -138,7 +140,7 @@ async def check_clusters(app: FastAPI) -> None:
         for instance in disconnected_instances
         if _get_instance_last_heartbeat(instance) is None
     }
-
+    # remove instances that were starting for too long
     if terminateable_instances := await _find_terminateable_instances(
         app, starting_instances
     ):
@@ -149,7 +151,14 @@ async def check_clusters(app: FastAPI) -> None:
         )
         await delete_clusters(app, instances=terminateable_instances)
 
-    # the other instances are broken (they were at some point connected but now not anymore)
+    # TODO: transmit command to start docker swarm/stack if needed
+    # once the instance is connected to the SSM server,
+    # use ssm client to send the command to these instances,
+    # we send a command that contain:
+    # the docker-compose file in binary,
+    # the call to init the docker swarm and the call to deploy the stack
+
+    # the remaining instances are broken (they were at some point connected but now not anymore)
     broken_instances = disconnected_instances - starting_instances
     if terminateable_instances := await _find_terminateable_instances(
         app, broken_instances
