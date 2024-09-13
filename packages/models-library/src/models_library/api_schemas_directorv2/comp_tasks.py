@@ -43,6 +43,7 @@ class ComputationCreate(BaseModel):
     use_on_demand_clusters: bool = Field(
         default=False,
         description="if True, a cluster will be created as necessary (wallet_id cannot be None, and cluster_id must be None)",
+        validate_default=True,
     )
     wallet_info: WalletInfo | None = Field(
         default=None,
