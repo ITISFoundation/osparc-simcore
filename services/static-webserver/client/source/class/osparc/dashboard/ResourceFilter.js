@@ -26,7 +26,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     this.__resourceType = resourceType;
     this.__sharedWithButtons = [];
-    this.__workspaceButtons = [];
     this.__tagButtons = [];
     this.__serviceTypeButtons = [];
 
@@ -42,11 +41,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
   members: {
     __resourceType: null,
-    __contextLayout: null,
-    __contextRadioGroup: null,
     __workspacesAndFoldersTree: null,
     __sharedWithButtons: null,
-    __workspaceButtons: null,
     __tagButtons: null,
     __serviceTypeButtons: null,
 
@@ -88,10 +84,10 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     /* SHARED WITH */
     __createSharedWithFilterLayout: function() {
-      const layout = this.__contextLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const sharedWithLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const radioGroup = this.__contextRadioGroup = new qx.ui.form.RadioGroup();
-      radioGroup.setAllowEmptySelection(false);
+      const sharedWithRadioGroup = new qx.ui.form.RadioGroup();
+      sharedWithRadioGroup.setAllowEmptySelection(false);
 
       const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
       options.forEach(option => {
@@ -124,8 +120,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         }
         button.id = option.id;
 
-        layout.add(button);
-        radioGroup.add(button);
+        sharedWithLayout.add(button);
+        sharedWithRadioGroup.add(button);
 
         button.addListener("execute", () => {
           this.fireDataEvent("changeSharedWith", {
@@ -137,61 +133,13 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         this.__sharedWithButtons.push(button);
       });
 
-      return layout;
+      return sharedWithLayout;
     },
     /* /SHARED WITH */
 
     /* WORKSPACES */
-    __addWorkspaceButtons: function() {
-      this.__contextLayout.add(new qx.ui.core.Spacer());
-      const workspacesButton = new qx.ui.toolbar.RadioButton(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath(22));
-      workspacesButton.workspaceId = -1;
-      workspacesButton.set({
-        appearance: "filter-toggle-button"
-      });
-      this.__contextLayout.add(workspacesButton);
-      this.__contextRadioGroup.add(workspacesButton);
-      workspacesButton.addListener("execute", () => {
-        this.fireDataEvent("changeWorkspace", workspacesButton.workspaceId);
-      });
-
-      this.reloadWorkspaceButtons();
-    },
-
-    reloadWorkspaceButtons: function() {
-      // remove first the workspaces
-      for (let i=this.__workspaceButtons.length-1; i >= 0; i--) {
-        const workspaceButton = this.__workspaceButtons[i];
-        this.__contextLayout.remove(workspaceButton);
-        this.__contextRadioGroup.remove(workspaceButton);
-      }
-      this.__workspaceButtons = [];
-      osparc.store.Workspaces.fetchWorkspaces()
-        .then(workspaces => {
-          workspaces.forEach(workspace => {
-            const workspaceButton = new qx.ui.toolbar.RadioButton(null, osparc.store.Workspaces.iconPath(22));
-            workspace.bind("name", workspaceButton, "label");
-            workspaceButton.workspaceId = workspace.getWorkspaceId();
-            this.__workspaceButtons.push(workspaceButton);
-            workspaceButton.set({
-              appearance: "filter-toggle-button",
-              marginLeft: 15,
-            });
-            this.__contextLayout.add(workspaceButton);
-            this.__contextRadioGroup.add(workspaceButton);
-            workspaceButton.addListener("execute", () => {
-              this.fireDataEvent("changeWorkspace", workspaceButton.workspaceId);
-            }, this);
-          });
-        })
-        .catch(console.error);
-    },
-
     workspaceSelected: function(workspaceId) {
-      const foundButton = this.__workspaceButtons.find(workspaceButton => workspaceButton.workspaceId === workspaceId);
-      if (foundButton) {
-        foundButton.execute();
-      }
+      // OM: select folder
     },
     /* /WORKSPACES */
 

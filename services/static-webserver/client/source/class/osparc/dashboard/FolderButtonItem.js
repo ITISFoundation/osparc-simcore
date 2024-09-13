@@ -151,7 +151,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     },
 
     __applyWorkspaceId: function(workspaceId) {
-      const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
+      const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
       const accessRights = workspace ? workspace.getAccessRights() : {};
       if (accessRights && Object.keys(accessRights).length) {
         const shareIcon = this.getChildControl("icon").getChildControl("shared-icon");

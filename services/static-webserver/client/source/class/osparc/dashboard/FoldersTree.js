@@ -21,7 +21,7 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
   construct: function(currentWorkspaceId) {
     this.__currentWorkspaceId = currentWorkspaceId;
 
-    const workspace = osparc.store.Workspaces.getWorkspace(this.__currentWorkspaceId);
+    const workspace = osparc.store.Workspaces.getInstance().getWorkspace(this.__currentWorkspaceId);
     const workspaceLabel = workspace ? workspace.getName() : "My Workspace";
     const rootData = {
       label: workspaceLabel,
