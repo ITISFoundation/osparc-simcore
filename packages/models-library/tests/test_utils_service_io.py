@@ -40,7 +40,7 @@ def service_port(request: pytest.FixtureRequest) -> ServiceInput | ServiceOutput
 
 
 def test_get_schema_from_port(service_port: ServiceInput | ServiceOutput):
-    print(service_port.json(indent=2))
+    print(service_port.model_dump_json(indent=2))
 
     # get
     schema = get_service_io_json_schema(service_port)

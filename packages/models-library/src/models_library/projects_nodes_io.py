@@ -11,9 +11,8 @@ from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
-from models_library.basic_types import ConstrainedStr, KeyIDStr
+from models_library.basic_types import AnyUrl, ConstrainedStr, KeyIDStr
 from pydantic import (
-    AnyUrl,
     BaseModel,
     ConfigDict,
     Field,

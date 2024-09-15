@@ -130,6 +130,7 @@ class LongTruncatedStr(ConstrainedStr):
 IdInt: TypeAlias = PositiveInt
 PrimaryKeyInt: TypeAlias = PositiveInt
 
+AnyUrl = Annotated[str, pydantic.AnyUrl]
 
 AnyHttpUrl = Annotated[str, pydantic.AnyHttpUrl]
 
