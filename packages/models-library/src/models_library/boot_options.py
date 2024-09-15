@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 from typing_extensions import TypedDict
 
 from .basic_types import EnvVarKey
@@ -17,8 +17,8 @@ class BootOption(BaseModel):
 
     @field_validator("items")
     @classmethod
-    def ensure_default_included(cls, v, values):
-        default = values["default"]
+    def ensure_default_included(cls, v, info: ValidationInfo):
+        default = info.data["default"]
         if default not in v:
             msg = f"Expected default={default} to be present a key of items={v}"
             raise ValueError(msg)
