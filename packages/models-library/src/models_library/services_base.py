@@ -1,5 +1,6 @@
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from .basic_types import HttpUrl
 from .services_types import ServiceKey, ServiceVersion
 from .utils.common_validators import empty_str_to_none_pre_validator
 
@@ -31,6 +32,7 @@ class ServiceBaseDisplay(BaseModel):
         examples=[
             "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
         ],
+        validate_default=True,
     )
     description: str = Field(
         ...,
@@ -52,6 +54,6 @@ class ServiceBaseDisplay(BaseModel):
         " This name is not used for version comparison but is useful for communication and documentation purposes.",
     )
 
-    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True, always=False)(
+    _empty_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )
