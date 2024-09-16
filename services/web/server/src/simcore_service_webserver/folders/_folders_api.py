@@ -15,12 +15,11 @@ from pydantic import NonNegativeInt
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.utils import fire_and_forget_task
-from simcore_service_webserver.workspaces._workspaces_api import (
-    check_user_workspace_access,
-)
 
+from ..folders.errors import FolderValueNotPermittedError
 from ..projects.projects_api import submit_delete_project_task
 from ..users.api import get_user
+from ..workspaces._workspaces_api import check_user_workspace_access
 from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceFolderInconsistencyError,
@@ -237,6 +236,24 @@ async def update_folder(
         user_id=user_id if workspace_is_private else None,
         workspace_id=folder_db.workspace_id,
     )
+
+    if folder_db.parent_folder_id != parent_folder_id and parent_folder_id is not None:
+        # Check user has access to the parent folder
+        await folders_db.get_for_user_or_workspace(
+            app,
+            folder_id=parent_folder_id,
+            product_name=product_name,
+            user_id=user_id if workspace_is_private else None,
+            workspace_id=folder_db.workspace_id,
+        )
+        # Do not allow to move to a child folder id
+        _child_folders = await folders_db.get_folders_recursively(
+            app, folder_id=folder_id, product_name=product_name
+        )
+        if parent_folder_id in _child_folders:
+            raise FolderValueNotPermittedError(
+                reason="Parent folder id should not be one of children"
+            )
 
     folder_db = await folders_db.update(
         app,

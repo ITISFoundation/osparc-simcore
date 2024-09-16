@@ -5,6 +5,10 @@ class FoldersValueError(WebServerBaseError, ValueError):
     ...
 
 
+class FolderValueNotPermittedError(FoldersValueError):
+    msg_template = "Provided value is not permitted. {reason}"
+
+
 class FolderNotFoundError(FoldersValueError):
     msg_template = "Folder not found. {reason}"
 
