@@ -163,11 +163,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadWorkspaces: function() {
+      // empty list
+      this.__setWorkspacesToList([]);
       osparc.store.Workspaces.getInstance().fetchWorkspaces()
         .then(workspaces => {
-          this.__workspacesList = workspaces;
-          workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
-          this.__reloadWorkspaceCards();
+          this.__setWorkspacesToList(workspaces);
         });
     },
 
@@ -374,6 +374,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       this.self().sortFoldersList(this.__foldersList, sortByValue);
       this.__reloadFolderCards();
+    },
+
+    __setWorkspacesToList: function(workspaces) {
+      this.__workspacesList = workspaces;
+      workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
+      this.__reloadWorkspaceCards();
     },
 
     _reloadCards: function() {
