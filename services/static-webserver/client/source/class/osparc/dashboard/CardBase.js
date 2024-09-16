@@ -780,6 +780,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
         if (studyDataButton) {
           studyDataButton.setEnabled(osparc.study.Utils.canShowStudyData(resourceData));
         }
+        const billingSettingsButton = menuButtons.find(menuBtn => "billingSettingsButton" in menuBtn);
+        if (billingSettingsButton) {
+          billingSettingsButton.setEnabled(osparc.study.Utils.canShowBillingOptions(resourceData));
+        }
         const moveToFolderButton = menuButtons.find(menuBtn => "moveToFolderButton" in menuBtn);
         if (moveToFolderButton) {
           moveToFolderButton.setEnabled(osparc.study.Utils.canMoveToFolder(resourceData));

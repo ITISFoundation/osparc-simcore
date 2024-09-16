@@ -36,7 +36,9 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       decorator: "no-border",
       font: "text-14",
       hideRoot: true,
-      paddingLeft: -10,
+      // paddingLeft: -10,
+      contentPadding: 0,
+      padding: 0,
     });
 
     this.__addMyWorkspace(rootModel);
@@ -102,6 +104,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     __initTree: function() {
       const that = this;
       this.setDelegate({
+        createItem: () => new osparc.dashboard.WorkspacesAndFoldersTreeItem(),
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("", "open", {
@@ -115,12 +118,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
               return isOpen;
             },
           }, item, id);
-        },
-        configureItem: item => {
-          item.set({
-            indent: 12, // defaults to 19
-          });
-        },
+        }
       });
 
       this.setIconPath("icon");
