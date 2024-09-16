@@ -97,7 +97,8 @@ async def declare_queue(
         "durable": True,
         "exclusive": exclusive_queue,
         "arguments": default_arguments,
-        "name": f"{get_rabbitmq_client_unique_name(client_name)}_{exchange_name}_exclusive",
+        # no names for exclusive queues
+        #  "name": f"{get_rabbitmq_client_unique_name(client_name)}_{exchange_name}_exclusive",
     }
     if not exclusive_queue:
         # NOTE: setting a name will ensure multiple instance will take their data here
