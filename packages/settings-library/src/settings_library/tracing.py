@@ -1,4 +1,4 @@
-from pydantic import AnyUrl, Field, parse_obj_as
+from pydantic import AliasChoices, AnyUrl, Field, parse_obj_as
 
 from .base import BaseCustomSettings
 
@@ -17,5 +17,5 @@ class TracingSettings(BaseCustomSettings):
     TRACING_CLIENT_NAME: str = Field(
         default=UNDEFINED_CLIENT_NAME,
         description="Name of the application connecting the tracing service",
-        env=["HOST", "HOSTNAME", "TRACING_CLIENT_NAME"],
+        validation_alias=AliasChoices("HOST", "HOSTNAME", "TRACING_CLIENT_NAME"),
     )

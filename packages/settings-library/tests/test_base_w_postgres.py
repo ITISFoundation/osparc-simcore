@@ -6,7 +6,7 @@
 from collections.abc import Callable
 
 import pytest
-from pydantic import Field, ValidationError
+from pydantic import AliasChoices, Field, ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_envfile
 from settings_library.base import BaseCustomSettings, DefaultFromEnvFactoryError
 from settings_library.basic_types import PortInt
@@ -49,7 +49,9 @@ def model_classes_factory() -> Callable:
 
             POSTGRES_CLIENT_NAME: str | None = Field(
                 None,
-                env=["HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"],
+                validation_alias=AliasChoices(
+                    "HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"
+                ),
             )
 
         #

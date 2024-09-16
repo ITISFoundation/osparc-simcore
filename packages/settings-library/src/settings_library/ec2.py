@@ -1,6 +1,4 @@
-from typing import Any, ClassVar
-
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from .base import BaseCustomSettings
 
@@ -13,8 +11,8 @@ class EC2Settings(BaseCustomSettings):
     EC2_REGION_NAME: str = "us-east-1"
     EC2_SECRET_ACCESS_KEY: str
 
-    class Config(BaseCustomSettings.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "EC2_ACCESS_KEY_ID": "my_access_key_id",
@@ -24,3 +22,4 @@ class EC2Settings(BaseCustomSettings):
                 }
             ],
         }
+    )
