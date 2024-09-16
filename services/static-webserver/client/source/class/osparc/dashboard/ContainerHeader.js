@@ -31,12 +31,15 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
     }));
   },
 
+  events: {
+    "changeContext": "qx.event.type.Data",
+  },
+
   properties: {
     currentWorkspaceId: {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeCurrentWorkspaceId",
       apply: "__buildBreadcrumbs"
     },
 
@@ -44,7 +47,6 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeCurrentFolderId",
       apply: "__buildBreadcrumbs"
     }
   },
@@ -112,9 +114,16 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       } else {
         rootButton = new qx.ui.form.Button(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
       }
-      rootButton.addListener("execute", () => this.set({
-        currentFolderId: null,
-      }));
+      rootButton.addListener("execute", () => {
+        const folderId = null;
+        this.set({
+          currentFolderId: null,
+        });
+        this.fireDataEvent("changeContext", {
+          workspaceId,
+          folderId,
+        });
+      });
       return rootButton;
     },
 
@@ -122,7 +131,17 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       let folderButton = null;
       if (folder) {
         folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14");
-        folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder ? folder.getFolderId() : null), this);
+        folderButton.addListener("execute", () => {
+          const workspaceId = this.getCurrentWorkspaceId();
+          const folderId = folder ? folder.getFolderId() : null;
+          this.set({
+            currentFolderId: folderId,
+          });
+          this.fireDataEvent("changeContext", {
+            workspaceId,
+            folderId,
+          });
+        }, this);
       } else {
         const workspaceId = this.getCurrentWorkspaceId();
         folderButton = this.__createRootButton(workspaceId);
