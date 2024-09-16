@@ -24,7 +24,7 @@ def tracing_settings_in(request: pytest.FixtureRequest) -> dict[str, Any]:
 @pytest.fixture()
 def set_and_clean_settings_env_vars(
     monkeypatch: pytest.MonkeyPatch, tracing_settings_in: Callable[[], dict[str, Any]]
-):
+) -> None:
     if tracing_settings_in[0]:
         monkeypatch.setenv(
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}"
@@ -45,8 +45,8 @@ def set_and_clean_settings_env_vars(
 )
 async def test_valid_tracing_settings(
     mocked_app: FastAPI,
-    set_and_clean_settings_env_vars,
-    tracing_settings_in,
+    set_and_clean_settings_env_vars: Callable[[], None],
+    tracing_settings_in: Callable[[], dict[str, Any]],
 ):
     tracing_settings = TracingSettings()
     setup_tracing(
@@ -75,8 +75,8 @@ async def test_valid_tracing_settings(
 )
 async def test_invalid_tracing_settings(
     mocked_app: FastAPI,
-    set_and_clean_settings_env_vars,
-    tracing_settings_in,
+    set_and_clean_settings_env_vars: Callable[[], None],
+    tracing_settings_in: Callable[[], dict[str, Any]],
 ):
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
@@ -95,8 +95,8 @@ async def test_invalid_tracing_settings(
 )
 async def test_missing_tracing_settings(
     mocked_app: FastAPI,
-    set_and_clean_settings_env_vars,
-    tracing_settings_in,
+    set_and_clean_settings_env_vars: Callable[[], None],
+    tracing_settings_in: Callable[[], dict[str, Any]],
 ):
     tracing_settings = TracingSettings()
     setup_tracing(
@@ -112,8 +112,8 @@ async def test_missing_tracing_settings(
     indirect=True,
 )
 async def test_incomplete_tracing_settings(
-    set_and_clean_settings_env_vars,
-    tracing_settings_in,
+    set_and_clean_settings_env_vars: Callable[[], None],
+    tracing_settings_in: Callable[[], dict[str, Any]],
     mocked_app: FastAPI,
 ):
     tracing_settings = TracingSettings()
