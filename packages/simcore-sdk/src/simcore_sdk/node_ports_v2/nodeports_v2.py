@@ -9,7 +9,7 @@ from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic.error_wrappers import flatten_errors
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
@@ -45,11 +45,9 @@ class Nodeports(BaseModel):
     ]
     auto_update: bool = False
     r_clone_settings: RCloneSettings | None = None
-    io_log_redirect_cb: LogRedirectCB | None
+    io_log_redirect_cb: LogRedirectCB | None = None
     aws_s3_cli_settings: AwsS3CliSettings | None = None
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, **data: Any):
         super().__init__(**data)

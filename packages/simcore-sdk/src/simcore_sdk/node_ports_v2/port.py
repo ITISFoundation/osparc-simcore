@@ -10,7 +10,14 @@ from models_library.api_schemas_storage import LinkType
 from models_library.basic_types import IDStr
 from models_library.services_io import BaseServiceIOModel
 from models_library.services_types import ServicePortKey
-from pydantic import AnyUrl, Field, PrivateAttr, ValidationError, validator
+from pydantic import (
+    AnyUrl,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    ValidationError,
+    field_validator,
+)
 from pydantic.tools import parse_obj_as
 from servicelib.progress_bar import ProgressBarData
 
@@ -72,7 +79,7 @@ class Port(BaseServiceIOModel):
     widget: dict[str, Any] | None = None
     default_value: DataItemValue | None = Field(None, alias="defaultValue")
 
-    value: DataItemValue | None = None
+    value: DataItemValue | None = Field(None, validate_default=True)
 
     # Different states of "value"
     #   - e.g. typically after resolving a port's link, a download link, ...
@@ -90,10 +97,9 @@ class Port(BaseServiceIOModel):
     # flags
     _used_default_value: bool = PrivateAttr(False)
 
-    class Config(BaseServiceIOModel.Config):
-        validate_assignment = True
+    model_configg = ConfigDict(validate_assignment=True)
 
-    @validator("value", always=True)
+    @field_validator("value")
     @classmethod
     def check_value(cls, v: DataItemValue, values: dict[str, Any]) -> DataItemValue:
         if (
@@ -119,7 +125,7 @@ class Port(BaseServiceIOModel):
                 )
         return v
 
-    @validator("value_item", "value_concrete", pre=True)
+    @field_validator("value_item", "value_concrete", mode="before")
     @classmethod
     def check_item_or_concrete_value(cls, v, values):
         if (

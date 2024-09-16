@@ -42,8 +42,8 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
 class _SyncSettings(BaseModel):
-    r_clone_settings: RCloneSettings | None
-    aws_s3_cli_settings: AwsS3CliSettings | None
+    r_clone_settings: RCloneSettings | None = None
+    aws_s3_cli_settings: AwsS3CliSettings | None = None
 
 
 @pytest.fixture(

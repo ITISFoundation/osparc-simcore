@@ -3,7 +3,7 @@ import logging
 from typing import Union
 
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, ByteSize, Field, parse_raw_as
+from pydantic import BaseModel, ByteSize, ConfigDict, Field, parse_raw_as
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 
@@ -31,9 +31,7 @@ class _RCloneSyncTransferCompletedMessage(_RCloneSyncMessageBase):
 class _RCloneSyncTransferringStats(BaseModel):
     bytes: ByteSize
     total_bytes: ByteSize
-
-    class Config:
-        alias_generator = snake_to_camel
+    model_config = ConfigDict(alias_generator=snake_to_camel)
 
 
 class _RCloneSyncTransferringMessage(_RCloneSyncMessageBase):
