@@ -234,10 +234,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             resp["params"]["url"].folderId !== this.getCurrentFolderId()
           ) {
             // another call has been made and this response can be ignored
-            console.log("studies  ignore:", resp["params"]["url"].workspaceId, resp["params"]["url"].folderId);
             return;
           }
-          console.log("studies  print:", resp["params"]["url"].workspaceId, resp["params"]["url"].folderId);
 
           const studies = resp["data"];
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
@@ -473,7 +471,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (this.getCurrentWorkspaceId()) {
         const currentWorkspace = osparc.store.Workspaces.getInstance().getWorkspace(this.getCurrentWorkspaceId());
         if (currentWorkspace && !currentWorkspace.getMyAccessRights()["write"]) {
-          // If user can't write in folder, do not show plus button
+          // If user can't write in workspace, do not show plus button
           return;
         }
         const newFolderCard = new osparc.dashboard.FolderButtonNew();
@@ -675,7 +673,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       params.url.workspaceId = this.getCurrentWorkspaceId();
       params.url.folderId = this.getCurrentFolderId();
-      console.log("studies  request:", params.url.workspaceId, params.url.folderId);
       if (params.url.orderBy) {
         return osparc.data.Resources.fetch("studies", "getPageSortBy", params, undefined, options);
       } else if (params.url.search) {
@@ -738,7 +735,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (this.getCurrentWorkspaceId()) {
         const currentWorkspace = osparc.store.Workspaces.getInstance().getWorkspace(this.getCurrentWorkspaceId());
         if (currentWorkspace && !currentWorkspace.getMyAccessRights()["write"]) {
-          // If user can't write in folder, do not show plus buttons
+          // If user can't write in workspace, do not show plus buttons
           return;
         }
       }
