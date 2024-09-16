@@ -75,7 +75,6 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
   },
 
   events: {
-    "changeContext": "qx.event.type.Data",
     "openChanged": "qx.event.type.Event",
   },
 
@@ -118,18 +117,6 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
           }, item, id);
         },
         configureItem: item => {
-          item.addListener("tap", () => {
-            const workspaceId = item.getModel().getWorkspaceId();
-            const folderId = item.getModel().getFolderId();
-            this.set({
-              currentWorkspaceId: workspaceId,
-              currentFolderId: folderId,
-            });
-            this.fireDataEvent("changeContext", {
-              workspaceId,
-              folderId,
-            });
-          }, this);
           item.set({
             indent: 12, // defaults to 19
           });

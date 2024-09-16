@@ -260,7 +260,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
         menu.add(share);
         editButton.setMenu(menu);
         const val = value["read"] + value["write"] + value["delete"];
-        roleText.setValue(osparc.data.Roles.STUDY[val].label);
+        roleText.setValue(osparc.data.Roles.WORKSPACE[val].label);
         roleText.show();
         roleIcon.show();
         this.__showSpacers(true);
