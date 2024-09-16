@@ -133,6 +133,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-info");
 
       // right-items
+      if (osparc.product.Utils.isProduct("tiplite")) {
+        this.getChildControl("tip-lite-button");
+      }
       this.getChildControl("tasks-button");
       this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");
@@ -228,16 +231,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("center-items").add(control);
           break;
         }
-        case "credits-menu-button": {
-          const currentUsage = new osparc.desktop.credits.CurrentUsage();
-          control = new osparc.navigation.CreditsMenuButton().set({
-            appearance: "fab-button",
-            currentUsage,
-            maxHeight: this.self().HEIGHT
+        case "tip-lite-button":
+          control = new qx.ui.form.Button(this.tr("Access TIP")).set({
+            marginRight: 30,
+            ...this.self().BUTTON_OPTIONS,
           });
+          control.addListener("execute", () => osparc.product.TIPTeaser.getInstance().open());
           this.getChildControl("right-items").add(control);
           break;
-        }
         case "credits-button":
           control = new osparc.desktop.credits.CreditsIndicatorButton();
           this.getChildControl("right-items").add(control);

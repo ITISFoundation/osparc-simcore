@@ -100,6 +100,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
+    __dontShowTutorial: null,
     __workspacesList: null,
     __foldersList: null,
 
@@ -245,7 +246,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const quickStartInfo = osparc.product.quickStart.Utils.getQuickStart();
           if (quickStartInfo) {
             const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(quickStartInfo.localStorageStr);
-            if (dontShow === "true") {
+            if (dontShow === "true" || this.__dontShowTutorial) {
               return;
             }
             const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
@@ -257,6 +258,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               const quickStartWindow = quickStartInfo.tutorial();
               quickStartWindow.center();
               quickStartWindow.open();
+              quickStartWindow.addListener("close", () => {
+                this.__dontShowTutorial = true;
+              }, this);
             }
           }
         })
