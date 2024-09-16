@@ -1,6 +1,5 @@
 import logging
 from functools import partial
-from typing import Any, ClassVar
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -8,7 +7,15 @@ from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, parse_raw_as
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    parse_raw_as,
+)
 from simcore_service_api_server.exceptions.backend_errors import (
     JobNotFoundError,
     LogFileNotFoundError,
@@ -43,8 +50,8 @@ class ComputationTaskGet(ComputationTask):
             return PercentageInt(100)
         return PercentageInt(0)
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     **ComputationTask.Config.schema_extra["examples"][0],
@@ -52,6 +59,7 @@ class ComputationTaskGet(ComputationTask):
                 }
             ]
         }
+    )
 
 
 class TaskLogFileGet(BaseModel):

@@ -1,8 +1,14 @@
 from functools import cached_property
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr
-from pydantic.class_validators import validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+    SecretStr,
+    field_validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.director_v2 import DirectorV2Settings
@@ -24,11 +30,14 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
         description="Secret key to encrypt cookies. "
         'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
         min_length=44,
-        env=["SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"],
+        validation_alias=AliasChoices(
+            "SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"
+        ),
     )
     WEBSERVER_SESSION_NAME: str = DEFAULT_SESSION_COOKIE_NAME
 
-    @validator("WEBSERVER_SESSION_SECRET_KEY")
+    @field_validator("WEBSERVER_SESSION_SECRET_KEY")
+    @classmethod
     @classmethod
     def check_valid_fernet_key(cls, v):
         return cls.do_check_valid_fernet_key(v)
@@ -41,21 +50,25 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
     # DEVELOPMENT
     API_SERVER_DEV_FEATURES_ENABLED: bool = Field(
         default=False,
-        env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"],
+        validation_alias=AliasChoices(
+            "API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"
+        ),
     )
 
     # LOGGING
     LOG_LEVEL: LogLevel = Field(
         default=LogLevel.INFO.value,
-        env=["API_SERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        validation_alias=AliasChoices("API_SERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
     )
     API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=["API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        validation_alias=AliasChoices(
+            "API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    @validator("LOG_LEVEL", pre=True)
+    @field_validator("LOG_LEVEL", mode="before")
     @classmethod
     def _validate_loglevel(cls, value) -> str:
         log_level: str = cls.validate_log_level(value)

@@ -1,6 +1,6 @@
-from typing import Any, ClassVar
+from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ErrorGet(BaseModel):
@@ -11,8 +11,8 @@ class ErrorGet(BaseModel):
     #   - https://github.com/ITISFoundation/osparc-simcore/issues/2446
     errors: list[Any]
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "errors": [
                     "some error message",
@@ -20,3 +20,4 @@ class ErrorGet(BaseModel):
                 ]
             }
         }
+    )

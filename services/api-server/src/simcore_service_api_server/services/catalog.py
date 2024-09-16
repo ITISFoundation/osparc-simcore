@@ -9,7 +9,7 @@ from operator import attrgetter
 from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceMetaDataPublished, ServiceType
-from pydantic import Extra, ValidationError, parse_obj_as, parse_raw_as
+from pydantic import ConfigDict, ValidationError, parse_obj_as, parse_raw_as
 from settings_library.catalog import CatalogSettings
 from simcore_service_api_server.exceptions.backend_errors import (
     ListSolversOrStudiesError,
@@ -43,9 +43,7 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
     """
 
     owner: LowerCaseEmailStr | None
-
-    class Config:
-        extra = Extra.ignore
+    model_config = ConfigDict(extra="ignore")
 
     # Converters
     def to_solver(self) -> Solver:

@@ -1,6 +1,6 @@
 from mimetypes import guess_type
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Annotated
 from urllib.parse import quote as _quote
 from urllib.parse import unquote as _unquote
 from uuid import UUID, uuid3
@@ -14,18 +14,18 @@ from pydantic import (
     AnyUrl,
     BaseModel,
     ByteSize,
-    ConstrainedStr,
+    ConfigDict,
     Field,
+    StringConstraints,
+    field_validator,
     parse_obj_as,
-    validator,
 )
 from servicelib.file_utils import create_sha256_checksum
 
 _NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
 
 
-class FileName(ConstrainedStr):
-    strip_whitespace = True
+FileName = Annotated[str, StringConstraints(strip_whitespace=True)]
 
 
 class ClientFile(BaseModel):
@@ -46,7 +46,9 @@ class File(BaseModel):
 
     filename: str = Field(..., description="Name of the file with extension")
     content_type: str | None = Field(
-        default=None, description="Guess of type content [EXPERIMENTAL]"
+        default=None,
+        description="Guess of type content [EXPERIMENTAL]",
+        validate_default=True,
     )
     sha256_checksum: SHA256Str | None = Field(
         default=None,
@@ -55,9 +57,9 @@ class File(BaseModel):
     )
     e_tag: ETag | None = Field(default=None, description="S3 entity tag")
 
-    class Config:
-        allow_population_by_field_name = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
             "examples": [
                 # complete
                 {
@@ -72,9 +74,10 @@ class File(BaseModel):
                     "filename": "whitepaper.pdf",
                 },
             ]
-        }
+        },
+    )
 
-    @validator("content_type", always=True, pre=True)
+    @field_validator("content_type", mode="before")
     @classmethod
     def guess_content_type(cls, v, values):
         if v is None:

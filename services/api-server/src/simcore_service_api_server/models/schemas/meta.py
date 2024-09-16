@@ -1,15 +1,12 @@
-from typing import ClassVar
-
 from models_library.api_schemas__common.meta import BaseMeta
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, ConfigDict
 
 
 class Meta(BaseMeta):
     docs_url: AnyHttpUrl
     docs_dev_url: AnyHttpUrl
-
-    class Config:
-        schema_extra: ClassVar = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "name": "simcore_service_foo",
                 "version": "2.4.45",
@@ -18,3 +15,4 @@ class Meta(BaseMeta):
                 "docs_dev_url": "https://api.osparc.io/dev/doc",
             }
         }
+    )
