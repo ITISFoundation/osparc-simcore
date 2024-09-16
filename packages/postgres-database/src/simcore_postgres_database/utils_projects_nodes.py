@@ -5,7 +5,7 @@ from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -43,18 +43,16 @@ class ProjectNodeCreate(BaseModel):
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
-        return {name for name in cls.__fields__ if name not in exclude}
+        return {name for name in cls.model_fields.keys() if name not in exclude}
 
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class ProjectNode(ProjectNodeCreate):
     created: datetime.datetime
     modified: datetime.datetime
 
-    class Config(ProjectNodeCreate.Config):
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 @dataclass(frozen=True, kw_only=True)
