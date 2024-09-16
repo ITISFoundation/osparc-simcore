@@ -248,7 +248,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       const roleText = this.getChildControl("role-text");
       const roleIcon = this.getChildControl("role-icon");
       if (value && Object.keys(value).length) {
-        editButton.show();
+        editButton.setVisibility(value["delete"] ? "visible" : "exclude");
         const menu = new qx.ui.menu.Menu().set({
           position: "bottom-right"
         });
