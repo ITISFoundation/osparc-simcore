@@ -11,8 +11,7 @@ from typing import Any
 
 from models_library.basic_types import SHA1Str, VersionStr
 from models_library.utils.labels_annotations import from_labels, to_labels
-from pydantic import BaseModel, Field
-from pydantic.config import Extra
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.networks import AnyUrl
 
 #
@@ -100,22 +99,20 @@ class OciImageSpecAnnotations(BaseModel):
         None,
         description="Digest of the image this image is based on (string)",
     )
-
-    class Config:
-        alias_generator = _underscore_as_dot
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        alias_generator=_underscore_as_dot, populate_by_name=True, extra="forbid"
+    )
 
     @classmethod
     def from_labels_annotations(
         cls, labels: dict[str, str]
     ) -> "OciImageSpecAnnotations":
         data = from_labels(labels, prefix_key=OCI_LABEL_PREFIX, trim_key_head=False)
-        return cls.parse_obj(data)
+        return cls.model_validate(data)
 
     def to_labels_annotations(self) -> dict[str, str]:
         labels: dict[str, str] = to_labels(
-            self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
+            self.model_dump(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OCI_LABEL_PREFIX,
         )
         return labels
@@ -131,30 +128,30 @@ class LabelSchemaAnnotations(BaseModel):
     build_date: datetime
     vcs_ref: str
     vcs_url: AnyUrl
-
-    class Config:
-        alias_generator = lambda field_name: field_name.replace("_", "-")
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        alias_generator=lambda field_name: field_name.replace("_", "-"),
+        populate_by_name=True,
+        extra="forbid",
+    )
 
     @classmethod
     def create_from_env(cls) -> "LabelSchemaAnnotations":
         data = {}
-        for field_name in cls.__fields__:
+        for field_name in cls.model_fields:
             if value := os.environ.get(field_name.upper()):
                 data[field_name] = value
-        return cls.parse_obj(data)
+        return cls.model_validate(data)
 
     def to_oci_data(self) -> dict[str, Any]:
         """Collects data that be converted to OCI labels.
 
         WARNING: label-schema has be deprecated in favor of OCI image specs
         """
-        convertable_data = self.dict(
+        convertable_data = self.model_dump(
             include=set(_TO_OCI.keys()), exclude_unset=True, exclude_none=True
         )
         assert set(convertable_data.keys()).issubset(  # nosec
-            set(self.__fields__.keys())
+            set(self.model_fields.keys())
         )  # nosec
 
         return {_TO_OCI[key]: value for key, value in convertable_data.items()}
