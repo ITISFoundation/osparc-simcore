@@ -3,7 +3,6 @@
 """
 import logging
 
-from aiohttp import web
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
@@ -21,7 +20,6 @@ log = logging.getLogger(__name__)
 
 
 def setup_tracing(
-    app: web.Application,  # pylint: disable=unused-argument
     tracing_settings: TracingSettings,
     service_name: str,
     instrument_aiopg: bool = False,  # noqa: FBT001, FBT002
@@ -53,9 +51,8 @@ def setup_tracing(
         tracing_destination,
     )
 
-    # Configure the OTLP exporter
     otlp_exporter = OTLPSpanExporterHTTP(
-        endpoint=tracing_destination,  # Adjust this to your OTLP collector endpoint
+        endpoint=tracing_destination,
     )
 
     # Add the span processor to the tracer provider

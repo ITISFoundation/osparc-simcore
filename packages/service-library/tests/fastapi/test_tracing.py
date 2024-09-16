@@ -1,7 +1,8 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
-# pylint: disable=unused-variable
+# pylint: disable
 
+
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 from fastapi import FastAPI
@@ -16,13 +17,13 @@ def mocked_app() -> FastAPI:
 
 
 @pytest.fixture
-def tracing_settings_in(request):
+def tracing_settings_in(request: pytest.FixtureRequest) -> dict[str, Any]:
     return request.param
 
 
 @pytest.fixture()
 def set_and_clean_settings_env_vars(
-    monkeypatch: pytest.MonkeyPatch, tracing_settings_in
+    monkeypatch: pytest.MonkeyPatch, tracing_settings_in: Callable[[], dict[str, Any]]
 ):
     if tracing_settings_in[0]:
         monkeypatch.setenv(
