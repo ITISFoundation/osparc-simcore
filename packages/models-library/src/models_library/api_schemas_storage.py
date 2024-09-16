@@ -310,7 +310,7 @@ class FoldersBody(BaseModel):
     destination: dict[str, Any] = Field(default_factory=dict)
     nodes_map: dict[NodeID, NodeID] = Field(default_factory=dict)
 
-    @model_validator(mode="before")
+    @model_validator(mode="after")
     @classmethod
     def ensure_consistent_entries(cls, values):
         source_node_keys = (NodeID(n) for n in values["source"].get("workbench", {}))
