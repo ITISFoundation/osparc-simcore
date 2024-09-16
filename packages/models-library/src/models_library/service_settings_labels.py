@@ -540,9 +540,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         ]  # type: ignore[index]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][
-                            0
-                        ]  # type: ignore[index]
+                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][0]  # type: ignore [index]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
                     "simcore.service.callbacks-mapping": json_dumps(
@@ -568,9 +566,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         ]  # type: ignore[index]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
-                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][
-                            0
-                        ]  # type: ignore[index]
+                        PathMappingsLabel.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index]
                     ),
                     "simcore.service.compose-spec": json_dumps(
                         {
@@ -598,9 +594,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.container-http-entrypoint": "rt-web",
                     "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
                     "simcore.service.callbacks-mapping": json_dumps(
-                        CallbacksMapping.model_config["json_schema_extra"]["examples"][
-                            3
-                        ]  # type: ignore[index]
+                        CallbacksMapping.model_config["json_schema_extra"]["examples"][3]  # type: ignore [index]
                     ),
                 },
             ]

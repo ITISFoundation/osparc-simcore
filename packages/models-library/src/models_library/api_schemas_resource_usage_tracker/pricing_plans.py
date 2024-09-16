@@ -29,11 +29,7 @@ class PricingUnitGet(BaseModel):
                 {
                     "pricing_unit_id": 1,
                     "unit_name": "SMALL",
-                    "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"][
-                        "examples"
-                    ][
-                        0
-                    ],  # type: ignore[index]
+                    "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,

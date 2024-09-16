@@ -97,11 +97,7 @@ ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
 
 
 _EXAMPLE_FILEPICKER: dict[str, Any] = {
-    **api_schemas_catalog_services.ServiceGet.model_config["json_schema_extra"][
-        "examples"
-    ][
-        1
-    ],  # type: ignore[index,dict-item]
+    **api_schemas_catalog_services.ServiceGet.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index,dict-item]
     "inputs": {},
     "outputs": {
         "outFile": {
@@ -116,11 +112,7 @@ _EXAMPLE_FILEPICKER: dict[str, Any] = {
 }
 
 _EXAMPLE_SLEEPER: dict[str, Any] = {
-    **api_schemas_catalog_services.ServiceGet.model_config["json_schema_extra"][
-        "examples"
-    ][
-        0
-    ],  # type: ignore[index,dict-item]
+    **api_schemas_catalog_services.ServiceGet.model_config["json_schema_extra"]["examples"][0],  # type: ignore[index,dict-item]
     "inputs": {
         "input_1": {
             "displayOrder": 1,
@@ -255,11 +247,7 @@ class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
         **OutputSchema.model_config,
         json_schema_extra={
             "example": {
-                **api_schemas_catalog_services.ServiceGetV2.model_config[
-                    "json_schema_extra"
-                ]["examples"][
-                    0
-                ],  # type: ignore[index,dict-item]
+                **api_schemas_catalog_services.ServiceGetV2.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index,dict-item]
                 "inputs": {
                     f"input{i}": example
                     for i, example in enumerate(

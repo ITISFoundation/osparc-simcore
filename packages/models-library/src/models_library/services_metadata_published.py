@@ -76,16 +76,8 @@ _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER = {
         }
     },
     "boot-options": {
-        "example_service_defined_boot_mode": BootOption.model_config[
-            "json_schema_extra"
-        ]["examples"][
-            0
-        ],  # type: ignore[index]
-        "example_service_defined_theme_selection": BootOption.model_config[
-            "json_schema_extra"
-        ]["examples"][
-            1
-        ],  # type: ignore[index]
+        "example_service_defined_boot_mode": BootOption.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+        "example_service_defined_theme_selection": BootOption.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index]
     },
     "min-visible-inputs": 2,
 }
