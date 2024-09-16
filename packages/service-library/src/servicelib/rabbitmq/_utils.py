@@ -1,6 +1,9 @@
 import logging
 import socket
+from pathlib import Path
+from tempfile import gettempdir
 from typing import Any, Final
+from uuid import uuid4
 
 import aio_pika
 from aiormq.exceptions import ChannelPreconditionFailed
@@ -18,6 +21,10 @@ _logger = logging.getLogger(__file__)
 _MINUTE: Final[int] = 60
 
 RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS: Final[int] = 15 * _MINUTE * 1000
+
+_PATH_UNIQUE_RABBIT_QUEUE_PREFIX: Final[Path] = (
+    Path(gettempdir()) / f"{__name__}_unique_rabbit_queue_prefix"
+)
 
 
 class RabbitMQRetryPolicyUponInitialization:
@@ -50,8 +57,21 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
     return await is_rabbitmq_responsive(url)
 
 
+def _get_unique_rabbit_queue_prefix() -> str:
+    # NOTE: TODO: finish notes with reasons for this
+    prefix: str | None = None
+    if _PATH_UNIQUE_RABBIT_QUEUE_PREFIX.exists():
+        prefix = _PATH_UNIQUE_RABBIT_QUEUE_PREFIX.read_text()
+
+    if prefix is None:
+        prefix = f"{socket.gethostname()}_{f'{uuid4()}'[:6]}"
+        _PATH_UNIQUE_RABBIT_QUEUE_PREFIX.write_text(prefix)
+
+    return prefix
+
+
 def get_rabbitmq_client_unique_name(base_name: str) -> str:
-    return f"{base_name}_{socket.gethostname()}"
+    return f"{base_name}_{_get_unique_rabbit_queue_prefix()}"
 
 
 async def declare_queue(
