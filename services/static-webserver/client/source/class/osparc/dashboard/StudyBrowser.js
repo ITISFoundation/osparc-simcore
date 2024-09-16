@@ -163,7 +163,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadWorkspaces: function() {
-      // empty list
       this.__setWorkspacesToList([]);
       osparc.store.Workspaces.getInstance().fetchWorkspaces()
         .then(workspaces => {
@@ -233,7 +232,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             resp["params"]["url"].workspaceId !== this.getCurrentWorkspaceId() ||
             resp["params"]["url"].folderId !== this.getCurrentFolderId()
           ) {
-            // another call has been made and this response can be ignored
+            // Context might have been changed while waiting for the response.
+            // The new call is on the ways and this can be ignored.
             return;
           }
 
