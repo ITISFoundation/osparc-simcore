@@ -113,6 +113,24 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
         };
         marked.use({ renderer });
         */
+        const renderer = {
+          link(link) {
+            console.log(link);
+            const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
+            let linkHtml = `<a href="${link.href}" title="${link.title || ""}" style="color: ${linkColor};">`
+            if (link.tokens && link.tokens.length) {
+              const linkRepresentation = link.tokens[0];
+              if (linkRepresentation.type === "text") {
+                linkHtml += linkRepresentation.text;
+              } else if (linkRepresentation.type === "image") {
+                linkHtml += `<img src="${linkRepresentation.href}" tile alt="${linkRepresentation.text}"></img>`;
+              }
+            }
+            linkHtml += `</a>`;
+            return linkHtml;
+          }
+        };
+        marked.use({ renderer });
 
         const html = marked.parse(value);
 
