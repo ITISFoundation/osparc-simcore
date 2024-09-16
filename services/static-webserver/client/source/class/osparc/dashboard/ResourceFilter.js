@@ -165,7 +165,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       this.__tagButtons = [];
       layout.removeAll();
       osparc.store.Store.getInstance().getTags().forEach((tag, idx) => {
-        const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/20");
+        const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/18");
         button.id = tag.id;
         button.set({
           appearance: "filter-toggle-button",
