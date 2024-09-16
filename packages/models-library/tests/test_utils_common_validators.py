@@ -26,7 +26,8 @@ def test_enums_pre_validator():
 
     # with Enum1
     model = Model(color=Enum1.RED)
-    assert ModelWithPreValidator(color=Enum1.RED) == model
+    # See: https://docs.pydantic.dev/latest/migration/#changes-to-pydanticbasemodel
+    assert ModelWithPreValidator(color=Enum1.RED).model_dump() == model.model_dump()
 
     # with Enum2
     class Enum2(Enum):
@@ -35,7 +36,8 @@ def test_enums_pre_validator():
     with pytest.raises(ValidationError):
         Model(color=Enum2.RED)
 
-    assert ModelWithPreValidator(color=Enum2.RED) == model
+    # See: https://docs.pydantic.dev/latest/migration/#changes-to-pydanticbasemodel
+    assert ModelWithPreValidator(color=Enum2.RED).model_dump() == model.model_dump()
 
 
 def test_empty_str_to_none_pre_validator():
