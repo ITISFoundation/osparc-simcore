@@ -5,12 +5,18 @@ from typing import Final
 
 import arrow
 from aws_library.ec2 import AWSTagKey, EC2InstanceData
+from aws_library.ec2._models import AWSTagValue
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import parse_obj_as
 from servicelib.logging_utils import log_catch
+from servicelib.utils import limited_gather
 
+from ..constants import (
+    DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY,
+    DOCKER_STACK_DEPLOY_COMMAND_NAME,
+)
 from ..core.settings import get_application_settings
 from ..modules.clusters import (
     delete_clusters,
@@ -18,9 +24,12 @@ from ..modules.clusters import (
     get_cluster_workers,
     set_instance_heartbeat,
 )
+from ..utils.clusters import create_deploy_cluster_stack_script
 from ..utils.dask import get_scheduler_auth, get_scheduler_url
-from ..utils.ec2 import HEARTBEAT_TAG_KEY
+from ..utils.ec2 import HEARTBEAT_TAG_KEY, get_cluster_name
 from .dask import is_scheduler_busy, ping_scheduler
+from .ec2 import get_ec2_client
+from .ssm import get_ssm_client
 
 _logger = logging.getLogger(__name__)
 
@@ -157,6 +166,62 @@ async def check_clusters(app: FastAPI) -> None:
     # we send a command that contain:
     # the docker-compose file in binary,
     # the call to init the docker swarm and the call to deploy the stack
+    instances_in_need_of_deployment = {
+        i
+        for i in starting_instances - terminateable_instances
+        if DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY not in i.tags
+    }
+
+    if instances_in_need_of_deployment:
+        app_settings = get_application_settings(app)
+        ssm_client = get_ssm_client(app)
+        ec2_client = get_ec2_client(app)
+        instances_in_need_of_deployment_ssm_connection_state = await limited_gather(
+            *[
+                ssm_client.is_instance_connected_to_ssm_server(i.id)
+                for i in instances_in_need_of_deployment
+            ],
+            reraise=False,
+            log=_logger,
+            limit=20,
+        )
+        ec2_connected_to_ssm_server = [
+            i
+            for i, c in zip(
+                instances_in_need_of_deployment,
+                instances_in_need_of_deployment_ssm_connection_state,
+                strict=True,
+            )
+            if c is True
+        ]
+        started_instances_ready_for_command = ec2_connected_to_ssm_server
+        if started_instances_ready_for_command:
+            ssm_command = await ssm_client.send_command(
+                [i.id for i in started_instances_ready_for_command],
+                command=create_deploy_cluster_stack_script(
+                    app_settings,
+                    cluster_machines_name_prefix=get_cluster_name(
+                        app_settings,
+                        user_id=user_id,
+                        wallet_id=wallet_id,
+                        is_manager=False,
+                    ),
+                    additional_custom_tags={
+                        AWSTagKey("user_id"): AWSTagValue(f"{user_id}"),
+                        AWSTagKey("wallet_id"): AWSTagValue(f"{wallet_id}"),
+                        AWSTagKey("role"): AWSTagValue("worker"),
+                    },
+                ),
+                command_name=DOCKER_STACK_DEPLOY_COMMAND_NAME,
+            )
+            await ec2_client.set_instances_tags(
+                started_instances_ready_for_command,
+                tags={
+                    DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY: AWSTagValue(
+                        ssm_command.command_id
+                    ),
+                },
+            )
 
     # the remaining instances are broken (they were at some point connected but now not anymore)
     broken_instances = disconnected_instances - starting_instances
