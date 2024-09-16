@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from functools import cached_property
 from typing import Final, get_args, get_origin
 
-from pydantic import BaseConfig, ConfigError, Extra, ValidationError, validator
+from pydantic import BaseConfig, ConfigError, Extra, ValidationError, field_validator
 from pydantic.error_wrappers import ErrorList, ErrorWrapper
 from pydantic.fields import ModelField, Undefined
 from pydantic.typing import is_literal_type
@@ -64,9 +64,7 @@ class BaseCustomSettings(BaseSettings):
     SEE tests for details.
     """
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
-    @validator("*", pre=True)
+    @field_validator("*", mode="before")
     @classmethod
     def parse_none(cls, v, field: ModelField):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
