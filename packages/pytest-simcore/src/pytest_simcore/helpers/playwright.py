@@ -58,6 +58,7 @@ class NodeProgressType(str, Enum):
     SERVICE_OUTPUTS_PULLING = "SERVICE_OUTPUTS_PULLING"
     SERVICE_STATE_PULLING = "SERVICE_STATE_PULLING"
     SERVICE_IMAGES_PULLING = "SERVICE_IMAGES_PULLING"
+    SERVICE_CONTAINERS_STARTING = "SERVICE_CONTAINERS_STARTING"
 
     @classmethod
     def required_types_for_started_service(cls) -> set["NodeProgressType"]:
@@ -67,6 +68,7 @@ class NodeProgressType(str, Enum):
             NodeProgressType.SERVICE_OUTPUTS_PULLING,
             NodeProgressType.SERVICE_STATE_PULLING,
             NodeProgressType.SERVICE_IMAGES_PULLING,
+            NodeProgressType.SERVICE_CONTAINERS_STARTING,
         }
 
 
