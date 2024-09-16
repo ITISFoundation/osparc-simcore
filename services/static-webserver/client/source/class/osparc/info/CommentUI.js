@@ -90,9 +90,7 @@ qx.Class.define("osparc.info.CommentUI", {
           });
           break;
         case "comment-content":
-          control = new osparc.ui.markdown.Markdown().set({
-            noMargin: true
-          });
+          control = new osparc.ui.markdown.Markdown();
           control.getContentElement().setStyles({
             "text-align": this.__isMyComment() ? "right" : "left"
           });
