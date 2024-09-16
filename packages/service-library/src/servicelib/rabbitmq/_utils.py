@@ -64,8 +64,7 @@ def _get_unique_rabbit_queue_name_prefix() -> str:
     # NOTE: this prefix is guaranteed to be unique for the entire lifecycle of the docker container
     # Why is this desiarable?
     # 1. the code base makes the above assumption, otherwise subcscribers and consumers do not work
-    # 2. enables restaratability of production deployemnts, where containers are frist created and
-    # then killed; avoids overlapping queue names and errors during start
+    # 2. enables restartability of webserver during [re]deploys
     prefix: str | None = None
     if _PATH_UNIQUE_RABBIT_QUEUE_PREFIX.exists():
         prefix = _PATH_UNIQUE_RABBIT_QUEUE_PREFIX.read_text()
