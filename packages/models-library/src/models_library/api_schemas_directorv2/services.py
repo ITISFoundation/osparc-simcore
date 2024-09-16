@@ -21,6 +21,7 @@ class NodeRequirements(BaseModel):
         None,
         description="defines the required (maximum) GPU for running the services",
         alias="GPU",
+        validate_default=True
     )
     ram: ByteSize = Field(
         ...,
@@ -31,6 +32,7 @@ class NodeRequirements(BaseModel):
         default=None,
         description="defines the required (maximum) amount of VRAM for running the services",
         alias="VRAM",
+        validate_default=True
     )
 
     @field_validator("vram", "gpu", mode="before")

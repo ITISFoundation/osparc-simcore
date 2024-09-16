@@ -50,7 +50,7 @@ class ComputationCreate(BaseModel):
         description="contains information about the wallet used to bill the running service",
     )
 
-    @field_validator("product_name", mode="before")
+    @field_validator("product_name")
     @classmethod
     def ensure_product_name_defined_if_computation_starts(cls, v, values):
         if "start_pipeline" in values and values["start_pipeline"] and v is None:
@@ -58,7 +58,7 @@ class ComputationCreate(BaseModel):
             raise ValueError(msg)
         return v
 
-    @field_validator("use_on_demand_clusters", mode="before")
+    @field_validator("use_on_demand_clusters")
     @classmethod
     def ensure_expected_options(cls, v, values):
         if v is True and ("cluster_id" in values and values["cluster_id"] is not None):
