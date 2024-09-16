@@ -46,6 +46,9 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
 
     this.__initTree();
 
+    // preselect "My Workspace"
+    this.contextChanged(null, null);
+
     osparc.store.Folders.getInstance().addListener("folderAdded", e => {
       const folder = e.getData();
       this.__folderAdded(folder);
@@ -255,7 +258,9 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const folderId = this.getCurrentFolderId();
       const contextModel = this.__getModel(workspaceId, folderId);
       if (contextModel) {
-        this.setSelection(new qx.data.Array([contextModel]));
+        const selection = this.getSelection();
+        selection.removeAll();
+        selection.push(contextModel);
       }
     },
   }
