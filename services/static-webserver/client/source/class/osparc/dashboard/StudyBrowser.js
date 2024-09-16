@@ -444,7 +444,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => {
           this.__reloadWorkspaces();
         })
-        .catch(err => console.error(err));
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+        })
     },
     // /WORKSPACES
 
