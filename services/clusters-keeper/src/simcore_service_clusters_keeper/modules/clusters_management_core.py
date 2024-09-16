@@ -16,6 +16,10 @@ from servicelib.utils import limited_gather
 from ..constants import (
     DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY,
     DOCKER_STACK_DEPLOY_COMMAND_NAME,
+    ROLE_TAG_KEY,
+    USER_ID_TAG_KEY,
+    WALLET_ID_TAG_KEY,
+    WORKER_ROLE_TAG_VALUE,
 )
 from ..core.settings import get_application_settings
 from ..modules.clusters import (
@@ -26,7 +30,12 @@ from ..modules.clusters import (
 )
 from ..utils.clusters import create_deploy_cluster_stack_script
 from ..utils.dask import get_scheduler_auth, get_scheduler_url
-from ..utils.ec2 import HEARTBEAT_TAG_KEY, get_cluster_name
+from ..utils.ec2 import (
+    HEARTBEAT_TAG_KEY,
+    get_cluster_name,
+    user_id_from_instance_tags,
+    wallet_id_from_instance_tags,
+)
 from .dask import is_scheduler_busy, ping_scheduler
 from .ec2 import get_ec2_client
 from .ssm import get_ssm_client
@@ -196,24 +205,26 @@ async def check_clusters(app: FastAPI) -> None:
         ]
         started_instances_ready_for_command = ec2_connected_to_ssm_server
         if started_instances_ready_for_command:
-            ssm_command = await ssm_client.send_command(
-                [i.id for i in started_instances_ready_for_command],
-                command=create_deploy_cluster_stack_script(
-                    app_settings,
-                    cluster_machines_name_prefix=get_cluster_name(
+            # we need to send 1 command per machine here, as the user_id/wallet_id changes
+            for i in started_instances_ready_for_command:
+                ssm_command = await ssm_client.send_command(
+                    [i.id],
+                    command=create_deploy_cluster_stack_script(
                         app_settings,
-                        user_id=user_id,
-                        wallet_id=wallet_id,
-                        is_manager=False,
+                        cluster_machines_name_prefix=get_cluster_name(
+                            app_settings,
+                            user_id=user_id_from_instance_tags(i.tags),
+                            wallet_id=wallet_id_from_instance_tags(i.tags),
+                            is_manager=False,
+                        ),
+                        additional_custom_tags={
+                            USER_ID_TAG_KEY: i.tags[USER_ID_TAG_KEY],
+                            WALLET_ID_TAG_KEY: i.tags[WALLET_ID_TAG_KEY],
+                            ROLE_TAG_KEY: WORKER_ROLE_TAG_VALUE,
+                        },
                     ),
-                    additional_custom_tags={
-                        AWSTagKey("user_id"): AWSTagValue(f"{user_id}"),
-                        AWSTagKey("wallet_id"): AWSTagValue(f"{wallet_id}"),
-                        AWSTagKey("role"): AWSTagValue("worker"),
-                    },
-                ),
-                command_name=DOCKER_STACK_DEPLOY_COMMAND_NAME,
-            )
+                    command_name=DOCKER_STACK_DEPLOY_COMMAND_NAME,
+                )
             await ec2_client.set_instances_tags(
                 started_instances_ready_for_command,
                 tags={

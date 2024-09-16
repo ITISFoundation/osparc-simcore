@@ -21,7 +21,7 @@ def setup(app: FastAPI) -> None:
         app.state.ssm_client = None
         settings: SSMSettings | None = get_application_settings(
             app
-        ).AUTOSCALING_SSM_ACCESS
+        ).CLUSTERS_KEEPER_SSM_ACCESS
 
         if not settings:
             _logger.warning("SSM client is de-activated in the settings")

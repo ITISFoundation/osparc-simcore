@@ -54,13 +54,15 @@ class ClustersKeeperEC2Settings(EC2Settings):
 class ClustersKeeperSSMSettings(SSMSettings):
     class Config(SSMSettings.Config):
         env_prefix = CLUSTERS_KEEPER_ENV_PREFIX
-        prefixed_examples: ClassVar[list[dict[str, Any]]] = [
-            {f"{CLUSTERS_KEEPER_ENV_PREFIX}{key}": var for key, var in example.items()}
-            for example in SSMSettings.Config.schema_extra["examples"]
-        ]
 
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": prefixed_examples,
+        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+            "examples": [
+                {
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}{key}": var
+                    for key, var in example.items()
+                }
+                for example in SSMSettings.Config.schema_extra["examples"]
+            ],
         }
 
 
