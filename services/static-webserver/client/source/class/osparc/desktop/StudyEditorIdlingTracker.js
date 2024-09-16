@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
     __startTimer: function() {
       const inactivityThresholdT = osparc.Preferences.getInstance().getUserInactivityThreshold();
       if (inactivityThresholdT === 0) {
-        // If 0 "Automatic Shutdown of Idle Instances" is disabled
+        // If 0, "Automatic Shutdown of Idle Instances" is disabled
         return;
       }
 
