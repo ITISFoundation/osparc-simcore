@@ -67,7 +67,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
 
     noMargin: {
       check: "Boolean",
-      init: true
+      init: false
     }
   },
 
@@ -80,7 +80,6 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     __applyMarkdown: function(value = "") {
       this.__loadMarked.then(() => {
         // trying to prettify:
-        // - links: color with own colors
         // - headers: add margins
         // - line height: increase to 1.5
         /*
@@ -115,7 +114,6 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
         */
         const renderer = {
           link(link) {
-            console.log(link);
             const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
             let linkHtml = `<a href="${link.href}" title="${link.title || ""}" style="color: ${linkColor};">`
             if (link.tokens && link.tokens.length) {
@@ -166,9 +164,6 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       if (domElement === null) {
         return;
       }
-      this.getContentElement().setStyle({
-        "line-height": 1.5
-      });
       if (domElement && domElement.children) {
         const elemHeight = this.__getChildrenElementHeight(domElement.children);
         if (this.getMaxHeight() && elemHeight > this.getMaxHeight()) {

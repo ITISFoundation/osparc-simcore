@@ -182,9 +182,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       });
       descriptionLayout.add(label);
 
-      const description = new osparc.ui.markdown.Markdown().set({
-        noMargin: true,
-      });
+      const description = new osparc.ui.markdown.Markdown();
       // display markdown link content if that's the case
       if (
         osparc.utils.Utils.isValidHttpUrl(serviceData["description"]) &&
