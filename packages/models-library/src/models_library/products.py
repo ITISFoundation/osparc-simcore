@@ -15,7 +15,7 @@ class CreditResultGet(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
-                {"product_name": "s4l", "credit_amount": Decimal(15.5)},
+                {"product_name": "s4l", "credit_amount": Decimal(15.5)},  # type: ignore[dict-item]
             ]
         }
     )

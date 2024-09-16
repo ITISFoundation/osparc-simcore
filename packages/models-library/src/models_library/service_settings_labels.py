@@ -525,7 +525,9 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.settings": json_dumps(
                         SimcoreServiceSettingLabelEntry.model_config[
                             "json_schema_extra"
-                        ]["examples"]
+                        ][
+                            "examples"
+                        ]  # type: ignore[index]
                     )
                 },
                 # dynamic-service
@@ -533,12 +535,14 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.settings": json_dumps(
                         SimcoreServiceSettingLabelEntry.model_config[
                             "json_schema_extra"
-                        ]["examples"]
+                        ][
+                            "examples"
+                        ]  # type: ignore[index]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
                         PathMappingsLabel.model_config["json_schema_extra"]["examples"][
                             0
-                        ]
+                        ]  # type: ignore[index]
                     ),
                     "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
                     "simcore.service.callbacks-mapping": json_dumps(
@@ -559,12 +563,14 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.settings": json_dumps(
                         SimcoreServiceSettingLabelEntry.model_config[
                             "json_schema_extra"
-                        ]["examples"]
+                        ][
+                            "examples"
+                        ]  # type: ignore[index]
                     ),
                     "simcore.service.paths-mapping": json_dumps(
                         PathMappingsLabel.model_config["json_schema_extra"]["examples"][
                             0
-                        ]
+                        ]  # type: ignore[index]
                     ),
                     "simcore.service.compose-spec": json_dumps(
                         {
@@ -594,7 +600,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.callbacks-mapping": json_dumps(
                         CallbacksMapping.model_config["json_schema_extra"]["examples"][
                             3
-                        ]
+                        ]  # type: ignore[index]
                     ),
                 },
             ]

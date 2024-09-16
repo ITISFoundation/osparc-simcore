@@ -33,8 +33,8 @@ class _ProjectsCommentsBase(BaseModel):
 
 
 class ProjectsCommentsDB(_ProjectsCommentsBase):
-    model_config = ConfigDict(extra="forbid", validation=False)
+    model_config = ConfigDict(extra="forbid")
 
 
 class ProjectsCommentsAPI(_ProjectsCommentsBase):
-    model_config = ConfigDict(extra="forbid", validation=False)
+    model_config = ConfigDict(extra="forbid")

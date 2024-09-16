@@ -2,8 +2,9 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import ConfigDict, Field, HttpUrl
+from pydantic import ConfigDict, Field
 
+from .basic_types import HttpUrl
 from .services_base import ServiceBaseDisplay
 from .services_constants import LATEST_INTEGRATION_VERSION
 from .services_enums import ServiceType

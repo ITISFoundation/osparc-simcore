@@ -191,9 +191,9 @@ class Cluster(BaseCluster):
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {"type": "kerberos"},
                     "access_rights": {
-                        154: CLUSTER_ADMIN_RIGHTS,
-                        12: CLUSTER_MANAGER_RIGHTS,
-                        7899: CLUSTER_USER_RIGHTS,
+                        154: CLUSTER_ADMIN_RIGHTS,  # type: ignore[dict-item]
+                        12: CLUSTER_MANAGER_RIGHTS,  # type: ignore[dict-item]
+                        7899: CLUSTER_USER_RIGHTS,  # type: ignore[dict-item]
                     },
                 },
                 {
@@ -208,9 +208,9 @@ class Cluster(BaseCluster):
                         "api_token": "some_fake_token",
                     },
                     "access_rights": {
-                        154: CLUSTER_ADMIN_RIGHTS,
-                        12: CLUSTER_MANAGER_RIGHTS,
-                        7899: CLUSTER_USER_RIGHTS,
+                        154: CLUSTER_ADMIN_RIGHTS,  # type: ignore[dict-item]
+                        12: CLUSTER_MANAGER_RIGHTS,  # type: ignore[dict-item]
+                        7899: CLUSTER_USER_RIGHTS,  # type: ignore[dict-item]
                     },
                 },
             ]

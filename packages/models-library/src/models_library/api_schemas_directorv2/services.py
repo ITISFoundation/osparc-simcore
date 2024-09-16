@@ -65,7 +65,7 @@ class ServiceExtras(BaseModel):
                 {"node_requirements": node_example}
                 for node_example in NodeRequirements.model_config["json_schema_extra"][
                     "examples"
-                ]
+                ]  # type: ignore[index,union-attr]
             ]
             + [
                 {
@@ -78,7 +78,7 @@ class ServiceExtras(BaseModel):
                 }
                 for node_example in NodeRequirements.model_config["json_schema_extra"][
                     "examples"
-                ]
+                ]  # type: ignore[index,dict-item, union-attr]
             ]
             + [
                 {
@@ -92,7 +92,7 @@ class ServiceExtras(BaseModel):
                 }
                 for node_example in NodeRequirements.model_config["json_schema_extra"][
                     "examples"
-                ]
+                ]  # type: ignore[index,union-attr]
             ]
         }
     )

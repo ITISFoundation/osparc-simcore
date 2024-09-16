@@ -11,7 +11,7 @@ class OsparcErrorMixin(PydanticErrorMixin):
 
     def __new__(cls, *_args, **_kwargs):
         if not hasattr(cls, "code"):
-            cls.code = cls._get_full_class_name()
+            cls.code = cls._get_full_class_name()  # type: ignore[assignment]
         return super().__new__(cls)
 
     def __init__(self, *_args, **kwargs) -> None:

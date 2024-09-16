@@ -38,7 +38,7 @@ class ApiInvitationContentAndLink(ApiInvitationContent):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                **ApiInvitationContent.model_config["json_schema_extra"]["example"],
+                **ApiInvitationContent.model_config["json_schema_extra"]["example"],  # type: ignore[index,dict-item]
                 "invitation_url": "https://foo.com/#/registration?invitation=1234",
             }
         }

@@ -26,7 +26,7 @@ class WalletInfo(BaseModel):
                 {
                     "wallet_id": 1,
                     "wallet_name": "My Wallet",
-                    "wallet_credit_amount": Decimal(10),
+                    "wallet_credit_amount": Decimal(10),  # type: ignore[dict-item]
                 }
             ]
         }

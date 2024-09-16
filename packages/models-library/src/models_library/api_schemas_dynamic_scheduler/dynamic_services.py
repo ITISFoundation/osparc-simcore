@@ -28,16 +28,22 @@ class DynamicServiceStart(DynamicServiceCreate):
                 "simcore_user_agent": "",
                 "service_resources": ServiceResourcesDictHelpers.model_config[
                     "json_schema_extra"
-                ]["examples"][0],
+                ]["examples"][
+                    0
+                ],  # type: ignore [index]
                 "wallet_info": WalletInfo.model_config["json_schema_extra"]["examples"][
                     0
-                ],
+                ],  # type: ignore [index]
                 "pricing_info": PricingInfo.model_config["json_schema_extra"][
                     "examples"
-                ][0],
+                ][
+                    0
+                ],  # type: ignore [index]
                 "hardware_info": HardwareInfo.model_config["json_schema_extra"][
                     "examples"
-                ][0],
+                ][
+                    0
+                ],  # type: ignore [index]
             }
         }
     )

@@ -31,15 +31,15 @@ class ServiceUpdate(ServiceMetaDataEditable, ServiceAccessRights):
                     1: {
                         "execute_access": False,
                         "write_access": False,
-                    },
+                    },  # type: ignore[dict-item]
                     2: {
                         "execute_access": True,
                         "write_access": True,
-                    },
+                    },  # type: ignore[dict-item]
                     44: {
                         "execute_access": False,
                         "write_access": False,
-                    },
+                    },  # type: ignore[dict-item]
                 },
                 # ServiceMetaData = ServiceCommonData +
                 "name": "My Human Readable Service Name",

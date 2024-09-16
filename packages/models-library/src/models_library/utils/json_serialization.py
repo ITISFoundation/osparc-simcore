@@ -54,7 +54,7 @@ def decimal_encoder(dec_value: Decimal) -> int | float:
     >>> decimal_encoder(Decimal("1"))
     1
     """
-    if dec_value.as_tuple().exponent >= 0:
+    if dec_value.as_tuple().exponent >= 0:  # type: ignore[operator]
         return int(dec_value)
     else:
         return float(dec_value)
@@ -94,9 +94,9 @@ def pydantic_encoder(obj: Any) -> Any:
     from pydantic.main import BaseModel
 
     if isinstance(obj, BaseModel):
-        return obj.dict()
+        return obj.model_dump()
     elif is_dataclass(obj):
-        return asdict(obj)
+        return asdict(obj)  # type: ignore[call-overload]
 
     # Check the class type and its superclasses for a matching encoder
     for base in obj.__class__.__mro__[:-1]:

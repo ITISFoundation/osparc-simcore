@@ -172,7 +172,7 @@ def jsonable_encoder(
             sqlalchemy_safe=sqlalchemy_safe,
         )
     if dataclasses.is_dataclass(obj):
-        obj_dict = dataclasses.asdict(obj)
+        obj_dict = dataclasses.asdict(obj)  # type: ignore[call-overload]
         return jsonable_encoder(
             obj_dict,
             include=include,

@@ -238,7 +238,9 @@ class PricingUnitWithCostCreate(BaseModel):
                     "unit_name": "My pricing plan",
                     "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"][
                         "examples"
-                    ][0],
+                    ][
+                        0
+                    ],  # type: ignore[index]
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "cost_per_unit": 10,
@@ -272,7 +274,9 @@ class PricingUnitWithCostUpdate(BaseModel):
                     "unit_name": "My pricing plan",
                     "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"][
                         "examples"
-                    ][0],
+                    ][
+                        0
+                    ],  # type: ignore[index]
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "pricing_unit_cost_update": {
@@ -286,7 +290,9 @@ class PricingUnitWithCostUpdate(BaseModel):
                     "unit_name": "My pricing plan",
                     "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"][
                         "examples"
-                    ][0],
+                    ][
+                        0
+                    ],  # type: ignore[index]
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "pricing_unit_cost_update": None,

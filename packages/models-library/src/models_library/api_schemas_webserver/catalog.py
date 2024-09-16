@@ -7,7 +7,6 @@ from ..api_schemas_catalog import services as api_schemas_catalog_services
 from ..services_io import ServiceInput, ServiceOutput
 from ..services_types import ServicePortKey
 from ..utils.change_case import snake_to_camel
-from ..utils.json_serialization import json_dumps, json_loads
 from ._base import InputSchema, OutputSchema
 
 ServiceInputKey: TypeAlias = ServicePortKey
@@ -23,14 +22,9 @@ class _BaseCommonApiExtension(BaseModel):
         None,
         description="Short name for the unit for display (html-compatible), if available",
     )
-    # TODO[pydantic]: The following keys were removed: `json_dumps`, `json_loads`.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+
     model_config = ConfigDict(
-        alias_generator=snake_to_camel,
-        populate_by_name=True,
-        extra="forbid",
-        json_dumps=json_dumps,
-        json_loads=json_loads,
+        alias_generator=snake_to_camel, populate_by_name=True, extra="forbid"
     )
 
 
@@ -105,7 +99,9 @@ ServiceOutputsGetDict: TypeAlias = dict[ServicePortKey, ServiceOutputGet]
 _EXAMPLE_FILEPICKER: dict[str, Any] = {
     **api_schemas_catalog_services.ServiceGet.model_config["json_schema_extra"][
         "examples"
-    ][1],
+    ][
+        1
+    ],  # type: ignore[index,dict-item]
     "inputs": {},
     "outputs": {
         "outFile": {
@@ -122,7 +118,9 @@ _EXAMPLE_FILEPICKER: dict[str, Any] = {
 _EXAMPLE_SLEEPER: dict[str, Any] = {
     **api_schemas_catalog_services.ServiceGet.model_config["json_schema_extra"][
         "examples"
-    ][0],
+    ][
+        0
+    ],  # type: ignore[index,dict-item]
     "inputs": {
         "input_1": {
             "displayOrder": 1,
@@ -259,17 +257,19 @@ class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
             "example": {
                 **api_schemas_catalog_services.ServiceGetV2.model_config[
                     "json_schema_extra"
-                ]["examples"][0],
+                ]["examples"][
+                    0
+                ],  # type: ignore[index,dict-item]
                 "inputs": {
                     f"input{i}": example
                     for i, example in enumerate(
-                        ServiceInputGet.model_config["json_schema_extra"]["examples"]
+                        ServiceInputGet.model_config["json_schema_extra"]["examples"]  # type: ignore[index,arg-type]
                     )
                 },
                 "outputs": {
                     "outFile": ServiceOutputGet.model_config["json_schema_extra"][
                         "example"
-                    ]
+                    ]  # type: ignore[index]
                 },
             }
         },

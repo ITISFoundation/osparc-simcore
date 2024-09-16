@@ -31,7 +31,9 @@ class PricingUnitGet(BaseModel):
                     "unit_name": "SMALL",
                     "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"][
                         "examples"
-                    ][0],
+                    ][
+                        0
+                    ],  # type: ignore[index]
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,
@@ -39,7 +41,7 @@ class PricingUnitGet(BaseModel):
                 }
                 for hw_config_example in HardwareInfo.model_config["json_schema_extra"][
                     "examples"
-                ]
+                ]  # type: ignore[index,union-attr]
             ]
         }
     )
@@ -70,7 +72,9 @@ class PricingPlanGet(BaseModel):
                 }
                 for pricing_unit_get_example in PricingUnitGet.model_config[
                     "json_schema_extra"
-                ]["examples"]
+                ][
+                    "examples"
+                ]  # type: ignore[index,union-attr]
             ]
         }
     )

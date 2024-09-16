@@ -59,9 +59,13 @@ OutputTypes = Union[
 InputID: TypeAlias = KeyIDStr
 OutputID: TypeAlias = KeyIDStr
 
- # union_mode="smart" by default for Pydantic>=2: https://docs.pydantic.dev/latest/concepts/unions/#union-modes
-InputsDict: TypeAlias = dict[InputID, Annotated[InputTypes, Field(union_mode="left_to_right")]]
-OutputsDict: TypeAlias = dict[OutputID, Annotated[OutputTypes, Field(union_mode="left_to_right")]]
+# union_mode="smart" by default for Pydantic>=2: https://docs.pydantic.dev/latest/concepts/unions/#union-modes
+InputsDict: TypeAlias = dict[
+    InputID, Annotated[InputTypes, Field(union_mode="left_to_right")]
+]
+OutputsDict: TypeAlias = dict[
+    OutputID, Annotated[OutputTypes, Field(union_mode="left_to_right")]
+]
 
 UnitStr = Annotated[str, StringConstraints(strip_whitespace=True)]
 
@@ -241,5 +245,5 @@ class Node(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra=_patch_json_schema_extra,
+        json_schema_extra=_patch_json_schema_extra,  # type: ignore[typeddict-item]
     )

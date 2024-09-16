@@ -1,5 +1,5 @@
 from enum import auto
-from typing import Annotated, Any, ClassVar, Literal, TypeAlias
+from typing import Annotated, Any, ClassVar, Literal, TypeAlias, get_args
 
 from pydantic import BaseModel, Field
 from pydantic._internal._model_construction import ModelMetaclass
@@ -90,11 +90,15 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
     value: Any
 
     def to_db(self) -> dict:
-        return self.dict(exclude={"preference_identifier", "preference_type"})
+        return self.model_dump(exclude={"preference_identifier", "preference_type"})
 
     @classmethod
     def update_preference_default_value(cls, new_default: Any) -> None:
-        expected_type = cls.model_fields["value"].type_
+        expected_type = (
+            t[0]
+            if (t := get_args(cls.model_fields["value"].annotation))
+            else cls.model_fields["value"].annotation
+        )
         detected_type = type(new_default)
         if expected_type != detected_type:
             msg = (

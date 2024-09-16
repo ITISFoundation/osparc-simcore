@@ -30,7 +30,7 @@ class RabbitEventMessageType(str, Enum):
 
 
 class RabbitMessageBase(BaseModel):
-    channel_name: Literal[...] = ...
+    channel_name: str
 
     @classmethod
     def get_channel_name(cls) -> str:

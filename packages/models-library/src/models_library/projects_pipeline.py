@@ -88,9 +88,9 @@ class ComputationTask(BaseModel):
                     },
                     "iteration": None,
                     "cluster_id": None,
-                    "started": arrow.utcnow().shift(minutes=-50).datetime,
+                    "started": arrow.utcnow().shift(minutes=-50).datetime,  # type: ignore[dict-item]
                     "stopped": None,
-                    "submitted": arrow.utcnow().shift(hours=-1).datetime,
+                    "submitted": arrow.utcnow().shift(hours=-1).datetime,  # type: ignore[dict-item]
                 },
                 {
                     "id": "f81d7994-9ccc-4c95-8c32-aa70d6bbb1b0",
@@ -120,9 +120,9 @@ class ComputationTask(BaseModel):
                     },
                     "iteration": 2,
                     "cluster_id": 0,
-                    "started": arrow.utcnow().shift(minutes=-50).datetime,
-                    "stopped": arrow.utcnow().shift(minutes=-20).datetime,
-                    "submitted": arrow.utcnow().shift(hours=-1).datetime,
+                    "started": arrow.utcnow().shift(minutes=-50).datetime,  # type: ignore[dict-item]
+                    "stopped": arrow.utcnow().shift(minutes=-20).datetime,  # type: ignore[dict-item]
+                    "submitted": arrow.utcnow().shift(hours=-1).datetime,  # type: ignore[dict-item]
                 },
             ]
         }

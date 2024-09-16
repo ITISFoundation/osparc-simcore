@@ -78,10 +78,14 @@ _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER = {
     "boot-options": {
         "example_service_defined_boot_mode": BootOption.model_config[
             "json_schema_extra"
-        ]["examples"][0],
+        ]["examples"][
+            0
+        ],  # type: ignore[index]
         "example_service_defined_theme_selection": BootOption.model_config[
             "json_schema_extra"
-        ]["examples"][1],
+        ]["examples"][
+            1
+        ],  # type: ignore[index]
     },
     "min-visible-inputs": 2,
 }
@@ -166,11 +170,11 @@ class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBaseDisplay):
         populate_by_name=True,
         json_schema_extra={
             "examples": [
-                _EXAMPLE,
-                _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,
+                _EXAMPLE,  # type: ignore[list-item]
+                _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,  # type: ignore[list-item]
                 # latest
                 {
-                    **_EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,
+                    **_EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER,  # type: ignore[dict-item]
                     "version_display": "Matterhorn Release",
                     "description_ui": True,
                     "release_date": "2024-05-31T13:45:30",
