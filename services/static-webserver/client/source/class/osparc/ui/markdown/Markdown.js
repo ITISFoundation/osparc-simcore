@@ -79,39 +79,6 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      */
     __applyMarkdown: function(value = "") {
       this.__loadMarked.then(() => {
-        // trying to prettify:
-        // - headers: add margins
-        // - line height: increase to 1.5
-        /*
-        const walkTokens = token => {
-          // Check if the token is a link
-          if (token.type === 'link' && token.tokens.length > 0) {
-            // Check if the link contains an image token
-            const containsImage = token.tokens.some(t => t.type === "image");
-            // If the link does not contain an image, modify the text to include color styling
-            if (!containsImage) {
-              const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
-              token.text = `<span style="color: ${linkColor};">${token.text}</span>`;
-            }
-          }
-        };
-        marked.use({ walkTokens });
-        */
-        /*
-        const renderer = new marked.Renderer();
-        renderer.link = ({href, title, tokens}) => {
-          // Check if the tokens array contains an image token
-          const hasImageToken = tokens.some(token => token.type === "image");
-          if (hasImageToken) {
-            // Return the link HTML as is for image links (badges)
-            return `<a href="${href}" title="${title || ''}">${tokens.map(token => token.text || '').join('')}</a>`;
-          }
-          // text links
-          const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
-          return `<a href="${href}" title="${title || ''}" style="color: ${linkColor};>${tokens.map(token => token.text || '').join('')}</a>`;
-        };
-        marked.use({ renderer });
-        */
         const renderer = {
           link(link) {
             const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
