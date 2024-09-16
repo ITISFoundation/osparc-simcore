@@ -122,16 +122,6 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
           }));
           this._add(control);
           break;
-        case "share-icon": {
-          control = new qx.ui.basic.Image().set({
-            alignY: "middle",
-            allowGrowX: false,
-            allowShrinkX: false
-          });
-          const layout = this.getChildControl("share-layout");
-          layout.addAt(control, 0);
-          break;
-        }
         case "share-text": {
           control = new qx.ui.basic.Label().set({
             font: "text-14"
@@ -227,8 +217,24 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       this.__spacers.forEach(spacer => spacer.setVisibility(show ? "visible" : "excluded"));
     },
 
+    __getShareIcon: function() {
+      // reset previous
+      const layout = this.getChildControl("share-layout");
+      if (this.__shareIcon) {
+        layout.remove(this.__shareIcon);
+      }
+
+      const shareIcon = this.__shareIcon = new qx.ui.basic.Image().set({
+        alignY: "middle",
+        allowGrowX: false,
+        allowShrinkX: false
+      });
+      layout.addAt(shareIcon, 0);
+      return shareIcon;
+    },
+
     __applyAccessRights: function(accessRights) {
-      const shareIcon = this.getChildControl("share-icon");
+      const shareIcon = this.__getShareIcon();
       const shareText = this.getChildControl("share-text");
       if (accessRights && Object.keys(accessRights).length) {
         osparc.dashboard.CardBase.populateShareIcon(shareIcon, accessRights);
@@ -248,7 +254,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       const roleText = this.getChildControl("role-text");
       const roleIcon = this.getChildControl("role-icon");
       if (value && Object.keys(value).length) {
-        editButton.show();
+        editButton.setVisibility(value["delete"] ? "visible" : "excluded");
         const menu = new qx.ui.menu.Menu().set({
           position: "bottom-right"
         });
