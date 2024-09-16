@@ -252,10 +252,10 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
 
     contextChanged: function() {
       const workspaceId = this.getCurrentWorkspaceId();
-      const folderId = this.getCurrentWorkspaceId();
-      const workspaceModel = this.__getModel(workspaceId, folderId);
-      if (workspaceModel) {
-        this.__workspacesAndFoldersTree.setSelection(new qx.data.Array([workspaceModel]));
+      const folderId = this.getCurrentFolderId();
+      const contextModel = this.__getModel(workspaceId, folderId);
+      if (contextModel) {
+        this.setSelection(new qx.data.Array([contextModel]));
       }
     },
   }
