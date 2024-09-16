@@ -83,7 +83,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   statics: {
     PAGINATED_STUDIES: 10,
     MIN_GRID_CARDS_PER_ROW: 3,
-    SIDE_SPACER_WIDTH: 180,
+    SIDE_SPACER_WIDTH: 200,
 
     checkLoggedIn: function() {
       const isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
@@ -359,7 +359,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _addResourceFilter: function() {
       const resourceFilter = this._resourceFilter = new osparc.dashboard.ResourceFilter(this._resourceType).set({
-        marginTop: osparc.dashboard.SearchBarFilter.HEIGHT + 10, // aligned with toolbar buttons: search bar + spacing
+        marginTop: osparc.dashboard.SearchBarFilter.HEIGHT,
         maxWidth: this.self().SIDE_SPACER_WIDTH,
         width: this.self().SIDE_SPACER_WIDTH
       });
@@ -371,6 +371,21 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         const sharedWith = e.getData();
         this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
       }, this);
+
+      if (this._resourceType === "study") {
+        const workspacesAndFoldersTree = resourceFilter.getWorkspacesAndFoldersTree();
+        workspacesAndFoldersTree.getSelection().addListener("change", () => {
+          const selection = workspacesAndFoldersTree.getSelection();
+          if (selection.getLength() > 0) {
+            const item = selection.getItem(0);
+            const workspaceId = item.getWorkspaceId();
+            const folderId = item.getFolderId();
+            this._changeContext(workspaceId, folderId);
+          }
+        }, this);
+        this.bind("currentWorkspaceId", workspacesAndFoldersTree, "currentWorkspaceId");
+        this.bind("currentFolderId", workspacesAndFoldersTree, "currentFolderId");
+      }
 
       resourceFilter.addListener("changeWorkspace", e => {
         const workspaceId = e.getData();
@@ -395,7 +410,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         resourceFilter.filterChanged(filterData);
       });
 
-      this.__leftFilters.add(resourceFilter);
+      this.__leftFilters.add(resourceFilter, {
+        flex: 1
+      });
     },
 
     /**
@@ -465,6 +482,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _deleteResourceRequested: function(resourceId) {
+      throw new Error("Abstract method called!");
+    },
+
+    _changeContext: function(workspaceId, folderId) {
       throw new Error("Abstract method called!");
     },
 

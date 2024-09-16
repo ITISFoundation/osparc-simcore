@@ -799,6 +799,7 @@ def cluster() -> Callable[..., Cluster]:
                 buffer_ec2s=[],
                 disconnected_nodes=[],
                 terminating_nodes=[],
+                retired_nodes=[],
                 terminated_instances=[],
             ),
             **cluter_overrides,

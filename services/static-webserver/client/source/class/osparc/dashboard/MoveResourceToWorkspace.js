@@ -39,7 +39,7 @@ qx.Class.define("osparc.dashboard.MoveResourceToWorkspace", {
       } else {
         moveButton.setEnabled(false);
       }
-    });
+    }, this);
     moveButton.addListener("execute", () => {
       this.fireDataEvent("moveToWorkspace", this.__selectedWorkspaceId);
     }, this);
@@ -58,7 +58,7 @@ qx.Class.define("osparc.dashboard.MoveResourceToWorkspace", {
       let control;
       switch (id) {
         case "current-workspace": {
-          const workspace = osparc.store.Workspaces.getWorkspace(this.__currentWorkspaceId);
+          const workspace = osparc.store.Workspaces.getInstance().getWorkspace(this.__currentWorkspaceId);
           const currentWorkspaceName = workspace ? workspace.getName() : "My Workspace";
           control = new qx.ui.basic.Label(this.tr("Current location: ") + currentWorkspaceName);
           this._add(control);

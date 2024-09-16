@@ -73,7 +73,7 @@ qx.Class.define("osparc.Application", {
       const webSocket = osparc.wrapper.WebSocket.getInstance();
       webSocket.addListener("connect", () => osparc.WatchDog.getInstance().setOnline(true));
       webSocket.addListener("disconnect", () => osparc.WatchDog.getInstance().setOnline(false));
-      webSocket.addListener("logout", () => this.logout());
+      webSocket.addListener("logout", () => this.logout(qx.locale.Manager.tr("You were logged out")));
       // alert the users that they are about to navigate away
       // from osparc. unfortunately it is not possible
       // to provide our own message here
@@ -96,7 +96,7 @@ qx.Class.define("osparc.Application", {
       });
 
       // Setting up auth manager
-      osparc.auth.Manager.getInstance().addListener("logout", () => this.__restart(), this);
+      osparc.auth.Manager.getInstance().addListener("loggedOut", () => this.__closeAllAndToLoginPage(), this);
 
       this.__initRouting();
       this.__startupChecks();
@@ -243,7 +243,7 @@ qx.Class.define("osparc.Application", {
           });
       }
       if (maskIconMeta) {
-        const maskIcon = osparc.product.Utils.getManifestIconUrl("safari-pinned-tab.svg")
+        const maskIcon = osparc.product.Utils.getManifestIconUrl("safari-pinned-tab.png", "apple-icon-fallback.png")
         Promise.resolve(maskIcon)
           .then(resolvedUrl => {
             // Create the manifest data object with resolved URLs
@@ -268,15 +268,15 @@ qx.Class.define("osparc.Application", {
     __updateAppIcons: function() {
       // Array of promises to resolve icon URLs for Apple Touch Icons
       const appleIconUrls = [
-        osparc.product.Utils.getManifestIconUrl("apple-icon-57x57.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-60x60.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-72x72.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-76x76.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-114x114.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-120x120.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-144x144.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-152x152.png"),
-        osparc.product.Utils.getManifestIconUrl("apple-icon-180x180.png")
+        osparc.product.Utils.getManifestIconUrl("apple-icon-57x57.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-60x60.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-72x72.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-76x76.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-114x114.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-120x120.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-144x144.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-152x152.png", "apple-icon-fallback.png"),
+        osparc.product.Utils.getManifestIconUrl("apple-icon-180x180.png", "apple-icon-fallback.png")
       ];
 
       // Array of promises to resolve icon URLs for Favicons
@@ -469,7 +469,7 @@ qx.Class.define("osparc.Application", {
         let title = this.tr("Privacy Policy");
         let height = 160;
         if (osparc.product.Utils.showLicenseExtra()) {
-          // "tis" and "s4llite" include the license terms
+          // "tis", "tiplite" and "s4llite" include the license terms
           title = this.tr("Privacy Policy and License Terms");
           height = 210;
         }
@@ -491,7 +491,6 @@ qx.Class.define("osparc.Application", {
 
     __restart: function() {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
-
       if (isLogged) {
         this.__loadMainPage();
       } else {
@@ -520,6 +519,7 @@ qx.Class.define("osparc.Application", {
           view = new osparc.auth.LoginPageS4L();
           break;
         case "tis":
+        case "tiplite":
           view = new osparc.auth.LoginPageTI();
           break;
         default: {
@@ -635,13 +635,21 @@ qx.Class.define("osparc.Application", {
       } else {
         osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out"), "INFO");
       }
+      const isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
+      if (isLoggedIn) {
+        osparc.auth.Manager.getInstance().logout()
+          .finally(() => this.__closeAllAndToLoginPage());
+      } else {
+        this.__closeAllAndToLoginPage();
+      }
+    },
 
+    __closeAllAndToLoginPage: function() {
       osparc.data.PollTasks.getInstance().removeTasks();
       osparc.MaintenanceTracker.getInstance().stopTracker();
       osparc.CookieExpirationTracker.getInstance().stopTracker();
       osparc.NewUITracker.getInstance().stopTracker();
       osparc.announcement.Tracker.getInstance().stopTracker();
-      osparc.auth.Manager.getInstance().logout();
       if ("closeEditor" in this.__mainPage) {
         this.__mainPage.closeEditor();
       }

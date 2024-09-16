@@ -147,6 +147,22 @@
       },
       "addTimestampsToUrls": true,
       "bootPath": "source/boot"
+    },
+    {
+      "class": "osparc.Application",
+      "theme": "osparc.theme.products.tis.ThemeDark",
+      "name": "tiplite",
+      "title": "TI Plan lite - IT'IS",
+      "include": [
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load",
+        "osparc.theme.products.tis.ThemeLight"
+      ],
+      "environment": {
+        "product.name": "tiplite"
+      },
+      "addTimestampsToUrls": true,
+      "bootPath": "source/boot"
     }
   ],
   "eslintConfig": {

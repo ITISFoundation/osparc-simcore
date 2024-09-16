@@ -153,7 +153,6 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       });
       if (domElement && domElement.children) {
         const elemHeight = this.__getChildrenElementHeight(domElement.children);
-        console.log("resizeMe elemHeight", elemHeight);
         if (this.getMaxHeight() && elemHeight > this.getMaxHeight()) {
           this.setHeight(elemHeight);
         } else {

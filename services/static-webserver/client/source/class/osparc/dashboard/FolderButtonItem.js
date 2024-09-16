@@ -143,7 +143,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       });
       folder.bind("workspaceId", this, "workspaceId");
       folder.bind("folderId", this, "folderId");
-      folder.bind("parentId", this, "parentFolderId");
+      folder.bind("parentFolderId", this, "parentFolderId");
       folder.bind("name", this, "title");
       folder.bind("lastModified", this, "lastModified");
 
@@ -151,7 +151,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     },
 
     __applyWorkspaceId: function(workspaceId) {
-      const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
+      const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
       const accessRights = workspace ? workspace.getAccessRights() : {};
       if (accessRights && Object.keys(accessRights).length) {
         const shareIcon = this.getChildControl("icon").getChildControl("shared-icon");
@@ -226,8 +226,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         const newName = folderEditor.getLabel();
         const updateData = {
           "name": newName,
+          "parentFolderId": folder.getParentFolderId(),
         };
-        osparc.data.model.Folder.putFolder(this.getFolderId(), updateData)
+        osparc.store.Folders.getInstance().putFolder(this.getFolderId(), updateData)
           .then(() => {
             folder.set({
               name: newName,

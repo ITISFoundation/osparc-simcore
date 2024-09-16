@@ -784,6 +784,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
         if (moveToFolderButton) {
           moveToFolderButton.setEnabled(osparc.study.Utils.canMoveToFolder(resourceData));
         }
+        const moveToWorkspaceButton = menuButtons.find(menuBtn => "moveToWorkspaceButton" in menuBtn);
+        if (moveToWorkspaceButton) {
+          moveToWorkspaceButton.setEnabled(osparc.study.Utils.canMoveToWorkspace(resourceData));
+        }
         const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
         if (deleteButton) {
           deleteButton.setEnabled(osparc.study.Utils.canBeDeleted(resourceData));

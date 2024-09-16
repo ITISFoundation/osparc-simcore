@@ -31,12 +31,15 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
     }));
   },
 
+  events: {
+    "changeContext": "qx.event.type.Data",
+  },
+
   properties: {
     currentWorkspaceId: {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeCurrentWorkspaceId",
       apply: "__buildBreadcrumbs"
     },
 
@@ -44,7 +47,6 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeCurrentFolderId",
       apply: "__buildBreadcrumbs"
     }
   },
@@ -81,7 +83,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
     __createUpstreamButtons: function(childFolder) {
       if (childFolder) {
         const breadcrumbsLayout = this.getChildControl("breadcrumbs-layout");
-        const parentFolder = osparc.store.Folders.getInstance().getFolder(childFolder.getParentId());
+        const parentFolder = osparc.store.Folders.getInstance().getFolder(childFolder.getParentFolderId());
         if (parentFolder) {
           breadcrumbsLayout.addAt(this.__createArrow(), 0);
           const upstreamButton = this.__createFolderButton(parentFolder);
@@ -106,15 +108,22 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
         if (workspaceId === -1) {
           rootButton = new qx.ui.form.Button(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath());
         } else {
-          const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
+          const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
           rootButton = new qx.ui.form.Button(workspace.getName(), osparc.store.Workspaces.iconPath());
         }
       } else {
         rootButton = new qx.ui.form.Button(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
       }
-      rootButton.addListener("execute", () => this.set({
-        currentFolderId: null,
-      }));
+      rootButton.addListener("execute", () => {
+        const folderId = null;
+        this.set({
+          currentFolderId: null,
+        });
+        this.fireDataEvent("changeContext", {
+          workspaceId,
+          folderId,
+        });
+      });
       return rootButton;
     },
 
@@ -122,7 +131,17 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       let folderButton = null;
       if (folder) {
         folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14");
-        folderButton.addListener("execute", () => this.fireDataEvent("changeCurrentFolderId", folder ? folder.getFolderId() : null), this);
+        folderButton.addListener("execute", () => {
+          const workspaceId = this.getCurrentWorkspaceId();
+          const folderId = folder ? folder.getFolderId() : null;
+          this.set({
+            currentFolderId: folderId,
+          });
+          this.fireDataEvent("changeContext", {
+            workspaceId,
+            folderId,
+          });
+        }, this);
       } else {
         const workspaceId = this.getCurrentWorkspaceId();
         folderButton = this.__createRootButton(workspaceId);

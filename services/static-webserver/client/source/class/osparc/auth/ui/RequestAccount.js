@@ -62,6 +62,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         case "osparc":
           this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
           break;
+        case "tiplite":
         case "s4lacad":
         case "s4ldesktopacad":
           this._form.add(email, this.tr("University Email"), qx.util.Validate.email(), "email");
@@ -80,6 +81,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           break;
         case "s4lacad":
         case "s4ldesktopacad":
+        case "tiplite":
           this._form.add(organization, this.tr("University"), null, "university");
           break;
         case "tis":
@@ -294,6 +296,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       switch (osparc.product.Utils.getProductName()) {
         case "osparc":
         case "tis":
+        case "tiplite":
           ppLink = osparc.CookiePolicy.getITISPrivacyPolicyLink("our privacy policy");
           break;
         default:
