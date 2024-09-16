@@ -9,7 +9,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    HttpUrl,
     Json,
     StrictBool,
     StrictFloat,
@@ -18,7 +17,7 @@ from pydantic import (
     field_validator,
 )
 
-from .basic_types import EnvVarKey, KeyIDStr
+from .basic_types import EnvVarKey, HttpUrl, KeyIDStr
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
