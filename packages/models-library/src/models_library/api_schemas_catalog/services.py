@@ -332,7 +332,9 @@ class ServiceUpdateV2(BaseModel):
     access_rights: dict[GroupID, ServiceGroupAccessRightsV2] | None = None
 
     model_config = ConfigDict(
-        extra="forbid", populate_by_name=True, alias_generator=snake_to_camel
+        extra="forbid",
+        populate_by_name=True,
+        alias_generator=snake_to_camel,
     )
 
 
