@@ -480,15 +480,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // If user can't write in workspace, do not show plus button
           return;
         }
-        const newFolderCard = new osparc.dashboard.FolderButtonNew();
-        newFolderCard.setCardKey("new-folder");
-        newFolderCard.subscribeToFilterGroup("searchBarFilter");
-        newFolderCard.addListener("createFolder", e => {
-          const data = e.getData();
-          this.__createFolder(data);
-        }, this);
-        this._resourcesContainer.addNewFolderCard(newFolderCard);
       }
+
+      const newFolderCard = new osparc.dashboard.FolderButtonNew();
+      newFolderCard.setCardKey("new-folder");
+      newFolderCard.subscribeToFilterGroup("searchBarFilter");
+      newFolderCard.addListener("createFolder", e => {
+        const data = e.getData();
+        this.__createFolder(data);
+      }, this);
+      this._resourcesContainer.addNewFolderCard(newFolderCard);
     },
 
     __createFolder: function(data) {
