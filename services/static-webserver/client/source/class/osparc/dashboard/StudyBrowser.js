@@ -449,13 +449,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
+        this.invalidateStudies();
         this._resourcesContainer.setResourcesToList([]);
-        this._resourcesList = [];
 
         if (workspaceId === -1) {
           this.__reloadWorkspaces();
         } else {
-          this.invalidateStudies();
           this.__reloadFoldersAndStudies();
         }
       }
