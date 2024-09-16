@@ -12,7 +12,7 @@ class ServiceSpecifications(BaseModel):
         default=None,
         description="schedule-time specifications specifications for the service (follows Docker Service creation API (specifically only the Resources part), see https://docs.docker.com/engine/api/v1.41/#tag/Service/operation/ServiceCreate",
     )
-    model_config = ConfigDict()
+
 
 
 class ServiceSpecificationsGet(ServiceSpecifications):
