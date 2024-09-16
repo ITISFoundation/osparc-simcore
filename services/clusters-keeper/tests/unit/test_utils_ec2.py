@@ -49,6 +49,7 @@ def test_get_cluster_name(
 
 def test_creation_ec2_tags(
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     disabled_rabbitmq: None,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
@@ -78,6 +79,7 @@ def test_creation_ec2_tags(
 
 def test_all_created_ec2_instances_filter(
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     disabled_rabbitmq: None,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,

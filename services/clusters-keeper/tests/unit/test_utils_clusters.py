@@ -69,6 +69,7 @@ def app_environment(
 def test_create_startup_script(
     disabled_rabbitmq: None,
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
     cluster_machines_name_prefix: str,
@@ -160,6 +161,7 @@ def test_create_startup_script(
 def test_create_startup_script_script_size_below_16kb(
     disabled_rabbitmq: None,
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
     cluster_machines_name_prefix: str,
@@ -187,6 +189,7 @@ def test_create_startup_script_script_size_below_16kb(
 def test_startup_script_defines_all_envs_for_docker_compose(
     disabled_rabbitmq: None,
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
     cluster_machines_name_prefix: str,
