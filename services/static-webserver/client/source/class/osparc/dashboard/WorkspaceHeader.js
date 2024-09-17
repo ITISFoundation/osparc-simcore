@@ -159,14 +159,15 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     __buildLayout: function(workspaceId) {
       this.getChildControl("icon");
       const title = this.getChildControl("title");
+
       this.getChildControl("edit-button").exclude();
+      this.resetAccessRights();
+      this.resetMyAccessRights();
 
       const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
       if (workspaceId === -1) {
         this.__setIcon(osparc.store.Workspaces.iconPath(32));
         title.setValue(this.tr("Shared Workspaces"));
-        this.resetAccessRights();
-        this.resetMyAccessRights();
       } else if (workspace) {
         const thumbnail = workspace.getThumbnail();
         this.__setIcon(thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32));
@@ -176,8 +177,6 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       } else {
         this.__setIcon("@FontAwesome5Solid/home/30");
         title.setValue(this.tr("My Workspace"));
-        this.resetAccessRights();
-        this.resetMyAccessRights();
       }
     },
 
