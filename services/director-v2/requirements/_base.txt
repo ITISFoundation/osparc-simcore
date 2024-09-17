@@ -5,6 +5,8 @@ aio-pika==9.4.1
     #   -r requirements/_base.in
 aiocache==0.12.2
     # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
 aiodebug==2.3.0

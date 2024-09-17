@@ -1,5 +1,7 @@
 aio-pika==9.4.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+aiocache==0.12.2
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.22.2
