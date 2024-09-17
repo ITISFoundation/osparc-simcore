@@ -15,6 +15,10 @@
 
 ************************************************************************ */
 
+/**
+ * @asset(osparc/blacklist.json")
+ */
+
 qx.Class.define("osparc.auth.ui.RequestAccount", {
   extend: osparc.auth.core.BaseAuthPage,
 
