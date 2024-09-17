@@ -2,97 +2,70 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from asyncio import AbstractEventLoop
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 from aiohttp import web
-from aiohttp.client_reqrep import ClientResponse
 from aiohttp.test_utils import TestClient
-from servicelib.aiohttp import status
-from servicelib.aiohttp.rest_responses import _collect_http_exceptions
+from pydantic import ValidationError
 from servicelib.aiohttp.tracing import setup_tracing
+from settings_library.tracing import TracingSettings
 
-DEFAULT_JAEGER_BASE_URL = "http://jaeger:9411"
+
+@pytest.fixture
+def tracing_settings_in(request):
+    return request.param
 
 
 @pytest.fixture()
-def client(
-    event_loop: AbstractEventLoop,
-    aiohttp_client: Callable,
-    unused_tcp_port_factory: Callable,
-) -> TestClient:
-    ports = [unused_tcp_port_factory() for _ in range(2)]
-
-    async def redirect(request: web.Request) -> web.Response:
-        return web.HTTPFound(location="/return/200")
-
-    async def return_response(request: web.Request) -> web.Response:
-        code = int(request.match_info["code"])
-        return web.Response(status=code)
-
-    async def raise_response(request: web.Request):
-        status_code = int(request.match_info["code"])
-        status_to_http_exception = _collect_http_exceptions()
-        http_exception_cls = status_to_http_exception[status_code]
-        raise http_exception_cls(
-            reason=f"raised from raised_error with code {status_code}"
+def set_and_clean_settings_env_vars(
+    monkeypatch: pytest.MonkeyPatch, tracing_settings_in
+):
+    if tracing_settings_in[0]:
+        monkeypatch.setenv(
+            "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}"
+        )
+    if tracing_settings_in[1]:
+        monkeypatch.setenv(
+            "TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}"
         )
 
-    async def skip(request: web.Request):
-        return web.HTTPServiceUnavailable(reason="should not happen")
 
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318),
+    ],
+    indirect=True,
+)
+async def test_valid_tracing_settings(
+    aiohttp_client: Callable,
+    set_and_clean_settings_env_vars: Callable,
+    tracing_settings_in,
+) -> TestClient:
     app = web.Application()
-    app.add_routes(
-        [
-            web.get("/redirect", redirect),
-            web.get("/return/{code}", return_response),
-            web.get("/raise/{code}", raise_response),
-            web.get("/skip", skip, name="skip"),
-        ]
-    )
-
-    print("Resources:")
-    for resource in app.router.resources():
-        print(resource)
-
-    # UNDER TEST ---
-    # SEE RoutesView to understand how resources can be iterated to get routes
-    resource = app.router["skip"]
-    routes_in_a_resource = list(resource)
-
+    service_name = "simcore_service_webserver"
+    tracing_settings = TracingSettings()
     setup_tracing(
         app,
-        service_name=f"{__name__}.client",
-        host="127.0.0.1",
-        port=ports[0],
-        jaeger_base_url=DEFAULT_JAEGER_BASE_URL,
-        skip_routes=routes_in_a_resource,
-    )
-
-    return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": ports[0]})
+        service_name=service_name,
+        tracing_settings=tracing_settings,
     )
 
 
-async def test_setup_tracing(client: TestClient):
-    res: ClientResponse
-
-    # on error
-    for code in (status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST):
-        res = await client.get(f"/return/{code}")
-
-        assert res.status == code, await res.text()
-        res = await client.get(f"/raise/{code}")
-        assert res.status == code, await res.text()
-
-    res = await client.get("/redirect")
-    # TODO: check it was redirected
-    assert res.status == 200, await res.text()
-
-    res = await client.get("/skip")
-    assert res.status == status.HTTP_503_SERVICE_UNAVAILABLE
-
-    # using POST instead of GET ->  HTTPMethodNotAllowed
-    res = await client.post("/skip")
-    assert res.status == status.HTTP_405_METHOD_NOT_ALLOWED, "GET and not POST"
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 80),
+        ("opentelemetry-collector", 4318),
+        ("httsdasp://ot@##el-collector", 4318),
+    ],
+    indirect=True,
+)
+async def test_invalid_tracing_settings(
+    aiohttp_client: Callable,
+    set_and_clean_settings_env_vars: Callable,
+    tracing_settings_in,
+) -> TestClient:
+    with pytest.raises(ValidationError):
+        TracingSettings()

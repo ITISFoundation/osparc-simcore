@@ -14,6 +14,7 @@ __version__: Final[VersionStr] = info.__version__
 PROJECT_NAME: Final[str] = info.project_name
 VERSION: Final[Version] = info.version
 API_VERSION: Final[VersionStr] = info.__version__
+APP_NAME: Final[str] = PROJECT_NAME
 API_VTAG: Final[str] = info.api_prefix_path_tag
 SUMMARY: Final[str] = info.get_summary()
 

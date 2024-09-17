@@ -36,13 +36,16 @@ botocore-stubs==1.35.2
 certifi==2024.7.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   requests
 cffi==1.17.0
     # via cryptography
 cfn-lint==1.10.3
     # via moto
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.1.7
     # via
     #   -c requirements/_base.txt
@@ -214,6 +217,7 @@ regex==2024.7.24
     # via cfn-lint
 requests==2.32.3
     # via
+    #   -c requirements/_base.txt
     #   docker
     #   jsonschema-path
     #   moto
@@ -231,8 +235,10 @@ s3transfer==0.10.2
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==73.0.1
-    # via moto
+setuptools==74.0.0
+    # via
+    #   -c requirements/_base.txt
+    #   moto
 six==1.16.0
     # via
     #   -c requirements/_base.txt
