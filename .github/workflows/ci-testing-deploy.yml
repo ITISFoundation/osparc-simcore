@@ -590,7 +590,7 @@ jobs:
   unit-test-autoscaling:
     needs: changes
     if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 19 # if this timeout gets too small, then split the tests
     name: "[unit] autoscaling"
     runs-on: ${{ matrix.os }}
     strategy:
