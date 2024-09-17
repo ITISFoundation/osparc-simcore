@@ -882,15 +882,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const containerHeader = this._resourcesContainer.getContainerHeader();
       if (containerHeader) {
-        this.bind("currentWorkspaceId", containerHeader, "currentWorkspaceId", {
-          onUpdate: () => containerHeader.setCurrentFolderId(null)
-        });
+        this.bind("currentWorkspaceId", containerHeader, "currentWorkspaceId");
         this.bind("currentFolderId", containerHeader, "currentFolderId");
         containerHeader.addListener("changeContext", e => {
           const {
             workspaceId,
             folderId,
           } = e.getData();
+          this.set({
+            currentWorkspaceId: workspaceId,
+            currentFolderId: folderId,
+          })
           this._changeContext(workspaceId, folderId);
         });
       }
