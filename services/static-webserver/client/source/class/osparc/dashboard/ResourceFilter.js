@@ -84,6 +84,14 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       return this.__workspacesAndFoldersTree;
     },
 
+    contextChanged: function(workspaceId, folderId) {
+      this.__workspacesAndFoldersTree.set({
+        currentWorkspaceId: workspaceId,
+        currentFolderId: folderId,
+      });
+      this.__workspacesAndFoldersTree.contextChanged();
+    },
+
     workspaceSelected: function(workspaceId) {
       this.__workspacesAndFoldersTree.set({
         currentWorkspaceId: workspaceId,
