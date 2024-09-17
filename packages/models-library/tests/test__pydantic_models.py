@@ -11,7 +11,7 @@ from typing import Union, get_args, get_origin
 import pytest
 from models_library.projects_nodes import InputTypes, OutputTypes
 from models_library.projects_nodes_io import SimCoreFileLink
-from pydantic import BaseModel, ValidationError, schema_json_of
+from pydantic import BaseModel, Field, ValidationError, schema_json_of
 from pydantic.types import Json
 from pydantic.version import version_short
 
@@ -90,8 +90,8 @@ def test_json_type():
 def test_union_types_coercion():
     # SEE https://pydantic-docs.helpmanual.io/usage/types/#unions
     class Func(BaseModel):
-        input: InputTypes
-        output: OutputTypes
+        input: InputTypes = Field(union_mode="left_to_right")
+        output: OutputTypes = Field(union_mode="left_to_right")
 
     assert get_origin(InputTypes) is Union
     assert get_origin(OutputTypes) is Union
@@ -125,15 +125,15 @@ def test_union_types_coercion():
     model = Func.model_validate({"input": "0", "output": 1})
     print(model.model_dump_json(indent=1))
 
-    assert model.input == "0"
+    assert model.input == 0
     assert model.output == 1
 
     # numbers and bool ------------------------
     model = Func.model_validate({"input": "0.5", "output": "false"})
     print(model.model_dump_json(indent=1))
 
-    assert model.input == "0.5"
-    assert model.output == "false"
+    assert model.input == 0.5
+    assert model.output is False
 
     # (undefined) json string vs string ------------------------
     model = Func.model_validate(
@@ -144,7 +144,7 @@ def test_union_types_coercion():
     )
     print(model.model_dump_json(indent=1))
 
-    assert model.input == '{"w": 42, "z": false}'
+    assert model.input == {"w": 42, "z": False}
     assert model.output == "some/path/or/string"
 
     # (undefined) json string vs SimCoreFileLink.dict() ------------
@@ -162,7 +162,7 @@ def test_union_types_coercion():
         }
     )
     print(model.model_dump_json(indent=1))
-    assert model.input == '{"w": 42, "z": false}'
+    assert model.input == {"w": 42, "z": False}
     assert model.output == example
     assert isinstance(model.output, SimCoreFileLink)
 
