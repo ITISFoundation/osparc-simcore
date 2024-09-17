@@ -62,6 +62,8 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       }
     },
 
+
+    /* WORKSPACES AND FOLDERS */
     __createWorkspacesAndFoldersTree: function() {
       const workspacesAndFoldersTree = this.__workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();
       // Height needs to be calculated manually to make it flexible
@@ -81,6 +83,32 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     getWorkspacesAndFoldersTree: function() {
       return this.__workspacesAndFoldersTree;
     },
+
+    contextChanged: function(workspaceId, folderId) {
+      this.__workspacesAndFoldersTree.set({
+        currentWorkspaceId: workspaceId,
+        currentFolderId: folderId,
+      });
+      this.__workspacesAndFoldersTree.contextChanged();
+    },
+
+    workspaceSelected: function(workspaceId) {
+      this.__workspacesAndFoldersTree.set({
+        currentWorkspaceId: workspaceId,
+        currentFolderId: null,
+      });
+      this.__workspacesAndFoldersTree.contextChanged();
+    },
+
+    folderSelected: function(folderId) {
+      const workspaceId = this.__workspacesAndFoldersTree.getCurrentWorkspaceId();
+      this.__workspacesAndFoldersTree.set({
+        currentWorkspaceId: workspaceId,
+        currentFolderId: folderId,
+      });
+      this.__workspacesAndFoldersTree.contextChanged();
+    },
+    /* /WORKSPACES AND FOLDERS */
 
     /* SHARED WITH */
     __createSharedWithFilterLayout: function() {
@@ -136,12 +164,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       return sharedWithLayout;
     },
     /* /SHARED WITH */
-
-    /* WORKSPACES */
-    workspaceSelected: function(workspaceId) {
-      // OM: select folder
-    },
-    /* /WORKSPACES */
 
     /* TAGS */
     __createTagsFilterLayout: function() {

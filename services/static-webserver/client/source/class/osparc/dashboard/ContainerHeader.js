@@ -102,27 +102,36 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       return this.__createFolderButton(currentFolder);
     },
 
-    __createRootButton: function(workspaceId) {
+    __changeContext: function(workspaceId, folderId) {
+      this.set({
+        currentWorkspaceId: workspaceId,
+        currentFolderId: folderId,
+      });
+      this.fireDataEvent("changeContext", {
+        workspaceId,
+        folderId,
+      });
+    },
+
+    __createRootButton: function() {
+      const workspaceId = this.getCurrentWorkspaceId();
       let rootButton = null;
       if (workspaceId) {
         if (workspaceId === -1) {
           rootButton = new qx.ui.form.Button(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath());
         } else {
           const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
-          rootButton = new qx.ui.form.Button(workspace.getName(), osparc.store.Workspaces.iconPath());
+          rootButton = new qx.ui.form.Button(workspace.getName(), osparc.store.Workspaces.iconPath()).set({
+            maxWidth: 200
+          });
+          workspace.bind("name", rootButton, "label");
         }
       } else {
         rootButton = new qx.ui.form.Button(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
       }
       rootButton.addListener("execute", () => {
         const folderId = null;
-        this.set({
-          currentFolderId: null,
-        });
-        this.fireDataEvent("changeContext", {
-          workspaceId,
-          folderId,
-        });
+        this.__changeContext(workspaceId, folderId);
       });
       return rootButton;
     },
@@ -130,21 +139,17 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
     __createFolderButton: function(folder) {
       let folderButton = null;
       if (folder) {
-        folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14");
+        folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14").set({
+          maxWidth: 200
+        });
+        folder.bind("name", folderButton, "label");
         folderButton.addListener("execute", () => {
           const workspaceId = this.getCurrentWorkspaceId();
           const folderId = folder ? folder.getFolderId() : null;
-          this.set({
-            currentFolderId: folderId,
-          });
-          this.fireDataEvent("changeContext", {
-            workspaceId,
-            folderId,
-          });
+          this.__changeContext(workspaceId, folderId);
         }, this);
       } else {
-        const workspaceId = this.getCurrentWorkspaceId();
-        folderButton = this.__createRootButton(workspaceId);
+        folderButton = this.__createRootButton();
       }
       folderButton.set({
         backgroundColor: "transparent",
