@@ -6,8 +6,6 @@ aiohttp==3.10.5
     #   -r requirements.in
 aiosignal==1.3.1
     # via aiohttp
-async-timeout==4.0.3
-    # via aiohttp
 attrs==24.2.0
     # via
     #   aiohttp
@@ -23,8 +21,6 @@ coverage==7.6.1
     # via
     #   -r requirements.in
     #   pytest-cov
-exceptiongroup==1.2.2
-    # via pytest
 frozenlist==1.4.1
     # via
     #   aiohttp
@@ -118,10 +114,6 @@ six==1.16.0
     #   rfc3339-validator
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via
-    #   coverage
-    #   pytest
 urllib3==2.2.2
     # via
     #   -c ../../requirements/constraints.txt
