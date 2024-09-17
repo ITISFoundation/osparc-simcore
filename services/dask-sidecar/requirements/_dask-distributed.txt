@@ -63,7 +63,7 @@ partd==1.4.2
     # via
     #   -c requirements/./_base.txt
     #   dask
-psutil==5.9.8
+psutil==6.0.0
     # via
     #   -c requirements/./_base.txt
     #   distributed

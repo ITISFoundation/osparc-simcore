@@ -193,7 +193,7 @@ pluggy==1.5.0
     # via pytest
 ply==3.11
     # via jsonpath-ng
-psutil==5.9.8
+psutil==6.0.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
