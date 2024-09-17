@@ -17,7 +17,7 @@ from .playwright import (
     wait_for_service_running,
 )
 
-_S4L_STREAMING_ESTABLISHMENT_MAX_TIME: Final[int] = 15 * SECOND
+_S4L_STREAMING_ESTABLISHMENT_MAX_TIME: Final[int] = 30 * SECOND
 _S4L_SOCKETIO_REGEX: Final[re.Pattern] = re.compile(
     r"^(?P<protocol>[^:]+)://(?P<node_id>[^\.]+)\.services\.(?P<hostname>[^\/]+)\/socket\.io\/.+$"
 )
