@@ -32,7 +32,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
   },
 
   events: {
-    "folderSelected": "qx.event.type.Data",
+    "changeContext": "qx.event.type.Data",
   },
 
   properties: {
@@ -102,11 +102,12 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       return this.__createFolderButton(currentFolder);
     },
 
-    __folderSelected: function(folderId) {
+    __changeContext: function(workspaceId, folderId) {
       this.set({
-        currentFolderId: folderId,
+        workspaceId,
+        folderId,
       });
-      this.fireDataEvent("folderSelected", folderId);
+      this.fireDataEvent("changeContext", folderId);
     },
 
     __createRootButton: function() {
@@ -124,7 +125,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       }
       rootButton.addListener("execute", () => {
         const folderId = null;
-        this.__folderSelected(folderId);
+        this.__changeContext(workspaceId, folderId);
       });
       return rootButton;
     },
@@ -134,8 +135,9 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       if (folder) {
         folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14");
         folderButton.addListener("execute", () => {
+          const workspaceId = this.getCurrentWorkspaceId();
           const folderId = folder ? folder.getFolderId() : null;
-          this.__folderSelected(folderId);
+          this.__changeContext(workspaceId, folderId);
         }, this);
       } else {
         folderButton = this.__createRootButton();
