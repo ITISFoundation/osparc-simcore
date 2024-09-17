@@ -227,6 +227,11 @@ def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture
+def disabled_ssm(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("CLUSTERS_KEEPER_SSM_ACCESS", "null")
+
+
+@pytest.fixture
 def enabled_rabbitmq(
     app_environment: EnvVarsDict, rabbit_service: RabbitSettings
 ) -> RabbitSettings:
