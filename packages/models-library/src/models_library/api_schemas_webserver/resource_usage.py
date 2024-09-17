@@ -95,7 +95,10 @@ class CreatePricingPlanBodyParams(InputSchema):
     classification: PricingPlanClassification
     pricing_plan_key: str
 
-    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        str_max_length=200,
+    )
 
 
 class UpdatePricingPlanBodyParams(InputSchema):
@@ -103,7 +106,10 @@ class UpdatePricingPlanBodyParams(InputSchema):
     description: str
     is_active: bool
 
-    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        str_max_length=200,
+    )
 
 
 class CreatePricingUnitBodyParams(InputSchema):
@@ -114,7 +120,10 @@ class CreatePricingUnitBodyParams(InputSchema):
     cost_per_unit: Decimal
     comment: str
 
-    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        str_max_length=200,
+    )
 
 
 class UpdatePricingUnitBodyParams(InputSchema):
@@ -124,11 +133,17 @@ class UpdatePricingUnitBodyParams(InputSchema):
     specific_info: SpecificInfo
     pricing_unit_cost_update: PricingUnitCostUpdate | None
 
-    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        str_max_length=200,
+    )
 
 
 class ConnectServiceToPricingPlanBodyParams(InputSchema):
     service_key: ServiceKey
     service_version: ServiceVersion
 
-    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        str_max_length=200,
+    )
