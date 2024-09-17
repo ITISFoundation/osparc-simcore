@@ -25,13 +25,16 @@ botocore==1.34.106
 certifi==2024.7.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   requests
 cffi==1.17.0
     # via cryptography
 cfn-lint==1.10.3
     # via moto
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.1.7
     # via
     #   -c requirements/_base.txt
@@ -50,10 +53,6 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-exceptiongroup==1.2.1
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
 faker==27.0.0
     # via -r requirements/_test.in
 flask==3.0.3
@@ -208,6 +207,7 @@ regex==2024.7.24
     # via cfn-lint
 requests==2.32.3
     # via
+    #   -c requirements/_base.txt
     #   docker
     #   jsonschema-path
     #   moto
@@ -223,8 +223,10 @@ rpds-py==0.18.1
     #   referencing
 s3transfer==0.10.2
     # via boto3
-setuptools==73.0.1
-    # via moto
+setuptools==74.0.0
+    # via
+    #   -c requirements/_base.txt
+    #   moto
 six==1.16.0
     # via
     #   -c requirements/_base.txt
@@ -234,10 +236,6 @@ sympy==1.13.2
     # via cfn-lint
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via
-    #   coverage
-    #   pytest
 types-aiofiles==24.1.0.20240626
     # via -r requirements/_test.in
 typing-extensions==4.11.0

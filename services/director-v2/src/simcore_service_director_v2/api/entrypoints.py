@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from ..meta import API_VTAG
+from .._meta import API_VTAG
 from .routes import (
     clusters,
     computations,
