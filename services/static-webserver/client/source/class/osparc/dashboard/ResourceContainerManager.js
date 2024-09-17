@@ -38,7 +38,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
 
     const workspacesContainer = this.__workspacesContainer = new osparc.dashboard.ToggleButtonContainer();
-    this._add(workspacesContainer);
     workspacesContainer.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
 
 

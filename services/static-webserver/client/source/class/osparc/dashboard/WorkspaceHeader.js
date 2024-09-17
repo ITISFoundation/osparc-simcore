@@ -122,16 +122,6 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
           }));
           this._add(control);
           break;
-        case "share-icon": {
-          control = new qx.ui.basic.Image().set({
-            alignY: "middle",
-            allowGrowX: false,
-            allowShrinkX: false
-          });
-          const layout = this.getChildControl("share-layout");
-          layout.addAt(control, 0);
-          break;
-        }
         case "share-text": {
           control = new qx.ui.basic.Label().set({
             font: "text-14"
@@ -169,14 +159,15 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     __buildLayout: function(workspaceId) {
       this.getChildControl("icon");
       const title = this.getChildControl("title");
+
       this.getChildControl("edit-button").exclude();
+      this.resetAccessRights();
+      this.resetMyAccessRights();
 
       const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
       if (workspaceId === -1) {
         this.__setIcon(osparc.store.Workspaces.iconPath(32));
         title.setValue(this.tr("Shared Workspaces"));
-        this.resetAccessRights();
-        this.resetMyAccessRights();
       } else if (workspace) {
         const thumbnail = workspace.getThumbnail();
         this.__setIcon(thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32));
@@ -186,8 +177,6 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       } else {
         this.__setIcon("@FontAwesome5Solid/home/30");
         title.setValue(this.tr("My Workspace"));
-        this.resetAccessRights();
-        this.resetMyAccessRights();
       }
     },
 
@@ -227,8 +216,24 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       this.__spacers.forEach(spacer => spacer.setVisibility(show ? "visible" : "excluded"));
     },
 
+    __getShareIcon: function() {
+      // reset previous
+      const layout = this.getChildControl("share-layout");
+      if (this.__shareIcon) {
+        layout.remove(this.__shareIcon);
+      }
+
+      const shareIcon = this.__shareIcon = new qx.ui.basic.Image().set({
+        alignY: "middle",
+        allowGrowX: false,
+        allowShrinkX: false
+      });
+      layout.addAt(shareIcon, 0);
+      return shareIcon;
+    },
+
     __applyAccessRights: function(accessRights) {
-      const shareIcon = this.getChildControl("share-icon");
+      const shareIcon = this.__getShareIcon();
       const shareText = this.getChildControl("share-text");
       if (accessRights && Object.keys(accessRights).length) {
         osparc.dashboard.CardBase.populateShareIcon(shareIcon, accessRights);
@@ -248,7 +253,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       const roleText = this.getChildControl("role-text");
       const roleIcon = this.getChildControl("role-icon");
       if (value && Object.keys(value).length) {
-        editButton.show();
+        editButton.setVisibility(value["delete"] ? "visible" : "excluded");
         const menu = new qx.ui.menu.Menu().set({
           position: "bottom-right"
         });
