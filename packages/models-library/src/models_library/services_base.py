@@ -1,6 +1,6 @@
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing import Annotated
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
-from .basic_types import HttpUrl
 from .services_types import ServiceKey, ServiceVersion
 from .utils.common_validators import empty_str_to_none_pre_validator
 
@@ -26,7 +26,7 @@ class ServiceBaseDisplay(BaseModel):
         description="Display name: short, human readable name for the node",
         examples=["Fast Counter"],
     )
-    thumbnail: HttpUrl | None = Field(
+    thumbnail: Annotated[str, HttpUrl] | None = Field(
         None,
         description="url to the thumbnail",
         examples=[

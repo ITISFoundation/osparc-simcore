@@ -11,8 +11,9 @@ from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
-from models_library.basic_types import AnyUrl, ConstrainedStr, KeyIDStr
+from models_library.basic_types import ConstrainedStr, KeyIDStr
 from pydantic import (
+    AnyUrl,
     BaseModel,
     ConfigDict,
     Field,
@@ -122,7 +123,7 @@ class PortLink(BaseModel):
 class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
-    download_link: AnyUrl = Field(..., alias="downloadLink")
+    download_link: Annotated[str, AnyUrl] = Field(..., alias="downloadLink")
     label: str | None = Field(default=None, description="Display name")
     model_config = ConfigDict(
         extra="forbid",

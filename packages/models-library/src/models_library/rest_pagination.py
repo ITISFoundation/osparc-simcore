@@ -1,6 +1,7 @@
 from typing import Annotated, Final, Generic, TypeAlias, TypeVar
 
 from pydantic import (
+    AnyHttpUrl,
     BaseModel,
     ConfigDict,
     Field,
@@ -11,7 +12,6 @@ from pydantic import (
     field_validator,
 )
 
-from .basic_types import AnyHttpUrl
 from .utils.common_validators import none_to_empty_list_pre_validator
 
 # Default limit values
@@ -92,7 +92,7 @@ class PageRefs(BaseModel, Generic[RefT]):
     model_config = ConfigDict(extra="forbid")
 
 
-class PageLinks(PageRefs[AnyHttpUrl]):
+class PageLinks(PageRefs[Annotated[str, AnyHttpUrl]]):
     ...
 
 

@@ -9,6 +9,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    HttpUrl,
     Json,
     StrictBool,
     StrictFloat,
@@ -17,7 +18,7 @@ from pydantic import (
     field_validator,
 )
 
-from .basic_types import EnvVarKey, HttpUrl, KeyIDStr
+from .basic_types import EnvVarKey, KeyIDStr
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
@@ -137,7 +138,7 @@ class Node(BaseModel):
         description="the node progress value (deprecated in DB, still used for API only)",
         deprecated=True,
     )
-    thumbnail: HttpUrl | None = Field(
+    thumbnail: Annotated[str, HttpUrl] | None = Field(
         default=None,
         description="url of the latest screenshot of the node",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],

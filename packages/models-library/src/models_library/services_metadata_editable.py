@@ -1,10 +1,9 @@
 # mypy: disable-error-code=truthy-function
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, HttpUrl
 
-from .basic_types import HttpUrl
 from .services_base import ServiceBaseDisplay
 from .services_constants import LATEST_INTEGRATION_VERSION
 from .services_enums import ServiceType
@@ -20,7 +19,7 @@ assert ServiceVersion  # nosec
 class ServiceMetaDataEditable(ServiceBaseDisplay):
     # Overrides ServiceBaseDisplay fields to Optional for a partial update
     name: str | None  # type: ignore[assignment]
-    thumbnail: HttpUrl | None
+    thumbnail: Annotated[str, HttpUrl] | None
     description: str | None  # type: ignore[assignment]
     description_ui: bool = False
     version_display: str | None = None
