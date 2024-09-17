@@ -12,7 +12,7 @@ class ProgressStructuredMessage(BaseModel):
     description: IDStr
     current: float
     total: int
-    unit: str | None = None
+    unit: str | None
     sub: "ProgressStructuredMessage | None"
 
     model_config = ConfigDict(

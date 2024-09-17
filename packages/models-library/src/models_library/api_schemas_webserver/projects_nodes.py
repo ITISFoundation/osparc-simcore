@@ -63,14 +63,12 @@ class NodeGet(OutputSchema):
         ...,
         description="distinctive name for the node based on the docker registry path",
         examples=[
-            [
-                "simcore/services/comp/itis/sleeper",
-                "simcore/services/dynamic/3dviewer",
-            ]
+            "simcore/services/comp/itis/sleeper",
+            "simcore/services/dynamic/3dviewer",
         ],
     )
     service_version: ServiceVersion = Field(
-        ..., description="semantic version number", examples=[["1.0.0", "0.0.1"]]
+        ..., description="semantic version number", examples=["1.0.0", "0.0.1"]
     )
     service_host: str = Field(
         ...,

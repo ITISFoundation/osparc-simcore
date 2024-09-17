@@ -122,7 +122,7 @@ class UpdatePricingUnitBodyParams(InputSchema):
     unit_extra_info: UnitExtraInfo
     default: bool
     specific_info: SpecificInfo
-    pricing_unit_cost_update: PricingUnitCostUpdate | None = None
+    pricing_unit_cost_update: PricingUnitCostUpdate | None
 
     model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 

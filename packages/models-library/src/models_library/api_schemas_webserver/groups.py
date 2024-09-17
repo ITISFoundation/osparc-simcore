@@ -5,9 +5,9 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    TypeAdapter,
     ValidationError,
     field_validator,
-    parse_obj_as,
 )
 
 from ..emails import LowerCaseEmailStr
@@ -86,11 +86,11 @@ class UsersGroup(BaseModel):
 
     @field_validator("thumbnail", mode="before")
     @classmethod
-    def sanitize_legacy_data(cls, v):
+    def _sanitize_legacy_data(cls, v):
         if v:
             # Enforces null if thumbnail is not valid URL or empty
             with suppress(ValidationError):
-                return parse_obj_as(AnyUrl, v)
+                return TypeAdapter(AnyUrl).validate_python(v)
         return None
 
 
