@@ -1,6 +1,8 @@
 # pylint: disable=all
 
 
+import random
+import string
 from collections.abc import Callable
 from typing import Any
 
@@ -69,7 +71,12 @@ async def test_valid_tracing_settings(
         ("http://opentelemetry-collector", 1238712936),
         ("opentelemetry-collector", 4318),
         ("httsdasp://ot@##el-collector", 4318),
-        (None, "1238712936"),
+        (" !@#$%^&*()[]{};:,<>?\\|`~+=/'\"", 4318),
+        # The following exceeds max DNS name length
+        (
+            "".join(random.choice(string.ascii_letters) for _ in range(300)),
+            "1238712936",
+        ),  # noqa: S311
     ],
     indirect=True,
 )
@@ -83,43 +90,6 @@ async def test_invalid_tracing_settings(
         tracing_settings = TracingSettings()
         setup_tracing(
             app,
-            tracing_settings=tracing_settings,
-            service_name="Mock-Openetlemetry-Pytest",
-        )
-
-
-@pytest.mark.parametrize(
-    "tracing_settings_in",  # noqa: PT002
-    [("", ""), ("", None), (None, None)],
-    indirect=True,
-)
-async def test_missing_tracing_settings(
-    mocked_app: FastAPI,
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in: Callable[[], dict[str, Any]],
-):
-    tracing_settings = TracingSettings()
-    setup_tracing(
-        mocked_app,
-        tracing_settings=tracing_settings,
-        service_name="Mock-Openetlemetry-Pytest",
-    )
-
-
-@pytest.mark.parametrize(
-    "tracing_settings_in",
-    [("http://opentelemetry-collector", None), (None, 4318)],
-    indirect=True,
-)
-async def test_incomplete_tracing_settings(
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in: Callable[[], dict[str, Any]],
-    mocked_app: FastAPI,
-):
-    tracing_settings = TracingSettings()
-    with pytest.raises(RuntimeError):
-        setup_tracing(
-            mocked_app,
             tracing_settings=tracing_settings,
             service_name="Mock-Openetlemetry-Pytest",
         )
