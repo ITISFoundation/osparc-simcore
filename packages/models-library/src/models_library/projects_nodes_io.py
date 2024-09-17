@@ -238,7 +238,7 @@ class DatCoreFileLink(BaseFileLink):
         description="Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
     )
 
-    @field_validator("store", mode="before")
+    @field_validator("store")
     @classmethod
     def check_discriminator(cls, v):
         """Used as discriminator to cast to this class"""
