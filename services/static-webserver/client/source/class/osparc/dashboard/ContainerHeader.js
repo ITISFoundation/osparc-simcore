@@ -128,6 +128,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
         } else {
           const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
           rootButton = this.__createBreadcrumbButton(workspace.getName(), osparc.store.Workspaces.iconPath());
+          workspace.bind("name", rootButton, "label");
         }
       } else {
         rootButton = this.__createBreadcrumbButton(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
@@ -143,6 +144,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       let folderButton = null;
       if (folder) {
         folderButton = this.__createBreadcrumbButton(folder.getName(), "@FontAwesome5Solid/folder/14");
+        folder.bind("name", folderButton, "label");
         folderButton.addListener("execute", () => {
           const workspaceId = this.getCurrentWorkspaceId();
           const folderId = folder ? folder.getFolderId() : null;
