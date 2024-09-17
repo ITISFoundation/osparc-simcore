@@ -67,9 +67,11 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
           break;
         case "tiplite":
-        case "s4lacad":
         case "s4ldesktopacad":
           this._form.add(email, this.tr("University Email"), qx.util.Validate.email(), "email");
+          break;
+        case "s4lacad":
+          this._form.add(email, this.tr("University Email"), this.__validateEmail(), "email");
           break;
       }
 
@@ -366,6 +368,11 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       cancelBtn.addListener("execute", () => this.fireDataEvent("done", null), this);
 
       this.add(grp);
+    },
+
+    __validateEmail: function(errorMessage) {
+      const validate = qx.util.Validate.email(errorMessage);
+      return validate;
     },
 
     __requestPressed: function() {
