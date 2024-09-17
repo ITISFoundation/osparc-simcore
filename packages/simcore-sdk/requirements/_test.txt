@@ -30,10 +30,6 @@ alembic==1.13.2
     #   -r requirements/_test.in
 antlr4-python3-runtime==4.13.2
     # via moto
-async-timeout==4.0.3
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
 attrs==24.2.0
     # via
     #   -c requirements/_base.txt
@@ -88,10 +84,6 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-exceptiongroup==1.2.2
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
 execnet==2.1.1
     # via pytest-xdist
 faker==27.0.0
@@ -304,11 +296,6 @@ sympy==1.13.2
     # via cfn-lint
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via
-    #   coverage
-    #   mypy
-    #   pytest
 types-aiobotocore==2.13.2
     # via -r requirements/_test.in
 types-aiobotocore-s3==2.13.2

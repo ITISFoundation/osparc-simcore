@@ -81,8 +81,6 @@ ecdsa==0.19.0
     #   moto
     #   python-jose
     #   sshpubkeys
-exceptiongroup==1.2.2
-    # via pytest
 faker==27.0.0
     # via -r requirements/_test.in
 flask==3.0.3
@@ -257,10 +255,6 @@ sshpubkeys==3.3.1
     # via moto
 sympy==1.13.2
     # via cfn-lint
-tomli==2.0.1
-    # via
-    #   coverage
-    #   pytest
 typing-extensions==4.4.0
     # via
     #   -c requirements/_base.txt

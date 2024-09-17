@@ -11,8 +11,6 @@ certifi==2024.7.4
     #   httpx
 click==8.1.7
     # via uvicorn
-exceptiongroup==1.2.2
-    # via anyio
 fastapi==0.99.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -61,9 +59,7 @@ starlette==0.27.0
     #   fastapi
 typing-extensions==4.12.2
     # via
-    #   anyio
     #   fastapi
     #   pydantic
-    #   uvicorn
 uvicorn==0.30.6
     # via -r requirements/_fastapi.in

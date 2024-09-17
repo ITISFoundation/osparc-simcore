@@ -77,22 +77,12 @@ setuptools==73.0.1
     # via
     #   -c requirements/_test.txt
     #   pip-tools
-tomli==2.0.1
-    # via
-    #   -c requirements/_test.txt
-    #   black
-    #   build
-    #   mypy
-    #   pip-tools
-    #   pylint
 tomlkit==0.13.2
     # via pylint
 typing-extensions==4.10.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
-    #   astroid
-    #   black
     #   mypy
 virtualenv==20.26.3
     # via pre-commit

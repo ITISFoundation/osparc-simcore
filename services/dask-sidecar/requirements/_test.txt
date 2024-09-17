@@ -50,10 +50,6 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-exceptiongroup==1.2.1
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
 faker==27.0.0
     # via -r requirements/_test.in
 flask==3.0.3
@@ -234,10 +230,6 @@ sympy==1.13.2
     # via cfn-lint
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via
-    #   coverage
-    #   pytest
 types-aiofiles==24.1.0.20240626
     # via -r requirements/_test.in
 typing-extensions==4.11.0
