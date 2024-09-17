@@ -1,4 +1,4 @@
-# pylint: disable
+# pylint: disable=all
 
 
 from collections.abc import Callable
