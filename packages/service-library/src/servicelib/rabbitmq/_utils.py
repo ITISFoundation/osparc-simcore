@@ -71,7 +71,6 @@ async def declare_queue(
     arguments: dict[str, Any] | None = None,
     message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
 ) -> aio_pika.abc.AbstractRobustQueue:
-    _ = client_name
     default_arguments = {"x-message-ttl": message_ttl}
     if arguments is not None:
         default_arguments.update(arguments)
