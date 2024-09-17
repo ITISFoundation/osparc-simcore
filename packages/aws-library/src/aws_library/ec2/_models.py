@@ -68,7 +68,7 @@ InstancePrivateDNSName: TypeAlias = str
 
 
 # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
-AWSTagKey = Annotated[
+AWSTagKey: TypeAlias = Annotated[
     str,
     StringConstraints(
         min_length=1,
@@ -79,7 +79,7 @@ AWSTagKey = Annotated[
 
 # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
 # quotes []{} were added as it allows to json encode. it seems to be accepted as a value
-AWSTagValue = Annotated[
+AWSTagValue: TypeAlias = Annotated[
     str,
     StringConstraints(
         min_length=0,
