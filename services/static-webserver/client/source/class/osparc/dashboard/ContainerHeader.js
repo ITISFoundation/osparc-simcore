@@ -32,7 +32,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
   },
 
   events: {
-    "changeContext": "qx.event.type.Data",
+    "folderSelected": "qx.event.type.Data",
   },
 
   properties: {
@@ -102,7 +102,15 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       return this.__createFolderButton(currentFolder);
     },
 
-    __createRootButton: function(workspaceId) {
+    __folderSelected: function(folderId) {
+      this.set({
+        currentFolderId: folderId,
+      });
+      this.fireDataEvent("folderSelected", folderId);
+    },
+
+    __createRootButton: function() {
+      const workspaceId = this.getCurrentWorkspaceId();
       let rootButton = null;
       if (workspaceId) {
         if (workspaceId === -1) {
@@ -116,13 +124,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       }
       rootButton.addListener("execute", () => {
         const folderId = null;
-        this.set({
-          currentFolderId: null,
-        });
-        this.fireDataEvent("changeContext", {
-          workspaceId,
-          folderId,
-        });
+        this.__folderSelected(folderId);
       });
       return rootButton;
     },
@@ -132,19 +134,11 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       if (folder) {
         folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14");
         folderButton.addListener("execute", () => {
-          const workspaceId = this.getCurrentWorkspaceId();
           const folderId = folder ? folder.getFolderId() : null;
-          this.set({
-            currentFolderId: folderId,
-          });
-          this.fireDataEvent("changeContext", {
-            workspaceId,
-            folderId,
-          });
+          this.__folderSelected(folderId);
         }, this);
       } else {
-        const workspaceId = this.getCurrentWorkspaceId();
-        folderButton = this.__createRootButton(workspaceId);
+        folderButton = this.__createRootButton();
       }
       folderButton.set({
         backgroundColor: "transparent",
