@@ -46,7 +46,9 @@ class TrackedTask(BaseModel):
             "polled by the client who created it"
         ),
     )
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 
 class ClientConfiguration(BaseModel):

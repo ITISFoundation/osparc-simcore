@@ -84,7 +84,7 @@ def fake_port_meta() -> dict[str, Any]:
     )
 
     port_model = ServiceInput.from_json_schema(port_schema=schema)
-    return port_model.dict(exclude_unset=True, by_alias=True)
+    return port_model.model_dump(exclude_unset=True, by_alias=True)
 
 
 def test_validate_port_value_against_schema(fake_port_meta: dict[str, Any]):

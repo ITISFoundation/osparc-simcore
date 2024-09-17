@@ -40,7 +40,9 @@ class DockerLayerSizeV2(BaseModel):
     size: ByteSize
     digest: str
     model_config = ConfigDict(
-        frozen=True, alias_generator=snake_to_camel, populate_by_name=True
+        frozen=True,
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
     )
 
 
@@ -66,7 +68,9 @@ class DockerImageMultiArchManifestsV2(BaseModel):
     media_type: Literal["application/vnd.oci.image.index.v1+json"]
     manifests: list[dict[str, Any]]
     model_config = ConfigDict(
-        frozen=True, alias_generator=snake_to_camel, populate_by_name=True
+        frozen=True,
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
     )
 
 
@@ -76,7 +80,9 @@ class _DockerPullImage(BaseModel):
     progress_detail: ProgressDetail | None = None
     progress: str | None = None
     model_config = ConfigDict(
-        frozen=True, alias_generator=snake_to_camel, populate_by_name=True
+        frozen=True,
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
     )
 
 

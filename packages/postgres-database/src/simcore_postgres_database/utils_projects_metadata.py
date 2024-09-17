@@ -46,13 +46,13 @@ class DBProjectInvalidParentNodeError(BaseProjectsMetadataError):
 
 
 class ProjectMetadata(BaseModel):
-    custom: dict[str, Any] | None = None
-    created: datetime.datetime | None = None
-    modified: datetime.datetime | None = None
-    parent_project_uuid: uuid.UUID | None = None
-    parent_node_id: uuid.UUID | None = None
-    root_parent_project_uuid: uuid.UUID | None = None
-    root_parent_node_id: uuid.UUID | None = None
+    custom: dict[str, Any] | None
+    created: datetime.datetime | None
+    modified: datetime.datetime | None
+    parent_project_uuid: uuid.UUID | None
+    parent_node_id: uuid.UUID | None
+    root_parent_project_uuid: uuid.UUID | None
+    root_parent_node_id: uuid.UUID | None
     model_config = ConfigDict(frozen=True, from_attributes=True)
 
 

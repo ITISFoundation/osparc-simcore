@@ -25,8 +25,8 @@ class TaskOwner(BaseModel):
     project_id: ProjectID
     node_id: NodeID
 
-    parent_project_id: ProjectID | None = None
-    parent_node_id: NodeID | None = None
+    parent_project_id: ProjectID | None
+    parent_node_id: NodeID | None
 
     @property
     def has_parent(self) -> bool:

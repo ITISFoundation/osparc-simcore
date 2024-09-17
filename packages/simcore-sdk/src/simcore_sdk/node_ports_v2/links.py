@@ -22,7 +22,9 @@ class PortLink(BasePortLink):
 class FileLink(BaseFileLink):
     """allow all kind of file links"""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(
+        extra="allow",
+    )
 
 
 # TODO: needs to be in sync with project_nodes.InputTypes and project_nodes.OutputTypes

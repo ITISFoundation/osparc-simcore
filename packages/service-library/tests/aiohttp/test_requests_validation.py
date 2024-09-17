@@ -41,7 +41,9 @@ class MyRequestContext(BaseModel):
 
 class MyRequestPathParams(BaseModel):
     project_uuid: UUID
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
     @classmethod
     def create_fake(cls, faker: Faker):
@@ -64,7 +66,9 @@ class MyRequestQueryParams(BaseModel):
 class MyRequestHeadersParams(BaseModel):
     user_agent: str = Field(alias="X-Simcore-User-Agent")
     optional_header: str | None = Field(default=None, alias="X-Simcore-Optional-Header")
-    model_config = ConfigDict(populate_by_name=False)
+    model_config = ConfigDict(
+        populate_by_name=False,
+    )
 
     @classmethod
     def create_fake(cls, faker: Faker):
@@ -190,21 +194,21 @@ async def test_parse_request_as(
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
-        json=body.dict(),
-        headers=headers_params.dict(by_alias=True),
+        json=body.model_dump(),
+        headers=headers_params.model_dump(by_alias=True),
     )
     assert r.status == status.HTTP_200_OK, f"{await r.text()}"
 
     got = await r.json()
 
-    assert got["parameters"] == jsonable_encoder(path_params.dict())
-    assert got["queries"] == jsonable_encoder(query_params.dict())
-    assert got["body"] == body.dict()
+    assert got["parameters"] == jsonable_encoder(path_params.model_dump())
+    assert got["queries"] == jsonable_encoder(query_params.model_dump())
+    assert got["body"] == body.model_dump()
     assert got["context"] == {
         "secret": client.app[APP_SECRET_KEY],
         "user_id": 42,
     }
-    assert got["headers"] == jsonable_encoder(headers_params.dict())
+    assert got["headers"] == jsonable_encoder(headers_params.model_dump())
 
 
 async def test_parse_request_with_invalid_path_params(
@@ -248,8 +252,8 @@ async def test_parse_request_with_invalid_query_params(
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params={},
-        json=body.dict(),
-        headers=headers_params.dict(by_alias=True),
+        json=body.model_dump(),
+        headers=headers_params.model_dump(by_alias=True),
     )
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
@@ -280,7 +284,7 @@ async def test_parse_request_with_invalid_body(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
         json={"invalid": "body"},
-        headers=headers_params.dict(by_alias=True),
+        headers=headers_params.model_dump(by_alias=True),
     )
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 

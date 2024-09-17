@@ -192,7 +192,7 @@ class SettingsItem(BaseModel):
     @classmethod
     def check_value_against_custom_types(cls, v, values):
         if (type_ := values.get("type_")) and type_ == "ContainerSpec":
-            ContainerSpec.parse_obj(v)
+            ContainerSpec.model_validate(v)
         return v
 
 
@@ -246,7 +246,9 @@ class RuntimeConfig(BaseModel):
         return v
 
     model_config = ConfigDict(
-        alias_generator=_underscore_as_minus, populate_by_name=True, extra="forbid"
+        alias_generator=_underscore_as_minus,
+        populate_by_name=True,
+        extra="forbid",
     )
 
     @classmethod

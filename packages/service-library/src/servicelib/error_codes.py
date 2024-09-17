@@ -9,11 +9,9 @@ SEE test_error_codes for some use cases
 
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
-from pydantic import StringConstraints
-from pydantic.tools import parse_obj_as
-from typing_extensions import Annotated
+from pydantic import StringConstraints, TypeAdapter
 
 _LABEL = "OEC:{}"
 _PATTERN = r"OEC:\d+"
@@ -27,7 +25,7 @@ else:
 
 
 def create_error_code(exception: BaseException) -> ErrorCodeStr:
-    return parse_obj_as(ErrorCodeStr, _LABEL.format(id(exception)))
+    return TypeAdapter(ErrorCodeStr).validate_python(_LABEL.format(id(exception)))
 
 
 def parse_error_code(obj) -> set[ErrorCodeStr]:

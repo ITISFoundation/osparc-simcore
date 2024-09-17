@@ -45,9 +45,11 @@ class Nodeports(BaseModel):
     ]
     auto_update: bool = False
     r_clone_settings: RCloneSettings | None = None
-    io_log_redirect_cb: LogRedirectCB | None = None
+    io_log_redirect_cb: LogRedirectCB | None
     aws_s3_cli_settings: AwsS3CliSettings | None = None
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def __init__(self, **data: Any):
         super().__init__(**data)

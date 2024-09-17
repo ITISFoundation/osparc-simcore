@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, TypeAlias
 
 from models_library.basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
 from packaging.version import Version
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-SemanticVersionStr = Annotated[
+SemanticVersionStr: TypeAlias = Annotated[
     str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
 ]
 

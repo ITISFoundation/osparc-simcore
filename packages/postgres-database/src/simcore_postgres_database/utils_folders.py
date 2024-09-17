@@ -295,7 +295,7 @@ def _get_filter_for_enabled_permissions(
 ###
 
 
-FolderName = Annotated[
+FolderName: TypeAlias = Annotated[
     str,
     StringConstraints(
         min_length=1,
@@ -324,8 +324,8 @@ class FolderEntry(BaseModel):
 class _ResolvedAccessRights(BaseModel):
     folder_id: _FolderID
     gid: _GroupID
-    traversal_parent_id: _FolderID | None = None
-    original_parent_id: _FolderID | None = None
+    traversal_parent_id: _FolderID | None
+    original_parent_id: _FolderID | None
     read: bool
     write: bool
     delete: bool
