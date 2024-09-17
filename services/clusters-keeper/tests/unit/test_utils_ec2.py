@@ -25,6 +25,7 @@ def wallet_id(faker: Faker) -> WalletID:
 def test_get_cluster_name(
     disabled_rabbitmq: None,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
     user_id: UserID,
@@ -44,6 +45,17 @@ def test_get_cluster_name(
             app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False
         )
         == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-worker-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
+    )
+
+    assert (
+        get_cluster_name(app_settings, user_id=user_id, wallet_id=None, is_manager=True)
+        == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:None"
+    )
+    assert (
+        get_cluster_name(
+            app_settings, user_id=user_id, wallet_id=None, is_manager=False
+        )
+        == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-worker-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:None"
     )
 
 
