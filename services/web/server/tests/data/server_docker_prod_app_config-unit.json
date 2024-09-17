@@ -9,7 +9,6 @@
   },
   "tracing": {
     "enabled": 1,
-    "zipkin_endpoint": "http://jaeger:9411"
   },
   "db": {
     "postgres": {

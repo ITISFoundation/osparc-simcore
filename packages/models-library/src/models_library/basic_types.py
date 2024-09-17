@@ -2,7 +2,6 @@ import re
 from enum import StrEnum
 from typing import Final, TypeAlias
 
-
 from pydantic import (
     ConstrainedDecimal,
     ConstrainedInt,
@@ -39,6 +38,12 @@ class AmountDecimal(ConstrainedDecimal):
 # port number range
 class PortInt(ConstrainedInt):
     gt = 0
+    lt = 65535
+
+
+# https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Registered_ports
+class RegisteredPortInt(ConstrainedInt):
+    gt = 1024
     lt = 65535
 
 
