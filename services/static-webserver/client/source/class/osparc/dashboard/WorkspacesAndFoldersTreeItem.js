@@ -29,6 +29,10 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
       "border-radius": "8px"
     });
 
+    this.set({
+      maxWidth: 200 - 10
+    });
+
     this.setNotHoveredStyle();
     this.__attachEventHandlers();
   },
