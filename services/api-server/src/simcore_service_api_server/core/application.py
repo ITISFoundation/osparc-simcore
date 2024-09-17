@@ -5,10 +5,11 @@ from fastapi_pagination import add_pagination
 from models_library.basic_types import BootModeEnum
 from packaging.version import Version
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
+from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 
 from .. import exceptions
-from .._meta import API_VERSION, API_VTAG
+from .._meta import API_VERSION, API_VTAG, APP_NAME
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..services import catalog, director_v2, storage, webserver
@@ -82,6 +83,8 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     if settings.API_SERVER_WEBSERVER:
         webserver.setup(app, settings.API_SERVER_WEBSERVER)
+    if app.state.settings.API_SERVER_TRACING:
+        setup_tracing(app, app.state.settings.API_SERVER_TRACING, APP_NAME)
 
     if settings.API_SERVER_CATALOG:
         catalog.setup(app, settings.API_SERVER_CATALOG)

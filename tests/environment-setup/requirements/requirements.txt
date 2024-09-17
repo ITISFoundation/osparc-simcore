@@ -1,5 +1,3 @@
-exceptiongroup==1.2.2
-    # via pytest
 iniconfig==2.0.0
     # via pytest
 packaging==24.1
@@ -48,7 +46,5 @@ pyyaml==6.0.2
     #   -r requirements/requirements.in
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via pytest
 typing-extensions==4.12.2
     # via pydantic
