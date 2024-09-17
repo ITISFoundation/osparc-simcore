@@ -257,20 +257,6 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const workspaceId = this.getCurrentWorkspaceId();
       const folderId = this.getCurrentFolderId();
 
-      if (folderId) {
-        const currentFolder = osparc.store.Folders.getInstance().getFolder(folderId);
-        if (currentFolder) {
-          const parentFolderId = currentFolder.getParentFolderId();
-          if (parentFolderId) {
-            const parentFolder = osparc.store.Folders.getInstance().getFolder(folderId);
-            const parentModel = this.__getModel(workspaceId, parentFolder.getFolderId());
-            if (parentModel) {
-              this.openNodeAndParents(parentModel);
-            }
-          }
-        }
-      }
-
       const contextModel = this.__getModel(workspaceId, folderId);
       if (contextModel) {
         const selection = this.getSelection();
