@@ -1,5 +1,5 @@
 {
-  "blacklist-list": [
+  "blacklist-lite": [
     "@*\.ir$",
     "@imanova\.co\.uk$",
     "@centrum\.sk$",
