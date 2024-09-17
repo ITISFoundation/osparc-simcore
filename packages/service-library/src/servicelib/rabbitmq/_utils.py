@@ -1,12 +1,10 @@
 import logging
-import random
+import os
 import socket
-import string
-from pathlib import Path
-from tempfile import gettempdir
 from typing import Any, Final
 
 import aio_pika
+import psutil
 from aiormq.exceptions import ChannelPreconditionFailed
 from pydantic import NonNegativeInt
 from tenacity import retry
@@ -22,12 +20,6 @@ _logger = logging.getLogger(__file__)
 _MINUTE: Final[int] = 60
 
 RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS: Final[int] = 15 * _MINUTE * 1000
-
-_PATH_UNIQUE_RABBIT_QUEUE_PREFIX: Final[Path] = (
-    Path(gettempdir()) / f"{__name__}_unique_rabbit_queue_prefix"
-)
-_ALPHABET: Final[str] = string.ascii_letters + string.digits
-_CHAR_COUNT: Final[NonNegativeInt] = 6
 
 
 class RabbitMQRetryPolicyUponInitialization:
@@ -60,25 +52,14 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
     return await is_rabbitmq_responsive(url)
 
 
-def _get_unique_rabbit_queue_name_prefix() -> str:
-    # NOTE: this prefix is guaranteed to be unique for the entire lifecycle of the docker container
+def get_rabbitmq_client_unique_name(base_name: str) -> str:
+    # NOTE: below prefix is guaranteed to change each time the preocess restarts
     # Why is this desiarable?
     # 1. the code base makes the above assumption, otherwise subcscribers and consumers do not work
     # 2. enables restartability of webserver during [re]deploys
-    prefix: str | None = None
-    if _PATH_UNIQUE_RABBIT_QUEUE_PREFIX.exists():
-        prefix = _PATH_UNIQUE_RABBIT_QUEUE_PREFIX.read_text()
+    prefix_create_time = f"{psutil.Process(os.getpid()).create_time()}".strip(".")[-6:]
 
-    if prefix is None:
-        random_str = "".join(random.choices(_ALPHABET, k=_CHAR_COUNT))  # noqa: S311
-        prefix = f"{socket.gethostname()}_{random_str}"
-        _PATH_UNIQUE_RABBIT_QUEUE_PREFIX.write_text(prefix)
-
-    return prefix
-
-
-def get_rabbitmq_client_unique_name(base_name: str) -> str:
-    return f"{base_name}_{_get_unique_rabbit_queue_name_prefix()}"
+    return f"{base_name}_{socket.gethostname()}_{prefix_create_time}"
 
 
 async def declare_queue(
@@ -90,6 +71,7 @@ async def declare_queue(
     arguments: dict[str, Any] | None = None,
     message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
 ) -> aio_pika.abc.AbstractRobustQueue:
+    _ = client_name
     default_arguments = {"x-message-ttl": message_ttl}
     if arguments is not None:
         default_arguments.update(arguments)
@@ -97,8 +79,7 @@ async def declare_queue(
         "durable": True,
         "exclusive": exclusive_queue,
         "arguments": default_arguments,
-        # no names for exclusive queues
-        #  "name": f"{get_rabbitmq_client_unique_name(client_name)}_{exchange_name}_exclusive",
+        "name": f"{get_rabbitmq_client_unique_name(client_name)}_{exchange_name}_exclusive",
     }
     if not exclusive_queue:
         # NOTE: setting a name will ensure multiple instance will take their data here
