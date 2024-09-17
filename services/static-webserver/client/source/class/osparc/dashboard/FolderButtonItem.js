@@ -105,8 +105,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           control = new qx.ui.basic.Label().set({
             anonymous: true,
             font: "text-14",
-            rich: true,
-            maxHeight: osparc.dashboard.FolderButtonBase.TITLE_MAX_HEIGHT,
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.TITLE);
           break;

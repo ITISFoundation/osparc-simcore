@@ -84,7 +84,6 @@ qx.Class.define("osparc.dashboard.FolderButtonBase", {
         rowSpan: 2
       }
     },
-    TITLE_MAX_HEIGHT: 40,
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members
