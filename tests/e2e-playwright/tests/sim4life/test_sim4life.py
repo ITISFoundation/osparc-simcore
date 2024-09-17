@@ -11,7 +11,10 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page, WebSocket
-from pytest_simcore.helpers.playwright import ServiceType
+from pytest_simcore.helpers.playwright import (
+    ServiceType,
+    web_socket_default_log_handler,
+)
 from pytest_simcore.helpers.playwright_sim4life import (
     check_video_streaming,
     interact_with_s4l,
@@ -49,8 +52,9 @@ def test_sim4life(
         page, node_ids[0], log_in_and_out, autoscaled=autoscaled, copy_workspace=False
     )
     s4l_websocket = resp["websocket"]
-    s4l_iframe = resp["iframe"]
-    interact_with_s4l(page, s4l_iframe)
+    with web_socket_default_log_handler(s4l_websocket):
+        s4l_iframe = resp["iframe"]
+        interact_with_s4l(page, s4l_iframe)
 
-    if check_videostreaming:
-        check_video_streaming(page, s4l_iframe, s4l_websocket)
+        if check_videostreaming:
+            check_video_streaming(page, s4l_iframe, s4l_websocket)
