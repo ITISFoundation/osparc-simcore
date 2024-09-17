@@ -181,6 +181,19 @@ async def test_sub_folders_full_workflow(
     assert data[0]["name"] == "My sub sub folder"
     assert data[0]["parentFolderId"] == subfolder_folder["folderId"]
 
+    # try to move sub folder to sub sub folder (should not be allowed to)
+    url = client.app.router["replace_folder"].url_for(
+        folder_id=f"{subfolder_folder['folderId']}",
+    )
+    resp = await client.put(
+        url.path,
+        json={
+            "name": "My Updated Folder",
+            "parentFolderId": f"{subsubfolder_folder['folderId']}",
+        },
+    )
+    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
+
     # move sub sub folder to root folder
     url = client.app.router["replace_folder"].url_for(
         folder_id=f"{subsubfolder_folder['folderId']}"

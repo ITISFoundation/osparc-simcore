@@ -1,0 +1,26 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317  # Default endpoint for OTLP over gRPC
+      http:
+        endpoint: 0.0.0.0:4318 # Default endpoint for OTLP over HTTP
+exporters:
+  otlphttp:
+    endpoint: ${TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT}  # Adjust to your Jaeger endpoint
+  debug:
+    verbosity: detailed
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlphttp,debug]
+  telemetry:
+    logs:
+      level: "debug"
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: ${TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE}
+  probabilistic_sampler:
+    sampling_percentage: ${TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE}

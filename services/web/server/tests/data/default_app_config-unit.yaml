@@ -113,7 +113,6 @@ tags:
   enabled: true
 tracing:
   enabled: false
-  zipkin_endpoint: http://jaeger:9411
 users:
   enabled: true
 version_control:

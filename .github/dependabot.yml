@@ -12,9 +12,6 @@ updates:
     assignees:
       - pcrespov
     ignore:
-      - dependency-name: aiozipkin
-        versions:
-          - ">= 1.a, < 2"
       - dependency-name: docker-compose
         versions:
           - 1.28.2
@@ -41,9 +38,6 @@ updates:
     assignees:
       - pcrespov
     ignore:
-      - dependency-name: aiozipkin
-        versions:
-          - ">= 1.a, < 2"
       - dependency-name: openapi-core
         versions:
           - "> 0.12.0, < 1"

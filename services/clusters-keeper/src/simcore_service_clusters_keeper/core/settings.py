@@ -25,6 +25,7 @@ from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -310,6 +311,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default="inf",
         description="override the dask scheduler 'worker-saturation' field"
         ", see https://selectfrom.dev/deep-dive-into-dask-distributed-scheduler-9fdb3b36b7c7",
+    )
+    CLUSTERS_KEEPER_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
     )
 
     SWARM_STACK_NAME: str = Field(

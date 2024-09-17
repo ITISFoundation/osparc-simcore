@@ -41,7 +41,6 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "fab-background": "rgba(255, 255, 255, 0.2)",
     "input_background": "#213248",
     "input_background_disable": "rgba(113, 157, 181, 0.25)",
-    "window-popup-background": "rgba(66, 66, 66, 1)",
     "hint-background": "rgba(82, 82, 82, 1)",
     "transparent_overlay": "rgba(1, 18, 26, 0.1)",
 
@@ -63,6 +62,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "shadow": qx.core.Environment.get("css.rgba") ? "a-bit-transparent" : "bg-shadow",
 
     // window
+    "window-popup-background": "rgba(66, 66, 66, 1)",
     "window-caption-background": "background-main",
     "window-caption-background-active":  "background-main-3",
     "window-caption-text": "text",

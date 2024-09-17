@@ -10,8 +10,6 @@ coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.2.2
-    # via pytest
 faker==27.0.0
     # via -r requirements/_test.in
 greenlet==3.0.3
@@ -70,11 +68,6 @@ sqlalchemy==1.4.53
     #   aiopg
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-tomli==2.0.1
-    # via
-    #   coverage
-    #   mypy
-    #   pytest
 types-docker==7.1.0.20240821
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20240819
