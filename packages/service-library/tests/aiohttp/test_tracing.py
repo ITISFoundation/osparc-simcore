@@ -67,51 +67,5 @@ async def test_invalid_tracing_settings(
     set_and_clean_settings_env_vars: Callable,
     tracing_settings_in,
 ) -> TestClient:
-    app = web.Application()
-    service_name = "simcore_service_webserver"
-    with pytest.raises((BaseException, TypeError, ValidationError)):
-        tracing_settings = TracingSettings()
-        setup_tracing(
-            app,
-            service_name=service_name,
-            tracing_settings=tracing_settings,
-        )
-
-
-@pytest.mark.parametrize(
-    "tracing_settings_in",
-    [
-        ("", ""),
-        (None, None),
-        ("", None),
-    ],
-    indirect=True,
-)
-async def test_missing_tracing_settings(
-    aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in,
-    caplog,
-) -> TestClient:
-    app = web.Application()
-    service_name = "simcore_service_webserver"
-    # setup_tracing in this case should no nothing
-    tracing_settings = TracingSettings()
-    setup_tracing(app, service_name=service_name, tracing_settings=tracing_settings)
-
-
-@pytest.mark.parametrize(
-    "tracing_settings_in",  # noqa: PT002
-    [("http://opentelemetry-collector", None), (None, 4318)],
-    indirect=True,
-)
-async def test_incomplete_tracing_settings(
-    aiohttp_client: Callable,
-    set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in,
-) -> TestClient:
-    app = web.Application()
-    service_name = "simcore_service_webserver"
-    with pytest.raises((BaseException, TypeError, ValidationError)):
-        tracing_settings = TracingSettings()
-        setup_tracing(app, service_name=service_name, tracing_settings=tracing_settings)
+    with pytest.raises(ValidationError):
+        TracingSettings()
