@@ -104,10 +104,13 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
 
     __changeContext: function(workspaceId, folderId) {
       this.set({
+        currentWorkspaceId: workspaceId,
+        currentFolderId: folderId,
+      });
+      this.fireDataEvent("changeContext", {
         workspaceId,
         folderId,
       });
-      this.fireDataEvent("changeContext", folderId);
     },
 
     __createRootButton: function() {
