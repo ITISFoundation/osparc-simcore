@@ -113,18 +113,24 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       });
     },
 
+    __createBreadcrumbButton: function(label, icon) {
+      return new qx.ui.form.Button(label, icon).set({
+        maxWidth: 200
+      });
+    },
+
     __createRootButton: function() {
       const workspaceId = this.getCurrentWorkspaceId();
       let rootButton = null;
       if (workspaceId) {
         if (workspaceId === -1) {
-          rootButton = new qx.ui.form.Button(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath());
+          rootButton = this.__createBreadcrumbButton(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath());
         } else {
           const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
-          rootButton = new qx.ui.form.Button(workspace.getName(), osparc.store.Workspaces.iconPath());
+          rootButton = this.__createBreadcrumbButton(workspace.getName(), osparc.store.Workspaces.iconPath());
         }
       } else {
-        rootButton = new qx.ui.form.Button(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
+        rootButton = this.__createBreadcrumbButton(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
       }
       rootButton.addListener("execute", () => {
         const folderId = null;
@@ -136,7 +142,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
     __createFolderButton: function(folder) {
       let folderButton = null;
       if (folder) {
-        folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14");
+        folderButton = this.__createBreadcrumbButton(folder.getName(), "@FontAwesome5Solid/folder/14");
         folderButton.addListener("execute", () => {
           const workspaceId = this.getCurrentWorkspaceId();
           const folderId = folder ? folder.getFolderId() : null;
