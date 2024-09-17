@@ -66,7 +66,7 @@ OutputsDict: TypeAlias = dict[
     OutputID, Annotated[OutputTypes, Field(union_mode="left_to_right")]
 ]
 
-UnitStr = Annotated[str, StringConstraints(strip_whitespace=True)]
+UnitStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True)]
 
 
 class NodeState(BaseModel):

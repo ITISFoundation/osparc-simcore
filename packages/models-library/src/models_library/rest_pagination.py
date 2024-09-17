@@ -1,4 +1,4 @@
-from typing import Annotated, Final, Generic, TypeVar
+from typing import Annotated, Final, Generic, TypeAlias, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -20,7 +20,7 @@ from .utils.common_validators import none_to_empty_list_pre_validator
 MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
 
 
-PageLimitInt = Annotated[int, Field(ge=1, lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE)]
+PageLimitInt: TypeAlias = Annotated[int, Field(ge=1, lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE)]
 
 DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(
     PageLimitInt

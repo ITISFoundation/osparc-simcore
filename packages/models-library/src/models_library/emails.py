@@ -1,5 +1,5 @@
-from typing import Annotated
+from typing import Annotated, TypeAlias
 
 from pydantic import AfterValidator, EmailStr
 
-LowerCaseEmailStr = Annotated[str, EmailStr, AfterValidator(str.lower)]
+LowerCaseEmailStr: TypeAlias = Annotated[str, EmailStr, AfterValidator(str.lower)]

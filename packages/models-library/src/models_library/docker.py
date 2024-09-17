@@ -1,6 +1,6 @@
 import contextlib
 import re
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -33,7 +33,7 @@ class DockerLabelKey(ConstrainedStr):
 
 
 # NOTE: https://docs.docker.com/engine/reference/commandline/tag/#description
-DockerGenericTag = Annotated[str, StringConstraints(pattern=DOCKER_GENERIC_TAG_KEY_RE)]
+DockerGenericTag: TypeAlias = Annotated[str, StringConstraints(pattern=DOCKER_GENERIC_TAG_KEY_RE)]
 
 
 class DockerPlacementConstraint(ConstrainedStr):

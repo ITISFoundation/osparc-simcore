@@ -14,44 +14,44 @@ from .basic_regex import (
     UUID_RE,
 )
 
-NonNegativeDecimal = Annotated[Decimal, Field(ge=0)]
+NonNegativeDecimal: TypeAlias = Annotated[Decimal, Field(ge=0)]
 
-PositiveDecimal = Annotated[Decimal, Field(gt=0)]
+PositiveDecimal: TypeAlias = Annotated[Decimal, Field(gt=0)]
 
 # Used for amounts like credits or dollars
 # NOTE: upper limit to avoid https://github.com/ITISFoundation/appmotion-exchange/issues/2
 # NOTE: do not contraint in decimal places. Too strong validation error rather Decimal.quantize
 # before passing the value
-AmountDecimal = Annotated[Decimal, Field(gt=0, lt=1e6)]
+AmountDecimal: TypeAlias = Annotated[Decimal, Field(gt=0, lt=1e6)]
 
 # port number range
-PortInt = Annotated[int, Field(gt=0, lt=65535)]
+PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
 
 # e.g. 'v5'
-VersionTag = Annotated[str, StringConstraints(pattern=r"^v\d$")]
+VersionTag: TypeAlias = Annotated[str, StringConstraints(pattern=r"^v\d$")]
 
-VersionStr = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
+VersionStr: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
 
 # e.g. '1.23.11' or '2.1.0-rc2' or not 0.1.0-alpha  (see test_SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
-SemanticVersionStr = Annotated[
+SemanticVersionStr: TypeAlias = Annotated[
     str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
 ]
 
 # checksums
 # sha1sum path/to/file
-SHA1Str = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{40}$")]
+SHA1Str: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{40}$")]
 
 # sha256sum path/to/file
-SHA256Str = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{64}$")]
+SHA256Str: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{64}$")]
 
 # md5sum path/to/file
-MD5Str = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{32}$")]
+MD5Str: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{32}$")]
 
 # env var
-EnvVarKey = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z]\w*")]
+EnvVarKey: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z]\w*")]
 
 # e.g. '5c833a78-1af3-43a7-9ed7-6a63b188f4d8'
-UUIDStr = Annotated[str, StringConstraints(pattern=UUID_RE)]
+UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]
 
 
 # non-empty bounded string used as identifier

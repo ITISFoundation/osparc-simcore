@@ -31,7 +31,7 @@ from .basic_regex import (
 
 NodeID = UUID
 
-UUIDStr = Annotated[str, StringConstraints(pattern=UUID_RE)]
+UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]
 
 NodeIDStr = UUIDStr
 

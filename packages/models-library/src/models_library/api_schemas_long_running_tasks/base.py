@@ -9,7 +9,7 @@ TaskId = str
 
 ProgressMessage: TypeAlias = str
 
-ProgressPercent = Annotated[float, Field(ge=0.0, le=1.0)]
+ProgressPercent: TypeAlias = Annotated[float, Field(ge=0.0, le=1.0)]
 
 
 class TaskProgress(BaseModel):

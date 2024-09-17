@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, TypeAlias
 from uuid import uuid4
 
 import arrow
@@ -13,21 +13,21 @@ from .services_regex import (
     SERVICE_KEY_RE,
 )
 
-ServicePortKey = Annotated[str, StringConstraints(pattern=PROPERTY_KEY_RE)]
+ServicePortKey: TypeAlias = Annotated[str, StringConstraints(pattern=PROPERTY_KEY_RE)]
 
-FileName = Annotated[str, StringConstraints(pattern=FILENAME_RE)]
+FileName: TypeAlias = Annotated[str, StringConstraints(pattern=FILENAME_RE)]
 
-ServiceKey = Annotated[str, StringConstraints(pattern=SERVICE_KEY_RE)]
+ServiceKey: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_KEY_RE)]
 
-ServiceKeyEncoded = Annotated[str, StringConstraints(pattern=SERVICE_ENCODED_KEY_RE)]
+ServiceKeyEncoded: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_ENCODED_KEY_RE)]
 
-DynamicServiceKey = Annotated[str, StringConstraints(pattern=DYNAMIC_SERVICE_KEY_RE)]
+DynamicServiceKey: TypeAlias = Annotated[str, StringConstraints(pattern=DYNAMIC_SERVICE_KEY_RE)]
 
-ComputationalServiceKey = Annotated[
+ComputationalServiceKey: TypeAlias = Annotated[
     str, StringConstraints(pattern=COMPUTATIONAL_SERVICE_KEY_RE)
 ]
 
-ServiceVersion = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
+ServiceVersion: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
 
 
 class RunID(str):

@@ -6,9 +6,9 @@ UserID: TypeAlias = PositiveInt
 GroupID: TypeAlias = PositiveInt
 
 
-FirstNameStr = Annotated[str, StringConstraints(strip_whitespace=True, max_length=255)]
+FirstNameStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, max_length=255)]
 
-LastNameStr = Annotated[str, StringConstraints(strip_whitespace=True, max_length=255)]
+LastNameStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, max_length=255)]
 
 
 class UserBillingDetails(BaseModel):

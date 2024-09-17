@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, TypeAlias
 
 from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt, PositiveInt
 
@@ -76,7 +76,7 @@ class GetProduct(OutputSchema):
     )
 
 
-ExtraCreditsUsdRangeInt = Annotated[int, Field(ge=0, lt=500)]
+ExtraCreditsUsdRangeInt: TypeAlias = Annotated[int, Field(ge=0, lt=500)]
 
 
 class GenerateInvitation(InputSchema):

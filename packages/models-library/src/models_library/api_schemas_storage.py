@@ -38,9 +38,9 @@ from .projects_nodes_io import (
 ETag: TypeAlias = str
 
 
-S3BucketName = Annotated[str, StringConstraints(pattern=S3_BUCKET_NAME_RE)]
+S3BucketName: TypeAlias = Annotated[str, StringConstraints(pattern=S3_BUCKET_NAME_RE)]
 
-DatCoreDatasetName = Annotated[str, StringConstraints(pattern=DATCORE_DATASET_NAME_RE)]
+DatCoreDatasetName: TypeAlias = Annotated[str, StringConstraints(pattern=DATCORE_DATASET_NAME_RE)]
 
 
 # /

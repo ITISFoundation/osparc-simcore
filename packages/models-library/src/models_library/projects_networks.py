@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Final
+from typing import Annotated, Final, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
@@ -12,9 +12,9 @@ SERVICE_NETWORK_RE: Final[re.Pattern] = re.compile(r"^[a-zA-Z]([a-zA-Z0-9_-]{0,6
 PROJECT_NETWORK_PREFIX: Final[str] = "prj-ntwrk"
 
 
-DockerNetworkName = Annotated[str, StringConstraints(pattern=SERVICE_NETWORK_RE)]
+DockerNetworkName: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_NETWORK_RE)]
 
-DockerNetworkAlias = Annotated[str, StringConstraints(pattern=SERVICE_NETWORK_RE)]
+DockerNetworkAlias: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_NETWORK_RE)]
 
 
 class ContainerAliases(DictModel[NodeIDStr, DockerNetworkAlias]):
