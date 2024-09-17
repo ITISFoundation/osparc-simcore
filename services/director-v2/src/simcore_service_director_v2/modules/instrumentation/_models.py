@@ -5,7 +5,7 @@ from prometheus_client import CollectorRegistry, Histogram
 from pydantic import ByteSize, parse_obj_as
 from servicelib.instrumentation import get_metrics_namespace
 
-from ...meta import PROJECT_NAME
+from ..._meta import PROJECT_NAME
 
 _NAMESPACE_METRICS: Final[str] = get_metrics_namespace(PROJECT_NAME)
 _SUBSYSTEM_NAME: Final[str] = "dynamic_services"
