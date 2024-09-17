@@ -261,6 +261,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
         const selection = this.getSelection();
         selection.removeAll();
         selection.push(contextModel);
+        this.openNodeAndParents(contextModel);
       }
     },
   }
