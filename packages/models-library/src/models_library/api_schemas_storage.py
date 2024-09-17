@@ -236,7 +236,7 @@ class FileMetaDataGet(BaseModel):
 
 
 class FileMetaDataArray(RootModel[list[FileMetaDataGet]]):
-    root: list[FileMetaDataGet] = []
+    root: list[FileMetaDataGet] = Field(default_factory=list)
 
 
 # /locations/{location_id}/files/{file_id}
