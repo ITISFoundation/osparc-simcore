@@ -1,5 +1,5 @@
-from models_library.basic_types import RegisteredPortInt
 from pydantic import AnyUrl, Field
+from settings_library.basic_types import RegisteredPortInt
 
 from .base import BaseCustomSettings
 
