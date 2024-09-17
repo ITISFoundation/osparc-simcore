@@ -168,6 +168,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     __applyTitle: function(value) {
       const label = this.getChildControl("title");
       label.setValue(value);
+
+      this.setToolTipText(value);
     },
 
     __applyLastModified: function(value) {
