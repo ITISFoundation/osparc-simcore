@@ -131,10 +131,7 @@ class BaseProjectDB:
             result = await conn.execute(
                 select(groups)
                 .select_from(groups.join(user_to_groups))
-                .where(
-                    (user_to_groups.c.uid == user_id)
-                    & (user_to_groups.c.access_rights["read"].astext == "true")
-                )
+                .where(user_to_groups.c.uid == user_id)
             )
             user_groups = await result.fetchall() or []
         return user_groups
