@@ -22,31 +22,7 @@
 qx.Class.define("osparc.auth.ui.RequestAccount", {
   extend: osparc.auth.core.BaseAuthPage,
 
-  construct: function() {
-    osparc.utils.Utils.fetchJSON("/resource/osparc/blacklist.json")
-      .then(blacklistData => {
-        if ("lite" in blacklistData) {
-          this.__blacklist = blacklistData["lite"];
-        }
-      })
-      .catch(console.error);
-
-    this.base(arguments)
-  },
-
-  statics: {
-    blacklistEmailValidator: function(errorMessage, blacklist, bat, bi, hiru) {
-      return emailValue => {
-        console.log("Hey", blacklist, bat, bi, hiru);
-        // const validate = qx.util.Validate.email();
-        // return validate;
-        qx.util.Validate.checkEmail(emailValue, null, errorMessage);
-      };
-    },
-  },
-
   members: {
-    __blacklist: null,
     __captchaField: null,
     __requestButton: null,
     __cancelButton: null,
@@ -85,9 +61,23 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           break;
         case "s4lacad":
         case "s4ldesktopacad":
-        case "tiplite":
-          this._form.add(email, this.tr("University Email"), this.self().blacklistEmailValidator(this.__blacklist), "email");
+        case "tiplite": {
+          this._form.add(email, this.tr("University Email"), null, "email");
+          let validator = qx.util.Validate.email();
+          osparc.utils.Utils.fetchJSON("/resource/osparc/blacklist.json")
+            .then(blacklistData => {
+              if ("lite" in blacklistData) {
+                const blacklist = blacklistData["lite"];
+                validator = osparc.auth.core.Utils.blacklistEmailValidator(blacklist);
+              }
+            })
+            .catch(console.error)
+            .finally(() => {
+              // this._form.getValidationManager().add(email, validator, validatorContext);
+              this._form.getValidationManager().add(email, validator);
+            });
           break;
+        }
       }
 
       const phone = new qx.ui.form.TextField();
