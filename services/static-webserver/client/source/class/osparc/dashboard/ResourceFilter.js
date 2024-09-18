@@ -140,11 +140,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
               })
             });
           }
-          if (option.id !== "show-all") {
-            button.set({
-              marginLeft: 15
-            });
-          }
         }
         button.id = option.id;
 
