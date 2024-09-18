@@ -138,6 +138,8 @@ protobuf==4.25.4
     # via
     #   googleapis-common-protos
     #   opentelemetry-proto
+psutil==6.0.0
+    # via -r requirements/_base.in
 pydantic==1.10.17
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

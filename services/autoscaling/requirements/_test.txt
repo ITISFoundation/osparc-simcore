@@ -173,7 +173,7 @@ ply==3.11
     # via jsonpath-ng
 pprintpp==0.4.0
     # via pytest-icdiff
-psutil==5.9.8
+psutil==6.0.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

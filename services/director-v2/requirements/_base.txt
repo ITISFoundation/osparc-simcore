@@ -5,6 +5,8 @@ aio-pika==9.4.1
     #   -r requirements/_base.in
 aiocache==0.12.2
     # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
 aiodebug==2.3.0
@@ -430,8 +432,10 @@ protobuf==4.25.4
     # via
     #   googleapis-common-protos
     #   opentelemetry-proto
-psutil==5.9.8
+psutil==6.0.0
     # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
 psycopg2-binary==2.9.9
