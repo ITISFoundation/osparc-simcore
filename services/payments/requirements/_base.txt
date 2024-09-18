@@ -1,5 +1,7 @@
 aio-pika==9.4.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+aiocache==0.12.2
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.22.2
@@ -266,6 +268,8 @@ protobuf==4.25.4
     # via
     #   googleapis-common-protos
     #   opentelemetry-proto
+psutil==6.0.0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.9
     # via sqlalchemy
 pyasn1==0.6.0
