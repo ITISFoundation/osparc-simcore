@@ -130,9 +130,14 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
             and product.vendor
             and (template_url := product.vendor.get("release_notes_url_template", None))
         ):
-            # template URL should be somethign like:
+            # As pattern vX.Y.Z is already guaranted, we replace the the minor version with 0
+            parts = vtag.split(".")
+            parts[-1] = "0"
+            updated_vtag = ".".join(parts)
+
+            # template URL should be something like:
             # https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/{vtag}.md
-            data["vcsReleaseUrl"] = template_url.format(vtag=vtag)
+            data["vcsReleaseUrl"] = template_url.format(vtag=updated_vtag)
 
         data_json = json_dumps(data)
         _logger.debug("Front-end statics.json: %s", data_json)
