@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * @asset(osparc/blacklist.json")
+ * @asset(osparc/denylist.json")
  */
 
 qx.Class.define("osparc.auth.ui.RequestAccount", {
@@ -59,11 +59,11 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         case "tiplite": {
           this._form.add(email, this.tr("University Email"), null, "email");
           let validator = qx.util.Validate.email();
-          osparc.utils.Utils.fetchJSON("/resource/osparc/blacklist.json")
-            .then(blacklistData => {
-              if ("lite" in blacklistData) {
-                const blacklist = blacklistData["lite"];
-                validator = osparc.auth.core.Utils.blacklistEmailValidator(blacklist);
+          osparc.utils.Utils.fetchJSON("/resource/osparc/denylist.json")
+            .then(denylistData => {
+              if ("lite" in denylistData) {
+                const denylist = denylistData["lite"];
+                validator = osparc.auth.core.Utils.denylistEmailValidator(denylist);
               }
             })
             .catch(console.error)
