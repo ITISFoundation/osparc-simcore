@@ -86,11 +86,11 @@ class _JLabWebSocketWaiter:
             return False
 
 
-def test_tip(  # noqa: PLR0915
+def test_classic_ti_plan(  # noqa: PLR0915
     page: Page,
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
-    autoscaled: bool,
+    is_autoscaled: bool,
 ):
     project_data = create_tip_plan_from_dashboard("newTIPlanButton")
     assert "workbench" in project_data, "Expected workbench to be in project data!"
@@ -108,7 +108,7 @@ def test_tip(  # noqa: PLR0915
             websocket=log_in_and_out,
             timeout=(
                 _ELECTRODE_SELECTOR_AUTOSCALED_MAX_STARTUP_TIME
-                if autoscaled
+                if is_autoscaled
                 else _ELECTRODE_SELECTOR_MAX_STARTUP_TIME
             ),
             press_start_button=False,
@@ -155,7 +155,7 @@ def test_tip(  # noqa: PLR0915
             timeout=_OUTER_EXPECT_TIMEOUT_RATIO
             * (
                 _JLAB_AUTOSCALED_MAX_STARTUP_TIME
-                if autoscaled
+                if is_autoscaled
                 else _JLAB_MAX_STARTUP_MAX_TIME
             ),
         ) as ws_info:
@@ -165,7 +165,7 @@ def test_tip(  # noqa: PLR0915
                 websocket=log_in_and_out,
                 timeout=(
                     _JLAB_AUTOSCALED_MAX_STARTUP_TIME
-                    if autoscaled
+                    if is_autoscaled
                     else _JLAB_MAX_STARTUP_MAX_TIME
                 ),
                 press_start_button=False,
@@ -218,7 +218,7 @@ def test_tip(  # noqa: PLR0915
             websocket=log_in_and_out,
             timeout=(
                 _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME
-                if autoscaled
+                if is_autoscaled
                 else _POST_PRO_MAX_STARTUP_TIME
             ),
             press_start_button=False,

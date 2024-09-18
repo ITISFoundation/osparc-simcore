@@ -80,6 +80,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Whether product is billable or not",
     )
     group.addoption(
+        "--product-lite",
+        action="store_true",
+        default=False,
+        help="Whether product is lite version or not",
+    )
+    group.addoption(
         "--autoscaled",
         action="store_true",
         default=False,
@@ -227,13 +233,19 @@ def user_password(
 
 
 @pytest.fixture(scope="session")
-def product_billable(request: pytest.FixtureRequest) -> bool:
+def is_product_billable(request: pytest.FixtureRequest) -> bool:
     billable = request.config.getoption("--product-billable")
     return TypeAdapter(bool).validate_python(billable)
 
 
 @pytest.fixture(scope="session")
-def autoscaled(request: pytest.FixtureRequest) -> bool:
+def is_product_lite(request: pytest.FixtureRequest) -> bool:
+    enabled = request.config.getoption("--product-lite")
+    return TypeAdapter(bool).validate_python(enabled)
+
+
+@pytest.fixture(scope="session")
+def is_autoscaled(request: pytest.FixtureRequest) -> bool:
     autoscaled = request.config.getoption("--autoscaled")
     return TypeAdapter(bool).validate_python(autoscaled)
 
@@ -392,7 +404,7 @@ def log_in_and_out(
 def create_new_project_and_delete(
     page: Page,
     log_in_and_out: WebSocket,
-    product_billable: bool,
+    is_product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
 ) -> Iterator[Callable[[tuple[RunningState], bool], dict[str, Any]]]:
@@ -411,7 +423,7 @@ def create_new_project_and_delete(
         ), "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
         with log_context(
             logging.INFO,
-            f"Open project in {product_url=} as {product_billable=}",
+            f"Open project in {product_url=} as {is_product_billable=}",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
             timeout = (
@@ -473,7 +485,7 @@ def create_new_project_and_delete(
                                 ...
                     else:
                         open_button.click()
-                if product_billable:
+                if is_product_billable:
                     # Open project with default resources
                     page.get_by_test_id("openWithResources").click()
             project_data = response_info.value.json()
@@ -512,7 +524,7 @@ def create_new_project_and_delete(
     for project_uuid in created_project_uuids:
         with log_context(
             logging.INFO,
-            f"Delete project with {project_uuid=} in {product_url=} as {product_billable=}",
+            f"Delete project with {project_uuid=} in {product_url=} as {is_product_billable=}",
         ):
             response = api_request_context.delete(
                 f"{product_url}v0/projects/{project_uuid}"
