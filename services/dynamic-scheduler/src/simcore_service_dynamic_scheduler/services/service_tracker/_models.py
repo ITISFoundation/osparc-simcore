@@ -1,6 +1,7 @@
 import pickle
 from dataclasses import dataclass, field
 from datetime import timedelta
+from enum import auto
 
 import arrow
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -8,30 +9,30 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from models_library.utils.enums import StrAutoEnum, auto_str
+from models_library.utils.enums import StrAutoEnum
 from servicelib.deferred_tasks import TaskUID
 
 
 class UserRequestedState(StrAutoEnum):
-    RUNNING = auto_str()
-    STOPPED = auto_str()
+    RUNNING = auto()
+    STOPPED = auto()
 
 
 class SchedulerServiceState(StrAutoEnum):
     # service was started and is running as expected
-    RUNNING = auto_str()
+    RUNNING = auto()
     # service is not present
-    IDLE = auto_str()
+    IDLE = auto()
     # something went wrong while starting/stopping service
-    UNEXPECTED_OUTCOME = auto_str()
+    UNEXPECTED_OUTCOME = auto()
 
     # service is being started
-    STARTING = auto_str()
+    STARTING = auto()
     # service is being stopped
-    STOPPING = auto_str()
+    STOPPING = auto()
 
     # service status has not been determined
-    UNKNOWN = auto_str()
+    UNKNOWN = auto()
 
 
 @dataclass
