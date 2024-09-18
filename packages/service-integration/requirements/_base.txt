@@ -73,14 +73,22 @@ pydantic==2.9.1
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   pydantic-extra-types
+    #   pydantic-settings
 pydantic-core==2.23.3
     # via pydantic
+pydantic-extra-types==2.9.0
+    # via -r requirements/../../../packages/models-library/requirements/_base.in
+pydantic-settings==2.5.2
+    # via -r requirements/../../../packages/models-library/requirements/_base.in
 pygments==2.18.0
     # via rich
 pytest==8.3.2
     # via -r requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
+python-dotenv==1.0.1
+    # via pydantic-settings
 python-slugify==8.0.4
     # via cookiecutter
 pyyaml==6.0.2
