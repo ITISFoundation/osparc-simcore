@@ -388,7 +388,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         cls, v, info: ValidationInfo
     ):
         if v is None:
-            return v
+            return None
 
         compose_spec: dict | None = info.data.get("compose_spec")
         if compose_spec is None:
