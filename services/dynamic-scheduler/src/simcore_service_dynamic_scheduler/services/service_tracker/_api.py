@@ -241,6 +241,6 @@ async def get_all_tracked(app: FastAPI) -> dict[NodeID, TrackedServiceModel]:
 
 
 async def get_user_id(app: FastAPI, node_id: NodeID) -> UserID | None:
-    """returns user_id for the user"""
+    """returns user_id for the service"""
     model: TrackedServiceModel | None = await get_tracker(app).load(node_id)
     return model.user_id if model else None
