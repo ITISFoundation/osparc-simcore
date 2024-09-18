@@ -15,7 +15,7 @@ def setup_socketio(app: FastAPI):
     async def _on_startup() -> None:
         assert app.state.rabbitmq_client  # nosec
 
-        # Connect to the webserver's external process in write-only mode
+        # Connect to the as an external process in write-only mode
         # SEE https://python-socketio.readthedocs.io/en/stable/server.html#emitting-from-external-processes
         assert settings.RABBIT_SETTINGS  # nosec
         app.state.external_socketio = socketio.AsyncAioPikaManager(
