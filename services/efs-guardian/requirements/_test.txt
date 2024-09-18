@@ -192,7 +192,9 @@ pluggy==1.5.0
 ply==3.11
     # via jsonpath-ng
 psutil==6.0.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 py-partiql-parser==0.5.5
     # via moto
 pycparser==2.22
