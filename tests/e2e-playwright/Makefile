@@ -168,6 +168,7 @@ define run_test
 	pytest -s $2 \
 		--color=yes \
 		--browser chromium \
+		--headed \
 		$$TEST_ARGS
 endef
 
