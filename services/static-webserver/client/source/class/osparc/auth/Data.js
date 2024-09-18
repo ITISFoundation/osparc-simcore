@@ -58,7 +58,8 @@ qx.Class.define("osparc.auth.Data", {
     auth: {
       init: null,
       nullable: true,
-      check: "osparc.io.request.authentication.Token"
+      check: "osparc.io.request.authentication.Token",
+      apply: "__applyAuth"
     },
 
     /**
@@ -104,10 +105,21 @@ qx.Class.define("osparc.auth.Data", {
       nullable: true,
       check: "Date",
       event: "changeExpirationDate"
+    },
+
+    loggedIn: {
+      check: "Boolean",
+      nullable: false,
+      init: false,
+      event: "changeLoggedIn",
     }
   },
 
   members: {
+    __applyAuth: function(auth) {
+      this.setLoggedIn(auth !== null && auth instanceof osparc.io.request.authentication.Token);
+    },
+
     __applyRole: function(role) {
       if (role && ["user", "tester", "product_owner", "admin"].includes(role)) {
         this.setGuest(false);
