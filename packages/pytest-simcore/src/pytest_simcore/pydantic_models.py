@@ -82,7 +82,7 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
     for model_name, model_cls in inspect.getmembers(module, _is_model_cls):
         assert model_name  # nosec
         if (
-            (config_cls := model_cls.Config)
+            (config_cls := model_cls.model_config)
             and inspect.isclass(config_cls)
             and is_strict_inner(model_cls, config_cls)
             and (schema_extra := getattr(config_cls, "schema_extra", {}))
@@ -121,7 +121,9 @@ def model_cls_examples(model_cls: type[BaseModel]) -> dict[str, dict[str, Any]]:
     )
 
     # checks exampleS setup in schema_extra
-    examples_list = copy.deepcopy(model_cls.Config.schema_extra.get("examples", []))
+    examples_list = copy.deepcopy(
+        model_cls.model_config["json_schema_extra"].get("examples", [])
+    )
     assert isinstance(examples_list, list), (
         "OpenAPI and json-schema differ regarding the format for exampleS."
         "The former is a dict and the latter an array. "
@@ -131,7 +133,7 @@ def model_cls_examples(model_cls: type[BaseModel]) -> dict[str, dict[str, Any]]:
     )
 
     # check example in schema_extra
-    example = copy.deepcopy(model_cls.Config.schema_extra.get("example"))
+    example = copy.deepcopy(model_cls.model_config["json_schema_extra"].get("example"))
 
     # collect all examples and creates fixture -> {example-name: example, ...}
     examples = {

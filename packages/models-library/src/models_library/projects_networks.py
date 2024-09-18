@@ -1,7 +1,7 @@
 import re
-from typing import Any, ClassVar, Final
+from typing import Annotated, Final, TypeAlias
 
-from pydantic import BaseModel, ConstrainedStr, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from .generics import DictModel
 from .projects import ProjectID
@@ -12,12 +12,9 @@ SERVICE_NETWORK_RE: Final[re.Pattern] = re.compile(r"^[a-zA-Z]([a-zA-Z0-9_-]{0,6
 PROJECT_NETWORK_PREFIX: Final[str] = "prj-ntwrk"
 
 
-class DockerNetworkName(ConstrainedStr):
-    regex = SERVICE_NETWORK_RE
+DockerNetworkName: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_NETWORK_RE)]
 
-
-class DockerNetworkAlias(ConstrainedStr):
-    regex = SERVICE_NETWORK_RE
+DockerNetworkAlias: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_NETWORK_RE)]
 
 
 class ContainerAliases(DictModel[NodeIDStr, DockerNetworkAlias]):
@@ -25,8 +22,8 @@ class ContainerAliases(DictModel[NodeIDStr, DockerNetworkAlias]):
 
 
 class NetworksWithAliases(DictModel[DockerNetworkName, ContainerAliases]):
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "network_one": {
@@ -36,6 +33,7 @@ class NetworksWithAliases(DictModel[DockerNetworkName, ContainerAliases]):
                 },
             ]
         }
+    )
 
 
 class ProjectsNetworks(BaseModel):
@@ -47,10 +45,9 @@ class ProjectsNetworks(BaseModel):
             "is given a user defined alias by which it is identified on the network."
         ),
     )
-
-    class Config:
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "example": {
                 "project_uuid": "ec5cdfea-f24e-4aa1-83b8-6dccfdc8cf4d",
                 "networks_with_aliases": {
@@ -60,4 +57,5 @@ class ProjectsNetworks(BaseModel):
                     }
                 },
             }
-        }
+        },
+    )

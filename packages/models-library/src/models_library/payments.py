@@ -1,7 +1,7 @@
 from decimal import Decimal
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .emails import LowerCaseEmailStr
 from .products import StripePriceID, StripeTaxRateID
@@ -19,15 +19,8 @@ class UserInvoiceAddress(BaseModel):
         description="Currently validated in webserver via pycountry library. Two letter country code alpha_2 expected.",
     )
 
-    @validator("*", pre=True)
-    @classmethod
-    def parse_empty_string_as_null(cls, v):
-        if isinstance(v, str) and len(v.strip()) == 0:
-            return None
-        return v
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "line1": None,
@@ -38,6 +31,14 @@ class UserInvoiceAddress(BaseModel):
                 },
             ]
         }
+    )
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def parse_empty_string_as_null(cls, v):
+        if isinstance(v, str) and len(v.strip()) == 0:
+            return None
+        return v
 
 
 class InvoiceDataGet(BaseModel):
@@ -48,18 +49,17 @@ class InvoiceDataGet(BaseModel):
     user_display_name: str
     user_email: LowerCaseEmailStr
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
-                    "credit_amount": Decimal(15.5),
+                    "credit_amount": Decimal(15.5),  # type: ignore[dict-item]
                     "stripe_price_id": "stripe-price-id",
                     "stripe_tax_rate_id": "stripe-tax-rate-id",
-                    "user_invoice_address": UserInvoiceAddress.Config.schema_extra[
-                        "examples"
-                    ][0],
+                    "user_invoice_address": UserInvoiceAddress.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
                     "user_display_name": "My Name",
-                    "user_email": LowerCaseEmailStr("email@example.itis"),
+                    "user_email": "email@example.itis",
                 },
             ]
         }
+    )

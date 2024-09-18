@@ -14,15 +14,20 @@ class MyModel(BaseModel):
 
 
 def test_schema():
-    assert MyModel.schema() == {
+    assert MyModel.model_json_schema() == {
         "title": "MyModel",
         "type": "object",
         "properties": {
             "a": {"title": "A", "type": "integer"},
-            "b": {"title": "B", "type": "integer"},
+            "b": {"anyOf": [{"type": "integer"}, {"type": "null"}], "title": "B"},
             "c": {"title": "C", "default": 42, "type": "integer"},
-            "d": {"title": "D", "type": "integer"},
+            "d": {
+                "anyOf": [{"type": "integer"}, {"type": "null"}],
+                "default": None,
+                "title": "D",
+            },
             "e": {
+                "default": None,
                 "title": "E",
                 "type": "integer",
                 "description": "optional non-nullable",

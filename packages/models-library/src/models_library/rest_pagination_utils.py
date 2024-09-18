@@ -1,8 +1,9 @@
 from math import ceil
 from typing import Any, Protocol, TypedDict, Union, runtime_checkable
 
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import parse_obj_as
 
+from .basic_types import AnyHttpUrl
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
 # NOTE: In this repo we use two type of URL-like data structures:

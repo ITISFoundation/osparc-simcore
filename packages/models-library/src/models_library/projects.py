@@ -1,18 +1,17 @@
 """
     Models a study's project document
 """
-import re
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from typing import Any, Final, TypeAlias
 from uuid import UUID
 
+from models_library.basic_types import ConstrainedStr
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, ConstrainedStr, Extra, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
-from .basic_types import HttpUrlWithCustomMinLength
 from .emails import LowerCaseEmailStr
 from .projects_access import AccessRights, GroupIDStr
 from .projects_nodes import Node
@@ -32,17 +31,11 @@ _DATETIME_FORMAT: Final[str] = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 class ProjectIDStr(ConstrainedStr):
-    regex = re.compile(UUID_RE_BASE)
-
-    class Config:
-        frozen = True
+    pattern = UUID_RE_BASE
 
 
 class DateTimeStr(ConstrainedStr):
-    regex = re.compile(DATE_RE)
-
-    class Config:
-        frozen = True
+    pattern = DATE_RE
 
     @classmethod
     def to_datetime(cls, s: "DateTimeStr"):
@@ -73,7 +66,7 @@ class BaseProjectModel(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    thumbnail: HttpUrlWithCustomMinLength | None = Field(
+    thumbnail: HttpUrl | None = Field(
         ...,
         description="url of the project thumbnail",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
@@ -86,11 +79,11 @@ class BaseProjectModel(BaseModel):
     workbench: NodesDict = Field(..., description="Project's pipeline")
 
     # validators
-    _empty_thumbnail_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+    _empty_thumbnail_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )
 
-    _none_description_is_empty = validator("description", allow_reuse=True, pre=True)(
+    _none_description_is_empty = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
     )
 
@@ -108,17 +101,16 @@ class ProjectAtDB(BaseProjectModel):
         False, description="Defines if a study is available publicly"
     )
 
-    @validator("project_type", pre=True)
+    @field_validator("project_type", mode="before")
     @classmethod
     def convert_sql_alchemy_enum(cls, v):
         if isinstance(v, Enum):
             return v.value
         return v
 
-    class Config:
-        orm_mode = True
-        use_enum_values = True
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        from_attributes=True, use_enum_values=True, populate_by_name=True
+    )
 
 
 class Project(BaseProjectModel):
@@ -180,18 +172,16 @@ class Project(BaseProjectModel):
         alias="workspaceId",
     )
 
-    class Config:
-        description = "Document that stores metadata, pipeline and UI setup of a study"
-        title = "osparc-simcore project"
-        extra = Extra.forbid
+    def _patch_json_schema_extra(self, schema: dict) -> None:
+        # Patch to allow jsonschema nullable
+        # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
+        state_pydantic_schema = deepcopy(schema["properties"]["state"])
+        schema["properties"]["state"] = {
+            "anyOf": [{"type": "null"}, state_pydantic_schema]
+        }
 
-        @staticmethod
-        def schema_extra(schema: dict, _model: "Project"):
-            # pylint: disable=unsubscriptable-object
-
-            # Patch to allow jsonschema nullable
-            # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
-            state_pydantic_schema = deepcopy(schema["properties"]["state"])
-            schema["properties"]["state"] = {
-                "anyOf": [{"type": "null"}, state_pydantic_schema]
-            }
+    model_config = ConfigDict(
+        title="osparc-simcore project",
+        extra="forbid",
+        json_schema_extra=_patch_json_schema_extra,  # type: ignore[typeddict-item]
+    )

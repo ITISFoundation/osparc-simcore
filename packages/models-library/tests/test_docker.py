@@ -103,7 +103,7 @@ def test_docker_generic_tag(image_name: str, valid: bool):
 
 @pytest.mark.parametrize(
     "obj_data",
-    StandardSimcoreDockerLabels.Config.schema_extra["examples"],
+    StandardSimcoreDockerLabels.model_config["json_schema_extra"]["examples"],
     ids=str,
 )
 def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):

@@ -11,6 +11,7 @@ import pytest
 from faker import Faker
 from models_library.generics import DictModel, Envelope
 from pydantic import BaseModel, ValidationError
+from pydantic.version import version_short
 
 
 def test_dict_base_model():
@@ -86,7 +87,7 @@ def test_enveloped_data_builtin(builtin_type: type, builtin_value: Any):
 def test_enveloped_data_model():
     class User(BaseModel):
         idr: int
-        name = "Jane Doe"
+        name: str = "Jane Doe"
 
     enveloped = Envelope[User](data={"idr": 3})
 
@@ -102,9 +103,11 @@ def test_enveloped_data_dict():
     error: ValidationError = err_info.value
     assert error.errors() == [
         {
+            "input": "not-a-dict",
             "loc": ("data",),
-            "msg": "value is not a valid dict",
-            "type": "type_error.dict",
+            "msg": "Input should be a valid dictionary",
+            "type": "dict_type",
+            "url": f"https://errors.pydantic.dev/{version_short()}/v/dict_type",
         }
     ]
 
@@ -122,9 +125,11 @@ def test_enveloped_data_list():
     error: ValidationError = err_info.value
     assert error.errors() == [
         {
+            "input": "not-a-list",
             "loc": ("data",),
-            "msg": "value is not a valid list",
-            "type": "type_error.list",
+            "msg": "Input should be a valid list",
+            "type": "list_type",
+            "url": f"https://errors.pydantic.dev/{version_short()}/v/list_type",
         }
     ]
 
