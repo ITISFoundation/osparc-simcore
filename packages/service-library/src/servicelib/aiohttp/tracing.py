@@ -9,7 +9,10 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
 from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
-from opentelemetry.instrumentation.aiohttp_server import AioHttpServerInstrumentor
+from opentelemetry.instrumentation.aiohttp_server import (
+    AioHttpServerInstrumentor,
+    middleware,
+)
 from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.resources import Resource
@@ -21,7 +24,7 @@ log = logging.getLogger(__name__)
 
 
 def setup_tracing(
-    app: web.Application,  # pylint: disable=unused-argument
+    app: web.Application,
     tracing_settings: TracingSettings,
     service_name: str,
     instrument_aiopg: bool = False,  # noqa: FBT001, FBT002
@@ -37,9 +40,8 @@ def setup_tracing(
         log.warning("Skipping opentelemetry tracing setup")
         return
     if not opentelemetry_collector_endpoint or not opentelemetry_collector_port:
-        raise RuntimeError(
-            f"Variable opentelemetry_collector_endpoint [{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}] or opentelemetry_collector_port [{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT}] unset. Tracing options incomplete."
-        )
+        msg = f"Variable opentelemetry_collector_endpoint [{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}] or opentelemetry_collector_port [{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT}] unset. Tracing options incomplete."
+        raise RuntimeError(msg)
     resource = Resource(attributes={"service.name": service_name})
     trace.set_tracer_provider(TracerProvider(resource=resource))
     tracer_provider: trace.TracerProvider = trace.get_tracer_provider()
@@ -61,6 +63,7 @@ def setup_tracing(
     tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))  # type: ignore[attr-defined] # https://github.com/open-telemetry/opentelemetry-python/issues/3713
     # Instrument aiohttp server and client
     AioHttpServerInstrumentor().instrument()
+    app.middlewares.append(middleware)
     AioHttpClientInstrumentor().instrument()
     if instrument_aiopg:
         AiopgInstrumentor().instrument()
