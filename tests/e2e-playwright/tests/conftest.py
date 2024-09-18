@@ -21,8 +21,9 @@ import pytest
 from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
 from playwright.sync_api._generated import Playwright
-from pydantic import AnyUrl, TypeAdapter
+from pydantic import AnyUrl, SecretStr, TypeAdapter
 from pytest import Item
+from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
@@ -223,13 +224,13 @@ def user_name(request: pytest.FixtureRequest, auto_register: bool, faker: Faker)
 @pytest.fixture
 def user_password(
     request: pytest.FixtureRequest, auto_register: bool, faker: Faker
-) -> str:
+) -> SecretStr:
     if auto_register:
-        return faker.password(length=12)
+        return SecretStr(DEFAULT_TEST_PASSWORD)
     if osparc_password := request.config.getoption("--password"):
         assert isinstance(osparc_password, str)
-        return osparc_password
-    return os.environ["USER_PASSWORD"]
+        return SecretStr(osparc_password)
+    return SecretStr(os.environ["USER_PASSWORD"])
 
 
 @pytest.fixture(scope="session")
@@ -292,7 +293,7 @@ def register(
     page: Page,
     product_url: AnyUrl,
     user_name: str,
-    user_password: str,
+    user_password: SecretStr,
 ) -> Callable[[], AutoRegisteredUser]:
     def _do() -> AutoRegisteredUser:
         with log_context(
@@ -309,11 +310,13 @@ def register(
             for pass_id in ["registrationPass1Fld", "registrationPass2Fld"]:
                 user_password_box = page.get_by_test_id(pass_id)
                 user_password_box.click()
-                user_password_box.fill(user_password)
+                user_password_box.fill(user_password.get_secret_value())
             with page.expect_response(re.compile(r"/auth/register")) as response_info:
                 page.get_by_test_id("registrationSubmitBtn").click()
             assert response_info.value.ok, response_info.value.json()
-            return AutoRegisteredUser(user_email=user_name, password=user_password)
+            return AutoRegisteredUser(
+                user_email=user_name, password=user_password.get_secret_value()
+            )
 
     return _do
 
@@ -323,7 +326,7 @@ def log_in_and_out(
     page: Page,
     product_url: AnyUrl,
     user_name: str,
-    user_password: str,
+    user_password: SecretStr,
     auto_register: bool,
     register: Callable[[], AutoRegisteredUser],
 ) -> Iterator[WebSocket]:
@@ -364,7 +367,7 @@ def log_in_and_out(
                 _user_email_box.fill(user_name)
                 _user_password_box = page.get_by_test_id("loginPasswordFld")
                 _user_password_box.click()
-                _user_password_box.fill(user_password)
+                _user_password_box.fill(user_password.get_secret_value())
                 with page.expect_response(re.compile(r"/login")) as response_info:
                     page.get_by_test_id("loginSubmitBtn").click()
                 assert response_info.value.ok, f"{response_info.value.json()}"
