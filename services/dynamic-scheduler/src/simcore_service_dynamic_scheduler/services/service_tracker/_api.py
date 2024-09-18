@@ -1,3 +1,4 @@
+import inspect
 import logging
 from datetime import timedelta
 from typing import Final
@@ -121,6 +122,18 @@ def _get_current_scheduler_service_state(
     raise TypeError(msg)
 
 
+def _log_skipping_operation(node_id: NodeID) -> None:
+    # the caller is at index 1 (index 0 is the current function)
+    caller_name = inspect.stack()[1].function
+
+    _logger.info(
+        "Could not find a %s entry for node_id %s: skipping %s",
+        TrackedServiceModel.__name__,
+        node_id,
+        caller_name,
+    )
+
+
 async def set_if_status_changed(
     app: FastAPI, node_id: NodeID, status: NodeGet | DynamicServiceGet | NodeGetIdle
 ) -> bool:
@@ -128,11 +141,7 @@ async def set_if_status_changed(
     tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
-        _logger.info(
-            "Could not find a %s entry for node_id %s: skipping set_if_status_changed",
-            TrackedServiceModel.__name__,
-            node_id,
-        )
+        _log_skipping_operation(node_id)
         return False
 
     # set new polling interval in the future
@@ -179,11 +188,7 @@ async def set_frontned_notified(app: FastAPI, node_id: NodeID) -> None:
     tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
-        _logger.info(
-            "Could not find a %s entry for node_id %s: skipping set_last_status_notification_to_now",
-            TrackedServiceModel.__name__,
-            node_id,
-        )
+        _log_skipping_operation(node_id)
         return
 
     model.set_last_status_notification_to_now()
@@ -196,11 +201,7 @@ async def set_scheduled_to_run(
     tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
-        _logger.info(
-            "Could not find a %s entry for node_id %s: skipping set_scheduled_to_start",
-            TrackedServiceModel.__name__,
-            node_id,
-        )
+        _log_skipping_operation(node_id)
         return
 
     model.scheduled_to_run = True
@@ -214,11 +215,7 @@ async def set_service_status_task_uid(
     tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
-        _logger.info(
-            "Could not find a %s entry for node_id %s: skipping set_service_status_task_uid",
-            TrackedServiceModel.__name__,
-            node_id,
-        )
+        _log_skipping_operation(node_id)
         return
 
     model.service_status_task_uid = task_uid
