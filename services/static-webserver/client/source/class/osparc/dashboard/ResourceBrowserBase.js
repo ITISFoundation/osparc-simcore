@@ -386,7 +386,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
       }, this);
 
-      if (this._resourceType === "study") {
+      if (this._resourceType === "study" && osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         const workspacesAndFoldersTree = resourceFilter.getWorkspacesAndFoldersTree();
         workspacesAndFoldersTree.getSelection().addListener("change", () => {
           const selection = workspacesAndFoldersTree.getSelection();
