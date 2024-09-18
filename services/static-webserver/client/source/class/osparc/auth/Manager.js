@@ -26,22 +26,28 @@ qx.Class.define("osparc.auth.Manager", {
   extend: qx.core.Object,
   type: "singleton",
 
-  /*
-  *****************************************************************************
-     EVENTS
-  *****************************************************************************
-  */
+  construct: function() {
+    // TODO: how to store this locally?? See http://www.qooxdoo.org/devel/pages/data_binding/stores.html#offline-store
+    // TODO: check if expired??
+    // TODO: request server if token is still valid (e.g. expired, etc)
+    const authData = osparc.auth.Data.getInstance();
+    authData.bind("auth", this, "loggedIn", {
+      converter: auth => auth !== null && auth instanceof osparc.io.request.authentication.Token
+    });
+  },
 
   events: {
     "loggedOut": "qx.event.type.Event"
   },
 
-
-  /*
-  *****************************************************************************
-     MEMBERS
-  *****************************************************************************
-  */
+  properties: {
+    loggedIn: {
+      check: "Boolean",
+      nullable: false,
+      init: false,
+      event: "changeLoggedIn",
+    }
+  },
 
   members: {
     register: function(userData) {
@@ -127,14 +133,6 @@ qx.Class.define("osparc.auth.Manager", {
         }
       };
       return osparc.data.Resources.fetch("auth", "resendCode", params);
-    },
-
-    isLoggedIn: function() {
-      // TODO: how to store this locally?? See http://www.qooxdoo.org/devel/pages/data_binding/stores.html#offline-store
-      // TODO: check if expired??
-      // TODO: request server if token is still valid (e.g. expired, etc)
-      const auth = osparc.auth.Data.getInstance().getAuth();
-      return auth !== null && auth instanceof osparc.io.request.authentication.Token;
     },
 
     /*

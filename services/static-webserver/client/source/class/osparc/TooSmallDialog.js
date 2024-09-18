@@ -69,8 +69,10 @@ qx.Class.define("osparc.TooSmallDialog", {
       button.addListener("execute", () => qx.core.Init.getApplication().logout());
       layout.add(button);
 
-      const isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
-      layout.setVisibility(isLoggedIn ? "visible" : "excluded");
+      const authManager = osparc.auth.Manager.getInstance();
+      authManager.bind("loggedIn", layout, "visibility", {
+        converter: isLoggedIn => isLoggedIn ? "visible" : "excluded"
+      });
 
       return layout;
     },
