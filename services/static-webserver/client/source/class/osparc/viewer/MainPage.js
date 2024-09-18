@@ -29,7 +29,6 @@ qx.Class.define("osparc.viewer.MainPage", {
     navBar.populateLayout();
     this._add(navBar);
 
-    osparc.WindowSizeTracker.getInstance().startTracker();
     osparc.MaintenanceTracker.getInstance().startTracker();
 
     const nodeViewer = new osparc.viewer.NodeViewer(studyId, viewerNodeId);
