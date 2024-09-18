@@ -27,7 +27,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.service_tracker import (
-    get_all_tracked,
+    get_all_tracked_services,
     set_request_as_running,
     set_request_as_stopped,
 )
@@ -252,7 +252,9 @@ def deferred_status_spies(mocker: MockerFixture) -> dict[str, AsyncMock]:
 
 @pytest.fixture
 def remove_tracked_spy(mocker: MockerFixture) -> AsyncMock:
-    mock_method = mocker.AsyncMock(wraps=_monitor.service_tracker.remove_tracked)
+    mock_method = mocker.AsyncMock(
+        wraps=_monitor.service_tracker.remove_tracked_service
+    )
     return mocker.patch.object(_monitor.service_tracker, "remove_tracked", mock_method)
 
 
@@ -366,7 +368,7 @@ async def test_expected_calls_to_notify_frontend(  # pylint:disable=too-many-arg
     get_dynamic_service_start: Callable[[NodeID], DynamicServiceStart],
     get_dynamic_service_stop: Callable[[NodeID], DynamicServiceStop],
 ):
-    assert await get_all_tracked(app) == {}
+    assert await get_all_tracked_services(app) == {}
 
     if user_requests_running:
         await set_request_as_running(app, get_dynamic_service_start(node_id))

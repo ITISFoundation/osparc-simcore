@@ -134,7 +134,7 @@ def _log_skipping_operation(node_id: NodeID) -> None:
     )
 
 
-async def set_if_status_changed(
+async def set_if_status_changed_for_service(
     app: FastAPI, node_id: NodeID, status: NodeGet | DynamicServiceGet | NodeGetIdle
 ) -> bool:
     """returns ``True`` if the tracker detected a status change"""
@@ -162,7 +162,7 @@ async def set_if_status_changed(
     return False
 
 
-async def should_notify_frontend(
+async def should_notify_frontend_for_service(
     app: FastAPI, node_id: NodeID, *, status_changed: bool
 ) -> bool:
     """
@@ -184,7 +184,7 @@ async def should_notify_frontend(
     )
 
 
-async def set_frontned_notified(app: FastAPI, node_id: NodeID) -> None:
+async def set_frontned_notified_for_service(app: FastAPI, node_id: NodeID) -> None:
     tracker = get_tracker(app)
     model: TrackedServiceModel | None = await tracker.load(node_id)
     if model is None:
@@ -195,7 +195,7 @@ async def set_frontned_notified(app: FastAPI, node_id: NodeID) -> None:
     await tracker.save(node_id, model)
 
 
-async def set_scheduled_to_run(
+async def set_service_scheduled_to_run(
     app: FastAPI, node_id: NodeID, delay_from_now: timedelta
 ) -> None:
     tracker = get_tracker(app)
@@ -222,7 +222,7 @@ async def set_service_status_task_uid(
     await tracker.save(node_id, model)
 
 
-async def remove_tracked(app: FastAPI, node_id: NodeID) -> None:
+async def remove_tracked_service(app: FastAPI, node_id: NodeID) -> None:
     """
     Removes the service from tracking (usually after stop completes)
     # NOTE: does not raise if node_id is not found
@@ -230,17 +230,19 @@ async def remove_tracked(app: FastAPI, node_id: NodeID) -> None:
     await get_tracker(app).delete(node_id)
 
 
-async def get_tracked(app: FastAPI, node_id: NodeID) -> TrackedServiceModel | None:
+async def get_tracked_service(
+    app: FastAPI, node_id: NodeID
+) -> TrackedServiceModel | None:
     """Returns information about the tracked service"""
     return await get_tracker(app).load(node_id)
 
 
-async def get_all_tracked(app: FastAPI) -> dict[NodeID, TrackedServiceModel]:
+async def get_all_tracked_services(app: FastAPI) -> dict[NodeID, TrackedServiceModel]:
     """Returns all tracked services"""
     return await get_tracker(app).all()
 
 
-async def get_user_id(app: FastAPI, node_id: NodeID) -> UserID | None:
+async def get_user_id_for_service(app: FastAPI, node_id: NodeID) -> UserID | None:
     """returns user_id for the service"""
     model: TrackedServiceModel | None = await get_tracker(app).load(node_id)
     return model.user_id if model else None

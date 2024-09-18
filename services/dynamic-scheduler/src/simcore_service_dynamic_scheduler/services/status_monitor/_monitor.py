@@ -27,7 +27,7 @@ _MAX_CONCURRENCY: Final[NonNegativeInt] = 10
 async def _start_get_status_deferred(
     app: FastAPI, node_id: NodeID, *, next_check_delay: timedelta
 ) -> None:
-    await service_tracker.set_scheduled_to_run(app, node_id, next_check_delay)
+    await service_tracker.set_service_scheduled_to_run(app, node_id, next_check_delay)
     await DeferredGetStatus.start(node_id=node_id)
 
 
@@ -51,7 +51,7 @@ class Monitor:
 
         models: dict[
             NodeID, TrackedServiceModel
-        ] = await service_tracker.get_all_tracked(self.app)
+        ] = await service_tracker.get_all_tracked_services(self.app)
 
         to_remove: list[NodeID] = []
         to_start: list[NodeID] = []
@@ -90,7 +90,7 @@ class Monitor:
         _logger.debug("Removing tracked services: '%s'", to_remove)
         await logged_gather(
             *(
-                service_tracker.remove_tracked(self.app, node_id)
+                service_tracker.remove_tracked_service(self.app, node_id)
                 for node_id in to_remove
             ),
             max_concurrency=_MAX_CONCURRENCY,

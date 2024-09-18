@@ -23,10 +23,10 @@ from servicelib.deferred_tasks import TaskUID
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.service_tracker import (
-    get_all_tracked,
-    get_tracked,
-    remove_tracked,
-    set_if_status_changed,
+    get_all_tracked_services,
+    get_tracked_service,
+    remove_tracked_service,
+    set_if_status_changed_for_service,
     set_request_as_running,
     set_request_as_stopped,
     set_service_status_task_uid,
@@ -66,19 +66,19 @@ async def test_services_tracer_set_as_running_set_as_stopped(
     get_dynamic_service_stop: Callable[[NodeID], DynamicServiceStop],
 ):
     async def _remove_service() -> None:
-        await remove_tracked(app, node_id)
-        assert await get_tracked(app, node_id) is None
-        assert await get_all_tracked(app) == {}
+        await remove_tracked_service(app, node_id)
+        assert await get_tracked_service(app, node_id) is None
+        assert await get_all_tracked_services(app) == {}
 
     async def _set_as_running() -> None:
         await set_request_as_running(app, get_dynamic_service_start(node_id))
-        tracked_model = await get_tracked(app, node_id)
+        tracked_model = await get_tracked_service(app, node_id)
         assert tracked_model
         assert tracked_model.requested_state == UserRequestedState.RUNNING
 
     async def _set_as_stopped() -> None:
         await set_request_as_stopped(app, get_dynamic_service_stop(node_id))
-        tracked_model = await get_tracked(app, node_id)
+        tracked_model = await get_tracked_service(app, node_id)
         assert tracked_model
         assert tracked_model.requested_state == UserRequestedState.STOPPED
 
@@ -109,7 +109,7 @@ async def test_services_tracer_workflow(
         ],
         limit=100,
     )
-    assert len(await get_all_tracked(app)) == item_count
+    assert len(await get_all_tracked_services(app)) == item_count
 
 
 @pytest.mark.parametrize(
@@ -131,11 +131,11 @@ async def test_set_if_status_changed(
 ):
     await set_request_as_running(app, get_dynamic_service_start(node_id))
 
-    assert await set_if_status_changed(app, node_id, status) is True
+    assert await set_if_status_changed_for_service(app, node_id, status) is True
 
-    assert await set_if_status_changed(app, node_id, status) is False
+    assert await set_if_status_changed_for_service(app, node_id, status) is False
 
-    model = await get_tracked(app, node_id)
+    model = await get_tracked_service(app, node_id)
     assert model
 
     assert model.service_status == status.json()
@@ -152,7 +152,7 @@ async def test_set_service_status_task_uid(
     task_uid = TaskUID(faker.uuid4())
     await set_service_status_task_uid(app, node_id, task_uid)
 
-    model = await get_tracked(app, node_id)
+    model = await get_tracked_service(app, node_id)
     assert model
 
     assert model.service_status_task_uid == task_uid

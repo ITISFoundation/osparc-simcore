@@ -65,16 +65,18 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
 
         _logger.debug("Received status for service '%s': '%s'", node_id, result)
 
-        status_changed: bool = await service_tracker.set_if_status_changed(
+        status_changed: bool = await service_tracker.set_if_status_changed_for_service(
             app, node_id, result
         )
-        if await service_tracker.should_notify_frontend(
+        if await service_tracker.should_notify_frontend_for_service(
             app, node_id, status_changed=status_changed
         ):
-            user_id: UserID | None = await service_tracker.get_user_id(app, node_id)
+            user_id: UserID | None = await service_tracker.get_user_id_for_service(
+                app, node_id
+            )
             if user_id:
                 await notify_service_status_change(app, user_id, result)
-                await service_tracker.set_frontned_notified(app, node_id)
+                await service_tracker.set_frontned_notified_for_service(app, node_id)
             else:
                 _logger.info(
                     "Did not find a user for '%s', skipping status delivery of: %s",
