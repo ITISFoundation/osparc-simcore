@@ -18,7 +18,7 @@ from models_library.resource_tracker import (
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import AnyUrl, PositiveInt
+from pydantic import AnyUrl, PositiveInt, TypeAdapter
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
 )
@@ -158,7 +158,7 @@ async def export_service_runs(
     started_until = filters.started_at.until if filters else None
 
     # Create S3 key name
-    s3_bucket_name = S3BucketName(bucket_name)
+    s3_bucket_name = TypeAdapter(S3BucketName).validate_python(bucket_name)
     # NOTE: su stands for "service usage"
     file_name = f"su_{shortuuid.uuid()}.csv"
     s3_object_key = f"resource-usage-tracker-service-runs/{datetime.now(tz=timezone.utc).date()}/{file_name}"
