@@ -43,7 +43,6 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic.class_validators import field_validator
 from pydantic.fields import Field
 from pydantic.main import BaseModel
 

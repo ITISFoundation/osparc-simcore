@@ -72,7 +72,8 @@ def test_load_from_labels(
 
 
 @pytest.mark.parametrize(
-    "example_data", SimcoreServiceSettingLabelEntry.Config.schema_extra["examples"]
+    "example_data",
+    SimcoreServiceSettingLabelEntry.model_config["json_schema_extra"]["examples"],
 )
 def test_settings_item_in_sync_with_service_settings_label(
     example_data: dict[str, Any]

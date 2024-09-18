@@ -5,9 +5,9 @@
 # type:ignore
 
 from enum import Enum
-from typing import Any
+from typing import Any, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, ConstrainedInt, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, RootModel, StringConstraints
 from typing_extensions import Annotated
 
 #  MODIFICATIONS -------------------------------------------------------------------------
@@ -20,9 +20,7 @@ from typing_extensions import Annotated
 # UserWarning: format of 'subnet_ip_address' not understood for 'string' - using default
 
 # port number range
-class PortInt(ConstrainedInt):
-    gt = 0
-    lt = 65535
+PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
 
 
 # ----------------------------------------------------------------------------------------
@@ -227,8 +225,8 @@ class GenericResource(BaseModel):
     discrete_resource_spec: DiscreteResourceSpec | None = None
 
 
-class GenericResources(BaseModel):
-    __root__: list[GenericResource]
+class GenericResources(RootModel):
+    root: list[GenericResource]
 
 
 class ConfigItem(BaseModel):
@@ -270,12 +268,12 @@ class External3(BaseModel):
     name: str | None = None
 
 
-class ListOfStrings(BaseModel):
-    __root__: list[str]
+class ListOfStrings(RootModel):
+    root: list[str]
 
 
-class ListOrDict(BaseModel):
-    __root__: (
+class ListOrDict(RootModel):
+    root: (
         dict[
             Annotated[str, StringConstraints(pattern=r".+")], str | float | bool | None
         ]
@@ -297,8 +295,8 @@ class BlkioWeight(BaseModel):
     weight: int | None = None
 
 
-class Constraints(BaseModel):
-    __root__: Any = None
+class Constraints(RootModel):
+    root: Any = None
 
 
 class BuildItem(BaseModel):
@@ -347,8 +345,8 @@ class Device(BaseModel):
     options: ListOrDict | None = None
 
 
-class Devices(BaseModel):
-    __root__: list[Device]
+class Devices(RootModel):
+    root: list[Device]
 
 
 class Network(BaseModel):
@@ -403,8 +401,8 @@ class ComposeSpecConfig(BaseModel):
     template_driver: str | None = None
 
 
-class StringOrList(BaseModel):
-    __root__: str | ListOfStrings
+class StringOrList(RootModel):
+    root: str | ListOfStrings
 
 
 class Reservations(BaseModel):
