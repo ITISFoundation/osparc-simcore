@@ -54,11 +54,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         required: true
       });
       switch (osparc.product.Utils.getProductName()) {
-        case "s4l":
-        case "tis":
-        case "osparc":
-          this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
-          break;
         case "s4lacad":
         case "s4ldesktopacad":
         case "tiplite": {
@@ -73,11 +68,13 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
             })
             .catch(console.error)
             .finally(() => {
-              // this._form.getValidationManager().add(email, validator, validatorContext);
               this._form.getValidationManager().add(email, validator);
             });
           break;
         }
+        default:
+          this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
+          break;
       }
 
       const phone = new qx.ui.form.TextField();
