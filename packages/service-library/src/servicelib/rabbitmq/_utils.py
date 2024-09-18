@@ -53,10 +53,10 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
 
 
 def get_rabbitmq_client_unique_name(base_name: str) -> str:
-    # NOTE: below prefix is guaranteed to change each time the preocess restarts
-    # Why is this desiarable?
-    # 1. the code base makes the above assumption, otherwise subcscribers and consumers do not work
-    # 2. enables restartability of webserver during [re]deploys
+    # NOTE: The prefix below will change every time the process restarts.
+    # Why is this necessary?
+    # 1. The codebase relies on this behavior; without it, subscribers and consumers will fail.
+    # 2. It allows the web server to be restarted seamlessly during [re]deployments.
     prefix_create_time = f"{psutil.Process(os.getpid()).create_time()}".strip(".")[-6:]
 
     return f"{base_name}_{socket.gethostname()}_{prefix_create_time}"

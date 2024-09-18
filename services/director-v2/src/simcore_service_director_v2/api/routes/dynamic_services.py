@@ -136,7 +136,6 @@ async def create_dynamic_service(
         logger.debug("Redirecting %s", redirect_url_with_query)
         return RedirectResponse(str(redirect_url_with_query))
 
-    #
     if not await is_sidecar_running(
         service.node_uuid, dynamic_services_settings.DYNAMIC_SCHEDULER.SWARM_STACK_NAME
     ):

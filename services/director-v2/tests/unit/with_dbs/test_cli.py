@@ -81,6 +81,7 @@ def mock_save_service_state(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_director_v2.modules.dynamic_sidecar.api_client._public.SidecarsClient.save_service_state",
         spec=True,
+        return_value=0,
     )
 
 
