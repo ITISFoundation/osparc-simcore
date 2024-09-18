@@ -138,7 +138,7 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
       }
 
       const promises = [];
-      queryParams.forEach(qP => promises.push(osparc.service.Store.getService(qP.key, qP.version)));
+      queryParams.forEach(qP => promises.push(osparc.store.Services.getService(qP.key, qP.version)));
       return Promise.all(promises)
         .then(values => {
           const suggestions = new Set([]);
@@ -157,6 +157,7 @@ qx.Class.define("osparc.editor.ThumbnailSuggestions", {
         case "osparc":
           return this.self().osparcTemplates;
         case "tis":
+        case "tiplite":
           return this.self().tipTemplates;
         default:
           return this.self().defaultTemplates.sort();

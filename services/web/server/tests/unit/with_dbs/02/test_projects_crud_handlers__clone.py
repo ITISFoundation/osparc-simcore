@@ -16,7 +16,11 @@ from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.webserver_login import UserInfoDict
-from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
+from pytest_simcore.helpers.webserver_parametrizations import (
+    MockedStorageSubsystem,
+    standard_role_response,
+)
+from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -46,6 +50,34 @@ async def _request_clone_project(client: TestClient, url: URL) -> ProjectGet:
 
     assert data is not None
     return ProjectGet.parse_obj(data)
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_clone_project_user_permissions(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    # mocks backend
+    storage_subsystem_mock: MockedStorageSubsystem,
+    mock_catalog_service_api_responses: None,
+    project_db_cleaner: None,
+    expected,
+):
+    assert client.app
+
+    project = user_project
+
+    url = client.app.router["clone_project"].url_for(project_id=project["uuid"])
+    assert f"/v0/projects/{project['uuid']}:clone" == url.path
+
+    try:
+        cloned_project = await _request_clone_project(client, url)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        assert exc.status == expected.ok  # pylint: disable=no-member
+
+    if expected.ok == status.HTTP_200_OK:
+        # check whether it's a clone
+        assert ProjectID(project["uuid"]) != cloned_project.uuid
 
 
 @pytest.mark.parametrize(

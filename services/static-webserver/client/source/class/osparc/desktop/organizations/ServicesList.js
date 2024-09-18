@@ -88,7 +88,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
           item.addListener("openMoreInfo", e => {
             const serviceKey = e.getData()["key"];
             const serviceVersion = e.getData()["version"];
-            osparc.store.Store.getInstance().getService(serviceKey, serviceVersion)
+            osparc.store.Store.getService(serviceKey, serviceVersion)
               .then(serviceData => {
                 if (serviceData) {
                   serviceData["resourceType"] = "service";
@@ -115,7 +115,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
       }
 
       const gid = orgModel.getGid();
-      osparc.service.Store.getServicesLatest()
+      osparc.store.Services.getServicesLatest()
         .then(servicesLatest => {
           const orgServices = [];
           Object.keys(servicesLatest).forEach(key => {

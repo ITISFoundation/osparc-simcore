@@ -178,9 +178,7 @@ def monkeypatch_setenv_from_app_config(
             "  - convert_to_environ_vars(app_cfg)=\n",
             json_dumps(envs, indent=1, sort_keys=True),
         )
-        setenvs_from_dict(monkeypatch, envs)
-
-        return envs
+        return setenvs_from_dict(monkeypatch, envs)
 
     return _patch
 
@@ -227,6 +225,8 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             "thumbnail": None,
             "name": None,
             "prjOwner": None,
+            "workspaceId": None,
+            "folderId": None,
         }
         if from_study:
             # access rights are replaced
@@ -296,7 +296,9 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             parent_node_id=parent_node_id,
         )
         # Create project here:
-        resp = await client.post(f"{url}", json=project_data, headers=headers)
+        resp = await client.post(
+            f"{url}", json=project_data, headers=headers
+        )  # NOTE: MD <-- here is project created!
         print(f"<-- created project response: {resp=}")
         data, error = await assert_status(resp, expected_accepted_response)
         if error:

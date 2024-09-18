@@ -27,32 +27,17 @@ qx.Class.define("osparc.editor.FolderEditor", {
     const title = this.getChildControl("title");
     title.setRequired(true);
     manager.add(title);
-    this.getChildControl("description");
     newFolder ? this.getChildControl("create") : this.getChildControl("save");
 
     this.addListener("appear", this.__onAppear, this);
   },
 
   properties: {
-    gid: {
-      check: "Number",
-      init: 0,
-      nullable: false,
-      event: "changeGid"
-    },
-
     label: {
       check: "String",
       init: "",
       nullable: false,
       event: "changeLabel"
-    },
-
-    description: {
-      check: "String",
-      init: "",
-      nullable: false,
-      event: "changeDescription"
     }
   },
 
@@ -71,23 +56,10 @@ qx.Class.define("osparc.editor.FolderEditor", {
             font: "text-14",
             backgroundColor: "background-main",
             placeholder: this.tr("Title"),
-            height: 35
+            height: 27
           });
           this.bind("label", control, "value");
           control.bind("value", this, "label");
-          this._add(control);
-          break;
-        }
-        case "description": {
-          control = new qx.ui.form.TextArea().set({
-            font: "text-14",
-            placeholder: this.tr("Description"),
-            autoSize: true,
-            minHeight: 70,
-            maxHeight: 140
-          });
-          this.bind("description", control, "value");
-          control.bind("value", this, "description");
           this._add(control);
           break;
         }

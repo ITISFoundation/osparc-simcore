@@ -152,18 +152,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       osparc.data.Resources.getOne("studies", params)
         .then(updatedStudyData => {
           this.__openButton.setFetching(false);
-          const workbench = updatedStudyData.workbench;
-          const updatableServices = [];
-          let anyUpdatable = false;
-          for (const nodeId in workbench) {
-            const node = workbench[nodeId];
-            const isUpdatable = osparc.service.Utils.isUpdatable(node);
-            if (isUpdatable) {
-              anyUpdatable = true;
-              updatableServices.push(nodeId);
-            }
-          }
-          if (anyUpdatable) {
+          const updatableServices = osparc.metadata.ServicesInStudyUpdate.updatableNodeIds(updatedStudyData.workbench);
+          if (updatableServices.length && osparc.data.model.Study.canIWrite(updatedStudyData["accessRights"])) {
             this.__confirmUpdate();
           } else {
             this.__openResource();
@@ -267,7 +257,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         if (selection.length) {
           const serviceVersion = selection[0].version;
           if (serviceVersion !== this.__resourceData["version"]) {
-            osparc.service.Store.getService(this.__resourceData["key"], serviceVersion)
+            osparc.store.Services.getService(this.__resourceData["key"], serviceVersion)
               .then(serviceData => {
                 serviceData["resourceType"] = "service";
                 this.__resourceData = serviceData;
@@ -632,7 +622,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         tagManager.addListener("updateTags", e => {
           const updatedData = e.getData();
           tagManager.setStudyData(updatedData);
-          this.fireDataEvent("updateStudy", updatedData);
+          if (osparc.utils.Resources.isStudy(resourceData)) {
+            this.fireDataEvent("updateStudy", updatedData);
+          } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+            this.fireDataEvent("updateTemplate", updatedData);
+          }
         }, this);
         page.addToContent(tagManager);
       }
@@ -678,7 +672,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     __getServicesBootOptionsPage: function() {
       const resourceData = this.__resourceData;
-      if (osparc.utils.Resources.isService(resourceData)) {
+      if (
+        osparc.utils.Resources.isService(resourceData) ||
+        !osparc.data.Permissions.getInstance().canDo("study.node.bootOptions.read")
+      ) {
         return null;
       }
 

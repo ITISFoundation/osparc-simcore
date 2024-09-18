@@ -156,7 +156,7 @@ qx.Class.define("osparc.share.Collaborators", {
   members: {
     _serializedDataCopy: null,
     _resourceType: null,
-    __organizationsAndMembers: null,
+    __addCollaborators: null,
     __collaboratorsModel: null,
     __collaborators: null,
 
@@ -189,7 +189,11 @@ qx.Class.define("osparc.share.Collaborators", {
       return control || this.base(arguments, id);
     },
 
-    __amIOwner: function() {
+    __canIChangePermissions: function() {
+      if (this._resourceType === "study" && this._serializedDataCopy["workspaceId"]) {
+        // Access Rights are set at workspace level
+        return false;
+      }
       let fullOptions = false;
       switch (this._resourceType) {
         case "study":
@@ -199,8 +203,8 @@ qx.Class.define("osparc.share.Collaborators", {
         case "service":
           fullOptions = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
           break;
-        case "folder":
-          fullOptions = osparc.share.CollaboratorsFolder.canIDelete(this._serializedDataCopy["myAccessRights"]);
+        case "workspace":
+          fullOptions = osparc.share.CollaboratorsWorkspace.canIDelete(this._serializedDataCopy["myAccessRights"]);
           break;
       }
       return fullOptions;
@@ -212,8 +216,8 @@ qx.Class.define("osparc.share.Collaborators", {
         case "service":
           rolesLayout = osparc.data.Roles.createRolesServicesInfo();
           break;
-        case "folder":
-          rolesLayout = osparc.data.Roles.createRolesFolderInfo();
+        case "workspace":
+          rolesLayout = osparc.data.Roles.createRolesWorkspaceInfo();
           break;
         default:
           rolesLayout = osparc.data.Roles.createRolesStudyInfo();
@@ -223,10 +227,9 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __buildLayout: function() {
-      if (this.__amIOwner()) {
-        this._createChildControlImpl("add-collaborator");
+      if (this.__canIChangePermissions()) {
+        this.__addCollaborators = this._createChildControlImpl("add-collaborator");
       }
-      this._createChildControlImpl("open-organizations-btn");
       this._createChildControlImpl("collaborators-list");
       this._createChildControlImpl("study-link");
       this._createChildControlImpl("template-link");
@@ -234,7 +237,7 @@ qx.Class.define("osparc.share.Collaborators", {
 
     __createAddCollaboratorSection: function() {
       const serializedDataCopy = osparc.utils.Utils.deepCloneObject(this._serializedDataCopy);
-      // pass resourceType, so that, it it's a template testers can share it with product everyone
+      // pass resourceType, so that, if it's a template testers can share it with product everyone
       serializedDataCopy["resourceType"] = this._resourceType;
       const addCollaborators = new osparc.share.AddCollaborators(serializedDataCopy);
       addCollaborators.addListener("addCollaborators", e => this._addEditors(e.getData()), this);
@@ -365,6 +368,15 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     _reloadCollaboratorsList: function() {
+      // reload "Share with..." list
+      if (this.__addCollaborators) {
+        const serializedDataCopy = osparc.utils.Utils.deepCloneObject(this._serializedDataCopy);
+        // pass resourceType, so that, if it's a template testers can share it with product everyone
+        serializedDataCopy["resourceType"] = this._resourceType;
+        this.__addCollaborators.setSerializedData(serializedDataCopy);
+      }
+
+      // reload list
       this.__collaboratorsModel.removeAll();
 
       const store = osparc.store.Store.getInstance();
@@ -374,7 +386,7 @@ qx.Class.define("osparc.share.Collaborators", {
       ];
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
-      const showOptions = this.__amIOwner();
+      const showOptions = this.__canIChangePermissions();
       Object.keys(accessRights).forEach(gid => {
         if (Object.prototype.hasOwnProperty.call(this.__collaborators, gid)) {
           const collab = this.__collaborators[gid];

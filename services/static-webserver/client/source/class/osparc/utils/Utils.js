@@ -405,13 +405,14 @@ qx.Class.define("osparc.utils.Utils", {
       });
     },
 
-    getViewButton: function() {
-      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/12").set({
+    getLinkButton: function(isVisible = true) {
+      return new qx.ui.form.Button(null, "@FontAwesome5Solid/link/12").set({
+        appearance: "form-button-outlined",
         allowGrowY: false,
         padding: 3,
-        maxWidth: 20
+        maxWidth: 20,
+        visibility: isVisible ? "visible" : "excluded"
       });
-      return button;
     },
 
     getCopyButton: function() {
@@ -991,11 +992,30 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    // Function that creates a unique tabId even for duplicated tabs
     getClientSessionID: function() {
-      // https://stackoverflow.com/questions/11896160/any-way-to-identify-browser-tab-in-javascript
-      const clientSessionID = sessionStorage.getItem("clientsessionid") ? sessionStorage.getItem("clientsessionid") : osparc.utils.Utils.uuidV4();
-      sessionStorage.setItem("clientsessionid", clientSessionID);
-      return clientSessionID;
+      const getUniqueSessionId = () => {
+        const uuid = osparc.utils.Utils.uuidV4();
+        // Set window.name. This property is persistent on window reloads, but it doesn't get copied in a duplicated tab
+        window.name = uuid;
+        sessionStorage.setItem("clientsessionid", uuid);
+        return uuid;
+      };
+
+      let uniqueSessionId = sessionStorage.getItem("clientsessionid");
+      if (uniqueSessionId) {
+        // Check if the tab was duplicated
+        // window.name is one of the few things it doesn't get copied, but persists on window reload
+        if (window.name !== uniqueSessionId) {
+          // Tab has been duplicated, generate a new uniqueId for the duplicated tab
+          uniqueSessionId = getUniqueSessionId();
+        }
+      } else {
+        // If no tabId exists in sessionStorage, generate one
+        uniqueSessionId = getUniqueSessionId();
+      }
+
+      return uniqueSessionId;
     },
 
     getFreeDistanceToWindowEdges: function(layoutItem) {

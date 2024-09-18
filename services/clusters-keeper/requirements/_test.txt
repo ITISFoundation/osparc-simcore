@@ -11,7 +11,7 @@ aiosignal==1.3.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-antlr4-python3-runtime==4.13.1
+antlr4-python3-runtime==4.13.2
     # via moto
 anyio==4.3.0
     # via
@@ -19,11 +19,6 @@ anyio==4.3.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-async-timeout==4.0.3
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
-    #   redis
 attrs==23.2.0
     # via
     #   -c requirements/_base.txt
@@ -55,26 +50,28 @@ certifi==2024.2.2
     #   httpcore
     #   httpx
     #   requests
-cffi==1.16.0
+cffi==1.17.0
     # via cryptography
-cfn-lint==1.8.0
+cfn-lint==1.10.3
     # via moto
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.6.0
+coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==42.0.8
+cryptography==43.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
     #   moto
-debugpy==1.8.2
+debugpy==1.8.5
     # via -r requirements/_test.in
 deepdiff==7.0.1
     # via -r requirements/_test.in
@@ -82,14 +79,9 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-exceptiongroup==1.2.1
-    # via
-    #   -c requirements/_base.txt
-    #   anyio
-    #   pytest
-faker==26.0.0
+faker==27.0.0
     # via -r requirements/_test.in
-fakeredis==2.23.3
+fakeredis==2.23.5
     # via -r requirements/_test.in
 flask==3.0.3
     # via
@@ -142,7 +134,7 @@ jmespath==1.0.1
     #   botocore
 joserfc==1.0.0
     # via moto
-jsondiff==2.1.2
+jsondiff==2.2.0
     # via moto
 jsonpatch==1.33
     # via cfn-lint
@@ -172,7 +164,7 @@ markupsafe==2.1.5
     #   -c requirements/_base.txt
     #   jinja2
     #   werkzeug
-moto==5.0.11
+moto==5.0.13
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -201,7 +193,7 @@ pluggy==1.5.0
     # via pytest
 ply==3.11
     # via jsonpath-ng
-psutil==5.9.8
+psutil==6.0.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -216,13 +208,13 @@ pydantic==1.10.15
     #   aws-sam-translator
 pyparsing==3.1.2
     # via moto
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
-pytest-asyncio==0.21.2
+pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
@@ -260,10 +252,11 @@ referencing==0.29.3
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-regex==2024.5.15
+regex==2024.7.24
     # via cfn-lint
 requests==2.32.3
     # via
+    #   -c requirements/_base.txt
     #   docker
     #   jsonschema-path
     #   moto
@@ -283,8 +276,10 @@ s3transfer==0.10.1
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==71.0.2
-    # via moto
+setuptools==74.0.0
+    # via
+    #   -c requirements/_base.txt
+    #   moto
 six==1.16.0
     # via
     #   -c requirements/_base.txt
@@ -300,22 +295,16 @@ sortedcontainers==2.4.0
     # via
     #   -c requirements/_base.txt
     #   fakeredis
-sympy==1.13.0
+sympy==1.13.2
     # via cfn-lint
-tomli==2.0.1
-    # via
-    #   coverage
-    #   pytest
-types-pyyaml==6.0.12.20240724
+types-pyyaml==6.0.12.20240808
     # via -r requirements/_test.in
 typing-extensions==4.11.0
     # via
     #   -c requirements/_base.txt
     #   aiodocker
-    #   anyio
     #   aws-sam-translator
     #   cfn-lint
-    #   fakeredis
     #   pydantic
 urllib3==2.2.1
     # via

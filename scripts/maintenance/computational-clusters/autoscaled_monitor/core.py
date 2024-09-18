@@ -38,8 +38,12 @@ def _parse_computational(
     state: AppState, instance: Instance
 ) -> ComputationalInstance | None:
     name = utils.get_instance_name(instance)
-    if result := state.computational_parser.search(name):
+    if result := (
+        state.computational_parser_workers.parse(name)
+        or state.computational_parser_primary.parse(name)
+    ):
         assert isinstance(result, parse.Result)
+
         last_heartbeat = utils.get_last_heartbeat(instance)
         return ComputationalInstance(
             role=InstanceRole(result["role"]),
@@ -444,7 +448,7 @@ async def summary(state: AppState, user_id: int | None, wallet_id: int | None) -
 
 def _print_computational_tasks(
     user_id: int,
-    wallet_id: int,
+    wallet_id: int | None,
     tasks: list[tuple[ComputationalTask | None, DaskTask | None]],
 ) -> None:
     table = Table(
@@ -483,7 +487,7 @@ def _print_computational_tasks(
 
 
 async def _list_computational_clusters(
-    state: AppState, user_id: int, wallet_id: int
+    state: AppState, user_id: int, wallet_id: int | None
 ) -> list[ComputationalCluster]:
     assert state.ec2_resource_clusters_keeper
     computational_instances = await ec2.list_computational_instances_from_ec2(
@@ -495,7 +499,7 @@ async def _list_computational_clusters(
 
 
 async def cancel_jobs(  # noqa: C901, PLR0912
-    state: AppState, user_id: int, wallet_id: int, *, force: bool
+    state: AppState, user_id: int, wallet_id: int | None, *, force: bool
 ) -> None:
     # get the theory
     computational_tasks = await db.list_computational_tasks_from_db(state, user_id)
@@ -538,12 +542,13 @@ async def cancel_jobs(  # noqa: C901, PLR0912
     rich.print(the_cluster.datasets)
     try:
         if response := typer.prompt(
-            "[yellow]Which dataset to cancel? all for all of them.[/yellow]",
+            "Which dataset to cancel? (all: will cancel everything, 1-5: will cancel jobs 1-5, or 4: will cancel job #4)",
             default="none",
         ):
             if response == "none":
                 rich.print("[yellow]not cancelling anything[/yellow]")
             elif response == "all":
+                rich.print("cancelling all tasks")
                 for comp_task, dask_task in task_to_dask_job:
                     if dask_task is not None and dask_task.state != "unknown":
                         await dask.trigger_job_cancellation_in_scheduler(
@@ -565,25 +570,43 @@ async def cancel_jobs(  # noqa: C901, PLR0912
 
                 rich.print("cancelled all tasks")
             else:
-                selected_index = TypeAdapter(int).validate_python(response)
-                comp_task, dask_task = task_to_dask_job[selected_index]
-                if dask_task is not None and dask_task.state != "unknown":
-                    await dask.trigger_job_cancellation_in_scheduler(
-                        state, the_cluster, dask_task.job_id
-                    )
-                    if comp_task is None:
-                        # we need to clear it of the cluster
-                        await dask.remove_job_from_scheduler(
-                            state, the_cluster, dask_task.job_id
-                        )
+                try:
+                    # Split the response and handle ranges
+                    indices = response.split("-")
+                    if len(indices) == 2:
+                        start_index, end_index = map(int, indices)
+                        selected_indices = range(start_index, end_index + 1)
+                    else:
+                        selected_indices = [int(indices[0])]
 
-                if comp_task is not None and force:
-                    await db.abort_job_in_db(
-                        state, comp_task.project_id, comp_task.node_id
-                    )
+                    for selected_index in selected_indices:
+                        comp_task, dask_task = task_to_dask_job[selected_index]
+                        if dask_task is not None and dask_task.state != "unknown":
+                            await dask.trigger_job_cancellation_in_scheduler(
+                                state, the_cluster, dask_task.job_id
+                            )
+                            if comp_task is None:
+                                # we need to clear it of the cluster
+                                await dask.remove_job_from_scheduler(
+                                    state, the_cluster, dask_task.job_id
+                                )
 
+                        if comp_task is not None and force:
+                            await db.abort_job_in_db(
+                                state, comp_task.project_id, comp_task.node_id
+                            )
+                    rich.print(f"Cancelled selected tasks: {response}")
+
+                except ValidationError:
+                    rich.print(
+                        "[yellow]wrong index format, not cancelling anything[/yellow]"
+                    )
+                except IndexError:
+                    rich.print(
+                        "[yellow]index out of range, not cancelling anything[/yellow]"
+                    )
     except ValidationError:
-        rich.print("[yellow]wrong index, not cancelling anything[/yellow]")
+        rich.print("[yellow]wrong input, not cancelling anything[/yellow]")
 
 
 async def trigger_cluster_termination(

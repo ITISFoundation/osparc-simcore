@@ -13,6 +13,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
+from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, Extra, Field, Json, root_validator, validator
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -26,18 +27,18 @@ from .models import ProjectTypeAPI
 
 class ProjectCreateHeaders(BaseModel):
 
-    simcore_user_agent: str = Field(
+    simcore_user_agent: str = Field(  # type: ignore[literal-required]
         default=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
         description="Optional simcore user agent",
         alias=X_SIMCORE_USER_AGENT,
     )
 
-    parent_project_uuid: ProjectID | None = Field(
+    parent_project_uuid: ProjectID | None = Field(  # type: ignore[literal-required]
         default=None,
         description="Optional parent project UUID",
         alias=X_SIMCORE_PARENT_PROJECT_UUID,
     )
-    parent_node_id: NodeID | None = Field(
+    parent_node_id: NodeID | None = Field(  # type: ignore[literal-required]
         default=None,
         description="Optional parent node ID",
         alias=X_SIMCORE_PARENT_NODE_ID,
@@ -98,6 +99,10 @@ class ProjectListParams(PageQueryParameters):
         default=None,
         description="Filter projects in specific folder. Default filtering is a root directory.",
     )
+    workspace_id: WorkspaceID | None = Field(
+        default=None,
+        description="Filter projects in specific workspace. Default filtering is a private workspace.",
+    )
 
     @validator("search", pre=True)
     @classmethod
@@ -110,9 +115,13 @@ class ProjectListParams(PageQueryParameters):
         "folder_id", allow_reuse=True, pre=True
     )(null_or_none_str_to_none_validator)
 
+    _null_or_none_str_to_none_validator2 = validator(
+        "workspace_id", allow_reuse=True, pre=True
+    )(null_or_none_str_to_none_validator)
+
 
 class ProjectListWithJsonStrParams(ProjectListParams):
-    order_by: Json[OrderBy] = Field(  # type: ignore[type-arg] # need update to pydantic 1.10 # pylint: disable=unsubscriptable-object
+    order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
         default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
         example='{"field": "prj_owner", "direction": "desc"}',

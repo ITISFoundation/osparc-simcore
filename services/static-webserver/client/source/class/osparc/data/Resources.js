@@ -57,7 +57,6 @@
 
 qx.Class.define("osparc.data.Resources", {
   extend: qx.core.Object,
-
   type: "singleton",
 
   defer: function(statics) {
@@ -119,19 +118,19 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user"
           },
-          getPageFolder: {
+          getPage: {
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}"
           },
-          getPageFolderSearch: {
+          getPageSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}&search={text}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}&search={text}"
           },
-          getPageFolderSortBy: {
+          getPageSortBy: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&folder_id={folderId}&order_by={orderBy}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}&order_by={orderBy}"
           },
           getOne: {
             useCache: false,
@@ -260,13 +259,13 @@ qx.Class.define("osparc.data.Resources", {
           },
           addTag: {
             useCache: false,
-            method: "PUT",
-            url: statics.API + "/projects/{studyId}/tags/{tagId}"
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/tags/{tagId}:add"
           },
           removeTag: {
             useCache: false,
-            method: "DELETE",
-            url: statics.API + "/projects/{studyId}/tags/{tagId}"
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/tags/{tagId}:remove"
           },
           getInactivity: {
             useCache: false,
@@ -276,7 +275,11 @@ qx.Class.define("osparc.data.Resources", {
           moveToFolder: {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/folders/{folderId}"
-          }
+          },
+          moveToWorkspace: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/workspaces/{workspaceId}"
+          },
         }
       },
       "studyComments": {
@@ -299,7 +302,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/folders?folder_id={folderId}&offset={offset}&limit={limit}"
+            url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}"
           },
           getOne: {
             method: "GET",
@@ -316,7 +319,47 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/folders/{folderId}"
-          }
+          },
+          moveToWorkspace: {
+            method: "PUT",
+            url: statics.API + "/folders/{folderId}/folders/{workspaceId}"
+          },
+        }
+      },
+      "workspaces": {
+        endpoints: {
+          getPage: {
+            method: "GET",
+            url: statics.API + "/workspaces?&offset={offset}&limit={limit}"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/workspaces/{workspaceId}"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/workspaces"
+          },
+          update: {
+            method: "PUT",
+            url: statics.API + "/workspaces/{workspaceId}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/workspaces/{workspaceId}"
+          },
+          postAccessRights: {
+            method: "POST",
+            url: statics.API + "/workspaces/{workspaceId}/groups/{groupId}"
+          },
+          putAccessRights: {
+            method: "PUT",
+            url: statics.API + "/workspaces/{workspaceId}/groups/{groupId}"
+          },
+          deleteAccessRights: {
+            method: "DELETE",
+            url: statics.API + "/workspaces/{workspaceId}/groups/{groupId}"
+          },
         }
       },
       "resourceUsage": {
@@ -470,7 +513,7 @@ qx.Class.define("osparc.data.Resources", {
        * SERVICES V2 (web-api >=0.42.0)
        */
       "servicesV2": {
-        useCache: false, // handled in osparc.service.Store
+        useCache: false, // handled in osparc.store.Services
         idField: ["key", "version"],
         endpoints: {
           get: {
@@ -1249,7 +1292,12 @@ qx.Class.define("osparc.data.Resources", {
             }
           }
           res.dispose();
-          "resolveWResponse" in options && options.resolveWResponse ? resolve(response) : resolve(data);
+          if ("resolveWResponse" in options && options.resolveWResponse) {
+            response.params = params;
+            resolve(response);
+          } else {
+            resolve(data);
+          }
         }, this);
 
         res.addListenerOnce(endpoint + "Error", e => {
@@ -1272,6 +1320,21 @@ qx.Class.define("osparc.data.Resources", {
             status = req.getStatus();
           }
           res.dispose();
+
+          // If a 401 is received, make a call to the /me endpoint.
+          // If the backend responds with yet another 401, assume that the backend logged the user out
+          if (status === 401 && resource !== "profile" && osparc.auth.Manager.getInstance().isLoggedIn()) {
+            console.warn("Checking if user is logged in the backend");
+            this.fetch("profile", "getOne")
+              .catch(err => {
+                if ("status" in err && err.status === 401) {
+                  // Unauthorized again, the cookie might have expired.
+                  // We can assume that all calls after this will respond with 401, so bring the user ot the login page.
+                  qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You were logged out"));
+                }
+              });
+          }
+
           if ([404, 503].includes(status)) {
             message += "<br>Please try again later and/or contact support";
           }

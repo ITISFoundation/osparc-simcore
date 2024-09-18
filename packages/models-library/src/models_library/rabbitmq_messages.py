@@ -85,6 +85,7 @@ class ProgressType(StrAutoEnum):
     SERVICE_OUTPUTS_PULLING = auto()
     SERVICE_STATE_PULLING = auto()
     SERVICE_IMAGES_PULLING = auto()
+    SERVICE_CONTAINERS_STARTING = auto()
 
     SERVICE_STATE_PUSHING = auto()
     SERVICE_OUTPUTS_PUSHING = auto()

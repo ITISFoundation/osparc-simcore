@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Class that stores Service data.
+ * Class that stores Folder data.
  */
 
 qx.Class.define("osparc.data.model.Folder", {
@@ -29,12 +29,11 @@ qx.Class.define("osparc.data.model.Folder", {
     this.base(arguments);
 
     this.set({
+      workspaceId: folderData.workspaceId,
       folderId: folderData.folderId,
-      parentId: folderData.parentFolderId,
+      parentFolderId: folderData.parentFolderId,
       name: folderData.name,
-      description: folderData.description,
       myAccessRights: folderData.myAccessRights,
-      accessRights: folderData.accessRights,
       owner: folderData.owner,
       createdAt: new Date(folderData.createdAt),
       lastModified: new Date(folderData.modifiedAt),
@@ -42,18 +41,25 @@ qx.Class.define("osparc.data.model.Folder", {
   },
 
   properties: {
+    workspaceId: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeWorkspaceId"
+    },
+
     folderId: {
       check: "Number",
       nullable: false,
       init: null,
-      event: "changeId"
+      event: "changeFolderId"
     },
 
-    parentId: {
+    parentFolderId: {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeParentId"
+      event: "changeParentFolderId"
     },
 
     name: {
@@ -63,25 +69,11 @@ qx.Class.define("osparc.data.model.Folder", {
       event: "changeName"
     },
 
-    description: {
-      check: "String",
-      nullable: true,
-      init: null,
-      event: "changeDescription"
-    },
-
     myAccessRights: {
       check: "Object",
       nullable: false,
       init: null,
       event: "changeMyAccessRights"
-    },
-
-    accessRights: {
-      check: "Object",
-      nullable: false,
-      init: null,
-      event: "changeAccessRights"
     },
 
     owner: {
@@ -107,10 +99,6 @@ qx.Class.define("osparc.data.model.Folder", {
   },
 
   statics: {
-    putFolder: function(folderId, propKey, value) {
-      return osparc.store.Folders.getInstance().putFolder(folderId, propKey, value);
-    },
-
     getProperties: function() {
       return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Folder));
     }

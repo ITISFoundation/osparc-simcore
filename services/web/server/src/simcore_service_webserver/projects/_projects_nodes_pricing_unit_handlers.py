@@ -87,7 +87,7 @@ async def get_project_node_pricing_unit(request: web.Request):
     webserver_pricing_unit_get = PricingUnitGet(
         pricing_unit_id=pricing_unit_get.pricing_unit_id,
         unit_name=pricing_unit_get.unit_name,
-        unit_extra_info=pricing_unit_get.unit_extra_info,
+        unit_extra_info=pricing_unit_get.unit_extra_info,  # type: ignore[arg-type]
         current_cost_per_unit=pricing_unit_get.current_cost_per_unit,
         default=pricing_unit_get.default,
     )

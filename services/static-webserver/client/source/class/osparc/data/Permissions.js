@@ -115,9 +115,9 @@ qx.Class.define("osparc.data.Permissions", {
           "study.node.data.push",
           "study.node.data.delete",
           "study.node.export",
+          "study.node.bootOptions.read",
           "study.edge.create",
           "study.edge.delete",
-          "study.service.update",
           "study.classifier",
           "study.tag",
           "study.slides.edit",
@@ -148,12 +148,13 @@ qx.Class.define("osparc.data.Permissions", {
         "admin": []
       };
       let fromUserToTester = [];
-      if (osparc.product.Utils.isProduct("tis")) {
+      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
         // "templates" and "services" tabs only for testers
         // start/stop/edit app mode only for testers
         fromUserToTester = [
           "dashboard.templates.read",
           "dashboard.services.read",
+          "study.node.bootOptions.read",
           "study.slides.edit",
           "study.slides.stop"
         ];

@@ -1,6 +1,6 @@
 from collections import defaultdict
 from collections.abc import Generator
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Any, TypeAlias
 
 from aws_library.ec2 import EC2InstanceData, EC2InstanceType, Resources
@@ -68,7 +68,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             "description": "This is a EC2-backed docker node which is drained (cannot accept tasks)"
         }
     )
-    reserve_drained_nodes: list[AssociatedInstance] = field(
+    buffer_drained_nodes: list[AssociatedInstance] = field(
         metadata={
             "description": "This is a EC2-backed docker node which is drained in the reserve if this is enabled (with no tasks)"
         }
@@ -98,6 +98,11 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             "description": "This is a EC2-backed docker node which is docker drained and waiting for termination"
         }
     )
+    retired_nodes: list[AssociatedInstance] = field(
+        metadata={
+            "description": "This is a EC2-backed docker node which was retired and waiting to be drained and eventually terminated or re-used"
+        }
+    )
     terminated_instances: list[NonAssociatedInstance]
 
     def can_scale_down(self) -> bool:
@@ -107,6 +112,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             or self.drained_nodes
             or self.pending_ec2s
             or self.terminating_nodes
+            or self.retired_nodes
         )
 
     def total_number_of_machines(self) -> int:
@@ -115,10 +121,11 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             len(self.active_nodes)
             + len(self.pending_nodes)
             + len(self.drained_nodes)
-            + len(self.reserve_drained_nodes)
+            + len(self.buffer_drained_nodes)
             + len(self.pending_ec2s)
             + len(self.broken_ec2s)
             + len(self.terminating_nodes)
+            + len(self.retired_nodes)
         )
 
     def __repr__(self) -> str:
@@ -128,16 +135,17 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             return f"[{','.join(n.ec2_instance.id for n in instances)}]"
 
         return (
-            f"active-nodes: count={len(self.active_nodes)} {_get_instance_ids(self.active_nodes)}, "
+            f"Cluster(active-nodes: count={len(self.active_nodes)} {_get_instance_ids(self.active_nodes)}, "
             f"pending-nodes: count={len(self.pending_nodes)} {_get_instance_ids(self.pending_nodes)}, "
             f"drained-nodes: count={len(self.drained_nodes)} {_get_instance_ids(self.drained_nodes)}, "
-            f"reserve-drained-nodes: count={len(self.reserve_drained_nodes)} {_get_instance_ids(self.reserve_drained_nodes)}, "
+            f"reserve-drained-nodes: count={len(self.buffer_drained_nodes)} {_get_instance_ids(self.buffer_drained_nodes)}, "
             f"pending-ec2s: count={len(self.pending_ec2s)} {_get_instance_ids(self.pending_ec2s)}, "
             f"broken-ec2s: count={len(self.broken_ec2s)} {_get_instance_ids(self.broken_ec2s)}, "
             f"buffer-ec2s: count={len(self.buffer_ec2s)} {_get_instance_ids(self.buffer_ec2s)}, "
             f"disconnected-nodes: count={len(self.disconnected_nodes)}, "
             f"terminating-nodes: count={len(self.terminating_nodes)} {_get_instance_ids(self.terminating_nodes)}, "
-            f"terminated-ec2s: count={len(self.terminated_instances)} {_get_instance_ids(self.terminated_instances)}, "
+            f"retired-nodes: count={len(self.retired_nodes)} {_get_instance_ids(self.retired_nodes)}, "
+            f"terminated-ec2s: count={len(self.terminated_instances)} {_get_instance_ids(self.terminated_instances)})"
         )
 
 
@@ -158,6 +166,7 @@ class BufferPool:
     waiting_to_stop_instances: set[EC2InstanceData] = field(default_factory=set)
     pulling_instances: set[EC2InstanceData] = field(default_factory=set)
     stopping_instances: set[EC2InstanceData] = field(default_factory=set)
+    broken_instances: set[EC2InstanceData] = field(default_factory=set)
 
     def __repr__(self) -> str:
         return (
@@ -166,7 +175,8 @@ class BufferPool:
             f"waiting-to-pull-count={len(self.waiting_to_pull_instances)}, "
             f"waiting-to-stop-count={len(self.waiting_to_stop_instances)}, "
             f"pulling-count={len(self.pulling_instances)}, "
-            f"stopping-count={len(self.stopping_instances)})"
+            f"stopping-count={len(self.stopping_instances)}, "
+            f"broken-count={len(self.broken_instances)})"
         )
 
     def _sort_by_readyness(
@@ -179,6 +189,7 @@ class BufferPool:
             self.pulling_instances,
             self.waiting_to_pull_instances,
             self.pending_instances,
+            self.broken_instances,
         )
         if invert:
             yield from reversed(order)
@@ -209,3 +220,13 @@ class BufferPoolManager:
 
     def __repr__(self) -> str:
         return f"BufferPoolManager({dict(self.buffer_pools)})"
+
+    def flatten_buffer_pool(self) -> BufferPool:
+        """returns a flattened buffer pool with all the EC2InstanceData"""
+        flat_pool = BufferPool()
+
+        for buffer_pool in self.buffer_pools.values():
+            for f in fields(BufferPool):
+                getattr(flat_pool, f.name).update(getattr(buffer_pool, f.name))
+
+        return flat_pool

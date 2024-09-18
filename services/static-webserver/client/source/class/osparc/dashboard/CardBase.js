@@ -449,7 +449,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyUuid: function(value, old) {
-      osparc.utils.Utils.setIdToWidget(this, "studyBrowserListItem_"+value);
+      const resourceType = this.getResourceType() || "study";
+      osparc.utils.Utils.setIdToWidget(this, resourceType + "BrowserListItem_" + value);
 
       this.setCardKey(value);
     },
@@ -779,9 +780,17 @@ qx.Class.define("osparc.dashboard.CardBase", {
         if (studyDataButton) {
           studyDataButton.setEnabled(osparc.study.Utils.canShowStudyData(resourceData));
         }
+        const billingSettingsButton = menuButtons.find(menuBtn => "billingSettingsButton" in menuBtn);
+        if (billingSettingsButton) {
+          billingSettingsButton.setEnabled(osparc.study.Utils.canShowBillingOptions(resourceData));
+        }
         const moveToFolderButton = menuButtons.find(menuBtn => "moveToFolderButton" in menuBtn);
         if (moveToFolderButton) {
           moveToFolderButton.setEnabled(osparc.study.Utils.canMoveToFolder(resourceData));
+        }
+        const moveToWorkspaceButton = menuButtons.find(menuBtn => "moveToWorkspaceButton" in menuBtn);
+        if (moveToWorkspaceButton) {
+          moveToWorkspaceButton.setEnabled(osparc.study.Utils.canMoveToWorkspace(resourceData));
         }
         const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
         if (deleteButton) {
@@ -803,9 +812,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (osparc.data.model.Study.canIWrite(accessRights)) {
         permissionIcon.exclude();
       } else {
-        permissionIcon.setSource(osparc.dashboard.CardBase.PERM_READ);
-        this.addListener("mouseover", () => permissionIcon.show(), this);
-        this.addListener("mouseout", () => permissionIcon.exclude(), this);
+        permissionIcon.show();
       }
     },
 

@@ -1,12 +1,10 @@
 appdirs==1.4.4
     # via pint
-coverage==7.6.0
+coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.2.2
-    # via pytest
-faker==26.0.0
+faker==27.0.0
     # via -r requirements/_test.in
 flexcache==0.3
     # via pint
@@ -27,7 +25,7 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -36,7 +34,7 @@ pytest==8.2.2
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.21.2
+pytest-asyncio==0.23.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
@@ -56,7 +54,7 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   faker
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -67,10 +65,6 @@ six==1.16.0
     #   python-dateutil
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via
-    #   coverage
-    #   pytest
 typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt

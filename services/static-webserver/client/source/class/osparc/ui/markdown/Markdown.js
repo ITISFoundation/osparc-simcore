@@ -7,7 +7,7 @@
  */
 
 /**
- * @asset(marked/marked.js)
+ * @asset(marked/marked.min.js)
  * @ignore(marked)
  */
 
@@ -32,7 +32,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
         resolve(marked);
       } else {
         const loader = new qx.util.DynamicScriptLoader([
-          "marked/marked.js"
+          "marked/marked.min.js"
         ]);
         loader.addListenerOnce("ready", () => {
           resolve(marked);
@@ -62,12 +62,12 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      */
     value: {
       check: "String",
-      apply: "_applyMarkdown"
+      apply: "__applyMarkdown"
     },
 
     noMargin: {
       check: "Boolean",
-      init: true
+      init: false
     }
   },
 
@@ -77,20 +77,27 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
      * Apply function for the markdown property. Compiles the markdown text to HTML and applies it to the value property of the label.
      * @param {String} value Plain text accepting markdown syntax.
      */
-    _applyMarkdown: function(value = "") {
+    __applyMarkdown: function(value = "") {
       this.__loadMarked.then(() => {
-        const renderer = new marked.Renderer();
-
-        const linkRenderer = renderer.link;
-        renderer.link = (href, title, text) => {
-          const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
-          const html = linkRenderer.call(renderer, href, title, text);
-          // eslint-disable-next-line quotes
-          const linkWithRightColor = html.replace(/^<a /, '<a style="color:'+ linkColor + ' !important"');
-          return linkWithRightColor;
+        const renderer = {
+          link(link) {
+            const linkColor = qx.theme.manager.Color.getInstance().resolve("link");
+            let linkHtml = `<a href="${link.href}" title="${link.title || ""}" style="color: ${linkColor};">`
+            if (link.tokens && link.tokens.length) {
+              const linkRepresentation = link.tokens[0];
+              if (linkRepresentation.type === "text") {
+                linkHtml += linkRepresentation.text;
+              } else if (linkRepresentation.type === "image") {
+                linkHtml += `<img src="${linkRepresentation.href}" tile alt="${linkRepresentation.text}"></img>`;
+              }
+            }
+            linkHtml += `</a>`;
+            return linkHtml;
+          }
         };
+        marked.use({ renderer });
 
-        const html = marked(value, { renderer });
+        const html = marked.parse(value);
 
         const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
         this.setHtml(safeHtml);

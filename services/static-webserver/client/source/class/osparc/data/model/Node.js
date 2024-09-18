@@ -166,12 +166,6 @@ qx.Class.define("osparc.data.model.Node", {
       apply: "__applyPropsForm"
     },
 
-    propsFormEditor: {
-      check: "osparc.form.renderer.PropFormEditor",
-      init: null,
-      nullable: true
-    },
-
     marker: {
       check: "qx.core.Object",
       init: null,
@@ -388,7 +382,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     __applyNewMetaData: function(newV, oldV) {
       if (oldV !== null) {
-        const metadata = osparc.service.Store.getMetadata(this.getKey(), this.getVersion());
+        const metadata = osparc.store.Services.getMetadata(this.getKey(), this.getVersion());
         if (metadata) {
           this.__metaData = metadata;
         }
@@ -447,7 +441,6 @@ qx.Class.define("osparc.data.model.Node", {
           this.setInputs(metadata.inputs);
           if (Object.keys(metadata.inputs).length) {
             this.__addSettings(metadata.inputs);
-            this.__addSettingsAccessLevelEditor(metadata.inputs);
           }
           if (this.getPropsForm()) {
             this.getPropsForm().makeInputsDynamic();
@@ -549,7 +542,17 @@ qx.Class.define("osparc.data.model.Node", {
         this.getPropsForm().setEnabled(!isPipelineRunning);
       };
       this.getStudy().addListener("changeState", () => checkIsPipelineRunning(), this);
-      checkIsPipelineRunning();
+
+      // potentially disabling the inputs form might have side effects if the deserialization is not over
+      if (this.getWorkbench().isDeserialized()) {
+        checkIsPipelineRunning();
+      } else {
+        this.getWorkbench().addListener("changeDeserialized", e => {
+          if (e.getData()) {
+            checkIsPipelineRunning();
+          }
+        }, this);
+      }
     },
 
     /**
@@ -609,36 +612,6 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
     },
 
-    __addSettingsAccessLevelEditor: function(inputs) {
-      const propsForm = this.getPropsForm();
-      const form = new osparc.form.Auto(inputs);
-      form.setData(this.__settingsForm.getData());
-      const propsFormEditor = new osparc.form.renderer.PropFormEditor(form, this);
-      this.__settingsForm.addListener("changeData", e => {
-        // apply data
-        const data = this.__settingsForm.getData();
-        form.setData(data);
-      }, this);
-      propsForm.addListener("linkFieldModified", e => {
-        const linkFieldModified = e.getData();
-        const {
-          portId,
-          added
-        } = linkFieldModified;
-        if (added) {
-          const srcControlLink = propsForm.getControlLink(portId);
-          const controlLink = new qx.ui.form.TextField().set({
-            enabled: false
-          });
-          srcControlLink.bind("value", controlLink, "value");
-          propsFormEditor.linkAdded(portId, controlLink);
-        } else {
-          propsFormEditor.linkRemoved(portId);
-        }
-      }, this);
-      this.setPropsFormEditor(propsFormEditor);
-    },
-
     removeNodePortConnections: function(inputNodeId) {
       let inputs = this.__getInputData();
       for (const portId in inputs) {
@@ -684,7 +657,7 @@ qx.Class.define("osparc.data.model.Node", {
             inputData[key] = inputsCopy[key];
           }
         }
-        this.getPropsForm().addPortLinks(inputLinks);
+        this.getPropsForm().setInputLinks(inputLinks);
         this.__settingsForm.setData(inputData);
       }
     },
@@ -699,7 +672,6 @@ qx.Class.define("osparc.data.model.Node", {
       if (inputAccess) {
         this.setInputAccess(inputAccess);
         this.getPropsForm().setAccessLevel(inputAccess);
-        this.getPropsFormEditor().setAccessLevel(inputAccess);
       }
 
       const study = this.getStudy();

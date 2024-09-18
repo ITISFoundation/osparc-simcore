@@ -18,7 +18,7 @@ from collections.abc import Generator
 from contextlib import suppress
 from decimal import Decimal
 from pprint import pformat
-from typing import Any, Final
+from typing import Any, Final, cast
 from uuid import UUID, uuid4
 
 from aiohttp import web
@@ -62,6 +62,7 @@ from models_library.users import GroupID, UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
+from models_library.workspaces import UserWorkspaceAccessRightsDB
 from pydantic import ByteSize, parse_obj_as
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
@@ -86,6 +87,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
+from simcore_service_webserver.projects._db_utils import PermissionStr
 
 from ..application_settings import get_application_settings
 from ..catalog import client as catalog_client
@@ -117,7 +119,12 @@ from ..users.preferences_api import (
 )
 from ..wallets import api as wallets_api
 from ..wallets.errors import WalletNotEnoughCreditsError
+from ..workspaces import _workspaces_db as workspaces_db
 from . import _crud_api_delete, _nodes_api
+from ._access_rights_api import (
+    check_user_project_permission,
+    has_user_project_access_rights,
+)
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from ._wallets_api import connect_wallet_to_project, get_project_wallet
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
@@ -172,10 +179,17 @@ async def get_project_for_user(
     """
     db = ProjectDBAPI.get_from_app_context(app)
 
+    product_name = await db.get_project_product(ProjectID(project_uuid))
+    await check_user_project_permission(
+        app,
+        project_id=ProjectID(project_uuid),
+        user_id=user_id,
+        product_name=product_name,
+        permission=cast(PermissionStr, check_permissions),
+    )
+
     project, project_type = await db.get_project(
-        user_id,
         project_uuid,
-        check_permissions=check_permissions,  # type: ignore[arg-type]
     )
 
     # adds state if it is not a template
@@ -183,6 +197,19 @@ async def get_project_for_user(
         project = await add_project_states_for_user(
             user_id, project, project_type is ProjectType.TEMPLATE, app
         )
+
+    if project["workspaceId"] is not None:
+        workspace_db: UserWorkspaceAccessRightsDB = (
+            await workspaces_db.get_workspace_for_user(
+                app=app,
+                user_id=user_id,
+                workspace_id=project["workspaceId"],
+                product_name=product_name,
+            )
+        )
+        project["accessRights"] = {
+            gid: access.dict() for gid, access in workspace_db.access_rights.items()
+        }
 
     Project.parse_obj(project)  # NOTE: only validates
     return project
@@ -226,11 +253,13 @@ async def patch_project(
     project_db = await db.get_project_db(project_uuid=project_uuid)
 
     # 2. Check user permissions
-    _user_project_access_rights = await db.get_project_access_rights_for_user(
-        user_id, project_uuid
+    _user_project_access_rights = await check_user_project_permission(
+        app,
+        project_id=project_uuid,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",
     )
-    if not _user_project_access_rights.write:
-        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 
     # 3. If patching access rights
     if new_prj_access_rights := _project_patch_exclude_unset.get("access_rights"):
@@ -460,10 +489,23 @@ async def update_project_node_resources_from_hardware_info(
 
 
 async def _check_project_node_has_all_required_inputs(
-    db: ProjectDBAPI, user_id: UserID, project_uuid: ProjectID, node_id: NodeID
+    app: web.Application,
+    db: ProjectDBAPI,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    node_id: NodeID,
 ) -> None:
 
-    project_dict, _ = await db.get_project(user_id, f"{project_uuid}")
+    product_name = await db.get_project_product(project_uuid)
+    await check_user_project_permission(
+        app,
+        project_id=project_uuid,
+        user_id=user_id,
+        product_name=product_name,
+        permission="read",
+    )
+
+    project_dict, _ = await db.get_project(f"{project_uuid}")
 
     nodes_map: dict[NodeID, Node] = {
         NodeID(k): Node(**v) for k, v in project_dict["workbench"].items()
@@ -530,7 +572,7 @@ async def _start_dynamic_service(
 
     try:
         await _check_project_node_has_all_required_inputs(
-            db, user_id, project_uuid, node_uuid
+            request.app, db, user_id, project_uuid, node_uuid
         )
     except ProjectNodeRequiredInputsNotSetError as e:
         if graceful_start:
@@ -545,10 +587,8 @@ async def _start_dynamic_service(
     save_state = False
     user_role: UserRole = await get_user_role(request.app, user_id)
     if user_role > UserRole.GUEST:
-        save_state = await ProjectDBAPI.get_from_app_context(
-            request.app
-        ).has_permission(
-            user_id=user_id, project_uuid=f"{project_uuid}", permission="write"
+        save_state = await has_user_project_access_rights(
+            request.app, project_id=project_uuid, user_id=user_id, permission="write"
         )
 
     lock_key = _nodes_api.get_service_start_lock_key(user_id, project_uuid)
@@ -729,6 +769,15 @@ async def add_project_node(
         user_id,
         extra=get_log_record_extra(user_id=user_id),
     )
+
+    await check_user_project_permission(
+        request.app,
+        project_id=project["uuid"],
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",
+    )
+
     node_uuid = NodeID(service_id if service_id else f"{uuid4()}")
     default_resources = await catalog_client.get_service_resources(
         request.app, user_id, service_key, service_version
@@ -829,10 +878,22 @@ async def _remove_service_and_its_data_folders(
 
 
 async def delete_project_node(
-    request: web.Request, project_uuid: ProjectID, user_id: UserID, node_uuid: NodeIDStr
+    request: web.Request,
+    project_uuid: ProjectID,
+    user_id: UserID,
+    node_uuid: NodeIDStr,
+    product_name: ProductName,
 ) -> None:
     log.debug(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
+    )
+
+    await check_user_project_permission(
+        request.app,
+        project_id=project_uuid,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",
     )
 
     list_running_dynamic_services = await director_v2_api.list_dynamic_services(
@@ -893,6 +954,15 @@ async def update_project_node_state(
     )
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    product_name = await db.get_project_product(project_id)
+    await check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",  # NOTE: MD: before only read was sufficient, double check this
+    )
+
     updated_project, _ = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
@@ -925,17 +995,17 @@ async def patch_project_node(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # 1. Check user permissions
-    _user_project_access_rights = await db.get_project_access_rights_for_user(
-        user_id, project_id
+    await check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
-    if not _user_project_access_rights.write:
-        raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_id)
 
     # 2. If patching service key or version make sure it's valid
     if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
-        _project, _ = await db.get_project(
-            user_id=user_id, project_uuid=f"{project_id}"
-        )
+        _project, _ = await db.get_project(project_uuid=f"{project_id}")
         _project_node_data = _project["workbench"][f"{node_id}"]
 
         _service_key = _node_patch_exclude_unset.get("key", _project_node_data["key"])
@@ -996,6 +1066,15 @@ async def update_project_node_outputs(
     new_outputs = new_outputs or {}
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    product_name = await db.get_project_product(project_id)
+    await check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",  # NOTE: MD: before only read was sufficient, double check this
+    )
+
     updated_project, changed_entries = await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
@@ -1337,7 +1416,7 @@ async def _get_project_lock_state(
             )
             return ProjectLocked(
                 value=False,
-                owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
+                owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),  # type: ignore[arg-type]
                 status=ProjectStatus.OPENED,
             )
     # the project is opened in another tab or browser, or by another user, both case resolves to the project being locked, and opened
@@ -1348,7 +1427,7 @@ async def _get_project_lock_state(
     )
     return ProjectLocked(
         value=True,
-        owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),
+        owner=Owner(user_id=list(set_user_ids)[0], **usernames[0]),  # type: ignore[arg-type]
         status=ProjectStatus.OPENED,
     )
 
@@ -1625,8 +1704,8 @@ async def remove_project_dynamic_services(
     except UserNotFoundError:
         user_role = None
 
-    save_state = await ProjectDBAPI.get_from_app_context(app).has_permission(
-        user_id=user_id, project_uuid=project_uuid, permission="write"
+    save_state = await has_user_project_access_rights(
+        app, project_id=ProjectID(project_uuid), user_id=user_id, permission="write"
     )
     if user_role is None or user_role <= UserRole.GUEST:
         save_state = False

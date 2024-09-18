@@ -1,10 +1,8 @@
-coverage==7.6.0
+coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.2.2
-    # via pytest
-faker==26.0.0
+faker==27.0.0
     # via -r requirements/_test.in
 iniconfig==2.0.0
     # via pytest
@@ -14,7 +12,7 @@ packaging==24.1
     #   pytest-sugar
 pluggy==1.5.0
     # via pytest
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -39,7 +37,3 @@ six==1.16.0
     # via python-dateutil
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via
-    #   coverage
-    #   pytest

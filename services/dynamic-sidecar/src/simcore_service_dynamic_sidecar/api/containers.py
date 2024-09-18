@@ -22,10 +22,21 @@ from ..core.errors import (
     ContainerExecTimeoutError,
 )
 from ..core.settings import ApplicationSettings
-from ..core.validation import parse_compose_spec
+from ..core.validation import (
+    ComposeSpecValidation,
+    parse_compose_spec,
+    validate_compose_spec,
+)
+from ..models.schemas.containers import ContainersComposeSpec
 from ..models.shared_store import SharedStore
 from ..modules.container_utils import run_command_in_container
-from ._dependencies import get_container_restart_lock, get_settings, get_shared_store
+from ..modules.mounted_fs import MountedVolumes
+from ._dependencies import (
+    get_container_restart_lock,
+    get_mounted_volumes,
+    get_settings,
+    get_shared_store,
+)
 
 _INACTIVE_FOR_LONG_TIME: Final[int] = 2**63 - 1
 
@@ -42,6 +53,43 @@ def _raise_if_container_is_missing(
 
 
 router = APIRouter()
+
+
+@router.post(
+    "/containers/compose-spec",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"}
+    },
+)
+@cancel_on_disconnect
+async def store_compose_spec(
+    request: Request,
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
+    containers_compose_spec: ContainersComposeSpec,
+    shared_store: Annotated[SharedStore, Depends(get_shared_store)],
+    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
+):
+    """
+    Validates and stores the docker compose spec for the user services.
+    """
+    _ = request
+
+    async with shared_store:
+        compose_spec_validation: ComposeSpecValidation = await validate_compose_spec(
+            settings=settings,
+            compose_file_content=containers_compose_spec.docker_compose_yaml,
+            mounted_volumes=mounted_volumes,
+        )
+        shared_store.compose_spec = compose_spec_validation.compose_spec
+        shared_store.container_names = compose_spec_validation.current_container_names
+        shared_store.original_to_container_names = (
+            compose_spec_validation.original_to_current_container_names
+        )
+
+    _logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
+
+    assert shared_store.compose_spec  # nosec
 
 
 @router.get(

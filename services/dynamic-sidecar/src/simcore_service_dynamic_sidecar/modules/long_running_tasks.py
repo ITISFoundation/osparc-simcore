@@ -46,11 +46,7 @@ from ..core.rabbitmq import (
 )
 from ..core.settings import ApplicationSettings
 from ..core.utils import CommandResult
-from ..core.validation import (
-    ComposeSpecValidation,
-    parse_compose_spec,
-    validate_compose_spec,
-)
+from ..core.validation import parse_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
@@ -146,51 +142,53 @@ async def _reset_on_error(
         raise
 
 
+async def task_pull_user_servcices_docker_images(
+    progress: TaskProgress, shared_store: SharedStore, app: FastAPI
+) -> None:
+    assert shared_store.compose_spec  # nosec
+
+    progress.update(message="started pulling user services", percent=ProgressPercent(0))
+
+    await docker_compose_pull(app, shared_store.compose_spec)
+
+    progress.update(
+        message="finished pulling user services", percent=ProgressPercent(1)
+    )
+
+
 async def task_create_service_containers(
     progress: TaskProgress,
     settings: ApplicationSettings,
     containers_create: ContainersCreate,
     shared_store: SharedStore,
-    mounted_volumes: MountedVolumes,
     app: FastAPI,
     application_health: ApplicationHealth,
 ) -> list[str]:
     progress.update(message="validating service spec", percent=ProgressPercent(0))
 
-    async with shared_store:
-        compose_spec_validation: ComposeSpecValidation = await validate_compose_spec(
-            settings=settings,
-            compose_file_content=containers_create.docker_compose_yaml,
-            mounted_volumes=mounted_volumes,
-        )
-        shared_store.compose_spec = compose_spec_validation.compose_spec
-        shared_store.container_names = compose_spec_validation.current_container_names
-        shared_store.original_to_container_names = (
-            compose_spec_validation.original_to_current_container_names
-        )
-
-    _logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
-
     assert shared_store.compose_spec  # nosec
 
-    async with event_propagation_disabled(app), _reset_on_error(shared_store):
+    async with event_propagation_disabled(app), _reset_on_error(
+        shared_store
+    ), ProgressBarData(
+        num_steps=4,
+        progress_report_cb=functools.partial(
+            post_progress_message,
+            app,
+            ProgressType.SERVICE_CONTAINERS_STARTING,
+        ),
+        description=IDStr("starting software"),
+    ) as progress_bar:
         with log_context(_logger, logging.INFO, "load user services preferences"):
             if user_services_preferences.is_feature_enabled(app):
                 await user_services_preferences.load_user_services_preferences(app)
+        await progress_bar.update()
 
         # removes previous pending containers
         progress.update(message="cleanup previous used resources")
         result = await docker_compose_rm(shared_store.compose_spec, settings)
         _raise_for_errors(result, "rm")
-
-        progress.update(message="pulling images", percent=ProgressPercent(0.01))
-        await post_sidecar_log_message(
-            app, "pulling service images", log_level=logging.INFO
-        )
-        await docker_compose_pull(app, shared_store.compose_spec)
-        await post_sidecar_log_message(
-            app, "service images ready", log_level=logging.INFO
-        )
+        await progress_bar.update()
 
         progress.update(
             message="creating and starting containers", percent=ProgressPercent(0.90)
@@ -199,6 +197,7 @@ async def task_create_service_containers(
             app, "starting service containers", log_level=logging.INFO
         )
         await _retry_docker_compose_create(shared_store.compose_spec, settings)
+        await progress_bar.update()
 
         progress.update(
             message="ensure containers are started", percent=ProgressPercent(0.95)
@@ -322,6 +321,15 @@ async def task_runs_docker_compose_down(
     progress.update(message="done", percent=ProgressPercent(0.99))
 
 
+def _get_satate_folders_size(paths: list[Path]) -> int:
+    total_size: int = 0
+    for path in paths:
+        for file in path.rglob("*"):
+            if file.is_file():
+                total_size += file.stat().st_size
+    return total_size
+
+
 async def _restore_state_folder(
     app: FastAPI,
     *,
@@ -348,7 +356,7 @@ async def task_restore_state(
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
-) -> None:
+) -> int:
     # NOTE: the legacy data format was a zip file
     # this method will maintain retro compatibility.
     # The legacy archive is always downloaded and decompressed
@@ -391,6 +399,8 @@ async def task_restore_state(
     )
     progress.update(message="state restored", percent=ProgressPercent(0.99))
 
+    return _get_satate_folders_size(state_paths)
+
 
 async def _save_state_folder(
     app: FastAPI,
@@ -420,7 +430,7 @@ async def task_save_state(
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
-) -> None:
+) -> int:
     """
     Saves the states of the service.
     If a legacy archive is detected, it will be removed after
@@ -453,6 +463,8 @@ async def task_save_state(
 
     await post_sidecar_log_message(app, "Finished state saving", log_level=logging.INFO)
     progress.update(message="finished state saving", percent=ProgressPercent(0.99))
+
+    return _get_satate_folders_size(state_paths)
 
 
 async def task_ports_inputs_pull(

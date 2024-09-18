@@ -7,6 +7,7 @@ import json
 import logging
 import warnings
 from dataclasses import dataclass
+from io import StringIO
 from typing import Iterator
 
 import aiohttp
@@ -151,9 +152,14 @@ def _wait_for_services_ready(services_endpoint: dict[str, URL]) -> None:
         for service_name, endpoint in services_endpoint.items()
     ]
 
-    print("Composing health-check endpoints for relevant stack's services:")
-    for h in health_endpoints:
-        print(f" - {h.name} -> {h.url}")
+    with StringIO() as buffer:
+        print(
+            "Composing health-check endpoints for relevant stack's services:",
+            file=buffer,
+        )
+        for h in health_endpoints:
+            print(f" - {h.name} -> {h.url}", file=buffer)
+        log.info(buffer.getvalue())
 
     async def _check_all_services_are_healthy():
         await asyncio.gather(

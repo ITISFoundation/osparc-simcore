@@ -38,16 +38,12 @@ asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
-async-timeout==4.0.3
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
 attrs==23.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   pytest-docker
-bokeh==3.5.0
+bokeh==3.5.1
     # via dask
 boto3==1.34.131
     # via aiobotocore
@@ -63,10 +59,12 @@ certifi==2024.2.2
     #   httpcore
     #   httpx
     #   requests
-cffi==1.16.0
+cffi==1.17.0
     # via cryptography
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.1.7
     # via
     #   -c requirements/_base.txt
@@ -81,9 +79,9 @@ colorlog==6.8.2
     # via dask-gateway-server
 contourpy==1.2.1
     # via bokeh
-coverage==7.6.0
+coverage==7.6.1
     # via pytest-cov
-cryptography==42.0.8
+cryptography==43.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   dask-gateway-server
@@ -100,14 +98,9 @@ distributed==2024.5.1
     #   dask
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.1
-    # via
-    #   -c requirements/_base.txt
-    #   anyio
-    #   pytest
 execnet==2.1.1
     # via pytest-xdist
-faker==26.0.0
+faker==27.0.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -188,7 +181,7 @@ multidict==6.0.5
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.10.1
+mypy==1.11.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -222,13 +215,13 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-psutil==5.9.8
+psutil==6.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
 pycparser==2.22
     # via cffi
-pytest==8.2.2
+pytest==8.3.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -270,6 +263,7 @@ pyyaml==6.0.1
     #   distributed
 requests==2.32.3
     # via
+    #   -c requirements/_base.txt
     #   async-asgi-testclient
     #   docker
 respx==0.21.1
@@ -303,11 +297,6 @@ tblib==3.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-tomli==2.0.1
-    # via
-    #   coverage
-    #   mypy
-    #   pytest
 toolz==0.12.1
     # via
     #   -c requirements/_base.txt
@@ -321,17 +310,16 @@ tornado==6.4
     #   distributed
 traitlets==5.14.3
     # via dask-gateway-server
-types-networkx==3.2.1.20240703
+types-networkx==3.2.1.20240820
     # via -r requirements/_test.in
-types-psycopg2==2.9.21.20240417
+types-psycopg2==2.9.21.20240819
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20240724
+types-pyyaml==6.0.12.20240808
     # via -r requirements/_test.in
 typing-extensions==4.11.0
     # via
     #   -c requirements/_base.txt
     #   alembic
-    #   anyio
     #   mypy
     #   sqlalchemy2-stubs
 tzdata==2024.1
@@ -345,7 +333,9 @@ urllib3==2.2.1
     #   docker
     #   requests
 wrapt==1.16.0
-    # via aiobotocore
+    # via
+    #   -c requirements/_base.txt
+    #   aiobotocore
 xyzservices==2024.6.0
     # via bokeh
 yarl==1.9.4

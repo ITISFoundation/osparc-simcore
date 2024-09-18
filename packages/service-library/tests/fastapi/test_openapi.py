@@ -8,8 +8,12 @@ import pytest
 import starlette.routing
 from fastapi.applications import FastAPI
 from fastapi.routing import APIRouter
-from openapi_spec_validator.exceptions import OpenAPISpecValidatorError
-from openapi_spec_validator.shortcuts import get_validator_cls
+from openapi_spec_validator.exceptions import (
+    OpenAPISpecValidatorError,  # pylint: disable=no-name-in-module
+)
+from openapi_spec_validator.shortcuts import (
+    get_validator_cls,  # pylint: disable=no-name-in-module
+)
 from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
     set_operation_id_as_handler_function_name,

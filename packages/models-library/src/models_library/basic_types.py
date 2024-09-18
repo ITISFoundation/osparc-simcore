@@ -1,5 +1,5 @@
 import re
-from enum import Enum
+from enum import StrEnum
 from typing import Final, TypeAlias
 
 from pydantic import (
@@ -38,6 +38,12 @@ class AmountDecimal(ConstrainedDecimal):
 # port number range
 class PortInt(ConstrainedInt):
     gt = 0
+    lt = 65535
+
+
+# https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Registered_ports
+class RegisteredPortInt(ConstrainedInt):
+    gt = 1024
     lt = 65535
 
 
@@ -142,14 +148,14 @@ class HttpUrlWithCustomMinLength(HttpUrl):
     min_length = 0
 
 
-class LogLevel(str, Enum):
+class LogLevel(StrEnum):
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
     ERROR = "ERROR"
 
 
-class BootModeEnum(str, Enum):
+class BootModeEnum(StrEnum):
     """
     Values taken by SC_BOOT_MODE environment variable
     set in Dockerfile and used during docker/boot.sh
@@ -166,7 +172,7 @@ class BootModeEnum(str, Enum):
         return self in (self.DEBUG, self.DEVELOPMENT, self.LOCAL)
 
 
-class BuildTargetEnum(str, Enum):
+class BuildTargetEnum(StrEnum):
     """
     Values taken by SC_BUILD_TARGET environment variable
     set in Dockerfile that defines the stage targeted in the

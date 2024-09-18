@@ -89,20 +89,18 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const grp = new qx.ui.container.Composite(new qx.ui.layout.HBox(20));
 
       const createAccountBtn = new osparc.ui.form.LinkButton(this.tr("Create Account"));
-      const config = osparc.store.Store.getInstance().get("config");
-      if (config["invitation_required"]) {
+      const createAccountAction = osparc.product.Utils.getCreateAccountAction();
+      if (["REQUEST_ACCOUNT_FORM", "REQUEST_ACCOUNT_INSTRUCTIONS"].includes(createAccountAction)) {
         createAccountBtn.setLabel(this.tr("Request Account"));
       }
       createAccountBtn.addListener("execute", () => {
         createAccountBtn.setEnabled(false);
-        if (config["invitation_required"]) {
-          if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
-            this.fireEvent("toRequestAccount");
-          } else {
-            osparc.store.Support.openInvitationRequiredDialog();
-          }
-        } else {
+        if (createAccountAction === "REGISTER") {
           this.fireEvent("toRegister");
+        } else if (createAccountAction === "REQUEST_ACCOUNT_FORM") {
+          this.fireEvent("toRequestAccount");
+        } else if (createAccountAction === "REQUEST_ACCOUNT_INSTRUCTIONS") {
+          osparc.store.Support.openInvitationRequiredDialog();
         }
         createAccountBtn.setEnabled(true);
       }, this);
@@ -123,16 +121,21 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
       this.add(grp);
 
-      if (osparc.product.Utils.isProduct("tis")) {
-        const text = `
-        1) The TIP tool is designed for research purposes only and is not intended for clinical use.
-        </br>
-        </br>
-        2) Users are responsible for ensuring the anonymization and privacy protection of personal data.
-        </br>
-        </br>
-        3) The development, maintenance and usage of the TIP tool is fully sponsored by the IT’IS Foundation, with the exception of the 61 complex 3D electromagnetic simulations on the AWS cluster required for the personalized plans.
-        `;
+      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
+        let text = "";
+        if (osparc.product.Utils.isProduct("tiplite")) {
+          text = "The TIP tool is designed for research purposes only and is not intended for clinical use."
+        } else {
+          text = `
+            1) The TIP tool is designed for research purposes only and is not intended for clinical use.
+            </br>
+            </br>
+            2) Users are responsible for ensuring the anonymization and privacy protection of personal data.
+            </br>
+            </br>
+            3) The development, maintenance and usage of the TIP tool is fully sponsored by the IT’IS Foundation, with the exception of the 61 complex 3D electromagnetic simulations on the AWS cluster required for the personalized plans.
+          `;
+        }
         const disclaimer = osparc.announcement.AnnouncementUIFactory.createLoginAnnouncement(this.tr("Disclaimer"), text);
         this.add(disclaimer);
 

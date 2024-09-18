@@ -22,7 +22,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import select
 from sqlalchemy.sql.selectable import Select
 
-from ..db.models import GroupType, groups, study_tags, user_to_groups, users
+from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
 from .exceptions import (
@@ -31,7 +31,7 @@ from .exceptions import (
     ProjectInvalidUsageError,
     ProjectNotFoundError,
 )
-from .models import ProjectDict, ProjectProxy
+from .models import ProjectDict
 from .utils import find_changed_node_keys, project_uses_available_services
 
 logger = logging.getLogger(__name__)
@@ -49,88 +49,6 @@ class ProjectAccessRights(Enum):
     OWNER = {"read": True, "write": True, "delete": True}
     COLLABORATOR = {"read": True, "write": True, "delete": False}
     VIEWER = {"read": True, "write": False, "delete": False}
-
-
-def check_project_permissions(
-    project: ProjectProxy | ProjectDict,
-    user_id: int,
-    user_groups: list[dict[str, Any]] | list[RowProxy],
-    permission: str,
-) -> None:
-    """
-    :raises ProjectInvalidRightsError if check fails
-    """
-
-    if not permission:
-        return
-
-    operations_on_project = set(permission.split("|"))
-    assert set(operations_on_project).issubset(set(PermissionStr.__args__))  # type: ignore[attr-defined] # nosec
-
-    #
-    # Get primary_gid, standard_gids and everyone_gid for user_id
-    #
-    all_group = next(
-        filter(lambda x: x.get("type") == GroupType.EVERYONE, user_groups), None
-    )
-    if all_group is None:
-        raise ProjectInvalidRightsError(
-            user_id=user_id, project_uuid=project.get("uuid")
-        )
-
-    everyone_gid = str(all_group["gid"])
-
-    if user_id == ANY_USER_ID_SENTINEL:
-        primary_gid = None
-        standard_gids = []
-
-    else:
-        primary_group = next(
-            filter(lambda x: x.get("type") == GroupType.PRIMARY, user_groups), None
-        )
-        if primary_group is None:
-            # the user groups is missing entries
-            raise ProjectInvalidRightsError(
-                user_id=user_id, project_uuid=project.get("uuid")
-            )
-
-        standard_groups = filter(
-            lambda x: x.get("type") == GroupType.STANDARD, user_groups
-        )
-
-        primary_gid = str(primary_group["gid"])
-        standard_gids = [str(group["gid"]) for group in standard_groups]
-
-    #
-    # Composes access rights by order of priority all group > organizations > primary
-    #
-    project_access_rights = deepcopy(project.get("access_rights", {}))
-
-    # access rights for everyone
-    user_can = project_access_rights.get(
-        everyone_gid, {"read": False, "write": False, "delete": False}
-    )
-
-    # access rights for standard groups
-    for group_id in standard_gids:
-        standard_project_access = project_access_rights.get(
-            group_id, {"read": False, "write": False, "delete": False}
-        )
-        for operation in user_can:
-            user_can[operation] = (
-                user_can[operation] or standard_project_access[operation]
-            )
-    # access rights for primary group
-    primary_access_right = project_access_rights.get(
-        primary_gid, {"read": False, "write": False, "delete": False}
-    )
-    for operation in user_can:
-        user_can[operation] = user_can[operation] or primary_access_right[operation]
-
-    if any(not user_can[operation] for operation in operations_on_project):
-        raise ProjectInvalidRightsError(
-            user_id=user_id, project_uuid=project.get("uuid")
-        )
 
 
 def create_project_access_rights(
@@ -238,8 +156,8 @@ class BaseProjectDB:
 
     @staticmethod
     async def _get_tags_by_project(conn: SAConnection, project_id: str) -> list:
-        query = sa.select(study_tags.c.tag_id).where(
-            study_tags.c.study_id == project_id
+        query = sa.select(projects_tags.c.tag_id).where(
+            projects_tags.c.project_id == project_id
         )
         return [row.tag_id async for row in conn.execute(query)]
 
@@ -249,21 +167,20 @@ class BaseProjectDB:
     ) -> None:
         for tag_id in project_tags:
             await conn.execute(
-                pg_insert(study_tags)
+                pg_insert(projects_tags)
                 .values(
-                    study_id=project_index_id,
+                    project_id=project_index_id,
                     tag_id=tag_id,
                 )
                 .on_conflict_do_nothing()
             )
 
-    async def _execute_with_permission_check(
+    async def _execute_without_permission_check(
         self,
         conn: SAConnection,
+        user_id: UserID,
         *,
         select_projects_query: Select,
-        user_id: int,
-        user_groups: list[RowProxy],
         filter_by_services: list[dict] | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType]]:
         api_projects: list[dict] = []  # API model-compatible projects
@@ -272,8 +189,6 @@ class BaseProjectDB:
         async for row in conn.execute(select_projects_query):
             assert isinstance(row, RowProxy)  # nosec
             try:
-                check_project_permissions(row, user_id, user_groups, "read")
-
                 await asyncio.get_event_loop().run_in_executor(
                     None, ProjectAtDB.from_orm, row
                 )
@@ -322,22 +237,17 @@ class BaseProjectDB:
     async def _get_project(
         self,
         connection: SAConnection,
-        user_id: UserID,
         project_uuid: str,
+        *,
         exclude_foreign: list[str] | None = None,
         for_update: bool = False,
         only_templates: bool = False,
         only_published: bool = False,
-        check_permissions: PermissionStr = "read",
     ) -> dict:
         """
         raises ProjectNotFoundError if project does not exists
-        raises ProjectInvalidRightsError if user_id does not have at 'check_permissions' access rights
         """
         exclude_foreign = exclude_foreign or []
-
-        # this retrieves the projects where user is owner
-        user_groups: list[RowProxy] = await self._list_user_groups(connection, user_id)
 
         access_rights_subquery = (
             select(
@@ -360,7 +270,7 @@ class BaseProjectDB:
 
         query = (
             sa.select(
-                *[col for col in projects.columns if col.name != "access_rights"],
+                *[col for col in projects.columns if col.name not in ["access_rights"]],
                 access_rights_subquery.c.access_rights,
             )
             .select_from(projects.join(access_rights_subquery, isouter=True))
@@ -391,13 +301,7 @@ class BaseProjectDB:
         if not project_row:
             raise ProjectNotFoundError(
                 project_uuid=project_uuid,
-                search_context=f"{user_id=}, {only_templates=}, {only_published=}, {check_permissions=}",
-            )
-
-        # check the access rights
-        if user_id:
-            check_project_permissions(
-                project_row, user_id, user_groups, check_permissions
+                search_context=f"{only_templates=}, {only_published=}",
             )
 
         project: dict[str, Any] = dict(project_row.items())

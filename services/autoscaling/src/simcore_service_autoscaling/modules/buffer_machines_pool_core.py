@@ -16,43 +16,98 @@ Open features:
 
 import logging
 from collections import defaultdict
-from typing import Final, TypeAlias, cast
+from typing import TypeAlias, cast
 
+import arrow
 from aws_library.ec2 import (
-    AWSTagKey,
     AWSTagValue,
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
     Resources,
 )
+from aws_library.ssm import (
+    SSMCommandExecutionResultError,
+    SSMCommandExecutionTimeoutError,
+)
 from fastapi import FastAPI
-from models_library.utils.json_serialization import json_dumps, json_loads
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
+from ..constants import (
+    BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
+    DOCKER_PULL_COMMAND,
+    PREPULL_COMMAND_NAME,
+)
 from ..core.settings import get_application_settings
 from ..models import BufferPool, BufferPoolManager
 from ..utils.auto_scaling_core import ec2_buffer_startup_script
-from ..utils.buffer_machines_pool_core import get_buffer_ec2_tags
+from ..utils.buffer_machines_pool_core import (
+    dump_pre_pulled_images_as_tags,
+    get_deactivated_buffer_ec2_tags,
+    load_pre_pulled_images_from_tags,
+)
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
+from .instrumentation import get_instrumentation, has_instrumentation
 from .ssm import get_ssm_client
 
-_BUFFER_MACHINE_PULLING_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
-    AWSTagKey, "pulling"
-)
-_BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
-    AWSTagKey, "ssm-command-id"
-)
-_PREPULL_COMMAND_NAME: Final[str] = "docker images pulling"
-_PRE_PULLED_IMAGES_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
-    AWSTagKey, "io.simcore.autoscaling.pre_pulled_images"
-)
-
-
 _logger = logging.getLogger(__name__)
+
+
+async def _analyze_running_instance_state(
+    app: FastAPI, *, buffer_pool: BufferPool, instance: EC2InstanceData
+):
+    ssm_client = get_ssm_client(app)
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+
+    if BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
+        buffer_pool.pulling_instances.add(instance)
+    elif await ssm_client.is_instance_connected_to_ssm_server(instance.id):
+        try:
+            if await ssm_client.wait_for_has_instance_completed_cloud_init(instance.id):
+                if has_instrumentation(app):
+                    get_instrumentation(
+                        app
+                    ).buffer_machines_pools_metrics.instances_ready_to_pull_seconds.labels(
+                        instance_type=instance.type
+                    ).observe(
+                        (arrow.utcnow().datetime - instance.launch_time).total_seconds()
+                    )
+                if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                    instance.type
+                ].pre_pull_images:
+                    buffer_pool.waiting_to_pull_instances.add(instance)
+                else:
+                    buffer_pool.waiting_to_stop_instances.add(instance)
+            else:
+                buffer_pool.pending_instances.add(instance)
+        except (
+            SSMCommandExecutionResultError,
+            SSMCommandExecutionTimeoutError,
+        ):
+            _logger.exception(
+                "Unnexpected error when checking EC2 cloud initialization completion!. "
+                "The machine will be terminated. TIP: check the initialization phase for errors."
+            )
+            buffer_pool.broken_instances.add(instance)
+    else:
+        is_broken = bool(
+            (arrow.utcnow().datetime - instance.launch_time)
+            > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+        )
+
+        if is_broken:
+            _logger.error(
+                "The machine does not connect to the SSM server after %s. It will be terminated. TIP: check the initialization phase for errors.",
+                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME,
+            )
+            buffer_pool.broken_instances.add(instance)
+        else:
+            buffer_pool.pending_instances.add(instance)
 
 
 async def _analyse_current_state(
@@ -64,10 +119,9 @@ async def _analyse_current_state(
 
     all_buffer_instances = await ec2_client.get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_buffer_ec2_tags(app, auto_scaling_mode),
+        tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
         state_names=["stopped", "pending", "running", "stopping"],
     )
-
     buffers_manager = BufferPoolManager()
     for instance in all_buffer_instances:
         match instance.state:
@@ -84,32 +138,12 @@ async def _analyse_current_state(
                     instance
                 )
             case "running":
-                if _BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
-                    buffers_manager.buffer_pools[instance.type].pulling_instances.add(
-                        instance
-                    )
+                await _analyze_running_instance_state(
+                    app,
+                    buffer_pool=buffers_manager.buffer_pools[instance.type],
+                    instance=instance,
+                )
 
-                elif await get_ssm_client(app).is_instance_connected_to_ssm_server(
-                    instance.id
-                ) and await get_ssm_client(
-                    app
-                ).wait_for_has_instance_completed_cloud_init(
-                    instance.id
-                ):
-                    if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                        instance.type
-                    ].pre_pull_images:
-                        buffers_manager.buffer_pools[
-                            instance.type
-                        ].waiting_to_pull_instances.add(instance)
-                    else:
-                        buffers_manager.buffer_pools[
-                            instance.type
-                        ].waiting_to_stop_instances.add(instance)
-                else:
-                    buffers_manager.buffer_pools[instance.type].pending_instances.add(
-                        instance
-                    )
     _logger.info("Current buffer pools: %s", f"{buffers_manager}")
     return buffers_manager
 
@@ -160,10 +194,9 @@ async def _terminate_instances_with_invalid_pre_pulled_images(
         ].pre_pulled_instances()
 
         for instance in all_pre_pulled_instances:
+            pre_pulled_images = load_pre_pulled_images_from_tags(instance.tags)
             if (
-                pre_pulled_images := json_loads(
-                    instance.tags.get(_PRE_PULLED_IMAGES_EC2_TAG_KEY, "[]")
-                )
+                pre_pulled_images is not None
             ) and pre_pulled_images != ec2_boot_config.pre_pull_images:
                 _logger.info(
                     "%s",
@@ -174,6 +207,20 @@ async def _terminate_instances_with_invalid_pre_pulled_images(
     if terminateable_instances:
         await ec2_client.terminate_instances(terminateable_instances)
         for instance in terminateable_instances:
+            buffers_manager.buffer_pools[instance.type].remove_instance(instance)
+    return buffers_manager
+
+
+async def _terminate_broken_instances(
+    app: FastAPI, buffers_manager: BufferPoolManager
+) -> BufferPoolManager:
+    ec2_client = get_ec2_client(app)
+    termineatable_instances = set()
+    for pool in buffers_manager.buffer_pools.values():
+        termineatable_instances.update(pool.broken_instances)
+    if termineatable_instances:
+        await ec2_client.terminate_instances(termineatable_instances)
+        for instance in termineatable_instances:
             buffers_manager.buffer_pools[instance.type].remove_instance(instance)
     return buffers_manager
 
@@ -191,6 +238,7 @@ async def _add_remove_buffer_instances(
     # let's find what is missing and what is not needed
     missing_instances: dict[InstanceTypeType, NonNegativeInt] = defaultdict(int)
     unneeded_instances: set[EC2InstanceData] = set()
+
     for (
         ec2_type,
         ec2_boot_config,
@@ -217,7 +265,7 @@ async def _add_remove_buffer_instances(
                     name=ec2_type,
                     resources=Resources.create_as_empty(),  # fake resources
                 ),
-                tags=get_buffer_ec2_tags(app, auto_scaling_mode),
+                tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
                 startup_script=ec2_buffer_startup_script(
                     ec2_boot_specific, app_settings
                 ),
@@ -240,9 +288,6 @@ async def _add_remove_buffer_instances(
 
 InstancesToStop: TypeAlias = set[EC2InstanceData]
 InstancesToTerminate: TypeAlias = set[EC2InstanceData]
-_DOCKER_PULL_COMMAND: Final[
-    str
-] = "docker compose -f /docker-pull.compose.yml -p buffering pull"
 
 
 async def _handle_pool_image_pulling(
@@ -254,14 +299,14 @@ async def _handle_pool_image_pulling(
         # trigger the image pulling
         ssm_command = await ssm_client.send_command(
             [instance.id for instance in pool.waiting_to_pull_instances],
-            command=_DOCKER_PULL_COMMAND,
-            command_name=_PREPULL_COMMAND_NAME,
+            command=DOCKER_PULL_COMMAND,
+            command_name=PREPULL_COMMAND_NAME,
         )
         await ec2_client.set_instances_tags(
             tuple(pool.waiting_to_pull_instances),
             tags={
-                _BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true"),
-                _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: AWSTagValue(
+                BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true"),
+                BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: AWSTagValue(
                     ssm_command.command_id
                 ),
             },
@@ -272,13 +317,25 @@ async def _handle_pool_image_pulling(
     # wait for the image pulling to complete
     for instance in pool.pulling_instances:
         if ssm_command_id := instance.tags.get(
-            _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY
+            BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY
         ):
             ssm_command = await ssm_client.get_command(
                 instance.id, command_id=ssm_command_id
             )
             match ssm_command.status:
                 case "Success":
+                    if has_instrumentation(app):
+                        assert ssm_command.start_time is not None  # nosec
+                        assert ssm_command.finish_time is not None  # nosec
+                        get_instrumentation(
+                            app
+                        ).buffer_machines_pools_metrics.instances_completed_pulling_seconds.labels(
+                            instance_type=instance.type
+                        ).observe(
+                            (
+                                ssm_command.finish_time - ssm_command.start_time
+                            ).total_seconds()
+                        )
                     instances_to_stop.add(instance)
                 case "InProgress" | "Pending":
                     # do nothing we pass
@@ -294,15 +351,11 @@ async def _handle_pool_image_pulling(
         assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
         await ec2_client.set_instances_tags(
             tuple(instances_to_stop),
-            tags={
-                _PRE_PULLED_IMAGES_EC2_TAG_KEY: AWSTagValue(
-                    json_dumps(
-                        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                            instance_type
-                        ].pre_pull_images
-                    )
-                )
-            },
+            tags=dump_pre_pulled_images_as_tags(
+                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                    instance_type
+                ].pre_pull_images
+            ),
         )
     return instances_to_stop, broken_instances_to_terminate
 
@@ -328,8 +381,8 @@ async def _handle_image_pre_pulling(
             "pending buffer instances completed pulling of images, stopping them",
         ):
             tag_keys_to_remove = (
-                _BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
-                _BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
+                BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
             )
             await ec2_client.remove_instances_tags(
                 tuple(instances_to_stop),
@@ -368,6 +421,8 @@ async def monitor_buffer_machines(
     buffers_manager = await _terminate_instances_with_invalid_pre_pulled_images(
         app, buffers_manager
     )
+    # 3. terminate broken instances
+    buffers_manager = await _terminate_broken_instances(app, buffers_manager)
 
     # 3. add/remove buffer instances base on ec2 boot specific data
     buffers_manager = await _add_remove_buffer_instances(
@@ -376,3 +431,9 @@ async def monitor_buffer_machines(
 
     # 4. pull docker images if needed
     await _handle_image_pre_pulling(app, buffers_manager)
+
+    # 5. instrumentation
+    if has_instrumentation(app):
+        get_instrumentation(
+            app
+        ).buffer_machines_pools_metrics.update_from_buffer_pool_manager(buffers_manager)

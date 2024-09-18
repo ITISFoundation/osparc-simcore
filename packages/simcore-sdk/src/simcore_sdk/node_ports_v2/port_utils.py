@@ -67,7 +67,7 @@ async def get_value_from_link(
         if file_to_key_map:
             file_name = next(iter(file_to_key_map))
 
-        file_path = data_items_utils.create_file_path(key, file_name)
+        file_path = data_items_utils.get_file_path(key, file_name)
         if other_value == file_path:
             # this is a corner case: in case the output key of the other node has the same name as the input key
             return other_value
@@ -194,7 +194,7 @@ async def pull_file_from_store(
 ) -> Path:
     log.debug("pulling file from storage %s", value)
     # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
-    local_path = data_items_utils.create_folder_path(key)
+    local_path = data_items_utils.get_folder_path(key)
     downloaded_file = await filemanager.download_path_from_s3(
         user_id=user_id,
         store_id=value.store,
@@ -275,7 +275,7 @@ async def pull_file_from_download_link(
         value.label,
     )
 
-    local_path = data_items_utils.create_folder_path(key)
+    local_path = data_items_utils.get_folder_path(key)
     downloaded_file = await filemanager.download_file_from_link(
         URL(f"{value.download_link}"),
         local_path,

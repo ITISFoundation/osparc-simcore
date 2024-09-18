@@ -3,7 +3,7 @@ import datetime
 import logging
 import tempfile
 import urllib.parse
-from collections.abc import Callable, Coroutine
+from collections.abc import Coroutine
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,7 +13,13 @@ import arrow
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from aws_library.s3 import S3DirectoryMetaData, S3KeyNotFoundError, S3MetaData
+from aws_library.s3 import (
+    CopiedBytesTransferredCallback,
+    S3DirectoryMetaData,
+    S3KeyNotFoundError,
+    S3MetaData,
+    UploadedBytesTransferredCallback,
+)
 from models_library.api_schemas_storage import LinkType, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
@@ -668,7 +674,7 @@ class SimcoreS3DataManager(BaseDataManager):
                             dest_project_id=dst_project_uuid,
                             dest_node_id=NodeID(node_id),
                             file_storage_link=output,
-                            bytes_transfered_cb=s3_transfered_data_cb.copy_transfer_cb,
+                            bytes_transfered_cb=s3_transfered_data_cb.upload_transfer_cb,
                         )
                         for output in node.get("outputs", {}).values()
                         if isinstance(output, dict)
@@ -953,7 +959,7 @@ class SimcoreS3DataManager(BaseDataManager):
         dest_project_id: ProjectID,
         dest_node_id: NodeID,
         file_storage_link: dict[str, Any],
-        bytes_transfered_cb: Callable[[int], None],
+        bytes_transfered_cb: UploadedBytesTransferredCallback,
     ) -> FileMetaData:
         session = get_client_session(self.app)
         # 2 steps: Get download link for local copy, then upload to S3
@@ -1004,7 +1010,7 @@ class SimcoreS3DataManager(BaseDataManager):
         *,
         src_fmd: FileMetaDataAtDB,
         dst_file_id: SimcoreS3FileID,
-        bytes_transfered_cb: Callable[[int], None],
+        bytes_transfered_cb: CopiedBytesTransferredCallback,
     ) -> FileMetaData:
         with log_context(
             _logger,

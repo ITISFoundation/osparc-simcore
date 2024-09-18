@@ -2,18 +2,22 @@
 # pylint: disable=unused-argument
 
 from datetime import timedelta
+from typing import Final
 
 import pytest
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from models_library.projects import ProjectID
+from pydantic import NonNegativeFloat
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.external_dependencies import (
     CouldNotReachExternalDependenciesError,
 )
+
+_LONG_STARTUP_SHUTDOWN_TIMEOUT: Final[NonNegativeFloat] = 60
 
 
 @pytest.fixture
@@ -71,7 +75,11 @@ async def app(mock_environment: EnvVarsDict) -> FastAPI:
 
 async def test_external_dependencies_are_not_reachable(app: FastAPI):
     with pytest.raises(CouldNotReachExternalDependenciesError) as exe_info:
-        async with LifespanManager(app):
+        async with LifespanManager(
+            app,
+            startup_timeout=_LONG_STARTUP_SHUTDOWN_TIMEOUT,
+            shutdown_timeout=_LONG_STARTUP_SHUTDOWN_TIMEOUT,
+        ):
             ...
     failed = exe_info.value.failed
     assert len(failed) == 4
