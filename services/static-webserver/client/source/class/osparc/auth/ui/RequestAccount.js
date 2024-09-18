@@ -22,14 +22,31 @@
 qx.Class.define("osparc.auth.ui.RequestAccount", {
   extend: osparc.auth.core.BaseAuthPage,
 
+  construct: function() {
+    osparc.utils.Utils.fetchJSON("/resource/osparc/blacklist.json")
+      .then(blacklistData => {
+        if ("lite" in blacklistData) {
+          this.__blacklist = blacklistData["lite"];
+        }
+      })
+      .catch(console.error);
 
-  /*
-  *****************************************************************************
-     MEMBERS
-  *****************************************************************************
-  */
+    this.base(arguments)
+  },
+
+  statics: {
+    blacklistEmailValidator: function(errorMessage, blacklist, bat, bi, hiru) {
+      return emailValue => {
+        console.log("Hey", blacklist, bat, bi, hiru);
+        // const validate = qx.util.Validate.email();
+        // return validate;
+        qx.util.Validate.checkEmail(emailValue, null, errorMessage);
+      };
+    },
+  },
 
   members: {
+    __blacklist: null,
     __captchaField: null,
     __requestButton: null,
     __cancelButton: null,
@@ -66,12 +83,10 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         case "osparc":
           this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
           break;
-        case "tiplite":
-        case "s4ldesktopacad":
-          this._form.add(email, this.tr("University Email"), qx.util.Validate.email(), "email");
-          break;
         case "s4lacad":
-          this._form.add(email, this.tr("University Email"), this.__validateEmail(), "email");
+        case "s4ldesktopacad":
+        case "tiplite":
+          this._form.add(email, this.tr("University Email"), this.self().blacklistEmailValidator(this.__blacklist), "email");
           break;
       }
 
@@ -368,11 +383,6 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       cancelBtn.addListener("execute", () => this.fireDataEvent("done", null), this);
 
       this.add(grp);
-    },
-
-    __validateEmail: function(errorMessage) {
-      const validate = qx.util.Validate.email(errorMessage);
-      return validate;
     },
 
     __requestPressed: function() {

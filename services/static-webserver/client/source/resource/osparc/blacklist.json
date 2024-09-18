@@ -1,14 +1,14 @@
 {
-  "blacklist-lite": [
-    "@*\.ir$",
-    "@imanova\.co\.uk$",
-    "@centrum\.sk$",
-    "@centrum\.cz$",
-    "@*\.medical\.canon$",
+  "lite": [
+    "@*\\.ir$",
+    "@imanova\\.co\\.uk$",
+    "@centrum\\.sk$",
+    "@centrum\\.cz$",
+    "@*\\.medical\\.canon$",
     "@gmail.com$",
     "@yahoo.com$",
     "@hotmail.com$",
-    "@hotmail\.*$",
+    "@hotmail\\.*$",
     "@aol.com$",
     "@hotmail.co.uk$",
     "@hotmail.fr$",
@@ -176,6 +176,6 @@
     "@zipmail.com.br$",
     "@globo.com$",
     "@globomail.com$",
-    "@oi.com.br$",
+    "@oi.com.br$"
   ]
 }
