@@ -1,7 +1,8 @@
 import urllib.parse
 from functools import cached_property
 
-from pydantic import Field, PostgresDsn, SecretStr, field_validator
+from pydantic import AliasChoices, Field, PostgresDsn, SecretStr, field_validator
+from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt
@@ -30,12 +31,12 @@ class PostgresSettings(BaseCustomSettings):
     POSTGRES_CLIENT_NAME: str | None = Field(
         default=None,
         description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
-        validation_alias=[
+        validation_alias=AliasChoices(
             "POSTGRES_CLIENT_NAME",
             # This is useful when running inside a docker container, then the hostname is set each client gets a different name
             "HOST",
             "HOSTNAME",
-        ],
+        ),
     )
 
     # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
@@ -82,7 +83,7 @@ class PostgresSettings(BaseCustomSettings):
             )
         return dsn
 
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         json_schema_extra={
             "examples": [
                 # minimal required
