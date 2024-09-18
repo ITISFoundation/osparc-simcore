@@ -69,7 +69,7 @@ def test_simcore_service_labels(example: dict, items: int, uses_dynamic_sidecar:
     simcore_service_labels = SimcoreServiceLabels.model_validate(example)
 
     assert simcore_service_labels
-    assert len(simcore_service_labels.dict(exclude_unset=True)) == items
+    assert len(simcore_service_labels.model_dump(exclude_unset=True)) == items
     assert simcore_service_labels.needs_dynamic_sidecar == uses_dynamic_sidecar
 
 

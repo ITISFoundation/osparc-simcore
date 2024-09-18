@@ -58,7 +58,7 @@ async def compute_node_hash(
 
             # ensure we do not get pydantic types for hashing here, only jsoneable stuff
             if isinstance(payload, BaseModel):
-                payload = payload.dict(by_alias=True, exclude_unset=True)
+                payload = payload.model_dump(by_alias=True, exclude_unset=True)
 
             # remove the payload if it is null and it was resolved
             if payload is not None:
