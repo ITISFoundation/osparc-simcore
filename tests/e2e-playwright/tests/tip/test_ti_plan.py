@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from playwright.sync_api import Page, WebSocket
-from pytest_simcore.helpers.logging_tools import log_context
+from pytest_simcore.helpers.logging_tools import log_context, test_logger
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
@@ -91,6 +91,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
     is_autoscaled: bool,
+    is_product_lite: bool,
 ):
     project_data = create_tip_plan_from_dashboard("newTIPlanButton")
     assert "workbench" in project_data, "Expected workbench to be in project data!"
@@ -98,9 +99,19 @@ def test_classic_ti_plan(  # noqa: PLR0915
         project_data["workbench"], dict
     ), "Expected workbench to be a dict!"
     node_ids: list[str] = list(project_data["workbench"])
-    assert len(node_ids) >= 3, "Expected at least 3 nodes in the workbench!"
 
-    with log_context(logging.INFO, "Electrode Selector step") as ctx:
+    if is_product_lite:
+        expected_number_of_steps = 2
+        assert (
+            len(node_ids) == expected_number_of_steps
+        ), f"Expected {expected_number_of_steps=} in the app-mode"
+    else:
+        expected_number_of_steps = 3
+        assert (
+            len(node_ids) >= expected_number_of_steps
+        ), f"Expected at least {expected_number_of_steps} nodes in the workbench"
+
+    with log_context(logging.INFO, "Electrode Selector step (1)") as ctx:
         # NOTE: creating the plan auto-triggers the first service to start, which might already triggers socket events
         electrode_selector_iframe = wait_for_service_running(
             page=page,
@@ -149,7 +160,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
             response_body = response.json()
             ctx.logger.info("the following output was generated: %s", response_body)
 
-    with log_context(logging.INFO, "Classic TI step") as ctx:
+    with log_context(logging.INFO, "Classic TI step (2)") as ctx:
         with page.expect_websocket(
             _JLabWaitForWebSocket(),
             timeout=_OUTER_EXPECT_TIMEOUT_RATIO
@@ -211,7 +222,13 @@ def test_classic_ti_plan(  # noqa: PLR0915
             text_on_output_button = f"Outputs ({len(expected_outputs)})"
             page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
 
-    with log_context(logging.INFO, "Exposure Analysis step"):
+    if is_product_lite:
+        test_logger.info(
+            "Skipping the rest of the test since it is intended for the full version"
+        )
+        return
+
+    with log_context(logging.INFO, "Exposure Analysis step (3)"):
         with expected_service_running(
             page=page,
             node_id=node_ids[2],
