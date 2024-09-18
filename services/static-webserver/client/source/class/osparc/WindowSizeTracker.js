@@ -77,7 +77,7 @@ qx.Class.define("osparc.WindowSizeTracker", {
       }
 
       if (width < this.self().MIN_WIDTH_LOGOUT) {
-        osparc.LogoutWindow.openWindow();
+        osparc.TooSmallDialog.openWindow();
       }
 
       this.set({

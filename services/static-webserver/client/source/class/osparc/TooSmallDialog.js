@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.LogoutWindow", {
+qx.Class.define("osparc.TooSmallDialog", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
@@ -34,7 +34,7 @@ qx.Class.define("osparc.LogoutWindow", {
 
   statics: {
     openWindow: function() {
-      const orgsWindow = new osparc.LogoutWindow();
+      const orgsWindow = new osparc.TooSmallDialog();
       orgsWindow.center();
       orgsWindow.open();
       return orgsWindow;
@@ -46,6 +46,7 @@ qx.Class.define("osparc.LogoutWindow", {
       const message = this.__createMessage();
       this.add(message);
 
+      // if the user is logged in, let them log out, the user menu might be unreachable
       const logoutButton = this.__createLogoutButton();
       this.add(logoutButton);
     },
