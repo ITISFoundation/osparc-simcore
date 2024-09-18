@@ -7,6 +7,7 @@ from datetime import timedelta
 from typing import Any
 from uuid import uuid4
 
+import aioredis
 from pydantic import NonNegativeInt
 from servicelib.deferred_tasks import (
     BaseDeferredHandler,
@@ -54,22 +55,22 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
 
 class InMemoryLists:
     def __init__(self, redis_settings: RedisSettings, port: int) -> None:
-        self.redis_sdk = RedisClientSDK(
+        # NOTE: RedisClientSDK is not required here but it's used to easily construct
+        # a redis connection
+        self.redis: aioredis.Redis = RedisClientSDK(
             redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
             decode_responses=True,
-        )
+        ).redis
         self.port = port
 
     def _get_queue_name(self, queue_name: str) -> str:
         return f"in_memory_lists::{queue_name}.{self.port}"
 
     async def append_to(self, queue_name: str, value: Any) -> None:
-        await self.redis_sdk.redis.rpush(self._get_queue_name(queue_name), value)
+        await self.redis.rpush(self._get_queue_name(queue_name), value)  # type: ignore
 
     async def get_all_from(self, queue_name: str) -> list:
-        return await self.redis_sdk.redis.lrange(
-            self._get_queue_name(queue_name), 0, -1
-        )  # type: ignore
+        return await self.redis.lrange(self._get_queue_name(queue_name), 0, -1)  # type: ignore
 
 
 class ExampleApp:
