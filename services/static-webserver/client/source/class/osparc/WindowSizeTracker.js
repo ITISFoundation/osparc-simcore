@@ -55,6 +55,7 @@ qx.Class.define("osparc.WindowSizeTracker", {
   },
 
   members: {
+    __tooSmallDialog: null,
     __lastRibbonMessage: null,
 
     startTracker: function() {
@@ -77,7 +78,14 @@ qx.Class.define("osparc.WindowSizeTracker", {
       }
 
       if (width < this.self().MIN_WIDTH_LOGOUT) {
-        osparc.TooSmallDialog.openWindow();
+        if (this.__tooSmallDialog) {
+          this.__tooSmallDialog.center();
+          this.__tooSmallDialog.open();
+        } else {
+          this.__tooSmallDialog = osparc.TooSmallDialog.openWindow();
+        }
+      } else if (this.__tooSmallDialog) {
+        this.__tooSmallDialog.close();
       }
 
       this.set({
