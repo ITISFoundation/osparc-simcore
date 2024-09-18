@@ -61,16 +61,20 @@ qx.Class.define("osparc.TooSmallDialog", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "right"
       }));
-      const authData = osparc.auth.Data.getInstance();
-      authData.bind("loggedIn", layout, "visibility", {
-        converter: isLoggedIn => isLoggedIn ? "visible" : "excluded"
-      });
 
-      const button = new qx.ui.form.Button(authData.isGuest() ? this.tr("Exit") : this.tr("Log out")).set({
+      const button = new qx.ui.form.Button().set({
         allowGrowX: false
       });
       button.addListener("execute", () => qx.core.Init.getApplication().logout());
       layout.add(button);
+
+      const authData = osparc.auth.Data.getInstance();
+      authData.bind("loggedIn", layout, "visibility", {
+        converter: isLoggedIn => isLoggedIn ? "visible" : "excluded"
+      });
+      authData.bind("guest", button, "label", {
+        converter: isGuest => isGuest ? this.tr("Exit") : this.tr("Log out")
+      });
 
       return layout;
     },
