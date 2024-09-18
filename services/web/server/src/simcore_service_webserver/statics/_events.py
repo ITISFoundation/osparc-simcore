@@ -130,7 +130,7 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
             and product.vendor
             and (template_url := product.vendor.get("release_notes_url_template", None))
         ):
-            # As pattern vX.Y.Z is already guaranted, we replace the the minor version with 0
+            # As pattern vX.Y.Z is already guaranteed, we replace the the minor version with 0
             parts = vtag.split(".")
             parts[-1] = "0"
             updated_vtag = ".".join(parts)
