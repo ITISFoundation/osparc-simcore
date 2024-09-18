@@ -141,8 +141,6 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-psutil==6.0.0
-    # via -r requirements/_test.in
 py-cpuinfo==9.0.0
     # via pytest-benchmark
 pytest==8.3.2
@@ -243,6 +241,8 @@ sqlalchemy2-stubs==0.0.2a38
 termcolor==2.4.0
     # via pytest-sugar
 types-aiofiles==24.1.0.20240626
+    # via -r requirements/_test.in
+types-psutil==6.0.0.20240901
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20240819
     # via -r requirements/_test.in
