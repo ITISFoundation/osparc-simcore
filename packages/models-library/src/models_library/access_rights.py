@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AccessRights(BaseModel):
@@ -6,5 +6,4 @@ class AccessRights(BaseModel):
     write: bool = Field(..., description="has write access")
     delete: bool = Field(..., description="has deletion rights")
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")

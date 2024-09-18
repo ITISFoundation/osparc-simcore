@@ -1,4 +1,4 @@
-from pydantic import Field, validator
+from pydantic import ConfigDict, Field, field_validator
 
 from .generated_models.docker_rest_api import (
     ContainerSpec,
@@ -16,7 +16,7 @@ class AioDockerContainerSpec(ContainerSpec):
         description="aiodocker expects here a dictionary and re-convert it back internally`.\n",
     )
 
-    @validator("Env", pre=True)
+    @field_validator("Env", mode="before")
     @classmethod
     def convert_list_to_dict(cls, v):
         if v is not None and isinstance(v, list):
@@ -37,8 +37,7 @@ class AioDockerResources1(Resources1):
         None, description="Define resources reservation.", alias="Reservations"
     )
 
-    class Config(Resources1.Config):  # type: ignore
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class AioDockerTaskSpec(TaskSpec):
@@ -55,6 +54,4 @@ class AioDockerTaskSpec(TaskSpec):
 class AioDockerServiceSpec(ServiceSpec):
     TaskTemplate: AioDockerTaskSpec | None = None
 
-    class Config(ServiceSpec.Config):  # type: ignore
-        alias_generator = camel_to_snake
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True, alias_generator=camel_to_snake)

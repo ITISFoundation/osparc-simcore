@@ -96,9 +96,15 @@ def test_store_discriminator():
         },
     }
 
-    datacore_node = Node.parse_obj(workbench["89f95b67-a2a3-4215-a794-2356684deb61"])
-    rawgraph_node = Node.parse_obj(workbench["88119776-e869-4df2-a529-4aae9d9fa35c"])
-    simcore_node = Node.parse_obj(workbench["75c1707c-ec1c-49ac-a7bf-af6af9088f38"])
+    datacore_node = Node.model_validate(
+        workbench["89f95b67-a2a3-4215-a794-2356684deb61"]
+    )
+    rawgraph_node = Node.model_validate(
+        workbench["88119776-e869-4df2-a529-4aae9d9fa35c"]
+    )
+    simcore_node = Node.model_validate(
+        workbench["75c1707c-ec1c-49ac-a7bf-af6af9088f38"]
+    )
 
     # must cast to the right subclass within project_nodes.py's InputTypes and OutputTypes unions
     assert datacore_node.outputs

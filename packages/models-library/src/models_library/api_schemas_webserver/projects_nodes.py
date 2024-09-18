@@ -1,7 +1,7 @@
 # mypy: disable-error-code=truthy-function
-from typing import Any, ClassVar, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
@@ -62,13 +62,13 @@ class NodeGet(OutputSchema):
     service_key: ServiceKey = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        example=[
+        examples=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
         ],
     )
     service_version: ServiceVersion = Field(
-        ..., description="semantic version number", example=["1.0.0", "0.0.1"]
+        ..., description="semantic version number", examples=["1.0.0", "0.0.1"]
     )
     service_host: str = Field(
         ...,
@@ -90,9 +90,8 @@ class NodeGet(OutputSchema):
         description="the service message",
     )
     user_id: str = Field(..., description="the user that started the service")
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "published_port": 30000,
                 "entrypoint": "/the/entry/point/is/here",
@@ -107,6 +106,7 @@ class NodeGet(OutputSchema):
                 "user_id": 123,
             }
         }
+    )
 
 
 class NodeGetIdle(OutputSchema):
@@ -117,30 +117,32 @@ class NodeGetIdle(OutputSchema):
     def from_node_id(cls, node_id: NodeID) -> "NodeGetIdle":
         return cls(service_state="idle", service_uuid=node_id)
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 "service_state": "idle",
             }
         }
+    )
 
 
 class NodeGetUnknown(OutputSchema):
     service_state: Literal["unknown"]
     service_uuid: NodeID
 
-    @classmethod
-    def from_node_id(cls, node_id: NodeID) -> "NodeGetUnknown":
-        return cls(service_state="unknown", service_uuid=node_id)
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 "service_state": "unknown",
             }
         }
+    )
+
+    @classmethod
+    def from_node_id(cls, node_id: NodeID) -> "NodeGetUnknown":
+        return cls(service_state="unknown", service_uuid=node_id)
 
 
 class NodeOutputs(InputSchemaWithoutCamelCase):
@@ -152,5 +154,4 @@ class NodeRetrieve(InputSchemaWithoutCamelCase):
 
 
 class NodeRetrieved(RetrieveDataOut):
-    class Config(OutputSchema.Config):
-        ...
+    model_config = OutputSchema.model_config

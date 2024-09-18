@@ -3,7 +3,7 @@ from typing import TypeAlias
 
 from models_library.users import GroupID, UserID
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 FolderID: TypeAlias = PositiveInt
 
@@ -32,5 +32,4 @@ class FolderDB(BaseModel):
     user_id: UserID | None
     workspace_id: WorkspaceID | None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

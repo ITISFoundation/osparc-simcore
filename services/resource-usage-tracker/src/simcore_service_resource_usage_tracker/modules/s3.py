@@ -4,6 +4,7 @@ from typing import cast
 from aws_library.s3 import S3NotConnectedError, SimcoreS3API
 from fastapi import FastAPI
 from models_library.api_schemas_storage import S3BucketName
+from pydantic import TypeAdapter
 from settings_library.s3 import S3Settings
 from tenacity import (
     AsyncRetrying,
@@ -36,7 +37,9 @@ def setup(app: FastAPI) -> None:
         ):
             with attempt:
                 connected = await client.http_check_bucket_connected(
-                    bucket=S3BucketName(settings.S3_BUCKET_NAME)
+                    bucket=TypeAdapter(S3BucketName).validate_python(
+                        settings.S3_BUCKET_NAME
+                    )
                 )
                 if not connected:
                     raise S3NotConnectedError  # pragma: no cover

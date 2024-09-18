@@ -1,18 +1,14 @@
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
 
-from pydantic import BaseModel, ConstrainedStr, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, StringConstraints
 
 UserID: TypeAlias = PositiveInt
 GroupID: TypeAlias = PositiveInt
 
 
-class FirstNameStr(ConstrainedStr):
-    strip_whitespace = True
-    max_length = 255
+FirstNameStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, max_length=255)]
 
-
-class LastNameStr(FirstNameStr):
-    ...
+LastNameStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, max_length=255)]
 
 
 class UserBillingDetails(BaseModel):
@@ -26,5 +22,4 @@ class UserBillingDetails(BaseModel):
     postal_code: str | None
     phone: str | None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TypeAlias
 
-from pydantic import BaseModel, Extra, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 from .projects import ProjectID
 from .users import UserID
@@ -33,12 +33,8 @@ class _ProjectsCommentsBase(BaseModel):
 
 
 class ProjectsCommentsDB(_ProjectsCommentsBase):
-    class Config:
-        extra = Extra.forbid
-        validation = False
+    model_config = ConfigDict(extra="forbid")
 
 
 class ProjectsCommentsAPI(_ProjectsCommentsBase):
-    class Config:
-        extra = Extra.forbid
-        validation = False
+    model_config = ConfigDict(extra="forbid")

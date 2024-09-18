@@ -3,12 +3,28 @@
     - implemented using orjson, which  performs better. SEE https://github.com/ijl/orjson?tab=readme-ov-file#performance
 """
 
+import datetime
+from collections import deque
 from collections.abc import Callable
+from decimal import Decimal
+from enum import Enum
+from ipaddress import (
+    IPv4Address,
+    IPv4Interface,
+    IPv4Network,
+    IPv6Address,
+    IPv6Interface,
+    IPv6Network,
+)
+from pathlib import Path
+from re import Pattern
+from types import GeneratorType
 from typing import Any, Final, NamedTuple
+from uuid import UUID
 
 import orjson
-from pydantic.json import ENCODERS_BY_TYPE, pydantic_encoder
-from pydantic.types import ConstrainedFloat
+from pydantic import NameEmail, SecretBytes, SecretStr
+from pydantic_extra_types.color import Color
 
 
 class SeparatorTuple(NamedTuple):
@@ -16,10 +32,84 @@ class SeparatorTuple(NamedTuple):
     key_separator: str
 
 
-# Extends encoders for pydantic_encoder
-ENCODERS_BY_TYPE[ConstrainedFloat] = float
-
 _orjson_default_separator: Final = SeparatorTuple(item_separator=",", key_separator=":")
+
+
+def isoformat(o: datetime.date | datetime.time) -> str:
+    return o.isoformat()
+
+
+def decimal_encoder(dec_value: Decimal) -> int | float:
+    """
+    Encodes a Decimal as int of there's no exponent, otherwise float
+
+    This is useful when we use ConstrainedDecimal to represent Numeric(x,0)
+    where a integer (but not int typed) is used. Encoding this as a float
+    results in failed round-tripping between encode and parse.
+    Our Id type is a prime example of this.
+
+    >>> decimal_encoder(Decimal("1.0"))
+    1.0
+
+    >>> decimal_encoder(Decimal("1"))
+    1
+    """
+    if dec_value.as_tuple().exponent >= 0:  # type: ignore[operator]
+        return int(dec_value)
+    else:
+        return float(dec_value)
+
+
+ENCODERS_BY_TYPE: dict[type[Any], Callable[[Any], Any]] = {
+    bytes: lambda o: o.decode(),
+    Color: str,
+    datetime.date: isoformat,
+    datetime.datetime: isoformat,
+    datetime.time: isoformat,
+    datetime.timedelta: lambda td: td.total_seconds(),
+    Decimal: decimal_encoder,
+    Enum: lambda o: o.value,
+    frozenset: list,
+    deque: list,
+    GeneratorType: list,
+    IPv4Address: str,
+    IPv4Interface: str,
+    IPv4Network: str,
+    IPv6Address: str,
+    IPv6Interface: str,
+    IPv6Network: str,
+    NameEmail: str,
+    Path: str,
+    Pattern: lambda o: o.pattern,
+    SecretBytes: str,
+    SecretStr: str,
+    set: list,
+    UUID: str,
+}
+
+
+def pydantic_encoder(obj: Any) -> Any:
+    from dataclasses import asdict, is_dataclass
+
+    from pydantic.main import BaseModel
+
+    if isinstance(obj, BaseModel):
+        return obj.model_dump()
+    elif is_dataclass(obj):
+        return asdict(obj)  # type: ignore[call-overload]
+
+    # Check the class type and its superclasses for a matching encoder
+    for base in obj.__class__.__mro__[:-1]:
+        try:
+            encoder = ENCODERS_BY_TYPE[base]
+        except KeyError:
+            continue
+        return encoder(obj)
+
+    # We have exited the for loop without finding a suitable encoder
+    raise TypeError(
+        f"Object of type '{obj.__class__.__name__}' is not JSON serializable"
+    )
 
 
 def json_dumps(

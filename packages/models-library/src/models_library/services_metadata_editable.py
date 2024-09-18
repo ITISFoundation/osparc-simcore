@@ -1,8 +1,8 @@
 # mypy: disable-error-code=truthy-function
 from datetime import datetime
-from typing import Any, ClassVar
+from typing import Annotated, Any
 
-from pydantic import Field, HttpUrl
+from pydantic import ConfigDict, Field, HttpUrl
 
 from .services_base import ServiceBaseDisplay
 from .services_constants import LATEST_INTEGRATION_VERSION
@@ -19,7 +19,7 @@ assert ServiceVersion  # nosec
 class ServiceMetaDataEditable(ServiceBaseDisplay):
     # Overrides ServiceBaseDisplay fields to Optional for a partial update
     name: str | None  # type: ignore[assignment]
-    thumbnail: HttpUrl | None
+    thumbnail: Annotated[str, HttpUrl] | None
     description: str | None  # type: ignore[assignment]
     description_ui: bool = False
     version_display: str | None = None
@@ -35,8 +35,8 @@ class ServiceMetaDataEditable(ServiceBaseDisplay):
     classifiers: list[str] | None
     quality: dict[str, Any] = {}
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "key": "simcore/services/dynamic/sim4life",
                 "version": "1.0.9",
@@ -62,3 +62,4 @@ class ServiceMetaDataEditable(ServiceBaseDisplay):
                 },
             }
         }
+    )
