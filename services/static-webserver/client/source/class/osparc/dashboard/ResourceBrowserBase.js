@@ -251,18 +251,32 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
       resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
       resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
-      resourcesContainer.addListener("folderSelected", e => this._folderSelected(e.getData()));
       resourcesContainer.addListener("folderUpdated", e => this._folderUpdated(e.getData()));
       resourcesContainer.addListener("moveFolderToFolderRequested", e => this._moveFolderToFolderRequested(e.getData()));
       resourcesContainer.addListener("moveFolderToWorkspaceRequested", e => this._moveFolderToWorkspaceRequested(e.getData()));
       resourcesContainer.addListener("deleteFolderRequested", e => this._deleteFolderRequested(e.getData()));
+      resourcesContainer.addListener("folderSelected", e => {
+        const folderId = e.getData();
+        this._folderSelected(folderId);
+        this._resourceFilter.folderSelected(folderId);
+      }, this);
       resourcesContainer.addListener("workspaceSelected", e => {
         const workspaceId = e.getData();
         this._workspaceSelected(workspaceId);
         this._resourceFilter.workspaceSelected(workspaceId);
-      });
+      }, this);
       resourcesContainer.addListener("workspaceUpdated", e => this._workspaceUpdated(e.getData()));
       resourcesContainer.addListener("deleteWorkspaceRequested", e => this._deleteWorkspaceRequested(e.getData()));
+
+      const containerHeader = this._resourcesContainer.getContainerHeader();
+      containerHeader.addListener("changeContext", e => {
+        const {
+          workspaceId,
+          folderId,
+        } = e.getData();
+        this._resourceFilter.contextChanged(workspaceId, folderId);
+      }, this);
+
       this._addToLayout(resourcesContainer);
     },
 
