@@ -2,6 +2,8 @@ aio-pika==9.4.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiobotocore==2.13.0
     # via s3fs
+aiocache==0.12.2
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodebug==2.3.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.21.0
@@ -251,8 +253,10 @@ protobuf==4.25.4
     # via
     #   googleapis-common-protos
     #   opentelemetry-proto
-psutil==5.9.8
-    # via distributed
+psutil==6.0.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   distributed
 pydantic==1.10.15
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
