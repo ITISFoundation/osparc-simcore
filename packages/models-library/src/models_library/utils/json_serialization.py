@@ -105,10 +105,11 @@ def pydantic_encoder(obj: Any) -> Any:
         except KeyError:
             continue
         return encoder(obj)
-    else:  # We have exited the for loop without finding a suitable encoder
-        raise TypeError(
-            f"Object of type '{obj.__class__.__name__}' is not JSON serializable"
-        )
+
+    # We have exited the for loop without finding a suitable encoder
+    raise TypeError(
+        f"Object of type '{obj.__class__.__name__}' is not JSON serializable"
+    )
 
 
 def json_dumps(
