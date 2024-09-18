@@ -321,6 +321,15 @@ async def task_runs_docker_compose_down(
     progress.update(message="done", percent=ProgressPercent(0.99))
 
 
+def _get_satate_folders_size(paths: list[Path]) -> int:
+    total_size: int = 0
+    for path in paths:
+        for file in path.rglob("*"):
+            if file.is_file():
+                total_size += file.stat().st_size
+    return total_size
+
+
 async def _restore_state_folder(
     app: FastAPI,
     *,
@@ -347,7 +356,7 @@ async def task_restore_state(
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
-) -> None:
+) -> int:
     # NOTE: the legacy data format was a zip file
     # this method will maintain retro compatibility.
     # The legacy archive is always downloaded and decompressed
@@ -390,6 +399,8 @@ async def task_restore_state(
     )
     progress.update(message="state restored", percent=ProgressPercent(0.99))
 
+    return _get_satate_folders_size(state_paths)
+
 
 async def _save_state_folder(
     app: FastAPI,
@@ -419,7 +430,7 @@ async def task_save_state(
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
-) -> None:
+) -> int:
     """
     Saves the states of the service.
     If a legacy archive is detected, it will be removed after
@@ -452,6 +463,8 @@ async def task_save_state(
 
     await post_sidecar_log_message(app, "Finished state saving", log_level=logging.INFO)
     progress.update(message="finished state saving", percent=ProgressPercent(0.99))
+
+    return _get_satate_folders_size(state_paths)
 
 
 async def task_ports_inputs_pull(

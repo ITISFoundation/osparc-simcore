@@ -7,9 +7,6 @@ from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
 )
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
-from servicelib.fastapi.prometheus_instrumentation import (
-    setup_prometheus_instrumentation,
-)
 from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 
@@ -28,6 +25,7 @@ from ..modules import (
     director_v0,
     dynamic_services,
     dynamic_sidecar,
+    instrumentation,
     notifier,
     rabbitmq,
     redis,
@@ -192,7 +190,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
     resource_usage_tracker_client.setup(app)
 
     if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        setup_prometheus_instrumentation(app)
+        instrumentation.setup(app)
     if settings.DIRECTOR_V2_TRACING:
         setup_tracing(app, app.state.settings.DIRECTOR_V2_TRACING, APP_NAME)
 
