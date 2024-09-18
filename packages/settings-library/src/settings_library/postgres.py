@@ -39,8 +39,6 @@ class PostgresSettings(BaseCustomSettings):
         ),
     )
 
-    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @field_validator("POSTGRES_MAXSIZE")
     @classmethod
     def _check_size(cls, v, values):
