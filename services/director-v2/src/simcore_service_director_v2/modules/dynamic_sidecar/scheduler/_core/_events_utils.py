@@ -44,6 +44,12 @@ from .....models.dynamic_services_scheduler import (
     DockerStatus,
     SchedulerData,
 )
+from .....modules.instrumentation import (
+    get_instrumentation,
+    get_metrics_labels,
+    get_rate,
+    track_duration,
+)
 from .....utils.db import get_repository
 from ....db.repositories.projects import ProjectsRepository
 from ....db.repositories.projects_networks import ProjectsNetworksRepository
@@ -157,9 +163,15 @@ async def service_save_state(
     progress_callback: ProgressCallback | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
-    await sidecars_client.save_service_state(
-        scheduler_data.endpoint, progress_callback=progress_callback
-    )
+
+    with track_duration() as duration:
+        size = await sidecars_client.save_service_state(
+            scheduler_data.endpoint, progress_callback=progress_callback
+        )
+    get_instrumentation(app).dynamic_sidecar_metrics.push_service_state_rate.labels(
+        **get_metrics_labels(scheduler_data)
+    ).observe(get_rate(size, duration.to_flaot()))
+
     await sidecars_client.update_volume_state(
         scheduler_data.endpoint,
         volume_category=VolumeCategory.STATES,
@@ -375,6 +387,16 @@ async def attempt_pod_removal_and_data_saving(
     rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
     await rabbitmq_client.publish(message.channel_name, message)
 
+    # metrics
+
+    stop_duration = (
+        scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_close_request()
+    )
+    assert stop_duration is not None  # nosec
+    get_instrumentation(app).dynamic_sidecar_metrics.stop_time_duration.labels(
+        **get_metrics_labels(scheduler_data)
+    ).observe(stop_duration)
+
 
 async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -> None:
     _logger.debug("Attaching project networks for %s", scheduler_data.service_name)
@@ -460,14 +482,44 @@ async def prepare_services_environment(
         )
     )
 
+    async def _pull_output_ports_with_metrics() -> None:
+        with track_duration() as duration:
+            size: int = await sidecars_client.pull_service_output_ports(
+                dynamic_sidecar_endpoint
+            )
+
+        get_instrumentation(app).dynamic_sidecar_metrics.output_ports_pull_rate.labels(
+            **get_metrics_labels(scheduler_data)
+        ).observe(get_rate(size, duration.to_flaot()))
+
+    async def _pull_user_services_images_with_metrics() -> None:
+        with track_duration() as duration:
+            await sidecars_client.pull_user_services_images(dynamic_sidecar_endpoint)
+
+        get_instrumentation(
+            app
+        ).dynamic_sidecar_metrics.pull_user_services_images_duration.labels(
+            **get_metrics_labels(scheduler_data)
+        ).observe(
+            duration.to_flaot()
+        )
+
+    async def _restore_service_state_with_metrics() -> None:
+        with track_duration() as duration:
+            size = await sidecars_client.restore_service_state(dynamic_sidecar_endpoint)
+
+        get_instrumentation(app).dynamic_sidecar_metrics.pull_service_state_rate.labels(
+            **get_metrics_labels(scheduler_data)
+        ).observe(get_rate(size, duration.to_flaot()))
+
     tasks = [
-        sidecars_client.pull_user_services_images(dynamic_sidecar_endpoint),
-        sidecars_client.pull_service_output_ports(dynamic_sidecar_endpoint),
+        _pull_user_services_images_with_metrics(),
+        _pull_output_ports_with_metrics(),
     ]
     # When enabled no longer downloads state via nodeports
     # S3 is used to store state paths
     if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-        tasks.append(sidecars_client.restore_service_state(dynamic_sidecar_endpoint))
+        tasks.append(_restore_service_state_with_metrics())
 
     await limited_gather(*tasks, limit=3)
 

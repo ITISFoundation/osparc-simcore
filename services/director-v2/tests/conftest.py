@@ -208,6 +208,7 @@ async def client(mock_env: EnvVarsDict) -> AsyncIterator[TestClient]:
 async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
+    print("Application settings\n", settings.json(indent=2))
     async with LifespanManager(app):
         yield app
 

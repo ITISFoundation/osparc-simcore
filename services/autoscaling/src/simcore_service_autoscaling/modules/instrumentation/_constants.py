@@ -1,8 +1,10 @@
 from typing import Final
 
+from servicelib.instrumentation import get_metrics_namespace
+
 from ..._meta import APP_NAME
 
-METRICS_NAMESPACE: Final[str] = APP_NAME.replace("-", "_")
+METRICS_NAMESPACE: Final[str] = get_metrics_namespace(APP_NAME)
 EC2_INSTANCE_LABELS: Final[tuple[str, ...]] = ("instance_type",)
 
 CLUSTER_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
