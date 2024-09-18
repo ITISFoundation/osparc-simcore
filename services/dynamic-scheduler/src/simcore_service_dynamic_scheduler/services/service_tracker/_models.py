@@ -37,39 +37,73 @@ class SchedulerServiceState(StrAutoEnum):
 
 @dataclass
 class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
-    # used to create the service in any given moment if the requested_state is RUNNING
-    # can be set to None only when stopping the service
-    dynamic_service_start: DynamicServiceStart | None
 
-    # required for propagating status changes to the frontend
-    user_id: UserID | None
-    project_id: ProjectID | None
+    dynamic_service_start: DynamicServiceStart | None = field(
+        metadata={
+            "description": (
+                "used to create the service in any given moment if the requested_state is RUNNING"
+                "can be set to None only when stopping the service"
+            )
+        }
+    )
 
-    # what the user desires (RUNNING or STOPPED)
-    requested_state: UserRequestedState
+    user_id: UserID | None = field(
+        metadata={
+            "description": "required for propagating status changes to the frontend"
+        }
+    )
+    project_id: ProjectID | None = field(
+        metadata={
+            "description": "required for propagating status changes to the frontend"
+        }
+    )
 
-    # set this after parsing the incoming state via the API calls
-    current_state: SchedulerServiceState = SchedulerServiceState.UNKNOWN
+    requested_state: UserRequestedState = field(
+        metadata={
+            "description": (
+                "status of the service desidered by the user RUNNING or STOPPED"
+            )
+        }
+    )
+
+    current_state: SchedulerServiceState = field(
+        default=SchedulerServiceState.UNKNOWN,
+        metadata={
+            "description": "to set after parsing the incoming state via the API calls"
+        },
+    )
 
     #############################
     ### SERVICE STATUS UPDATE ###
     #############################
 
-    # set when a job will be immediately scheduled
-    scheduled_to_run: bool = False
-
-    # stored for debug mainly this is used to compute ``current_state``
-    service_status: str = ""
-    # uid of the job currently fetching the status
-    service_status_task_uid: TaskUID | None = None
-
-    # used to determine when to poll the status again
-    check_status_after: float = field(
-        default_factory=lambda: arrow.utcnow().timestamp()
+    scheduled_to_run: bool = field(
+        default=False,
+        metadata={"description": "set when a job will be immediately scheduled"},
     )
 
-    # used to determine when was the last time the status was notified
-    last_status_notification: float = 0
+    service_status: str = field(
+        default="",
+        metadata={
+            "description": "stored for debug mainly this is used to compute ``current_state``"
+        },
+    )
+    service_status_task_uid: TaskUID | None = field(
+        default=None,
+        metadata={"description": "uid of the job currently fetching the status"},
+    )
+
+    check_status_after: float = field(
+        default_factory=lambda: arrow.utcnow().timestamp(),
+        metadata={"description": "used to determine when to poll the status again"},
+    )
+
+    last_status_notification: float = field(
+        default=0,
+        metadata={
+            "description": "used to determine when was the last time the status was notified"
+        },
+    )
 
     def set_check_status_after_to(self, delay_from_now: timedelta) -> None:
         self.check_status_after = (arrow.utcnow() + delay_from_now).timestamp()
