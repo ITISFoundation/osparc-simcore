@@ -168,16 +168,26 @@ async def should_notify_frontend(
         return False
 
     # check if too much time has passed since the last time an update was sent
-    if (
+    return (
         status_changed
-        or (arrow.utcnow().timestamp() - model.last_status_notification)
+        or arrow.utcnow().timestamp() - model.last_status_notification
         > _MAX_PERIOD_WITHOUT_SERVICE_STATUS_UPDATES.total_seconds()
-    ):
-        model.set_last_status_notification_to_now()
-        await tracker.save(node_id, model)
-        return True
+    )
 
-    return False
+
+async def set_frontned_notified(app: FastAPI, node_id: NodeID) -> None:
+    tracker = get_tracker(app)
+    model: TrackedServiceModel | None = await tracker.load(node_id)
+    if model is None:
+        _logger.info(
+            "Could not find a %s entry for node_id %s: skipping set_last_status_notification_to_now",
+            TrackedServiceModel.__name__,
+            node_id,
+        )
+        return
+
+    model.set_last_status_notification_to_now()
+    await tracker.save(node_id, model)
 
 
 async def set_scheduled_to_run(

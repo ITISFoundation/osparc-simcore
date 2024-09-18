@@ -74,6 +74,7 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
             user_id: UserID | None = await service_tracker.get_user_id(app, node_id)
             if user_id:
                 await notify_service_status_change(app, user_id, result)
+                await service_tracker.set_frontned_notified(app, node_id)
             else:
                 _logger.info(
                     "Did not find a user for '%s', skipping status delivery of: %s",
