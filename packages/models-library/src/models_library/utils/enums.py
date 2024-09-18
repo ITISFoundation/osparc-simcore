@@ -7,7 +7,16 @@ from typing import Any
 class auto_str(enum.auto):  # noqa: N801
     """
     To be used in place of `auto()` when inheriting form `StrAutoEnum`
-    Makes typechecking play nice.
+
+    Helps avoding tooling to report the following error:
+    `Type "int" is not assignable to declared type "str"`
+
+    Usage:
+
+    ```
+    class MyEnum(StrAutoEnum):
+        FIELD_ONE = auto_str()
+    ```
     """
 
     value: str = enum._auto_null  # pylint:disable=protected-access # noqa: SLF001
