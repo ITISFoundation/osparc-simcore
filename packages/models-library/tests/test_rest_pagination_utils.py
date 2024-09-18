@@ -41,7 +41,7 @@ def test_paginating_data(base_url):
     )
     assert data_obj
 
-    model_instance = Page[int].parse_obj(data_obj)
+    model_instance = Page[int].model_validate(data_obj)
     assert model_instance
     assert model_instance.meta == PageMetaInfoLimitOffset(
         total=total_number_of_items, count=len(data_chunk), limit=limit, offset=offset
@@ -83,7 +83,7 @@ def test_paginating_data(base_url):
             offset=offset,
         )
 
-        model_instance = Page[int].parse_obj(data_obj)
+        model_instance = Page[int].model_validate(data_obj)
         assert model_instance
         assert model_instance.meta == PageMetaInfoLimitOffset(
             total=total_number_of_items,
@@ -136,7 +136,7 @@ def test_paginating_data(base_url):
     )
     assert data_obj
 
-    model_instance = Page[int].parse_obj(data_obj)
+    model_instance = Page[int].model_validate(data_obj)
     assert model_instance
 
     assert model_instance.meta == PageMetaInfoLimitOffset(

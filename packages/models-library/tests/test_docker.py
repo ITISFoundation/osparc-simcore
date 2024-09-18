@@ -107,7 +107,9 @@ def test_docker_generic_tag(image_name: str, valid: bool):
     ids=str,
 )
 def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):
-    simcore_service_docker_label_keys = StandardSimcoreDockerLabels.parse_obj(obj_data)
+    simcore_service_docker_label_keys = StandardSimcoreDockerLabels.model_validate(
+        obj_data
+    )
     exported_dict = simcore_service_docker_label_keys.to_simcore_runtime_docker_labels()
     assert all(
         isinstance(v, str) for v in exported_dict.values()

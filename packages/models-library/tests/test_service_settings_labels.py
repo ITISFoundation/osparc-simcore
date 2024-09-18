@@ -74,7 +74,7 @@ def test_simcore_service_labels(example: dict, items: int, uses_dynamic_sidecar:
 
 
 def test_service_settings():
-    simcore_settings_settings_label = SimcoreServiceSettingsLabel.parse_obj(
+    simcore_settings_settings_label = SimcoreServiceSettingsLabel.model_validate(
         SimcoreServiceSettingLabelEntry.model_config["json_schema_extra"]["examples"]
     )
     assert simcore_settings_settings_label
@@ -520,7 +520,7 @@ def test_can_parse_labels_with_osparc_identifiers(
     vendor_environments: dict[str, Any], service_labels: dict[str, str]
 ):
     # can load OSPARC_VARIABLE_ identifiers!!
-    service_meta = SimcoreServiceLabels.parse_obj(service_labels)
+    service_meta = SimcoreServiceLabels.model_validate(service_labels)
 
     assert service_meta.containers_allowed_outgoing_permit_list
     nat_rule: NATRule = service_meta.containers_allowed_outgoing_permit_list[
@@ -568,7 +568,7 @@ def test_resolving_some_service_labels_at_load_time(
     vendor_environments: dict[str, Any], service_labels: dict[str, str]
 ):
     print(json.dumps(service_labels, indent=1))
-    service_meta = SimcoreServiceLabels.parse_obj(service_labels)
+    service_meta = SimcoreServiceLabels.model_validate(service_labels)
 
     # NOTE: replacing all OsparcVariableIdentifier instances nested inside objects
     # this also does a partial replacement if there is no entry inside the vendor_environments
@@ -593,7 +593,7 @@ def test_resolving_some_service_labels_at_load_time(
     # NOTE: that this model needs all values to be resolved before parsing them
     # otherwise it might fail!! The question is whether these values can be resolved at this point
     # NOTE: vendor values are in the database and therefore are available at this point
-    labels = SimcoreServiceLabels.parse_obj(service_labels)
+    labels = SimcoreServiceLabels.model_validate(service_labels)
 
     print("After", labels.model_dump_json(indent=1))
     formatted_json = service_meta.model_dump_json(indent=1)

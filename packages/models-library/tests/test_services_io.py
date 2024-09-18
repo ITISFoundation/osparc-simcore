@@ -15,7 +15,7 @@ def test_service_port_units(tests_data_dir: Path):
     data = yaml.safe_load((tests_data_dir / "metadata-sleeper-2.0.2.yaml").read_text())
     print(ServiceMetaDataPublished.schema_json(indent=2))
 
-    service_meta = ServiceMetaDataPublished.parse_obj(data)
+    service_meta = ServiceMetaDataPublished.model_validate(data)
     assert service_meta.inputs
 
     for input_nameid, input_meta in service_meta.inputs.items():

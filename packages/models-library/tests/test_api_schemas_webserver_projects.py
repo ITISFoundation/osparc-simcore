@@ -34,7 +34,7 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
     ids=lambda c: c.name,
 )
 def test_create_project_schemas(api_call: HttpApiCallCapture):
-    request_payload = ProjectCreateNew.parse_obj(api_call.request_payload)
+    request_payload = ProjectCreateNew.model_validate(api_call.request_payload)
     assert request_payload
 
     response_body = parse_obj_as(

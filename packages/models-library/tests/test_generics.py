@@ -20,7 +20,7 @@ def test_dict_base_model():
         "another key": "a string value",
         "yet another key": Path("some_path"),
     }
-    some_instance = DictModel[str, Any].parse_obj(some_dict)
+    some_instance = DictModel[str, Any].model_validate(some_dict)
     assert some_instance
 
     # test some typical dict methods

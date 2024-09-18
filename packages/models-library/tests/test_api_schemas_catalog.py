@@ -9,7 +9,7 @@ from models_library.services import ServiceInput
 
 def test_service_port_with_file():
 
-    io = ServiceInput.parse_obj(
+    io = ServiceInput.model_validate(
         {
             "displayOrder": 1,
             "label": "Input files",
@@ -39,7 +39,7 @@ def test_service_port_with_file():
 
 def test_service_port_with_boolean():
 
-    io = ServiceInput.parse_obj(
+    io = ServiceInput.model_validate(
         {
             "displayOrder": 3,
             "label": "Same title and description is more usual than you might think",

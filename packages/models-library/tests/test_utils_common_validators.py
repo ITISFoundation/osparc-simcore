@@ -48,8 +48,8 @@ def test_empty_str_to_none_pre_validator():
             empty_str_to_none_pre_validator
         )
 
-    model = Model.parse_obj({"nullable_message": None})
-    assert model == Model.parse_obj({"nullable_message": ""})
+    model = Model.model_validate({"nullable_message": None})
+    assert model == Model.model_validate({"nullable_message": ""})
 
 
 def test_none_to_empty_str_pre_validator():
@@ -60,8 +60,8 @@ def test_none_to_empty_str_pre_validator():
             none_to_empty_str_pre_validator
         )
 
-    model = Model.parse_obj({"message": ""})
-    assert model == Model.parse_obj({"message": None})
+    model = Model.model_validate({"message": ""})
+    assert model == Model.model_validate({"message": None})
 
 
 def test_null_or_none_str_to_none_validator():
@@ -72,20 +72,20 @@ def test_null_or_none_str_to_none_validator():
             null_or_none_str_to_none_validator
         )
 
-    model = Model.parse_obj({"message": "none"})
-    assert model == Model.parse_obj({"message": None})
+    model = Model.model_validate({"message": "none"})
+    assert model == Model.model_validate({"message": None})
 
-    model = Model.parse_obj({"message": "null"})
-    assert model == Model.parse_obj({"message": None})
+    model = Model.model_validate({"message": "null"})
+    assert model == Model.model_validate({"message": None})
 
-    model = Model.parse_obj({"message": "NoNe"})
-    assert model == Model.parse_obj({"message": None})
+    model = Model.model_validate({"message": "NoNe"})
+    assert model == Model.model_validate({"message": None})
 
-    model = Model.parse_obj({"message": "NuLl"})
-    assert model == Model.parse_obj({"message": None})
+    model = Model.model_validate({"message": "NuLl"})
+    assert model == Model.model_validate({"message": None})
 
-    model = Model.parse_obj({"message": None})
-    assert model == Model.parse_obj({"message": None})
+    model = Model.model_validate({"message": None})
+    assert model == Model.model_validate({"message": None})
 
-    model = Model.parse_obj({"message": ""})
-    assert model == Model.parse_obj({"message": ""})
+    model = Model.model_validate({"message": ""})
+    assert model == Model.model_validate({"message": ""})

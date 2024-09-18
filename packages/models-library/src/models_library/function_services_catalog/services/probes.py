@@ -7,7 +7,7 @@ from .._utils import OM, WVG, FunctionServices, create_fake_thumbnail_url
 
 
 def _create_metadata(type_name: str) -> ServiceMetaDataPublished:
-    obj: ServiceMetaDataPublished = ServiceMetaDataPublished.parse_obj(
+    obj: ServiceMetaDataPublished = ServiceMetaDataPublished.model_validate(
         {
             "integration-version": LATEST_INTEGRATION_VERSION,
             "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/{type_name}",
@@ -38,7 +38,7 @@ META_NUMBER: Final = _create_metadata("number")
 META_BOOL: Final = _create_metadata("boolean")
 META_INT: Final = _create_metadata("integer")
 META_STR: Final = _create_metadata("string")
-META_ARRAY: Final = ServiceMetaDataPublished.parse_obj(
+META_ARRAY: Final = ServiceMetaDataPublished.model_validate(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/array",
@@ -67,7 +67,7 @@ META_ARRAY: Final = ServiceMetaDataPublished.parse_obj(
     }
 )
 
-META_FILE: Final = ServiceMetaDataPublished.parse_obj(
+META_FILE: Final = ServiceMetaDataPublished.model_validate(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/probe/file",

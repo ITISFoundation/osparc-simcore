@@ -32,11 +32,11 @@ def service_port(request: pytest.FixtureRequest) -> ServiceInput | ServiceOutput
     try:
         index = example_inputs_labels.index(request.param)
         example = ServiceInput.model_config["json_schema_extra"]["examples"][index]
-        return ServiceInput.parse_obj(example)
+        return ServiceInput.model_validate(example)
     except ValueError:
         index = example_outputs_labels.index(request.param)
         example = ServiceOutput.model_config["json_schema_extra"]["examples"][index]
-        return ServiceOutput.parse_obj(example)
+        return ServiceOutput.model_validate(example)
 
 
 def test_get_schema_from_port(service_port: ServiceInput | ServiceOutput):

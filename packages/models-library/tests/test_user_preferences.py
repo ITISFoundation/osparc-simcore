@@ -96,7 +96,7 @@ def unregister_defined_classes() -> Iterator[None]:
 
 
 def test__frontend__user_preference(value: Any, unregister_defined_classes: None):
-    pref1 = FrontendUserPreference.parse_obj(
+    pref1 = FrontendUserPreference.model_validate(
         {"preference_identifier": "pref_id", "value": value}
     )
     assert isinstance(pref1, FrontendUserPreference)
@@ -112,7 +112,7 @@ def test__user_service__user_preference(
     mock_file_path: Path,
     unregister_defined_classes: None,
 ):
-    pref1 = UserServiceUserPreference.parse_obj(
+    pref1 = UserServiceUserPreference.model_validate(
         {
             "value": value,
             "service_key": service_key,

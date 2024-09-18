@@ -61,7 +61,7 @@ def paginate_data(
     Usage:
 
         obj: PageDict = paginate_data( ... )
-        model = Page[MyModelItem].parse_obj(obj)
+        model = Page[MyModelItem].model_validate(obj)
 
     raises ValidationError
     """

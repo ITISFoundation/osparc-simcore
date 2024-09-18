@@ -19,7 +19,7 @@ from pydantic import ValidationError, parse_obj_as
     ],
 )
 def test_networks_with_aliases_ok(valid_example: dict) -> None:
-    assert NetworksWithAliases.parse_obj(valid_example)
+    assert NetworksWithAliases.model_validate(valid_example)
 
 
 @pytest.mark.parametrize(
@@ -39,7 +39,7 @@ def test_networks_with_aliases_ok(valid_example: dict) -> None:
 )
 def test_networks_with_aliases_fail(invalid_example: dict) -> None:
     with pytest.raises(ValidationError):
-        assert NetworksWithAliases.parse_obj(invalid_example)
+        assert NetworksWithAliases.model_validate(invalid_example)
 
 
 @pytest.mark.parametrize("network_name", ["a", "ok", "a_", "A_", "a1", "a-"])
@@ -58,7 +58,7 @@ def test_projects_networks_validation_fails(network_name: str) -> None:
 
 def test_class_constructors_fail() -> None:
     with pytest.raises(ValidationError):
-        NetworksWithAliases.parse_obj(
+        NetworksWithAliases.model_validate(
             {
                 "ok-netowrk_naeme": {
                     UUID(

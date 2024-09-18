@@ -59,7 +59,7 @@ def validate_csv_exported_pg_project(
             pid = row.get("uuid", index + 1)
 
             try:
-                model = ProjectFromCsv.parse_obj(row)
+                model = ProjectFromCsv.model_validate(row)
 
                 if verbose > 1:
                     typer.secho(f"{pid} OK", fg=typer.colors.GREEN)
