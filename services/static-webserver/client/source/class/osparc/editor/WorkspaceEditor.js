@@ -176,9 +176,12 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
         description: this.getDescription(),
         thumbnail: this.getThumbnail(),
       };
-      osparc.store.Workspaces.postWorkspace(newWorkspaceData)
+      osparc.store.Workspaces.getInstance().postWorkspace(newWorkspaceData)
         .then(newWorkspace => this.fireDataEvent("workspaceCreated", newWorkspace))
-        .catch(console.error)
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+        })
         .finally(() => createButton.setFetching(false));
     },
 
@@ -189,9 +192,12 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
         description: this.getDescription(),
         thumbnail: this.getThumbnail(),
       };
-      osparc.store.Workspaces.putWorkspace(this.__workspaceId, updateData)
+      osparc.store.Workspaces.getInstance().putWorkspace(this.__workspaceId, updateData)
         .then(() => this.fireEvent("workspaceUpdated"))
-        .catch(console.error)
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+        })
         .finally(() => editButton.setFetching(false));
     },
 

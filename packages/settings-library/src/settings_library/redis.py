@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import IntEnum
 
 from pydantic import parse_obj_as
 from pydantic.networks import RedisDsn
@@ -8,7 +8,7 @@ from .base import BaseCustomSettings
 from .basic_types import PortInt
 
 
-class RedisDatabase(int, Enum):
+class RedisDatabase(IntEnum):
     RESOURCES = 0
     LOCKS = 1
     VALIDATION_CODES = 2

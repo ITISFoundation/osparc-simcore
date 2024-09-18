@@ -8,8 +8,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from settings_library.utils_cli import create_settings_command
 
+from .._meta import PROJECT_NAME
 from ..core.settings import AppSettings
-from ..meta import PROJECT_NAME
 from ..modules.osparc_variables import substitutions
 from ._close_and_save_service import async_close_and_save_service
 from ._core import (

@@ -1292,7 +1292,12 @@ qx.Class.define("osparc.data.Resources", {
             }
           }
           res.dispose();
-          "resolveWResponse" in options && options.resolveWResponse ? resolve(response) : resolve(data);
+          if ("resolveWResponse" in options && options.resolveWResponse) {
+            response.params = params;
+            resolve(response);
+          } else {
+            resolve(data);
+          }
         }, this);
 
         res.addListenerOnce(endpoint + "Error", e => {

@@ -105,7 +105,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           control = new qx.ui.basic.Label().set({
             anonymous: true,
             font: "text-14",
-            rich: true,
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.TITLE);
           break;
@@ -151,7 +150,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     },
 
     __applyWorkspaceId: function(workspaceId) {
-      const workspace = osparc.store.Workspaces.getWorkspace(workspaceId);
+      const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
       const accessRights = workspace ? workspace.getAccessRights() : {};
       if (accessRights && Object.keys(accessRights).length) {
         const shareIcon = this.getChildControl("icon").getChildControl("shared-icon");
@@ -169,6 +168,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     __applyTitle: function(value) {
       const label = this.getChildControl("title");
       label.setValue(value);
+
+      this.setToolTipText(value);
     },
 
     __applyLastModified: function(value) {

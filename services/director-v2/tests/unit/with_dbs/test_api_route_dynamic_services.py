@@ -81,6 +81,8 @@ def minimal_config(
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
 
+    monkeypatch.setenv("DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED", "1")
+
 
 @pytest.fixture(scope="session")
 def dynamic_sidecar_headers() -> dict[str, str]:

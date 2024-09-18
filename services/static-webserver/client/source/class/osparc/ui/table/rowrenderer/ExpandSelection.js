@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.ui.table.rowrenderer.ExtendSelection", {
+qx.Class.define("osparc.ui.table.rowrenderer.ExpandSelection", {
   extend: qx.ui.table.rowrenderer.Default,
 
   members: {

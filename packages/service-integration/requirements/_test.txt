@@ -6,10 +6,6 @@ coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.2.2
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
 iniconfig==2.0.0
     # via
     #   -c requirements/_base.txt
@@ -48,11 +44,6 @@ rpds-py==0.20.0
     #   referencing
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   coverage
-    #   pytest
 types-docker==7.1.0.20240821
     # via -r requirements/_test.in
 types-jsonschema==4.23.0.20240813
