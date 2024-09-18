@@ -1,5 +1,5 @@
-test-results
+.e2e-playwright-*.txt
 assets
 report.html
-.e2e-playwright-*.txt
 report.xml
+test-results
