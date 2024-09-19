@@ -108,7 +108,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
             ],
         }
     returned_computation = ComputationTask.parse_obj(
-        ComputationTask.Config.schema_extra["examples"][0]
+        ComputationTask.model_config["json_schema_extra"]["examples"][0]
     ).copy(
         update={
             "id": f"{kwargs['json']['project_id']}",
@@ -132,7 +132,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
     returned_computation = ComputationTask.parse_obj(
-        ComputationTask.Config.schema_extra["examples"][0]
+        ComputationTask.model_config["json_schema_extra"]["examples"][0]
     ).copy(
         update={
             "id": Path(url.path).name,
@@ -155,7 +155,7 @@ def create_cluster_cb(url, **kwargs) -> CallbackResult:
     assert "json" in kwargs, f"missing body in call to {url}"
     assert url.query.get("user_id")
     random_cluster = Cluster.parse_obj(
-        random.choice(Cluster.Config.schema_extra["examples"])
+        random.choice(Cluster.model_config["json_schema_extra"]["examples"])
     )
     return CallbackResult(
         status=201, payload=json.loads(random_cluster.json(by_alias=True))
@@ -170,7 +170,9 @@ def list_clusters_cb(url, **kwargs) -> CallbackResult:
             [
                 json.loads(
                     Cluster.parse_obj(
-                        random.choice(Cluster.Config.schema_extra["examples"])
+                        random.choice(
+                            Cluster.model_config["json_schema_extra"]["examples"]
+                        )
                     ).json(by_alias=True)
                 )
                 for _ in range(3)
@@ -187,7 +189,9 @@ def get_cluster_cb(url, **kwargs) -> CallbackResult:
         payload=json.loads(
             Cluster.parse_obj(
                 {
-                    **random.choice(Cluster.Config.schema_extra["examples"]),
+                    **random.choice(
+                        Cluster.model_config["json_schema_extra"]["examples"]
+                    ),
                     **{"id": cluster_id},
                 }
             ).json(by_alias=True)
@@ -216,7 +220,9 @@ def patch_cluster_cb(url, **kwargs) -> CallbackResult:
         payload=json.loads(
             Cluster.parse_obj(
                 {
-                    **random.choice(Cluster.Config.schema_extra["examples"]),
+                    **random.choice(
+                        Cluster.model_config["json_schema_extra"]["examples"]
+                    ),
                     **{"id": cluster_id},
                 }
             ).json(by_alias=True)
@@ -436,7 +442,9 @@ async def storage_v0_service_mock(
     aioresponses_mocker.get(
         get_file_metadata_pattern,
         status=status.HTTP_200_OK,
-        payload={"data": FileMetaDataGet.Config.schema_extra["examples"][0]},
+        payload={
+            "data": FileMetaDataGet.model_config["json_schema_extra"]["examples"][0]
+        },
         repeat=True,
     )
     aioresponses_mocker.get(
