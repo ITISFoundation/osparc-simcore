@@ -12,11 +12,11 @@ from pydantic import (
     Field,
     Json,
     PrivateAttr,
+    TypeAdapter,
     ValidationError,
     ValidationInfo,
     field_validator,
     model_validator,
-    parse_obj_as,
 )
 
 from .callbacks_mapping import CallbacksMapping
@@ -203,7 +203,7 @@ class PathMappingsLabel(BaseModel):
         for path_str, size_str in v.items():
             # checks that format is correct
             try:
-                parse_obj_as(ByteSize, size_str)
+                TypeAdapter(ByteSize).validate_python(size_str)
             except ValidationError as e:
                 msg = f"Provided size='{size_str}' contains invalid charactes: {e!s}"
                 raise ValueError(msg) from e

@@ -5,9 +5,9 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    TypeAdapter,
     ValidationInfo,
     field_validator,
-    parse_obj_as,
 )
 
 from .basic_types import PortInt
@@ -15,7 +15,7 @@ from .osparc_variable_identifier import OsparcVariableIdentifier, raise_if_unres
 
 # Cloudflare DNS server address
 DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
-DEFAULT_DNS_SERVER_PORT: Final[PortInt] = parse_obj_as(PortInt, 53)
+DEFAULT_DNS_SERVER_PORT: Final[PortInt] = TypeAdapter(PortInt).validate_python(53)
 
 
 class _PortRange(BaseModel):

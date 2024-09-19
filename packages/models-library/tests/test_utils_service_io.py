@@ -17,7 +17,7 @@ from models_library.basic_regex import SIMPLE_VERSION_RE
 from models_library.services import ServiceInput, ServiceOutput, ServicePortKey
 from models_library.utils.json_schema import jsonschema_validate_schema
 from models_library.utils.services_io import get_service_io_json_schema
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 example_inputs_labels = [
     e for e in ServiceInput.model_config["json_schema_extra"]["examples"] if e["label"]
@@ -73,8 +73,12 @@ def test_against_service_metadata_configs(metadata_path: Path):
 
     meta = json.loads(metadata_path.read_text())
 
-    inputs = parse_obj_as(dict[ServicePortKey, ServiceInput], meta["inputs"])
-    outputs = parse_obj_as(dict[ServicePortKey, ServiceOutput], meta["outputs"])
+    inputs = TypeAdapter(dict[ServicePortKey, ServiceInput]).validate_python(
+        meta["inputs"]
+    )
+    outputs = TypeAdapter(dict[ServicePortKey, ServiceOutput]).validate_python(
+        meta["outputs"]
+    )
 
     for port in itertools.chain(inputs.values(), outputs.values()):
         schema = get_service_io_json_schema(port)

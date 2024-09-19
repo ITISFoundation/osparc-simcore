@@ -31,7 +31,7 @@ from models_library.service_settings_nat_rule import (
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.utils.string_substitution import TextTemplate
-from pydantic import BaseModel, TypeAdapter, ValidationError, parse_obj_as
+from pydantic import BaseModel, TypeAdapter, ValidationError
 from pydantic.json import pydantic_encoder
 
 
@@ -526,17 +526,14 @@ def test_can_parse_labels_with_osparc_identifiers(
     nat_rule: NATRule = service_meta.containers_allowed_outgoing_permit_list[
         "s4l-core"
     ][0]
-    assert nat_rule.hostname == parse_obj_as(
-        OsparcVariableIdentifier,
+    assert nat_rule.hostname == TypeAdapter(OsparcVariableIdentifier).validate_python(
         "${OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_HOSTNAME}",
     )
     assert nat_rule.tcp_ports == [
-        parse_obj_as(
-            OsparcVariableIdentifier,
+        TypeAdapter(OsparcVariableIdentifier).validate_python(
             "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_1",
         ),
-        parse_obj_as(
-            OsparcVariableIdentifier,
+        TypeAdapter(OsparcVariableIdentifier).validate_python(
             "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_2",
         ),
         3,

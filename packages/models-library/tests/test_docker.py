@@ -13,7 +13,7 @@ from models_library.docker import (
     DockerLabelKey,
     StandardSimcoreDockerLabels,
 )
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 
 _faker = Faker()
 
@@ -40,11 +40,11 @@ _faker = Faker()
 def test_docker_label_key(label_key: str, valid: bool):
     # NOTE: https://docs.docker.com/config/labels-custom-metadata/#key-format-recommendations
     if valid:
-        instance = parse_obj_as(DockerLabelKey, label_key)
+        instance = TypeAdapter(DockerLabelKey).validate_python(label_key)
         assert instance
     else:
         with pytest.raises(ValidationError):
-            parse_obj_as(DockerLabelKey, label_key)
+            TypeAdapter(DockerLabelKey).validate_python(label_key)
 
 
 @pytest.mark.parametrize(
@@ -94,11 +94,11 @@ def test_docker_label_key(label_key: str, valid: bool):
 )
 def test_docker_generic_tag(image_name: str, valid: bool):
     if valid:
-        instance = parse_obj_as(DockerGenericTag, image_name)
+        instance = TypeAdapter(DockerGenericTag).validate_python(image_name)
         assert instance
     else:
         with pytest.raises(ValidationError):
-            parse_obj_as(DockerGenericTag, image_name)
+            TypeAdapter(DockerGenericTag).validate_python(image_name)
 
 
 @pytest.mark.parametrize(
@@ -117,8 +117,8 @@ def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):
     assert all(
         key.startswith(_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX) for key in exported_dict
     )
-    re_imported_docker_label_keys = parse_obj_as(
-        StandardSimcoreDockerLabels, exported_dict
-    )
+    re_imported_docker_label_keys = TypeAdapter(
+        StandardSimcoreDockerLabels
+    ).validate_python(exported_dict)
     assert re_imported_docker_label_keys
     assert simcore_service_docker_label_keys == re_imported_docker_label_keys
