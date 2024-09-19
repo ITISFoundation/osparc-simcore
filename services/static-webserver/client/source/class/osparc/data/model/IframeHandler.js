@@ -364,7 +364,9 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       };
       node.fireDataEvent("showInLogger", msgData);
       this.__restartIFrame();
-      node.callRetrieveInputs();
+      if (!node.isDynamicV2()) {
+        node.callRetrieveInputs();
+      }
     },
 
     __restartIFrame: function() {
