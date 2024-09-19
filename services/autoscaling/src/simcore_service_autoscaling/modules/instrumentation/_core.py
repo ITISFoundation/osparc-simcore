@@ -22,8 +22,10 @@ def setup(app: FastAPI) -> None:
         metrics_subsystem = (
             "dynamic" if app_settings.AUTOSCALING_NODES_MONITORING else "computational"
         )
-        app.state.instrumentation = AutoscalingInstrumentation(
-            registry=instrumentator.registry, subsystem=metrics_subsystem
+        app.state.instrumentation = (
+            AutoscalingInstrumentation(  # pylint: disable=unexpected-keyword-arg
+                registry=instrumentator.registry, subsystem=metrics_subsystem
+            )
         )
 
     async def on_shutdown() -> None:

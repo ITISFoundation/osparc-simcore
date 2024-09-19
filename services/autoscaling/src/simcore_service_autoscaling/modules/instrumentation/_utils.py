@@ -3,7 +3,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 from aws_library.ec2._models import EC2InstanceData
-from prometheus_client import Gauge
+from prometheus_client import CollectorRegistry, Gauge
 
 from ._constants import METRICS_NAMESPACE
 
@@ -27,9 +27,11 @@ class TrackedGauge:
 
 
 def create_gauge(
+    *,
     field_name: str,
     definition: tuple[str, tuple[str, ...]],
     subsystem: str,
+    registry: CollectorRegistry,
 ) -> TrackedGauge:
     description, labelnames = definition
     return TrackedGauge(
@@ -39,5 +41,6 @@ def create_gauge(
             labelnames=labelnames,
             namespace=METRICS_NAMESPACE,
             subsystem=subsystem,
+            registry=registry,
         )
     )
