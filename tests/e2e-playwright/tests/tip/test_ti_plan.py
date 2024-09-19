@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from playwright.sync_api import Page, WebSocket
-from pytest_simcore.helpers.logging_tools import log_context, test_logger
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
@@ -93,6 +93,9 @@ def test_classic_ti_plan(  # noqa: PLR0915
     is_autoscaled: bool,
     is_product_lite: bool,
 ):
+
+    # TODO: check TIP upgrade
+
     project_data = create_tip_plan_from_dashboard("newTIPlanButton")
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(
@@ -204,49 +207,69 @@ def test_classic_ti_plan(  # noqa: PLR0915
             )
 
         with log_context(logging.INFO, "Create report"):
-            ti_iframe.get_by_role("button", name="Load Analysis").click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-            ti_iframe.get_by_role("button", name="Load").nth(1).click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-            ti_iframe.get_by_role("button", name="Add to Report (0)").nth(0).click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-            ti_iframe.get_by_role("button", name="Export to S4L").click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-            ti_iframe.get_by_role("button", name="Add to Report (1)").nth(1).click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-            ti_iframe.get_by_role("button", name="Export Report").click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+            if is_product_lite:
+                # NOTE: buttons should be disabled
+                assert not ti_iframe.get_by_role(
+                    "button", name="Load Analysis"
+                ).is_enabled()
+                assert (
+                    not ti_iframe.get_by_role("button", name="Load").nth(1).is_enabled()
+                )
+                assert not ti_iframe.get_by_role(
+                    "button", name="Export to S4L"
+                ).is_enabled()
+                assert not ti_iframe.get_by_role(
+                    "button", name="Export Report"
+                ).is_enabled()
+
+            else:
+                ti_iframe.get_by_role("button", name="Load Analysis").click()
+                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                ti_iframe.get_by_role("button", name="Load").nth(1).click()
+                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                ti_iframe.get_by_role("button", name="Add to Report (0)").nth(0).click()
+                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                ti_iframe.get_by_role("button", name="Export to S4L").click()
+                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                ti_iframe.get_by_role("button", name="Add to Report (1)").nth(1).click()
+                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                ti_iframe.get_by_role("button", name="Export Report").click()
+                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
 
         with log_context(logging.INFO, "Check outputs"):
-            expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv"]
-            text_on_output_button = f"Outputs ({len(expected_outputs)})"
-            page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
+            if is_product_lite:
+                pass
+            else:
+                expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv"]
+                text_on_output_button = f"Outputs ({len(expected_outputs)})"
+                page.get_by_test_id("outputsBtn").get_by_text(
+                    text_on_output_button
+                ).click()
 
     if is_product_lite:
-        test_logger.info(
-            "Skipping the rest of the test since it is intended for the full version"
-        )
-        return
+        assert expected_number_of_steps == 2
+    else:
+        with log_context(logging.INFO, "Exposure Analysis step (3)"):
+            with expected_service_running(
+                page=page,
+                node_id=node_ids[2],
+                websocket=log_in_and_out,
+                timeout=(
+                    _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME
+                    if is_autoscaled
+                    else _POST_PRO_MAX_STARTUP_TIME
+                ),
+                press_start_button=False,
+            ) as service_running:
+                app_mode_trigger_next_app(page)
+            s4l_postpro_iframe = service_running.iframe_locator
+            assert s4l_postpro_iframe
 
-    with log_context(logging.INFO, "Exposure Analysis step (3)"):
-        with expected_service_running(
-            page=page,
-            node_id=node_ids[2],
-            websocket=log_in_and_out,
-            timeout=(
-                _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME
-                if is_autoscaled
-                else _POST_PRO_MAX_STARTUP_TIME
-            ),
-            press_start_button=False,
-        ) as service_running:
-            app_mode_trigger_next_app(page)
-        s4l_postpro_iframe = service_running.iframe_locator
-        assert s4l_postpro_iframe
-
-        with log_context(logging.INFO, "Post process"):
-            # click on the postpro mode button
-            s4l_postpro_iframe.get_by_test_id("mode-button-postro").click()
-            # click on the surface viewer
-            s4l_postpro_iframe.get_by_test_id("tree-item-ti_field.cache").click()
-            s4l_postpro_iframe.get_by_test_id("tree-item-SurfaceViewer").nth(0).click()
+            with log_context(logging.INFO, "Post process"):
+                # click on the postpro mode button
+                s4l_postpro_iframe.get_by_test_id("mode-button-postro").click()
+                # click on the surface viewer
+                s4l_postpro_iframe.get_by_test_id("tree-item-ti_field.cache").click()
+                s4l_postpro_iframe.get_by_test_id("tree-item-SurfaceViewer").nth(
+                    0
+                ).click()
