@@ -236,6 +236,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             marginRight: 30,
             ...this.self().BUTTON_OPTIONS,
           });
+          osparc.utils.Utils.setIdToWidget(control, "accessTIPBtn");
           control.addListener("execute", () => osparc.product.TIPTeaser.getInstance().open());
           this.getChildControl("right-items").add(control);
           break;
