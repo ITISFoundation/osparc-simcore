@@ -268,21 +268,21 @@ def web_socket_default_log_handler(web_socket: WebSocket) -> Iterator[None]:
 
     try:
         with log_context(
-            logging.INFO,
-            msg="handle websocket message (set to DEBUG level if you wanna see all of them)",
+            logging.DEBUG,
+            msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
         ) as ctx:
 
             def on_framesent(payload: str | bytes) -> None:
-                ctx.logger.debug("⬇️ %s", payload)
+                ctx.logger.debug("⬇️ Frame sent: %s", payload)
 
             def on_framereceived(payload: str | bytes) -> None:
-                ctx.logger.debug("⬆️ %s", payload)
+                ctx.logger.debug("⬆️ Frame received: %s", payload)
 
             def on_close(payload: WebSocket) -> None:
-                ctx.logger.warning("Websocket closed: %s", payload)
+                ctx.logger.warning("⚠️ Websocket closed: %s", payload)
 
             def on_socketerror(error_msg: str) -> None:
-                ctx.logger.error("Websocket error: %s", error_msg)
+                ctx.logger.error("❌ Websocket error: %s", error_msg)
 
             web_socket.on("framesent", on_framesent)
             web_socket.on("framereceived", on_framereceived)
