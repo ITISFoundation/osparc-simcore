@@ -28,11 +28,9 @@ from servicelib.utils import logged_gather
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
+from simcore_service_dynamic_sidecar.modules.notifications import publish_disk_usage
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
     DiskUsageMonitor,
-)
-from simcore_service_dynamic_sidecar.modules.system_monitor._notifier import (
-    publish_disk_usage,
 )
 from socketio import AsyncServer
 from tenacity import AsyncRetrying
