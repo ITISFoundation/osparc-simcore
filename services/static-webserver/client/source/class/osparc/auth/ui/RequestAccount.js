@@ -15,15 +15,12 @@
 
 ************************************************************************ */
 
+/**
+ * @asset(osparc/denylist.json")
+ */
+
 qx.Class.define("osparc.auth.ui.RequestAccount", {
   extend: osparc.auth.core.BaseAuthPage,
-
-
-  /*
-  *****************************************************************************
-     MEMBERS
-  *****************************************************************************
-  */
 
   members: {
     __captchaField: null,
@@ -57,15 +54,26 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         required: true
       });
       switch (osparc.product.Utils.getProductName()) {
-        case "s4l":
-        case "tis":
-        case "osparc":
-          this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
-          break;
-        case "tiplite":
         case "s4lacad":
         case "s4ldesktopacad":
-          this._form.add(email, this.tr("University Email"), qx.util.Validate.email(), "email");
+        case "tiplite": {
+          this._form.add(email, this.tr("University Email"), null, "email");
+          let validator = qx.util.Validate.email();
+          osparc.utils.Utils.fetchJSON("/resource/osparc/denylist.json")
+            .then(denylistData => {
+              if ("lite" in denylistData) {
+                const denylist = denylistData["lite"];
+                validator = osparc.auth.core.Utils.denylistEmailValidator(denylist);
+              }
+            })
+            .catch(console.error)
+            .finally(() => {
+              this._form.getValidationManager().add(email, validator);
+            });
+          break;
+        }
+        default:
+          this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
           break;
       }
 
