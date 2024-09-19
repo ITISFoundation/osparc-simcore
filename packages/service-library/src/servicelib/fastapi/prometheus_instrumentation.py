@@ -15,7 +15,7 @@ def setup_prometheus_instrumentation(app: FastAPI) -> Instrumentator:
         registry=registry,
     ).instrument(app)
 
-    async def _on_startup(app: FastAPI) -> None:
+    async def _on_startup() -> None:
         instrumentator.expose(app, include_in_schema=False)
 
     def _unregister() -> None:
