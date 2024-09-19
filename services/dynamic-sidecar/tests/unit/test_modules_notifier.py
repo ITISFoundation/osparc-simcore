@@ -200,3 +200,6 @@ async def test_notifier_publish_message(
             )
 
     await _assert_call_count(server_disconnect, call_count=number_of_clients)
+
+
+# TODO: add tests for the two new types of messages
