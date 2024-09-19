@@ -186,12 +186,16 @@ class AutoscalingInstrumentation(MetricsBase):
     buffer_machines_pools_metrics: BufferPoolsMetrics = field(init=False)
 
     def __post_init__(self) -> None:
-        self.cluster_metrics = ClusterMetrics(
+        self.cluster_metrics = ClusterMetrics(  # pylint: disable=unexpected-keyword-arg
             subsystem=self.subsystem, registry=self.registry
         )
-        self.ec2_client_metrics = EC2ClientMetrics(
-            subsystem=self.subsystem, registry=self.registry
+        self.ec2_client_metrics = (
+            EC2ClientMetrics(  # pylint: disable=unexpected-keyword-arg
+                subsystem=self.subsystem, registry=self.registry
+            )
         )
-        self.buffer_machines_pools_metrics = BufferPoolsMetrics(
-            subsystem=self.subsystem, registry=self.registry
+        self.buffer_machines_pools_metrics = (
+            BufferPoolsMetrics(  # pylint: disable=unexpected-keyword-arg
+                subsystem=self.subsystem, registry=self.registry
+            )
         )
