@@ -3,7 +3,6 @@
 # pylint: disable=unused-import
 
 from collections.abc import Iterator
-from typing import Annotated
 from unittest import mock
 
 import pytest
@@ -125,7 +124,7 @@ def mocked_s3_server_settings(
 ) -> S3Settings:
     return S3Settings(
         S3_ACCESS_KEY=IDStr("xxx"),
-        S3_ENDPOINT=TypeAdapter(Annotated[str, AnyHttpUrl]).validate_python(
+        S3_ENDPOINT=TypeAdapter(AnyHttpUrl).validate_python(
             f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access  # noqa: SLF001
         ),
         S3_SECRET_KEY=IDStr("xxx"),

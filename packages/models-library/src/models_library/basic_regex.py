@@ -77,3 +77,9 @@ DOCKER_GENERIC_TAG_KEY_RE: Final[re.Pattern] = re.compile(
 )
 
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
+
+
+def validate_re(pattern: str, value: str):
+    if not re.compile(pattern).match(value):
+        raise ValueError(f"The {value} doesn't match the {pattern=}.")
+    return value

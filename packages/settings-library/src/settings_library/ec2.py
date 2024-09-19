@@ -1,4 +1,5 @@
-from pydantic import ConfigDict, Field
+from pydantic import Field
+from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
 
@@ -11,7 +12,7 @@ class EC2Settings(BaseCustomSettings):
     EC2_REGION_NAME: str = "us-east-1"
     EC2_SECRET_ACCESS_KEY: str
 
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         json_schema_extra={
             "examples": [
                 {
