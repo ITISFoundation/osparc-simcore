@@ -172,9 +172,11 @@ def pytest_runtest_makereport(item: Item, call):
             diagnostics["duration"] = str(end_time - start_time)
 
         # Print the diagnostics report
-        print(f"\nDiagnostics repoort for {test_name} ---")
-        print(json.dumps(diagnostics, indent=2))
-        print("---")
+        with log_context(
+            logging.WARNING,
+            f"ℹ️ Diagnostics report for {test_name} ---",  # noqa: RUF001
+        ) as ctx:
+            ctx.logger.warning(json.dumps(diagnostics, indent=2))
 
 
 @pytest.hookimpl(tryfirst=True)
