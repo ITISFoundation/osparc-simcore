@@ -249,6 +249,27 @@ qx.Class.define("osparc.utils.Utils", {
       // window.location.href = window.location.href.replace(/#.*$/, "");
     },
 
+    reloadNoCacheButton: function() {
+      const reloadButton = new qx.ui.form.Button().set({
+        label: qx.locale.Manager.tr("Reload"),
+        icon: "@FontAwesome5Solid/redo/16",
+        font: "text-16",
+        gap: 10,
+        appearance: "strong-button",
+        allowGrowX: false,
+        center: true,
+        alignX: "center",
+      });
+      reloadButton.addListener("execute", () => {
+        // this argument, which is passed and consumed by the boot.js init file,
+        // adds a `nocache=rand()` query argument to the js resource calls.
+        // This forces a hard reload
+        const noCacheUrl = window.location.href + "?qooxdoo:add-no-cache=true";
+        window.location.href = noCacheUrl;
+      });
+      return reloadButton;
+    },
+
     getUniqueStudyName: function(preferredName, list) {
       let title = preferredName;
       const existingTitles = list.map(study => study.name);

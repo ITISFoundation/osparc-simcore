@@ -33,9 +33,13 @@ qx.Class.define("osparc.NewUITracker", {
           let msg = "";
           msg += qx.locale.Manager.tr("A new version of the application is now available.");
           msg += "<br>";
-          msg += qx.locale.Manager.tr("Reload to get the latest features.");
+          msg += qx.locale.Manager.tr("Click the Reload button to get the latest features.");
           // permanent message
-          osparc.FlashMessenger.getInstance().logAs(msg, "INFO", 0);
+          const flashMessage = osparc.FlashMessenger.getInstance().logAs(msg, "INFO", 0).set({
+            maxWidth: 500
+          });
+          const reloadButton = osparc.utils.Utils.reloadNoCacheButton();
+          flashMessage.addWidget(reloadButton);
           this.stopTracker();
         }
       };
