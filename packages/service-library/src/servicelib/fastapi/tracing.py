@@ -9,9 +9,7 @@ from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
-from opentelemetry.instrumentation.fastapi import (
-    FastAPIInstrumentor,  # pylint: disable=no-name-in-module
-)
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -29,15 +27,7 @@ def setup_tracing(
     ):
         log.warning("Skipping opentelemetry tracing setup")
         return
-    if (
-        not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
-        or not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
-    ):
-        msg = (
-            f"Variable opentelemetry_collector_endpoint [{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}] "
-            f"or opentelemetry_collector_port [{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT}] unset. Tracing options incomplete."
-        )
-        raise RuntimeError(msg)
+
     # Set up the tracer provider
     resource = Resource(attributes={"service.name": service_name})
     trace.set_tracer_provider(TracerProvider(resource=resource))
