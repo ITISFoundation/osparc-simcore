@@ -249,6 +249,18 @@ qx.Class.define("osparc.utils.Utils", {
       // window.location.href = window.location.href.replace(/#.*$/, "");
     },
 
+    reloadNoCacheButton: function() {
+      const reloadButton = new qx.ui.form.Button().set({
+        label: this.tr("Reload"),
+        icon: "@FontAwesome5Solid/redo/14",
+      });
+      reloadButton.addListener("execute", () => {
+        const noCacheUrl = window.location.href + "?qooxdoo:add-no-cache=true";
+        console.log("noCacheUrl", noCacheUrl);
+      });
+      return reloadButton;
+    },
+
     getUniqueStudyName: function(preferredName, list) {
       let title = preferredName;
       const existingTitles = list.map(study => study.name);
