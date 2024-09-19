@@ -88,9 +88,9 @@ def test_resources_gt_operator(a: Resources, b: Resources, a_greater_than_b: boo
             Resources(cpus=1, ram=ByteSize(34)),
         ),
         (
-            Resources(cpus=0.1, ram=ByteSize(-1)),
+            Resources(cpus=0.1, ram=ByteSize(1)),
             Resources(cpus=1, ram=ByteSize(34)),
-            Resources(cpus=1.1, ram=ByteSize(33)),
+            Resources(cpus=1.1, ram=ByteSize(35)),
         ),
     ],
 )
@@ -108,14 +108,14 @@ def test_resources_create_as_empty():
     "a,b,result",
     [
         (
-            Resources(cpus=0, ram=ByteSize(0)),
-            Resources(cpus=1, ram=ByteSize(34)),
-            Resources.construct(cpus=-1, ram=ByteSize(-34)),
+            Resources(cpus=0, ram=ByteSize(34)),
+            Resources(cpus=1, ram=ByteSize(0)),
+            Resources.construct(cpus=-1, ram=ByteSize(34)),
         ),
         (
-            Resources(cpus=0.1, ram=ByteSize(-1)),
-            Resources(cpus=1, ram=ByteSize(34)),
-            Resources.construct(cpus=-0.9, ram=ByteSize(-35)),
+            Resources(cpus=0.1, ram=ByteSize(34)),
+            Resources(cpus=1, ram=ByteSize(1)),
+            Resources.construct(cpus=-0.9, ram=ByteSize(33)),
         ),
     ],
 )
