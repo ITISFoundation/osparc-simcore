@@ -251,8 +251,14 @@ qx.Class.define("osparc.utils.Utils", {
 
     reloadNoCacheButton: function() {
       const reloadButton = new qx.ui.form.Button().set({
-        label: this.tr("Reload"),
-        icon: "@FontAwesome5Solid/redo/14",
+        label: qx.locale.Manager.tr("Reload"),
+        icon: "@FontAwesome5Solid/redo/16",
+        font: "text-16",
+        gap: 10,
+        appearance: "strong-button",
+        allowGrowX: false,
+        center: true,
+        alignX: "center",
       });
       reloadButton.addListener("execute", () => {
         // this argument, which is passed and consumed by the boot.js init file,

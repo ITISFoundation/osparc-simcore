@@ -35,7 +35,9 @@ qx.Class.define("osparc.NewUITracker", {
           msg += "<br>";
           msg += qx.locale.Manager.tr("Click the Reload button to get the latest features.");
           // permanent message
-          const flashMessage = osparc.FlashMessenger.getInstance().logAs(msg, "INFO", 0);
+          const flashMessage = osparc.FlashMessenger.getInstance().logAs(msg, "INFO", 0).set({
+            maxWidth: 500
+          });
           const reloadButton = osparc.utils.Utils.reloadNoCacheButton();
           flashMessage.addWidget(reloadButton);
           this.stopTracker();
