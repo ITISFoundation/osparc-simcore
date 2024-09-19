@@ -255,8 +255,11 @@ qx.Class.define("osparc.utils.Utils", {
         icon: "@FontAwesome5Solid/redo/14",
       });
       reloadButton.addListener("execute", () => {
+        // this argument, which is passed and consumed by the boot.js init file,
+        // adds a `nocache=rand()` query argument to the js resource calls.
+        // This forces a hard reload
         const noCacheUrl = window.location.href + "?qooxdoo:add-no-cache=true";
-        console.log("noCacheUrl", noCacheUrl);
+        window.location.href = noCacheUrl;
       });
       return reloadButton;
     },
