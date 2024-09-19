@@ -64,7 +64,7 @@ def validate_csv_exported_pg_project(
                 if verbose > 1:
                     typer.secho(f"{pid} OK", fg=typer.colors.GREEN)
                     if verbose > 2:
-                        typer.echo(model.json(indent=2))
+                        typer.echo(model.model_dump_json(indent=2))
             except ValidationError as err:
                 failed.append(pid)
                 typer.secho(

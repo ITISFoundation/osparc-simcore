@@ -543,7 +543,7 @@ def test_can_parse_labels_with_osparc_identifiers(
     ]
 
     service_meta = replace_osparc_variable_identifier(service_meta, vendor_environments)
-    service_meta_str = service_meta.json()
+    service_meta_str = service_meta.model_dump_json()
 
     not_replaced_vars = {"OSPARC_VARIABLE_OS_TYPE_LINUX"}
 
@@ -552,7 +552,7 @@ def test_can_parse_labels_with_osparc_identifiers(
             continue
         assert osparc_variable_name not in service_meta_str
 
-    service_meta_str = service_meta.json(
+    service_meta_str = service_meta.model_dump_json(
         include={"containers_allowed_outgoing_permit_list"}
     )
 

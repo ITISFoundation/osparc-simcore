@@ -87,7 +87,7 @@ def test_nat_rule_with_osparc_variable_identifier(
     # NOTE: values are mostly replaced in place unless it's used as first level
     replace_osparc_variable_identifier(nat_rule, osparc_variables)
 
-    nat_rule_str = nat_rule.json()
+    nat_rule_str = nat_rule.model_dump_json()
     for osparc_variable_name in osparc_variables:
         assert osparc_variable_name not in nat_rule_str
 

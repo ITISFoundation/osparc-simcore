@@ -46,7 +46,7 @@ class RabbitMessageBase(BaseModel):
         """
 
     def body(self) -> bytes:
-        return self.json().encode()
+        return self.model_dump_json().encode()
 
 
 class ProjectMessageBase(BaseModel):
