@@ -13,6 +13,7 @@ from asyncio import gather
 from collections.abc import Awaitable, Callable, Iterable
 from pathlib import Path
 from typing import Any
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import np_helpers
@@ -777,6 +778,7 @@ async def test_batch_update_inputs_outputs(
                 for k, port in enumerate((await PORTS.outputs).values())
             },
             progress_bar=progress_bar,
+            outputs_callbacks=AsyncMock(),
         )
         # pylint: disable=protected-access
         assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
@@ -786,6 +788,7 @@ async def test_batch_update_inputs_outputs(
                 for k, port in enumerate((await PORTS.inputs).values(), start=1000)
             },
             progress_bar=progress_bar,
+            outputs_callbacks=None,
         )
         assert progress_bar._current_steps == pytest.approx(2)  # noqa: SLF001
 
@@ -807,4 +810,5 @@ async def test_batch_update_inputs_outputs(
             await PORTS.set_multiple(
                 {ServicePortKey("missing_key_in_both"): (123132, None)},
                 progress_bar=progress_bar,
+                outputs_callbacks=AsyncMock(),
             )

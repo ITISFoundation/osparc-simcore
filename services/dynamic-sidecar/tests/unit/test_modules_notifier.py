@@ -279,16 +279,18 @@ async def test_notifier_send_input_port_status(
 
         # server publishes a message
         match input_status:
-            case InputStatus.UPLOAD_STARTED:
-                await port_notifier.send_input_port_upload_started(port_key)
-            case InputStatus.UPLOAD_WAS_ABORTED:
-                await port_notifier.send_input_port_upload_was_aborted(port_key)
-            case InputStatus.UPLOAD_FINISHED_SUCCESSFULLY:
-                await port_notifier.send_input_port_upload_finished_succesfully(
+            case InputStatus.DOWNLOAD_STARTED:
+                await port_notifier.send_input_port_download_started(port_key)
+            case InputStatus.DOWNLOAD_WAS_ABORTED:
+                await port_notifier.send_input_port_download_was_aborted(port_key)
+            case InputStatus.DOWNLOAD_FINISHED_SUCCESSFULLY:
+                await port_notifier.send_input_port_download_finished_succesfully(
                     port_key
                 )
-            case InputStatus.UPLOAD_FINISHED_WITH_ERRROR:
-                await port_notifier.send_input_port_upload_finished_with_error(port_key)
+            case InputStatus.DOWNLOAD_FINISHED_WITH_ERRROR:
+                await port_notifier.send_input_port_download_finished_with_error(
+                    port_key
+                )
 
         # check that all clients received it
         for on_input_port_event in on_input_port_events:
@@ -362,14 +364,16 @@ async def test_notifier_send_output_port_status(
 
         # server publishes a message
         match output_status:
-            case OutputStatus.DOWNLOAD_STARTED:
-                await port_notifier.send_output_port_download_sarted(port_key)
-            case OutputStatus.DOWNLOAD_FINISHED_SUCCESSFULLY:
-                await port_notifier.send_output_port_download_finished_successfully(
+            case OutputStatus.UPLOAD_STARTED:
+                await port_notifier.send_output_port_upload_sarted(port_key)
+            case OutputStatus.UPLOAD_WAS_ABORTED:
+                await port_notifier.send_output_port_upload_was_aborted(port_key)
+            case OutputStatus.UPLOAD_FINISHED_SUCCESSFULLY:
+                await port_notifier.send_output_port_upload_finished_successfully(
                     port_key
                 )
-            case OutputStatus.DOWNLOAD_FINISHED_WITH_ERRROR:
-                await port_notifier.send_output_port_download_finished_with_error(
+            case OutputStatus.UPLOAD_FINISHED_WITH_ERRROR:
+                await port_notifier.send_output_port_upload_finished_with_error(
                     port_key
                 )
 

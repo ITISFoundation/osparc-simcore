@@ -31,41 +31,46 @@ class PortNotifier:
             self.user_id, self.node_id, port_key, status
         )
 
-    async def send_output_port_download_sarted(self, port_key: ServicePortKey) -> None:
-        await self._send_output_port_status(port_key, OutputStatus.DOWNLOAD_STARTED)
+    async def send_output_port_upload_sarted(self, port_key: ServicePortKey) -> None:
+        await self._send_output_port_status(port_key, OutputStatus.UPLOAD_STARTED)
 
-    async def send_output_port_download_finished_successfully(
+    async def send_output_port_upload_was_aborted(
+        self, port_key: ServicePortKey
+    ) -> None:
+        await self._send_output_port_status(port_key, OutputStatus.UPLOAD_WAS_ABORTED)
+
+    async def send_output_port_upload_finished_successfully(
         self, port_key: ServicePortKey
     ) -> None:
         await self._send_output_port_status(
-            port_key, OutputStatus.DOWNLOAD_FINISHED_SUCCESSFULLY
+            port_key, OutputStatus.UPLOAD_FINISHED_SUCCESSFULLY
         )
 
-    async def send_output_port_download_finished_with_error(
+    async def send_output_port_upload_finished_with_error(
         self, port_key: ServicePortKey
     ) -> None:
         await self._send_output_port_status(
-            port_key, OutputStatus.DOWNLOAD_FINISHED_WITH_ERRROR
+            port_key, OutputStatus.UPLOAD_FINISHED_WITH_ERRROR
         )
 
-    async def send_input_port_upload_started(self, port_key: ServicePortKey) -> None:
-        await self._send_input_port_status(port_key, InputStatus.UPLOAD_STARTED)
+    async def send_input_port_download_started(self, port_key: ServicePortKey) -> None:
+        await self._send_input_port_status(port_key, InputStatus.DOWNLOAD_STARTED)
 
-    async def send_input_port_upload_was_aborted(
+    async def send_input_port_download_was_aborted(
         self, port_key: ServicePortKey
     ) -> None:
-        await self._send_input_port_status(port_key, InputStatus.UPLOAD_WAS_ABORTED)
+        await self._send_input_port_status(port_key, InputStatus.DOWNLOAD_WAS_ABORTED)
 
-    async def send_input_port_upload_finished_succesfully(
+    async def send_input_port_download_finished_succesfully(
         self, port_key: ServicePortKey
     ) -> None:
         await self._send_input_port_status(
-            port_key, InputStatus.UPLOAD_FINISHED_SUCCESSFULLY
+            port_key, InputStatus.DOWNLOAD_FINISHED_SUCCESSFULLY
         )
 
-    async def send_input_port_upload_finished_with_error(
+    async def send_input_port_download_finished_with_error(
         self, port_key: ServicePortKey
     ) -> None:
         await self._send_input_port_status(
-            port_key, InputStatus.UPLOAD_FINISHED_WITH_ERRROR
+            port_key, InputStatus.DOWNLOAD_FINISHED_WITH_ERRROR
         )

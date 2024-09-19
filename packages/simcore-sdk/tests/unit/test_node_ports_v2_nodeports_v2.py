@@ -138,6 +138,7 @@ async def test_node_ports_accessors(
                 + list(original_outputs.values())
             },
             progress_bar=progress_bar,
+            outputs_callbacks=None,
         )
     assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
 

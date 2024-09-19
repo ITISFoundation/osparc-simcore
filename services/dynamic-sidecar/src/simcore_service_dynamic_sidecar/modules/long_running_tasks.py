@@ -19,6 +19,9 @@ from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
+from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
+    PortNotifier,
+)
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
@@ -472,6 +475,7 @@ async def task_ports_inputs_pull(
     port_keys: list[str] | None,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
+    settings: ApplicationSettings,
     *,
     inputs_pulling_enabled: bool,
 ) -> int:
@@ -505,6 +509,9 @@ async def task_ports_inputs_pull(
                     post_sidecar_log_message, app, log_level=logging.INFO
                 ),
                 progress_bar=root_progress,
+                port_notifier=PortNotifier(
+                    app, settings.DY_SIDECAR_USER_ID, settings.DY_SIDECAR_NODE_ID
+                ),
             )
     await post_sidecar_log_message(
         app, "Finished pulling inputs", log_level=logging.INFO
@@ -541,6 +548,7 @@ async def task_ports_outputs_pull(
                 post_sidecar_log_message, app, log_level=logging.INFO
             ),
             progress_bar=root_progress,
+            port_notifier=None,
         )
     await post_sidecar_log_message(
         app, "Finished pulling outputs", log_level=logging.INFO
