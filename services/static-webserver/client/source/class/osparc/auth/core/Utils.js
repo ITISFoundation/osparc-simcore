@@ -51,6 +51,23 @@ qx.Class.define("osparc.auth.core.Utils", {
       return isValid;
     },
 
+    denylistEmailValidator: function(denylist) {
+      return emailValue => {
+        let errorMessage = "";
+        qx.util.Validate.checkEmail(emailValue, null, errorMessage);
+        // if the email check goes through, check it now against the denylist
+        if (denylist) {
+          denylist.forEach(reg => {
+            const re = new RegExp(reg);
+            if (re.test(emailValue)) {
+              errorMessage = qx.locale.Manager.tr("Invalid email address.<br>Please register using your university email address");
+              throw new qx.core.ValidationError("Validation Error", errorMessage);
+            }
+          })
+        }
+      };
+    },
+
     /** Finds parameters in the fragment
      *
      * Expected fragment format as https://osparc.io#page=reset-password;code=123546
