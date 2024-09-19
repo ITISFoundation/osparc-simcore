@@ -11,6 +11,7 @@ import logging
 import os
 import random
 import re
+import textwrap
 import urllib.parse
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
@@ -123,7 +124,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 # Dictionary to store start times of tests
-_test_start_times = {}
+_test_start_times: dict[str, datetime.datetime] = {}
 
 
 def pytest_runtest_setup(item):
@@ -151,7 +152,7 @@ def _construct_graylog_url(
     return f"{monitoring_url}/graylog/search?{query}"
 
 
-def pytest_runtest_makereport(item: Item, call):
+def pytest_runtest_makereport(item: pytest.Item, call):
     """
     Hook to add extra information when a test fails.
     """
@@ -178,12 +179,9 @@ def pytest_runtest_makereport(item: Item, call):
             )
             diagnostics["duration"] = str(end_time - start_time)
 
-        # Print the diagnostics report
-        with log_context(
-            logging.WARNING,
-            f"ℹ️ Diagnostics report for {test_name} ---",  # noqa: RUF001
-        ) as ctx:
-            ctx.logger.warning(json.dumps(diagnostics, indent=2))
+        print(f"\nDiagnostics report for {test_name} ---") # noqa: RUF001
+        print(textwrap.indent(json.dumps(diagnostics, indent=2), "  "))
+        print("---")
 
 
 @pytest.hookimpl(tryfirst=True)
