@@ -33,15 +33,6 @@ class Notifier(SingletonInAppStateMixin):
         )
 
 
-async def publish_disk_usage(
-    app: FastAPI, *, user_id: UserID, node_id: NodeID, usage: dict[Path, DiskUsage]
-) -> None:
-    notifier: Notifier = Notifier.get_from_app_state(app)
-    await notifier.notify_service_disk_usage(
-        user_id=user_id, node_id=node_id, usage=usage
-    )
-
-
 def setup_notifier(app: FastAPI):
     async def _on_startup() -> None:
         assert app.state.external_socketio  # nosec
