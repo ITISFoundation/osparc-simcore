@@ -174,7 +174,7 @@ class Nodeports(BaseModel):
         raises ValidationError
         """
 
-        async def _set_output_with_notifications(
+        async def _set_with_notifications(
             port_key: ServicePortKey,
             value: ItemConcreteValue | None,
             set_kwargs: SetKWargs | None,
@@ -187,6 +187,13 @@ class Nodeports(BaseModel):
                     value, set_kwargs=set_kwargs, progress_bar=sub_progress
                 )
                 await outputs_callbacks.finished_succesfully(port_key)
+            except UnboundPortError:
+                # not available try inputs
+                # if this fails it will raise another exception
+                # pylint: disable=protected-access
+                await self.internal_inputs[port_key]._set(  # noqa: SLF001
+                    value, set_kwargs=set_kwargs, progress_bar=sub_progress
+                )
             except CancelledError:
                 await outputs_callbacks.aborted(port_key)
                 raise
@@ -199,21 +206,9 @@ class Nodeports(BaseModel):
             steps=len(port_values.items()), description=IDStr("set multiple")
         ) as sub_progress:
             for port_key, (value, set_kwargs) in port_values.items():
-                # pylint: disable=protected-access
-                try:
-                    tasks.append(
-                        _set_output_with_notifications(
-                            port_key, value, set_kwargs, sub_progress
-                        )
-                    )
-                except UnboundPortError:
-                    # not available try inputs
-                    # if this fails it will raise another exception
-                    tasks.append(
-                        self.internal_inputs[port_key]._set(
-                            value, set_kwargs=set_kwargs, progress_bar=sub_progress
-                        )
-                    )
+                tasks.append(
+                    _set_with_notifications(port_key, value, set_kwargs, sub_progress)
+                )
 
             results = await logged_gather(*tasks)
             await self.save_to_db_cb(self)
