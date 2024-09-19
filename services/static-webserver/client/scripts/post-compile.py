@@ -37,20 +37,5 @@ def update_apps_metadata():
                 file.write(data)
 
 
-def force_no_cache():
-    dirname = os.path.dirname(__file__)
-    for output_folder in output_folders:
-        filename = os.path.join(dirname, '..', output_folder, "osparc", "boot.js")
-        if not os.path.isfile(filename):
-            continue
-        with open(filename, "r") as file:
-            data = file.read()
-            data = data.replace("addNoCacheParam : false", "addNoCacheParam : true")
-        with open(filename, "w") as file: 
-            print(f"Updating addNoCacheParam: {filename}")
-            file.write(data)
-
-
 if __name__ == "__main__":
     update_apps_metadata()
-    force_no_cache()
