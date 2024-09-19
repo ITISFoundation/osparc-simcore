@@ -1,5 +1,6 @@
 from enum import StrEnum, auto
 
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from pydantic import BaseModel
@@ -20,6 +21,7 @@ class InputStatus(StrEnum):
 
 
 class _PortStatusCommon(BaseModel):
+    project_id: ProjectID
     node_id: NodeID
     port_key: ServicePortKey
 

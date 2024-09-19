@@ -28,6 +28,7 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import (
     ServiceDiskUsage,
 )
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
@@ -240,6 +241,7 @@ async def test_notifier_send_input_port_status(
     socketio_server_events: dict[str, AsyncMock],
     app: FastAPI,
     user_id: UserID,
+    project_id: ProjectID,
     node_id: NodeID,
     port_key: ServicePortKey,
     socketio_client_factory: Callable[
@@ -275,7 +277,7 @@ async def test_notifier_send_input_port_status(
             _get_on_input_port_spy(c) for c in frontend_clients
         ]
 
-        port_notifier = PortNotifier(app, user_id, node_id)
+        port_notifier = PortNotifier(app, user_id, project_id, node_id)
 
         # server publishes a message
         match input_status:
@@ -298,7 +300,10 @@ async def test_notifier_send_input_port_status(
             on_input_port_event.assert_awaited_once_with(
                 jsonable_encoder(
                     InputPortSatus(
-                        node_id=node_id, port_key=port_key, status=input_status
+                        project_id=project_id,
+                        node_id=node_id,
+                        port_key=port_key,
+                        status=input_status,
                     )
                 )
             )
@@ -325,6 +330,7 @@ async def test_notifier_send_output_port_status(
     socketio_server_events: dict[str, AsyncMock],
     app: FastAPI,
     user_id: UserID,
+    project_id: ProjectID,
     node_id: NodeID,
     port_key: ServicePortKey,
     socketio_client_factory: Callable[
@@ -360,7 +366,7 @@ async def test_notifier_send_output_port_status(
             _get_on_output_port_spy(c) for c in frontend_clients
         ]
 
-        port_notifier = PortNotifier(app, user_id, node_id)
+        port_notifier = PortNotifier(app, user_id, project_id, node_id)
 
         # server publishes a message
         match output_status:
@@ -383,7 +389,10 @@ async def test_notifier_send_output_port_status(
             on_output_port_event.assert_awaited_once_with(
                 jsonable_encoder(
                     OutputPortStatus(
-                        node_id=node_id, port_key=port_key, status=output_status
+                        project_id=project_id,
+                        node_id=node_id,
+                        port_key=port_key,
+                        status=output_status,
                     )
                 )
             )

@@ -20,6 +20,7 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import (
     ServiceDiskUsage,
 )
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
@@ -44,6 +45,7 @@ class Notifier(SingletonInAppStateMixin):
     async def notify_output_port_status(
         self,
         user_id: UserID,
+        project_id: ProjectID,
         node_id: NodeID,
         port_key: ServicePortKey,
         output_status: OutputStatus,
@@ -52,7 +54,10 @@ class Notifier(SingletonInAppStateMixin):
             SOCKET_IO_STATE_OUTPUT_PORTS_EVENT,
             data=jsonable_encoder(
                 OutputPortStatus(
-                    node_id=node_id, port_key=port_key, status=output_status
+                    project_id=project_id,
+                    node_id=node_id,
+                    port_key=port_key,
+                    status=output_status,
                 )
             ),
             room=SocketIORoomStr.from_user_id(user_id),
@@ -61,6 +66,7 @@ class Notifier(SingletonInAppStateMixin):
     async def notify_input_port_status(
         self,
         user_id: UserID,
+        project_id: ProjectID,
         node_id: NodeID,
         port_key: ServicePortKey,
         input_status: InputStatus,
@@ -68,7 +74,12 @@ class Notifier(SingletonInAppStateMixin):
         await self._sio_manager.emit(
             SOCKET_IO_STATE_INPUT_PORTS_EVENT,
             data=jsonable_encoder(
-                InputPortSatus(node_id=node_id, port_key=port_key, status=input_status)
+                InputPortSatus(
+                    project_id=project_id,
+                    node_id=node_id,
+                    port_key=port_key,
+                    status=input_status,
+                )
             ),
             room=SocketIORoomStr.from_user_id(user_id),
         )

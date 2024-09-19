@@ -278,7 +278,10 @@ def setup_outputs_manager(app: FastAPI) -> None:
                 post_progress_message, app, ProgressType.SERVICE_OUTPUTS_PUSHING
             ),
             port_notifier=PortNotifier(
-                app, settings.DY_SIDECAR_USER_ID, settings.DY_SIDECAR_NODE_ID
+                app,
+                settings.DY_SIDECAR_USER_ID,
+                settings.DY_SIDECAR_PROJECT_ID,
+                settings.DY_SIDECAR_NODE_ID,
             ),
         )
         await outputs_manager.start()

@@ -510,7 +510,10 @@ async def task_ports_inputs_pull(
                 ),
                 progress_bar=root_progress,
                 port_notifier=PortNotifier(
-                    app, settings.DY_SIDECAR_USER_ID, settings.DY_SIDECAR_NODE_ID
+                    app,
+                    settings.DY_SIDECAR_USER_ID,
+                    settings.DY_SIDECAR_PROJECT_ID,
+                    settings.DY_SIDECAR_NODE_ID,
                 ),
             )
     await post_sidecar_log_message(
