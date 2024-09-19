@@ -3,6 +3,7 @@
 # pylint: disable=unused-import
 
 from collections.abc import Iterator
+from typing import Annotated
 from unittest import mock
 
 import pytest
@@ -11,7 +12,7 @@ from aiohttp.test_utils import unused_port
 from faker import Faker
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
-from pydantic import AnyHttpUrl, SecretStr, parse_obj_as
+from pydantic import AnyHttpUrl, SecretStr, TypeAdapter, parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from settings_library.basic_types import IDStr
 from settings_library.ec2 import EC2Settings
@@ -124,8 +125,7 @@ def mocked_s3_server_settings(
 ) -> S3Settings:
     return S3Settings(
         S3_ACCESS_KEY=IDStr("xxx"),
-        S3_ENDPOINT=parse_obj_as(
-            AnyHttpUrl,
+        S3_ENDPOINT=TypeAdapter(Annotated[str, AnyHttpUrl]).validate_python(
             f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access  # noqa: SLF001
         ),
         S3_SECRET_KEY=IDStr("xxx"),
