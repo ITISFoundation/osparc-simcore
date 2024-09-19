@@ -2,6 +2,7 @@ from collections.abc import Callable
 from typing import TypedDict
 
 from aws_library.ec2._models import EC2InstanceData
+from prometheus_client import CollectorRegistry
 from prometheus_client.metrics import MetricWrapperBase
 from simcore_service_autoscaling.modules.instrumentation._constants import (
     EC2_INSTANCE_LABELS,
@@ -40,10 +41,12 @@ def test_update_gauge_sets_old_entries_to_0(
     fake_ec2_instance_data: Callable[..., EC2InstanceData]
 ):
     # Create a Gauge with example labels
+    registry = CollectorRegistry()
     tracked_gauge = create_gauge(
-        "example_gauge",
+        field_name="example_gauge",
         definition=("An example gauge", EC2_INSTANCE_LABELS),
         subsystem="whatever",
+        registry=registry,
     )
 
     ec2_instance_type_1 = fake_ec2_instance_data()
