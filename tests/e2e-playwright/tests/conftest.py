@@ -23,7 +23,6 @@ from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
 from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, SecretStr, TypeAdapter
-from pytest import Item
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
