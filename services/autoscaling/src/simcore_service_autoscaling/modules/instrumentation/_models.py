@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Final
 
 from prometheus_client import CollectorRegistry, Counter, Histogram
+from servicelib.instrumentation import MetricsBase
 
 from ...models import BufferPoolManager, Cluster
 from ._constants import (
@@ -11,12 +12,6 @@ from ._constants import (
     METRICS_NAMESPACE,
 )
 from ._utils import TrackedGauge, create_gauge
-
-
-@dataclass(slots=True, kw_only=True)
-class MetricsBase:
-    subsystem: str
-    registry: CollectorRegistry
 
 
 @dataclass(slots=True, kw_only=True)
