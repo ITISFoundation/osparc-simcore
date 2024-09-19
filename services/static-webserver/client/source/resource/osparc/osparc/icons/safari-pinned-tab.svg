@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="540px" height="540px" viewBox="0 0 540 540" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>osparc/safari-pinned-tab</title>
+    <defs>
+        <path d="M152.5,0 C208.842982,0 258.049406,30.5552324 284.452872,75.9992955 L97,76 C90.372583,76 85,81.372583 85,88 L85,97 C85,103.627417 90.372583,109 97,109 L298.706082,109.000191 C302.80122,122.78496 305,137.385704 305,152.5 C305,236.723424 236.723424,305 152.5,305 C95.7457374,305 46.2325999,273.997058 19.9725751,228.00316 L207,228 C213.627417,228 219,222.627417 219,216 L219,207 C219,200.372583 213.627417,195 207,195 L6.00128585,195.002228 C2.09412516,181.511321 0,167.250215 0,152.5 C0,68.2765757 68.2765757,0 152.5,0 Z" id="path-1"></path>
+    </defs>
+    <g id="osparc/safari-pinned-tab" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <circle id="Outside" stroke="#000000" stroke-width="29" cx="270" cy="270" r="254.5"></circle>
+        <circle id="Middle" stroke="#000000" stroke-width="29" cx="270.5" cy="269.5" r="196"></circle>
+        <g id="RectangleTop-2" transform="translate(119, 118)">
+            <mask id="mask-2" fill="white">
+                <use xlink:href="#path-1"></use>
+            </mask>
+            <use fill="#000000" xlink:href="#path-1"></use>
+        </g>
+    </g>
+</svg>
