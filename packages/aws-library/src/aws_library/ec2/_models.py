@@ -67,6 +67,10 @@ class EC2InstanceType:
 
 InstancePrivateDNSName: TypeAlias = str
 
+def _validate_tag_key(value: str):
+    if value in {"_index", ".", ".."}:
+        raise ValueError("Field cannot be '_index', '.', or '..'.")
+    return value
 
 # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
 AWSTagKey: TypeAlias = Annotated[
@@ -76,7 +80,7 @@ AWSTagKey: TypeAlias = Annotated[
         max_length=128,
         pattern=r"^[a-zA-Z0-9\+\-=\._:@]+$",
     ),
-    AfterValidator(lambda v: v not in {"_index", ".", ".."} or ValueError("Field cannot be '_index', '.', or '..'."))
+    AfterValidator(_validate_tag_key)
 ]
 
 # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
