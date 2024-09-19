@@ -6,6 +6,7 @@ from typing import Annotated, TypeAlias
 import sh  # type: ignore[import-untyped]
 from models_library.docker import DockerGenericTag
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ByteSize,
     ConfigDict,
@@ -73,8 +74,9 @@ AWSTagKey: TypeAlias = Annotated[
     StringConstraints(
         min_length=1,
         max_length=128,
-        pattern=r"^(?!(_index|\.{1,2})$)[a-zA-Z0-9\+\-=\._:@]+$",
+        pattern=r"^[a-zA-Z0-9\+\-=\._:@]+$",
     ),
+    AfterValidator(lambda v: v not in {"_index", ".", ".."} or ValueError("Field cannot be '_index', '.', or '..'."))
 ]
 
 # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
