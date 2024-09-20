@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import AnyHttpUrl, Field
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
@@ -6,7 +6,7 @@ from .base import BaseCustomSettings
 
 class EC2Settings(BaseCustomSettings):
     EC2_ACCESS_KEY_ID: str
-    EC2_ENDPOINT: str | None = Field(
+    EC2_ENDPOINT: AnyHttpUrl | None = Field(
         default=None, description="do not define if using standard AWS"
     )
     EC2_REGION_NAME: str = "us-east-1"

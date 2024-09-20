@@ -75,7 +75,7 @@ def mocked_ec2_server_envs(
     mocked_ec2_server_settings: EC2Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    changed_envs: EnvVarsDict = mocked_ec2_server_settings.dict()
+    changed_envs: EnvVarsDict = mocked_ec2_server_settings.model_dump()
     return setenvs_from_dict(monkeypatch, {**changed_envs})
 
 
@@ -101,10 +101,7 @@ def mocked_ssm_server_settings(
 ) -> SSMSettings:
     return SSMSettings(
         SSM_ACCESS_KEY_ID=SecretStr("xxx"),
-        SSM_ENDPOINT=parse_obj_as(
-            AnyHttpUrl,
-            f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access  # noqa: SLF001
-        ),
+        SSM_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",   # type: ignore[arg-type] # pylint: disable=protected-access  # noqa: SLF001
         SSM_SECRET_ACCESS_KEY=SecretStr("xxx"),
     )
 
@@ -124,9 +121,7 @@ def mocked_s3_server_settings(
 ) -> S3Settings:
     return S3Settings(
         S3_ACCESS_KEY=IDStr("xxx"),
-        S3_ENDPOINT=TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access  # noqa: SLF001
-        ),
+        S3_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access  # noqa: SLF001
         S3_SECRET_KEY=IDStr("xxx"),
         S3_BUCKET_NAME=IDStr(f"pytest{faker.pystr().lower()}"),
         S3_REGION=IDStr("us-east-1"),
