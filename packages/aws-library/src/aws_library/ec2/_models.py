@@ -1,4 +1,5 @@
 import datetime
+import re
 import tempfile
 from dataclasses import dataclass
 from typing import Annotated, TypeAlias
@@ -6,7 +7,6 @@ from typing import Annotated, TypeAlias
 import sh  # type: ignore[import-untyped]
 from models_library.docker import DockerGenericTag
 from pydantic import (
-    AfterValidator,
     BaseModel,
     ByteSize,
     ConfigDict,
@@ -67,10 +67,6 @@ class EC2InstanceType:
 
 InstancePrivateDNSName: TypeAlias = str
 
-def _validate_tag_key(value: str):
-    if value in {"_index", ".", ".."}:
-        raise ValueError("Field cannot be '_index', '.', or '..'.")
-    return value
 
 # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
 AWSTagKey: TypeAlias = Annotated[
@@ -78,9 +74,8 @@ AWSTagKey: TypeAlias = Annotated[
     StringConstraints(
         min_length=1,
         max_length=128,
-        pattern=r"^[a-zA-Z0-9\+\-=\._:@]+$",
+        pattern=re.compile(r"^(?!(_index|\.{1,2})$)[a-zA-Z0-9\+\-=\._:@]+$"),
     ),
-    AfterValidator(_validate_tag_key)
 ]
 
 # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
