@@ -209,7 +209,7 @@ def random_product(
     registration_email_template: str | None = None,
     fake: Faker = DEFAULT_FAKER,
     **overrides,
-):
+) -> dict[str, Any]:
     """
 
     Foreign keys are:
