@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Self
 
 from pydantic import model_validator
 from pydantic.fields import Field
@@ -32,24 +33,22 @@ class SMTPSettings(BaseCustomSettings):
     SMTP_PASSWORD: SecretStr | None = Field(None, min_length=1)
 
     @model_validator(mode="after")
-    @classmethod
-    def _both_credentials_must_be_set(cls, values):
-        username = values.get("SMTP_USERNAME")
-        password = values.get("SMTP_PASSWORD")
+    def _both_credentials_must_be_set(self) -> Self:
+        username = self.SMTP_USERNAME
+        password = self.SMTP_PASSWORD
 
         if username is None and password or username and password is None:
             msg = f"Please provide both {username=} and {password=} not just one"
             raise ValueError(msg)
 
-        return values
+        return self
 
     @model_validator(mode="after")
-    @classmethod
-    def _enabled_tls_required_authentication(cls, values):
-        smtp_protocol = values.get("SMTP_PROTOCOL")
+    def _enabled_tls_required_authentication(self) -> Self:
+        smtp_protocol = self.SMTP_PROTOCOL
 
-        username = values.get("SMTP_USERNAME")
-        password = values.get("SMTP_PASSWORD")
+        username = self.SMTP_USERNAME
+        password = self.SMTP_PASSWORD
 
         tls_enabled = smtp_protocol == EmailProtocol.TLS
         starttls_enabled = smtp_protocol == EmailProtocol.STARTTLS
@@ -57,7 +56,7 @@ class SMTPSettings(BaseCustomSettings):
         if (tls_enabled or starttls_enabled) and not (username or password):
             msg = "when using SMTP_PROTOCOL other than UNENCRYPTED username and password are required"
             raise ValueError(msg)
-        return values
+        return self
 
     @property
     def has_credentials(self) -> bool:
