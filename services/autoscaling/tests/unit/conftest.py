@@ -378,11 +378,17 @@ def enabled_rabbitmq(
     return rabbit_service
 
 
+_LIFESPAN_TIMEOUT: Final[int] = 10
+
+
 @pytest.fixture
 async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
     app = create_app(settings)
-    async with LifespanManager(app):
+    # NOTE: the timeout is sometime too small for CI machines, and even larger machines
+    async with LifespanManager(
+        app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT
+    ):
         yield app
 
 
