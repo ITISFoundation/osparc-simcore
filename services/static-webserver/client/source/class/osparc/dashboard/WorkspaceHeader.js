@@ -98,6 +98,11 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
           });
           this._add(control);
           break;
+        case "breadcrumbs":
+          control = new osparc.dashboard.ContextBreadcrumbs();
+          this.bind("currentWorkspaceId", control, "currentWorkspaceId");
+          this._add(control);
+          break;
         case "edit-button":
           control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
@@ -159,6 +164,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     __buildLayout: function(workspaceId) {
       this.getChildControl("icon");
       const title = this.getChildControl("title");
+      this.getChildControl("breadcrumbs");
 
       this.getChildControl("edit-button").exclude();
       this.resetAccessRights();
