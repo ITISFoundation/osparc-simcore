@@ -81,11 +81,14 @@ def test_product_to_static():
 def test_product_host_regex_with_spaces():
     data = Product.Config.schema_extra["examples"][2]
 
-    data["support_email"] = "  foo@BaR.com    "  # with leading and trailing spaces and
+    # with leading and trailing spaces and uppercase (tests anystr_strip_whitespace )
+    data["support_email"] = "  fOO@BaR.COM    "
 
+    # with leading trailing spaces (tests validator("host_regex", pre=True))
     expected = r"([\.-]{0,1}osparc[\.-])".strip()
-    data["host_regex"] = expected + "   "  # with leading trailing spaces
+    data["host_regex"] = expected + "   "
 
+    # parsing should strip all whitespaces and normalize email
     product = Product.parse_obj(data)
 
     assert product.host_regex.pattern == expected
