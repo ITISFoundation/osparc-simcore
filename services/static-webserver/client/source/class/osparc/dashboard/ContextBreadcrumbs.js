@@ -15,12 +15,7 @@
 
 ************************************************************************ */
 
-/**
- * Widget used for displaying a New Folder in the Study Browser
- *
- */
-
-qx.Class.define("osparc.dashboard.ContainerHeader", {
+qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -40,19 +35,19 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       check: "Number",
       nullable: true,
       init: null,
-      apply: "__buildBreadcrumbs"
+      apply: "__rebuild"
     },
 
     currentFolderId: {
       check: "Number",
       nullable: true,
       init: null,
-      apply: "__buildBreadcrumbs"
+      apply: "__rebuild"
     }
   },
 
   members: {
-    __buildBreadcrumbs: function() {
+    __rebuild: function() {
       this._removeAll();
 
       if (this.getCurrentFolderId()) {
