@@ -139,13 +139,15 @@ async def delete_project_group(
     group_id: GroupID,
     product_name: ProductName,
 ) -> None:
-    await check_user_project_permission(
-        app,
-        project_id=project_id,
-        user_id=user_id,
-        product_name=product_name,
-        permission="delete",
-    )
+    user = await users_api.get_user(app, user_id=user_id)
+    if user["primary_gid"] != group_id:
+        await check_user_project_permission(
+            app,
+            project_id=project_id,
+            user_id=user_id,
+            product_name=product_name,
+            permission="delete",
+        )
 
     project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     project = await project_db.get_project_db(project_id)
