@@ -21,6 +21,7 @@ def app_environment(
     app_environment: EnvVarsDict,
     enabled_rabbitmq: None,
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     mocked_redis_server: None,
 ) -> EnvVarsDict:
     return app_environment
@@ -69,6 +70,9 @@ async def test_status(
     assert status_response.ec2.is_enabled is True
     assert status_response.ec2.is_responsive is False
 
+    assert status_response.ssm.is_enabled is True
+    assert status_response.ssm.is_responsive is False
+
     # restart the server
     mocked_aws_server.start()
 
@@ -83,3 +87,6 @@ async def test_status(
 
     assert status_response.ec2.is_enabled is True
     assert status_response.ec2.is_responsive is True
+
+    assert status_response.ssm.is_enabled is True
+    assert status_response.ssm.is_responsive is True
