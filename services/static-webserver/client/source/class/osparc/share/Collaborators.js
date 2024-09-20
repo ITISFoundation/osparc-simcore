@@ -353,7 +353,7 @@ qx.Class.define("osparc.share.Collaborators", {
       if (
         (this._resourceType === "study") &&
         // check if I'm part of the access rights (not through an organization)
-        (Object.keys(this._serializedDataCopy["accessRights"]).includes(myGid.toString())) &&
+        Object.keys(this._serializedDataCopy["accessRights"]).includes(myGid.toString()) &&
         // check also user is not "prjOwner". Backend will silently not let the frontend remove that user.
         (this._serializedDataCopy["prjOwner"] !== osparc.auth.Data.getInstance().getEmail())
       ) {
