@@ -74,12 +74,22 @@ pydantic==2.9.1
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
+    #   pydantic-extra-types
+    #   pydantic-settings
 pydantic-core==2.23.3
     # via pydantic
+pydantic-extra-types==2.9.0
+    # via -r requirements/../../../packages/models-library/requirements/_base.in
+pydantic-settings==2.5.2
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.18.0
     # via rich
 python-dateutil==2.9.0.post0
     # via arrow
+python-dotenv==1.0.1
+    # via pydantic-settings
 referencing==0.35.1
     # via
     #   jsonschema
