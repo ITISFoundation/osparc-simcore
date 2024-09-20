@@ -107,8 +107,8 @@ async def _commands_handler(
 ) -> Any:
     """Handles all commands send by remote party"""
     if command == "init-context":
-        context.redis_settings = RedisSettings.parse_raw(payload["redis"])
-        context.rabbit_settings = RabbitSettings.parse_raw(payload["rabbit"])
+        context.redis_settings = RedisSettings.model_validate_json(payload["redis"])
+        context.rabbit_settings = RabbitSettings.model_validate_json(payload["rabbit"])
         # using the same db as the deferred tasks with different keys
         context.in_memory_lists = InMemoryLists(context.redis_settings, port)
 

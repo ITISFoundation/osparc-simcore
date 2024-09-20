@@ -10,7 +10,7 @@ import pytest
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient
 from models_library.api_schemas__common.errors import DefaultApiError
-from pydantic import parse_raw_as
+from pydantic import TypeAdapter
 from servicelib.fastapi.exceptions_utils import (
     handle_errors_as_500,
     http_exception_as_json_response,
@@ -66,7 +66,7 @@ async def test_http_errors_respond_with_error_model(
     response = await client.post(f"/error/{code}")
     assert response.status_code == code
 
-    error = parse_raw_as(DefaultApiError, response.text)
+    error = TypeAdapter(DefaultApiError).validate_json(response.text)
     assert error.detail == f"test {code}"
     assert error.name
 
@@ -79,4 +79,4 @@ async def test_non_http_error_handling(
     response = await client.post(f"/raise/{code}")
     print(response)
 
-    error = parse_raw_as(DefaultApiError, response.text)
+    error = TypeAdapter(DefaultApiError).validate_json(response.text)
