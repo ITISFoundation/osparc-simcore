@@ -788,7 +788,7 @@ async def test_batch_update_inputs_outputs(
                 for k, port in enumerate((await PORTS.inputs).values(), start=1000)
             },
             progress_bar=progress_bar,
-            outputs_callbacks=None,
+            outputs_callbacks=AsyncMock(),
         )
         assert progress_bar._current_steps == pytest.approx(2)  # noqa: SLF001
 
