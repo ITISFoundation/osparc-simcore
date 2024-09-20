@@ -48,7 +48,5 @@ class AlreadyPreRegisteredError(UsersBaseError):
 
 
 class BillingDetailsNotFoundError(UsersBaseError):
-    def log_msg(self):
-        return "Billing details are missing for user_id={user_id}. TIP: Check whether this user is pre-registered".format(
-            **self.__dict__
-        )
+    # NOTE: this is for internal log and should not be transmitted to the final user
+    msg_template = "Billing details are missing for user_id={user_id}. TIP: Check whether this user is pre-registered"

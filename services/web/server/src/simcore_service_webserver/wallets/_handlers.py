@@ -96,7 +96,7 @@ def handle_wallets_exceptions(handler: Handler):
 
             _logger.exception(
                 "%s [%s]",
-                exc.log_msg(),
+                f"{exc}",
                 f"{error_code}",
                 extra={"error_code": error_code, **log_extra},
             )
