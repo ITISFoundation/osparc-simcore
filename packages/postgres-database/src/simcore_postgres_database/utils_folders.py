@@ -7,6 +7,8 @@ from enum import Enum
 from functools import reduce
 from typing import Annotated, Any, ClassVar, Final, TypeAlias, cast
 
+from models_library.errors_classes import OsparcErrorMixin
+
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
@@ -20,7 +22,6 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
 )
-from pydantic.errors import PydanticErrorMixin
 from simcore_postgres_database.utils_ordering import OrderByDict
 from sqlalchemy import Column, func
 from sqlalchemy.dialects import postgresql
@@ -64,7 +65,7 @@ FoldersError
 """
 
 
-class FoldersError(PydanticErrorMixin, RuntimeError):
+class FoldersError(OsparcErrorMixin, RuntimeError):
     pass
 
 
