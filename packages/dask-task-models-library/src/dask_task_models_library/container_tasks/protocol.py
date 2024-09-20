@@ -32,7 +32,7 @@ class TaskOwner(BaseModel):
     def has_parent(self) -> bool:
         return bool(self.parent_node_id and self.parent_project_id)
 
-    @model_validator(mode="after")
+    @model_validator(mode="before")
     @classmethod
     def check_parent_valid(cls, values: dict[str, Any]) -> dict[str, Any]:
         parent_project_id = values.get("parent_project_id")

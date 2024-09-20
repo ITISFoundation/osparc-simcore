@@ -1,19 +1,19 @@
 """ Dask task exceptions
 
 """
-from pydantic.errors import PydanticErrorMixin
+from models_library.errors_classes import OsparcErrorMixin
 
 
-class TaskValueError(PydanticErrorMixin, ValueError):
+class TaskValueError(OsparcErrorMixin, ValueError):
     code = "task.value_error"
 
 
-class TaskCancelledError(PydanticErrorMixin, RuntimeError):
+class TaskCancelledError(OsparcErrorMixin, RuntimeError):
     code = "task.cancelled_error"
     msg_template = "The task was cancelled"
 
 
-class ServiceRuntimeError(PydanticErrorMixin, RuntimeError):
+class ServiceRuntimeError(OsparcErrorMixin, RuntimeError):
     code = "service.runtime_error"
     msg_template = (
         "The service {service_key}:{service_version}"
