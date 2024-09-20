@@ -345,7 +345,7 @@ qx.Class.define("osparc.share.Collaborators", {
           visibility: Object.keys(this._serializedDataCopy["accessRights"]).includes(myGid.toString()) ? "visible" : "excluded"
         });
         leaveButton.addListener("execute", () => {
-          let msg = this._serializedDataCopy["name"] + " " + this.tr("will no longer be listed.");
+          let msg = `"${this._serializedDataCopy["name"]}" ` + this.tr("will no longer be listed.");
           if (!osparc.share.CollaboratorsStudy.checkRemoveCollaborator(this._serializedDataCopy, myGid)) {
             msg += "<br>";
             msg += this.tr("If you remove yourself, there won't be any other Owners.");
