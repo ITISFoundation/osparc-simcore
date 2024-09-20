@@ -59,10 +59,6 @@ frozenlist==1.4.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-greenlet==3.0.3
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   sqlalchemy
 h11==0.14.0
     # via
     #   -c requirements/_fastapi.txt
@@ -186,7 +182,9 @@ python-dateutil==2.9.0.post0
     #   -c requirements/_base.txt
     #   faker
 python-dotenv==1.0.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt

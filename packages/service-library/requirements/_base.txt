@@ -72,7 +72,7 @@ orjson==3.10.7
     #   -r requirements/../../../packages/models-library/requirements/_base.in
 pamqp==3.3.0
     # via aiormq
-pydantic==2.9.1
+pydantic==2.9.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -81,14 +81,24 @@ pydantic==2.9.1
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
     #   fast-depends
-pydantic-core==2.23.3
+    #   pydantic-extra-types
+    #   pydantic-settings
+pydantic-core==2.23.4
     # via pydantic
+pydantic-extra-types==2.9.0
+    # via -r requirements/../../../packages/models-library/requirements/_base.in
+pydantic-settings==2.5.2
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.18.0
     # via rich
 pyinstrument==4.7.2
     # via -r requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
+python-dotenv==1.0.1
+    # via pydantic-settings
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
