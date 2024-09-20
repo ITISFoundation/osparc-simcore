@@ -88,12 +88,13 @@ class _JLabWebSocketWaiter:
 
 def test_classic_ti_plan(  # noqa: PLR0915
     page: Page,
-    create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
     is_autoscaled: bool,
     is_product_lite: bool,
+    create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
 ):
 
+    assert page.get_by_text("Access TIP").is_enabled()
     # TODO: check TIP upgrade
 
     project_data = create_tip_plan_from_dashboard("newTIPlanButton")
