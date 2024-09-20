@@ -376,8 +376,10 @@ qx.Class.define("osparc.share.Collaborators", {
           win.open();
           win.addListener("close", () => {
             if (win.getConfirmed()) {
-              this._deleteMember({gid: myGid});
-              qx.event.message.Bus.dispatchByName("reloadStudies");
+              this._deleteMember({gid: myGid})
+                .then(() => {
+                  qx.event.message.Bus.dispatchByName("reloadStudies");
+                });
             }
           }, this);
         }, this);
