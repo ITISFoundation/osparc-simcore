@@ -6,10 +6,8 @@ from typing import Final, TypedDict
 
 import arrow
 from playwright.sync_api import FrameLocator, Page, WebSocket, expect
-from pydantic import TypeAdapter  # type: ignore
-from pydantic import (  # pylint: disable=no-name-in-module # until we get pydantic 2.x all over the place
-    ByteSize,
-)
+from pydantic import TypeAdapter  # pylint: disable=no-name-in-module
+from pydantic import ByteSize
 
 from .logging_tools import log_context
 from .playwright import (
