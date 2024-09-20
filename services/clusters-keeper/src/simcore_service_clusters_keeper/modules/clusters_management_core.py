@@ -169,7 +169,7 @@ async def check_clusters(app: FastAPI) -> None:
         )
         await delete_clusters(app, instances=terminateable_instances)
 
-    # TODO: transmit command to start docker swarm/stack if needed
+    # NOTE: transmit command to start docker swarm/stack if needed
     # once the instance is connected to the SSM server,
     # use ssm client to send the command to these instances,
     # we send a command that contain:
