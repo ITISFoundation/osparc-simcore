@@ -56,7 +56,7 @@ class SimcoreSSMAPI:
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
-        ec2_client = cast(SSMClient, await exit_stack.enter_async_context(session_client))  # type: ignore[arg-type]
+        ec2_client = cast(SSMClient, await exit_stack.enter_async_context(session_client))
         return cls(ec2_client, session, exit_stack)
 
     async def close(self) -> None:

@@ -78,7 +78,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
-        s3_client = cast(S3Client, await exit_stack.enter_async_context(session_client))    # type: ignore[arg-type]
+        s3_client = cast(S3Client, await exit_stack.enter_async_context(session_client))
         # NOTE: this triggers a botocore.exception.ClientError in case the connection is not made to the S3 backend
         await s3_client.list_buckets()
 
