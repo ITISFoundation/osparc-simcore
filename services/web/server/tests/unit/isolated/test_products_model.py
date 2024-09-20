@@ -79,11 +79,16 @@ def test_product_to_static():
 
 
 def test_product_host_regex_with_spaces():
-    expected = r"([\.-]{0,1}osparc[\.-])".strip()
-
     data = Product.Config.schema_extra["examples"][2]
-    data["host_regex"] = expected + "   "  # spaces added at the end
+
+    data["support_email"] = "  foo@BaR.com    "  # with leading and trailing spaces and
+
+    expected = r"([\.-]{0,1}osparc[\.-])".strip()
+    data["host_regex"] = expected + "   "  # with leading trailing spaces
 
     product = Product.parse_obj(data)
+
     assert product.host_regex.pattern == expected
-    assert product.host_regex.search("osparc.speag.com")
+    assert product.host_regex.search("osparc.bar.com")
+
+    assert product.support_email == "foo@bar.com"
