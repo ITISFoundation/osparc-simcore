@@ -189,6 +189,25 @@ qx.Class.define("osparc.share.Collaborators", {
       return control || this.base(arguments, id);
     },
 
+    __canIShare: function() {
+      if (this._resourceType === "study" && this._serializedDataCopy["workspaceId"]) {
+        // Access Rights are set at workspace level
+        return false;
+      }
+      let canIShare = false;
+      switch (this._resourceType) {
+        case "study":
+        case "template":
+        case "service":
+          canIShare = osparc.service.Utils.canIWrite(this._serializedDataCopy["accessRights"]);
+          break;
+        case "workspace":
+          canIShare = osparc.share.CollaboratorsWorkspace.canIDelete(this._serializedDataCopy["myAccessRights"]);
+          break;
+      }
+      return canIShare;
+    },
+
     __canIChangePermissions: function() {
       if (this._resourceType === "study" && this._serializedDataCopy["workspaceId"]) {
         // Access Rights are set at workspace level
@@ -227,7 +246,7 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __buildLayout: function() {
-      if (this.__canIChangePermissions()) {
+      if (this.__canIShare()) {
         this.__addCollaborators = this._createChildControlImpl("add-collaborator");
       }
       this._createChildControlImpl("collaborators-list");
@@ -330,14 +349,14 @@ qx.Class.define("osparc.share.Collaborators", {
     },
 
     __getLeaveStudyButton: function() {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (
         (this._resourceType === "study") &&
-        // check the study is shared
-        (Object.keys(this._serializedDataCopy["accessRights"]).length > 1) &&
+        // check if I'm part of the shared (not through an organization)
+        (Object.keys(this._serializedDataCopy["accessRights"]).includes(myGid)) &&
         // check also user is not "prjOwner". Backend will silently not let the frontend remove that user.
         (this._serializedDataCopy["prjOwner"] !== osparc.auth.Data.getInstance().getEmail())
       ) {
-        const myGid = osparc.auth.Data.getInstance().getGroupId();
         const leaveButton = new qx.ui.form.Button(this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({
           firstUpperCase: true
         })).set({
