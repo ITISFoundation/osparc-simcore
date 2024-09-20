@@ -121,7 +121,7 @@ def mocked_s3_server_settings(
 ) -> S3Settings:
     return S3Settings(
         S3_ACCESS_KEY=IDStr("xxx"),
-        S3_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access  # noqa: SLF001
+        S3_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",    # type: ignore[arg-type] # pylint: disable=protected-access  # noqa: SLF001
         S3_SECRET_KEY=IDStr("xxx"),
         S3_BUCKET_NAME=IDStr(f"pytest{faker.pystr().lower()}"),
         S3_REGION=IDStr("us-east-1"),
@@ -133,5 +133,5 @@ def mocked_s3_server_envs(
     mocked_s3_server_settings: S3Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    changed_envs: EnvVarsDict = mocked_s3_server_settings.dict(exclude_unset=True)
+    changed_envs: EnvVarsDict = mocked_s3_server_settings.model_dump(mode="json", exclude_unset=True)
     return setenvs_from_dict(monkeypatch, {**changed_envs})
