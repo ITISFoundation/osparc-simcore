@@ -696,7 +696,7 @@ async def test_create_single_presigned_download_link(
 
     dest_file = tmp_path / faker.file_name()
     async with ClientSession() as session:
-        response = await session.get(download_url)
+        response = await session.get(str(download_url))
         response.raise_for_status()
         with dest_file.open("wb") as fp:
             fp.write(await response.read())
@@ -1302,7 +1302,7 @@ def test_compute_s3_url(
     bucket: S3BucketName, object_key: S3ObjectKey, expected_s3_url: AnyUrl
 ):
     assert (
-        SimcoreS3API.compute_s3_url(bucket=bucket, object_key=object_key)
+        str(SimcoreS3API.compute_s3_url(bucket=bucket, object_key=object_key))
         == expected_s3_url
     )
 

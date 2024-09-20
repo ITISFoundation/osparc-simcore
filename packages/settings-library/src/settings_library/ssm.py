@@ -1,17 +1,20 @@
-from pydantic import AnyHttpUrl, ConfigDict, Field, SecretStr
+from typing import Annotated
+
+from pydantic import AfterValidator, AnyHttpUrl, Field, SecretStr
+from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
 
 
 class SSMSettings(BaseCustomSettings):
     SSM_ACCESS_KEY_ID: SecretStr
-    SSM_ENDPOINT: AnyHttpUrl | None = Field(
+    SSM_ENDPOINT: Annotated[AnyHttpUrl, AfterValidator(str)] | None = Field(
         default=None, description="do not define if using standard AWS"
     )
     SSM_REGION_NAME: str = "us-east-1"
     SSM_SECRET_ACCESS_KEY: SecretStr
 
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         json_schema_extra={
             "examples": [
                 {

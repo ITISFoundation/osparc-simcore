@@ -51,7 +51,7 @@ async def upload_file_part(
         f"--> uploading {this_file_chunk_size=} of {file=}, [{part_index+1}/{num_parts}]..."
     )
     response = await session.put(
-        upload_url,
+        str(upload_url),
         data=_file_sender(
             file,
             offset=file_offset,
