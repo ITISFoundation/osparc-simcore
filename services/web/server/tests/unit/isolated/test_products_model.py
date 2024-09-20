@@ -86,4 +86,4 @@ def test_product_host_regex_with_spaces():
 
     product = Product.parse_obj(data)
     assert product.host_regex.pattern == expected
-    assert product.host_regex.search("osparcf.speag.com")
+    assert product.host_regex.search("osparc.speag.com")
