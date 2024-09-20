@@ -179,7 +179,7 @@ def set_template_to_product(
 
 @pytest.fixture
 def unset_template_to_product(sqlalchemy_async_engine: AsyncEngine):
-    @validate_arguments
+    @validate_call
     async def _(template_name: IDStr, product_name: ProductName) -> None:
         async with sqlalchemy_async_engine.begin() as conn:
             await conn.execute(
