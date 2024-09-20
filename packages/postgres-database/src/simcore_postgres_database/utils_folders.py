@@ -7,10 +7,10 @@ from enum import Enum
 from functools import reduce
 from typing import Annotated, Any, ClassVar, Final, TypeAlias, cast
 
-
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
+from models_library.errors_classes import OsparcErrorMixin
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -21,8 +21,6 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
 )
-from pydantic.errors import PydanticErrorMixin
-
 from simcore_postgres_database.utils_ordering import OrderByDict
 from sqlalchemy import Column, func
 from sqlalchemy.dialects import postgresql
@@ -65,44 +63,9 @@ FoldersError
         * ProjectAlreadyExistsInFolderError
 """
 
-class _DefaultDict(dict):
-    def __missing__(self, key):
-        return f"'{key}=?'"
 
-
-class FoldersError(PydanticErrorMixin, RuntimeError):
-    msg_template: str
-
-    def __new__(cls, *_args, **_kwargs):
-        if not hasattr(cls, "code"):
-            cls.code = cls._get_full_class_name()  # type: ignore[assignment]
-        return super().__new__(cls)
-
-    def __init__(self, *_args, **kwargs) -> None:
-        self.__dict__ = kwargs
-        super().__init__(message=self._build_message(), code=self.code)
-
-    def __str__(self) -> str:
-        return self._build_message()
-
-    def _build_message(self) -> str:
-        # NOTE: safe. Does not raise KeyError
-        return self.msg_template.format_map(_DefaultDict(**self.__dict__))
-
-    @classmethod
-    def _get_full_class_name(cls) -> str:
-        relevant_classes = [
-            c.__name__
-            for c in cls.__mro__[:-1]
-            if c.__name__
-            not in (
-                "PydanticErrorMixin",
-                "FoldersError",
-                "Exception",
-                "BaseException",
-            )
-        ]
-        return ".".join(reversed(relevant_classes))
+class FoldersError(OsparcErrorMixin, RuntimeError):
+    ...
 
 
 class InvalidFolderNameError(FoldersError):

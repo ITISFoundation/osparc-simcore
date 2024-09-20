@@ -13,6 +13,7 @@
 
 # installs this repo's packages
 pytest-simcore @ ../../packages/pytest-simcore/
+simcore-models-library @ ../models-library
 
 # current module
 simcore-postgres-database @ .

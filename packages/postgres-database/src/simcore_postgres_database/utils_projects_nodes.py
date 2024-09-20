@@ -5,8 +5,8 @@ from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
+from models_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
-from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .errors import ForeignKeyViolation, UniqueViolation
@@ -17,7 +17,7 @@ from .models.projects_nodes import projects_nodes
 #
 # Errors
 #
-class BaseProjectNodesError(PydanticErrorMixin, RuntimeError):
+class BaseProjectNodesError(OsparcErrorMixin, RuntimeError):
     msg_template: str = "Project nodes unexpected error"
 
 

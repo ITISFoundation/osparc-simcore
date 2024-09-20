@@ -5,8 +5,8 @@ from typing import Any
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict
-from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .errors import ForeignKeyViolation
@@ -18,7 +18,7 @@ from .models.projects_metadata import projects_metadata
 #
 
 
-class BaseProjectsMetadataError(PydanticErrorMixin, RuntimeError):
+class BaseProjectsMetadataError(OsparcErrorMixin, RuntimeError):
     msg_template: str = "Project metadata unexpected error"
 
 
