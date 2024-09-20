@@ -26,7 +26,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(20).set({
+    this._setLayout(new qx.ui.layout.HBox(5).set({
       alignY: "middle"
     }));
   },
@@ -52,22 +52,8 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
   },
 
   members: {
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "breadcrumbs-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-            alignY: "middle"
-          }));
-          this._addAt(control, 0, {flex: 1});
-          break;
-      }
-      return control || this.base(arguments, id);
-    },
-
     __buildBreadcrumbs: function() {
-      const breadcrumbsLayout = this.getChildControl("breadcrumbs-layout");
-      breadcrumbsLayout.removeAll();
+      this._removeAll();
 
       if (this.getCurrentFolderId()) {
         const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
@@ -76,23 +62,22 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
 
       const currentFolderButton = this.__createCurrentFolderButton();
       if (currentFolderButton) {
-        breadcrumbsLayout.add(currentFolderButton);
+        this._add(currentFolderButton);
       }
     },
 
     __createUpstreamButtons: function(childFolder) {
       if (childFolder) {
-        const breadcrumbsLayout = this.getChildControl("breadcrumbs-layout");
         const parentFolder = osparc.store.Folders.getInstance().getFolder(childFolder.getParentFolderId());
         if (parentFolder) {
-          breadcrumbsLayout.addAt(this.__createArrow(), 0);
+          this._addAt(this.__createArrow(), 0);
           const upstreamButton = this.__createFolderButton(parentFolder);
-          breadcrumbsLayout.addAt(upstreamButton, 0);
+          this._addAt(upstreamButton, 0);
           this.__createUpstreamButtons(parentFolder);
         } else {
-          breadcrumbsLayout.addAt(this.__createArrow(), 0);
+          this._addAt(this.__createArrow(), 0);
           const homeButton = this.__createFolderButton();
-          breadcrumbsLayout.addAt(homeButton, 0);
+          this._addAt(homeButton, 0);
         }
       }
     },
