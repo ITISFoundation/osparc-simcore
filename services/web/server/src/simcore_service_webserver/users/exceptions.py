@@ -45,3 +45,10 @@ class AlreadyPreRegisteredError(UsersBaseError):
     msg_template = (
         "Found {num_found} matches for '{email}'. Cannot pre-register existing user"
     )
+
+
+class BillingDetailsNotFoundError(UsersBaseError):
+    def log_msg(self):
+        return "Billing details are missing for user_id={user_id}. TIP: Check whether this user is pre-registered".format(
+            **self.__dict__
+        )
