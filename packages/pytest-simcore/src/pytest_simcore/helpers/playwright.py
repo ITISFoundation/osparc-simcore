@@ -3,10 +3,10 @@ import json
 import logging
 import re
 from collections import defaultdict
-from contextlib import ExitStack
+from collections.abc import Generator, Iterator
 from dataclasses import dataclass, field
 from enum import Enum, unique
-from typing import Any, Final, Generator
+from typing import Any, Final
 
 from playwright.sync_api import FrameLocator, Page, Request, WebSocket
 from pytest_simcore.helpers.logging_tools import log_context
@@ -263,28 +263,37 @@ def wait_for_pipeline_state(
     return current_state
 
 
-def on_web_socket_default_handler(ws) -> None:
-    """Usage
+@contextlib.contextmanager
+def web_socket_default_log_handler(web_socket: WebSocket) -> Iterator[None]:
 
-    from pytest_simcore.playwright_utils import on_web_socket_default_handler
+    try:
+        with log_context(
+            logging.DEBUG,
+            msg="handle websocket message (set to --log-cli-level=DEBUG level if you wanna see all of them)",
+        ) as ctx:
 
-    page.on("websocket", on_web_socket_default_handler)
+            def on_framesent(payload: str | bytes) -> None:
+                ctx.logger.debug("⬇️ Frame sent: %s", payload)
 
-    """
-    stack = ExitStack()
-    ctx = stack.enter_context(
-        log_context(
-            logging.INFO,
-            (
-                f"WebSocket opened: {ws.url}",
-                "WebSocket closed",
-            ),
-        )
-    )
+            def on_framereceived(payload: str | bytes) -> None:
+                ctx.logger.debug("⬆️ Frame received: %s", payload)
 
-    ws.on("framesent", lambda payload: ctx.logger.info("⬇️ %s", payload))
-    ws.on("framereceived", lambda payload: ctx.logger.info("⬆️ %s", payload))
-    ws.on("close", lambda payload: stack.close())  # noqa: ARG005
+            def on_close(payload: WebSocket) -> None:
+                ctx.logger.warning("⚠️ Websocket closed: %s", payload)
+
+            def on_socketerror(error_msg: str) -> None:
+                ctx.logger.error("❌ Websocket error: %s", error_msg)
+
+            web_socket.on("framesent", on_framesent)
+            web_socket.on("framereceived", on_framereceived)
+            web_socket.on("close", on_close)
+            web_socket.on("socketerror", on_socketerror)
+            yield
+    finally:
+        web_socket.remove_listener("framesent", on_framesent)
+        web_socket.remove_listener("framereceived", on_framereceived)
+        web_socket.remove_listener("close", on_close)
+        web_socket.remove_listener("socketerror", on_socketerror)
 
 
 def _node_started_predicate(request: Request) -> bool:
