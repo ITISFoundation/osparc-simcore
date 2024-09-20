@@ -76,3 +76,14 @@ def test_product_to_static():
         ],
         "isPaymentEnabled": False,
     }
+
+
+def test_product_host_regex_with_spaces():
+    expected = r"([\.-]{0,1}osparc[\.-])".strip()
+
+    data = Product.Config.schema_extra["examples"][2]
+    data["host_regex"] = expected + "   "  # spaces added at the end
+
+    product = Product.parse_obj(data)
+    assert product.host_regex.pattern == expected
+    assert product.host_regex.search("osparcf.speag.com")
