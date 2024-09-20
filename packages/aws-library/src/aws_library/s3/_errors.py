@@ -1,7 +1,7 @@
-from pydantic.errors import PydanticErrorMixin
+from models_library.errors_classes import OsparcErrorMixin
 
 
-class S3RuntimeError(PydanticErrorMixin, RuntimeError):
+class S3RuntimeError(OsparcErrorMixin, RuntimeError):
     msg_template: str = "S3 client unexpected error"
 
 
