@@ -28,7 +28,7 @@ from models_library.generics import Envelope
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from yarl import URL
 
@@ -372,11 +372,13 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
     if file_size := kwargs["params"].get("file_size") is not None:
         assert file_size
         upload_schema = FileUploadSchema(
-            chunk_size=parse_obj_as(ByteSize, "5GiB"),
-            urls=[parse_obj_as(AnyUrl, f"{scheme[link_type]}://{file_id}")],
+            chunk_size=TypeAdapter(ByteSize).validate_python("5GiB"),
+            urls=[
+                TypeAdapter(AnyUrl).validate_python(f"{scheme[link_type]}://{file_id}")
+            ],
             links=FileUploadLinks(
-                abort_upload=parse_obj_as(AnyUrl, f"{url}:abort"),
-                complete_upload=parse_obj_as(AnyUrl, f"{url}:complete"),
+                abort_upload=TypeAdapter(AnyUrl).validate_python(f"{url}:abort"),
+                complete_upload=TypeAdapter(AnyUrl).validate_python(f"{url}:complete"),
             ),
         )
         return CallbackResult(
@@ -385,7 +387,7 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
         )
     # version 1 returns a presigned link
     presigned_link = PresignedLink(
-        link=parse_obj_as(AnyUrl, f"{scheme[link_type]}://{file_id}")
+        link=TypeAdapter(AnyUrl).validate_python(f"{scheme[link_type]}://{file_id}")
     )
     return CallbackResult(
         status=status.HTTP_200_OK,
@@ -473,8 +475,9 @@ async def storage_v0_service_mock(
             (parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", "")
         )
 
-        payload: FileUploadCompleteResponse = parse_obj_as(
-            FileUploadCompleteResponse,
+        payload: FileUploadCompleteResponse = TypeAdapter(
+            FileUploadCompleteResponse
+        ).validate_python(
             {
                 "links": {
                     "state": stripped_url + ":complete/futures/" + str(faker.uuid4())

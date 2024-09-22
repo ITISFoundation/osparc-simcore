@@ -11,7 +11,7 @@ import arrow
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, ByteSize, ConfigDict, ValidationError, parse_obj_as
+from pydantic import BaseModel, ByteSize, ConfigDict, TypeAdapter, ValidationError
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 
@@ -60,7 +60,9 @@ class DockerImageManifestsV2(BaseModel):
 
     @cached_property
     def layers_total_size(self) -> ByteSize:
-        return parse_obj_as(ByteSize, sum(layer.size for layer in self.layers))
+        return TypeAdapter(ByteSize).validate_python(
+            sum(layer.size for layer in self.layers)
+        )
 
 
 class DockerImageMultiArchManifestsV2(BaseModel):
@@ -241,7 +243,9 @@ async def pull_image(
             image, stream=True, auth=registry_auth
         ):
             try:
-                parsed_progress = parse_obj_as(_DockerPullImage, pull_progress)
+                parsed_progress = TypeAdapter(_DockerPullImage).validate_python(
+                    pull_progress
+                )
             except ValidationError:
                 _logger.exception(
                     "Unexpected error while validating '%s'. "
