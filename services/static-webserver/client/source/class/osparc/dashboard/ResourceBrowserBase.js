@@ -232,7 +232,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _createSearchBar: function() {
       const searchBarFilter = this._searchBarFilter = new osparc.dashboard.SearchBarFilter(this._resourceType).set({
-        paddingRight: 22
+        marginRight: 22
       });
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
