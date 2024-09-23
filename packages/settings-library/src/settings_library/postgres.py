@@ -1,7 +1,14 @@
 import urllib.parse
 from functools import cached_property
 
-from pydantic import AliasChoices, Field, PostgresDsn, SecretStr, field_validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    PostgresDsn,
+    SecretStr,
+    ValidationInfo,
+    field_validator,
+)
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
@@ -41,33 +48,37 @@ class PostgresSettings(BaseCustomSettings):
 
     @field_validator("POSTGRES_MAXSIZE")
     @classmethod
-    def _check_size(cls, v, values):
-        if not (values["POSTGRES_MINSIZE"] <= v):
-            msg = f"assert POSTGRES_MINSIZE={values['POSTGRES_MINSIZE']} <= POSTGRES_MAXSIZE={v}"
+    def _check_size(cls, v, info: ValidationInfo):
+        if not (info.data["POSTGRES_MINSIZE"] <= v):
+            msg = f"assert POSTGRES_MINSIZE={info.data['POSTGRES_MINSIZE']} <= POSTGRES_MAXSIZE={v}"
             raise ValueError(msg)
         return v
 
     @cached_property
     def dsn(self) -> str:
-        dsn: str = PostgresDsn.build(
-            scheme="postgresql",
-            user=self.POSTGRES_USER,
-            password=self.POSTGRES_PASSWORD.get_secret_value(),
-            host=self.POSTGRES_HOST,
-            port=f"{self.POSTGRES_PORT}",
-            path=f"/{self.POSTGRES_DB}",
+        dsn: str = str(
+            PostgresDsn.build(  # pylint: disable=no-member
+                scheme="postgresql",
+                username=self.POSTGRES_USER,
+                password=self.POSTGRES_PASSWORD.get_secret_value(),
+                host=self.POSTGRES_HOST,
+                port=self.POSTGRES_PORT,
+                path=f"/{self.POSTGRES_DB}",
+            )
         )
         return dsn
 
     @cached_property
     def dsn_with_async_sqlalchemy(self) -> str:
-        dsn: str = PostgresDsn.build(
-            scheme="postgresql+asyncpg",
-            user=self.POSTGRES_USER,
-            password=self.POSTGRES_PASSWORD.get_secret_value(),
-            host=self.POSTGRES_HOST,
-            port=f"{self.POSTGRES_PORT}",
-            path=f"/{self.POSTGRES_DB}",
+        dsn: str = str(
+            PostgresDsn.build(  # pylint: disable=no-member
+                scheme="postgresql+asyncpg",
+                username=self.POSTGRES_USER,
+                password=self.POSTGRES_PASSWORD.get_secret_value(),
+                host=self.POSTGRES_HOST,
+                port=self.POSTGRES_PORT,
+                path=f"/{self.POSTGRES_DB}",
+            )
         )
         return dsn
 
