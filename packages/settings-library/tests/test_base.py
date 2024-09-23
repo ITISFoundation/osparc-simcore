@@ -39,8 +39,8 @@ def _get_attrs_tree(obj: Any) -> dict[str, Any]:
 
 
 def _print_defaults(model_cls: type[BaseModel]):
-    for field in model_cls.__fields__.values():
-        print(field.name, ":", end="")
+    for name, field in model_cls.model_fields.items():
+        print(name, ":", end="")
         try:
             default = field.get_default()
             print(default, type(default))
@@ -49,7 +49,7 @@ def _print_defaults(model_cls: type[BaseModel]):
 
 
 def _dumps_model_class(model_cls: type[BaseModel]):
-    d = {field.name: _get_attrs_tree(field) for field in model_cls.__fields__.values()}
+    d = {name: _get_attrs_tree(field) for name, field in model_cls.model_fields.items()}
     return json.dumps(d, indent=1)
 
 
@@ -102,14 +102,14 @@ def test_create_settings_class(
 
     # DEV: Path("M1.ignore.json").write_text(dumps_model_class(M))
 
-    assert M.__fields__["VALUE_NULLABLE_DEFAULT_ENV"].default_factory
+    assert M.model_fields["VALUE_NULLABLE_DEFAULT_ENV"].default_factory
 
-    assert M.__fields__["VALUE_NULLABLE_DEFAULT_ENV"].get_default() is None
+    assert M.model_fields["VALUE_NULLABLE_DEFAULT_ENV"].get_default() is None
 
-    assert M.__fields__["VALUE_DEFAULT_ENV"].default_factory
+    assert M.model_fields["VALUE_DEFAULT_ENV"].default_factory
 
     with pytest.raises(DefaultFromEnvFactoryError):
-        M.__fields__["VALUE_DEFAULT_ENV"].get_default()
+        M.model_fields["VALUE_DEFAULT_ENV"].get_default()
 
 
 def test_create_settings_class_with_environment(
@@ -137,10 +137,10 @@ def test_create_settings_class_with_environment(
 
         instance = SettingsClass()
 
-        print(instance.json(indent=2))
+        print(instance.model_dump_json(indent=2))
 
         # checks
-        assert instance.dict(exclude_unset=True) == {
+        assert instance.model_dump(exclude_unset=True) == {
             "VALUE": {"S_VALUE": 2},
             "VALUE_NULLABLE_REQUIRED": {"S_VALUE": 3},
         }
