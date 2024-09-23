@@ -47,6 +47,7 @@ def setup(app: FastAPI):
         for s in [
             app_settings.CLUSTERS_KEEPER_EC2_ACCESS,
             app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES,
+            app_settings.CLUSTERS_KEEPER_SSM_ACCESS,
         ]
     ):
         logger.warning(

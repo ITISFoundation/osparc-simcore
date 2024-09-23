@@ -133,9 +133,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-info");
 
       // right-items
-      if (osparc.product.Utils.isProduct("tiplite")) {
-        this.getChildControl("tip-lite-button");
-      }
       this.getChildControl("tasks-button");
       this.getChildControl("notifications-button");
       this.getChildControl("expiration-icon");
@@ -186,6 +183,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             width: osparc.product.Utils.isS4LProduct() ? 150 : 100,
             height: osparc.navigation.NavigationBar.HEIGHT
           });
+          if (osparc.product.Utils.isProduct("tiplite")) {
+            control.set({
+              cursor: "pointer",
+              toolTipText: this.tr("This is TIP.lite, a light version of TIP.<br>Request access to TIP.")
+            });
+            control.addListener("tap", () => osparc.product.TIPTeaser.getInstance().open());
+          }
           this.getChildControl("left-items").add(control);
           break;
         case "logo-powered":
@@ -231,15 +235,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("center-items").add(control);
           break;
         }
-        case "tip-lite-button":
-          control = new qx.ui.form.Button(this.tr("Access TIP")).set({
-            marginRight: 30,
-            ...this.self().BUTTON_OPTIONS,
-          });
-          osparc.utils.Utils.setIdToWidget(control, "accessTIPBtn");
-          control.addListener("execute", () => osparc.product.TIPTeaser.getInstance().open());
-          this.getChildControl("right-items").add(control);
-          break;
         case "credits-button":
           control = new osparc.desktop.credits.CreditsIndicatorButton();
           this.getChildControl("right-items").add(control);

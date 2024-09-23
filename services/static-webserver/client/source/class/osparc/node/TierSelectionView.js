@@ -72,7 +72,11 @@ qx.Class.define("osparc.node.TierSelectionView", {
               .then(preselectedPricingUnit => {
                 if (preselectedPricingUnit && preselectedPricingUnit["pricingUnitId"]) {
                   const tierFound = tierBox.getSelectables().find(t => t.getModel() === preselectedPricingUnit["pricingUnitId"]);
-                  tierBox.setSelection([tierFound]);
+                  if (tierFound) {
+                    tierBox.setSelection([tierFound]);
+                  } else {
+                    console.error("Tier not found");
+                  }
                 }
               })
               .finally(() => {

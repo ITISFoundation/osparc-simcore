@@ -8,6 +8,7 @@ from typing import Any, Final
 import arrow
 import yaml
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, EC2Tags
+from aws_library.ec2._models import CommandStr
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_clusters_keeper.clusters import (
     ClusterState,
@@ -107,12 +108,35 @@ def _prepare_environment_variables(
 def create_startup_script(
     app_settings: ApplicationSettings,
     *,
-    cluster_machines_name_prefix: str,
     ec2_boot_specific: EC2InstanceBootSpecific,
-    additional_custom_tags: EC2Tags,
 ) -> str:
     assert app_settings.CLUSTERS_KEEPER_EC2_ACCESS  # nosec
     assert app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES  # nosec
+
+    startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
+    return "\n".join(startup_commands)
+
+
+def create_deploy_cluster_stack_script(
+    app_settings: ApplicationSettings,
+    *,
+    cluster_machines_name_prefix: str,
+    additional_custom_tags: EC2Tags,
+) -> str:
+    deploy_script: list[CommandStr] = []
+    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
+    if isinstance(
+        app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
+        TLSAuthentication,
+    ):
+        # get the dask certificates
+        download_certificates_commands = [
+            f"mkdir --parents {_HOST_CERTIFICATES_BASE_PATH}",
+            f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_CA_FILE_PATH}',
+            f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_CERT_FILE_PATH}',
+            f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_KEY_FILE_PATH}',
+        ]
+        deploy_script.extend(download_certificates_commands)
 
     environment_variables = _prepare_environment_variables(
         app_settings,
@@ -120,22 +144,7 @@ def create_startup_script(
         additional_custom_tags=additional_custom_tags,
     )
 
-    startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
-    assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
-    if isinstance(
-        app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
-        TLSAuthentication,
-    ):
-
-        download_certificates_commands = [
-            f"mkdir --parents {_HOST_CERTIFICATES_BASE_PATH}",
-            f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_CA_FILE_PATH}',
-            f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_CERT_FILE_PATH}',
-            f'aws ssm get-parameter --name "{app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY}" --region us-east-1 --with-decryption --query "Parameter.Value" --output text > {_HOST_TLS_KEY_FILE_PATH}',
-        ]
-        startup_commands.extend(download_certificates_commands)
-
-    startup_commands.extend(
+    deploy_script.extend(
         [
             # NOTE: https://stackoverflow.com/questions/41203492/solving-redis-warnings-on-overcommit-memory-and-transparent-huge-pages-for-ubunt
             "sysctl vm.overcommit_memory=1",
@@ -143,11 +152,11 @@ def create_startup_script(
             f"echo '{_prometheus_yml_base64_encoded()}' | base64 -d > {_HOST_PROMETHEUS_PATH}",
             f"echo '{_prometheus_basic_auth_yml_base64_encoded(app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME, app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD.get_secret_value())}' | base64 -d > {_HOST_PROMETHEUS_WEB_PATH}",
             # NOTE: --default-addr-pool is necessary in order to prevent conflicts with AWS node IPs
-            "docker swarm init --default-addr-pool 172.20.0.0/14",
+            f"docker swarm init --default-addr-pool {app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL}",
             f"{' '.join(environment_variables)} docker stack deploy --with-registry-auth --compose-file={_HOST_DOCKER_COMPOSE_PATH} dask_stack",
         ]
     )
-    return "\n".join(startup_commands)
+    return "\n".join(deploy_script)
 
 
 def _convert_ec2_state_to_cluster_state(

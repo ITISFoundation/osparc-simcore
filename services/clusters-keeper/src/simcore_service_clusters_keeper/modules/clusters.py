@@ -49,7 +49,7 @@ async def _get_primary_ec2_params(
     ec2_instance_types: list[
         EC2InstanceType
     ] = await ec2_client.get_ec2_instance_capabilities(
-        instance_type_names=[ec2_type_name]
+        instance_type_names={ec2_type_name}
     )
     assert ec2_instance_types  # nosec
     assert len(ec2_instance_types) == 1  # nosec
@@ -72,15 +72,7 @@ async def create_cluster(
         tags=creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id),
         startup_script=create_startup_script(
             app_settings,
-            cluster_machines_name_prefix=get_cluster_name(
-                app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False
-            ),
             ec2_boot_specific=ec2_instance_boot_specs,
-            additional_custom_tags={
-                AWSTagKey("user_id"): AWSTagValue(f"{user_id}"),
-                AWSTagKey("wallet_id"): AWSTagValue(f"{wallet_id}"),
-                AWSTagKey("role"): AWSTagValue("worker"),
-            },
         ),
         ami_id=ec2_instance_boot_specs.ami_id,
         key_name=app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_KEY_NAME,
