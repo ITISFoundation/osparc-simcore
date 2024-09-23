@@ -794,7 +794,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 if (product in newStudiesData) {
                   const mode = this._resourcesContainer.getMode();
                   const title = this.tr("New Plan");
-                  const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title) : new osparc.dashboard.ListButtonNew(title, desc);
+                  const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title) : new osparc.dashboard.ListButtonNew(title);
                   newStudyBtn.setCardKey("new-study");
                   newStudyBtn.subscribeToFilterGroup("searchBarFilter");
                   osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
