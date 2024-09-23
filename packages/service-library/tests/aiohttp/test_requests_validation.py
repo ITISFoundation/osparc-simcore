@@ -111,7 +111,9 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
     async def _handler(request: web.Request) -> web.Response:
         # --------- UNDER TEST -------
         # NOTE: app context does NOT need to be validated everytime!
-        context = MyRequestContext.parse_obj({**dict(request.app), **dict(request)})
+        context = MyRequestContext.model_validate(
+            {**dict(request.app), **dict(request)}
+        )
 
         path_params = parse_request_path_parameters_as(
             MyRequestPathParams, request, use_enveloped_error_v1=False
@@ -129,11 +131,11 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
 
         return web.json_response(
             {
-                "parameters": path_params.dict(),
-                "queries": query_params.dict(),
-                "body": body.dict(),
-                "context": context.dict(),
-                "headers": headers_params.dict(),
+                "parameters": path_params.model_dump(),
+                "queries": query_params.model_dump(),
+                "body": body.model_dump(),
+                "context": context.model_dump(),
+                "headers": headers_params.model_dump(),
             },
             dumps=json_dumps,
         )
@@ -221,8 +223,8 @@ async def test_parse_request_with_invalid_path_params(
     r = await client.get(
         "/projects/invalid-uuid",
         params=query_params.as_params(),
-        json=body.dict(),
-        headers=headers_params.dict(by_alias=True),
+        json=body.model_dump(),
+        headers=headers_params.model_dump(by_alias=True),
     )
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
@@ -234,8 +236,8 @@ async def test_parse_request_with_invalid_path_params(
             "details": [
                 {
                     "loc": "project_uuid",
-                    "msg": "value is not a valid uuid",
-                    "type": "type_error.uuid",
+                    "msg": "Input should be a valid UUID, invalid character: expected an optional prefix of `urn:uuid:` followed by [0-9a-fA-F-], found `i` at 1",
+                    "type": "uuid_parsing",
                 }
             ],
         }
@@ -265,8 +267,8 @@ async def test_parse_request_with_invalid_query_params(
             "details": [
                 {
                     "loc": "label",
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
@@ -298,13 +300,13 @@ async def test_parse_request_with_invalid_body(
             "details": [
                 {
                     "loc": "x",
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
                 {
                     "loc": "z",
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 },
             ],
         }
@@ -353,8 +355,8 @@ async def test_parse_request_with_invalid_headers_params(
             "details": [
                 {
                     "loc": "X-Simcore-User-Agent",
-                    "msg": "field required",
-                    "type": "value_error.missing",
+                    "msg": "Field required",
+                    "type": "missing",
                 }
             ],
         }
