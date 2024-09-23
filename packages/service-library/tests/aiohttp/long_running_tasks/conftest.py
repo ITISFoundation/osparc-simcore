@@ -9,7 +9,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel, TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks.server import TaskId
@@ -92,7 +92,7 @@ def start_long_running_task(
         data, error = await assert_status(resp, status.HTTP_202_ACCEPTED)
         assert data
         assert not error
-        task_get = parse_obj_as(long_running_tasks.server.TaskGet, data)
+        task_get = TypeAdapter(long_running_tasks.server.TaskGet).validate_python(data)
         return task_get.task_id
 
     return _caller

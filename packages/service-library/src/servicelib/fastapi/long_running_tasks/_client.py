@@ -6,7 +6,7 @@ from typing import Any, Awaitable, Callable, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
-from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
+from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -129,8 +129,7 @@ class Client:
         return output
 
     def _get_url(self, path: str) -> AnyHttpUrl:
-        output: AnyHttpUrl = parse_obj_as(
-            AnyHttpUrl,
+        output: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(
             f"{self._base_url}{self._client_configuration.router_prefix}{path}",
         )
         return output

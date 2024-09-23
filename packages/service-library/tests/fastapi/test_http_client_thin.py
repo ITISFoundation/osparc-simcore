@@ -15,7 +15,7 @@ from httpx import (
     TransportError,
     codes,
 )
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from respx import MockRouter
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
@@ -77,7 +77,7 @@ async def thick_client(request_timeout: int) -> AsyncIterable[FakeThickClient]:
 
 @pytest.fixture
 def test_url() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://missing-host:1111")
+    return TypeAdapter(AnyHttpUrl).validate_python("http://missing-host:1111")
 
 
 async def test_connection_error(
