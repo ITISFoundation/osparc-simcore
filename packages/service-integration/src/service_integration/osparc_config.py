@@ -133,7 +133,7 @@ class MetadataConfig(ServiceMetaDataPublished):
 
     def to_labels_annotations(self) -> dict[str, str]:
         labels: dict[str, str] = to_labels(
-            self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
+            self.model_dump(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[0],
             trim_key_head=False,
         )
