@@ -871,30 +871,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     // LAYOUT //
     _createLayout: function() {
+      this._createSearchBar();
+
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         const workspaceHeader = new osparc.dashboard.WorkspaceHeader();
         this.bind("currentWorkspaceId", workspaceHeader, "currentWorkspaceId");
+        this.bind("currentFolderId", workspaceHeader, "currentFolderId");
+        [
+          "changeCurrentWorkspaceId",
+          "changeCurrentFolderId",
+        ].forEach(ev => {
+          workspaceHeader.addListener(ev, () => {
+            const workspaceId = workspaceHeader.getCurrentWorkspaceId();
+            const folderId = workspaceHeader.getCurrentFolderId();
+            this._changeContext(workspaceId, folderId);
+            this._resourceFilter.contextChanged(workspaceId, folderId);
+          }, this);
+        });
+
         this._addToLayout(workspaceHeader);
       }
 
       this._createResourcesLayout();
 
-      const containerHeader = this._resourcesContainer.getContainerHeader();
-      if (containerHeader) {
-        this.bind("currentWorkspaceId", containerHeader, "currentWorkspaceId");
-        this.bind("currentFolderId", containerHeader, "currentFolderId");
-        containerHeader.addListener("changeContext", e => {
-          const {
-            workspaceId,
-            folderId,
-          } = e.getData();
-          this.set({
-            currentWorkspaceId: workspaceId,
-            currentFolderId: folderId,
-          })
-          this._changeContext(workspaceId, folderId);
-        });
-      }
       const list = this._resourcesContainer.getFlatList();
       if (list) {
         osparc.utils.Utils.setIdToWidget(list, "studiesList");
