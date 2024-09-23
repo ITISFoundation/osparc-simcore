@@ -1,9 +1,9 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-import asyncio
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator, Iterator
+from typing import Any, Final
 from unittest.mock import AsyncMock
 
 import pytest
@@ -24,12 +24,12 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-_TENACITY_RETRY_PARAMS = dict(
-    reraise=True,
-    retry=retry_if_exception_type(AssertionError),
-    stop=stop_after_delay(10),
-    wait=wait_fixed(0.01),
-)
+_TENACITY_RETRY_PARAMS: Final[dict[str, Any]] = {
+    "reraise": True,
+    "retry": retry_if_exception_type(AssertionError),
+    "stop": stop_after_delay(10),
+    "wait": wait_fixed(0.01),
+}
 
 # FIXTURES
 
@@ -75,11 +75,11 @@ async def outputs_manager(
 @pytest.fixture
 def mocked_port_key_content_changed(
     mocker: MockerFixture, outputs_manager: OutputsManager
-) -> Iterator[AsyncMock]:
+) -> AsyncMock:
     async def _mock_upload_outputs(*args, **kwargs) -> None:
         pass
 
-    yield mocker.patch.object(
+    return mocker.patch.object(
         outputs_manager, "port_key_content_changed", side_effect=_mock_upload_outputs
     )
 
@@ -101,8 +101,8 @@ def mock_delay_policy() -> BaseDelayPolicy:
 
 
 @pytest.fixture
-def mock_get_directory_total_size(mocker: MockerFixture) -> Iterator[AsyncMock]:
-    yield mocker.patch(
+def mock_get_directory_total_size(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs._event_filter.get_directory_total_size",
         return_value=1,
     )
@@ -120,17 +120,6 @@ async def event_filter(
     await event_filter.shutdown()
 
 
-# UTILS
-
-
-async def _wait_for_event_to_trigger(event_filter: EventFilter) -> None:
-    await asyncio.sleep(event_filter.delay_policy.get_min_interval() * 5)
-
-
-async def _wait_for_event_to_trigger_big_directory(event_filter: EventFilter) -> None:
-    await asyncio.sleep(event_filter.delay_policy.get_wait_interval(1) * 2)
-
-
 # TESTS
 
 
@@ -141,13 +130,16 @@ async def test_event_triggers_once(
 ):
     # event triggers once
     await event_filter.enqueue(port_key_1)
-    await _wait_for_event_to_trigger(event_filter)
-    assert mocked_port_key_content_changed.call_count == 1
+
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            assert mocked_port_key_content_changed.call_count == 1
 
     # event triggers a second time
     await event_filter.enqueue(port_key_1)
-    await _wait_for_event_to_trigger(event_filter)
-    assert mocked_port_key_content_changed.call_count == 2
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            assert mocked_port_key_content_changed.call_count == 2
 
 
 async def test_trigger_once_after_event_chain(
@@ -157,8 +149,9 @@ async def test_trigger_once_after_event_chain(
 ):
     for _ in range(100):
         await event_filter.enqueue(port_key_1)
-    await _wait_for_event_to_trigger(event_filter)
-    assert mocked_port_key_content_changed.call_count == 1
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            assert mocked_port_key_content_changed.call_count == 1
 
 
 async def test_always_trigger_after_delay(
@@ -170,8 +163,9 @@ async def test_always_trigger_after_delay(
     # event trigger after correct interval delay correctly
     for expected_call_count in range(1, 10):
         await event_filter.enqueue(port_key_1)
-        await _wait_for_event_to_trigger_big_directory(event_filter)
-        assert mocked_port_key_content_changed.call_count == expected_call_count
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                assert mocked_port_key_content_changed.call_count == expected_call_count
 
 
 async def test_minimum_amount_of_get_directory_total_size_calls(
@@ -183,14 +177,12 @@ async def test_minimum_amount_of_get_directory_total_size_calls(
     await event_filter.enqueue(port_key_1)
     # wait a bit for the vent to be picked up
     # by the workers and processed
-    await _wait_for_event_to_trigger(event_filter)
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             assert mock_get_directory_total_size.call_count == 1
             assert mocked_port_key_content_changed.call_count == 0
 
     # event finished processing and was dispatched
-    await _wait_for_event_to_trigger_big_directory(event_filter)
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             assert mock_get_directory_total_size.call_count == 2
@@ -206,9 +198,10 @@ async def test_minimum_amount_of_get_directory_total_size_calls_with_continuous_
     await event_filter.enqueue(port_key_1)
     # wait a bit for the vent to be picked up
     # by the workers and processed
-    await _wait_for_event_to_trigger(event_filter)
-    assert mock_get_directory_total_size.call_count == 1
-    assert mocked_port_key_content_changed.call_count == 0
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            assert mock_get_directory_total_size.call_count == 1
+            assert mocked_port_key_content_changed.call_count == 0
 
     # while changes keep piling up, keep extending the duration
     # no event will trigger
@@ -216,14 +209,16 @@ async def test_minimum_amount_of_get_directory_total_size_calls_with_continuous_
     VERY_LONG_EVENT_CHAIN = 1000
     for _ in range(VERY_LONG_EVENT_CHAIN):
         await event_filter.enqueue(port_key_1)
-        await _wait_for_event_to_trigger(event_filter)
-        assert mock_get_directory_total_size.call_count == 1
-        assert mocked_port_key_content_changed.call_count == 0
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                assert mock_get_directory_total_size.call_count == 1
+                assert mocked_port_key_content_changed.call_count == 0
 
     # event finished processing and was dispatched
-    await _wait_for_event_to_trigger_big_directory(event_filter)
-    assert mock_get_directory_total_size.call_count == 2
-    assert mocked_port_key_content_changed.call_count == 1
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            assert mock_get_directory_total_size.call_count == 2
+            assert mocked_port_key_content_changed.call_count == 1
 
 
 def test_default_delay_policy():
