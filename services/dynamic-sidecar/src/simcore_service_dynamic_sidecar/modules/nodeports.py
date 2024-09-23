@@ -86,9 +86,8 @@ class OutputCallbacksWrapper(OutputsCallbacks):
         await self.port_notifier.send_output_port_upload_finished_with_error(key)
 
 
-# NOTE: outputs_manager guarantees that no parallel calls
-# to this function occur
-async def upload_outputs(
+# NOTE: outputs_manager guarantees that no parallel calls to this function occur
+async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915, C901
     outputs_path: Path,
     port_keys: list[str],
     io_log_redirect_cb: LogRedirectCB | None,
