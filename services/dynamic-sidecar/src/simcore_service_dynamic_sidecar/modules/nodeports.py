@@ -25,7 +25,7 @@ from servicelib.async_utils import run_sequentially_in_context
 from servicelib.file_utils import remove_directory
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
-from servicelib.utils import logged_gather
+from servicelib.utils import limited_gather
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import Port
@@ -120,8 +120,9 @@ async def upload_outputs(
         if (not port_keys) or (port_value.key in port_keys)
     ]
 
-    await logged_gather(
-        *(port_notifier.send_output_port_upload_sarted(p.key) for p in ports_to_set)
+    await limited_gather(
+        *(port_notifier.send_output_port_upload_sarted(p.key) for p in ports_to_set),
+        limit=4,
     )
 
     async with AsyncExitStack() as stack:
@@ -218,7 +219,7 @@ async def upload_outputs(
                     logger.debug("No file %s to fetch port values from", data_file)
 
         if archiving_tasks:
-            await logged_gather(*archiving_tasks)
+            await limited_gather(*archiving_tasks, limit=4)
 
         await PORTS.set_multiple(
             ports_values,
@@ -354,7 +355,7 @@ async def download_target_ports(
     async with progress_bar.sub_progress(
         steps=len(ports_to_get), description=IDStr("downloading")
     ) as sub_progress:
-        results = await logged_gather(
+        results = await limited_gather(
             *[
                 (
                     _get_data_from_port(
@@ -365,7 +366,7 @@ async def download_target_ports(
                 )
                 for port in ports_to_get
             ],
-            max_concurrency=2,
+            limit=2,
         )
     # parse results
     data = {
