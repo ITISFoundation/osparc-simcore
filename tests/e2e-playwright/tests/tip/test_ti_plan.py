@@ -93,10 +93,11 @@ def test_classic_ti_plan(  # noqa: PLR0915
     is_product_lite: bool,
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
 ):
+    # checks "Access TIP" button
+    page.get_by_test_id("userMenuBtn").locator("div").click()
+    assert page.get_by_text("Access Full TIP").is_visible()
 
-    assert page.get_by_text("Access TIP").is_enabled()
-    # TODO: check TIP upgrade
-
+    # press + button
     project_data = create_tip_plan_from_dashboard("newTIPlanButton")
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(
@@ -115,7 +116,9 @@ def test_classic_ti_plan(  # noqa: PLR0915
             len(node_ids) >= expected_number_of_steps
         ), f"Expected at least {expected_number_of_steps} nodes in the workbench"
 
-    with log_context(logging.INFO, "Electrode Selector step (1)") as ctx:
+    with log_context(
+        logging.INFO, "Electrode Selector step (1/%s)", expected_number_of_steps
+    ) as ctx:
         # NOTE: creating the plan auto-triggers the first service to start, which might already triggers socket events
         electrode_selector_iframe = wait_for_service_running(
             page=page,
@@ -164,7 +167,9 @@ def test_classic_ti_plan(  # noqa: PLR0915
             response_body = response.json()
             ctx.logger.info("the following output was generated: %s", response_body)
 
-    with log_context(logging.INFO, "Classic TI step (2)") as ctx:
+    with log_context(
+        logging.INFO, "Classic TI step (2/%s)", expected_number_of_steps
+    ) as ctx:
         with page.expect_websocket(
             _JLabWaitForWebSocket(),
             timeout=_OUTER_EXPECT_TIMEOUT_RATIO
@@ -250,7 +255,9 @@ def test_classic_ti_plan(  # noqa: PLR0915
     if is_product_lite:
         assert expected_number_of_steps == 2
     else:
-        with log_context(logging.INFO, "Exposure Analysis step (3)"):
+        with log_context(
+            logging.INFO, "Exposure Analysis step (3/%s)", expected_number_of_steps
+        ):
             with expected_service_running(
                 page=page,
                 node_id=node_ids[2],
