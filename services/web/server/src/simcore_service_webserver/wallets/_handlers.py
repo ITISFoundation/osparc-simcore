@@ -18,6 +18,8 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.error_codes import create_error_code
+from servicelib.logging_utils import LogExtra, get_log_record_extra
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
@@ -36,10 +38,16 @@ from ..payments.errors import (
 )
 from ..products.errors import BelowMinimumPaymentError, ProductPriceNotDefinedError
 from ..security.decorators import permission_required
-from ..users.exceptions import UserDefaultWalletNotFoundError
+from ..users.exceptions import (
+    BillingDetailsNotFoundError,
+    UserDefaultWalletNotFoundError,
+)
 from ..utils_aiohttp import envelope_json_response
 from . import _api
-from ._constants import MSG_PRICE_NOT_DEFINED_ERROR
+from ._constants import (
+    MSG_BILLING_DETAILS_NOT_DEFINED_ERROR,
+    MSG_PRICE_NOT_DEFINED_ERROR,
+)
 from .errors import WalletAccessForbiddenError, WalletNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -79,6 +87,20 @@ def handle_wallets_exceptions(handler: Handler):
 
         except ProductPriceNotDefinedError as exc:
             raise web.HTTPConflict(reason=MSG_PRICE_NOT_DEFINED_ERROR) from exc
+
+        except BillingDetailsNotFoundError as exc:
+            error_code = create_error_code(exc)
+            log_extra: LogExtra = {}
+            if user_id := getattr(exc, "user_id", None):
+                log_extra = get_log_record_extra(user_id=user_id) or {}
+
+            log_msg = f"{exc} [{error_code}]"
+            _logger.exception(
+                log_msg,
+                extra={"error_code": error_code, **log_extra},
+            )
+            user_msg = f"{MSG_BILLING_DETAILS_NOT_DEFINED_ERROR} ({error_code})"
+            raise web.HTTPServiceUnavailable(reason=user_msg) from exc
 
     return wrapper
 
