@@ -106,7 +106,7 @@ async def remove_disconnected_user_resources(
                     # inform that the project can be closed on the backend side
                     #
                     try:
-                        _logger.warning(
+                        _logger.info(
                             "Closing services for project '%s'", resource_value
                         )
                         await remove_project_dynamic_services(

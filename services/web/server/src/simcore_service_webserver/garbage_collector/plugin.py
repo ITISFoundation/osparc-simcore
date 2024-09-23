@@ -11,14 +11,14 @@ from ._tasks_core import run_background_task
 from ._tasks_users import create_background_task_for_trial_accounts
 from .settings import get_plugin_settings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
     "simcore_service_webserver.garbage_collector",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_GARBAGE_COLLECTOR",
-    logger=logger,
+    logger=_logger,
 )
 def setup_garbage_collector(app: web.Application) -> None:
     # - project-api needs access to db
@@ -31,6 +31,10 @@ def setup_garbage_collector(app: web.Application) -> None:
     settings = get_plugin_settings(app)
 
     app.cleanup_ctx.append(run_background_task)
+
+    # set module log level to INFO
+    parent_module = ".".join(__name__.split(".")[:-1])
+    logging.getLogger(parent_module).setLevel(logging.INFO)
 
     # NOTE: scaling web-servers will lead to having multiple tasks upgrading the db
     # not a huge deal. Instead this task runs in the GC.
