@@ -17,7 +17,7 @@ fi
 readonly_user=${POSTGRES_READONLY_USER}
 readonly_password=${POSTGRES_READONLY_PASSWORD}
 database=${POSTGRES_DB}
-schema=${SCHEMA:-public}
+schema=${POSTGRES_SCHEMA:-public}
 
 # Create the read-only user and assign permissions
 echo "Creating read-only user: $readonly_user for $database.$schema ..."
@@ -29,4 +29,5 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$database" <<-EOSQ
   GRANT SELECT ON ALL TABLES IN SCHEMA $schema TO "$readonly_user";
   GRANT SELECT ON ALL SEQUENCES IN SCHEMA $schema TO "$readonly_user";
   ALTER DEFAULT PRIVILEGES IN SCHEMA $schema GRANT SELECT ON TABLES TO "$readonly_user";
+  ALTER DEFAULT PRIVILEGES IN SCHEMA $schema GRANT SELECT ON SEQUENCES TO "$readonly_user";
 EOSQL
