@@ -26,15 +26,12 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
     }));
   },
 
-  events: {
-    "changeContext": "qx.event.type.Data",
-  },
-
   properties: {
     currentWorkspaceId: {
       check: "Number",
       nullable: true,
       init: null,
+      event: "changeCurrentWorkspaceId",
       apply: "__rebuild"
     },
 
@@ -42,6 +39,7 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
       check: "Number",
       nullable: true,
       init: null,
+      event: "changeCurrentFolderId",
       apply: "__rebuild"
     }
   },
@@ -82,14 +80,11 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
       return this.__createFolderButton(currentFolder);
     },
 
-    __changeContext: function(workspaceId, folderId) {
+    __changeFolder: function(folderId) {
+      const workspaceId = this.getCurrentWorkspaceId();
       this.set({
         currentWorkspaceId: workspaceId,
         currentFolderId: folderId,
-      });
-      this.fireDataEvent("changeContext", {
-        workspaceId,
-        folderId,
       });
     },
 
@@ -111,7 +106,7 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
       }
       rootButton.addListener("execute", () => {
         const folderId = null;
-        this.__changeContext(workspaceId, folderId);
+        this.__changeFolder(folderId);
       });
       return rootButton;
     },
@@ -119,17 +114,20 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
     __createFolderButton: function(folder) {
       let folderButton = null;
       if (folder) {
-        folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14").set({
+        folderButton = new qx.ui.form.Button(folder.getName()).set({
           maxWidth: 200
         });
         folder.bind("name", folderButton, "label");
         folderButton.addListener("execute", () => {
-          const workspaceId = this.getCurrentWorkspaceId();
           const folderId = folder ? folder.getFolderId() : null;
-          this.__changeContext(workspaceId, folderId);
+          this.__changeFolder(folderId);
         }, this);
       } else {
         folderButton = this.__createRootButton();
+        // Do not show root folder
+        folderButton.set({
+          visibility: "excluded"
+        });
       }
       folderButton.set({
         backgroundColor: "transparent",

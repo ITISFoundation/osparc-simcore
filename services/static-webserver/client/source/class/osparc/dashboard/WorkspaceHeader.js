@@ -52,6 +52,13 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       apply: "__buildLayout"
     },
 
+    currentFolderId: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeCurrentFolderId",
+    },
+
     accessRights: {
       check: "Object",
       nullable: false,
@@ -101,6 +108,9 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
         case "breadcrumbs":
           control = new osparc.dashboard.ContextBreadcrumbs();
           this.bind("currentWorkspaceId", control, "currentWorkspaceId");
+          this.bind("currentFolderId", control, "currentFolderId");
+          control.bind("currentWorkspaceId", this, "currentWorkspaceId");
+          control.bind("currentFolderId", this, "currentFolderId");
           this._add(control);
           break;
         case "edit-button":
