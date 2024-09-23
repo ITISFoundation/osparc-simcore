@@ -48,8 +48,8 @@ def test_make_docker_compose_meta(
     compose_labels = compose_cfg.services[metadata_cfg.service_name()].build.labels
 
     assert compose_labels
-    assert isinstance(compose_labels.__root__, dict)
+    assert isinstance(compose_labels.root, dict)
 
     assert (
-        MetadataConfig.from_labels_annotations(compose_labels.__root__) == metadata_cfg
+        MetadataConfig.from_labels_annotations(compose_labels.root) == metadata_cfg
     )
