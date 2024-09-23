@@ -92,4 +92,4 @@ def test_settings_item_in_sync_with_service_settings_label(
     )
 
     # check back
-    SimcoreServiceSettingLabelEntry.model_validate(new_model.dict(by_alias=True))
+    SimcoreServiceSettingLabelEntry.model_validate(new_model.model_dump(by_alias=True))

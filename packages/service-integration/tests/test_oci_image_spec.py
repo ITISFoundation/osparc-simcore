@@ -18,7 +18,7 @@ def test_label_schema_to_oci_conversion(monkeypatch):
 
     lsa = LabelSchemaAnnotations.create_from_env()
 
-    OciImageSpecAnnotations.parse_obj(lsa.to_oci_data())
+    OciImageSpecAnnotations.model_validate(lsa.to_oci_data())
 
 
 def test_create_annotations_from_metadata(tests_data_dir: Path):
