@@ -43,6 +43,7 @@ def _base_configuration(
     mocked_redis_server: None,
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_primary_ec2_instances_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     initialized_app: FastAPI,
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
