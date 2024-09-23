@@ -52,6 +52,13 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       apply: "__buildLayout"
     },
 
+    currentFolderId: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeCurrentFolderId",
+    },
+
     accessRights: {
       check: "Object",
       nullable: false,
@@ -96,6 +103,14 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
             font: "text-16",
             alignY: "middle",
           });
+          this._add(control);
+          break;
+        case "breadcrumbs":
+          control = new osparc.dashboard.ContextBreadcrumbs();
+          this.bind("currentWorkspaceId", control, "currentWorkspaceId");
+          this.bind("currentFolderId", control, "currentFolderId");
+          control.bind("currentWorkspaceId", this, "currentWorkspaceId");
+          control.bind("currentFolderId", this, "currentFolderId");
           this._add(control);
           break;
         case "edit-button":
@@ -158,7 +173,15 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
 
     __buildLayout: function(workspaceId) {
       this.getChildControl("icon");
-      const title = this.getChildControl("title");
+      const title = this.getChildControl("title").set({
+        cursor: "pointer"
+      });
+      title.addListener("tap", () => {
+        const folderId = null;
+        this.setCurrentFolderId(folderId);
+      });
+
+      this.getChildControl("breadcrumbs");
 
       this.getChildControl("edit-button").exclude();
       this.resetAccessRights();
