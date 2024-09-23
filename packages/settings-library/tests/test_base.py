@@ -287,9 +287,11 @@ def test_how_settings_parse_null_environs(monkeypatch: pytest.MonkeyPatch):
 
     error = err_info.value.errors()[0]
     assert error == {
+        "input": "",
         "loc": ("INT_VALUE_TO_NOTHING",),
-        "msg": "value is not a valid integer",
-        "type": "type_error.integer",
+        "msg": "Input should be a valid integer, unable to parse string as an integer",
+        "type": "int_parsing",
+        'url': 'https://errors.pydantic.dev/2.9/v/int_parsing',
     }
 
 
