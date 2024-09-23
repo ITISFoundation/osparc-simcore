@@ -19,9 +19,6 @@ from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
-from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
-    PortNotifier,
-)
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
@@ -55,6 +52,7 @@ from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports, user_services_preferences
 from ..modules.mounted_fs import MountedVolumes
+from ..modules.notifications._notifications_ports import PortNotifier
 from ..modules.outputs import OutputsManager, event_propagation_disabled
 from .long_running_tasksutils import run_before_shutdown_actions
 from .resource_tracking import send_service_started, send_service_stopped

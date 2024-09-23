@@ -15,12 +15,10 @@ from servicelib import progress_bar
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
-from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
-    PortNotifier,
-)
 
 from ...core.rabbitmq import post_log_message, post_progress_message
 from ...core.settings import ApplicationSettings
+from ...modules.notifications._notifications_ports import PortNotifier
 from ..nodeports import upload_outputs
 from ._context import OutputsContext
 
