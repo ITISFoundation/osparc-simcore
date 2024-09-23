@@ -168,13 +168,34 @@ async def upload_outputs(
 
                 # when having multiple directories it is important to
                 # run the compression in parallel to guarantee better performance
+                async def _archive_dir_notified(
+                    dir_to_compress: Path, destination: Path, port_key: ServicePortKey
+                ) -> None:
+                    # Errors and cancellation can also be triggered from archving as well
+                    try:
+                        await archive_dir(
+                            dir_to_compress=dir_to_compress,
+                            destination=destination,
+                            compress=False,
+                            store_relative_path=True,
+                            progress_bar=sub_progress,
+                        )
+                    except CancelledError:
+                        await port_notifier.send_output_port_upload_was_aborted(
+                            port_key
+                        )
+                        raise
+                    except Exception:
+                        await port_notifier.send_output_port_upload_finished_with_error(
+                            port_key
+                        )
+                        raise
+
                 archiving_tasks.append(
-                    archive_dir(
+                    _archive_dir_notified(
                         dir_to_compress=src_folder,
                         destination=tmp_file,
-                        compress=False,
-                        store_relative_path=True,
-                        progress_bar=sub_progress,
+                        port_key=port.key,
                     )
                 )
                 ports_values[port.key] = (
@@ -197,26 +218,7 @@ async def upload_outputs(
                     logger.debug("No file %s to fetch port values from", data_file)
 
         if archiving_tasks:
-            # NOTE: if one archiving task fails/cancelled all the ports are affected
-            # setting all other ports as finished with error/cancelled
-            try:
-                await logged_gather(*archiving_tasks)
-            except CancelledError:
-                await logged_gather(
-                    *(
-                        port_notifier.send_output_port_upload_was_aborted(p.key)
-                        for p in ports_to_set
-                    )
-                )
-                raise
-            except Exception:
-                await logged_gather(
-                    *(
-                        port_notifier.send_output_port_upload_finished_with_error(p.key)
-                        for p in ports_to_set
-                    )
-                )
-                raise
+            await logged_gather(*archiving_tasks)
 
         await PORTS.set_multiple(
             ports_values,
