@@ -75,12 +75,12 @@ async def test_workflow(
             data, error = await assert_status(result, status.HTTP_200_OK)
             assert data
             assert not error
-            task_status = long_running_tasks.server.TaskStatus.parse_obj(data)
+            task_status = long_running_tasks.server.TaskStatus.model_validate(data)
             assert task_status
             progress_updates.append(
                 (task_status.task_progress.message, task_status.task_progress.percent)
             )
-            print(f"<-- received task status: {task_status.json(indent=2)}")
+            print(f"<-- received task status: {task_status.model_dump_json(indent=2)}")
             assert task_status.done, "task incomplete"
             print(
                 f"-- waiting for task status completed successfully: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
