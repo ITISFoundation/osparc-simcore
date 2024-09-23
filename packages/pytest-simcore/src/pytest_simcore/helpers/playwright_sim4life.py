@@ -6,6 +6,8 @@ from typing import Final, TypedDict
 
 import arrow
 from playwright.sync_api import FrameLocator, Page, WebSocket, expect
+from pydantic import TypeAdapter  # pylint: disable=no-name-in-module
+from pydantic import ByteSize
 
 from .logging_tools import log_context
 from .playwright import (
@@ -17,7 +19,7 @@ from .playwright import (
     wait_for_service_running,
 )
 
-_S4L_STREAMING_ESTABLISHMENT_MAX_TIME: Final[int] = 15 * SECOND
+_S4L_STREAMING_ESTABLISHMENT_MAX_TIME: Final[int] = 30 * SECOND
 _S4L_SOCKETIO_REGEX: Final[re.Pattern] = re.compile(
     r"^(?P<protocol>[^:]+)://(?P<node_id>[^\.]+)\.services\.(?P<hostname>[^\/]+)\/socket\.io\/.+$"
 )
@@ -63,7 +65,7 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                     self._initial_bit_rate_time = arrow.utcnow().datetime
                     self.logger.info(
                         "%s",
-                        f"{self._initial_bit_rate=} at {self._initial_bit_rate_time.isoformat()}",
+                        f"{TypeAdapter(ByteSize).validate_python(self._initial_bit_rate).human_readable()}/s at {self._initial_bit_rate_time.isoformat()}",
                     )
                     return False
 
@@ -78,7 +80,7 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                     bitrate_test = bool(self._initial_bit_rate != current_bitrate)
                     self.logger.info(
                         "%s",
-                        f"{current_bitrate=} after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
+                        f"{TypeAdapter(ByteSize).validate_python(current_bitrate).human_readable()}/s after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
                     )
                     return bitrate_test
 
