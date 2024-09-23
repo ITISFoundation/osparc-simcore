@@ -8,11 +8,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Final
 
+from models_library.errors_classes import OsparcErrorMixin
+
 from aiocache import cached  # type: ignore[import-untyped]
 from aiofiles import tempfile
 from models_library.basic_types import IDStr
 from pydantic import AnyUrl, BaseModel, ByteSize
-from pydantic.errors import PydanticErrorMixin
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
@@ -31,7 +32,7 @@ _S3_CONFIG_KEY_SOURCE: Final[str] = "s3-source"
 _logger = logging.getLogger(__name__)
 
 
-class BaseRCloneError(PydanticErrorMixin, RuntimeError):
+class BaseRCloneError(OsparcErrorMixin, RuntimeError):
     ...
 
 
@@ -279,7 +280,7 @@ async def sync_s3_to_local(
     progress_bar: ProgressBarData,
     *,
     local_directory_path: Path,
-    download_s3_link: AnyUrl,
+    download_s3_link: str,
     exclude_patterns: set[str] | None = None,
     debug_logs: bool = False,
 ) -> None:
