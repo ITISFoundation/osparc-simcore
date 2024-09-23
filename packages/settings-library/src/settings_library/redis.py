@@ -28,14 +28,16 @@ class RedisSettings(BaseCustomSettings):
     REDIS_USER: str | None = None
     REDIS_PASSWORD: SecretStr | None = None
 
-    def build_redis_dsn(self, db_index: RedisDatabase):
-        return RedisDsn.build(  # pylint: disable=no-member
-            scheme="redis",
-            username=self.REDIS_USER or None,
-            password=(
-                self.REDIS_PASSWORD.get_secret_value() if self.REDIS_PASSWORD else None
-            ),
-            host=self.REDIS_HOST,
-            port=self.REDIS_PORT,
-            path=f"/{db_index}",
+    def build_redis_dsn(self, db_index: RedisDatabase) -> str:
+        return str(
+            RedisDsn.build(  # pylint: disable=no-member
+                scheme="redis",
+                username=self.REDIS_USER or None,
+                password=(
+                    self.REDIS_PASSWORD.get_secret_value() if self.REDIS_PASSWORD else None
+                ),
+                host=self.REDIS_HOST,
+                port=self.REDIS_PORT,
+                path=f"/{db_index}",
+            )
         )
