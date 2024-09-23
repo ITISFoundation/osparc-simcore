@@ -159,7 +159,7 @@ async def delete_workspace_group(
     group_id: GroupID,
     product_name: ProductName,
 ) -> None:
-    user = await users_api.get_user(app, user_id=user_id)
+    user: dict = await users_api.get_user(app, user_id=user_id)
     workspace: UserWorkspaceAccessRightsDB = await workspaces_db.get_workspace_for_user(
         app=app, user_id=user_id, workspace_id=workspace_id, product_name=product_name
     )
@@ -168,7 +168,6 @@ async def delete_workspace_group(
             reason=f"User does not have delete access to workspace {workspace_id}"
         )
     if workspace.owner_primary_gid == group_id:
-        user: dict = await users_api.get_user(app, user_id)
         if user["primary_gid"] != workspace.owner_primary_gid:
             # Only the owner of the workspace can delete the owner group
             raise WorkspaceAccessForbiddenError(
