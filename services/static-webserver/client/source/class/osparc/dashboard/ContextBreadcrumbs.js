@@ -15,24 +15,15 @@
 
 ************************************************************************ */
 
-/**
- * Widget used for displaying a New Folder in the Study Browser
- *
- */
-
-qx.Class.define("osparc.dashboard.ContainerHeader", {
+qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(20).set({
+    this._setLayout(new qx.ui.layout.HBox(5).set({
       alignY: "middle"
     }));
-  },
-
-  events: {
-    "changeContext": "qx.event.type.Data",
   },
 
   properties: {
@@ -40,34 +31,22 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       check: "Number",
       nullable: true,
       init: null,
-      apply: "__buildBreadcrumbs"
+      event: "changeCurrentWorkspaceId",
+      apply: "__rebuild"
     },
 
     currentFolderId: {
       check: "Number",
       nullable: true,
       init: null,
-      apply: "__buildBreadcrumbs"
+      event: "changeCurrentFolderId",
+      apply: "__rebuild"
     }
   },
 
   members: {
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "breadcrumbs-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-            alignY: "middle"
-          }));
-          this._addAt(control, 0, {flex: 1});
-          break;
-      }
-      return control || this.base(arguments, id);
-    },
-
-    __buildBreadcrumbs: function() {
-      const breadcrumbsLayout = this.getChildControl("breadcrumbs-layout");
-      breadcrumbsLayout.removeAll();
+    __rebuild: function() {
+      this._removeAll();
 
       if (this.getCurrentFolderId()) {
         const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
@@ -76,23 +55,22 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
 
       const currentFolderButton = this.__createCurrentFolderButton();
       if (currentFolderButton) {
-        breadcrumbsLayout.add(currentFolderButton);
+        this._add(currentFolderButton);
       }
     },
 
     __createUpstreamButtons: function(childFolder) {
       if (childFolder) {
-        const breadcrumbsLayout = this.getChildControl("breadcrumbs-layout");
         const parentFolder = osparc.store.Folders.getInstance().getFolder(childFolder.getParentFolderId());
         if (parentFolder) {
-          breadcrumbsLayout.addAt(this.__createArrow(), 0);
+          this._addAt(this.__createArrow(), 0);
           const upstreamButton = this.__createFolderButton(parentFolder);
-          breadcrumbsLayout.addAt(upstreamButton, 0);
+          this._addAt(upstreamButton, 0);
           this.__createUpstreamButtons(parentFolder);
         } else {
-          breadcrumbsLayout.addAt(this.__createArrow(), 0);
+          this._addAt(this.__createArrow(), 0);
           const homeButton = this.__createFolderButton();
-          breadcrumbsLayout.addAt(homeButton, 0);
+          this._addAt(homeButton, 0);
         }
       }
     },
@@ -102,14 +80,11 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       return this.__createFolderButton(currentFolder);
     },
 
-    __changeContext: function(workspaceId, folderId) {
+    __changeFolder: function(folderId) {
+      const workspaceId = this.getCurrentWorkspaceId();
       this.set({
         currentWorkspaceId: workspaceId,
         currentFolderId: folderId,
-      });
-      this.fireDataEvent("changeContext", {
-        workspaceId,
-        folderId,
       });
     },
 
@@ -131,7 +106,7 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
       }
       rootButton.addListener("execute", () => {
         const folderId = null;
-        this.__changeContext(workspaceId, folderId);
+        this.__changeFolder(folderId);
       });
       return rootButton;
     },
@@ -139,17 +114,20 @@ qx.Class.define("osparc.dashboard.ContainerHeader", {
     __createFolderButton: function(folder) {
       let folderButton = null;
       if (folder) {
-        folderButton = new qx.ui.form.Button(folder.getName(), "@FontAwesome5Solid/folder/14").set({
+        folderButton = new qx.ui.form.Button(folder.getName()).set({
           maxWidth: 200
         });
         folder.bind("name", folderButton, "label");
         folderButton.addListener("execute", () => {
-          const workspaceId = this.getCurrentWorkspaceId();
           const folderId = folder ? folder.getFolderId() : null;
-          this.__changeContext(workspaceId, folderId);
+          this.__changeFolder(folderId);
         }, this);
       } else {
         folderButton = this.__createRootButton();
+        // Do not show root folder
+        folderButton.set({
+          visibility: "excluded"
+        });
       }
       folderButton.set({
         backgroundColor: "transparent",

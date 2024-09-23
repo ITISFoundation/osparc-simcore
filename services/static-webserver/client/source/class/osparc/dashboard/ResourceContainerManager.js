@@ -32,7 +32,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     this.__resourcesList = [];
     this.__groupedContainersList = [];
 
-    const containerHeader = this.__containerHeader = new osparc.dashboard.ContainerHeader();
+    const containerHeader = this.__containerHeader = new osparc.dashboard.ContextBreadcrumbs();
     this._add(containerHeader);
     containerHeader.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
 
