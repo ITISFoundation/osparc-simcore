@@ -173,7 +173,14 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
 
     __buildLayout: function(workspaceId) {
       this.getChildControl("icon");
-      const title = this.getChildControl("title");
+      const title = this.getChildControl("title").set({
+        cursor: "pointer"
+      });
+      title.addListener("tap", () => {
+        const folderId = null;
+        this.setCurrentFolderId(folderId);
+      });
+
       this.getChildControl("breadcrumbs");
 
       this.getChildControl("edit-button").exclude();
