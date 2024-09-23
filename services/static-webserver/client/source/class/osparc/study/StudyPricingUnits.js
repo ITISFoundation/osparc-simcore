@@ -27,7 +27,7 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
 
     this.__studyData = studyData;
 
-    this.showPricingUnits();
+    this.__showPricingUnits();
   },
 
   events: {
@@ -38,7 +38,7 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
   members: {
     __studyData: null,
 
-    showPricingUnits: function() {
+    __showPricingUnits: function() {
       const unitsLoading = () => this.fireEvent("loadingUnits");
       const unitsAdded = () => this.fireEvent("unitsReady");
       unitsLoading();
@@ -48,6 +48,9 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
         const workbench = this.__studyData["workbench"];
         Object.keys(workbench).forEach(nodeId => {
           const node = workbench[nodeId];
+          if (osparc.data.model.Node.isFrontend(node)) {
+            return;
+          }
           const nodePricingUnits = new osparc.study.NodePricingUnits(this.__studyData["uuid"], nodeId, node);
           this._add(nodePricingUnits);
           promises.push(nodePricingUnits.showPricingUnits());
@@ -55,33 +58,6 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
       }
       Promise.all(promises)
         .then(() => unitsAdded());
-    },
-
-    __createPricingUnitsGroup: function(nodeLabel, pricingPlans, preselectedPricingUnit) {
-      if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
-        const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
-
-        const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"], preselectedPricingUnit);
-        pricingUnitsLayout.add(unitButtons);
-
-        return {
-          layout: pricingUnitsLayout,
-          unitButtons
-        };
-      }
-      return null;
-    },
-
-    __pricingUnitSelected: function(nodeId, pricingPlanId, selectedPricingUnitId) {
-      const params = {
-        url: {
-          studyId: this.__studyData["uuid"],
-          nodeId,
-          pricingPlanId,
-          pricingUnitId: selectedPricingUnitId
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "putPricingUnit", params);
     }
   }
 });
