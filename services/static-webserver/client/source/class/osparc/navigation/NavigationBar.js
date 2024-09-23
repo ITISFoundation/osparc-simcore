@@ -185,6 +185,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           if (osparc.product.Utils.isProduct("tiplite")) {
             control.set({
+              cursor: "pointer",
               toolTipText: this.tr("This is TIP lite, a light version of TIP.<br>Request access to TIP.")
             });
             control.addListener("tap", () => osparc.product.TIPTeaser.getInstance().open());
