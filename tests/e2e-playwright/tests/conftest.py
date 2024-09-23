@@ -25,8 +25,8 @@ from pydantic import AnyUrl, TypeAdapter
 from pytest import Item
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
-    SECOND,
     MINUTE,
+    SECOND,
     AutoRegisteredUser,
     RunningState,
     ServiceType,
@@ -34,6 +34,7 @@ from pytest_simcore.helpers.playwright import (
     SocketIOProjectClosedWaiter,
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
+    web_socket_default_log_handler,
 )
 
 _PROJECT_CLOSING_TIMEOUT: Final[int] = 10 * MINUTE
@@ -171,9 +172,11 @@ def pytest_runtest_makereport(item: Item, call):
             diagnostics["duration"] = str(end_time - start_time)
 
         # Print the diagnostics report
-        print(f"\nDiagnostics repoort for {test_name} ---")
-        print(json.dumps(diagnostics, indent=2))
-        print("---")
+        with log_context(
+            logging.WARNING,
+            f"ℹ️ Diagnostics report for {test_name} ---",  # noqa: RUF001
+        ) as ctx:
+            ctx.logger.warning(json.dumps(diagnostics, indent=2))
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -369,7 +372,8 @@ def log_in_and_out(
     if quickStartWindowCloseBtnLocator.is_visible():
         quickStartWindowCloseBtnLocator.click()
 
-    yield ws
+    with web_socket_default_log_handler(ws):
+        yield ws
 
     with log_context(
         logging.INFO,
@@ -410,12 +414,17 @@ def create_new_project_and_delete(
             f"Open project in {product_url=} as {product_billable=}",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
-            timeout = _OPENING_TUTORIAL_MAX_WAIT_TIME if template_id is not None else _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME
+            timeout = (
+                _OPENING_TUTORIAL_MAX_WAIT_TIME
+                if template_id is not None
+                else _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME
+            )
             with (
-                log_in_and_out.expect_event("framereceived", waiter, timeout=timeout + 10 * SECOND),
+                log_in_and_out.expect_event(
+                    "framereceived", waiter, timeout=timeout + 10 * SECOND
+                ),
                 page.expect_response(
-                    re.compile(r"/projects/[^:]+:open"),
-                    timeout=timeout + 5 * SECOND
+                    re.compile(r"/projects/[^:]+:open"), timeout=timeout + 5 * SECOND
                 ) as response_info,
             ):
                 # Project detail view pop-ups shows
@@ -436,8 +445,11 @@ def create_new_project_and_delete(
                             # From the long running tasks response's urls, only their path is relevant
                             def url_to_path(url):
                                 return urllib.parse.urlparse(url).path
+
                             def wait_for_done(response):
-                                if url_to_path(response.url) == url_to_path(lrt_data["status_href"]):
+                                if url_to_path(response.url) == url_to_path(
+                                    lrt_data["status_href"]
+                                ):
                                     resp_data = response.json()
                                     resp_data = resp_data["data"]
                                     assert "task_progress" in resp_data
@@ -448,10 +460,13 @@ def create_new_project_and_delete(
                                         task_progress["message"],
                                     )
                                     return False
-                                if url_to_path(response.url) == url_to_path(lrt_data["result_href"]):
+                                if url_to_path(response.url) == url_to_path(
+                                    lrt_data["result_href"]
+                                ):
                                     copying_logger.logger.info("project created")
                                     return response.status == 201
                                 return False
+
                             with page.expect_response(wait_for_done, timeout=timeout):
                                 # if the above calls go to fast, this test could fail
                                 # not expected in the sim4life context though
