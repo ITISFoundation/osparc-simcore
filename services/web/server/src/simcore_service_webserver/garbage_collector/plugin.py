@@ -2,6 +2,7 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.logging_utils import set_parent_module_log_level
 
 from ..login.plugin import setup_login_storage
 from ..projects.db import setup_projects_db
@@ -32,9 +33,7 @@ def setup_garbage_collector(app: web.Application) -> None:
 
     app.cleanup_ctx.append(run_background_task)
 
-    # set module log level to INFO
-    parent_module = ".".join(__name__.split(".")[:-1])
-    logging.getLogger(parent_module).setLevel(logging.INFO)
+    set_parent_module_log_level(__name__, logging.INFO)
 
     # NOTE: scaling web-servers will lead to having multiple tasks upgrading the db
     # not a huge deal. Instead this task runs in the GC.
