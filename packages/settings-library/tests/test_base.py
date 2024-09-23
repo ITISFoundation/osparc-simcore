@@ -169,8 +169,8 @@ def test_create_settings_class_without_environ_fails(
 
     assert err_info.value.errors()[0] == {
         "loc": ("VALUE_DEFAULT_ENV", "S_VALUE"),
-        "msg": "field required",
-        "type": "value_error.missing",
+        "msg": "Field required",
+        "type": "missing",
     }
 
 
