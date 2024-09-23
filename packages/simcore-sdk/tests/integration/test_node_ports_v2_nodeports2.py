@@ -771,7 +771,6 @@ async def output_callbacks() -> _Callbacks:
 async def spy_outputs_callbaks(
     mocker: MockerFixture, output_callbacks: _Callbacks
 ) -> dict[str, AsyncMock]:
-
     return {
         "aborted": mocker.spy(output_callbacks, "aborted"),
         "finished_succesfully": mocker.spy(output_callbacks, "finished_succesfully"),
@@ -779,6 +778,7 @@ async def spy_outputs_callbaks(
     }
 
 
+@pytest.mark.parametrize("use_output_callbacks", [True, False])
 async def test_batch_update_inputs_outputs(
     user_id: int,
     project_id: str,
@@ -789,7 +789,10 @@ async def test_batch_update_inputs_outputs(
     faker: Faker,
     output_callbacks: _Callbacks,
     spy_outputs_callbaks: dict[str, AsyncMock],
+    use_output_callbacks: bool,
 ) -> None:
+    callbacks = output_callbacks if use_output_callbacks else None
+
     outputs = [(f"value_out_{i}", "integer", None) for i in range(port_count)]
     inputs = [(f"value_in_{i}", "integer", None) for i in range(port_count)]
     config_dict, _, _ = create_special_configuration(inputs=inputs, outputs=outputs)
@@ -807,10 +810,10 @@ async def test_batch_update_inputs_outputs(
         await PORTS.set_multiple(
             {ServicePortKey(port.key): (k, None) for k, port in enumerate(port_values)},
             progress_bar=progress_bar,
-            outputs_callbacks=output_callbacks,
+            outputs_callbacks=callbacks,
         )
-        assert len(spy_outputs_callbaks["finished_succesfully"].call_args_list) == len(
-            port_values
+        assert len(spy_outputs_callbaks["finished_succesfully"].call_args_list) == (
+            len(port_values) if use_output_callbacks else 0
         )
         # pylint: disable=protected-access
         assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
@@ -820,11 +823,11 @@ async def test_batch_update_inputs_outputs(
                 for k, port in enumerate((await PORTS.inputs).values(), start=1000)
             },
             progress_bar=progress_bar,
-            outputs_callbacks=output_callbacks,
+            outputs_callbacks=callbacks,
         )
         # inputs do not trigger callbacks
-        assert len(spy_outputs_callbaks["finished_succesfully"].call_args_list) == len(
-            port_values
+        assert len(spy_outputs_callbaks["finished_succesfully"].call_args_list) == (
+            len(port_values) if use_output_callbacks else 0
         )
         assert progress_bar._current_steps == pytest.approx(2)  # noqa: SLF001
 
@@ -846,11 +849,11 @@ async def test_batch_update_inputs_outputs(
             await PORTS.set_multiple(
                 {ServicePortKey("missing_key_in_both"): (123132, None)},
                 progress_bar=progress_bar,
-                outputs_callbacks=output_callbacks,
+                outputs_callbacks=callbacks,
             )
 
-    assert len(spy_outputs_callbaks["finished_succesfully"].call_args_list) == len(
-        port_values
+    assert len(spy_outputs_callbaks["finished_succesfully"].call_args_list) == (
+        len(port_values) if use_output_callbacks else 0
     )
     assert len(spy_outputs_callbaks["aborted"].call_args_list) == 0
     assert len(spy_outputs_callbaks["finished_with_error"].call_args_list) == 0
