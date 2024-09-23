@@ -20,7 +20,7 @@ qx.Class.define("osparc.product.TIPTeaser", {
   type: "singleton",
 
   construct: function() {
-    this.base(arguments, this.tr("Access TIP"));
+    this.base(arguments, this.tr("Access Full TIP"));
 
     this.set({
       layout: new qx.ui.layout.VBox(10),
