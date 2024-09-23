@@ -354,7 +354,7 @@ async def test_get_namespaced_method_name_max_length(
             await rpc_server.register_handler(
                 RPCNamespace("a"), RPCMethodName(handler_name), _a_handler
             )
-        assert "ensure this value has at most 255 characters" in f"{exec_info.value}"
+        assert "String should have at most 252 characters" in f"{exec_info.value}"
     else:
         await rpc_server.register_handler(
             RPCNamespace("a"), RPCMethodName(handler_name), _a_handler

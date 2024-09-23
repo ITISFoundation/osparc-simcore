@@ -89,7 +89,7 @@ async def test_rabbit_client_with_paused_container(
 def _get_rabbitmq_api_params(rabbit_service: RabbitSettings) -> dict[str, str]:
     return {
         "scheme": "http",
-        "user": rabbit_service.RABBIT_USER,
+        "username": rabbit_service.RABBIT_USER,
         "password": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
         "host": rabbit_service.RABBIT_HOST,
         "port": "15672",
