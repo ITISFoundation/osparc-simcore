@@ -180,13 +180,13 @@ class Nodeports(BaseModel):
             set_kwargs: SetKWargs | None,
             sub_progress: ProgressBarData,
         ) -> None:
-            assert outputs_callbacks is not None  # nosec
             try:
                 # pylint: disable=protected-access
                 await self.internal_outputs[port_key]._set(  # noqa: SLF001
                     value, set_kwargs=set_kwargs, progress_bar=sub_progress
                 )
-                await outputs_callbacks.finished_succesfully(port_key)
+                if outputs_callbacks:
+                    await outputs_callbacks.finished_succesfully(port_key)
             except UnboundPortError:
                 # not available try inputs
                 # if this fails it will raise another exception
@@ -195,10 +195,12 @@ class Nodeports(BaseModel):
                     value, set_kwargs=set_kwargs, progress_bar=sub_progress
                 )
             except CancelledError:
-                await outputs_callbacks.aborted(port_key)
+                if outputs_callbacks:
+                    await outputs_callbacks.aborted(port_key)
                 raise
             except Exception:
-                await outputs_callbacks.finished_with_error(port_key)
+                if outputs_callbacks:
+                    await outputs_callbacks.finished_with_error(port_key)
                 raise
 
         tasks = []
