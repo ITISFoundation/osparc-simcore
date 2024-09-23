@@ -151,7 +151,7 @@ class Client:
                 body=result.text,
             )
 
-        return TaskStatus.parse_obj(result.json())
+        return TaskStatus.model_validate(result.json())
 
     @retry_on_http_errors
     async def get_task_result(
@@ -159,7 +159,7 @@ class Client:
     ) -> Any | None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.get(
-            self._get_url(f"/task/{task_id}/result"),
+            str(self._get_url(f"/task/{task_id}/result")),
             timeout=timeout,
         )
         if result.status_code != status.HTTP_200_OK:
@@ -170,7 +170,7 @@ class Client:
                 body=result.text,
             )
 
-        task_result = TaskResult.parse_obj(result.json())
+        task_result = TaskResult.model_validate(result.json())
         if task_result.error is not None:
             raise TaskClientResultError(message=task_result.error)
         return task_result.result
@@ -181,7 +181,7 @@ class Client:
     ) -> None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.delete(
-            self._get_url(f"/task/{task_id}"),
+            str(self._get_url(f"/task/{task_id}")),
             timeout=timeout,
         )
 
