@@ -154,11 +154,11 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
 def create_cluster_cb(url, **kwargs) -> CallbackResult:
     assert "json" in kwargs, f"missing body in call to {url}"
     assert url.query.get("user_id")
-    random_cluster = Cluster.parse_obj(
+    random_cluster = Cluster.model_validate(
         random.choice(Cluster.model_config["json_schema_extra"]["examples"])
     )
     return CallbackResult(
-        status=201, payload=json.loads(random_cluster.json(by_alias=True))
+        status=201, payload=json.loads(random_cluster.model_dump_json(by_alias=True))
     )
 
 
@@ -173,7 +173,7 @@ def list_clusters_cb(url, **kwargs) -> CallbackResult:
                         random.choice(
                             Cluster.model_config["json_schema_extra"]["examples"]
                         )
-                    ).json(by_alias=True)
+                    ).model_dump_json(by_alias=True)
                 )
                 for _ in range(3)
             ]
@@ -194,7 +194,7 @@ def get_cluster_cb(url, **kwargs) -> CallbackResult:
                     ),
                     **{"id": cluster_id},
                 }
-            ).json(by_alias=True)
+            ).model_dump_json(by_alias=True)
         ),
     )
 
@@ -225,7 +225,7 @@ def patch_cluster_cb(url, **kwargs) -> CallbackResult:
                     ),
                     **{"id": cluster_id},
                 }
-            ).json(by_alias=True)
+            ).model_dump_json(by_alias=True)
         ),
     )
 
