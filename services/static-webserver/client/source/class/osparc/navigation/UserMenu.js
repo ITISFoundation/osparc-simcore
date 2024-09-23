@@ -120,7 +120,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control = new qx.ui.menu.Button(this.tr("Access full TIP"));
           osparc.utils.Utils.setIdToWidget(control, "userMenuAccessTIPBtn");
           control.addListener("execute", () => osparc.product.TIPTeaser.getInstance().open());
-          this.getChildControl("right-items").add(control);
+          this.add(control);
           break;
         case "log-out": {
           const authData = osparc.auth.Data.getInstance();
