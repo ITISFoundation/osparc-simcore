@@ -117,7 +117,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           this.add(control);
           break;
         case "tip-lite-button":
-          control = new qx.ui.menu.Button(this.tr("Access full TIP"));
+          control = new qx.ui.menu.Button(this.tr("Access Full TIP"));
           osparc.utils.Utils.setIdToWidget(control, "userMenuAccessTIPBtn");
           control.addListener("execute", () => osparc.product.TIPTeaser.getInstance().open());
           this.add(control);
