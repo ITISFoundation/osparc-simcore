@@ -52,8 +52,8 @@ def test_load_from_labels(
     runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
     assert runtime_cfg.callbacks_mapping is not None
 
-    print(meta_cfg.json(exclude_unset=True, indent=2))
-    print(runtime_cfg.json(exclude_unset=True, indent=2))
+    print(meta_cfg.model_dump_json(exclude_unset=True, indent=2))
+    print(runtime_cfg.model_dump_json(exclude_unset=True, indent=2))
 
     # create yamls from config
     for model in (runtime_cfg, meta_cfg):
@@ -62,7 +62,7 @@ def test_load_from_labels(
         )
         with open(config_path, "w") as fh:
             data = json.loads(
-                model.json(exclude_unset=True, by_alias=True, exclude_none=True)
+                model.model_dump_json(exclude_unset=True, by_alias=True, exclude_none=True)
             )
             yaml.safe_dump(data, fh, sort_keys=False)
 
