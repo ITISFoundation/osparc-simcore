@@ -103,7 +103,7 @@ class MixinServiceSettings:
                 else "http"
             ),
             "host": self._safe_getattr(f"{prefix}_HOST", URLPart.REQUIRED),
-            "user": self._safe_getattr(f"{prefix}_USER", user),
+            "username": self._safe_getattr(f"{prefix}_USER", user),
             "password": self._safe_getattr(f"{prefix}_PASSWORD", password),
             "port": self._safe_getattr(f"{prefix}_PORT", port),
         }
@@ -125,7 +125,7 @@ class MixinServiceSettings:
 
         assert all(isinstance(v, str) or v is None for v in kwargs.values())  # nosec
 
-        composed_url: str = AnyUrl.build(**kwargs)
+        composed_url: str = str(AnyUrl.build(**kwargs)) # type: ignore[arg-type]
         return composed_url
 
     def _build_api_base_url(self, *, prefix: str) -> str:
