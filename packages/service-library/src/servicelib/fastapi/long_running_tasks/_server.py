@@ -50,4 +50,4 @@ def setup(
 
     # add error handlers
     # NOTE: Exception handler can not be added during the on_startup script, otherwise not working correctly
-    app.add_exception_handler(BaseLongRunningError, base_long_running_error_handler)
+    app.add_exception_handler(BaseLongRunningError, base_long_running_error_handler)    # type: ignore[arg-type]
