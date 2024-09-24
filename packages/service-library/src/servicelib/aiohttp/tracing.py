@@ -50,7 +50,7 @@ def setup_tracing(
             f"[{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}] "
             "or opentelemetry_collector_port "
             f"[{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT}] "
-            "unset. Tracing options incomplete."
+            "unset. Provide both or remove both."
         )
         raise RuntimeError(msg)
     resource = Resource(attributes={"service.name": service_name})
