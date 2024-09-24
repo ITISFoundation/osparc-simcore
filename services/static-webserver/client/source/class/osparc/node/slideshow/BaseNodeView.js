@@ -241,9 +241,9 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
           font: "text-14"
         });
         const title = this.tr("Instructions") + " - " + this.getNode().getLabel();
-        const width = 500;
-        const height = 500;
-        const win = this.__instructionsWindow = osparc.ui.window.Window.popUpInWindow(descView, title, width, height).set({
+        const width = 600;
+        const minHeight = 200;
+        const win = this.__instructionsWindow = osparc.ui.window.Window.popUpInWindow(descView, title, width, minHeight).set({
           modal: false,
           clickAwayClose: false
         });
