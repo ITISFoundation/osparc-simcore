@@ -68,7 +68,7 @@ async def test_rpc_pricing_plans_workflow(
     result = await pricing_plans.create_pricing_plan(
         rpc_client,
         data=PricingPlanCreate(
-            product_name="s4l",
+            product_name="osparc",
             display_name=_display_name,
             description=faker.sentence(),
             classification=PricingPlanClassification.TIER,
@@ -84,7 +84,7 @@ async def test_rpc_pricing_plans_workflow(
     _update_description = "description name updated"
     result = await pricing_plans.update_pricing_plan(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         data=PricingPlanUpdate(
             pricing_plan_id=_pricing_plan_id,
             display_name=_update_display_name,
@@ -99,7 +99,7 @@ async def test_rpc_pricing_plans_workflow(
 
     result = await pricing_plans.get_pricing_plan(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
     )
     assert isinstance(result, PricingPlanGet)
@@ -110,7 +110,7 @@ async def test_rpc_pricing_plans_workflow(
 
     result = await pricing_plans.list_pricing_plans(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
     )
     assert isinstance(result, list)
     assert len(result) == 1
@@ -120,7 +120,7 @@ async def test_rpc_pricing_plans_workflow(
     # Now I will deactivate the pricing plan
     result = await pricing_plans.update_pricing_plan(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         data=PricingPlanUpdate(
             pricing_plan_id=_pricing_plan_id,
             display_name=faker.word(),
@@ -142,7 +142,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
     result = await pricing_plans.create_pricing_plan(
         rpc_client,
         data=PricingPlanCreate(
-            product_name="s4l",
+            product_name="osparc",
             display_name=_display_name,
             description=faker.sentence(),
             classification=PricingPlanClassification.TIER,
@@ -156,7 +156,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
 
     result = await pricing_units.create_pricing_unit(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
             unit_name="SMALL",
@@ -175,7 +175,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
     # Get pricing plan
     result = await pricing_plans.get_pricing_plan(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
     )
     assert isinstance(result, PricingPlanGet)
@@ -187,7 +187,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
     _unit_name = "VERY SMALL"
     result = await pricing_units.update_pricing_unit(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         data=PricingUnitWithCostUpdate(
             pricing_plan_id=_pricing_plan_id,
             pricing_unit_id=_first_pricing_unit_id,
@@ -206,7 +206,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
     # Update pricing unit with COST update!
     result = await pricing_units.update_pricing_unit(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         data=PricingUnitWithCostUpdate(
             pricing_plan_id=_pricing_plan_id,
             pricing_unit_id=_first_pricing_unit_id,
@@ -228,7 +228,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
     # Test get pricing unit
     result = await pricing_units.get_pricing_unit(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
         pricing_unit_id=_first_pricing_unit_id,
     )
@@ -238,7 +238,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
     # Create one more unit
     result = await pricing_units.create_pricing_unit(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
             unit_name="LARGE",
@@ -256,7 +256,7 @@ async def test_rpc_pricing_plans_with_units_workflow(
     # Get pricing plan with units
     result = await pricing_plans.get_pricing_plan(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
     )
     assert isinstance(result, PricingPlanGet)
@@ -275,7 +275,7 @@ async def test_rpc_pricing_plans_to_service_workflow(
     result = await pricing_plans.create_pricing_plan(
         rpc_client,
         data=PricingPlanCreate(
-            product_name="s4l",
+            product_name="osparc",
             display_name=faker.word(),
             description=faker.sentence(),
             classification=PricingPlanClassification.TIER,
@@ -288,7 +288,7 @@ async def test_rpc_pricing_plans_to_service_workflow(
     result = (
         await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
             rpc_client,
-            product_name="s4l",
+            product_name="osparc",
             pricing_plan_id=_pricing_plan_id,
         )
     )
@@ -298,7 +298,7 @@ async def test_rpc_pricing_plans_to_service_workflow(
     _first_service_version = ServiceVersion("2.0.2")
     result = await pricing_plans.connect_service_to_pricing_plan(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
         service_key=ServiceKey("simcore/services/comp/itis/sleeper"),
         service_version=_first_service_version,
@@ -310,7 +310,7 @@ async def test_rpc_pricing_plans_to_service_workflow(
     result = (
         await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
             rpc_client,
-            product_name="s4l",
+            product_name="osparc",
             pricing_plan_id=_pricing_plan_id,
         )
     )
@@ -321,7 +321,7 @@ async def test_rpc_pricing_plans_to_service_workflow(
     _second_service_version = ServiceVersion("3.0.0")
     result = await pricing_plans.connect_service_to_pricing_plan(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
         service_key=ServiceKey("simcore/services/comp/itis/sleeper"),
         service_version=_second_service_version,
@@ -333,7 +333,7 @@ async def test_rpc_pricing_plans_to_service_workflow(
     result = (
         await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
             rpc_client,
-            product_name="s4l",
+            product_name="osparc",
             pricing_plan_id=_pricing_plan_id,
         )
     )
@@ -344,7 +344,7 @@ async def test_rpc_pricing_plans_to_service_workflow(
     _different_service_key = ServiceKey("simcore/services/comp/itis/different-service")
     result = await pricing_plans.connect_service_to_pricing_plan(
         rpc_client,
-        product_name="s4l",
+        product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
         service_key=_different_service_key,
         service_version=ServiceVersion("1.0.0"),
@@ -356,7 +356,7 @@ async def test_rpc_pricing_plans_to_service_workflow(
     result = (
         await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
             rpc_client,
-            product_name="s4l",
+            product_name="osparc",
             pricing_plan_id=_pricing_plan_id,
         )
     )
