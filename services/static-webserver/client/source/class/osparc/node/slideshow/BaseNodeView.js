@@ -235,7 +235,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       }
       const desc = this.getNode().getSlideshowInstructions();
       if (desc) {
-        const descView = new osparc.ui.markdown.Markdown().set({
+        const markdownInstructions = new osparc.ui.markdown.Markdown().set({
           value: desc,
           padding: 3,
           font: "text-14"
@@ -243,7 +243,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         const title = this.tr("Instructions") + " - " + this.getNode().getLabel();
         const width = 600;
         const minHeight = 200;
-        const win = this.__instructionsWindow = osparc.ui.window.Window.popUpInWindow(descView, title, width, minHeight).set({
+        const win = this.__instructionsWindow = osparc.ui.window.Window.popUpInWindow(markdownInstructions, title, width, minHeight).set({
           modal: false,
           clickAwayClose: false
         });
