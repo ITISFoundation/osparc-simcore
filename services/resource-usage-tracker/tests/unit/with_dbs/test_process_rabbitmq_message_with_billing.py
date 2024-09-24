@@ -167,6 +167,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
         con.execute(resource_tracker_pricing_plans.delete())
         con.execute(resource_tracker_pricing_unit_costs.delete())
         con.execute(resource_tracker_credit_transactions.delete())
+        con.execute(services_meta_data.delete())
 
 
 @pytest.fixture

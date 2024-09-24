@@ -37,11 +37,20 @@ from simcore_postgres_database.models.resource_tracker_pricing_unit_costs import
 from simcore_postgres_database.models.resource_tracker_pricing_units import (
     resource_tracker_pricing_units,
 )
+from simcore_postgres_database.models.services import services_meta_data
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
+
+
+_SERVICE_KEY = "simcore/services/comp/itis/sleeper"
+_SERVICE_VERSION_1 = "2.0.2"
+_SERVICE_VERSION_2 = "3.0.0"
+
+_SERVICE_KEY_3 = "simcore/services/comp/itis/different-service"
+_SERVICE_VERSION_3 = "1.0.1"
 
 
 @pytest.fixture()
@@ -50,12 +59,38 @@ def resource_tracker_setup_db(
 ) -> Iterator[None]:
     with postgres_db.connect() as con:
 
+        con.execute(
+            services_meta_data.insert().values(
+                key=_SERVICE_KEY,
+                version=_SERVICE_VERSION_1,
+                name="name",
+                description="description",
+            )
+        )
+        con.execute(
+            services_meta_data.insert().values(
+                key=_SERVICE_KEY,
+                version=_SERVICE_VERSION_2,
+                name="name",
+                description="description",
+            )
+        )
+        con.execute(
+            services_meta_data.insert().values(
+                key=_SERVICE_KEY_3,
+                version=_SERVICE_VERSION_3,
+                name="name",
+                description="description",
+            )
+        )
+
         yield
 
         con.execute(resource_tracker_pricing_unit_costs.delete())
         con.execute(resource_tracker_pricing_units.delete())
         con.execute(resource_tracker_pricing_plan_to_service.delete())
         con.execute(resource_tracker_pricing_plans.delete())
+        con.execute(services_meta_data.delete())
 
 
 async def test_rpc_pricing_plans_workflow(
@@ -295,12 +330,12 @@ async def test_rpc_pricing_plans_to_service_workflow(
     assert isinstance(result, list)
     assert result == []
 
-    _first_service_version = ServiceVersion("2.0.2")
+    _first_service_version = ServiceVersion(_SERVICE_VERSION_1)
     result = await pricing_plans.connect_service_to_pricing_plan(
         rpc_client,
         product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
-        service_key=ServiceKey("simcore/services/comp/itis/sleeper"),
+        service_key=ServiceKey(_SERVICE_KEY),
         service_version=_first_service_version,
     )
     assert isinstance(result, PricingPlanToServiceGet)
@@ -318,12 +353,12 @@ async def test_rpc_pricing_plans_to_service_workflow(
     assert len(result) == 1
 
     # Connect different version
-    _second_service_version = ServiceVersion("3.0.0")
+    _second_service_version = ServiceVersion(_SERVICE_VERSION_2)
     result = await pricing_plans.connect_service_to_pricing_plan(
         rpc_client,
         product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
-        service_key=ServiceKey("simcore/services/comp/itis/sleeper"),
+        service_key=ServiceKey(_SERVICE_KEY),
         service_version=_second_service_version,
     )
     assert isinstance(result, PricingPlanToServiceGet)
@@ -341,13 +376,13 @@ async def test_rpc_pricing_plans_to_service_workflow(
     assert len(result) == 2
 
     # Connect different service
-    _different_service_key = ServiceKey("simcore/services/comp/itis/different-service")
+    _different_service_key = ServiceKey(_SERVICE_KEY_3)
     result = await pricing_plans.connect_service_to_pricing_plan(
         rpc_client,
         product_name="osparc",
         pricing_plan_id=_pricing_plan_id,
         service_key=_different_service_key,
-        service_version=ServiceVersion("1.0.0"),
+        service_version=ServiceVersion(_SERVICE_VERSION_3),
     )
     assert isinstance(result, PricingPlanToServiceGet)
     assert result.pricing_plan_id == _pricing_plan_id
