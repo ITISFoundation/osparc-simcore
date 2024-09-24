@@ -735,7 +735,7 @@ class BaseCompScheduler(ABC):
             }
         )
         next_task_node_ids = [
-            node_id for node_id, degree in dag.in_degree() if degree == 0
+            node_id for node_id, degree in dag.in_degree if degree == 0
         ]
 
         # get the tasks to start
