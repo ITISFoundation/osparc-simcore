@@ -36,8 +36,7 @@ def _run_git(*args) -> str:
 
 
 def _strip_credentials(url: str) -> str:
-    yarl_url = URL(url)
-    if yarl_url.is_absolute():
+    if (yarl_url := URL(url)) and yarl_url.is_absolute():
         stripped_url = URL(url).with_user(None).with_password(None)
         return f"{stripped_url}"
     return url
