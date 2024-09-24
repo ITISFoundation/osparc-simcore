@@ -93,9 +93,11 @@ def test_classic_ti_plan(  # noqa: PLR0915
     is_product_lite: bool,
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
 ):
-    # checks "Access TIP" button
-    page.get_by_test_id("userMenuBtn").locator("div").click()
-    assert page.get_by_text("Access Full TIP").is_visible()
+    with log_context(logging.INFO, "Checking 'Access TIP' teaser"):
+        page.get_by_test_id("userMenuBtn").click()
+        page.get_by_test_id("userMenuAccessTIPBtn").click()
+        assert page.get_by_test_id("tipTeaserWindow").is_visible()
+        page.get_by_test_id("tipTeaserWindowCloseBtn").click()
 
     # press + button
     project_data = create_tip_plan_from_dashboard("newTIPlanButton")
