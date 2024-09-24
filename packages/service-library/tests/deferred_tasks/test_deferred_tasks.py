@@ -64,7 +64,8 @@ class _RemoteProcess:
             parent = psutil.Process(self.pid)
             children = parent.children(recursive=True)
             for child_pid in [child.pid for child in children]:
-                psutil.Process(child_pid).kill()
+                with suppress(psutil.NoSuchProcess):
+                    psutil.Process(child_pid).kill()
 
         self.process = None
         self.pid = None
