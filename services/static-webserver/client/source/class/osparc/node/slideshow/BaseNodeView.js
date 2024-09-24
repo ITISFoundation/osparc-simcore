@@ -240,12 +240,10 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
           padding: 3,
           font: "text-14"
         });
-        const scrollContainer = new qx.ui.container.Scroll();
-        scrollContainer.add(descView);
         const title = this.tr("Instructions") + " - " + this.getNode().getLabel();
         const width = 500;
         const height = 500;
-        const win = this.__instructionsWindow = osparc.ui.window.Window.popUpInWindow(scrollContainer, title, width, height).set({
+        const win = this.__instructionsWindow = osparc.ui.window.Window.popUpInWindow(descView, title, width, height).set({
           modal: false,
           clickAwayClose: false
         });
