@@ -62,7 +62,7 @@ def model_classes_factory() -> Callable:
             WEBSERVER_POSTGRES: _FakePostgresSettings
 
         class S2(BaseCustomSettings):
-            WEBSERVER_POSTGRES_NULLABLE_OPTIONAL: _FakePostgresSettings | None
+            WEBSERVER_POSTGRES_NULLABLE_OPTIONAL: _FakePostgresSettings | None = None
 
         class S3(BaseCustomSettings):
             # cannot be disabled!!
