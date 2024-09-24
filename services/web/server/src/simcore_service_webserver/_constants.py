@@ -28,6 +28,19 @@ MSG_UNDER_DEVELOPMENT: Final[
 ] = "Under development. Use WEBSERVER_DEV_FEATURES_ENABLED=1 to enable current implementation"
 
 
+FMSG_SERVER_EXCEPTION_LOG: Final[
+    # formatted message for _logger.exception(...)
+    # Use these keys as guidance to provide necessary information for a good error message log
+    #
+    # user_msg: message seem by front-end user (should include OEC)
+    # exc: handled exception
+    # ctx: exception context e.g. exc.ctx()  (see OsparcErrorMixin)
+    # tip: tips on why this might have happened and or possible solution
+    #
+    str
+] = "{user_msg}.\nERROR: {exc}.\nCONTEXT: {ctx}.\nTIP: {tip}\n"
+
+
 __all__: tuple[str, ...] = (
     "APP_CONFIG_KEY",
     "APP_AIOPG_ENGINE_KEY",
