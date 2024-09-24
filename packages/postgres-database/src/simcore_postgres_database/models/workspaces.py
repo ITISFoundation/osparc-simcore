@@ -34,7 +34,18 @@ workspaces = sa.Table(
         nullable=False,
         doc="Identifier of the group that owns this workspace (Should be just PRIMARY GROUP)",
     ),
-    sa.Column("product_name", sa.String, nullable=False, doc="Product name"),
+    sa.Column(
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+            name="fk_workspaces_product_name",
+        ),
+        nullable=False,
+        doc="Products unique name",
+    ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
 )
