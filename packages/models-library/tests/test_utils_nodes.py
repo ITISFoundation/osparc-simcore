@@ -16,12 +16,6 @@ from models_library.projects_nodes_io import (
 from models_library.utils.nodes import compute_node_hash
 from pydantic import AnyUrl, parse_obj_as
 
-
-@pytest.fixture()
-def node_id() -> NodeID:
-    return uuid4()
-
-
 ANOTHER_NODE_ID = uuid4()
 ANOTHER_NODE_OUTPUT_KEY = "the_output_link"
 ANOTHER_NODE_PAYLOAD = {"outputs": {ANOTHER_NODE_OUTPUT_KEY: 36}}
