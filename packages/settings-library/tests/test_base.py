@@ -162,13 +162,15 @@ def test_create_settings_class_without_environ_fails(
     # now defining S_VALUE
     M2_outside_context = create_settings_class("M2")
 
-    with pytest.raises(DefaultFromEnvFactoryError) as err_info:
+    with pytest.raises(ValidationError) as err_info:
         M2_outside_context.create_from_envs()
 
-    assert err_info.value.errors[0] == {
-        "loc": ("VALUE_DEFAULT_ENV", "S_VALUE"),
+    assert err_info.value.errors()[0] == {
+        "input": {},
+        "loc": ("S_VALUE",),
         "msg": "Field required",
         "type": "missing",
+        "url": "https://errors.pydantic.dev/2.9/v/missing",
     }
 
 

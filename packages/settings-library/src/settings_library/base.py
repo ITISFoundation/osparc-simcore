@@ -1,11 +1,10 @@
 import logging
 from functools import cached_property
 from types import UnionType
-from typing import Any, Final, Literal, Sequence, get_args, get_origin
+from typing import Any, Final, Literal, get_args, get_origin
 
 from pydantic import ValidationError, ValidationInfo, field_validator
 from pydantic.fields import FieldInfo
-from pydantic.v1.error_wrappers import ErrorList, ErrorWrapper
 from pydantic_core import PydanticUndefined
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -14,10 +13,6 @@ _logger = logging.getLogger(__name__)
 _DEFAULTS_TO_NONE_MSG: Final[
     str
 ] = "%s auto_default_from_env unresolved, defaulting to None"
-
-
-class DefaultFromEnvFactoryError(ValueError):
-    pass
 
 
 def allows_none(info: FieldInfo) -> bool:
@@ -59,17 +54,7 @@ def create_settings_from_env(field_name, field):
                 )
                 return None
 
-            def _prepend_field_name(ee: ErrorList):
-                if isinstance(ee, ErrorWrapper):
-                    return ErrorWrapper(ee.exc, (field_name, *ee.loc_tuple()))
-                assert isinstance(ee, Sequence)  # nosec
-                return [_prepend_field_name(e) for e in ee]
-
-            raise DefaultFromEnvFactoryError(
-                #errors=_prepend_field_name(err.errors()),
-                # model=err.model,
-                # FIXME: model = shall be the parent settings?? but I dont find how retrieve it from the field
-            ) from err
+            raise err
 
     return _default_factory
 
@@ -111,8 +96,7 @@ class BaseCustomSettings(BaseSettings):
             auto_default_from_env = (
                 field.json_schema_extra is not None
                 and field.json_schema_extra.get("auto_default_from_env", False) # type: ignore[union-attr]
-            )
-
+            )  
             field_type = get_type(field)
 
             # Avoids issubclass raising TypeError. SEE test_issubclass_type_error_with_pydantic_models
@@ -146,7 +130,6 @@ class BaseCustomSettings(BaseSettings):
             elif auto_default_from_env:
                 msg = f"auto_default_from_env=True can only be used in BaseCustomSettings subclassesbut field {cls}.{name} is {field_type} "
                 raise ValueError(msg)
-
 
     @classmethod
     def create_from_envs(cls, **overrides):
