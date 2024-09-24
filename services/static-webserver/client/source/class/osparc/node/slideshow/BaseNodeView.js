@@ -235,20 +235,20 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       }
       const desc = this.getNode().getSlideshowInstructions();
       if (desc) {
-        const descView = new osparc.ui.markdown.Markdown().set({
+        const markdownInstructions = new osparc.ui.markdown.Markdown().set({
           value: desc,
           padding: 3,
           font: "text-14"
         });
-        const scrollContainer = new qx.ui.container.Scroll();
-        scrollContainer.add(descView);
         const title = this.tr("Instructions") + " - " + this.getNode().getLabel();
-        const width = 500;
-        const height = 500;
-        const win = this.__instructionsWindow = osparc.ui.window.Window.popUpInWindow(scrollContainer, title, width, height).set({
+        const width = 600;
+        const minHeight = 200;
+        const win = this.__instructionsWindow = osparc.ui.window.Window.popUpInWindow(markdownInstructions, title, width, minHeight).set({
           modal: false,
           clickAwayClose: false
         });
+        markdownInstructions.addListener("resized", () => win.center());
+
         win.getContentElement().setStyles({
           "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main")
         });
