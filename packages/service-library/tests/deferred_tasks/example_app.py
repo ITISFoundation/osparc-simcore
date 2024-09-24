@@ -8,7 +8,7 @@ from typing import Any
 from uuid import uuid4
 
 from pydantic import NonNegativeInt
-from redis import Redis
+from redis.asyncio import Redis
 from servicelib.deferred_tasks import (
     BaseDeferredHandler,
     DeferredContext,
