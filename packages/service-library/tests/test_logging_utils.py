@@ -14,6 +14,7 @@ from servicelib.logging_utils import (
     log_context,
     log_decorator,
     log_exceptions,
+    set_parent_module_log_level,
 )
 
 _logger = logging.getLogger(__name__)
@@ -322,3 +323,57 @@ def test_log_exceptions_and_reraise(caplog: pytest.LogCaptureFixture, level: int
 
     assert len(caplog.records) == (1 if level != logging.NOTSET else 0)
     assert all(r.levelno == level for r in caplog.records)
+
+
+def test_set_parent_module_log_level_(caplog: pytest.LogCaptureFixture):
+    caplog.clear()
+    # emulates service logger
+    logging.root.setLevel(logging.WARNING)
+
+    parent = logging.getLogger("parent")
+    child = logging.getLogger("parent.child")
+
+    assert parent.level == logging.NOTSET
+    assert child.level == logging.NOTSET
+
+    parent.debug("parent debug")
+    child.debug("child debug")
+
+    parent.info("parent info")
+    child.info("child info")
+
+    parent.warning("parent warning")
+    child.warning("child warning")
+
+    assert "parent debug" not in caplog.text
+    assert "child debug" not in caplog.text
+
+    assert "parent info" not in caplog.text
+    assert "child info" not in caplog.text
+
+    assert "parent warning" in caplog.text
+    assert "child warning" in caplog.text
+
+    caplog.clear()
+    set_parent_module_log_level("parent.child", logging.INFO)
+
+    assert parent.level == logging.INFO
+    assert child.level == logging.NOTSET
+
+    parent.debug("parent debug")
+    child.debug("child debug")
+
+    parent.info("parent info")
+    child.info("child info")
+
+    parent.warning("parent warning")
+    child.warning("child warning")
+
+    assert "parent debug" not in caplog.text
+    assert "child debug" not in caplog.text
+
+    assert "parent info" in caplog.text
+    assert "child info" in caplog.text
+
+    assert "parent warning" in caplog.text
+    assert "child warning" in caplog.text

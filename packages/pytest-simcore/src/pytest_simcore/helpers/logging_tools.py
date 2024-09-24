@@ -133,14 +133,14 @@ def log_context(
     else:
         ctx_msg = msg
 
-    started_time = datetime.datetime.now(tz=datetime.timezone.utc)
+    started_time = datetime.datetime.now(tz=datetime.UTC)
     try:
         DynamicIndentFormatter.cls_increase_indent()
 
         logger.log(level, ctx_msg.starting, *args, **kwargs)
         with _increased_logger_indent(logger):
             yield SimpleNamespace(logger=logger, messages=ctx_msg)
-        elapsed_time = datetime.datetime.now(tz=datetime.timezone.utc) - started_time
+        elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
         done_message = (
             f"{ctx_msg.done} ({_timedelta_as_minute_second_ms(elapsed_time)})"
         )
@@ -152,7 +152,7 @@ def log_context(
         )
 
     except:
-        elapsed_time = datetime.datetime.now(tz=datetime.timezone.utc) - started_time
+        elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
         error_message = (
             f"{ctx_msg.raised} ({_timedelta_as_minute_second_ms(elapsed_time)})"
         )

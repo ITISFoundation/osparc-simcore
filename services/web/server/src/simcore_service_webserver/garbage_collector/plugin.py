@@ -2,7 +2,9 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.logging_utils import set_parent_module_log_level
 
+from ..application_settings import get_application_settings
 from ..login.plugin import setup_login_storage
 from ..projects.db import setup_projects_db
 from ..socketio.plugin import setup_socketio
@@ -11,14 +13,14 @@ from ._tasks_core import run_background_task
 from ._tasks_users import create_background_task_for_trial_accounts
 from .settings import get_plugin_settings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
     "simcore_service_webserver.garbage_collector",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_GARBAGE_COLLECTOR",
-    logger=logger,
+    logger=_logger,
 )
 def setup_garbage_collector(app: web.Application) -> None:
     # - project-api needs access to db
@@ -31,6 +33,10 @@ def setup_garbage_collector(app: web.Application) -> None:
     settings = get_plugin_settings(app)
 
     app.cleanup_ctx.append(run_background_task)
+
+    set_parent_module_log_level(
+        _logger.name, min(logging.INFO, get_application_settings(app).log_level)
+    )
 
     # NOTE: scaling web-servers will lead to having multiple tasks upgrading the db
     # not a huge deal. Instead this task runs in the GC.
