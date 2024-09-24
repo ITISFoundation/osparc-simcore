@@ -22,7 +22,7 @@ import pytest
 from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
 from playwright.sync_api._generated import Playwright
-from pydantic import AnyUrl, SecretStr, TypeAdapter
+from pydantic import AnyUrl, TypeAdapter
 from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
@@ -37,6 +37,7 @@ from pytest_simcore.helpers.playwright import (
     decode_socketio_42_message,
     web_socket_default_log_handler,
 )
+from pytest_simcore.helpers.pydantic_ext import Secret4TestsStr
 
 _PROJECT_CLOSING_TIMEOUT: Final[int] = 10 * MINUTE
 _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME: Final[int] = 30 * SECOND
@@ -178,7 +179,7 @@ def pytest_runtest_makereport(item: pytest.Item, call):
             )
             diagnostics["duration"] = str(end_time - start_time)
 
-        print(f"\nDiagnostics report for {test_name} ---") # noqa: RUF001
+        print(f"\nDiagnostics report for {test_name} ---")  # noqa: RUF001
         print(textwrap.indent(json.dumps(diagnostics, indent=2), "  "))
         print("---")
 
@@ -221,13 +222,13 @@ def user_name(request: pytest.FixtureRequest, auto_register: bool, faker: Faker)
 @pytest.fixture
 def user_password(
     request: pytest.FixtureRequest, auto_register: bool, faker: Faker
-) -> SecretStr:
+) -> Secret4TestsStr:
     if auto_register:
-        return SecretStr(DEFAULT_TEST_PASSWORD)
+        return Secret4TestsStr(DEFAULT_TEST_PASSWORD)
     if osparc_password := request.config.getoption("--password"):
         assert isinstance(osparc_password, str)
-        return SecretStr(osparc_password)
-    return SecretStr(os.environ["USER_PASSWORD"])
+        return Secret4TestsStr(osparc_password)
+    return Secret4TestsStr(os.environ["USER_PASSWORD"])
 
 
 @pytest.fixture(scope="session")
@@ -290,7 +291,7 @@ def register(
     page: Page,
     product_url: AnyUrl,
     user_name: str,
-    user_password: SecretStr,
+    user_password: Secret4TestsStr,
 ) -> Callable[[], AutoRegisteredUser]:
     def _do() -> AutoRegisteredUser:
         with log_context(
@@ -323,7 +324,7 @@ def log_in_and_out(
     page: Page,
     product_url: AnyUrl,
     user_name: str,
-    user_password: SecretStr,
+    user_password: Secret4TestsStr,
     auto_register: bool,
     register: Callable[[], AutoRegisteredUser],
 ) -> Iterator[WebSocket]:
