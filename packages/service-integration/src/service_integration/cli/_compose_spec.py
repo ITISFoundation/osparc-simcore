@@ -8,6 +8,7 @@ import typer
 import yaml
 from models_library.utils.labels_annotations import to_labels
 from rich.console import Console
+from yarl import URL
 
 from ..compose_spec_model import ComposeSpecification
 from ..errors import UndefinedOciImageSpecError
@@ -34,9 +35,17 @@ def _run_git(*args) -> str:
     ).stdout.strip()
 
 
+def _strip_credentials(url: str) -> str:
+    yarl_url = URL(url)
+    if yarl_url.is_absolute():
+        stripped_url = URL(url).with_user(None).with_password(None)
+        return f"{stripped_url}"
+    return url
+
+
 def _run_git_or_empty_string(*args) -> str:
     try:
-        return _run_git(*args)
+        return _strip_credentials(_run_git(*args))
     except FileNotFoundError as err:
         error_console.print(
             "WARNING: Defaulting label to emtpy string",
