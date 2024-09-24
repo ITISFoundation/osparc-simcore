@@ -1,5 +1,11 @@
 import urllib.parse
 
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_webserver.projects_nodes import (
+    NodeGet,
+    NodeGetIdle,
+    NodeGetUnknown,
+)
 from models_library.services import ServiceType
 
 
@@ -9,3 +15,14 @@ def get_service_from_key(service_key: str) -> ServiceType:
     if encoded_service_type == "comp":
         encoded_service_type = "computational"
     return ServiceType(encoded_service_type)
+
+
+def get_status_as_dict(
+    status: NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet,
+) -> dict:
+    """shared between different backend services to guarantee same result to frontend"""
+    return (
+        status.dict(by_alias=True)
+        if isinstance(status, DynamicServiceGet)
+        else status.dict()
+    )
