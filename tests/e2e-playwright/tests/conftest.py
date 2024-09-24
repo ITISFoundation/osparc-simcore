@@ -11,7 +11,6 @@ import logging
 import os
 import random
 import re
-import textwrap
 import urllib.parse
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
@@ -179,9 +178,11 @@ def pytest_runtest_makereport(item: pytest.Item, call):
             )
             diagnostics["duration"] = str(end_time - start_time)
 
-        print(f"\nDiagnostics report for {test_name} ---")  # noqa: RUF001
-        print(textwrap.indent(json.dumps(diagnostics, indent=2), "  "))
-        print("---")
+        with log_context(
+            logging.WARNING,
+            f"ℹ️ Diagnostics report for {test_name} ---",  # noqa: RUF001
+        ) as ctx:
+            ctx.logger.warning(json.dumps(diagnostics, indent=2))
 
 
 @pytest.hookimpl(tryfirst=True)
