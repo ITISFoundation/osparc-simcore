@@ -3,9 +3,9 @@ from functools import cached_property
 from types import UnionType
 from typing import Any, Final, Literal, get_args, get_origin
 
-from pydantic import ValidationError, ValidationInfo, field_validator
+from pydantic import ValidationInfo, field_validator
 from pydantic.fields import FieldInfo
-from pydantic_core import PydanticUndefined
+from pydantic_core import PydanticUndefined, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _logger = logging.getLogger(__name__)
@@ -13,6 +13,12 @@ _logger = logging.getLogger(__name__)
 _DEFAULTS_TO_NONE_MSG: Final[
     str
 ] = "%s auto_default_from_env unresolved, defaulting to None"
+
+
+class DefaultFromEnvFactoryError(ValueError):
+    def __init__(self, errors):
+        super().__init__()
+        self.errors = errors
 
 
 def allows_none(info: FieldInfo) -> bool:
@@ -54,7 +60,7 @@ def create_settings_from_env(field_name, field):
                 )
                 return None
 
-            raise err
+            raise DefaultFromEnvFactoryError(errors=err.errors()) from err
 
     return _default_factory
 
@@ -95,8 +101,8 @@ class BaseCustomSettings(BaseSettings):
         for name, field in cls.model_fields.items():
             auto_default_from_env = (
                 field.json_schema_extra is not None
-                and field.json_schema_extra.get("auto_default_from_env", False) # type: ignore[union-attr]
-            )  
+                and field.json_schema_extra.get("auto_default_from_env", False)
+            )  # type: ignore[union-attr]
             field_type = get_type(field)
 
             # Avoids issubclass raising TypeError. SEE test_issubclass_type_error_with_pydantic_models
