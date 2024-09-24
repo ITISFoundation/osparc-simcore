@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 
+import os
 from collections.abc import Callable
 
 import pytest
@@ -20,6 +21,13 @@ from settings_library.basic_types import PortInt
 #
 # NOTE: suffixes are used to distinguis different options on the same field (e.g. _OPTIONAL, etc)
 #
+
+
+@pytest.fixture
+def postgres_envvars_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in os.environ:
+        if name.startswith("POSTGRES_"):
+            monkeypatch.delenv(name)
 
 
 @pytest.fixture
@@ -72,8 +80,8 @@ def model_classes_factory() -> Callable:
 
         class S4(BaseCustomSettings):
             # defaults enabled but if cannot be resolved, it disables
-            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV: _FakePostgresSettings | None = Field(
-                json_schema_extra={"auto_default_from_env": True}
+            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV: _FakePostgresSettings | None = (
+                Field(json_schema_extra={"auto_default_from_env": True})
             )
 
         class S5(BaseCustomSettings):
@@ -106,7 +114,9 @@ def model_classes_factory() -> Callable:
 #
 
 
-def test_parse_from_empty_envs(model_classes_factory: Callable):
+def test_parse_from_empty_envs(
+    postgres_envvars_unset: None, model_classes_factory: Callable
+):
 
     S1, S2, S3, S4, S5 = model_classes_factory()
 
@@ -128,7 +138,11 @@ def test_parse_from_empty_envs(model_classes_factory: Callable):
     assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is None
 
 
-def test_parse_from_individual_envs(monkeypatch, model_classes_factory):
+def test_parse_from_individual_envs(
+    postgres_envvars_unset: None,
+    monkeypatch: pytest.MonkeyPatch,
+    model_classes_factory: Callable,
+):
 
     S1, S2, S3, S4, S5 = model_classes_factory()
 
@@ -194,7 +208,9 @@ def test_parse_from_individual_envs(monkeypatch, model_classes_factory):
     assert s5.dict() == {"WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL": None}
 
 
-def test_parse_compact_env(monkeypatch, model_classes_factory):
+def test_parse_compact_env(
+    postgres_envvars_unset: None, monkeypatch, model_classes_factory
+):
 
     S1, S2, S3, S4, S5 = model_classes_factory()
 
@@ -306,7 +322,9 @@ def test_parse_compact_env(monkeypatch, model_classes_factory):
         }
 
 
-def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
+def test_parse_from_mixed_envs(
+    postgres_envvars_unset: None, monkeypatch, model_classes_factory
+):
 
     S1, S2, S3, S4, S5 = model_classes_factory()
 
@@ -440,7 +458,9 @@ def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
 #
 
 
-def test_toggle_plugin_1(monkeypatch, model_classes_factory):
+def test_toggle_plugin_1(
+    postgres_envvars_unset: None, monkeypatch, model_classes_factory
+):
 
     *_, S4, S5 = model_classes_factory()
 
@@ -453,7 +473,9 @@ def test_toggle_plugin_1(monkeypatch, model_classes_factory):
     assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is None
 
 
-def test_toggle_plugin_2(monkeypatch, model_classes_factory):
+def test_toggle_plugin_2(
+    postgres_envvars_unset: None, monkeypatch, model_classes_factory
+):
     *_, S4, S5 = model_classes_factory()
 
     # minimal
@@ -474,7 +496,9 @@ def test_toggle_plugin_2(monkeypatch, model_classes_factory):
     assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is None
 
 
-def test_toggle_plugin_3(monkeypatch, model_classes_factory):
+def test_toggle_plugin_3(
+    postgres_envvars_unset: None, monkeypatch, model_classes_factory
+):
     *_, S4, S5 = model_classes_factory()
 
     # explicitly disables
@@ -497,7 +521,9 @@ def test_toggle_plugin_3(monkeypatch, model_classes_factory):
     assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is None
 
 
-def test_toggle_plugin_4(monkeypatch, model_classes_factory):
+def test_toggle_plugin_4(
+    postgres_envvars_unset: None, monkeypatch, model_classes_factory
+):
 
     *_, S4, S5 = model_classes_factory()
     JSON_VALUE = '{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'

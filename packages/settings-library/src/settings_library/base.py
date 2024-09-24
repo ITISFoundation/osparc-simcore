@@ -76,7 +76,7 @@ class BaseCustomSettings(BaseSettings):
 
     @field_validator("*", mode="before")
     @classmethod
-    def parse_none(cls, v, info: ValidationInfo):
+    def _parse_none(cls, v, info: ValidationInfo):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
         if (
             info.field_name
@@ -101,8 +101,8 @@ class BaseCustomSettings(BaseSettings):
         for name, field in cls.model_fields.items():
             auto_default_from_env = (
                 field.json_schema_extra is not None
-                and field.json_schema_extra.get("auto_default_from_env", False) # type: ignore[union-attr]
-            )
+                and field.json_schema_extra.get("auto_default_from_env", False)
+            )  # type: ignore[union-attr]
             field_type = get_type(field)
 
             # Avoids issubclass raising TypeError. SEE test_issubclass_type_error_with_pydantic_models
@@ -123,7 +123,6 @@ class BaseCustomSettings(BaseSettings):
                     # Transform it into something like `Field(default_factory=create_settings_from_env(field))`
                     field.default_factory = create_settings_from_env(name, field)
                     field.default = None
-                    # field.required = False  # has a default now
 
             elif (
                 is_not_literal
@@ -134,7 +133,7 @@ class BaseCustomSettings(BaseSettings):
                 raise ValueError(msg)
 
             elif auto_default_from_env:
-                msg = f"auto_default_from_env=True can only be used in BaseCustomSettings subclassesbut field {cls}.{name} is {field_type} "
+                msg = f"auto_default_from_env=True can only be used in BaseCustomSettings subclasses but field {cls}.{name} is {field_type} "
                 raise ValueError(msg)
 
     @classmethod
