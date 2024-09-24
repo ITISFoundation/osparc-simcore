@@ -14,12 +14,18 @@ def _mask(value):
     return masked_value
 
 
+def _hash(value):
+    """Uses hash number to mask the password"""
+    return f"hash:{hash(value)}"
+
+
 class Secret4TestsStr(SecretStr):
     """Prints a hint of the secret
     TIP: Can be handy for testing
     """
 
-    def __str__(self) -> str:
+    def _display(self) -> str | bytes:
+        # SEE overrides _SecretBase._display
         value = self.get_secret_value()
         return _mask(value) if value else ""
 
