@@ -112,7 +112,7 @@ async def _replace_project(
     assert client.app
 
     # PUT /v0/projects/{project_id}
-    url = client.app.router["replace_project"].url_for(
+    url = client.app.router["replace_project"].url_for(  # <- this doesn't work anymore
         project_id=project_update["uuid"]
     )
     assert str(url) == f"{API_PREFIX}/projects/{project_update['uuid']}"

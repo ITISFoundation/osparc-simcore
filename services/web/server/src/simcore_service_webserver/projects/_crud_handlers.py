@@ -380,6 +380,8 @@ async def replace_project(request: web.Request):
        web.HTTPNotFound: This project was not found
     """
 
+    raise ValueError("Not supported anymore")
+
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
