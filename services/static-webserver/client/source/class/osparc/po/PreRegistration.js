@@ -78,8 +78,14 @@ qx.Class.define("osparc.po.PreRegistration", {
           submitBtn.setFetching(true);
           const findingStatus = this.getChildControl("finding-status");
           findingStatus.setValue(this.tr("Searching Pre-Registered users..."));
+          try {
+            const preData = JSON.parse(requestAccountData.getValue())
+          } catch (error) {
+            console.error(`Cannot parse pre-registration JSON data: ${preData}:`, error)
+            osparc.FlashMessenger.logAs("Invalid JSON in Pre-Registration input", "ERROR");
+          }
           const params = {
-            data: JSON.parse(requestAccountData.getValue())
+            data: preData
           };
           osparc.data.Resources.fetch("users", "preRegister", params)
             .then(data => {
