@@ -87,33 +87,32 @@ qx.Class.define("osparc.po.PreRegistration", {
               data: JSON.parse(requestAccountData.getValue())
             };
           } catch (err) {
-              console.error(err);
+            console.error(err);
 
-              const detailErrorMsg = `Error parsing Request Form JSON. ${err}`;
-              findingStatus.setValue(detailErrorMsg);
+            const detailErrorMsg = `Error parsing Request Form JSON. ${err}`;
+            findingStatus.setValue(detailErrorMsg);
 
-              osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
-              submitBtn.setFetching(false);
-              return
+            osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
+            submitBtn.setFetching(false);
+            return
           }
 
           osparc.data.Resources.fetch("users", "preRegister", params)
-          .then(data => {
-            if (data.length) {
-              findingStatus.setValue(this.tr("Pre-Registered as:"));
-            } else {
-              findingStatus.setValue(this.tr("No Pre-Registered user found"));
-            }
-            this.__populatePreRegistrationLayout(data);
+            .then(data => {
+              if (data.length) {
+                findingStatus.setValue(this.tr("Pre-Registered as:"));
+              } else {
+                findingStatus.setValue(this.tr("No Pre-Registered user found"));
+              }
+              this.__populatePreRegistrationLayout(data);
           })
-          .catch(err => {
-            const detail_msg = this.tr(`Error during Pre-Registeristration: ${err.message}`)
-            findingStatus.setValue(detail_msg);
-            console.error(err);
-            osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
+            .catch(err => {
+              const detailErrorMsg = this.tr(`Error during Pre-Registeristration: ${err.message}`)
+              findingStatus.setValue(detailErrorMsg);
+              console.error(err);
+              osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
           })
-          .finally(() => submitBtn.setFetching(false));
-
+            .finally(() => submitBtn.setFetching(false));
         }
       }, this);
       form.addButton(submitBtn);
