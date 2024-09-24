@@ -14,6 +14,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
 
 from ...core.settings import ApplicationSettings
 from ...services.director_v2 import DirectorV2Client
+from ...services.service_tracker import set_request_as_running, set_request_as_stopped
 
 router = RPCRouter()
 
@@ -37,6 +38,7 @@ async def run_dynamic_service(
     response: NodeGet | DynamicServiceGet = (
         await director_v2_client.run_dynamic_service(dynamic_service_start)
     )
+    await set_request_as_running(app, dynamic_service_start)
     return response
 
 
@@ -59,4 +61,5 @@ async def stop_dynamic_service(
             timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
         )
     )
+    await set_request_as_stopped(app, dynamic_service_stop)
     return response
