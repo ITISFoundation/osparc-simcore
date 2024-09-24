@@ -435,6 +435,7 @@ qx.Class.define("osparc.data.model.Study", {
       });
     },
 
+    // Used for updating some node data through the "nodeUpdated" websocket event
     nodeUpdated: function(nodeUpdatedData) {
       const studyId = nodeUpdatedData["project_id"];
       if (studyId !== this.getUuid()) {
@@ -444,7 +445,10 @@ qx.Class.define("osparc.data.model.Study", {
       const nodeData = nodeUpdatedData["data"];
       const workbench = this.getWorkbench();
       const node = workbench.getNode(nodeId);
-      if (node && nodeData) {
+      // Do not listen to output related backend updates if the node is a frontend node.
+      // The frontend controls its output values, progress and states.
+      // If a File Picker is uploading a file, the backend could override the current state with some older state.
+      if (node && nodeData && !osparc.data.model.Node.isFrontend(node)) {
         node.setOutputData(nodeData.outputs);
         if ("progress" in nodeData) {
           const progress = Number.parseInt(nodeData["progress"]);
