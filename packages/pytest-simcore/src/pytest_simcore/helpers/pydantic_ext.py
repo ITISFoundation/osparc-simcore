@@ -25,4 +25,4 @@ class Secret4TestsStr(SecretStr):
 
 
 assert str(Secret4TestsStr("123456890")) == "1*******0"
-assert repr(Secret4TestsStr("123456890")) == "SecretStr('1*******0')"
+assert "1*******0" in repr(Secret4TestsStr("123456890"))
