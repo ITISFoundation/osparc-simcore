@@ -48,6 +48,7 @@ resource_tracker_pricing_plan_to_service = sa.Table(
     sa.ForeignKeyConstraint(
         ["service_key", "service_version"],
         ["services_meta_data.key", "services_meta_data.version"],
+        name="fk_rut_pricing_plan_to_service_key_and_version",
         onupdate="CASCADE",
         ondelete="CASCADE",
     ),
