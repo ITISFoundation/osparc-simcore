@@ -247,6 +247,8 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
           modal: false,
           clickAwayClose: false
         });
+        markdownInstructions.addListener("resized", () => win.center());
+
         win.getContentElement().setStyles({
           "border-color": qx.theme.manager.Color.getInstance().resolve("strong-main")
         });

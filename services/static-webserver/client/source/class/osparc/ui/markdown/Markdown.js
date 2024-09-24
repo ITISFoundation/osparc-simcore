@@ -71,6 +71,10 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     }
   },
 
+  events: {
+    "resized": "qx.event.type.Event",
+  },
+
   members: {
     __loadMarked: null,
     /**
@@ -146,6 +150,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
           this.setMinWidth(elemMaxWidth);
         }
       }
+      this.fireEvent("resized");
     },
 
     __getDomElement: function() {
