@@ -255,7 +255,11 @@ def remove_tracked_spy(mocker: MockerFixture) -> AsyncMock:
     mock_method = mocker.AsyncMock(
         wraps=_monitor.service_tracker.remove_tracked_service
     )
-    return mocker.patch.object(_monitor.service_tracker, "remove_tracked", mock_method)
+    return mocker.patch.object(
+        _monitor.service_tracker,
+        _monitor.service_tracker.remove_tracked_service.__name__,
+        mock_method,
+    )
 
 
 @pytest.fixture
