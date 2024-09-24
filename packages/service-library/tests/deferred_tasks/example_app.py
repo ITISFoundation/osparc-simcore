@@ -7,8 +7,8 @@ from datetime import timedelta
 from typing import Any
 from uuid import uuid4
 
-import aioredis
 from pydantic import NonNegativeInt
+from redis import Redis
 from servicelib.deferred_tasks import (
     BaseDeferredHandler,
     DeferredContext,
@@ -57,7 +57,7 @@ class InMemoryLists:
     def __init__(self, redis_settings: RedisSettings, port: int) -> None:
         # NOTE: RedisClientSDK is not required here but it's used to easily construct
         # a redis connection
-        self.redis: aioredis.Redis = RedisClientSDK(
+        self.redis: Redis = RedisClientSDK(
             redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
             decode_responses=True,
         ).redis
