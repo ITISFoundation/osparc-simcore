@@ -67,13 +67,13 @@ def model_classes_factory() -> Callable:
         class S3(BaseCustomSettings):
             # cannot be disabled!!
             WEBSERVER_POSTGRES_DEFAULT_ENV: _FakePostgresSettings = Field(
-                auto_default_from_env=True
+                json_schema_extra={"auto_default_from_env": True}
             )
 
         class S4(BaseCustomSettings):
             # defaults enabled but if cannot be resolved, it disables
-            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV: _FakePostgresSettings | None = (
-                Field(auto_default_from_env=True)
+            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV: _FakePostgresSettings | None = Field(
+                json_schema_extra={"auto_default_from_env": True}
             )
 
         class S5(BaseCustomSettings):
@@ -117,7 +117,7 @@ def test_parse_from_empty_envs(model_classes_factory: Callable):
     assert s2.WEBSERVER_POSTGRES_NULLABLE_OPTIONAL is None
 
     with pytest.raises(DefaultFromEnvFactoryError):
-        # NOTE: cannot hae a default or assignment
+        # NOTE: cannot have a default or assignment
         S3()
 
     # auto default factory resolves to None (because is nullable)
