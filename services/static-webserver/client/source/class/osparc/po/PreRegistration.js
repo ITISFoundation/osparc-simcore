@@ -76,34 +76,44 @@ qx.Class.define("osparc.po.PreRegistration", {
         }
         if (form.validate()) {
           submitBtn.setFetching(true);
+
+          const flashErrorMsg = "Failed to Pre-Registration. See details below";
           const findingStatus = this.getChildControl("finding-status");
           findingStatus.setValue(this.tr("Searching Pre-Registered users..."));
-          const preData = requestAccountData.getValue()
+
+          let params;
           try {
-            const params = {
-              data: JSON.parse(preData)
+            params = {
+              data: JSON.parse(requestAccountData.getValue())
             };
+          } catch (err) {
+              console.error(err);
 
-            osparc.data.Resources.fetch("users", "preRegister", params)
-              .then(data => {
-                if (data.length) {
-                  findingStatus.setValue(this.tr("Pre-Registered as:"));
-                } else {
-                  findingStatus.setValue(this.tr("No Pre-Registered user found"));
-                }
-                this.__populatePreRegistrationLayout(data);
-              })
-              .catch(err => {
-                findingStatus.setValue(this.tr("Error searching Pre-Registered users"));
-                console.error(err);
-                osparc.FlashMessenger.logAs(err.message, "ERROR");
-              })
-              .finally(() => submitBtn.setFetching(false));
+              const detailErrorMsg = this.tr(`Error parsing JSON Pre-Registered users: ${err}`);
+              findingStatus.setValue(detailErrorMsg);
 
-          } catch (error) {
-              console.error(`Cannot parse pre-registration JSON data: ${preData}:`, error)
-              osparc.FlashMessenger.logAs("Invalid JSON in Pre-Registration input", "ERROR");
+              osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
+              submitBtn.setFetching(false);
+              return
           }
+
+          osparc.data.Resources.fetch("users", "preRegister", params)
+          .then(data => {
+            if (data.length) {
+              findingStatus.setValue(this.tr("Pre-Registered as:"));
+            } else {
+              findingStatus.setValue(this.tr("No Pre-Registered user found"));
+            }
+            this.__populatePreRegistrationLayout(data);
+          })
+          .catch(err => {
+            const detail_msg = this.tr(`Error during Pre-Registeristration: ${err.message}`)
+            findingStatus.setValue(detail_msg);
+            console.error(err);
+            osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
+          })
+          .finally(() => submitBtn.setFetching(false));
+
         }
       }, this);
       form.addButton(submitBtn);
