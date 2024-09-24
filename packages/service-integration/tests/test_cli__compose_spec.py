@@ -21,6 +21,7 @@ from service_integration.cli._compose_spec import _strip_credentials
             "git@git.speag.com:some/repo.git",
             "git@git.speag.com:some/repo.git",
         ),
+        ("any_str", "any_str"),
     ],
 )
 def test__strip_credentials(url: str, expected_url: str):
