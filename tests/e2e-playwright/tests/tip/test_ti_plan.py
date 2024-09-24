@@ -213,13 +213,17 @@ def test_classic_ti_plan(  # noqa: PLR0915
             )
 
         with log_context(logging.INFO, "Create report"):
+
+            ti_iframe.get_by_role("button", name="Load Analysis").click()
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+            ti_iframe.get_by_role("button", name="Load").nth(1).click()
+            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+
             if is_product_lite:
-                # NOTE: buttons should be disabled
-                assert not ti_iframe.get_by_role(
-                    "button", name="Load Analysis"
-                ).is_enabled()
                 assert (
-                    not ti_iframe.get_by_role("button", name="Load").nth(1).is_enabled()
+                    not ti_iframe.get_by_role("button", name="Add to Report (0)")
+                    .nth(0)
+                    .is_enabled()
                 )
                 assert not ti_iframe.get_by_role(
                     "button", name="Export to S4L"
@@ -229,10 +233,6 @@ def test_classic_ti_plan(  # noqa: PLR0915
                 ).is_enabled()
 
             else:
-                ti_iframe.get_by_role("button", name="Load Analysis").click()
-                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-                ti_iframe.get_by_role("button", name="Load").nth(1).click()
-                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
                 ti_iframe.get_by_role("button", name="Add to Report (0)").nth(0).click()
                 page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
                 ti_iframe.get_by_role("button", name="Export to S4L").click()
@@ -244,7 +244,12 @@ def test_classic_ti_plan(  # noqa: PLR0915
 
         with log_context(logging.INFO, "Check outputs"):
             if is_product_lite:
-                pass
+                expected_outputs = ["results.csv"]
+                text_on_output_button = f"Outputs ({len(expected_outputs)})"
+                page.get_by_test_id("outputsBtn").get_by_text(
+                    text_on_output_button
+                ).click()
+
             else:
                 expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv"]
                 text_on_output_button = f"Outputs ({len(expected_outputs)})"
