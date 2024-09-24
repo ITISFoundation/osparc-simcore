@@ -23,11 +23,13 @@ from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt, parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from yarl import URL
 
 from ._utils import handle_client_exceptions
+from .errors import DefaultPricingPlanNotFoundError
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -87,7 +89,7 @@ async def get_default_service_pricing_plan(
 ) -> PricingPlanGet:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
     url = URL(
-        f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}/pricing-plan",
+        f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}/pricing-plan",  # <- here is the issue
         encoded=True,
     ).with_query(
         {
@@ -95,10 +97,15 @@ async def get_default_service_pricing_plan(
         }
     )
     with handle_client_exceptions(app) as session:
-        async with session.get(url) as response:
-            response.raise_for_status()
-            body: dict = await response.json()
-            return parse_obj_as(PricingPlanGet, body)
+        try:
+            async with session.get(url) as response:
+                response.raise_for_status()
+                body: dict = await response.json()
+                return parse_obj_as(PricingPlanGet, body)
+        except ClientResponseError as e:
+            if e.status == status.HTTP_404_NOT_FOUND:
+                raise DefaultPricingPlanNotFoundError from e
+            raise
 
 
 async def get_pricing_plan_unit(
