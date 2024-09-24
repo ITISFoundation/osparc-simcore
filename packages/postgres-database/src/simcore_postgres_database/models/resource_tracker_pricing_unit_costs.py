@@ -22,8 +22,14 @@ resource_tracker_pricing_unit_costs = sa.Table(
     sa.Column(
         "pricing_plan_id",
         sa.BigInteger,
+        sa.ForeignKey(
+            "resource_tracker_pricing_plans.pricing_plan_id",
+            name="fk_resource_tracker_pricing_units_costs_pricing_plan_id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
         nullable=False,
-        doc="Parent pricing plan",
+        doc="Foreign key to pricing plan",
         index=True,
     ),
     sa.Column(
@@ -35,8 +41,14 @@ resource_tracker_pricing_unit_costs = sa.Table(
     sa.Column(
         "pricing_unit_id",
         sa.BigInteger,
+        sa.ForeignKey(
+            "resource_tracker_pricing_units.pricing_unit_id",
+            name="fk_resource_tracker_pricing_units_costs_pricing_unit_id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
         nullable=False,
-        doc="Parent pricing unit",
+        doc="Foreign key to pricing unit",
         index=True,
     ),
     sa.Column(

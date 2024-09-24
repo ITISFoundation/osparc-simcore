@@ -50,7 +50,18 @@ wallets = sa.Table(
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
-    sa.Column("product_name", sa.String, nullable=False, doc="Product name"),
+    sa.Column(
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+            name="fk_wallets_product_name",
+        ),
+        nullable=False,
+        doc="Products unique name",
+    ),
 )
 
 # ------------------------ TRIGGERS
