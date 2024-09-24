@@ -91,9 +91,9 @@ class BaseCustomSettings(BaseSettings):
         case_sensitive=True,  # All must be capitalized
         extra="forbid",
         frozen=True,
-        validate_default=False,
-        ignored_types=(cached_property,),
+        validate_default=True,
         defer_build=True,
+        ignored_types=(cached_property,),
     )
 
     @classmethod
@@ -101,8 +101,8 @@ class BaseCustomSettings(BaseSettings):
         for name, field in cls.model_fields.items():
             auto_default_from_env = (
                 field.json_schema_extra is not None
-                and field.json_schema_extra.get("auto_default_from_env", False)
-            )  # type: ignore[union-attr]
+                and field.json_schema_extra.get("auto_default_from_env", False) # type: ignore[union-attr]
+            )
             field_type = get_type(field)
 
             # Avoids issubclass raising TypeError. SEE test_issubclass_type_error_with_pydantic_models
