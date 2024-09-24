@@ -321,7 +321,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
       // Eula link
       if (osparc.product.Utils.getProductName() !== "osparc") {
-        const eulaLink = osparc.CookiePolicy.getZMTEULALink("end users license agreement (EULA)");
+        const eulaLink = osparc.CookiePolicy.getZMTEULALink("end-users license agreement (EULA)");
         const eulaText = "I accept the " + eulaLink + " and I will use the product in accordance with it";
         const eula = new qx.ui.form.CheckBox().set({
           required: true,
