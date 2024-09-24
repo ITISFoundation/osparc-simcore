@@ -230,10 +230,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _createResourcesLayout: function() {
-      const topBar = this.__createTopBar();
-      this._addToLayout(topBar);
+    _createSearchBar: function() {
+      const searchBarFilter = this._searchBarFilter = new osparc.dashboard.SearchBarFilter(this._resourceType).set({
+        marginRight: 22
+      });
+      const textField = searchBarFilter.getChildControl("text-field");
+      osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
+      this._addToLayout(searchBarFilter);
+    },
 
+    _createResourcesLayout: function() {
       const toolbar = this._toolbar = new qx.ui.toolbar.ToolBar().set({
         backgroundColor: "transparent",
         spacing: 10,
@@ -268,32 +274,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("workspaceUpdated", e => this._workspaceUpdated(e.getData()));
       resourcesContainer.addListener("deleteWorkspaceRequested", e => this._deleteWorkspaceRequested(e.getData()));
 
-      const containerHeader = this._resourcesContainer.getContainerHeader();
-      containerHeader.addListener("changeContext", e => {
-        const {
-          workspaceId,
-          folderId,
-        } = e.getData();
-        this._resourceFilter.contextChanged(workspaceId, folderId);
-      }, this);
-
       this._addToLayout(resourcesContainer);
-    },
-
-    __createTopBar: function() {
-      const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        paddingRight: 22,
-        alignY: "middle"
-      });
-
-      const searchBarFilter = this._searchBarFilter = new osparc.dashboard.SearchBarFilter(this._resourceType);
-      const textField = searchBarFilter.getChildControl("text-field");
-      osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
-      topBar.add(searchBarFilter, {
-        flex: 1
-      });
-
-      return topBar;
     },
 
     _groupByChanged: function(groupBy) {
@@ -373,7 +354,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _addResourceFilter: function() {
       const resourceFilter = this._resourceFilter = new osparc.dashboard.ResourceFilter(this._resourceType).set({
-        marginTop: osparc.dashboard.SearchBarFilter.HEIGHT,
+        marginTop: osparc.dashboard.SearchBarFilter.HEIGHT + 10,
         maxWidth: this.self().SIDE_SPACER_WIDTH,
         width: this.self().SIDE_SPACER_WIDTH
       });

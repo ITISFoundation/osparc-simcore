@@ -189,6 +189,11 @@ services:
       CLUSTERS_KEEPER_EC2_ENDPOINT: ${CLUSTERS_KEEPER_EC2_ENDPOINT}
       CLUSTERS_KEEPER_EC2_REGION_NAME: ${CLUSTERS_KEEPER_EC2_REGION_NAME}
       CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY: ${CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY}
+      CLUSTERS_KEEPER_SSM_ACCESS: ${CLUSTERS_KEEPER_SSM_ACCESS}
+      CLUSTERS_KEEPER_SSM_ACCESS_KEY_ID: ${CLUSTERS_KEEPER_SSM_ACCESS_KEY_ID}
+      CLUSTERS_KEEPER_SSM_ENDPOINT: ${CLUSTERS_KEEPER_SSM_ENDPOINT}
+      CLUSTERS_KEEPER_SSM_REGION_NAME: ${CLUSTERS_KEEPER_SSM_REGION_NAME}
+      CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY: ${CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY}
       CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX: ${CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: ${CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES}
@@ -204,6 +209,8 @@ services:
       PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY: ${PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY}
       PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME: ${PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME}
       PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD: ${PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD}
+      PRIMARY_EC2_INSTANCES_MAX_START_TIME: ${PRIMARY_EC2_INSTANCES_MAX_START_TIME}
+      PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL: ${PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL}
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
@@ -1192,8 +1199,14 @@ services:
       - "--metrics.prometheus.entryPoint=metrics"
       - "--entryPoints.http.address=:80"
       - "--entryPoints.http.forwardedHeaders.insecure"
+      - "--entryPoints.http.transport.respondingTimeouts.idleTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
+      - "--entryPoints.http.transport.respondingTimeouts.writeTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
+      - "--entryPoints.http.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805      - "--entryPoints.simcore_api.address=:10081"
       - "--entryPoints.simcore_api.address=:10081"
       - "--entryPoints.simcore_api.forwardedHeaders.insecure"
+      - "--entryPoints.simcore_api.transport.respondingTimeouts.idleTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
+      - "--entryPoints.simcore_api.transport.respondingTimeouts.writeTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
+      - "--entryPoints.simcore_api.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
       - "--entryPoints.traefik_monitor.address=:8080"
       - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
       - "--providers.swarm.endpoint=unix:///var/run/docker.sock"
@@ -1206,7 +1219,6 @@ services:
       - "--tracing.addinternals"
       - "--tracing.otlp=true"
       - "--tracing.otlp.http=true"
-      # - "--tracing.otlp.http.endpoint=0.0.0.0:4318/v1/traces"
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock

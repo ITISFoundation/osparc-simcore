@@ -45,3 +45,8 @@ class AlreadyPreRegisteredError(UsersBaseError):
     msg_template = (
         "Found {num_found} matches for '{email}'. Cannot pre-register existing user"
     )
+
+
+class BillingDetailsNotFoundError(UsersBaseError):
+    # NOTE: this is for internal log and should not be transmitted to the final user
+    msg_template = "Billing details are missing for user_id={user_id}. TIP: Check whether this user is pre-registered"
