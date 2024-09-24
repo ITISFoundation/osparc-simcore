@@ -1,7 +1,7 @@
 """improve foreign key dependencies
 
 Revision ID: 10729e07000d
-Revises: 9f381dcb9b95
+Revises: 47ca7335e146
 Create Date: 2024-09-24 07:52:20.253076+00:00
 
 """
@@ -9,7 +9,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "10729e07000d"
-down_revision = "9f381dcb9b95"
+down_revision = "47ca7335e146"
 branch_labels = None
 depends_on = None
 
