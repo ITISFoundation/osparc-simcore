@@ -160,7 +160,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       }
       const size = qx.bom.element.Dimension.getSize(element);
       // add padding
-      return size.height + 15;
+      return size.height + 20;
     },
 
     __getDomElement: function() {
