@@ -30,3 +30,7 @@ class OsparcErrorMixin(PydanticErrorMixin):
             )
         ]
         return ".".join(reversed(relevant_classes))
+
+    def ctx(self):
+        """Returns context stored in the exception"""
+        return dict(**self.__dict__)
