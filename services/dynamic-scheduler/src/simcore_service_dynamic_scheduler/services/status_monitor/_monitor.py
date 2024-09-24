@@ -9,7 +9,7 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat, NonNegativeInt
 from servicelib.background_task import stop_periodic_task
 from servicelib.redis_utils import start_exclusive_periodic_task
-from servicelib.utils import logged_gather
+from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 
 from .. import service_tracker
@@ -88,23 +88,23 @@ class Monitor:
                 )
 
         _logger.debug("Removing tracked services: '%s'", to_remove)
-        await logged_gather(
+        await limited_gather(
             *(
                 service_tracker.remove_tracked_service(self.app, node_id)
                 for node_id in to_remove
             ),
-            max_concurrency=_MAX_CONCURRENCY,
+            limit=_MAX_CONCURRENCY,
         )
 
         _logger.debug("Poll status for tracked services: '%s'", to_start)
-        await logged_gather(
+        await limited_gather(
             *(
                 _start_get_status_deferred(
                     self.app, node_id, next_check_delay=NORMAL_RATE_POLL_INTERVAL
                 )
                 for node_id in to_start
             ),
-            max_concurrency=_MAX_CONCURRENCY,
+            limit=_MAX_CONCURRENCY,
         )
 
     async def setup(self) -> None:
