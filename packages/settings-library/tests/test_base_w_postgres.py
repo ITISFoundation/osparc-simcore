@@ -148,9 +148,11 @@ def test_parse_from_individual_envs(monkeypatch, model_classes_factory):
         S1()
 
     assert exc_info.value.errors()[0] == {
+        "input": {},
         "loc": ("WEBSERVER_POSTGRES",),
-        "msg": "field required",
-        "type": "value_error.missing",
+        "msg": "Field required",
+        "type": "missing",
+        "url": "https://errors.pydantic.dev/2.9/v/missing",
     }
 
     s2 = S2()

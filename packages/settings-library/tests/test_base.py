@@ -65,7 +65,6 @@ def create_settings_class() -> Callable[[str], type[BaseCustomSettings]]:
             VALUE_CONFUSING: S = None  # type: ignore
 
             VALUE_NULLABLE_REQUIRED: S | None = ...  # type: ignore
-            VALUE_NULLABLE_OPTIONAL: S | None
 
             VALUE_NULLABLE_DEFAULT_VALUE: S | None = S(S_VALUE=42)
             VALUE_NULLABLE_DEFAULT_NULL: S | None = None
@@ -109,7 +108,7 @@ def test_create_settings_class(
     assert M.model_fields["VALUE_DEFAULT_ENV"].default_factory
 
     with pytest.raises(DefaultFromEnvFactoryError):
-        M.model_fields["VALUE_DEFAULT_ENV"].get_default()
+        M.model_fields["VALUE_DEFAULT_ENV"].get_default(call_default_factory=True)
 
 
 def test_create_settings_class_with_environment(
@@ -145,12 +144,11 @@ def test_create_settings_class_with_environment(
             "VALUE_NULLABLE_REQUIRED": {"S_VALUE": 3},
         }
 
-        assert instance.dict() == {
+        assert instance.model_dump() == {
             "VALUE": {"S_VALUE": 2},
             "VALUE_DEFAULT": {"S_VALUE": 42},
             "VALUE_CONFUSING": None,
             "VALUE_NULLABLE_REQUIRED": {"S_VALUE": 3},
-            "VALUE_NULLABLE_OPTIONAL": None,
             "VALUE_NULLABLE_DEFAULT_VALUE": {"S_VALUE": 42},
             "VALUE_NULLABLE_DEFAULT_NULL": None,
             "VALUE_NULLABLE_DEFAULT_ENV": {"S_VALUE": 1},
@@ -164,10 +162,10 @@ def test_create_settings_class_without_environ_fails(
     # now defining S_VALUE
     M2_outside_context = create_settings_class("M2")
 
-    with pytest.raises(ValidationError) as err_info:
+    with pytest.raises(DefaultFromEnvFactoryError) as err_info:
         M2_outside_context.create_from_envs()
 
-    assert err_info.value.errors()[0] == {
+    assert err_info.value.errors[0] == {
         "loc": ("VALUE_DEFAULT_ENV", "S_VALUE"),
         "msg": "Field required",
         "type": "missing",
@@ -291,7 +289,7 @@ def test_how_settings_parse_null_environs(monkeypatch: pytest.MonkeyPatch):
         "loc": ("INT_VALUE_TO_NOTHING",),
         "msg": "Input should be a valid integer, unable to parse string as an integer",
         "type": "int_parsing",
-        'url': 'https://errors.pydantic.dev/2.9/v/int_parsing',
+        "url": "https://errors.pydantic.dev/2.9/v/int_parsing",
     }
 
 
