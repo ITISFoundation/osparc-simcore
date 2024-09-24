@@ -392,3 +392,8 @@ def guess_message_log_level(message: str) -> LogLevelInt:
     ):
         return logging.WARNING
     return logging.INFO
+
+
+def set_parent_module_log_level(current_module: str, desired_log_level: int) -> None:
+    parent_module = ".".join(current_module.split(".")[:-1])
+    logging.getLogger(parent_module).setLevel(desired_log_level)
