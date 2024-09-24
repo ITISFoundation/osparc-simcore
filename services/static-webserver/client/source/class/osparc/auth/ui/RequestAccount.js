@@ -129,7 +129,8 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           rich: true
         });
         country.add(cItem);
-      })
+      });
+      // preselect
       fetch("https://ipapi.co/json")
         .then(res => res.json())
         .then(data => {
@@ -137,6 +138,12 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           if (countryFound) {
             country.setSelection([countryFound])
           }
+        })
+        .catch(err => {
+          console.error(err);
+          const emptyItem = new qx.ui.form.ListItem("", null, "");
+          country.add(emptyItem);
+          country.setSelection([emptyItem]);
         });
       this._form.add(country, this.tr("Country"), null, "country");
 
@@ -321,7 +328,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
       // Eula link
       if (osparc.product.Utils.getProductName() !== "osparc") {
-        const eulaLink = osparc.CookiePolicy.getZMTEULALink("end users license agreement (EULA)");
+        const eulaLink = osparc.CookiePolicy.getZMTEULALink("end-users license agreement (EULA)");
         const eulaText = "I accept the " + eulaLink + " and I will use the product in accordance with it";
         const eula = new qx.ui.form.CheckBox().set({
           required: true,
