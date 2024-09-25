@@ -40,14 +40,10 @@ def test_mixin_logging(monkeypatch):
     assert settings.LOG_LEVEL == "DEBUG"
 
     assert (
-        settings.json()
-        == '{"SC_BOOT_MODE": null, "LOG_LEVEL": "DEBUG", "APPNAME_DEBUG": false}'
+        settings.model_dump_json()
+        == '{"SC_BOOT_MODE":null,"LOG_LEVEL":"DEBUG","APPNAME_DEBUG":false}'
     )
 
     # test cached-property
     assert settings.log_level == logging.DEBUG
-    # log_level is cached-property (notice that is lower-case!), and gets added after first use
-    assert (
-        settings.json()
-        == '{"SC_BOOT_MODE": null, "LOG_LEVEL": "DEBUG", "APPNAME_DEBUG": false, "log_level": 10}'
-    )
+
