@@ -4,14 +4,13 @@
 """
 from enum import Enum, auto
 
-from pydantic import parse_obj_as
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
 
 from .basic_types import PortInt
 
-DEFAULT_AIOHTTP_PORT: PortInt = parse_obj_as(PortInt, 8080)
-DEFAULT_FASTAPI_PORT: PortInt = parse_obj_as(PortInt, 8000)
+DEFAULT_AIOHTTP_PORT: PortInt = 8080
+DEFAULT_FASTAPI_PORT: PortInt = 8000
 
 
 class URLPart(Enum):
@@ -96,6 +95,8 @@ class MixinServiceSettings:
         assert prefix  # nosec
         prefix = prefix.upper()
 
+        port_value = self._safe_getattr(f"{prefix}_PORT", port)
+
         parts = {
             "scheme": (
                 "https"
@@ -105,7 +106,7 @@ class MixinServiceSettings:
             "host": self._safe_getattr(f"{prefix}_HOST", URLPart.REQUIRED),
             "username": self._safe_getattr(f"{prefix}_USER", user),
             "password": self._safe_getattr(f"{prefix}_PASSWORD", password),
-            "port": self._safe_getattr(f"{prefix}_PORT", port),
+            "port": int(port_value) if port_value is not None else None,
         }
 
         if vtag != URLPart.EXCLUDE:  # noqa: SIM102
@@ -125,7 +126,7 @@ class MixinServiceSettings:
 
         assert all(isinstance(v, str) or v is None for v in kwargs.values())  # nosec
 
-        composed_url: str = str(AnyUrl.build(**kwargs)) # type: ignore[arg-type]
+        composed_url: str = str(AnyUrl.build(**kwargs))  # type: ignore[arg-type]
         return composed_url
 
     def _build_api_base_url(self, *, prefix: str) -> str:
