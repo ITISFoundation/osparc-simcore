@@ -1,12 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import datetime
 
-from ..modules.task_monitor import TaskMonitor
-from ._dependencies import get_task_monitor
+from fastapi import APIRouter
 
 router = APIRouter()
 
 
 @router.get("/health")
-def health(task_monitor: TaskMonitor = Depends(get_task_monitor)) -> None:
-    if not task_monitor.was_started or task_monitor.are_tasks_hanging:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="unhealthy")
+async def check_service_health():
+    return f"{__name__}@{datetime.datetime.now(tz=datetime.timezone.utc).isoformat()}"
