@@ -94,15 +94,19 @@ def test_classic_ti_plan(  # noqa: PLR0915
     create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
 ):
     with log_context(logging.INFO, "Checking 'Access TIP' teaser"):
+        # click to open and expand
+        page.get_by_test_id("userMenuBtn").click()
+
         if is_product_lite:
-            page.get_by_test_id("userMenuBtn").click()
             page.get_by_test_id("userMenuAccessTIPBtn").click()
             assert page.get_by_test_id("tipTeaserWindow").is_visible()
             page.get_by_test_id("tipTeaserWindowCloseBtn").click()
         else:
             assert (
-                page.get_by_test_id("userMenuBtn").count() == 0
+                page.get_by_test_id("userMenuAccessTIPBtn").count() == 0
             ), "full version should NOT have a teaser"
+            # click to close
+            page.get_by_test_id("userMenuBtn").click()
 
     # press + button
     project_data = create_tip_plan_from_dashboard("newTIPlanButton")
