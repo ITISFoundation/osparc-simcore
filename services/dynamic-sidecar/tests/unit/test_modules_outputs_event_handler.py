@@ -10,6 +10,9 @@ import aioprocessing
 import pytest
 from aioprocessing.queues import AioQueue
 from pydantic import PositiveFloat
+from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
+    PortNotifier,
+)
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._event_handler import (
     EventHandlerObserver,
@@ -39,10 +42,13 @@ async def outputs_context(
 
 @pytest.fixture
 async def outputs_manager(
-    outputs_context: OutputsContext,
+    outputs_context: OutputsContext, port_notifier: PortNotifier
 ) -> AsyncIterable[OutputsManager]:
     outputs_manager = OutputsManager(
-        outputs_context, io_log_redirect_cb=None, progress_cb=None
+        outputs_context,
+        port_notifier=port_notifier,
+        io_log_redirect_cb=None,
+        progress_cb=None,
     )
     await outputs_manager.start()
 

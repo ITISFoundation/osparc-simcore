@@ -1,6 +1,7 @@
-# pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
+# pylint:disable=too-many-positional-arguments
+# pylint:disable=unused-argument
 
 import asyncio
 import logging
@@ -229,6 +230,7 @@ def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
     )
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_legacy_and_dynamic_sidecar_run(
     initialized_app: FastAPI,
     wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],

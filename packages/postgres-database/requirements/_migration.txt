@@ -1,8 +1,8 @@
-alembic==1.13.2
+alembic==1.13.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_migration.in
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -12,11 +12,11 @@ click==8.1.7
     # via -r requirements/_migration.in
 docker==7.1.0
     # via -r requirements/_migration.in
-greenlet==3.0.3
+greenlet==3.1.1
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-idna==3.7
+idna==3.10
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -31,7 +31,7 @@ markupsafe==2.1.5
     #   mako
 requests==2.32.3
     # via docker
-sqlalchemy==1.4.53
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -42,7 +42,7 @@ typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   alembic
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_migration.in

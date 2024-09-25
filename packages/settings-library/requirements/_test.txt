@@ -2,7 +2,7 @@ coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==27.0.0
+faker==29.0.0
     # via -r requirements/_test.in
 iniconfig==2.0.0
     # via pytest
@@ -12,7 +12,7 @@ packaging==24.1
     #   pytest-sugar
 pluggy==1.5.0
     # via pytest
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/_test.in
     #   pytest-cov
