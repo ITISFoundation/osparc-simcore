@@ -104,9 +104,9 @@ class MixinServiceSettings:
                 else "http"
             ),
             "host": self._safe_getattr(f"{prefix}_HOST", URLPart.REQUIRED),
+            "port": int(port_value) if port_value is not None else None,
             "username": self._safe_getattr(f"{prefix}_USER", user),
             "password": self._safe_getattr(f"{prefix}_PASSWORD", password),
-            "port": int(port_value) if port_value is not None else None,
         }
 
         if vtag != URLPart.EXCLUDE:  # noqa: SIM102
@@ -116,15 +116,17 @@ class MixinServiceSettings:
         # post process parts dict
         kwargs = {}
         for k, v in parts.items():
-            value = v
             if isinstance(v, SecretStr):
                 value = v.get_secret_value()
-            elif v is not None:
-                value = f"{v}"
+            else:
+                value = v
 
-            kwargs[k] = value
+            if value is not None:
+                kwargs[k] = value
 
-        assert all(isinstance(v, str) or v is None for v in kwargs.values())  # nosec
+        assert all(
+            isinstance(v, (str, int)) or v is None for v in kwargs.values()
+        )  # nosec
 
         composed_url: str = str(AnyUrl.build(**kwargs))  # type: ignore[arg-type]
         return composed_url
