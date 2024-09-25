@@ -105,13 +105,13 @@ qx.Class.define("osparc.po.PreRegistration", {
                 findingStatus.setValue(this.tr("No Pre-Registered user found"));
               }
               this.__populatePreRegistrationLayout(data);
-          })
+            })
             .catch(err => {
               const detailErrorMsg = this.tr(`Error during Pre-Registeristration: ${err.message}`)
               findingStatus.setValue(detailErrorMsg);
               console.error(err);
               osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
-          })
+            })
             .finally(() => submitBtn.setFetching(false));
         }
       }, this);
