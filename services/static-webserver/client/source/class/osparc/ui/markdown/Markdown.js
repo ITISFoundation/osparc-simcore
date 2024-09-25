@@ -71,6 +71,10 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     }
   },
 
+  events: {
+    "resized": "qx.event.type.Event",
+  },
+
   members: {
     __loadMarked: null,
     /**
@@ -138,7 +142,26 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
         } else {
           this.setMinHeight(elemHeight);
         }
+
+        const elemMaxWidth = this.__getChildrenElementMaxWidth(domElement.children);
+        if (this.getMaxWidth() && elemMaxWidth > this.getMaxWidth()) {
+          this.setWidth(elemMaxWidth);
+        } else {
+          this.setMinWidth(elemMaxWidth);
+        }
       }
+      this.fireEvent("resized");
+    },
+
+    __getDomElement: function() {
+      if (!this.getContentElement || this.getContentElement() === null) {
+        return null;
+      }
+      const domElement = this.getContentElement().getDomElement();
+      if (domElement) {
+        return domElement;
+      }
+      return null;
     },
 
     __getChildrenElementHeight: function(children) {
@@ -155,23 +178,37 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
       if (this.getNoMargin()) {
         element.style.marginTop = 0;
         element.style.marginBottom = 0;
-        const size = qx.bom.element.Dimension.getSize(element);
+        const size = this.__getElementSize(element);
         return size.height;
       }
-      const size = qx.bom.element.Dimension.getSize(element);
+      const size = this.__getElementSize(element);
       // add padding
-      return size.height + 15;
+      return size.height + 20;
     },
 
-    __getDomElement: function() {
-      if (!this.getContentElement || this.getContentElement() === null) {
-        return null;
+    __getChildrenElementMaxWidth: function(children) {
+      let maxWidth = 0;
+      for (let i=0; i < children.length; i++) {
+        maxWidth = Math.max(this.__getElementWidth(children[i]), maxWidth);
       }
-      const domElement = this.getContentElement().getDomElement();
-      if (domElement) {
-        return domElement;
+      return maxWidth;
+    },
+
+    __getElementWidth: function(element) {
+      const size = this.__getElementSize(element);
+      return size.width;
+    },
+
+    __getElementSize: function(element) {
+      if (
+        element &&
+        element.children &&
+        element.children.length &&
+        element.children[0].localName === "img"
+      ) {
+        return qx.bom.element.Dimension.getSize(element.children[0]);
       }
-      return null;
-    }
+      return qx.bom.element.Dimension.getSize(element);
+    },
   }
 });
