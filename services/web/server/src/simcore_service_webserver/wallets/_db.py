@@ -156,6 +156,9 @@ async def get_wallet_for_user(
         if row is None:
             raise WalletAccessForbiddenError(
                 reason=f"User does not have access to the wallet {wallet_id}. Or wallet does not exist.",
+                user_id=user_id,
+                wallet_id=wallet_id,
+                product_name=product_name,
             )
         return parse_obj_as(UserWalletDB, row)
 
