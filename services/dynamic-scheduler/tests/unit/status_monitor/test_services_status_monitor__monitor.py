@@ -1,4 +1,5 @@
 # pylint:disable=redefined-outer-name
+# pylint:disable=too-many-positional-arguments
 # pylint:disable=unused-argument
 
 import json
