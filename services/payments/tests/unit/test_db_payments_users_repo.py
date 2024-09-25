@@ -59,7 +59,7 @@ async def user(
     injects a user in db
     """
     assert user_id == user["id"]
-    async with insert_and_get_row_lifespan(
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         get_engine(app),
         table=users,
         values=user,
@@ -84,7 +84,7 @@ async def product(
     """
     # NOTE: this fixture ignores products' group-id but it is fine for this test context
     assert product["group_id"] is None
-    async with insert_and_get_row_lifespan(
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         get_engine(app),
         table=products,
         values=product,
@@ -101,7 +101,7 @@ async def successful_transaction(
     """
     injects transaction in db
     """
-    async with insert_and_get_row_lifespan(
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         get_engine(app),
         table=payments_transactions,
         values=successful_transaction,
