@@ -30,7 +30,7 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
   },
 
   statics: {
-    createLoginAnnouncement: function(title, text) {
+    createLoginAnnouncement: function(title, description) {
       const loginAnnouncement = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
         backgroundColor: "strong-main",
         alignX: "center",
@@ -54,9 +54,9 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         loginAnnouncement.add(titleLabel);
       }
 
-      if (text) {
+      if (description) {
         const descriptionLabel = new qx.ui.basic.Label().set({
-          value: text,
+          value: description,
           font: "text-14",
           textColor: "white",
           alignX: "center",
@@ -124,8 +124,10 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         return;
       }
 
-      let text = announcement.getTitle() + ": ";
-      text += announcement.getDescription();
+      let text = announcement.getTitle();
+      if (announcement.getDescription()) {
+        text += ": " + announcement.getDescription();
+      }
 
       const ribbonAnnouncement = this.__ribbonAnnouncement = new osparc.notification.RibbonNotification(text, "announcement", true);
       ribbonAnnouncement.announcementId = announcement.getId();
