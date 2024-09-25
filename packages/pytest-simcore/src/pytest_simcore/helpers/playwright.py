@@ -332,7 +332,7 @@ def expected_service_running(
             with websocket.expect_event("framereceived", waiter, timeout=timeout):
                 if press_start_button:
                     _trigger_service_start(page, node_id)
-        except Exception:
+        except TimeoutError:
             ctx.logger.warning(
                 "⚠️ Progress bar didn't recieve 100 percent: %s ⚠️",
                 waiter._current_progress.values(),
