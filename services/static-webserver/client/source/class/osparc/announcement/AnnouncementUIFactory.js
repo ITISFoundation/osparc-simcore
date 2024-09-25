@@ -76,15 +76,12 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
     __isValid: function(widgetType) {
       const announcement = this.getAnnouncement();
 
-      const now = new Date();
-      if (
-        announcement &&
-        announcement.getProducts().includes(osparc.product.Utils.getProductName()) &&
-        announcement.getWidgets().includes(widgetType) &&
-        now > announcement.getStart() &&
-        now < announcement.getEnd()
-      ) {
-        return true;
+      if (announcement) {
+        const now = new Date();
+        const validPeriod = now > announcement.getStart() && now < announcement.getEnd();
+        const validProduct = announcement.getProducts().includes(osparc.product.Utils.getProductName());
+        const validWidget = widgetType ? announcement.getWidgets().includes(widgetType) : true;
+        return validPeriod && validProduct && validWidget;
       }
       return false;
     },
