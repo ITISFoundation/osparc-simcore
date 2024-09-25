@@ -1,7 +1,8 @@
 from functools import cached_property
 from typing import Any
 
-from pydantic import ConfigDict, Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator
+from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
 
@@ -36,7 +37,7 @@ class RegistrySettings(BaseCustomSettings):
     def api_url(self) -> str:
         return f"{self.REGISTRY_URL}/v2"
 
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         json_schema_extra={
             "examples": [
                 {
