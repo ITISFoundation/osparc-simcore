@@ -20,6 +20,27 @@ qx.Theme.define("osparc.theme.Decoration", {
   extend: osparc.theme.common.Decoration,
 
   decorations: {
+    "rounded": {
+      style: {
+        radius: 4
+      }
+    },
+
+    "border-simple": {
+      include: "border",
+      style: {
+        radius: 4
+      }
+    },
+
+    "no-border": {
+      style: {
+        radius: 4,
+        width: 1,
+        color: "transparent"
+      }
+    },
+
     "material-button-invalid": {},
     "material-button": {
       style: {
@@ -38,12 +59,6 @@ qx.Theme.define("osparc.theme.Decoration", {
         radius: 2,
         width: 1,
         color: "text"
-      }
-    },
-
-    "rounded": {
-      style: {
-        radius: 4
       }
     },
 
@@ -235,21 +250,6 @@ qx.Theme.define("osparc.theme.Decoration", {
         transitionProperty: "height",
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
-      }
-    },
-
-    "border-simple": {
-      include: "border",
-      style: {
-        radius: 4
-      }
-    },
-
-    "no-border": {
-      style: {
-        radius: 4,
-        width: 1,
-        color: "transparent"
       }
     },
 
