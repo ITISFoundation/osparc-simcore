@@ -169,7 +169,7 @@ qx.Class.define("osparc.dashboard.NewStudies", {
       const title = templateInfo.title;
       let desc = templateInfo.description;
       if (desc) {
-        desc = desc.replace("replace_me_product_name", osparc.store.StaticInfo.getDisplayName());
+        desc = desc.replace("replace_me_product_name", osparc.store.StaticInfo.getInstance().getDisplayName());
       }
       const newPlanButton = new osparc.dashboard.GridButtonNew(title, desc);
       newPlanButton.setCardKey(templateInfo.idToWidget);
