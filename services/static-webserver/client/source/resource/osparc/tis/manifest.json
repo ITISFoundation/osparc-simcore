@@ -39,5 +39,8 @@
    "density": "4.0"
   }
  ],
- "display": "standalone"
+ "start_url": ".",
+ "display": "standalone",
+ "theme_color": "#6969FF",
+ "background_color": "#FFFFFF"
 }
