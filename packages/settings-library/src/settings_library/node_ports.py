@@ -24,8 +24,8 @@ class StorageAuthSettings(StorageSettings):
     @model_validator(mode="after")
     @classmethod
     def _validate_auth_fields(cls, values):
-        username = values["STORAGE_USERNAME"]
-        password = values["STORAGE_PASSWORD"]
+        username = values.STORAGE_USERNAME
+        password = values.STORAGE_PASSWORD
         if (username is None) != (password is None):
             msg = f"Both {username=} and {password=} must be either set or unset!"
             raise ValueError(msg)

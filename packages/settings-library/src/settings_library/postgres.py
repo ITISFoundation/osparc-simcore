@@ -63,7 +63,7 @@ class PostgresSettings(BaseCustomSettings):
                 password=self.POSTGRES_PASSWORD.get_secret_value(),
                 host=self.POSTGRES_HOST,
                 port=self.POSTGRES_PORT,
-                path=f"/{self.POSTGRES_DB}",
+                path=f"{self.POSTGRES_DB}",
             )
         )
         return dsn
@@ -77,7 +77,7 @@ class PostgresSettings(BaseCustomSettings):
                 password=self.POSTGRES_PASSWORD.get_secret_value(),
                 host=self.POSTGRES_HOST,
                 port=self.POSTGRES_PORT,
-                path=f"/{self.POSTGRES_DB}",
+                path=f"{self.POSTGRES_DB}",
             )
         )
         return dsn
