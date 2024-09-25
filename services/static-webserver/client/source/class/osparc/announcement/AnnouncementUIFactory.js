@@ -46,6 +46,7 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         const titleLabel = new qx.ui.basic.Label().set({
           value: title,
           font: "text-16",
+          alignX: "center",
           textAlign: "center",
           rich: true
         });
@@ -56,6 +57,7 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         const descriptionLabel = new qx.ui.basic.Label().set({
           value: description,
           font: "text-14",
+          alignX: "center",
           textAlign: "center",
           rich: true
         });
