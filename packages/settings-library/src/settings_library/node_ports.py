@@ -11,8 +11,8 @@ NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE: Final[NonNegativeInt] = 3
 
 
 class StorageAuthSettings(StorageSettings):
-    STORAGE_USERNAME: str | None
-    STORAGE_PASSWORD: SecretStr | None
+    STORAGE_USERNAME: str | None = None
+    STORAGE_PASSWORD: SecretStr | None = None
     STORAGE_SECURE: bool = False
 
     @property
