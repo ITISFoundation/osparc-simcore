@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
+# pylint: disable=unused-argument
 
 from collections.abc import Callable
 from typing import Final
