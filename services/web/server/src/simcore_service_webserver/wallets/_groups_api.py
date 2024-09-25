@@ -41,7 +41,13 @@ async def create_wallet_group(
     )
     if wallet.write is False:
         raise WalletAccessForbiddenError(
-            reason=f"User does not have write access to wallet {wallet_id}"
+            reason=f"User does not have write access to wallet {wallet_id}",
+            user_id=user_id,
+            wallet_id=wallet_id,
+            product_name=product_name,
+            user_acces_rights_on_wallet=wallet.dict(
+                include={"read", "write", "delete"}
+            ),
         )
 
     wallet_group_db: WalletGroupGetDB = await wallets_groups_db.create_wallet_group(
@@ -69,7 +75,13 @@ async def list_wallet_groups_by_user_and_wallet(
     )
     if wallet.read is False:
         raise WalletAccessForbiddenError(
-            reason=f"User does not have read access to wallet {wallet_id}"
+            reason=f"User does not have read access to wallet {wallet_id}",
+            user_id=user_id,
+            wallet_id=wallet_id,
+            product_name=product_name,
+            user_acces_rights_on_wallet=wallet.dict(
+                include={"read", "write", "delete"}
+            ),
         )
 
     wallet_groups_db: list[
@@ -124,7 +136,13 @@ async def update_wallet_group(
         if user["primary_gid"] != wallet.owner:
             # Only the owner of the wallet can modify the owner group
             raise WalletAccessForbiddenError(
-                reason=f"User does not have access to modify owner wallet group in wallet {wallet_id}"
+                reason=f"User does not have access to modify owner wallet group in wallet {wallet_id}",
+                user_id=user_id,
+                wallet_id=wallet_id,
+                product_name=product_name,
+                user_acces_rights_on_wallet=wallet.dict(
+                    include={"read", "write", "delete"}
+                ),
             )
 
     wallet_group_db: WalletGroupGetDB = await wallets_groups_db.update_wallet_group(
