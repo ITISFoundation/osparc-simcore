@@ -119,7 +119,6 @@ def test_create_settings_class(
         M.model_fields["VALUE_DEFAULT_ENV"].get_default(call_default_factory=True)
 
 
-@pytest.mark.testit
 def test_create_settings_class_with_environment(
     monkeypatch: pytest.MonkeyPatch,
     create_settings_class: Callable[[str], type[BaseCustomSettings]],
