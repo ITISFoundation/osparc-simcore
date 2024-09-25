@@ -29,7 +29,9 @@ qx.Class.define("osparc.po.PreRegistration", {
           break;
         case "finding-status":
           control = new qx.ui.basic.Label();
-          this._add(control);
+          this._add(control, {
+            rich: true
+          });
           break;
         case "pre-registration-container":
           control = new qx.ui.container.Scroll();
@@ -76,11 +78,27 @@ qx.Class.define("osparc.po.PreRegistration", {
         }
         if (form.validate()) {
           submitBtn.setFetching(true);
+
+          const flashErrorMsg = this.tr("Pre-Registration Failed. See details below");
           const findingStatus = this.getChildControl("finding-status");
           findingStatus.setValue(this.tr("Searching Pre-Registered users..."));
-          const params = {
-            data: JSON.parse(requestAccountData.getValue())
-          };
+
+          let params;
+          try {
+            params = {
+              data: JSON.parse(requestAccountData.getValue())
+            };
+          } catch (err) {
+            console.error(err);
+
+            const detailErrorMsg = `Error parsing Request Form JSON. ${err}`;
+            findingStatus.setValue(detailErrorMsg);
+
+            osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
+            submitBtn.setFetching(false);
+            return
+          }
+
           osparc.data.Resources.fetch("users", "preRegister", params)
             .then(data => {
               if (data.length) {
@@ -91,9 +109,10 @@ qx.Class.define("osparc.po.PreRegistration", {
               this.__populatePreRegistrationLayout(data);
             })
             .catch(err => {
-              findingStatus.setValue(this.tr("Error searching Pre-Registered users"));
+              const detailErrorMsg = this.tr(`Error during Pre-Registeristration: ${err.message}`)
+              findingStatus.setValue(detailErrorMsg);
               console.error(err);
-              osparc.FlashMessenger.logAs(err.message, "ERROR");
+              osparc.FlashMessenger.logAs(flashErrorMsg, "ERROR");
             })
             .finally(() => submitBtn.setFetching(false));
         }
