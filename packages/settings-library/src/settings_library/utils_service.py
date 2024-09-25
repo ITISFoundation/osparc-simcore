@@ -111,7 +111,7 @@ class MixinServiceSettings:
 
         if vtag != URLPart.EXCLUDE:  # noqa: SIM102
             if v := self._safe_getattr(f"{prefix}_VTAG", vtag):
-                parts["path"] = f"/{v}"
+                parts["path"] = f"{v}"
 
         # post process parts dict
         kwargs = {}
@@ -129,7 +129,7 @@ class MixinServiceSettings:
         )  # nosec
 
         composed_url: str = str(AnyUrl.build(**kwargs))  # type: ignore[arg-type]
-        return composed_url
+        return composed_url.rstrip("/")
 
     def _build_api_base_url(self, *, prefix: str) -> str:
         return self._compose_url(

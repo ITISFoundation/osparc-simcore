@@ -24,9 +24,9 @@ def test_mixing_service_settings_usage(monkeypatch: pytest.MonkeyPatch):
         MY_VTAG: VersionTag | None = None
         MY_SECURE: bool = False
 
-        # optional
-        MY_USER: str | None
-        MY_PASSWORD: SecretStr | None
+        # optional (in Pydantic v2 requires a default)
+        MY_USER: str | None = None
+        MY_PASSWORD: SecretStr | None = None
 
         @cached_property
         def api_base_url(self) -> str:
