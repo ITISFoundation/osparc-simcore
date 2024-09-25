@@ -236,6 +236,14 @@ class SocketIONodeProgressCompleteWaiter:
 
         return False
 
+    def is_progress_succesfully_finished(self) -> bool:
+        return all(
+            round(progress, 1) == 1.0 for progress in self._current_progress.values()
+        )
+
+    def get_current_progress(self):
+        return self._current_progress.values()
+
 
 def wait_for_pipeline_state(
     current_state: RunningState,
@@ -333,10 +341,13 @@ def expected_service_running(
                 if press_start_button:
                     _trigger_service_start(page, node_id)
         except TimeoutError:
-            ctx.logger.warning(
-                "⚠️ Progress bar didn't recieve 100 percent: %s ⚠️",
-                waiter._current_progress.values(),
-            )
+            if waiter.is_progress_succesfully_finished() is False:
+                ctx.logger.warning(
+                    "⚠️ Progress bar didn't receive 100 percent: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
+                    waiter.get_current_progress(),
+                )
+            else:
+                raise
 
         yield service_running
 
