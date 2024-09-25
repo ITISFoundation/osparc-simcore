@@ -75,7 +75,6 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
 
     __isValid: function(widgetType) {
       const announcement = this.getAnnouncement();
-
       if (announcement) {
         const now = new Date();
         const validPeriod = now > announcement.getStart() && now < announcement.getEnd();
