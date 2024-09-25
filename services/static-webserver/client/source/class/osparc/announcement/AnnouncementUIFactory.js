@@ -46,10 +46,8 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         const titleLabel = new qx.ui.basic.Label().set({
           value: title,
           font: "text-16",
-          textColor: "white",
           alignX: "center",
-          rich: true,
-          wrap: true
+          rich: true
         });
         loginAnnouncement.add(titleLabel);
       }
@@ -58,10 +56,8 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         const descriptionLabel = new qx.ui.basic.Label().set({
           value: description,
           font: "text-14",
-          textColor: "white",
           alignX: "center",
-          rich: true,
-          wrap: true
+          rich: true
         });
         loginAnnouncement.add(descriptionLabel);
       }
