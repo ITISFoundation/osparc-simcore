@@ -36,7 +36,9 @@ class _ExtendedInotifyBuffer(InotifyBuffer):
         # overwrite the `InotifyBuffer.__init__` method
         BaseThread.__init__(self)  # pylint:disable=non-parent-init-called
         self._queue = DelayedQueue(self.delay)
-        self._inotify = Inotify(path, recursive, _EVENTS_TO_WATCH)
+        self._inotify = Inotify(  # pylint:disable=too-many-function-args
+            path, recursive, _EVENTS_TO_WATCH
+        )
         self.start()
 
 
