@@ -13,13 +13,14 @@ from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
-from pydantic import BaseModel, conint, schema_of
+from pydantic import BaseModel, Field, schema_of
 from pydantic.error_wrappers import ValidationError
 from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.port_validation import (
     PortUnitError,
     validate_port_content,
 )
+from typing_extensions import Annotated
 
 
 def _replace_value_in_dict(item: Any, original_schema: dict[str, Any]):
@@ -128,7 +129,7 @@ async def test_port_with_array_of_object(mocker):
     mocker.patch.object(Port, "_node_ports", new=AsyncMock())
 
     class A(BaseModel):
-        i: conint(gt=3)
+        i: Annotated[int, Field(gt=3)]
         b: bool = False
         s: str
         l: list[int]

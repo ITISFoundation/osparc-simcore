@@ -219,7 +219,8 @@ async def mock_filemanager(mocker: MockerFixture, e_tag: str, faker: Faker) -> N
     mocker.patch(
         "simcore_sdk.node_ports_common.filemanager._get_file_meta_data",
         return_value=parse_obj_as(
-            FileMetaDataGet, FileMetaDataGet.Config.schema_extra["examples"][0]
+            FileMetaDataGet,
+            FileMetaDataGet.model_config["json_schema_extra"]["examples"][0],
         ),
     )
     mocker.patch(

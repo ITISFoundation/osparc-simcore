@@ -1,15 +1,11 @@
-import re
+from decimal import Decimal
 from enum import StrEnum
-from typing import Final, TypeAlias
+from re import Pattern
+from typing import Annotated, Final, TypeAlias
 
-
-from pydantic import (
-    ConstrainedDecimal,
-    ConstrainedInt,
-    ConstrainedStr,
-    HttpUrl,
-    PositiveInt,
-)
+import pydantic
+from pydantic import Field, PositiveInt, StringConstraints
+from pydantic_core import core_schema
 
 from .basic_regex import (
     PROPERTY_KEY_RE,
@@ -18,73 +14,75 @@ from .basic_regex import (
     UUID_RE,
 )
 
+NonNegativeDecimal: TypeAlias = Annotated[Decimal, Field(ge=0)]
 
-class NonNegativeDecimal(ConstrainedDecimal):
-    ge = 0
+PositiveDecimal: TypeAlias = Annotated[Decimal, Field(gt=0)]
 
-
-class PositiveDecimal(ConstrainedDecimal):
-    gt = 0
-
-
-class AmountDecimal(ConstrainedDecimal):
-    # Used for amounts like credits or dollars
-    # NOTE: upper limit to avoid https://github.com/ITISFoundation/appmotion-exchange/issues/2
-    # NOTE: do not contraint in decimal places. Too strong validation error rather Decimal.quantize
-    # before passing the value
-    gt = 0
-    lt = 1e6
-
+# Used for amounts like credits or dollars
+# NOTE: upper limit to avoid https://github.com/ITISFoundation/appmotion-exchange/issues/2
+# NOTE: do not contraint in decimal places. Too strong validation error rather Decimal.quantize
+# before passing the value
+AmountDecimal: TypeAlias = Annotated[Decimal, Field(gt=0, lt=1e6)]
 
 # port number range
-class PortInt(ConstrainedInt):
-    gt = 0
-    lt = 65535
-
+PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
 
 # e.g. 'v5'
-class VersionTag(ConstrainedStr):
-    regex = re.compile(r"^v\d$")
+VersionTag: TypeAlias = Annotated[str, StringConstraints(pattern=r"^v\d$")]
 
-
-class VersionStr(ConstrainedStr):
-    regex = re.compile(SIMPLE_VERSION_RE)
-
+VersionStr: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
 
 # e.g. '1.23.11' or '2.1.0-rc2' or not 0.1.0-alpha  (see test_SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
-class SemanticVersionStr(ConstrainedStr):
-    regex = re.compile(SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
-
+SemanticVersionStr: TypeAlias = Annotated[
+    str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
+]
 
 # checksums
 # sha1sum path/to/file
-class SHA1Str(ConstrainedStr):
-    regex = re.compile(r"^[a-fA-F0-9]{40}$")
-
+SHA1Str: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{40}$")]
 
 # sha256sum path/to/file
-class SHA256Str(ConstrainedStr):
-    regex = re.compile(r"^[a-fA-F0-9]{64}$")
-
+SHA256Str: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{64}$")]
 
 # md5sum path/to/file
-class MD5Str(ConstrainedStr):
-    regex = re.compile(r"^[a-fA-F0-9]{32}$")
-
+MD5Str: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-fA-F0-9]{32}$")]
 
 # env var
-class EnvVarKey(ConstrainedStr):
-    regex = re.compile(r"[a-zA-Z]\w*")
-
+EnvVarKey: TypeAlias = Annotated[str, StringConstraints(pattern=r"^[a-zA-Z]\w*")]
 
 # e.g. '5c833a78-1af3-43a7-9ed7-6a63b188f4d8'
-class UUIDStr(ConstrainedStr):
-    regex = re.compile(UUID_RE)
+UUIDStr: TypeAlias = Annotated[str, StringConstraints(pattern=UUID_RE)]
 
 
 # non-empty bounded string used as identifier
 # e.g. "123" or "name_123" or "fa327c73-52d8-462a-9267-84eeaf0f90e3" but NOT ""
 _ELLIPSIS_CHAR: Final[str] = "..."
+
+
+class ConstrainedStr(str):
+    pattern: str | Pattern[str] | None = None
+    min_length: int | None = None
+    max_length: int | None = None
+    strip_whitespace: bool = False
+    curtail_length: int | None = None
+
+    @classmethod
+    def _validate(cls, __input_value: str) -> str:
+        if cls.curtail_length and len(__input_value) > cls.curtail_length:
+            __input_value = __input_value[: cls.curtail_length]
+        return cls(__input_value)
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, _source_type, _handler):
+        return core_schema.no_info_after_validator_function(
+            cls._validate,
+            core_schema.str_schema(
+                pattern=cls.pattern,
+                min_length=cls.min_length,
+                max_length=cls.max_length,
+                strip_whitespace=cls.strip_whitespace,
+            ),
+        )
 
 
 class IDStr(ConstrainedStr):
@@ -132,6 +130,9 @@ class LongTruncatedStr(ConstrainedStr):
 IdInt: TypeAlias = PositiveInt
 PrimaryKeyInt: TypeAlias = PositiveInt
 
+AnyHttpUrl = Annotated[str, pydantic.AnyHttpUrl]
+
+HttpUrl = Annotated[str, pydantic.HttpUrl]
 
 # https e.g. https://techterms.com/definition/https
 class HttpSecureUrl(HttpUrl):
@@ -180,5 +181,4 @@ class BuildTargetEnum(StrEnum):
     DEVELOPMENT = "development"
 
 
-class KeyIDStr(ConstrainedStr):
-    regex = re.compile(PROPERTY_KEY_RE)
+KeyIDStr = Annotated[str, StringConstraints(pattern=PROPERTY_KEY_RE)]

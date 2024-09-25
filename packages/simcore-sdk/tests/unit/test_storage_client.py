@@ -177,7 +177,7 @@ async def test_get_file_metada(
     )
     assert file_metadata
     assert file_metadata == FileMetaDataGet.parse_obj(
-        FileMetaDataGet.Config.schema_extra["examples"][0]
+        FileMetaDataGet.model_config["json_schema_extra"]["examples"][0]
     )
 
 

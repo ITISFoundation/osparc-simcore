@@ -2,12 +2,13 @@ import re
 from collections.abc import Awaitable, Callable
 from typing import Any, Protocol
 
+from models_library.basic_types import ConstrainedStr
 from models_library.rabbitmq_basic_types import (
     REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS,
     RPCMethodName,
     RPCNamespace,
 )
-from pydantic import ConstrainedStr, parse_obj_as
+from pydantic import TypeAdapter
 
 MessageHandler = Callable[[Any], Awaitable[bool]]
 
@@ -30,4 +31,4 @@ class RPCNamespacedMethodName(ConstrainedStr):
         cls, namespace: RPCNamespace, method_name: RPCMethodName
     ) -> "RPCNamespacedMethodName":
         namespaced_method_name = f"{namespace}.{method_name}"
-        return parse_obj_as(cls, namespaced_method_name)
+        return TypeAdapter(cls).validate_python(namespaced_method_name)

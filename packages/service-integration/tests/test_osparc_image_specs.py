@@ -58,8 +58,8 @@ def test_create_image_spec_impl(tests_data_dir: Path, settings: AppSettings):
     assert build_spec
     assert isinstance(build_spec, BaseModel)
 
-    print(build_spec.json(exclude_unset=True, indent=2))
-    print(yaml.safe_dump(compose_spec.dict(exclude_unset=True), sort_keys=False))
+    print(build_spec.model_dump_json(exclude_unset=True, indent=2))
+    print(yaml.safe_dump(compose_spec.model_dump(exclude_unset=True), sort_keys=False))
 
 
 def test_image_digest_is_not_a_label_annotation(tests_data_dir: Path):

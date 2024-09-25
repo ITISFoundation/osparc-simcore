@@ -28,12 +28,12 @@ alembic==1.13.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-antlr4-python3-runtime==4.13.2
-    # via moto
-async-timeout==4.0.3
+annotated-types==0.7.0
     # via
     #   -c requirements/_base.txt
-    #   aiohttp
+    #   pydantic
+antlr4-python3-runtime==4.13.2
+    # via moto
 attrs==24.2.0
     # via
     #   -c requirements/_base.txt
@@ -88,10 +88,6 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-exceptiongroup==1.2.2
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
 execnet==2.1.1
     # via pytest-xdist
 faker==27.0.0
@@ -207,11 +203,15 @@ py-partiql-parser==0.5.5
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==1.10.17
+pydantic==2.9.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
+pydantic-core==2.23.4
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 pyparsing==3.1.2
     # via moto
 pytest==8.3.2
@@ -249,7 +249,9 @@ python-dateutil==2.9.0.post0
     #   faker
     #   moto
 python-dotenv==1.0.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -304,11 +306,6 @@ sympy==1.13.2
     # via cfn-lint
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via
-    #   coverage
-    #   mypy
-    #   pytest
 types-aiobotocore==2.13.2
     # via -r requirements/_test.in
 types-aiobotocore-s3==2.13.2
@@ -327,6 +324,7 @@ typing-extensions==4.12.2
     #   cfn-lint
     #   mypy
     #   pydantic
+    #   pydantic-core
     #   sqlalchemy2-stubs
     #   types-aiobotocore
     #   types-aiobotocore-s3

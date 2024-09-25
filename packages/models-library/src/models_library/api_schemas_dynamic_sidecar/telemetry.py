@@ -34,8 +34,8 @@ class DiskUsage(BaseModel):
 
     total: ByteSize = Field(description="total space = free + used")
     used_percent: float = Field(
-        gte=0.00,
-        lte=100.00,
+        ge=0.00,
+        le=100.00,
         description="Percent of used space relative to the total space",
     )
 

@@ -10,7 +10,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 
@@ -33,7 +33,7 @@ async def get_service_status(
 ) -> NodeGetIdle | DynamicServiceGet | NodeGet:
     result = await rabbitmq_rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_service_status"),
+        TypeAdapter(RPCMethodName).validate_python("get_service_status"),
         node_id=node_id,
         timeout_s=_RPC_DEFAULT_TIMEOUT_S,
     )
@@ -49,7 +49,7 @@ async def run_dynamic_service(
 ) -> DynamicServiceGet | NodeGet:
     result = await rabbitmq_rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "run_dynamic_service"),
+        TypeAdapter(RPCMethodName).validate_python("run_dynamic_service"),
         dynamic_service_start=dynamic_service_start,
         timeout_s=_RPC_DEFAULT_TIMEOUT_S,
     )
@@ -66,7 +66,7 @@ async def stop_dynamic_service(
 ) -> None:
     result = await rabbitmq_rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "stop_dynamic_service"),
+        TypeAdapter(RPCMethodName).validate_python("stop_dynamic_service"),
         dynamic_service_stop=dynamic_service_stop,
         timeout_s=timeout_s,
     )

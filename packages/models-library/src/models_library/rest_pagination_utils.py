@@ -1,8 +1,9 @@
 from math import ceil
 from typing import Any, Protocol, TypedDict, Union, runtime_checkable
 
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import TypeAdapter
 
+from .basic_types import AnyHttpUrl
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
 # NOTE: In this repo we use two type of URL-like data structures:
@@ -60,7 +61,7 @@ def paginate_data(
     Usage:
 
         obj: PageDict = paginate_data( ... )
-        model = Page[MyModelItem].parse_obj(obj)
+        model = Page[MyModelItem].model_validate(obj)
 
     raises ValidationError
     """
@@ -72,24 +73,21 @@ def paginate_data(
         ),
         _links=PageLinks(
             self=(
-                parse_obj_as(
-                    AnyHttpUrl,
+                TypeAdapter(AnyHttpUrl).validate_python(
                     _replace_query(request_url, {"offset": offset, "limit": limit}),
                 )
             ),
-            first=parse_obj_as(
-                AnyHttpUrl, _replace_query(request_url, {"offset": 0, "limit": limit})
+            first=TypeAdapter(AnyHttpUrl).validate_python(
+                _replace_query(request_url, {"offset": 0, "limit": limit})
             ),
-            prev=parse_obj_as(
-                AnyHttpUrl,
+            prev=TypeAdapter(AnyHttpUrl).validate_python(
                 _replace_query(
                     request_url, {"offset": max(offset - limit, 0), "limit": limit}
                 ),
             )
             if offset > 0
             else None,
-            next=parse_obj_as(
-                AnyHttpUrl,
+            next=TypeAdapter(AnyHttpUrl).validate_python(
                 _replace_query(
                     request_url,
                     {"offset": min(offset + limit, last_page * limit), "limit": limit},
@@ -97,8 +95,7 @@ def paginate_data(
             )
             if offset < (last_page * limit)
             else None,
-            last=parse_obj_as(
-                AnyHttpUrl,
+            last=TypeAdapter(AnyHttpUrl).validate_python(
                 _replace_query(
                     request_url, {"offset": last_page * limit, "limit": limit}
                 ),

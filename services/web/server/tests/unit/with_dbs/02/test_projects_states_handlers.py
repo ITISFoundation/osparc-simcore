@@ -27,7 +27,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
-from models_library.projects_access import Owner, PositiveIntWithExclusiveMinimumRemoved
+from models_library.projects_access import Owner
 from models_library.projects_state import (
     ProjectLocked,
     ProjectRunningState,
@@ -41,6 +41,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import PositiveInt
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
@@ -1308,7 +1309,7 @@ async def test_open_shared_project_2_users_locked(
         expected_project_state_client_2.locked.value = True
         expected_project_state_client_2.locked.status = ProjectStatus.OPENED
         owner2 = Owner(
-            user_id=PositiveIntWithExclusiveMinimumRemoved(user_2["id"]),
+            user_id=PositiveInt(user_2["id"]),
             first_name=user_2.get("first_name", None),
             last_name=user_2.get("last_name", None),
         )

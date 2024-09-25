@@ -14,15 +14,20 @@ class MyModel(BaseModel):
 
 
 def test_schema():
-    assert MyModel.schema() == {
+    assert MyModel.model_json_schema() == {
         "title": "MyModel",
         "type": "object",
         "properties": {
             "a": {"title": "A", "type": "integer"},
-            "b": {"title": "B", "type": "integer"},
+            "b": {"anyOf": [{"type": "integer"}, {"type": "null"}], "title": "B"},
             "c": {"title": "C", "default": 42, "type": "integer"},
-            "d": {"title": "D", "type": "integer"},
+            "d": {
+                "anyOf": [{"type": "integer"}, {"type": "null"}],
+                "default": None,
+                "title": "D",
+            },
             "e": {
+                "default": None,
                 "title": "E",
                 "type": "integer",
                 "description": "optional non-nullable",
@@ -34,8 +39,8 @@ def test_schema():
 
 def test_only_required():
     model = MyModel(a=1, b=2)
-    assert model.dict() == {"a": 1, "b": 2, "c": 42, "d": None, "e": None}
-    assert model.dict(exclude_unset=True) == {"a": 1, "b": 2}
+    assert model.model_dump() == {"a": 1, "b": 2, "c": 42, "d": None, "e": None}
+    assert model.model_dump(exclude_unset=True) == {"a": 1, "b": 2}
 
 
 def test_parse_obj_or_none():

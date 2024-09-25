@@ -7,7 +7,7 @@ from typing import Any
 import rich
 import typer
 from pydantic import ValidationError
-from pydantic.env_settings import BaseSettings
+from pydantic_settings import BaseSettings
 
 from ._constants import HEADER_STR
 from .base import BaseCustomSettings
@@ -24,14 +24,14 @@ def print_as_envfile(
 ):
     exclude_unset = pydantic_export_options.get("exclude_unset", False)
 
-    for field in settings_obj.__fields__.values():
-        auto_default_from_env = field.field_info.extra.get(
-            "auto_default_from_env", False
+    for name, field in settings_obj.model_fields.items():
+        auto_default_from_env = field.json_schema_extra is not None and field.json_schema_extra.get(
+            "auto_default_from_env", False  # type: ignore[union-attr]
         )
 
-        value = getattr(settings_obj, field.name)
+        value = getattr(settings_obj, name)
 
-        if exclude_unset and field.name not in settings_obj.__fields_set__:
+        if exclude_unset and name not in settings_obj.model_fields_set:
             if not auto_default_from_env:
                 continue
             if value is None:
@@ -39,10 +39,10 @@ def print_as_envfile(
 
         if isinstance(value, BaseSettings):
             if compact:
-                value = f"'{value.json(**pydantic_export_options)}'"  # flat
+                value = f"'{value.model_dump_json(**pydantic_export_options)}'"  # flat
             else:
                 if verbose:
-                    typer.echo(f"\n# --- {field.name} --- ")
+                    typer.echo(f"\n# --- {name} --- ")
                 print_as_envfile(
                     value,
                     compact=False,
@@ -55,16 +55,15 @@ def print_as_envfile(
             value = value.get_secret_value()
 
         if verbose:
-            field_info = field.field_info
-            if field_info.description:
-                typer.echo(f"# {field_info.description}")
+            if field.description:
+                typer.echo(f"# {field.description}")
 
-        typer.echo(f"{field.name}={value}")
+        typer.echo(f"{name}={value}")
 
 
 def print_as_json(settings_obj, *, compact=False, **pydantic_export_options):
     typer.echo(
-        settings_obj.json(indent=None if compact else 2, **pydantic_export_options)
+        settings_obj.model_dump_json(indent=None if compact else 2, **pydantic_export_options)
     )
 
 

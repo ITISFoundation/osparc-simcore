@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
 class ApiKey(BaseModel):
@@ -15,5 +15,4 @@ class ApiKeyInDB(BaseModel):
     user_id: int
     product_name: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

@@ -28,7 +28,7 @@ from models_library.generics import Envelope
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from yarl import URL
 
@@ -108,7 +108,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
             ],
         }
     returned_computation = ComputationTask.parse_obj(
-        ComputationTask.Config.schema_extra["examples"][0]
+        ComputationTask.model_config["json_schema_extra"]["examples"][0]
     ).copy(
         update={
             "id": f"{kwargs['json']['project_id']}",
@@ -132,7 +132,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
     returned_computation = ComputationTask.parse_obj(
-        ComputationTask.Config.schema_extra["examples"][0]
+        ComputationTask.model_config["json_schema_extra"]["examples"][0]
     ).copy(
         update={
             "id": Path(url.path).name,
@@ -154,11 +154,11 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
 def create_cluster_cb(url, **kwargs) -> CallbackResult:
     assert "json" in kwargs, f"missing body in call to {url}"
     assert url.query.get("user_id")
-    random_cluster = Cluster.parse_obj(
-        random.choice(Cluster.Config.schema_extra["examples"])
+    random_cluster = Cluster.model_validate(
+        random.choice(Cluster.model_config["json_schema_extra"]["examples"])
     )
     return CallbackResult(
-        status=201, payload=json.loads(random_cluster.json(by_alias=True))
+        status=201, payload=json.loads(random_cluster.model_dump_json(by_alias=True))
     )
 
 
@@ -170,8 +170,10 @@ def list_clusters_cb(url, **kwargs) -> CallbackResult:
             [
                 json.loads(
                     Cluster.parse_obj(
-                        random.choice(Cluster.Config.schema_extra["examples"])
-                    ).json(by_alias=True)
+                        random.choice(
+                            Cluster.model_config["json_schema_extra"]["examples"]
+                        )
+                    ).model_dump_json(by_alias=True)
                 )
                 for _ in range(3)
             ]
@@ -187,10 +189,12 @@ def get_cluster_cb(url, **kwargs) -> CallbackResult:
         payload=json.loads(
             Cluster.parse_obj(
                 {
-                    **random.choice(Cluster.Config.schema_extra["examples"]),
+                    **random.choice(
+                        Cluster.model_config["json_schema_extra"]["examples"]
+                    ),
                     **{"id": cluster_id},
                 }
-            ).json(by_alias=True)
+            ).model_dump_json(by_alias=True)
         ),
     )
 
@@ -216,10 +220,12 @@ def patch_cluster_cb(url, **kwargs) -> CallbackResult:
         payload=json.loads(
             Cluster.parse_obj(
                 {
-                    **random.choice(Cluster.Config.schema_extra["examples"]),
+                    **random.choice(
+                        Cluster.model_config["json_schema_extra"]["examples"]
+                    ),
                     **{"id": cluster_id},
                 }
-            ).json(by_alias=True)
+            ).model_dump_json(by_alias=True)
         ),
     )
 
@@ -366,11 +372,13 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
     if file_size := kwargs["params"].get("file_size") is not None:
         assert file_size
         upload_schema = FileUploadSchema(
-            chunk_size=parse_obj_as(ByteSize, "5GiB"),
-            urls=[parse_obj_as(AnyUrl, f"{scheme[link_type]}://{file_id}")],
+            chunk_size=TypeAdapter(ByteSize).validate_python("5GiB"),
+            urls=[
+                TypeAdapter(AnyUrl).validate_python(f"{scheme[link_type]}://{file_id}")
+            ],
             links=FileUploadLinks(
-                abort_upload=parse_obj_as(AnyUrl, f"{url}:abort"),
-                complete_upload=parse_obj_as(AnyUrl, f"{url}:complete"),
+                abort_upload=TypeAdapter(AnyUrl).validate_python(f"{url}:abort"),
+                complete_upload=TypeAdapter(AnyUrl).validate_python(f"{url}:complete"),
             ),
         )
         return CallbackResult(
@@ -379,7 +387,7 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
         )
     # version 1 returns a presigned link
     presigned_link = PresignedLink(
-        link=parse_obj_as(AnyUrl, f"{scheme[link_type]}://{file_id}")
+        link=TypeAdapter(AnyUrl).validate_python(f"{scheme[link_type]}://{file_id}")
     )
     return CallbackResult(
         status=status.HTTP_200_OK,
@@ -436,7 +444,9 @@ async def storage_v0_service_mock(
     aioresponses_mocker.get(
         get_file_metadata_pattern,
         status=status.HTTP_200_OK,
-        payload={"data": FileMetaDataGet.Config.schema_extra["examples"][0]},
+        payload={
+            "data": FileMetaDataGet.model_config["json_schema_extra"]["examples"][0]
+        },
         repeat=True,
     )
     aioresponses_mocker.get(
@@ -465,8 +475,9 @@ async def storage_v0_service_mock(
             (parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", "")
         )
 
-        payload: FileUploadCompleteResponse = parse_obj_as(
-            FileUploadCompleteResponse,
+        payload: FileUploadCompleteResponse = TypeAdapter(
+            FileUploadCompleteResponse
+        ).validate_python(
             {
                 "links": {
                     "state": stripped_url + ":complete/futures/" + str(faker.uuid4())

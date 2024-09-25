@@ -16,7 +16,7 @@ from models_library.rpc_pagination import (
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, parse_obj_as, validate_arguments
+from pydantic import NonNegativeInt, TypeAdapter, validate_call
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 
@@ -40,7 +40,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
         CatalogForbiddenError: no access-rights to list services
     """
 
-    @validate_arguments()
+    @validate_call()
     async def _call(
         product_name: ProductName,
         user_id: UserID,
@@ -49,7 +49,7 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     ):
         return await rpc_client.request(
             CATALOG_RPC_NAMESPACE,
-            parse_obj_as(RPCMethodName, "list_services_paginated"),
+            TypeAdapter(RPCMethodName).validate_python("list_services_paginated"),
             product_name=product_name,
             user_id=user_id,
             limit=limit,
@@ -60,7 +60,9 @@ async def list_services_paginated(  # pylint: disable=too-many-arguments
     result = await _call(
         product_name=product_name, user_id=user_id, limit=limit, offset=offset
     )
-    assert parse_obj_as(PageRpc[ServiceGetV2], result) is not None  # nosec
+    assert (
+        TypeAdapter(PageRpc[ServiceGetV2]).validate_python(result) is not None
+    )  # nosec
     return cast(PageRpc[ServiceGetV2], result)
 
 
@@ -80,7 +82,7 @@ async def get_service(
         CatalogForbiddenError: not access rights to read this service
     """
 
-    @validate_arguments()
+    @validate_call()
     async def _call(
         product_name: ProductName,
         user_id: UserID,
@@ -89,7 +91,7 @@ async def get_service(
     ) -> Any:
         return await rpc_client.request(
             CATALOG_RPC_NAMESPACE,
-            parse_obj_as(RPCMethodName, "get_service"),
+            TypeAdapter(RPCMethodName).validate_python("get_service"),
             product_name=product_name,
             user_id=user_id,
             service_key=service_key,
@@ -103,7 +105,7 @@ async def get_service(
         service_key=service_key,
         service_version=service_version,
     )
-    assert parse_obj_as(ServiceGetV2, result) is not None  # nosec
+    assert TypeAdapter(ServiceGetV2).validate_python(result) is not None  # nosec
     return cast(ServiceGetV2, result)
 
 
@@ -125,7 +127,7 @@ async def update_service(
         CatalogForbiddenError: not access rights to read this service
     """
 
-    @validate_arguments()
+    @validate_call()
     async def _call(
         product_name: ProductName,
         user_id: UserID,
@@ -135,7 +137,7 @@ async def update_service(
     ):
         return await rpc_client.request(
             CATALOG_RPC_NAMESPACE,
-            parse_obj_as(RPCMethodName, "update_service"),
+            TypeAdapter(RPCMethodName).validate_python("update_service"),
             product_name=product_name,
             user_id=user_id,
             service_key=service_key,
@@ -150,7 +152,7 @@ async def update_service(
         service_version=service_version,
         update=update,
     )
-    assert parse_obj_as(ServiceGetV2, result) is not None  # nosec
+    assert TypeAdapter(ServiceGetV2).validate_python(result) is not None  # nosec
     return cast(ServiceGetV2, result)
 
 
@@ -170,7 +172,7 @@ async def check_for_service(
         CatalogForbiddenError: not access rights to read this service
     """
 
-    @validate_arguments()
+    @validate_call()
     async def _call(
         product_name: ProductName,
         user_id: UserID,
@@ -179,7 +181,7 @@ async def check_for_service(
     ):
         return await rpc_client.request(
             CATALOG_RPC_NAMESPACE,
-            parse_obj_as(RPCMethodName, "check_for_service"),
+            TypeAdapter(RPCMethodName).validate_python("check_for_service"),
             product_name=product_name,
             user_id=user_id,
             service_key=service_key,

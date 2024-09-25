@@ -15,7 +15,7 @@ from models_library.resource_tracker import (
     PricingUnitWithCostCreate,
     PricingUnitWithCostUpdate,
 )
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt, TypeAdapter
 
 from ....logging_utils import log_decorator
 from ....rabbitmq import RabbitMQRPCClient
@@ -36,7 +36,7 @@ async def get_pricing_unit(
 ) -> PricingUnitGet:
     result: PricingUnitGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_pricing_unit"),
+        TypeAdapter(RPCMethodName).validate_python("get_pricing_unit"),
         product_name=product_name,
         pricing_plan_id=pricing_plan_id,
         pricing_unit_id=pricing_unit_id,
@@ -55,7 +55,7 @@ async def create_pricing_unit(
 ) -> PricingUnitGet:
     result: PricingUnitGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "create_pricing_unit"),
+        TypeAdapter(RPCMethodName).validate_python("create_pricing_unit"),
         product_name=product_name,
         data=data,
         timeout_s=_DEFAULT_TIMEOUT_S,
@@ -73,7 +73,7 @@ async def update_pricing_unit(
 ) -> PricingUnitGet:
     result: PricingUnitGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "update_pricing_unit"),
+        TypeAdapter(RPCMethodName).validate_python("update_pricing_unit"),
         product_name=product_name,
         data=data,
         timeout_s=_DEFAULT_TIMEOUT_S,

@@ -1,15 +1,14 @@
 import functools
 from typing import Final, TypeVar
 
-from pydantic import Field, ValidationError
-from pydantic.tools import parse_obj_as
+from pydantic import Field, TypeAdapter, ValidationError
 
 T = TypeVar("T")
 
 
 def parse_obj_or_none(type_: type[T], obj) -> T | None:
     try:
-        return parse_obj_as(type_, obj)
+        return TypeAdapter(type_).validate_python(obj)
     except ValidationError:
         return None
 

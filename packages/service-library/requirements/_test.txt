@@ -21,11 +21,6 @@ anyio==4.4.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-async-timeout==4.0.3
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   -c requirements/_base.txt
-    #   aiohttp
 attrs==24.2.0
     # via
     #   -c requirements/_aiohttp.txt
@@ -52,12 +47,6 @@ coverage==7.6.1
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.2
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_fastapi.txt
-    #   anyio
-    #   pytest
 execnet==2.1.1
     # via pytest-xdist
 faker==27.0.0
@@ -70,10 +59,6 @@ frozenlist==1.4.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-greenlet==3.0.3
-    # via
-    #   -c requirements/_aiohttp.txt
-    #   sqlalchemy
 h11==0.14.0
     # via
     #   -c requirements/_fastapi.txt
@@ -197,7 +182,9 @@ python-dateutil==2.9.0.post0
     #   -c requirements/_base.txt
     #   faker
 python-dotenv==1.0.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -250,11 +237,6 @@ sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via
-    #   coverage
-    #   mypy
-    #   pytest
 types-aiofiles==24.1.0.20240626
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20240819
@@ -265,7 +247,6 @@ typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
-    #   anyio
     #   mypy
     #   sqlalchemy2-stubs
 urllib3==2.2.2

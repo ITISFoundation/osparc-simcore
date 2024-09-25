@@ -5,7 +5,7 @@ from typing import Final
 import httpx
 from models_library.basic_types import IDStr
 from models_library.docker import DockerGenericTag
-from pydantic import ByteSize, ValidationError, parse_obj_as
+from pydantic import ByteSize, TypeAdapter, ValidationError
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 
@@ -72,9 +72,9 @@ async def retrieve_image_layer_information(
             # if the image has multiple architectures
             json_response = response.json()
             try:
-                multi_arch_manifests = parse_obj_as(
-                    DockerImageMultiArchManifestsV2, json_response
-                )
+                multi_arch_manifests = TypeAdapter(
+                    DockerImageMultiArchManifestsV2
+                ).validate_python(json_response)
                 # find the correct platform
                 digest = ""
                 for manifest in multi_arch_manifests.manifests:
@@ -93,14 +93,20 @@ async def retrieve_image_layer_information(
                 response.raise_for_status()
                 assert response.status_code == status.HTTP_200_OK  # nosec
                 json_response = response.json()
-                return parse_obj_as(DockerImageManifestsV2, json_response)
+                return TypeAdapter(DockerImageManifestsV2).validate_python(
+                    json_response
+                )
 
             except ValidationError:
-                return parse_obj_as(DockerImageManifestsV2, json_response)
+                return TypeAdapter(DockerImageManifestsV2).validate_python(
+                    json_response
+                )
     return None
 
 
-_DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "200MiB")
+_DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
+    "200MiB"
+)
 
 
 async def pull_images(

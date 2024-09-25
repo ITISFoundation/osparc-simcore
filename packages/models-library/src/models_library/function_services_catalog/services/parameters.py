@@ -12,7 +12,7 @@ def _create_metadata(type_name: str) -> ServiceMetaDataPublished:
 
     This is a parametrized node (or param-node in short)
     """
-    meta = ServiceMetaDataPublished.parse_obj(
+    meta = ServiceMetaDataPublished.model_validate(
         {
             "integration-version": LATEST_INTEGRATION_VERSION,
             "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/parameter/{type_name}",
@@ -45,7 +45,7 @@ META_NUMBER: Final = _create_metadata(type_name="number")
 META_BOOL: Final = _create_metadata(type_name="boolean")
 META_INT: Final = _create_metadata(type_name="integer")
 META_STR: Final = _create_metadata(type_name="string")
-META_ARRAY: Final = ServiceMetaDataPublished.parse_obj(
+META_ARRAY: Final = ServiceMetaDataPublished.model_validate(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/parameter/array",

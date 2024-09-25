@@ -10,7 +10,7 @@ from models_library.progress_bar import (
     ProgressStructuredMessage,
     ProgressUnit,
 )
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from .logging_utils import log_catch
 
@@ -95,7 +95,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
 
     def __post_init__(self) -> None:
         if self.progress_unit is not None:
-            parse_obj_as(ProgressUnit, self.progress_unit)  # type: ignore[arg-type] # mypy does not like Literal with parse_obj_as
+            TypeAdapter(ProgressUnit).validate_python(self.progress_unit)
         self._continuous_value_lock = asyncio.Lock()
         self.num_steps = max(1, self.num_steps)
         if self.step_weights:

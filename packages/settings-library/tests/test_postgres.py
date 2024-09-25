@@ -17,15 +17,12 @@ def test_cached_property_dsn(mock_environment: dict):
     settings = PostgresSettings()
 
     # all are upper-case
-    assert all(key == key.upper() for key in settings.dict())
-
-    # dsn is computed from the other fields
-    assert "dsn" not in settings.dict()
-
-    # causes cached property to be computed and stored on the instance
+    assert all(key == key.upper() for key in settings.model_dump())
+    
     assert settings.dsn
 
-    assert "dsn" in settings.dict()
+    # dsn is computed from the other fields
+    assert "dsn" not in settings.model_dump()
 
 
 def test_dsn_with_query(mock_environment: dict, monkeypatch):

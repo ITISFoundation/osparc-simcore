@@ -18,7 +18,7 @@ from models_library.resource_tracker import (
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import AnyUrl, NonNegativeInt, parse_obj_as
+from pydantic import AnyUrl, NonNegativeInt, TypeAdapter
 
 from ....logging_utils import log_decorator
 from ....rabbitmq import RabbitMQRPCClient
@@ -44,7 +44,7 @@ async def get_service_run_page(
 ) -> ServiceRunPage:
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_service_run_page"),
+        TypeAdapter(RPCMethodName).validate_python("get_service_run_page"),
         user_id=user_id,
         product_name=product_name,
         limit=limit,
@@ -74,7 +74,9 @@ async def get_osparc_credits_aggregated_usages_page(
 ) -> OsparcCreditsAggregatedUsagesPage:
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_osparc_credits_aggregated_usages_page"),
+        TypeAdapter(RPCMethodName).validate_python(
+            "get_osparc_credits_aggregated_usages_page"
+        ),
         user_id=user_id,
         product_name=product_name,
         limit=limit,
@@ -102,7 +104,7 @@ async def export_service_runs(
 ) -> AnyUrl:
     result: AnyUrl = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "export_service_runs"),
+        TypeAdapter(RPCMethodName).validate_python("export_service_runs"),
         user_id=user_id,
         product_name=product_name,
         wallet_id=wallet_id,

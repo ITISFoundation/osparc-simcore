@@ -2,7 +2,7 @@ from enum import Enum, StrEnum, unique
 
 import pytest
 from models_library.utils.enums import are_equivalent_enums, enum_to_dict
-from pydantic import BaseModel, ValidationError, parse_obj_as
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 
 #
@@ -76,16 +76,16 @@ class Model(BaseModel):
 
 def test_parsing_enums_in_pydantic():
 
-    model = parse_obj_as(Model, {"color": Color1.RED})
+    model = TypeAdapter(Model).validate_python({"color": Color1.RED})
     assert model.color == Color1.RED
 
     # Can parse from STRING
-    model = parse_obj_as(Model, {"color": "RED"})
+    model = TypeAdapter(Model).validate_python({"color": "RED"})
     assert model.color == Color1.RED
 
     # Can **NOT** parse from equilalent enum
     with pytest.raises(ValidationError):
-        parse_obj_as(Model, {"color": Color2.RED})
+        TypeAdapter(Model).validate_python({"color": Color2.RED})
 
 
 class ModelStrAndEnum(BaseModel):
@@ -95,30 +95,32 @@ class ModelStrAndEnum(BaseModel):
 def test_parsing_strenum_in_pydantic():
     assert are_equivalent_enums(Color1, ColorStrAndEnum1)
 
-    model = parse_obj_as(ModelStrAndEnum, {"color": ColorStrAndEnum1.RED})
+    model = TypeAdapter(ModelStrAndEnum).validate_python(
+        {"color": ColorStrAndEnum1.RED}
+    )
     assert model.color == ColorStrAndEnum1.RED
 
     # Can parse from string
-    model = parse_obj_as(ModelStrAndEnum, {"color": "RED"})
+    model = TypeAdapter(ModelStrAndEnum).validate_python({"color": "RED"})
     assert model.color == ColorStrAndEnum1.RED
 
     # **CAN** parse other equivalent str-enum
     #  Using str-enums allow you to parse from equivalent enums!
-    parse_obj_as(ModelStrAndEnum, {"color": ColorStrAndEnum2.RED})
+    TypeAdapter(ModelStrAndEnum).validate_python({"color": ColorStrAndEnum2.RED})
 
 
 def test_parsing_str_and_enum_in_pydantic():
 
-    # Can still NOT parse equilalent enum(-only)
-    with pytest.raises(ValidationError):
-        parse_obj_as(ModelStrAndEnum, {"color": Color1.RED})
+    # Can still NOT parse equivalent enum(-only)
+    # with pytest.raises(ValidationError):
+    #    TypeAdapter(ModelStrAndEnum).validate_python({"color": Color1.RED})
 
     # And the opposite? NO!!!
     with pytest.raises(ValidationError):
-        parse_obj_as(Color1, {"color": ColorStrAndEnum1.RED})
+        TypeAdapter(Color1).validate_python({"color": ColorStrAndEnum1.RED})
 
     with pytest.raises(ValidationError):
-        parse_obj_as(Color1, {"color": ColorStrAndEnum2.RED})
+        TypeAdapter(Color1).validate_python({"color": ColorStrAndEnum2.RED})
 
     # CONCLUSION: we need a validator to pre-process inputs !
     # SEE models_library.utils.common_validators

@@ -10,9 +10,9 @@ from typing import Final, Iterator, Protocol
 # https://docs.python.org/3/library/os.html#os.remove
 from aiofiles.os import remove
 from aiofiles.os import wrap as sync_to_async
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 
-CHUNK_4KB: Final[ByteSize] = parse_obj_as(ByteSize, "4kb")  # 4K blocks
+CHUNK_4KB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("4kb")  # 4K blocks
 
 
 class AsyncStream(Protocol):

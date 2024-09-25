@@ -8,7 +8,7 @@ from ...services import (
 from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, FunctionServices
 
-META: Final = ServiceMetaDataPublished.parse_obj(
+META: Final = ServiceMetaDataPublished.model_validate(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/file-picker",

@@ -2,7 +2,7 @@ import urllib.parse
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 from .base import TaskId, TaskProgress
 
@@ -25,7 +25,7 @@ class TaskGet(BaseModel):
     result_href: str
     abort_href: str
 
-    @validator("task_name")
+    @field_validator("task_name")
     @classmethod
     def unquote_str(cls, v) -> str:
         return urllib.parse.unquote(v)

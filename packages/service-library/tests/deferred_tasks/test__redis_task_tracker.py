@@ -5,7 +5,7 @@
 from datetime import timedelta
 
 import pytest
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.deferred_tasks._models import TaskUID
 from servicelib.deferred_tasks._redis_task_tracker import RedisTaskTracker
 from servicelib.deferred_tasks._task_schedule import TaskScheduleModel, TaskState
@@ -19,8 +19,7 @@ pytest_simcore_core_services_selection = [
 
 @pytest.fixture
 def task_schedule() -> TaskScheduleModel:
-    return parse_obj_as(
-        TaskScheduleModel,
+    return TypeAdapter(TaskScheduleModel).validate_python(
         {
             "timeout": timedelta(seconds=1),
             "execution_attempts": 1,

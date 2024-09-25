@@ -69,7 +69,9 @@ def _create_fake_outputs(
 def test_create_task_output_from_task_with_optional_fields_as_required(
     tmp_path: Path, optional_fields_set: bool, faker: Faker
 ):
-    for schema_example in TaskOutputDataSchema.Config.schema_extra["examples"]:
+    for schema_example in TaskOutputDataSchema.model_config["json_schema_extra"][
+        "examples"
+    ]:
 
         task_output_schema = TaskOutputDataSchema.parse_obj(schema_example)
         outputs_file_name = _create_fake_outputs(

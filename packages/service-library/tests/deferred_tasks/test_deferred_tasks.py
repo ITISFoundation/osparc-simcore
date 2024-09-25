@@ -158,8 +158,8 @@ class _RemoteProcessLifecycleManager:
         response = await _tcp_command(
             "init-context",
             {
-                "rabbit": self.rabbit_service.json(**_get_serialization_options()),
-                "redis": self.redis_service.json(**_get_serialization_options()),
+                "rabbit": self.rabbit_service.model_dump_json(**_get_serialization_options()),
+                "redis": self.redis_service.model_dump_json(**_get_serialization_options()),
                 "max-workers": self.max_workers,
             },
             port=self.remote_process.port,

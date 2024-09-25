@@ -85,7 +85,7 @@ def fake_granular_env_file_content() -> str:
 def export_as_dict() -> Callable:
     def _export(model_obj, **export_options):
         return json.loads(
-            model_obj.json(
+            model_obj.model_dump_json(
                 encoder=create_json_encoder_wo_secrets(model_obj.__class__),
                 **export_options,
             )
@@ -136,7 +136,7 @@ def test_settings_as_json(
 
     # reuse resulting json to build settings
     settings: dict = json.loads(result.stdout)
-    assert fake_settings_class.parse_obj(settings)
+    assert fake_settings_class.model_validate(settings)
 
 
 def test_settings_as_json_schema(

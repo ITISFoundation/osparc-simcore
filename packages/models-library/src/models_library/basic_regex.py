@@ -46,7 +46,7 @@ MIME_TYPE_RE = (
 
 # Storage basic file ID
 SIMCORE_S3_FILE_ID_RE = rf"^(api|({UUID_RE_BASE}))\/({UUID_RE_BASE})\/(.+)$"
-SIMCORE_S3_DIRECTORY_ID_RE = rf"^({UUID_RE_BASE})\/({UUID_RE_BASE})\/(.+)/$"
+SIMCORE_S3_DIRECTORY_ID_RE = rf"^({UUID_RE_BASE})\/({UUID_RE_BASE})\/(.+)\/$"
 
 # S3 - AWS bucket names [https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html]
 S3_BUCKET_NAME_RE = r"(?!(^xn--|-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
@@ -77,3 +77,9 @@ DOCKER_GENERIC_TAG_KEY_RE: Final[re.Pattern] = re.compile(
 )
 
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
+
+
+def validate_re(pattern: str, value: str):
+    if not re.compile(pattern).match(value):
+        raise ValueError(f"The {value} doesn't match the {pattern=}.")
+    return value

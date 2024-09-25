@@ -5,7 +5,7 @@
 from functools import cached_property
 
 import pytest
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
@@ -24,9 +24,9 @@ def test_mixing_service_settings_usage(monkeypatch: pytest.MonkeyPatch):
         MY_VTAG: VersionTag | None = None
         MY_SECURE: bool = False
 
-        # optional
-        MY_USER: str | None
-        MY_PASSWORD: SecretStr | None
+        # optional (in Pydantic v2 requires a default)
+        MY_USER: str | None = None
+        MY_PASSWORD: SecretStr | None = None
 
         @cached_property
         def api_base_url(self) -> str:
@@ -88,8 +88,8 @@ def test_service_settings_base_urls(service_settings_cls: type):
 
     settings_with_defaults = service_settings_cls()
 
-    base_url = parse_obj_as(AnyHttpUrl, settings_with_defaults.base_url)
-    api_base_url = parse_obj_as(AnyHttpUrl, settings_with_defaults.api_base_url)
+    base_url = TypeAdapter(AnyHttpUrl).validate_python(settings_with_defaults.base_url)
+    api_base_url = TypeAdapter(AnyHttpUrl).validate_python(settings_with_defaults.api_base_url)
 
     assert base_url.path != api_base_url.path
     assert (base_url.scheme, base_url.host, base_url.port) == (

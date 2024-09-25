@@ -10,8 +10,6 @@ coverage==7.6.1
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.2
-    # via pytest
 faker==27.0.0
     # via -r requirements/_test.in
 greenlet==3.0.3
@@ -68,7 +66,9 @@ python-dateutil==2.9.0.post0
     #   -c requirements/_base.txt
     #   faker
 python-dotenv==1.0.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -90,11 +90,6 @@ tenacity==9.0.0
     # via -r requirements/_test.in
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via
-    #   coverage
-    #   mypy
-    #   pytest
 types-aiofiles==24.1.0.20240626
     # via -r requirements/_test.in
 typing-extensions==4.12.2

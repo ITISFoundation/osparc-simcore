@@ -18,7 +18,7 @@ from typing import Any
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskId
@@ -75,12 +75,12 @@ async def test_workflow(
             data, error = await assert_status(result, status.HTTP_200_OK)
             assert data
             assert not error
-            task_status = long_running_tasks.server.TaskStatus.parse_obj(data)
+            task_status = long_running_tasks.server.TaskStatus.model_validate(data)
             assert task_status
             progress_updates.append(
                 (task_status.task_progress.message, task_status.task_progress.percent)
             )
-            print(f"<-- received task status: {task_status.json(indent=2)}")
+            print(f"<-- received task status: {task_status.model_dump_json(indent=2)}")
             assert task_status.done, "task incomplete"
             print(
                 f"-- waiting for task status completed successfully: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
@@ -216,7 +216,7 @@ async def test_list_tasks(
     result = await client.get(f"{list_url}")
     data, error = await assert_status(result, status.HTTP_200_OK)
     assert not error
-    list_of_tasks = parse_obj_as(list[TaskGet], data)
+    list_of_tasks = TypeAdapter(list[TaskGet]).validate_python(data)
     assert len(list_of_tasks) == NUM_TASKS
 
     # the task name is properly formatted
@@ -235,5 +235,5 @@ async def test_list_tasks(
         result = await client.get(f"{list_url}")
         data, error = await assert_status(result, status.HTTP_200_OK)
         assert not error
-        list_of_tasks = parse_obj_as(list[TaskGet], data)
+        list_of_tasks = TypeAdapter(list[TaskGet]).validate_python(data)
         assert len(list_of_tasks) == NUM_TASKS - (task_index + 1)

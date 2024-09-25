@@ -1,15 +1,13 @@
-import re
 from datetime import datetime
-from re import Pattern
-from typing import Any, ClassVar
+from typing import Annotated, TypeAlias
 
 from models_library.basic_regex import SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS
 from packaging.version import Version
-from pydantic import BaseModel, ConstrainedStr, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-
-class SemanticVersionStr(ConstrainedStr):
-    regex: Pattern[str] | None = re.compile(SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
+SemanticVersionStr: TypeAlias = Annotated[
+    str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
+]
 
 
 def bump_version_string(current_version: str, bump: str) -> str:
@@ -52,8 +50,8 @@ class ExecutableVersionInfo(BaseModel):
     version: SemanticVersionStr
     released: datetime
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "display_name": "SEMCAD X",
                 "display_version": "Matterhorn Student Edition 1",
@@ -63,6 +61,7 @@ class ExecutableVersionInfo(BaseModel):
                 "released": "2021-11-19T14:58:45.900979",
             }
         }
+    )
 
 
 class ServiceVersionInfo(BaseModel):
@@ -72,11 +71,12 @@ class ServiceVersionInfo(BaseModel):
     )
     released: datetime = Field(..., description="Publication/release date")
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "version": "1.0.0",  # e.g. first time released as an osparc
                 "integration_version": "2.1.0",
                 "released": "2021-11-19T14:58:45.900979",
             }
         }
+    )

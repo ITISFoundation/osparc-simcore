@@ -9,7 +9,7 @@ from models_library.services import ServiceInput
 
 def test_service_port_with_file():
 
-    io = ServiceInput.parse_obj(
+    io = ServiceInput.model_validate(
         {
             "displayOrder": 1,
             "label": "Input files",
@@ -21,7 +21,7 @@ def test_service_port_with_file():
         }
     )
 
-    port = ServicePortGet.from_service_io("input", "input_1", io).dict(
+    port = ServicePortGet.from_service_io("input", "input_1", io).model_dump(
         exclude_unset=True
     )
 
@@ -39,7 +39,7 @@ def test_service_port_with_file():
 
 def test_service_port_with_boolean():
 
-    io = ServiceInput.parse_obj(
+    io = ServiceInput.model_validate(
         {
             "displayOrder": 3,
             "label": "Same title and description is more usual than you might think",
@@ -49,7 +49,7 @@ def test_service_port_with_boolean():
         }
     )
 
-    port = ServicePortGet.from_service_io("input", "input_1", io).dict(
+    port = ServicePortGet.from_service_io("input", "input_1", io).model_dump(
         exclude_unset=True
     )
 

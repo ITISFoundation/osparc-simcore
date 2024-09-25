@@ -1,5 +1,7 @@
 alembic==1.13.2
     # via -r requirements/_base.in
+annotated-types==0.7.0
+    # via pydantic
 async-timeout==4.0.3
     # via asyncpg
 asyncpg==0.29.0
@@ -18,10 +20,12 @@ multidict==6.0.5
     # via yarl
 psycopg2-binary==2.9.9
     # via sqlalchemy
-pydantic==1.10.17
+pydantic==2.9.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
+pydantic-core==2.23.3
+    # via pydantic
 sqlalchemy==1.4.53
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -31,5 +35,6 @@ typing-extensions==4.12.2
     # via
     #   alembic
     #   pydantic
+    #   pydantic-core
 yarl==1.9.4
     # via -r requirements/_base.in
