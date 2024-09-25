@@ -14,7 +14,7 @@ def test_mixin_logging(monkeypatch):
 
     class Settings(BaseCustomSettings, MixinLoggingSettings):
         # DOCKER
-        SC_BOOT_MODE: BootMode | None
+        SC_BOOT_MODE: BootMode | None = None
 
         # LOGGING
         LOG_LEVEL: str = Field(
