@@ -329,9 +329,7 @@ def expected_service_running(
         service_running = ServiceRunning(iframe_locator=None)
 
         try:
-            with websocket.expect_event(
-                "framereceived", waiter, timeout=timeout
-            ):  # <- here the test fails
+            with websocket.expect_event("framereceived", waiter, timeout=timeout):
                 if press_start_button:
                     _trigger_service_start(page, node_id)
         except Exception:
