@@ -15,7 +15,7 @@ from servicelib.utils import logged_gather
 
 from ...core.settings import ApplicationSettings
 from ..mounted_fs import MountedVolumes
-from ._notifier import publish_disk_usage
+from ..notifications import publish_disk_usage
 
 _logger = logging.getLogger(__name__)
 

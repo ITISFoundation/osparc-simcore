@@ -13,3 +13,4 @@ jsonschema # pytest-plugin
 pytest # pytest-plugin
 pyyaml
 typer[all]
+yarl

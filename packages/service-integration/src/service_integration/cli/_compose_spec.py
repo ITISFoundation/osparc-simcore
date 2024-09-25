@@ -8,6 +8,7 @@ import typer
 import yaml
 from models_library.utils.labels_annotations import to_labels
 from rich.console import Console
+from yarl import URL
 
 from ..compose_spec_model import ComposeSpecification
 from ..errors import UndefinedOciImageSpecError
@@ -32,6 +33,13 @@ def _run_git(*args) -> str:
         encoding="utf8",
         check=True,
     ).stdout.strip()
+
+
+def _strip_credentials(url: str) -> str:
+    if (yarl_url := URL(url)) and yarl_url.is_absolute():
+        stripped_url = URL(url).with_user(None).with_password(None)
+        return f"{stripped_url}"
+    return url
 
 
 def _run_git_or_empty_string(*args) -> str:
@@ -118,8 +126,8 @@ def create_docker_compose_image_spec(
     extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = _run_git_or_empty_string(
         "rev-parse", "HEAD"
     )
-    extra_labels[f"{LS_LABEL_PREFIX}.vcs-url"] = _run_git_or_empty_string(
-        "config", "--get", "remote.origin.url"
+    extra_labels[f"{LS_LABEL_PREFIX}.vcs-url"] = _strip_credentials(
+        _run_git_or_empty_string("config", "--get", "remote.origin.url")
     )
 
     return create_image_spec(
