@@ -35,6 +35,11 @@ qx.Class.define("osparc.product.TIPTeaser", {
     });
 
     this.getChildControl("teaser-text");
+
+    osparc.utils.Utils.setIdToWidget(this, "tipTeaserWindow");
+
+    const closeBtn = this.getChildControl("close-button");
+    osparc.utils.Utils.setIdToWidget(closeBtn, "tipTeaserWindowCloseBtn");
   },
 
   statics: {
