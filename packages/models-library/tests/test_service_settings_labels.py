@@ -126,7 +126,7 @@ def test_path_mappings_json_encoding():
         path_mappings = PathMappingsLabel.model_validate(example)
         print(path_mappings)
         assert (
-            PathMappingsLabel.parse_raw(path_mappings.model_dump_json())
+            PathMappingsLabel.model_validate_json(path_mappings.model_dump_json())
             == path_mappings
         )
 
@@ -262,7 +262,7 @@ def test_container_outgoing_permit_list_and_container_allow_internet_with_compos
         "simcore.service.container-http-entrypoint": container_name_1,
     }
 
-    instance = DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+    instance = DynamicSidecarServiceLabels.model_validate_json(json.dumps(dict_data))
     assert (
         instance.containers_allowed_outgoing_permit_list[container_name_1][0]
         == expected_host_permit_list_policy
@@ -291,7 +291,7 @@ def test_container_outgoing_permit_list_and_container_allow_internet_without_com
             )
         },
     ):
-        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+        assert TypeAdapter(DynamicSidecarServiceLabels).validate_json(json.dumps(dict_data))
 
 
 def test_container_allow_internet_no_compose_spec_not_ok():
@@ -299,7 +299,7 @@ def test_container_allow_internet_no_compose_spec_not_ok():
         "simcore.service.containers-allowed-outgoing-internet": json.dumps(["hoho"]),
     }
     with pytest.raises(ValidationError) as exec_info:
-        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+        assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(dict_data))
 
     assert "Expected only 1 entry 'container' not '{'hoho'}" in f"{exec_info.value}"
 
@@ -312,7 +312,7 @@ def test_container_allow_internet_compose_spec_not_ok():
         "simcore.service.containers-allowed-outgoing-internet": json.dumps(["hoho"]),
     }
     with pytest.raises(ValidationError) as exec_info:
-        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+        assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(dict_data))
 
     assert f"container='hoho' not found in {compose_spec=}" in f"{exec_info.value}"
 
@@ -331,7 +331,7 @@ def test_container_outgoing_permit_list_no_compose_spec_not_ok():
         ),
     }
     with pytest.raises(ValidationError) as exec_info:
-        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+        assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(dict_data))
     assert (
         f"Expected only one entry '{DEFAULT_SINGLE_SERVICE_NAME}' not 'container_name'"
         in f"{exec_info.value}"
@@ -355,7 +355,7 @@ def test_container_outgoing_permit_list_compose_spec_not_ok():
         "simcore.service.compose-spec": json.dumps(compose_spec),
     }
     with pytest.raises(ValidationError) as exec_info:
-        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+        assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(dict_data))
     assert (
         f"Trying to permit list container='container_name' which was not found in {compose_spec=}"
         in f"{exec_info.value}"
@@ -378,7 +378,7 @@ def test_not_allowed_in_both_permit_list_and_outgoing_internet():
     }
 
     with pytest.raises(ValidationError) as exec_info:
-        DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+        DynamicSidecarServiceLabels.model_validate_json(json.dumps(dict_data))
 
     assert (
         f"Not allowed common_containers={{'{container_name}'}} detected"
@@ -610,4 +610,4 @@ def test_user_preferences_path_is_part_of_exiting_volume():
         ),
     }
     with pytest.raises(ValidationError, match="user_preferences_path=/tmp/outputs"):
-        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(labels_data))
+        assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(labels_data))

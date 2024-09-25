@@ -63,7 +63,7 @@ def print_as_envfile(
 
 def print_as_json(settings_obj, *, compact=False, **pydantic_export_options):
     typer.echo(
-        settings_obj.json(indent=None if compact else 2, **pydantic_export_options)
+        settings_obj.model_dump_json(indent=None if compact else 2, **pydantic_export_options)
     )
 
 

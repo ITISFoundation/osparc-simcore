@@ -128,7 +128,7 @@ def test__user_service__user_preference(
     # NOTE: these will be stored as bytes,
     # check bytes serialization/deserialization
     pref1_as_bytes = pref1.model_dump_json().encode()
-    new_instance = UserServiceUserPreference.parse_raw(pref1_as_bytes)
+    new_instance = UserServiceUserPreference.model_validate_json(pref1_as_bytes)
     assert new_instance == pref1
 
 

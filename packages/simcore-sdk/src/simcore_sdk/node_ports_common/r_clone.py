@@ -167,7 +167,7 @@ async def _get_folder_size(
             cwd=f"{local_dir.resolve()}",
         )
 
-    rclone_folder_size_result = _RCloneSize.parse_raw(result)
+    rclone_folder_size_result = _RCloneSize.model_validate_json(result)
     _logger.debug(
         "RClone size call for %s: %s", f"{folder}", f"{rclone_folder_size_result}"
     )
