@@ -9,6 +9,9 @@ from unittest.mock import AsyncMock
 import pytest
 from pydantic import ByteSize, NonNegativeFloat, NonNegativeInt, parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
+    PortNotifier,
+)
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._event_filter import (
     BaseDelayPolicy,
@@ -56,10 +59,13 @@ async def outputs_context(outputs_path: Path, port_keys: list[str]) -> OutputsCo
 
 @pytest.fixture
 async def outputs_manager(
-    outputs_context: OutputsContext,
+    outputs_context: OutputsContext, port_notifier: PortNotifier
 ) -> AsyncIterator[OutputsManager]:
     outputs_manager = OutputsManager(
-        outputs_context=outputs_context, io_log_redirect_cb=None, progress_cb=None
+        outputs_context=outputs_context,
+        port_notifier=port_notifier,
+        io_log_redirect_cb=None,
+        progress_cb=None,
     )
     await outputs_manager.start()
     yield outputs_manager

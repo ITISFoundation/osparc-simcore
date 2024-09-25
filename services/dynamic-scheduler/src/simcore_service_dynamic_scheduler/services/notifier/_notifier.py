@@ -1,20 +1,17 @@
 import contextlib
-from pathlib import Path
 
 import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_dynamic_sidecar.socketio import (
-    SOCKET_IO_SERVICE_DISK_USAGE_EVENT,
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_dynamic_scheduler.socketio import (
+    SOCKET_IO_SERVICE_STATUS_EVENT,
 )
-from models_library.api_schemas_dynamic_sidecar.telemetry import (
-    DiskUsage,
-    ServiceDiskUsage,
-)
+from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
-from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
+from servicelib.services_utils import get_status_as_dict
 
 
 class Notifier(SingletonInAppStateMixin):
@@ -23,26 +20,24 @@ class Notifier(SingletonInAppStateMixin):
     def __init__(self, sio_manager: socketio.AsyncAioPikaManager):
         self._sio_manager = sio_manager
 
-    async def notify_service_disk_usage(
-        self, user_id: UserID, node_id: NodeID, usage: dict[Path, DiskUsage]
+    async def notify_service_status(
+        self, user_id: UserID, status: NodeGet | DynamicServiceGet | NodeGetIdle
     ) -> None:
         await self._sio_manager.emit(
-            SOCKET_IO_SERVICE_DISK_USAGE_EVENT,
-            data=jsonable_encoder(ServiceDiskUsage(node_id=node_id, usage=usage)),
+            SOCKET_IO_SERVICE_STATUS_EVENT,
+            data=jsonable_encoder(get_status_as_dict(status)),
             room=SocketIORoomStr.from_user_id(user_id),
         )
 
 
-async def publish_disk_usage(
-    app: FastAPI, *, user_id: UserID, node_id: NodeID, usage: dict[Path, DiskUsage]
+async def notify_service_status_change(
+    app: FastAPI, user_id: UserID, status: NodeGet | DynamicServiceGet | NodeGetIdle
 ) -> None:
     notifier: Notifier = Notifier.get_from_app_state(app)
-    await notifier.notify_service_disk_usage(
-        user_id=user_id, node_id=node_id, usage=usage
-    )
+    await notifier.notify_service_status(user_id=user_id, status=status)
 
 
-def setup_notifier(app: FastAPI):
+def setup(app: FastAPI):
     async def _on_startup() -> None:
         assert app.state.external_socketio  # nosec
 
