@@ -45,8 +45,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         this.addAt(announcementUIFactory.createLoginAnnouncement(), 0);
       } else {
         announcementUIFactory.addListenerOnce("changeAnnouncement", e => {
-          const announcement = e.getData();
-          if (announcement) {
+          if (announcementUIFactory.hasLoginAnnouncement()) {
             this.addAt(announcementUIFactory.createLoginAnnouncement(), 0);
           }
         });
