@@ -21,38 +21,38 @@ class DefaultFromEnvFactoryError(ValueError):
         self.errors = errors
 
 
-def allows_none(info: FieldInfo) -> bool:
+def _allows_none(info: FieldInfo) -> bool:
     origin = get_origin(info.annotation)  # X | None or Optional[X] will return Union
     if origin is UnionType:
         return any(x in get_args(info.annotation) for x in (type(None), Any))
     return False
 
 
-def get_type(info: FieldInfo) -> Any:
+def _get_type(info: FieldInfo) -> Any:
     field_type = info.annotation
     if args := get_args(info.annotation):
         field_type = next(a for a in args if a != type(None))
     return field_type
 
 
-def is_literal(info: FieldInfo) -> bool:
+def _is_literal(info: FieldInfo) -> bool:
     origin = get_origin(info.annotation)
     return origin is Literal
 
 
-def create_settings_from_env(field_name, field):
+def _create_settings_from_env(field_name: str, info: FieldInfo):
     # NOTE: Cannot pass only field.type_ because @prepare_field (when this function is called)
     #  this value is still not resolved (field.type_ at that moment has a weak_ref).
     #  Therefore we keep the entire 'field' but MUST be treated here as read-only
 
     def _default_factory():
         """Creates default from sub-settings or None (if nullable)"""
-        field_settings_cls = get_type(field)
+        field_settings_cls = _get_type(info)
         try:
             return field_settings_cls()
 
         except ValidationError as err:
-            if allows_none(field):
+            if _allows_none(info):
                 # e.g. Optional[PostgresSettings] would warn if defaults to None
                 _logger.warning(
                     _DEFAULTS_TO_NONE_MSG,
@@ -80,7 +80,7 @@ class BaseCustomSettings(BaseSettings):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
         if (
             info.field_name
-            and allows_none(cls.model_fields[info.field_name])
+            and _allows_none(cls.model_fields[info.field_name])
             and isinstance(v, str)
             and v.lower() in ("null", "none")
         ):
@@ -92,24 +92,25 @@ class BaseCustomSettings(BaseSettings):
         extra="forbid",
         frozen=True,
         validate_default=True,
-        defer_build=True,
         ignored_types=(cached_property,),
     )
 
     @classmethod
-    def __pydantic_init_subclass__(cls, **_kwargs: Any):
+    def __pydantic_init_subclass__(cls, **kwargs: Any):
+        super().__pydantic_init_subclass__(**kwargs)
+
         for name, field in cls.model_fields.items():
             auto_default_from_env = (
                 field.json_schema_extra is not None
                 and field.json_schema_extra.get("auto_default_from_env", False)
             )  # type: ignore[union-attr]
-            field_type = get_type(field)
+            field_type = _get_type(field)
 
             # Avoids issubclass raising TypeError. SEE test_issubclass_type_error_with_pydantic_models
             is_not_composed = (
                 get_origin(field_type) is None
             )  # is not composed as dict[str, Any] or Generic[Base]
-            is_not_literal = not get_origin(field.annotation) is Literal
+            is_not_literal = not _is_literal(field)
 
             if (
                 is_not_literal
@@ -121,7 +122,7 @@ class BaseCustomSettings(BaseSettings):
                     assert field.default_factory is None
 
                     # Transform it into something like `Field(default_factory=create_settings_from_env(field))`
-                    field.default_factory = create_settings_from_env(name, field)
+                    field.default_factory = _create_settings_from_env(name, field)
                     field.default = None
 
             elif (
@@ -135,6 +136,8 @@ class BaseCustomSettings(BaseSettings):
             elif auto_default_from_env:
                 msg = f"auto_default_from_env=True can only be used in BaseCustomSettings subclasses but field {cls}.{name} is {field_type} "
                 raise ValueError(msg)
+
+        cls.model_rebuild(force=True)
 
     @classmethod
     def create_from_envs(cls, **overrides):

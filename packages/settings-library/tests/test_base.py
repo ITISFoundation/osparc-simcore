@@ -42,7 +42,7 @@ def _print_defaults(model_cls: type[BaseModel]):
     for name, field in model_cls.model_fields.items():
         print(name, ":", end="")
         try:
-            default = field.get_default()
+            default = field.get_default(call_default_factory=True)  # new in Pydatic v2
             print(default, type(default))
         except ValidationError as err:
             print(err)
@@ -62,15 +62,19 @@ def create_settings_class() -> Callable[[str], type[BaseCustomSettings]]:
         class M1(BaseCustomSettings):
             VALUE: S
             VALUE_DEFAULT: S = S(S_VALUE=42)
-            #VALUE_CONFUSING: S = None  # type: ignore
+            # VALUE_CONFUSING: S = None  # type: ignore
 
             VALUE_NULLABLE_REQUIRED: S | None = ...  # type: ignore
 
             VALUE_NULLABLE_DEFAULT_VALUE: S | None = S(S_VALUE=42)
             VALUE_NULLABLE_DEFAULT_NULL: S | None = None
 
-            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(json_schema_extra={"auto_default_from_env": True})
-            VALUE_DEFAULT_ENV: S = Field(json_schema_extra={"auto_default_from_env": True})
+            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(
+                json_schema_extra={"auto_default_from_env": True}
+            )
+            VALUE_DEFAULT_ENV: S = Field(
+                json_schema_extra={"auto_default_from_env": True}
+            )
 
         class M2(BaseCustomSettings):
             #
@@ -82,10 +86,14 @@ def create_settings_class() -> Callable[[str], type[BaseCustomSettings]]:
             VALUE_NULLABLE_DEFAULT_NULL: S | None = None
 
             # defaults enabled but if not exists, it disables
-            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(json_schema_extra={"auto_default_from_env": True})
+            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(
+                json_schema_extra={"auto_default_from_env": True}
+            )
 
             # cannot be disabled
-            VALUE_DEFAULT_ENV: S = Field(json_schema_extra={"auto_default_from_env": True})
+            VALUE_DEFAULT_ENV: S = Field(
+                json_schema_extra={"auto_default_from_env": True}
+            )
 
         # Changed in version 3.7: Dictionary order is guaranteed to be insertion order
         _classes = {"M1": M1, "M2": M2, "S": S}
@@ -111,6 +119,7 @@ def test_create_settings_class(
         M.model_fields["VALUE_DEFAULT_ENV"].get_default(call_default_factory=True)
 
 
+@pytest.mark.testit
 def test_create_settings_class_with_environment(
     monkeypatch: pytest.MonkeyPatch,
     create_settings_class: Callable[[str], type[BaseCustomSettings]],
@@ -147,7 +156,7 @@ def test_create_settings_class_with_environment(
         assert instance.model_dump() == {
             "VALUE": {"S_VALUE": 2},
             "VALUE_DEFAULT": {"S_VALUE": 42},
-            #"VALUE_CONFUSING": None,
+            # "VALUE_CONFUSING": None,
             "VALUE_NULLABLE_REQUIRED": {"S_VALUE": 3},
             "VALUE_NULLABLE_DEFAULT_VALUE": {"S_VALUE": 42},
             "VALUE_NULLABLE_DEFAULT_NULL": None,
