@@ -4,15 +4,25 @@ from pathlib import Path
 import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from models_library.api_schemas_dynamic_sidecar.ports import (
+    InputPortSatus,
+    InputStatus,
+    OutputPortStatus,
+    OutputStatus,
+)
 from models_library.api_schemas_dynamic_sidecar.socketio import (
     SOCKET_IO_SERVICE_DISK_USAGE_EVENT,
+    SOCKET_IO_STATE_INPUT_PORTS_EVENT,
+    SOCKET_IO_STATE_OUTPUT_PORTS_EVENT,
 )
 from models_library.api_schemas_dynamic_sidecar.telemetry import (
     DiskUsage,
     ServiceDiskUsage,
 )
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
@@ -32,14 +42,47 @@ class Notifier(SingletonInAppStateMixin):
             room=SocketIORoomStr.from_user_id(user_id),
         )
 
+    async def notify_output_port_status(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        node_id: NodeID,
+        port_key: ServicePortKey,
+        output_status: OutputStatus,
+    ) -> None:
+        await self._sio_manager.emit(
+            SOCKET_IO_STATE_OUTPUT_PORTS_EVENT,
+            data=jsonable_encoder(
+                OutputPortStatus(
+                    project_id=project_id,
+                    node_id=node_id,
+                    port_key=port_key,
+                    status=output_status,
+                )
+            ),
+            room=SocketIORoomStr.from_user_id(user_id),
+        )
 
-async def publish_disk_usage(
-    app: FastAPI, *, user_id: UserID, node_id: NodeID, usage: dict[Path, DiskUsage]
-) -> None:
-    notifier: Notifier = Notifier.get_from_app_state(app)
-    await notifier.notify_service_disk_usage(
-        user_id=user_id, node_id=node_id, usage=usage
-    )
+    async def notify_input_port_status(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        node_id: NodeID,
+        port_key: ServicePortKey,
+        input_status: InputStatus,
+    ) -> None:
+        await self._sio_manager.emit(
+            SOCKET_IO_STATE_INPUT_PORTS_EVENT,
+            data=jsonable_encoder(
+                InputPortSatus(
+                    project_id=project_id,
+                    node_id=node_id,
+                    port_key=port_key,
+                    status=input_status,
+                )
+            ),
+            room=SocketIORoomStr.from_user_id(user_id),
+        )
 
 
 def setup_notifier(app: FastAPI):
