@@ -10,16 +10,16 @@ coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==27.0.0
+faker==29.0.0
     # via -r requirements/_test.in
-greenlet==3.0.3
+greenlet==3.1.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
     #   sqlalchemy
 iniconfig==2.0.0
     # via pytest
-mypy==1.11.1
+mypy==1.11.2
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -32,7 +32,7 @@ psycopg2-binary==2.9.9
     #   -c requirements/_base.txt
     #   aiopg
     #   sqlalchemy
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -59,7 +59,7 @@ pyyaml==6.0.2
     #   -r requirements/_test.in
 six==1.16.0
     # via python-dateutil
-sqlalchemy==1.4.53
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -68,11 +68,11 @@ sqlalchemy==1.4.53
     #   aiopg
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-types-docker==7.1.0.20240821
+types-docker==7.1.0.20240827
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20240819
     # via -r requirements/_test.in
-types-requests==2.32.0.20240712
+types-requests==2.32.0.20240914
     # via types-docker
 typing-extensions==4.12.2
     # via
@@ -80,7 +80,7 @@ typing-extensions==4.12.2
     #   -c requirements/_migration.txt
     #   mypy
     #   sqlalchemy2-stubs
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_migration.txt

@@ -12,7 +12,7 @@ from models_library.api_schemas_webserver.catalog import (
 )
 from models_library.services import BaseServiceIOModel
 from pint import PintError, UnitRegistry
-from pint.quantity import Quantity
+from pint.quantity import Quantity  # pylint:disable=no-name-in-module
 
 _logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ attrs==24.2.0
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
-aws-sam-translator==1.89.0
+aws-sam-translator==1.91.0
     # via cfn-lint
 aws-xray-sdk==2.14.0
     # via moto
@@ -18,7 +18,7 @@ boto3==1.34.131
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   moto
-boto3-stubs==1.35.2
+boto3-stubs==1.35.25
     # via types-boto3
 botocore==1.34.131
     # via
@@ -27,20 +27,20 @@ botocore==1.34.131
     #   boto3
     #   moto
     #   s3transfer
-botocore-stubs==1.35.2
+botocore-stubs==1.35.25
     # via
     #   -c requirements/_base.txt
     #   boto3-stubs
     #   types-aioboto3
     #   types-aiobotocore
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
-cffi==1.17.0
+cffi==1.17.1
     # via cryptography
-cfn-lint==1.10.3
+cfn-lint==1.15.0
     # via moto
 charset-normalizer==3.3.2
     # via
@@ -54,30 +54,30 @@ coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==43.0.0
+cryptography==43.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
     #   moto
 docker==7.1.0
     # via moto
-faker==27.0.0
+faker==29.0.0
     # via -r requirements/_test.in
 flask==3.0.3
     # via
     #   flask-cors
     #   moto
-flask-cors==4.0.1
+flask-cors==5.0.0
     # via moto
 flexcache==0.3
     # via pint
 flexparser==0.3.1
     # via pint
-graphql-core==3.2.3
+graphql-core==3.2.4
     # via moto
 icdiff==2.0.7
     # via pytest-icdiff
-idna==3.7
+idna==3.10
     # via
     #   -c requirements/_base.txt
     #   requests
@@ -97,7 +97,7 @@ jmespath==1.0.1
     #   botocore
 joserfc==1.0.0
     # via moto
-jsondiff==2.2.0
+jsondiff==2.2.1
     # via moto
 jsonpatch==1.33
     # via cfn-lint
@@ -124,7 +124,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   werkzeug
-moto==5.0.13
+moto==5.0.15
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -150,18 +150,18 @@ pprintpp==0.4.0
     # via pytest-icdiff
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-py-partiql-parser==0.5.5
+py-partiql-parser==0.5.6
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==1.10.17
+pydantic==1.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pyparsing==3.1.2
+pyparsing==3.1.4
     # via moto
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -213,7 +213,7 @@ referencing==0.29.3
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-regex==2024.7.24
+regex==2024.9.11
     # via cfn-lint
 requests==2.32.3
     # via
@@ -235,7 +235,7 @@ s3transfer==0.10.2
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==74.0.0
+setuptools==75.1.0
     # via
     #   -c requirements/_base.txt
     #   moto
@@ -244,23 +244,23 @@ six==1.16.0
     #   -c requirements/_base.txt
     #   python-dateutil
     #   rfc3339-validator
-sympy==1.13.2
+sympy==1.13.3
     # via cfn-lint
 termcolor==2.4.0
     # via pytest-sugar
 types-aioboto3==13.1.1
     # via -r requirements/_test.in
-types-aiobotocore==2.13.2
+types-aiobotocore==2.15.1
     # via
     #   -c requirements/_base.txt
     #   types-aioboto3
-types-awscrt==0.21.2
+types-awscrt==0.21.5
     # via
     #   -c requirements/_base.txt
     #   botocore-stubs
 types-boto3==1.0.2
     # via -r requirements/_test.in
-types-s3transfer==0.10.1
+types-s3transfer==0.10.2
     # via
     #   boto3-stubs
     #   types-aioboto3
@@ -276,7 +276,7 @@ typing-extensions==4.12.2
     #   pydantic
     #   types-aioboto3
     #   types-aiobotocore
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -284,7 +284,7 @@ urllib3==2.2.2
     #   docker
     #   requests
     #   responses
-werkzeug==3.0.3
+werkzeug==3.0.4
     # via
     #   flask
     #   moto
