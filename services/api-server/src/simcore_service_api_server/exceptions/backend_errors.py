@@ -12,7 +12,9 @@ class BaseBackEndError(ApiServerBaseError):
 
     @classmethod
     def named_fields(cls) -> set[str]:
-        return set(parse.compile(cls.msg_template).named_fields)
+        return set(
+            parse.compile(cls.msg_template).named_fields  # pylint: disable=no-member
+        )
 
 
 class ListSolversOrStudiesError(BaseBackEndError):

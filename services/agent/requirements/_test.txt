@@ -7,7 +7,7 @@ aiohttp==3.8.5
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aiobotocore
-aioitertools==0.11.0
+aioitertools==0.12.0
     # via aiobotocore
 aiosignal==1.2.0
     # via
@@ -51,9 +51,9 @@ certifi==2023.11.17
     #   httpcore
     #   httpx
     #   requests
-cffi==1.17.0
+cffi==1.17.1
     # via cryptography
-cfn-lint==1.10.3
+cfn-lint==1.15.0
     # via moto
 charset-normalizer==2.1.1
     # via
@@ -68,7 +68,7 @@ coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==43.0.0
+cryptography==43.0.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   moto
@@ -81,20 +81,20 @@ ecdsa==0.19.0
     #   moto
     #   python-jose
     #   sshpubkeys
-faker==27.0.0
+faker==29.0.0
     # via -r requirements/_test.in
 flask==3.0.3
     # via
     #   flask-cors
     #   moto
-flask-cors==4.0.1
+flask-cors==5.0.0
     # via moto
 frozenlist==1.3.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-graphql-core==3.2.3
+graphql-core==3.2.4
     # via moto
 h11==0.14.0
     # via
@@ -129,7 +129,7 @@ jmespath==1.0.1
     # via
     #   boto3
     #   botocore
-jsondiff==2.2.0
+jsondiff==2.2.1
     # via moto
 jsonpatch==1.33
     # via cfn-lint
@@ -170,7 +170,7 @@ pluggy==1.5.0
     # via pytest
 py-partiql-parser==0.4.0
     # via moto
-pyasn1==0.6.0
+pyasn1==0.6.1
     # via
     #   python-jose
     #   rsa
@@ -181,13 +181,13 @@ pydantic==1.10.2
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pyparsing==3.1.2
+pyparsing==3.1.4
     # via moto
 pyrsistent==0.19.2
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -219,7 +219,7 @@ pyyaml==6.0.2
     #   moto
     #   openapi-spec-validator
     #   responses
-regex==2024.7.24
+regex==2024.9.11
     # via cfn-lint
 requests==2.32.3
     # via
@@ -253,7 +253,7 @@ sniffio==1.3.0
     #   httpx
 sshpubkeys==3.3.1
     # via moto
-sympy==1.13.2
+sympy==1.13.3
     # via cfn-lint
 typing-extensions==4.4.0
     # via
@@ -261,14 +261,14 @@ typing-extensions==4.4.0
     #   aws-sam-translator
     #   cfn-lint
     #   pydantic
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
     #   docker
     #   requests
     #   responses
-werkzeug==3.0.3
+werkzeug==3.0.4
     # via
     #   flask
     #   moto
