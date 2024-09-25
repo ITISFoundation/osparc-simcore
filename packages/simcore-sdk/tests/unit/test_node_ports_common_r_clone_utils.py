@@ -67,9 +67,9 @@ from simcore_sdk.node_ports_common.r_clone_utils import (
         ),
     ],
 )
-async def test_regression_parsing(log_message: str, expected: type):
-    obj = parse_raw_as(_RCloneSyncMessages, log_message)
+async def test_rclone_stbc_message_parsing_regression(log_message: str, expected: type):
+    parsed_log = parse_raw_as(_RCloneSyncMessages, log_message)  # type: ignore[arg-type]
+    assert isinstance(parsed_log, expected)
 
-    assert isinstance(obj, expected)
     progress_log_parser = SyncProgressLogParser(AsyncMock())
     await progress_log_parser(log_message)
