@@ -65,14 +65,12 @@ qx.Class.define("osparc.info.CommentAdd", {
             allowShrinkX: true,
             allowShrinkY: true,
             maxWidth: 32,
-            maxHeight: 32
+            maxHeight: 32,
+            decorator: "rounded",
           });
           const userEmail = osparc.auth.Data.getInstance().getEmail();
           control.set({
             source: osparc.utils.Avatar.getUrl(userEmail, 32)
-          });
-          control.getContentElement().setStyles({
-            "border-radius": "8px"
           });
           const layout = this.getChildControl("add-comment-layout");
           layout.add(control, {
