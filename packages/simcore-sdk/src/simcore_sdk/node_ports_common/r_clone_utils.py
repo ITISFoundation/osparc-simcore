@@ -44,6 +44,7 @@ _RCloneSyncMessages = Union[  # noqa: UP007
     _RCloneSyncTransferCompletedMessage,
     _RCloneSyncUpdatedMessage,
     _RCloneSyncTransferringMessage,
+    _RCloneSyncMessageBase,
 ]
 
 
