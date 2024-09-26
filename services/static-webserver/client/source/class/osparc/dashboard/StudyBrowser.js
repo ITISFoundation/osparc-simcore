@@ -513,27 +513,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__reloadFolders();
     },
 
-    _moveFolderToFolderRequested: function(folderId) {
-      const moveFolderToFolder = new osparc.dashboard.MoveResourceToFolder(this.getCurrentFolderId(), this.getCurrentWorkspaceId());
-      const title = "Move to Folder";
-      const win = osparc.ui.window.Window.popUpInWindow(moveFolderToFolder, title, 350, 280);
-      moveFolderToFolder.addListener("moveToFolder", e => {
-        win.close();
-        const folder = osparc.store.Folders.getInstance().getFolder(folderId);
-        const destFolderId = e.getData();
-        const updatedData = {
-          name: folder.getName(),
-          parentFolderId: destFolderId,
-        };
-        osparc.store.Folders.getInstance().putFolder(folderId, updatedData)
-          .then(() => {
-            folder.setParentFolderId(destFolderId);
-            this.__reloadFolders()
-          })
-          .catch(err => console.error(err));
-      });
-    },
-
     __showMoveToWorkspaceWarningMessage: function() {
       const msg = this.tr("The permissions will be taken from the new workspace?");
       const win = new osparc.ui.window.Confirmation(msg).set({
@@ -543,40 +522,65 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return win;
     },
 
-    _moveFolderToWorkspaceRequested: function(folderId) {
-      const folderToWorkspaceRequested = false;
-      if (!folderToWorkspaceRequested) {
-        const msg = this.tr("Coming soon");
-        osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
-        return;
-      }
-      const moveFolderToWorkspace = new osparc.dashboard.MoveResourceToWorkspace(this.getCurrentWorkspaceId());
-      const title = "Move to Workspace";
-      const win = osparc.ui.window.Window.popUpInWindow(moveFolderToWorkspace, title, 350, 280);
-      moveFolderToWorkspace.addListener("moveToWorkspace", e => {
+    _moveFolderToRequested: function(workspaceId, folderId) {
+      const moveFolderToFolder = new osparc.dashboard.MoveResource(this.getCurrentWorkspaceId(), this.getCurrentFolderId());
+      const title = "Move to...";
+      const win = osparc.ui.window.Window.popUpInWindow(moveFolderToFolder, title, 350, 280);
+      moveFolderToFolder.addListener("moveTo", e => {
         win.close();
-        const destWorkspaceId = e.getData();
+        const data = e.getData();
+        const destWorkspaceId = data["workspaceId"];
+        const destFolderId = data["folderId"];
+        if (destWorkspaceId !== workspaceId) {
+          const msg = this.tr("Coming soon");
+          osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
+          return;
+        }
+        // OM only if workspace changed
         const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
         confirmationWin.addListener("close", () => {
           if (confirmationWin.getConfirmed()) {
-            const params = {
-              url: {
-                folderId,
-                workspaceId: destWorkspaceId,
-              }
-            };
-            osparc.data.Resources.fetch("folders", "moveToWorkspace", params)
-              .then(() => {
-                const folder = osparc.store.Folders.getInstance().getFolder(folderId);
-                if (folder) {
-                  folder.setWorkspaceId(destWorkspaceId);
-                }
-                this.__reloadFolders()
-              })
+            Promise.all([
+              this.__moveFolderToWorkspaceRequested(folderId, destWorkspaceId),
+              this.__moveFolderToFolderRequested(folderId, destFolderId),
+            ])
+              .then(() => this.__reloadFolders())
               .catch(err => console.error(err));
           }
         }, this);
-      }, this);
+      });
+    },
+
+    __moveFolderToWorkspaceRequested: function(folderId, destWorkspaceId) {
+      const folder = osparc.store.Folders.getInstance().getFolder(folderId);
+      if (folder.getWorkspaceId() === destWorkspaceId) {
+        // resolve right away
+        return new Promise(resolve => resolve());
+      }
+      const params = {
+        url: {
+          folderId,
+          workspaceId: destWorkspaceId,
+        }
+      };
+      return osparc.data.Resources.fetch("folders", "moveToWorkspace", params)
+        .then(() => folder.setWorkspaceId(destWorkspaceId))
+        .catch(err => console.error(err));
+    },
+
+    __moveFolderToFolderRequested: function(folderId, destFolderId) {
+      if (folderId === destFolderId) {
+        // resolve right away
+        return new Promise(resolve => resolve());
+      }
+      const folder = osparc.store.Folders.getInstance().getFolder(folderId);
+      const updatedData = {
+        name: folder.getName(),
+        parentFolderId: destFolderId,
+      };
+      return osparc.store.Folders.getInstance().putFolder(folderId, updatedData)
+        .then(() => folder.setParentFolderId(destFolderId))
+        .catch(err => console.error(err));
     },
 
     _deleteFolderRequested: function(folderId) {
