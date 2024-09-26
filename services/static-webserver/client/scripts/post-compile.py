@@ -31,7 +31,7 @@ def update_apps_metadata():
                 replacements = i.get("replacements")
                 for key in replacements:
                     replace_text = replacements[key]
-                    data = data.replace(key, replace_text)
+                    data = data.replace("${"+key+"}", replace_text)
             with open(filename, "w") as file: 
                 print(f"Updating app metadata: {filename}")
                 file.write(data)
