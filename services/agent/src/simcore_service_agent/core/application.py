@@ -18,7 +18,7 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
-from ._routes import router
+from .api.rest.routes import setup_rest_api
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,6 @@ def _setup_logger(settings: ApplicationSettings):
 
 
 def create_app() -> FastAPI:
-    # SETTINGS
     settings = ApplicationSettings.create_from_envs()
     _setup_logger(settings)
     logger.debug(settings.json(indent=2))
@@ -54,14 +53,13 @@ def create_app() -> FastAPI:
     if app.state.settings.AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
-    # ROUTERS
-    app.include_router(router)
+    setup_rest_api(app)
 
     async def _on_startup() -> None:
-        print(APP_STARTED_BANNER_MSG, flush=True)
+        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
-        print(APP_FINISHED_BANNER_MSG, flush=True)
+        print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
