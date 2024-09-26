@@ -8,7 +8,7 @@ For twilio SMS services:
 
 from typing import Annotated, TypeAlias
 
-from pydantic import Field, StringConstraints, TypeAdapter
+from pydantic import Field, StringConstraints, TypeAdapter, field_validator
 
 from .base import BaseCustomSettings
 
@@ -29,6 +29,13 @@ class TwilioSettings(BaseCustomSettings):
         description="list of country-codes supporting/registered for alphanumeric sender ID"
         "See https://support.twilio.com/hc/en-us/articles/223133767-International-support-for-Alphanumeric-Sender-ID",
     )
+
+
+    @field_validator("TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT", mode="before")
+    @classmethod
+    def _parse_country_codes_from_env(cls, v):
+        return [str(cc) for cc in v]
+
 
     def is_alphanumeric_supported(self, phone_number: str) -> bool:
         # Some countries do not support alphanumeric serder ID
