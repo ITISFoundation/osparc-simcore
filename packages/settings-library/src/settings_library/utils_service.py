@@ -115,7 +115,7 @@ class MixinServiceSettings:
 
         # post process parts dict
         kwargs = {}
-        for k, v in parts.items():
+        for k, v in parts.items():  # type: ignore[assignment]
             if isinstance(v, SecretStr):
                 value = v.get_secret_value()
             else:

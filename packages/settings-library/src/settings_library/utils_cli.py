@@ -26,7 +26,7 @@ def print_as_envfile(
 
     for name, field in settings_obj.model_fields.items():
         auto_default_from_env = field.json_schema_extra is not None and field.json_schema_extra.get(
-            "auto_default_from_env", False  # type: ignore[union-attr]
+            "auto_default_from_env", False
         )
 
         value = getattr(settings_obj, name)
