@@ -56,7 +56,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     "indicator-border": {
       include: "material-button",
       style: {
-        radius: 2,
+        radius: 4,
         width: 1,
         color: "text"
       }
@@ -143,7 +143,7 @@ qx.Theme.define("osparc.theme.Decoration", {
         shadowBlurRadius: 0,
         shadowLength: 0,
         width: 0,
-        radius: 3,
+        radius: 4,
         transitionProperty: "opacity",
         transitionDuration: "0.05s",
         transitionTimingFunction: "ease-in"
@@ -169,7 +169,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     "service-window": {
       include: "window",
       style: {
-        radius: 3,
+        radius: 4,
         width: 1
       }
     },
@@ -197,7 +197,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "flash": {
       style: {
-        radius: 3,
+        radius: 4,
         transitionProperty: "top",
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
@@ -241,7 +241,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "flash-badge": {
       style: {
-        radius: 5
+        radius: 4
       }
     },
 
@@ -297,27 +297,27 @@ qx.Theme.define("osparc.theme.Decoration", {
     "border-editable": {
       style: {
         width: 1,
-        radius: 3,
+        radius: 4,
         color: "text-disabled"
       }
     },
 
     "hint": {
       style: {
-        radius: 3
+        radius: 4
       }
     },
 
     "chip": {
       style: {
-        radius: 9
+        radius: 4
       }
     },
 
     "chip-button": {
       style: {
         width: 1,
-        radius: 6,
+        radius: 4,
         color: "text",
         backgroundColor: "transparent"
       }
@@ -326,7 +326,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     "filter-toggle-button": {
       style: {
         width: 1,
-        radius: 8,
+        radius: 4,
         color: "transparent"
       }
     },
@@ -340,7 +340,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "pb-listitem": {
       style: {
-        radius: 5
+        radius: 4
       }
     },
 
@@ -358,12 +358,12 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "tag": {
       style: {
-        radius: 2
+        radius: 4
       }
     },
     "tagitem": {
       style: {
-        radius: 2
+        radius: 4
       }
     },
     "tagitem-colorbutton": {
