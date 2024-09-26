@@ -37,7 +37,7 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         padding: 12,
         allowGrowX: true,
         maxWidth: osparc.auth.core.BaseAuthPage.FORM_WIDTH,
-        decorator: "rounded"
+        decorator: "rounded",
       });
 
       if (title) {

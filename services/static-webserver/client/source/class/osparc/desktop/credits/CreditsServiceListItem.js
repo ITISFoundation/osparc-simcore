@@ -86,7 +86,7 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
             minWidth: 32
           });
           control.getChildControl("image").set({
-            decorator: "rounded"
+            decorator: "rounded",
           });
           this._add(control, this.self().GRID.ICON);
           break;
