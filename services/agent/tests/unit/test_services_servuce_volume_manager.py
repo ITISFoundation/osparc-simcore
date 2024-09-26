@@ -1,9 +1,11 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 
 from collections.abc import AsyncIterable, Awaitable, Callable
 from contextlib import suppress
 from pathlib import Path
 from typing import Final
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import aiodocker
@@ -15,6 +17,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import RunID
 from models_library.users import UserID
+from pytest_mock import MockerFixture
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from simcore_service_agent.services.service_volume_manager import (
     _VOLUMES_NOT_TO_BACKUP,
@@ -155,8 +158,15 @@ def create_dynamic_sidecar_volumes(
 
 
 @pytest.fixture
-async def volume_manager(initialized_app: FastAPI) -> VolumeManager:
+def volume_manager(initialized_app: FastAPI) -> VolumeManager:
     return get_service_volume_manager(initialized_app)
+
+
+@pytest.fixture
+def mock_backup_volume(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_agent.services.service_volume_manager.backup_volume"
+    )
 
 
 @pytest.mark.parametrize("volume_count", [0, 2])
@@ -164,6 +174,7 @@ async def test_volume_manager_workflow_only_unmounted_volumes(
     volume_count: int,
     volume_manager: VolumeManager,
     create_dynamic_sidecar_volumes: Callable[[NodeID, bool], Awaitable[set[str]]],
+    mock_backup_volume: AsyncMock,
 ):
     created_volumes: set[str] = set()
     for _ in range(volume_count):
@@ -172,7 +183,7 @@ async def test_volume_manager_workflow_only_unmounted_volumes(
         )
         created_volumes.update(created_volume)
 
-    volumes = await volume_manager.get_unused_dynamc_sidecar_volumes()
+    volumes = await volume_manager._get_unused_dynamc_sidecar_volumes()  # noqa: SLF001
     # NOTE: if bleow check fails it's because there are exiting dy_sidecar volumes on the host
     # dirty docker enviornment
     assert volumes == created_volumes
@@ -189,7 +200,7 @@ async def test_volume_manager_workflow_only_unmounted_volumes(
             count_volumes_to_skip += 1
 
         assert volume.startswith(PREFIX_DYNAMIC_SIDECAR_VOLUMES)
-        await volume_manager.remove_volume(volume)
+        await volume_manager._remove_volume(volume)  # noqa: SLF001
 
     assert (
         count_vloumes_to_backup
@@ -197,5 +208,7 @@ async def test_volume_manager_workflow_only_unmounted_volumes(
     )
     assert count_volumes_to_skip == len(_VOLUMES_NOT_TO_BACKUP) * volume_count
 
-    volumes = await volume_manager.get_unused_dynamc_sidecar_volumes()
+    assert mock_backup_volume.call_count == count_vloumes_to_backup
+
+    volumes = await volume_manager._get_unused_dynamc_sidecar_volumes()  # noqa: SLF001
     assert len(volumes) == 0

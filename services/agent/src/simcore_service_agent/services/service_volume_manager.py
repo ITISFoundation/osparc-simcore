@@ -9,6 +9,8 @@ from fastapi import FastAPI
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from servicelib.logging_utils import log_context
 
+from .backup_manager import backup_volume
+
 _logger = logging.getLogger(__name__)
 
 
@@ -31,6 +33,7 @@ def _does_volume_require_backup(volume_name: str) -> bool:
 
 @dataclass
 class VolumeManager:
+    app: FastAPI
     _docker: Docker = field(default_factory=Docker)
 
     async def close(self) -> None:
@@ -47,7 +50,7 @@ class VolumeManager:
     async def __aenter__(self) -> "VolumeManager":
         return self
 
-    async def get_unused_dynamc_sidecar_volumes(self) -> set[str]:
+    async def _get_unused_dynamc_sidecar_volumes(self) -> set[str]:
         volumes = await self._docker.volumes.list()
         all_volumes: set[str] = {volume["Name"] for volume in volumes["Volumes"]}
 
@@ -66,22 +69,23 @@ class VolumeManager:
             v for v in unused_volumes if v.startswith(PREFIX_DYNAMIC_SIDECAR_VOLUMES)
         }
 
-    async def remove_volume(self, volume_name: str) -> None:
-        with log_context(
-            _logger, logging.INFO, f"removing {volume_name}", log_duration=True
-        ):
-            await DockerVolume(self._docker, volume_name).delete()
-
-    async def backup_volume(self, volume_name: str) -> None:
+    async def _backup_volume(self, volume_name: str) -> None:
         if _does_volume_require_backup(volume_name):
             # log backing up in info
             with log_context(
                 _logger, logging.INFO, f"backup {volume_name}", log_duration=True
             ):
-                pass
+                await backup_volume(self.app, volume_name)
         else:
             # log skipping backup in debug
             _logger.debug("No backup is required for %s", volume_name)
+
+    async def _remove_volume(self, volume_name: str) -> None:
+        with log_context(
+            _logger, logging.INFO, f"removing {volume_name}", log_duration=True
+        ):
+            await self._backup_volume(volume_name)
+            await DockerVolume(self._docker, volume_name).delete()
 
 
 def get_service_volume_manager(app: FastAPI) -> VolumeManager:
@@ -91,7 +95,7 @@ def get_service_volume_manager(app: FastAPI) -> VolumeManager:
 
 def setup_service_volume_manager(app: FastAPI) -> None:
     async def _on_startup() -> None:
-        app.state.service_volume_manager = VolumeManager()
+        app.state.service_volume_manager = VolumeManager(app)
 
     async def _on_shutdown() -> None:
         service_volume_manager: VolumeManager = app.state.service_volume_manager
