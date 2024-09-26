@@ -19,6 +19,7 @@ from .._meta import (
     VERSION,
 )
 from ..services.rabbitmq import setup_rabbitmq
+from ..services.service_volume_manager import setup_service_volume_manager
 from .api.rest.routes import setup_rest_api
 from .api.rpc.routes import setup_rpc_api_routes
 from .settings import ApplicationSettings
@@ -56,6 +57,7 @@ def create_app() -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     setup_rabbitmq(app)
+    setup_service_volume_manager(app)
     setup_rest_api(app)
     setup_rpc_api_routes(app)
 
