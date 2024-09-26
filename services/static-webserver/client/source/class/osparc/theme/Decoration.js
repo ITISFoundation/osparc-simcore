@@ -400,7 +400,7 @@ qx.Theme.define("osparc.theme.Decoration", {
         style: "solid",
         width: [0, 0, 2, 0],
         color: "transparent",
-        radius: [3, 3, 0, 0]
+        radius: [4, 4, 0, 0]
       }
     },
     "tab-button-selected": {
@@ -408,7 +408,7 @@ qx.Theme.define("osparc.theme.Decoration", {
         style: "solid",
         width: [0, 0, 2, 0],
         color: "default-button-focus",
-        radius: [3, 3, 0, 0]
+        radius: [4, 4, 0, 0]
       }
     },
 
@@ -419,7 +419,7 @@ qx.Theme.define("osparc.theme.Decoration", {
         style: "solid",
         width: 1,
         color: "default-button",
-        radius: 5,
+        radius: 4,
         backgroundColor: "default-button"
       }
     },
@@ -428,7 +428,7 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         style: "solid",
         width: 1,
-        radius: 5,
+        radius: 4,
         color: "fab-background",
         backgroundColor: "fab-background",
         shadowSpreadRadius: 0,
@@ -512,7 +512,7 @@ qx.Theme.define("osparc.theme.Decoration", {
       include: "form-button-outlined",
       style: {
         width: [1, 1, 1, 1],
-        radius: [0, 5, 5, 0]
+        radius: [0, 4, 4, 0]
       }
     },
     "form-button-outlined-hovered-right": {
@@ -535,7 +535,7 @@ qx.Theme.define("osparc.theme.Decoration", {
       include: "form-button-outlined",
       style: {
         width: [1, 0, 1, 1],
-        radius: [5, 0, 0, 5]
+        radius: [4, 0, 0, 4]
       }
     },
     "form-button-outlined-hovered-left": {
@@ -652,7 +652,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     */
     "appmotion-buy-credits-input": {
       style: {
-        radius: 8
+        radius: 4
       }
     }
   }
