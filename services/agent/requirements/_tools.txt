@@ -1,9 +1,7 @@
 astroid==3.3.4
     # via pylint
 black==24.8.0
-    # via
-    #   -r requirements/../../../requirements/devenv.txt
-    #   -r requirements/_tools.in
+    # via -r requirements/../../../requirements/devenv.txt
 build==1.2.2
     # via pip-tools
 bump2version==1.0.1
@@ -27,7 +25,6 @@ identify==2.6.1
 isort==5.13.2
     # via
     #   -r requirements/../../../requirements/devenv.txt
-    #   -r requirements/_tools.in
     #   pylint
 mccabe==0.7.0
     # via pylint
@@ -67,9 +64,9 @@ pyproject-hooks==1.1.0
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   pre-commit
-    #   watchdog
 ruff==0.6.7
     # via -r requirements/../../../requirements/devenv.txt
 setuptools==75.1.0
@@ -86,7 +83,5 @@ typing-extensions==4.12.2
     #   mypy
 virtualenv==20.26.5
     # via pre-commit
-watchdog==5.0.2
-    # via -r requirements/_tools.in
 wheel==0.44.0
     # via pip-tools
