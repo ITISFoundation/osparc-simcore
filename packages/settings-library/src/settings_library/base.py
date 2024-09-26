@@ -82,7 +82,7 @@ class BaseCustomSettings(BaseSettings):
             info.field_name
             and _allows_none(cls.model_fields[info.field_name])
             and isinstance(v, str)
-            and v.lower() in ("null", "none")
+            and v.lower() in ("none",)
         ):
             return None
         return v
@@ -93,6 +93,7 @@ class BaseCustomSettings(BaseSettings):
         frozen=True,
         validate_default=True,
         ignored_types=(cached_property,),
+        env_parse_none_str="null",
     )
 
     @classmethod
