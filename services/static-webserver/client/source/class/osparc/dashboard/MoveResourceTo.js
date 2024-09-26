@@ -70,7 +70,14 @@ qx.Class.define("osparc.dashboard.MoveResourceTo", {
           const folder = osparc.store.Folders.getInstance().getFolder(this.__currentFolderId);
           if (folder) {
             // OM intermediate folders missing
-            currentLocation += " / " + folder.getName()
+            const path = [];
+            this.__getUpstreamFolders(folder, path);
+            path.forEach(folderId => {
+              const fldr = osparc.store.Folders.getInstance().getFolder(folderId);
+              if (fldr) {
+                currentLocation += " / " + fldr.getName();
+              }
+            });
           }
           control = new qx.ui.basic.Label(this.tr("Current location: ") + currentLocation);
           this._add(control);
@@ -105,6 +112,14 @@ qx.Class.define("osparc.dashboard.MoveResourceTo", {
         }
       }
       return control || this.base(arguments, id);
+    },
+
+    __getUpstreamFolders: function(childFolder, folderIds = []) {
+      if (childFolder) {
+        folderIds.unshift(childFolder.getFolderId());
+        const parentFolder = osparc.store.Folders.getInstance().getFolder(childFolder.getParentFolderId());
+        this.__getUpstreamFolders(parentFolder, folderIds);
+      }
     }
   }
 });
