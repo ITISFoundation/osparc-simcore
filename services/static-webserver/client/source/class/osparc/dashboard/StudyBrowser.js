@@ -1383,8 +1383,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getMoveStudyToMenuButton: function(studyData) {
-      const text = this.tr("Move to...");
-      const moveToButton = new qx.ui.menu.Button(text, osparc.store.Workspaces.iconPath(14));
+      const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesome5Solid/folder/12");
       moveToButton["moveToButton"] = true;
       moveToButton.addListener("tap", () => {
         const title = this.tr("Move to...");
