@@ -33,15 +33,14 @@ qx.Class.define("osparc.dashboard.MoveResource", {
     const moveButton = this.getChildControl("move-btn");
 
     moveButton.setEnabled(false);
-    workspacesAndFoldersTree.addListener("changeCurrentWorkspaceId", e => {
-      const workspaceId = e.getData();
-      this.__selectedWorkspaceId = workspaceId;
-      moveButton.setEnabled(this.__currentWorkspaceId !== this.__selectedWorkspaceId || this.__currentFolderId !== this.__selectedFolderId);
-    }, this);
-    workspacesAndFoldersTree.addListener("changeCurrentFolderId", e => {
-      const folderId = e.getData();
-      this.__selectedFolderId = folderId;
-      moveButton.setEnabled(this.__currentWorkspaceId !== this.__selectedWorkspaceId || this.__currentFolderId !== this.__selectedFolderId);
+    workspacesAndFoldersTree.getSelection().addListener("change", () => {
+      const selection = workspacesAndFoldersTree.getSelection();
+      if (selection.getLength() > 0) {
+        const item = selection.getItem(0);
+        this.__selectedWorkspaceId = item.getWorkspaceId();
+        this.__selectedFolderId = item.getFolderId();
+        moveButton.setEnabled(this.__currentWorkspaceId !== this.__selectedWorkspaceId || this.__currentFolderId !== this.__selectedFolderId);
+      }
     }, this);
     moveButton.addListener("execute", () => {
       this.fireDataEvent("moveTo", {

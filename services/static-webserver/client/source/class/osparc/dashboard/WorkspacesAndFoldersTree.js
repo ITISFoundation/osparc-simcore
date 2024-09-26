@@ -36,7 +36,6 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       decorator: "no-border",
       font: "text-14",
       hideRoot: true,
-      // paddingLeft: -10,
       contentPadding: 0,
       padding: 0,
     });
@@ -89,7 +88,6 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       nullable: true,
       init: null,
       event: "changeCurrentWorkspaceId",
-      // apply: "__applyCurrentWorkspaceId"
     },
 
     currentFolderId: {
@@ -97,7 +95,6 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       nullable: true,
       init: null,
       event: "changeCurrentFolderId",
-      // apply: "__resetAndReloadAll"
     },
   },
 
