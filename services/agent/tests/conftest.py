@@ -41,6 +41,10 @@ def env(
         "AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY": "xxx",
         "AGENT_VOLUMES_CLEANUP_S3_BUCKET": bucket,
         "AGENT_VOLUMES_CLEANUP_S3_PROVIDER": S3Provider.MINIO,
+        "RABBIT_HOST": "test",
+        "RABBIT_PASSWORD": "test",
+        "RABBIT_SECURE": "false",
+        "RABBIT_USER": "test",
     }
     for key, value in mock_dict.items():
         monkeypatch.setenv(key, value)

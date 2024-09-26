@@ -10,7 +10,7 @@ from typer.testing import CliRunner
 
 
 @pytest.fixture
-def cli_runner() -> CliRunner:
+def cli_runner(env: None) -> CliRunner:
     return CliRunner()
 
 
