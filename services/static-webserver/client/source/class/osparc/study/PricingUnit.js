@@ -23,10 +23,8 @@ qx.Class.define("osparc.study.PricingUnit", {
 
     this.set({
       padding: 10,
-      center: true
-    });
-    this.getContentElement().setStyles({
-      "border-radius": "4px"
+      center: true,
+      decorator: "rounded",
     });
 
     this.setUnitData(new osparc.pricing.UnitData(pricingUnit));
