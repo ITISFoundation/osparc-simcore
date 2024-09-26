@@ -42,10 +42,6 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
       decorator: `flash-${this.self().LOG_LEVEL_COLOR_MAP[level].color}`
     });
 
-    this.getContentElement().setStyles({
-      "border-radius": "8px"
-    });
-
     const badge = this.getChildControl("badge");
     badge.set({
       source: this.self().LOG_LEVEL_COLOR_MAP[level].icon+"16",

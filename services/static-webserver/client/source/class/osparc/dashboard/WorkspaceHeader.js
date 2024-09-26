@@ -91,10 +91,8 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
             alignY: "middle",
             alignX: "center",
             allowGrowX: true,
-            allowGrowY: true
-          });
-          control.getContentElement().setStyles({
-            "border-radius": "4px"
+            allowGrowY: true,
+            decorator: "rounded",
           });
           this._add(control);
           break;

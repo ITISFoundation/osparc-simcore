@@ -47,12 +47,10 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
       indent: 5,
       textColor: "text",
       allowGrowX: true,
-      alignY: "middle"
+      alignY: "middle",
+      decorator: "rounded",
     });
 
-    this.getContentElement().setStyles({
-      "border-radius": "4px"
-    });
     this.__setNotHoveredStyle();
     this.__attachEventHandlers();
   },

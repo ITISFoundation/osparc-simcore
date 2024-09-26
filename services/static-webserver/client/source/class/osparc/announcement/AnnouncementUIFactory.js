@@ -36,10 +36,8 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         alignX: "center",
         padding: 12,
         allowGrowX: true,
-        maxWidth: 300
-      });
-      loginAnnouncement.getContentElement().setStyles({
-        "border-radius": "8px"
+        maxWidth: osparc.auth.core.BaseAuthPage.FORM_WIDTH,
+        decorator: "rounded",
       });
 
       if (title) {

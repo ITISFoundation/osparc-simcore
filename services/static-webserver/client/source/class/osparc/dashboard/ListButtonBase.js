@@ -75,7 +75,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           });
           control.getChildControl("image").set({
             anonymous: true,
-            decorator: "rounded"
+            decorator: "rounded",
           });
           this._add(control, {
             row: 0,
