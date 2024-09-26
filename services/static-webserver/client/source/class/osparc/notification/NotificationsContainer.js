@@ -27,7 +27,8 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
       zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
       maxWidth: osparc.notification.NotificationUI.MAX_WIDTH,
       maxHeight: 250,
-      backgroundColor: "background-main-3"
+      backgroundColor: "background-main-3",
+      decorator: "rounded",
     });
     osparc.utils.Utils.setIdToWidget(this, "notificationsContainer");
 

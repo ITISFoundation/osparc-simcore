@@ -206,6 +206,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "flash-message": {
       style: {
+        radius: 4,
         width: 1,
         style: "solid"
       }
