@@ -911,6 +911,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const selectStudiesButton = this.__createSelectButton();
       this._toolbar.add(selectStudiesButton);
 
+      const studiesMoveButton = this.__createMoveStudiesButton(false);
+      this._toolbar.add(studiesMoveButton);
+
       const studiesDeleteButton = this.__createDeleteButton(false);
       this._toolbar.add(studiesDeleteButton);
 
@@ -941,6 +944,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourcesContainer.addListener("changeSelection", e => {
         const selection = e.getData();
+
+        studiesMoveButton.set({
+          visibility: selection.length ? "visible" : "excluded",
+          label: selection.length > 1 ? this.tr("Move selected")+" ("+selection.length+")" : this.tr("Move")
+        });
+
         studiesDeleteButton.set({
           visibility: selection.length ? "visible" : "excluded",
           label: selection.length > 1 ? this.tr("Delete selected")+" ("+selection.length+")" : this.tr("Delete")
@@ -1028,6 +1037,43 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }, this);
       }, this);
       return importButton;
+    },
+
+    __createMoveStudiesButton: function() {
+      const moveStudiesButton = new qx.ui.form.Button(this.tr("Move to")).set({
+        appearance: "form-button-outlined",
+        visibility: "excluded",
+      });
+      moveStudiesButton.addListener("execute", () => {
+        const selection = this._resourcesContainer.getSelection();
+        const title = this.tr("Move to...");
+        const moveStudyTo = new osparc.dashboard.MoveResourceTo(this.getCurrentWorkspaceId(), this.getCurrentFolderId());
+        const win = osparc.ui.window.Window.popUpInWindow(moveStudyTo, title, 350, 280);
+        moveStudyTo.addListener("moveTo", e => {
+          win.close();
+          const data = e.getData();
+          const destWorkspaceId = data["workspaceId"];
+          const destFolderId = data["folderId"];
+          // OM only if workspace changed
+          const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
+          confirmationWin.addListener("close", () => {
+            if (confirmationWin.getConfirmed()) {
+              selection.forEach(button => {
+                const studyData = button.getResourceData();
+                Promise.all([
+                  this.__moveStudyToWorkspace(studyData, destWorkspaceId),
+                  this.__moveStudyToFolder(studyData, destFolderId),
+                ])
+                  .then(() => this.__removeFromStudyList(studyData["uuid"]))
+                  .catch(err => console.error(err));
+              });
+              this.resetSelection();
+            }
+          }, this);
+        }, this);
+        moveStudyTo.addListener("cancel", () => win.close());
+      }, this);
+      return moveStudiesButton;
     },
 
     __createDeleteButton: function() {
