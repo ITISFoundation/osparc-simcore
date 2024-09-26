@@ -18,6 +18,7 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
+from ..services.rabbitmq import setup_rabbitmq
 from .api.rest.routes import setup_rest_api
 from .api.rpc.routes import setup_rpc_api_routes
 from .settings import ApplicationSettings
@@ -54,6 +55,7 @@ def create_app() -> FastAPI:
     if app.state.settings.AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
+    setup_rabbitmq(app)
     setup_rest_api(app)
     setup_rpc_api_routes(app)
 
