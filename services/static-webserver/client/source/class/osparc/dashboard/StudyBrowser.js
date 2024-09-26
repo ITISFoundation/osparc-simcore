@@ -1352,21 +1352,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         moveStudyToFolder.addListener("moveToFolder", e => {
           win.close();
           const destFolderId = e.getData();
-          const params = {
-            url: {
-              studyId: studyData["uuid"],
-              folderId: destFolderId,
-            }
-          };
-          osparc.data.Resources.fetch("studies", "moveToFolder", params)
-            .then(() => {
-              studyData["folderId"] = destFolderId;
-              this.__removeFromStudyList(studyData["uuid"]);
-            })
-            .catch(err => {
-              console.error(err);
-              osparc.FlashMessenger.logAs(err.message, "ERROR");
-            });
+          this.__moveStudyToFolder(studyData, destFolderId);
         }, this);
         moveStudyToFolder.addListener("cancel", () => win.close());
       }, this);
@@ -1387,27 +1373,49 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
           confirmationWin.addListener("close", () => {
             if (confirmationWin.getConfirmed()) {
-              const params = {
-                url: {
-                  studyId: studyData["uuid"],
-                  workspaceId: destWorkspaceId,
-                }
-              };
-              osparc.data.Resources.fetch("studies", "moveToWorkspace", params)
-                .then(() => {
-                  studyData["workspaceId"] = destWorkspaceId;
-                  this.__removeFromStudyList(studyData["uuid"]);
-                })
-                .catch(err => {
-                  console.error(err);
-                  osparc.FlashMessenger.logAs(err.message, "ERROR");
-                });
+              this.__moveStudyToWorkspace(studyData, destWorkspaceId)
             }
           }, this);
         }, this);
         moveStudyToWorkspace.addListener("cancel", () => win.close());
       }, this);
       return moveToWorkspaceButton;
+    },
+
+    __moveStudyToWorkspace: function(studyData, destWorkspaceId) {
+      const params = {
+        url: {
+          studyId: studyData["uuid"],
+          workspaceId: destWorkspaceId,
+        }
+      };
+      osparc.data.Resources.fetch("studies", "moveToWorkspace", params)
+        .then(() => {
+          studyData["workspaceId"] = destWorkspaceId;
+          this.__removeFromStudyList(studyData["uuid"]);
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+        });
+    },
+
+    __moveStudyToFolder: function(studyData, destFolderId) {
+      const params = {
+        url: {
+          studyId: studyData["uuid"],
+          folderId: destFolderId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "moveToFolder", params)
+        .then(() => {
+          studyData["folderId"] = destFolderId;
+          this.__removeFromStudyList(studyData["uuid"]);
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+        });
     },
 
     __getDuplicateMenuButton: function(studyData) {
