@@ -11,6 +11,7 @@
 --constraint _base.txt
 
 aioboto3
+asgi-lifespan
 coverage
 faker
 httpx
