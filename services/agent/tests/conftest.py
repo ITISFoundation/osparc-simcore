@@ -1,12 +1,13 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from uuid import uuid4
 
 import pytest
+from faker import Faker
 from models_library.basic_types import BootModeEnum
 from moto.server import ThreadedMotoServer
 from pydantic import HttpUrl, parse_obj_as
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.r_clone import S3Provider
 
 pytest_plugins = [
@@ -21,33 +22,34 @@ def swarm_stack_name() -> str:
 
 
 @pytest.fixture
-def bucket() -> str:
-    return f"test-bucket-{uuid4()}"
+def bucket(faker: Faker) -> str:
+    return f"test-bucket-{faker.uuid4()}"
 
 
 @pytest.fixture
-def env(
+def mock_environment(
     monkeypatch: pytest.MonkeyPatch,
     mocked_s3_server_url: HttpUrl,
     bucket: str,
     swarm_stack_name: str,
-) -> None:
-    mock_dict = {
-        "LOGLEVEL": "DEBUG",
-        "SC_BOOT_MODE": BootModeEnum.DEBUG,
-        "AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME": swarm_stack_name,
-        "AGENT_VOLUMES_CLEANUP_S3_ENDPOINT": mocked_s3_server_url,
-        "AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY": "xxx",
-        "AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY": "xxx",
-        "AGENT_VOLUMES_CLEANUP_S3_BUCKET": bucket,
-        "AGENT_VOLUMES_CLEANUP_S3_PROVIDER": S3Provider.MINIO,
-        "RABBIT_HOST": "test",
-        "RABBIT_PASSWORD": "test",
-        "RABBIT_SECURE": "false",
-        "RABBIT_USER": "test",
-    }
-    for key, value in mock_dict.items():
-        monkeypatch.setenv(key, value)
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            "LOGLEVEL": "DEBUG",
+            "SC_BOOT_MODE": BootModeEnum.DEBUG,
+            "AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME": swarm_stack_name,
+            "AGENT_VOLUMES_CLEANUP_S3_ENDPOINT": mocked_s3_server_url,
+            "AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY": "xxx",
+            "AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY": "xxx",
+            "AGENT_VOLUMES_CLEANUP_S3_BUCKET": bucket,
+            "AGENT_VOLUMES_CLEANUP_S3_PROVIDER": S3Provider.MINIO,
+            "RABBIT_HOST": "test",
+            "RABBIT_PASSWORD": "test",
+            "RABBIT_SECURE": "false",
+            "RABBIT_USER": "test",
+        },
+    )
 
 
 @pytest.fixture(scope="module")
