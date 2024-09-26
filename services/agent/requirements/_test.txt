@@ -1,50 +1,53 @@
-aioboto3==12.4.0
+aioboto3==13.1.1
     # via -r requirements/_test.in
-aiobotocore==2.12.3
+aiobotocore==2.13.1
     # via aioboto3
-aiohttp==3.8.5
+aiofiles==24.1.0
+    # via aioboto3
+aiohappyeyeballs==2.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+aiohttp==3.10.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aiobotocore
 aioitertools==0.12.0
     # via aiobotocore
-aiosignal==1.2.0
+aiosignal==1.3.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-anyio==3.6.2
+anyio==4.6.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-async-timeout==4.0.2
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
-attrs==21.4.0
+attrs==24.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   jsonschema
+    #   referencing
 aws-sam-translator==1.91.0
     # via cfn-lint
 aws-xray-sdk==2.14.0
     # via moto
 blinker==1.8.2
     # via flask
-boto3==1.34.69
+boto3==1.34.131
     # via
     #   aiobotocore
     #   aws-sam-translator
     #   moto
-botocore==1.34.69
+botocore==1.34.131
     # via
     #   aiobotocore
     #   aws-xray-sdk
     #   boto3
     #   moto
     #   s3transfer
-certifi==2023.11.17
+certifi==2024.8.30
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -53,14 +56,11 @@ certifi==2023.11.17
     #   requests
 cffi==1.17.1
     # via cryptography
-cfn-lint==1.15.0
+cfn-lint==1.15.1
     # via moto
-charset-normalizer==2.1.1
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
-    #   requests
-click==8.1.3
+charset-normalizer==3.3.2
+    # via requests
+click==8.1.7
     # via
     #   -c requirements/_base.txt
     #   flask
@@ -81,7 +81,7 @@ ecdsa==0.19.0
     #   moto
     #   python-jose
     #   sshpubkeys
-faker==29.0.0
+faker==30.0.0
     # via -r requirements/_test.in
 flask==3.0.3
     # via
@@ -89,7 +89,7 @@ flask==3.0.3
     #   moto
 flask-cors==5.0.0
     # via moto
-frozenlist==1.3.1
+frozenlist==1.4.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -100,16 +100,16 @@ h11==0.14.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==1.0.2
+httpcore==1.0.5
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.26.0
+httpx==0.27.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-idna==3.4
+idna==3.10
     # via
     #   -c requirements/_base.txt
     #   anyio
@@ -135,12 +135,16 @@ jsonpatch==1.33
     # via cfn-lint
 jsonpointer==3.0.0
     # via jsonpatch
-jsonschema==3.2.0
+jsonschema==4.23.0
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   openapi-schema-validator
     #   openapi-spec-validator
+jsonschema-specifications==2023.7.1
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
 markupsafe==2.1.5
     # via
     #   jinja2
@@ -149,7 +153,7 @@ moto==4.2.6
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
-multidict==6.0.2
+multidict==6.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -162,7 +166,7 @@ openapi-spec-validator==0.4.0
     # via
     #   -c requirements/./constraints.txt
     #   moto
-packaging==23.1
+packaging==24.1
     # via
     #   -c requirements/_base.txt
     #   pytest
@@ -176,17 +180,13 @@ pyasn1==0.6.1
     #   rsa
 pycparser==2.22
     # via cffi
-pydantic==1.10.2
+pydantic==1.10.18
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
 pyparsing==3.1.4
     # via moto
-pyrsistent==0.19.2
-    # via
-    #   -c requirements/_base.txt
-    #   jsonschema
 pytest==8.3.3
     # via
     #   -r requirements/_test.in
@@ -203,12 +203,14 @@ pytest-mock==3.14.0
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   botocore
     #   faker
     #   moto
+python-dotenv==1.0.1
+    # via -r requirements/_test.in
 python-jose==3.3.0
     # via moto
 pyyaml==6.0.2
@@ -219,6 +221,11 @@ pyyaml==6.0.2
     #   moto
     #   openapi-spec-validator
     #   responses
+referencing==0.29.3
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
+    #   jsonschema-specifications
 regex==2024.9.11
     # via cfn-lint
 requests==2.32.3
@@ -228,25 +235,28 @@ requests==2.32.3
     #   responses
 responses==0.25.3
     # via moto
+rpds-py==0.20.0
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
+    #   referencing
 rsa==4.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   python-jose
 s3transfer==0.10.2
     # via boto3
-setuptools==69.2.0
+setuptools==75.1.0
     # via
     #   -c requirements/_base.txt
-    #   jsonschema
     #   moto
     #   openapi-spec-validator
 six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   ecdsa
-    #   jsonschema
     #   python-dateutil
-sniffio==1.3.0
+sniffio==1.3.1
     # via
     #   -c requirements/_base.txt
     #   anyio
@@ -255,7 +265,7 @@ sshpubkeys==3.3.1
     # via moto
 sympy==1.13.3
     # via cfn-lint
-typing-extensions==4.4.0
+typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
@@ -279,7 +289,7 @@ wrapt==1.16.0
     #   aws-xray-sdk
 xmltodict==0.13.0
     # via moto
-yarl==1.9.2
+yarl==1.12.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
