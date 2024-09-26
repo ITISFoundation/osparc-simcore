@@ -1068,6 +1068,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                   .catch(err => console.error(err));
               });
               this.resetSelection();
+              this.setMultiSelection(false);
             }
           }, this);
         }, this);
