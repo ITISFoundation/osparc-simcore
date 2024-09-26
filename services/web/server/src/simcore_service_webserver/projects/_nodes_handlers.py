@@ -68,6 +68,7 @@ from ..groups.api import get_group_from_gid, list_all_user_groups
 from ..groups.exceptions import GroupNotFoundError
 from ..login.decorators import login_required
 from ..projects.api import has_user_project_access_rights
+from ..resource_usage.errors import DefaultPricingPlanNotFoundError
 from ..security.decorators import permission_required
 from ..users.api import get_user_id_from_gid, get_user_role
 from ..users.exceptions import UserDefaultWalletNotFoundError
@@ -101,6 +102,7 @@ def _handle_project_nodes_exceptions(handler: Handler):
             ProjectNotFoundError,
             NodeNotFoundError,
             UserDefaultWalletNotFoundError,
+            DefaultPricingPlanNotFoundError,
             DefaultPricingUnitNotFoundError,
             GroupNotFoundError,
             CatalogItemNotFoundError,
