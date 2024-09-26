@@ -1,6 +1,6 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-# pylint: disable=protected-access
 
 from collections.abc import AsyncIterator
 
