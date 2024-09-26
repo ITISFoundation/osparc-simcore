@@ -19,6 +19,7 @@ from .._meta import (
     VERSION,
 )
 from .api.rest.routes import setup_rest_api
+from .api.rpc.routes import setup_rpc_api_routes
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ def create_app() -> FastAPI:
         setup_prometheus_instrumentation(app)
 
     setup_rest_api(app)
+    setup_rpc_api_routes(app)
 
     async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201

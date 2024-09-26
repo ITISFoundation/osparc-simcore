@@ -4,6 +4,7 @@ from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AnyHttpUrl, Field, NonNegativeInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
+from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 _MINUTE: Final[NonNegativeInt] = 60
@@ -46,6 +47,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         60 * _MINUTE, description="interval at which to repeat volumes cleanup"
     )
     AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
+
+    AGENT_RABBITMQ: RabbitSettings = Field(
+        auto_default_from_env=True, description="settings for service/rabbitmq"
+    )
 
     @validator("LOGLEVEL")
     @classmethod
