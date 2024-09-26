@@ -541,8 +541,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         confirmationWin.addListener("close", () => {
           if (confirmationWin.getConfirmed()) {
             Promise.all([
-              this.__moveFolderToWorkspaceRequested(folderId, destWorkspaceId),
-              this.__moveFolderToFolderRequested(folderId, destFolderId),
+              this.__moveFolderToWorkspace(folderId, destWorkspaceId),
+              this.__moveFolderToFolder(folderId, destFolderId),
             ])
               .then(() => this.__reloadFolders())
               .catch(err => console.error(err));
@@ -551,7 +551,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
     },
 
-    __moveFolderToWorkspaceRequested: function(folderId, destWorkspaceId) {
+    __moveFolderToWorkspace: function(folderId, destWorkspaceId) {
       const folder = osparc.store.Folders.getInstance().getFolder(folderId);
       if (folder.getWorkspaceId() === destWorkspaceId) {
         // resolve right away
@@ -568,7 +568,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => console.error(err));
     },
 
-    __moveFolderToFolderRequested: function(folderId, destFolderId) {
+    __moveFolderToFolder: function(folderId, destFolderId) {
       if (folderId === destFolderId) {
         // resolve right away
         return new Promise(resolve => resolve());
