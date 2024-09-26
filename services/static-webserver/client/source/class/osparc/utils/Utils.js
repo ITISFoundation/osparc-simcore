@@ -92,7 +92,7 @@ qx.Class.define("osparc.utils.Utils", {
     FLOATING_Z_INDEX: 110000,
 
     replaceTokens: function(str, key, value) {
-      return str.replaceAll("{"+key+"}", value);
+      return str.replaceAll("${"+key+"}", value);
     },
 
     /**
