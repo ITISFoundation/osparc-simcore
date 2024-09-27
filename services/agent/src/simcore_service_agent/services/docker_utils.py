@@ -14,7 +14,7 @@ from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from servicelib.logging_utils import log_catch, log_context
 from starlette import status
 
-from .backup_manager import backup_volume
+from .backup import backup_volume
 from .models import VolumeDetails
 
 _logger = logging.getLogger(__name__)
