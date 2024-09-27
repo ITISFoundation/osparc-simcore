@@ -8,7 +8,6 @@ from typing import Final
 from uuid import uuid4
 
 from fastapi import FastAPI
-from settings_library.r_clone import S3Provider
 from settings_library.utils_r_clone import resolve_provider
 
 from ..core.settings import ApplicationSettings
@@ -31,19 +30,15 @@ acl = private
 """
 
 
-def _get_config_file_path(
-    s3_endpoint: str,
-    s3_access_key: str,
-    s3_secret_key: str,
-    s3_region: str,
-    s3_provider: S3Provider,
-) -> Path:
+def _get_config_file_path(settings: ApplicationSettings) -> Path:
     config_content = _R_CLONE_CONFIG.format(
-        destination_provider=resolve_provider(s3_provider),
-        destination_access_key=s3_access_key,
-        destination_secret_key=s3_secret_key,
-        destination_endpoint=s3_endpoint,
-        destination_region=s3_region,
+        destination_provider=resolve_provider(
+            settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER
+        ),
+        destination_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
+        destination_secret_key=settings.AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY,
+        destination_endpoint=settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT,
+        destination_region=settings.AGENT_VOLUMES_CLEANUP_S3_REGION,
     )
     conf_path = Path(tempfile.gettempdir()) / f"rclone_config_{uuid4()}.ini"
     conf_path.write_text(config_content)
@@ -112,27 +107,12 @@ def _log_expected_operation(
     _logger.log(log_level, formatted_message)
 
 
-async def store_to_s3(  # pylint:disable=too-many-arguments  # noqa: PLR0913
-    volume_name: str,
-    volume_details: VolumeDetails,
-    *,
-    s3_endpoint: str,
-    s3_access_key: str,
-    s3_secret_key: str,
-    s3_bucket: str,
-    s3_region: str,
-    s3_provider: S3Provider,
-    s3_retries: int,
-    s3_parallelism: int,
-    exclude_files: list[str],
+async def _store_in_s3(
+    settings: ApplicationSettings, volume_name: str, volume_details: VolumeDetails
 ) -> None:
-    config_file_path = _get_config_file_path(
-        s3_endpoint=s3_endpoint,
-        s3_access_key=s3_access_key,
-        s3_secret_key=s3_secret_key,
-        s3_region=s3_region,
-        s3_provider=s3_provider,
-    )
+    exclude_files = settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES
+
+    config_file_path = _get_config_file_path(settings)
 
     source_dir = volume_details.mountpoint
     if not Path(source_dir).exists():
@@ -143,7 +123,9 @@ async def store_to_s3(  # pylint:disable=too-many-arguments  # noqa: PLR0913
         )
         return
 
-    s3_path = _get_s3_path(s3_bucket, volume_details.labels)
+    s3_path = _get_s3_path(
+        settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET, volume_details.labels
+    )
 
     # listing files rclone will sync
     r_clone_ls = [
@@ -174,9 +156,9 @@ async def store_to_s3(  # pylint:disable=too-many-arguments  # noqa: PLR0913
         "--low-level-retries",
         "3",
         "--retries",
-        f"{s3_retries}",
+        f"{settings.AGENT_VOLUMES_CLEANUP_RETRIES}",
         "--transfers",
-        f"{s3_parallelism}",
+        f"{settings.AGENT_VOLUMES_CLEANUP_PARALLELISM}",
         # below two options reduce to a minimum the memory footprint
         # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
         "--use-mmap",  # docs https://rclone.org/docs/#use-mmap
@@ -215,17 +197,6 @@ async def backup_volume(
     app: FastAPI, volume_details: VolumeDetails, volume_name: str
 ) -> None:
     settings: ApplicationSettings = app.state.settings
-
-    await store_to_s3(
-        volume_name=volume_name,
-        volume_details=volume_details,
-        s3_endpoint=settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT,
-        s3_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
-        s3_secret_key=settings.AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY,
-        s3_bucket=settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET,
-        s3_region=settings.AGENT_VOLUMES_CLEANUP_S3_REGION,
-        s3_provider=settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER,
-        s3_retries=settings.AGENT_VOLUMES_CLEANUP_RETRIES,
-        s3_parallelism=settings.AGENT_VOLUMES_CLEANUP_PARALLELISM,
-        exclude_files=settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES,
+    await _store_in_s3(
+        settings=settings, volume_name=volume_name, volume_details=volume_details
     )
