@@ -65,6 +65,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
+    AGENT_DOCKER_NODE_ID: str = Field(..., description="used by the rabbitmq module")
+
     AGENT_RABBITMQ: RabbitSettings = Field(
         auto_default_from_env=True, description="settings for service/rabbitmq"
     )

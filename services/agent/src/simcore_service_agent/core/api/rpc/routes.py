@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from models_library.api_schemas_api_agent import AGENT_RPC_NAMESPACE
+from models_library.rabbitmq_basic_types import RPCNamespace
 from servicelib.rabbitmq import RPCRouter
+from simcore_service_agent.core.settings import ApplicationSettings
 
 from ....services.rabbitmq import get_rabbitmq_rpc_server
 from . import _volumes
@@ -13,7 +14,15 @@ ROUTERS: list[RPCRouter] = [
 def setup_rpc_api_routes(app: FastAPI) -> None:
     async def startup() -> None:
         rpc_server = get_rabbitmq_rpc_server(app)
+        settings: ApplicationSettings = app.state.settings
+        namespace = RPCNamespace.from_entries(
+            {
+                "service": "agent",
+                "docker_node_id": settings.AGENT_DOCKER_NODE_ID,
+                "swarm_stack_name": settings.AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME,
+            }
+        )
         for router in ROUTERS:
-            await rpc_server.register_router(router, AGENT_RPC_NAMESPACE, app)
+            await rpc_server.register_router(router, namespace, app)
 
     app.add_event_handler("startup", startup)

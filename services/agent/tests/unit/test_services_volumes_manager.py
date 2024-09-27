@@ -42,9 +42,6 @@ class MockedVolumesProxy:
         return deepcopy(self.volumes)
 
 
-# spy on remove_volume
-
-
 @pytest.fixture
 async def mock_docker_utils(
     mocker: pytest_mock.MockerFixture, run_id: RunID

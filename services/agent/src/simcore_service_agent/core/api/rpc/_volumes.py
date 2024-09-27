@@ -16,6 +16,3 @@ async def remove_volumes_without_backup_for_service(
 @router.expose()
 async def backup_and_remove_volumes_for_all_services(app: FastAPI) -> None:
     await get_volumes_manager(app).remove_all_volumes()
-
-
-# TODO: add tests for these

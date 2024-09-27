@@ -25,6 +25,11 @@ def swarm_stack_name() -> str:
 
 
 @pytest.fixture
+def docker_node_id() -> str:
+    return "test-node-id"
+
+
+@pytest.fixture
 def bucket(faker: Faker) -> str:
     return f"test-bucket-{faker.uuid4()}"
 
@@ -35,6 +40,7 @@ def mock_environment(
     mocked_s3_server_url: HttpUrl,
     bucket: str,
     swarm_stack_name: str,
+    docker_node_id: str,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
@@ -51,6 +57,7 @@ def mock_environment(
             "RABBIT_PASSWORD": "test",
             "RABBIT_SECURE": "false",
             "RABBIT_USER": "test",
+            "AGENT_DOCKER_NODE_ID": docker_node_id,
         },
     )
 
