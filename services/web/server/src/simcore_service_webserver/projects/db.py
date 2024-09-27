@@ -566,17 +566,17 @@ class ProjectDBAPI(BaseProjectDB):
                 .select_from(
                     projects.join(
                         projects_to_folders,
-                        projects.c.uuid == projects_to_folders.c.project_uuid,
-                        isouter=True,  # <- left join
+                        (
+                            (projects_to_folders.c.project_uuid == projects.c.uuid)
+                            & (
+                                projects_to_folders.c.user_id
+                                == private_workspace_user_id_or_none
+                            )
+                        ),
+                        isouter=True,
                     )
                 )
-                .where(
-                    (projects.c.uuid == f"{project_uuid}")
-                    & (
-                        projects_to_folders.c.user_id
-                        == private_workspace_user_id_or_none
-                    )
-                )
+                .where(projects.c.uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
             if row is None:
