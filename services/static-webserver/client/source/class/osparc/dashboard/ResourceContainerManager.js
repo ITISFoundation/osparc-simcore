@@ -136,6 +136,12 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           this.__nonGroupedContainer.add(card);
           this.self().sortListByPriority(this.__nonGroupedContainer);
         }
+        /*
+        if (this.getMode() === "list") {
+          const width = this.getBounds().width - 15;
+          card.setWidth(width);
+        }
+        */
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
       }
