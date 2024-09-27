@@ -522,8 +522,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return win;
     },
 
-    _moveFolderToRequested: function(workspaceId, folderId) {
-      const moveFolderTo = new osparc.dashboard.MoveResourceTo(this.getCurrentWorkspaceId(), this.getCurrentFolderId());
+    _moveFolderToRequested: function(folderId) {
+      const currentWorkspaceId = this.getCurrentWorkspaceId();
+      const currentFolderId = this.getCurrentWorkspaceId();
+      const moveFolderTo = new osparc.dashboard.MoveResourceTo(currentWorkspaceId, currentFolderId);
       const title = this.tr("Move to...");
       const win = osparc.ui.window.Window.popUpInWindow(moveFolderTo, title, 400, 400);
       moveFolderTo.addListener("moveTo", e => {
@@ -531,23 +533,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const data = e.getData();
         const destWorkspaceId = data["workspaceId"];
         const destFolderId = data["folderId"];
-        if (destWorkspaceId !== workspaceId) {
+        if (destWorkspaceId !== currentWorkspaceId) {
           const msg = this.tr("Coming soon");
           osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
           return;
         }
-        // OM only if workspace changed
-        const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
-        confirmationWin.addListener("close", () => {
-          if (confirmationWin.getConfirmed()) {
-            Promise.all([
-              this.__moveFolderToWorkspace(folderId, destWorkspaceId),
-              this.__moveFolderToFolder(folderId, destFolderId),
-            ])
-              .then(() => this.__reloadFolders())
-              .catch(err => console.error(err));
-          }
-        }, this);
+        const moveFolder = () => {
+          Promise.all([
+            this.__moveFolderToWorkspace(folderId, destWorkspaceId),
+            this.__moveFolderToFolder(folderId, destFolderId),
+          ])
+            .then(() => this.__reloadFolders())
+            .catch(err => console.error(err));
+        }
+        if (destWorkspaceId === currentWorkspaceId) {
+          moveFolder();
+        } else {
+          const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
+          confirmationWin.addListener("close", () => {
+            if (confirmationWin.getConfirmed()) {
+              moveFolder();
+            }
+          }, this);
+        }
       });
     },
 
@@ -1045,32 +1053,40 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         visibility: "excluded",
       });
       moveStudiesButton.addListener("execute", () => {
-        const selection = this._resourcesContainer.getSelection();
+        const currentWorkspaceId = this.getCurrentWorkspaceId();
+        const currentFolderId = this.getCurrentFolderId();
+        const moveStudyTo = new osparc.dashboard.MoveResourceTo(currentWorkspaceId, currentFolderId);
         const title = this.tr("Move to...");
-        const moveStudyTo = new osparc.dashboard.MoveResourceTo(this.getCurrentWorkspaceId(), this.getCurrentFolderId());
         const win = osparc.ui.window.Window.popUpInWindow(moveStudyTo, title, 400, 400);
         moveStudyTo.addListener("moveTo", e => {
           win.close();
           const data = e.getData();
           const destWorkspaceId = data["workspaceId"];
           const destFolderId = data["folderId"];
-          // OM only if workspace changed
-          const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
-          confirmationWin.addListener("close", () => {
-            if (confirmationWin.getConfirmed()) {
-              selection.forEach(button => {
-                const studyData = button.getResourceData();
-                Promise.all([
-                  this.__moveStudyToWorkspace(studyData, destWorkspaceId),
-                  this.__moveStudyToFolder(studyData, destFolderId),
-                ])
-                  .then(() => this.__removeFromStudyList(studyData["uuid"]))
-                  .catch(err => console.error(err));
-              });
-              this.resetSelection();
-              this.setMultiSelection(false);
-            }
-          }, this);
+          const moveStudies = () => {
+            const selection = this._resourcesContainer.getSelection();
+            selection.forEach(button => {
+              const studyData = button.getResourceData();
+              Promise.all([
+                this.__moveStudyToWorkspace(studyData, destWorkspaceId),
+                this.__moveStudyToFolder(studyData, destFolderId),
+              ])
+                .then(() => this.__removeFromStudyList(studyData["uuid"]))
+                .catch(err => console.error(err));
+            });
+            this.resetSelection();
+            this.setMultiSelection(false);
+          }
+          if (destWorkspaceId === currentWorkspaceId) {
+            moveStudies();
+          } else {
+            const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
+            confirmationWin.addListener("close", () => {
+              if (confirmationWin.getConfirmed()) {
+                moveStudies();
+              }
+            }, this);
+          }
         }, this);
         moveStudyTo.addListener("cancel", () => win.close());
       }, this);
@@ -1387,26 +1403,34 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesome5Solid/folder/12");
       moveToButton["moveToButton"] = true;
       moveToButton.addListener("tap", () => {
+        const currentWorkspaceId = this.getCurrentWorkspaceId();
+        const currentFolderId = this.getCurrentWorkspaceId();
+        const moveStudyTo = new osparc.dashboard.MoveResourceTo(currentWorkspaceId, currentFolderId);
         const title = this.tr("Move to...");
-        const moveStudyTo = new osparc.dashboard.MoveResourceTo(this.getCurrentWorkspaceId(), this.getCurrentFolderId());
         const win = osparc.ui.window.Window.popUpInWindow(moveStudyTo, title, 400, 400);
         moveStudyTo.addListener("moveTo", e => {
           win.close();
           const data = e.getData();
           const destWorkspaceId = data["workspaceId"];
           const destFolderId = data["folderId"];
-          // OM only if workspace changed
-          const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
-          confirmationWin.addListener("close", () => {
-            if (confirmationWin.getConfirmed()) {
-              Promise.all([
-                this.__moveStudyToWorkspace(studyData, destWorkspaceId),
-                this.__moveStudyToFolder(studyData, destFolderId),
-              ])
-                .then(() => this.__removeFromStudyList(studyData["uuid"]))
-                .catch(err => console.error(err));
-            }
-          }, this);
+          const moveStudy = () => {
+            Promise.all([
+              this.__moveStudyToWorkspace(studyData, destWorkspaceId),
+              this.__moveStudyToFolder(studyData, destFolderId),
+            ])
+              .then(() => this.__removeFromStudyList(studyData["uuid"]))
+              .catch(err => console.error(err));
+          };
+          if (destWorkspaceId === currentWorkspaceId) {
+            moveStudy();
+          } else {
+            const confirmationWin = this.__showMoveToWorkspaceWarningMessage();
+            confirmationWin.addListener("close", () => {
+              if (confirmationWin.getConfirmed()) {
+                moveStudy();
+              }
+            }, this);
+          }
         }, this);
         moveStudyTo.addListener("cancel", () => win.close());
       }, this);
