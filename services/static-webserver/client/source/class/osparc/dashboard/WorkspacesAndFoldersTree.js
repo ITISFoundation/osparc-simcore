@@ -212,16 +212,12 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
 
     __addFolder: function(folder, parentModel) {
       const workspaceId = folder.getWorkspaceId();
-      const folderData = {
-        label: "",
-        icon: workspaceId ? "shared" : "folder",
+      const folderData = this.__createItemData(
+        "",
+        workspaceId ? "shared" : "folder",
         workspaceId,
-        folderId: folder.getFolderId(),
-        loaded: false,
-        children: [{
-          label: "Loading...",
-        }]
-      };
+        folder.getFolderId(),
+      );
       const folderModel = qx.data.marshal.Json.createModel(folderData, true);
       this.__models.push(folderModel);
       folder.bind("name", folderModel, "label");
