@@ -28,7 +28,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
         ..., description="Exactly the same as director-v2's `SWARM_STACK_NAME` env var"
     )
-    AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: AnyHttpUrl | None
+    AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: AnyHttpUrl
     AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY: str
     AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY: str
     AGENT_VOLUMES_CLEANUP_S3_BUCKET: str
