@@ -44,7 +44,7 @@ def downlaoded_from_s3(tmpdir: Path) -> Path:
     return path
 
 
-async def test_something(
+async def test_backup_volume(
     volume_content: Path,
     project_id: ProjectID,
     swarm_stack_name: str,
