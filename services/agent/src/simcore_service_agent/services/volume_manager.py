@@ -8,7 +8,7 @@ from aiodocker.docker import Docker
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat
-from servicelib.background_task import start_periodic_task
+from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
 
 from ..core.settings import ApplicationSettings
@@ -46,6 +46,12 @@ class VolumeManager:
 
     async def shutdown(self) -> None:
         await self.docker.close()
+
+        if self._task_bookkeeping:
+            await stop_periodic_task(self._task_bookkeeping)
+
+        if self._task_periodic_volume_cleanup:
+            await stop_periodic_task(self._task_periodic_volume_cleanup)
 
     async def _bookkeeping_task(self) -> None:
         with log_context(_logger, logging.DEBUG, "volume bookkeeping"):
