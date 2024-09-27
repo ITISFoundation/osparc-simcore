@@ -1,16 +1,19 @@
 import base64
 import binascii
 import logging
-from typing import Any, ClassVar, cast
 from urllib import parse
 
 from cryptography.fernet import Fernet, InvalidToken
 from models_library.invitations import InvitationContent, InvitationInputs
 from models_library.products import ProductName
-from pydantic import HttpUrl, ValidationError, parse_obj_as
+from pydantic import ConfigDict, HttpUrl, TypeAdapter, ValidationError
 from starlette.datastructures import URL
 
 _logger = logging.getLogger(__name__)
+
+
+def _to_initial(v: str):
+    return v[0]
 
 
 class InvalidInvitationCodeError(Exception):
@@ -25,7 +28,7 @@ class _ContentWithShortNames(InvitationContent):
         """Exports to json using *short* aliases and values in order to produce shorter codes"""
         model_w_short_aliases_json: str = cls.construct(
             **model_obj.dict(exclude_unset=True)
-        ).json(exclude_unset=True, by_alias=True)
+        ).model_dump_json(exclude_unset=True, by_alias=True)
         # NOTE: json arguments try to minimize the amount of data
         # serialized. The CONS is that it relies on models in the code
         # that might change over time. This might lead to some datasets in codes
@@ -40,31 +43,13 @@ class _ContentWithShortNames(InvitationContent):
             **model_w_short_aliases.dict(exclude_unset=True)
         )
 
-    class Config:
-        allow_population_by_field_name = True  # NOTE: can parse using field names
-        allow_mutation = False
-        anystr_strip_whitespace = True
+    model_config = ConfigDict(
         # NOTE: Can export with alias: short aliases to minimize the size of serialization artifact
-        fields: ClassVar[dict[str, Any]] = {
-            "issuer": {
-                "alias": "i",
-            },
-            "guest": {
-                "alias": "g",
-            },
-            "trial_account_days": {
-                "alias": "t",
-            },
-            "extra_credits_in_usd": {
-                "alias": "e",
-            },
-            "product": {
-                "alias": "p",
-            },
-            "created": {
-                "alias": "c",
-            },
-        }
+        alias_generator=_to_initial,
+        populate_by_name=True,  # NOTE: can parse using field names
+        frozen=True,
+        str_strip_whitespace=True,
+    )
 
 
 #
@@ -81,7 +66,7 @@ def _build_link(
     # Adds query to fragment
     base_url = f"{base_url.rstrip('/')}/"
     url = URL(base_url).replace(fragment=f"{r}")
-    return cast(HttpUrl, parse_obj_as(HttpUrl, f"{url}"))
+    return TypeAdapter(HttpUrl).validate_python(f"{url}")
 
 
 def _fernet_encrypt_as_urlsafe_code(
