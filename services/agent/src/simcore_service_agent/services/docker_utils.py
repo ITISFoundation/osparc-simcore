@@ -5,6 +5,14 @@ from aiodocker import DockerError
 from aiodocker.docker import Docker
 from aiodocker.volumes import DockerVolume
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.services import (
+    CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME,
+)
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
+from models_library.services_types import RunID
+from models_library.users import UserID
+from pydantic import BaseModel, Field
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from servicelib.logging_utils import log_catch, log_context
 from starlette import status
@@ -12,6 +20,24 @@ from starlette import status
 from .backup_manager import backup_volume
 
 _logger = logging.getLogger(__name__)
+
+
+class DynamicServiceVolumeLabel(BaseModel):
+    node_uuid: NodeID
+    run_id: RunID
+    source: str
+    study_id: ProjectID
+    swarm_stack_name: str
+    user_id: UserID
+
+    @property
+    def directory_name(self) -> str:
+        return self.source[CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME:][::-1].strip("_")
+
+
+class VolumeDetails(BaseModel):
+    mountpoint: str = Field(alias="Mountpoint")
+    labels: DynamicServiceVolumeLabel = Field(alias="Labels")
 
 
 def _reverse_string(to_reverse: str) -> str:
@@ -27,7 +53,7 @@ _VOLUMES_NOT_TO_BACKUP: Final[tuple[str, ...]] = (
 def _does_volume_require_backup(volume_name: str) -> bool:
     # from    `dyv_1726228407_891aa1a7-eb31-459f-8aed-8c902f5f5fb0_dd84f39e-7154-4a13-ba1d-50068d723104_stupni_www_`
     # retruns `stupni_www_`
-    inverse_name_part = volume_name[89:]
+    inverse_name_part = volume_name[CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME:]
     return not inverse_name_part.startswith(_VOLUMES_NOT_TO_BACKUP)
 
 
@@ -78,3 +104,8 @@ async def remove_volume(
                     _logger.info("Volume not found '%s'", volume_name)
                 else:
                     raise
+
+
+async def get_volume_details(docker: Docker, *, volume_name: str) -> VolumeDetails:
+    volume_details = await DockerVolume(docker, volume_name).show()
+    return VolumeDetails.parse_obj(volume_details)

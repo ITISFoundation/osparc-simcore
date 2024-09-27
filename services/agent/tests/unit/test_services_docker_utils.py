@@ -25,6 +25,7 @@ from simcore_service_agent.services.docker_utils import (
     _does_volume_require_backup,
     _reverse_string,
     get_unused_dynamc_sidecar_volumes,
+    get_volume_details,
     remove_volume,
 )
 from simcore_service_agent.services.volume_manager import get_volume_manager
@@ -237,3 +238,19 @@ async def test_remove_misisng_volume_does_not_raise_error(
         volume_name="this-volume-does-not-exist",
         requires_backup=requires_backup,
     )
+
+
+async def test_get_volume_details(
+    used_volume_path: Path,
+    volume_manager_docker_client: Docker,
+    create_dynamic_sidecar_volumes: Callable[[NodeID, bool], Awaitable[set[str]]],
+):
+
+    volume_names = await create_dynamic_sidecar_volumes(uuid4(), False)  # noqa: FBT003
+    for volume_name in volume_names:
+        volume_details = await get_volume_details(
+            volume_manager_docker_client, volume_name=volume_name
+        )
+        print(volume_details)
+        volume_prefix = f"{used_volume_path}".replace("/", "_").strip("_")
+        assert volume_details.labels.directory_name.startswith(volume_prefix)
