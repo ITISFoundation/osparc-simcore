@@ -34,8 +34,10 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
 
     const layout = new qx.ui.layout.Grid();
     layout.setSpacing(10);
-    layout.setColumnFlex(osparc.dashboard.ListButtonBase.POS.TITLE, 1);
+    layout.setColumnFlex(osparc.dashboard.ListButtonBase.POS.SPACER, 1);
     this._setLayout(layout);
+
+    this.getChildControl("spacer");
   },
 
   statics: {
@@ -45,18 +47,19 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       THUMBNAIL: 0,
       LOCK_STATUS: 1,
       TITLE: 2,
-      PROGRESS: 3,
-      TAGS: 4,
-      UPDATES: 5,
-      UI_MODE: 6,
-      STATUS: 7,
-      PERMISSION: 8,
-      TSR: 9,
-      OWNER: 10,
-      SHARED: 11,
-      LAST_CHANGE: 12,
-      HITS: 13,
-      OPTIONS: 14
+      SPACER: 3,
+      PROGRESS: 4,
+      TAGS: 5,
+      UPDATES: 6,
+      UI_MODE: 7,
+      STATUS: 8,
+      PERMISSION: 9,
+      TSR: 10,
+      OWNER: 11,
+      SHARED: 12,
+      LAST_CHANGE: 13,
+      HITS: 14,
+      OPTIONS: 15
     }
   },
 
@@ -85,12 +88,18 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             font: "text-14",
             alignY: "middle",
             maxWidth: 300,
-            allowGrowX: true,
             rich: true,
           });
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.TITLE
+          });
+          break;
+        case "spacer":
+          control = new qx.ui.core.Spacer();
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.SPACER
           });
           break;
         case "owner":

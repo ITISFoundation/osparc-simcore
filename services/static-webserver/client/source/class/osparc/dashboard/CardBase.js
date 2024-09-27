@@ -730,7 +730,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       this._getChildren().forEach(item => {
-        if (item) {
+        if (item && "setOpacity" in item) {
           item.setOpacity(enabled ? 1.0 : 0.7);
         }
       });
