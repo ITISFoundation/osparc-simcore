@@ -10236,6 +10236,11 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+        folderId:
+          title: Folderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     ProjectGroupGet:
       title: ProjectGroupGet
       required:
@@ -10468,6 +10473,11 @@ components:
           $ref: '#/components/schemas/ProjectPermalink'
         workspaceId:
           title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        folderId:
+          title: Folderid
           exclusiveMinimum: true
           type: integer
           minimum: 0

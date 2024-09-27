@@ -920,6 +920,7 @@ async def test_get_active_project(
         )
         assert not error
         assert ProjectState(**data.pop("state")).locked.value
+        data.pop("folderId")
 
         user_project_last_change_date = user_project.pop("lastChangeDate")
         data_last_change_date = data.pop("lastChangeDate")
@@ -1416,6 +1417,7 @@ async def test_open_shared_project_at_same_time(
                 num_assertions += 1
             elif data:
                 project_status = ProjectState(**data.pop("state"))
+                data.pop("folderId")
                 assert data == shared_project
                 assert project_status.locked.value
                 assert project_status.locked.owner

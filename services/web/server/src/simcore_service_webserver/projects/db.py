@@ -87,7 +87,12 @@ from .exceptions import (
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
 )
-from .models import ProjectDB, ProjectDict, UserProjectAccessRights
+from .models import (
+    ProjectDB,
+    ProjectDict,
+    UserProjectAccessRightsDB,
+    UserSpecificProjectDataDB,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -398,6 +403,7 @@ class ProjectDBAPI(BaseProjectDB):
                     ],
                     access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
+                    projects_to_folders.c.folder_id,
                 )
                 .select_from(_join_query)
                 .where(
@@ -496,13 +502,9 @@ class ProjectDBAPI(BaseProjectDB):
         only_published: bool = False,
         only_templates: bool = False,
     ) -> tuple[ProjectDict, ProjectType]:
-        """Returns all projects *owned* by the user
-
-            - prj_owner
-            - Notice that a user can have access to a template but he might not own it
-            - Notice that a user can have access to a project where he/she has read access
-
-        :raises ProjectNotFoundError: project is not assigned to user
+        """
+        This is a legacy function that retrieves the project resource along with additional adjustments.
+        The `get_project_db` function is now recommended for use when interacting with the projects DB layer.
         """
         async with self.engine.acquire() as conn:
             project = await self._get_project(
@@ -553,9 +555,37 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return ProjectDB.from_orm(row)
 
+    async def get_user_specific_project_data_db(
+        self, project_uuid: ProjectID, private_workspace_user_id_or_none: UserID | None
+    ) -> UserSpecificProjectDataDB:
+        async with self.engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select(
+                    *self._SELECTION_PROJECT_DB_ARGS, projects_to_folders.c.folder_id
+                )
+                .select_from(
+                    projects.join(
+                        projects_to_folders,
+                        (
+                            (projects_to_folders.c.project_uuid == projects.c.uuid)
+                            & (
+                                projects_to_folders.c.user_id
+                                == private_workspace_user_id_or_none
+                            )
+                        ),
+                        isouter=True,
+                    )
+                )
+                .where(projects.c.uuid == f"{project_uuid}")
+            )
+            row = await result.fetchone()
+            if row is None:
+                raise ProjectNotFoundError(project_uuid=project_uuid)
+            return UserSpecificProjectDataDB.from_orm(row)
+
     async def get_pure_project_access_rights_without_workspace(
         self, user_id: UserID, project_uuid: ProjectID
-    ) -> UserProjectAccessRights:
+    ) -> UserProjectAccessRightsDB:
         """
         Be careful what you want. You should use `get_user_project_access_rights` to get access rights on the
         project. It depends on which context you are in, whether private or shared workspace.
@@ -597,7 +627,7 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectInvalidRightsError(
                     user_id=user_id, project_uuid=project_uuid
                 )
-            return UserProjectAccessRights.from_orm(row)
+            return UserProjectAccessRightsDB.from_orm(row)
 
     async def replace_project(
         self,

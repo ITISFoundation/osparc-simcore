@@ -423,6 +423,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                 # dynamic
                 "state",
                 "permalink",
+                "folderId",
             ]
 
             for key in new_project:
