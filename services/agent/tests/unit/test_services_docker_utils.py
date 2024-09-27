@@ -46,8 +46,8 @@ def user_id() -> UserID:
 
 
 @pytest.fixture
-def used_volume_path(tmp_path: Path) -> Path:
-    return tmp_path / "used_volume"
+def volumes_path(tmp_path: Path) -> Path:
+    return tmp_path / "volumes"
 
 
 def test__reverse_string():
@@ -77,7 +77,7 @@ async def create_dynamic_sidecar_volume(
     project_id: ProjectID,
     swarm_stack_name: str,
     user_id: UserID,
-    used_volume_path: Path,
+    volumes_path: Path,
 ) -> AsyncIterable[Callable[[NodeID, bool, str], Awaitable[str]]]:
     volumes_to_cleanup: list[DockerVolume] = []
     containers_to_cleanup: list[DockerContainer] = []
@@ -85,7 +85,7 @@ async def create_dynamic_sidecar_volume(
     async with aiodocker.Docker() as docker_client:
 
         async def _(node_id: NodeID, in_use: bool, volume_name: str) -> str:
-            source = get_source(run_id, node_id, used_volume_path / volume_name)
+            source = get_source(run_id, node_id, volumes_path / volume_name)
             volume = await docker_client.volumes.create(
                 {
                     "Name": source,
@@ -106,7 +106,7 @@ async def create_dynamic_sidecar_volume(
                     config={
                         "Cmd": ["/bin/ash", "-c", "sleep 10000"],
                         "Image": "alpine:latest",
-                        "HostConfig": {"Binds": [f"{volume.name}:{used_volume_path}"]},
+                        "HostConfig": {"Binds": [f"{volume.name}:{volumes_path}"]},
                     },
                     name=f"using_volume_{volume.name}",
                 )
@@ -221,7 +221,7 @@ async def test_remove_misisng_volume_does_not_raise_error(
 
 
 async def test_get_volume_details(
-    used_volume_path: Path,
+    volumes_path: Path,
     volumes_manager_docker_client: Docker,
     create_dynamic_sidecar_volumes: Callable[[NodeID, bool], Awaitable[set[str]]],
 ):
@@ -232,5 +232,5 @@ async def test_get_volume_details(
             volumes_manager_docker_client, volume_name=volume_name
         )
         print(volume_details)
-        volume_prefix = f"{used_volume_path}".replace("/", "_").strip("_")
+        volume_prefix = f"{volumes_path}".replace("/", "_").strip("_")
         assert volume_details.labels.directory_name.startswith(volume_prefix)
