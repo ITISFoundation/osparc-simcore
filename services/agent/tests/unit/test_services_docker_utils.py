@@ -27,9 +27,7 @@ from simcore_service_agent.services.docker_utils import (
     get_unused_dynamc_sidecar_volumes,
     remove_volume,
 )
-from simcore_service_agent.services.service_volume_manager import (
-    get_service_volume_manager,
-)
+from simcore_service_agent.services.volume_manager import get_volume_manager
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -163,7 +161,7 @@ def create_dynamic_sidecar_volumes(
 
 @pytest.fixture
 def volume_manager_docker_client(initialized_app: FastAPI) -> Docker:
-    volume_manager = get_service_volume_manager(initialized_app)
+    volume_manager = get_volume_manager(initialized_app)
     return volume_manager._docker  # noqa: SLF001
 
 

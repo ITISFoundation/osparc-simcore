@@ -34,18 +34,18 @@ class VolumeManager:
     # TODO: not finishd with this still require smore
 
 
-def get_service_volume_manager(app: FastAPI) -> VolumeManager:
-    service_volume_manager: VolumeManager = app.state.service_volume_manager
-    return service_volume_manager
+def get_volume_manager(app: FastAPI) -> VolumeManager:
+    volume_manager: VolumeManager = app.state.volume_manager
+    return volume_manager
 
 
-def setup_service_volume_manager(app: FastAPI) -> None:
+def setup_volume_manager(app: FastAPI) -> None:
     async def _on_startup() -> None:
-        app.state.service_volume_manager = VolumeManager(app)
+        app.state.volume_manager = VolumeManager(app)
 
     async def _on_shutdown() -> None:
-        service_volume_manager: VolumeManager = app.state.service_volume_manager
-        await service_volume_manager.close()
+        volume_manager: VolumeManager = app.state.volume_manager
+        await volume_manager.close()
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
