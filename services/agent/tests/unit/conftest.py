@@ -7,6 +7,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from models_library.services_types import RunID
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_agent.core.application import create_app
@@ -42,3 +43,8 @@ async def initialized_app(service_env: EnvVarsDict) -> AsyncIterator[FastAPI]:
 @pytest.fixture
 def test_client(initialized_app: FastAPI) -> TestClient:
     return TestClient(initialized_app)
+
+
+@pytest.fixture
+def run_id() -> RunID:
+    return RunID.create()

@@ -4,7 +4,6 @@
 from collections.abc import AsyncIterable, Awaitable, Callable
 from contextlib import suppress
 from pathlib import Path
-from typing import Final
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -28,7 +27,8 @@ from simcore_service_agent.services.docker_utils import (
     get_volume_details,
     remove_volume,
 )
-from simcore_service_agent.services.volume_manager import get_volume_manager
+from simcore_service_agent.services.volumes_manager import get_volumes_manager
+from utils import VOLUMES_TO_CREATE, get_source
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -38,11 +38,6 @@ pytest_simcore_core_services_selection = [
 @pytest.fixture
 def project_id() -> ProjectID:
     return uuid4()
-
-
-@pytest.fixture
-def run_id() -> RunID:
-    return RunID.create()
 
 
 @pytest.fixture
@@ -59,12 +54,6 @@ def test__reverse_string():
     assert _reverse_string("abcd") == "dcba"
 
 
-def _get_source(run_id: str, node_id: NodeID, full_volume_path: Path) -> str:
-    # NOTE: volume name is not trimmed here, but it's ok for the tests
-    reversed_path = f"{full_volume_path}"[::-1].replace("/", "_")
-    return f"dyv_{run_id}_{node_id}_{reversed_path}"
-
-
 @pytest.mark.parametrize(
     "volume_path_part, expected",
     [
@@ -77,7 +66,7 @@ def _get_source(run_id: str, node_id: NodeID, full_volume_path: Path) -> str:
 def test__does_volume_require_backup(
     run_id: RunID, volume_path_part: str, expected: bool
 ) -> None:
-    volume_name = _get_source(run_id, uuid4(), Path("/apath") / volume_path_part)
+    volume_name = get_source(run_id, uuid4(), Path("/apath") / volume_path_part)
     print(volume_name)
     assert _does_volume_require_backup(volume_name) is expected
 
@@ -96,7 +85,7 @@ async def create_dynamic_sidecar_volume(
     async with aiodocker.Docker() as docker_client:
 
         async def _(node_id: NodeID, in_use: bool, volume_name: str) -> str:
-            source = _get_source(run_id, node_id, used_volume_path / volume_name)
+            source = get_source(run_id, node_id, used_volume_path / volume_name)
             volume = await docker_client.volumes.create(
                 {
                     "Name": source,
@@ -136,22 +125,13 @@ async def create_dynamic_sidecar_volume(
                 await volume.delete()
 
 
-_VOLUMES_TO_CREATE: Final[list[str]] = [
-    "inputs",
-    "outputs",
-    "workspace",
-    "work",
-    "shared-store",
-]
-
-
 @pytest.fixture
 def create_dynamic_sidecar_volumes(
     create_dynamic_sidecar_volume: Callable[[NodeID, bool, str], Awaitable[str]]
 ) -> Callable[[NodeID, bool], Awaitable[set[str]]]:
     async def _(node_id: NodeID, in_use: bool) -> set[str]:
         volume_names: set[str] = set()
-        for volume_name in _VOLUMES_TO_CREATE:
+        for volume_name in VOLUMES_TO_CREATE:
             name = await create_dynamic_sidecar_volume(node_id, in_use, volume_name)
             volume_names.add(name)
 
@@ -161,9 +141,9 @@ def create_dynamic_sidecar_volumes(
 
 
 @pytest.fixture
-def volume_manager_docker_client(initialized_app: FastAPI) -> Docker:
-    volume_manager = get_volume_manager(initialized_app)
-    return volume_manager.docker
+def volumes_manager_docker_client(initialized_app: FastAPI) -> Docker:
+    volumes_manager = get_volumes_manager(initialized_app)
+    return volumes_manager.docker
 
 
 @pytest.fixture
@@ -177,7 +157,7 @@ async def test_doclker_utils_workflow(
     volume_count: int,
     requires_backup: bool,
     initialized_app: FastAPI,
-    volume_manager_docker_client: Docker,
+    volumes_manager_docker_client: Docker,
     create_dynamic_sidecar_volumes: Callable[[NodeID, bool], Awaitable[set[str]]],
     mock_backup_volume: AsyncMock,
 ):
@@ -188,12 +168,12 @@ async def test_doclker_utils_workflow(
         )
         created_volumes.update(created_volume)
 
-    volumes = await get_unused_dynamc_sidecar_volumes(volume_manager_docker_client)
+    volumes = await get_unused_dynamc_sidecar_volumes(volumes_manager_docker_client)
     # NOTE: if bleow check fails it's because there are exiting dy_sidecar volumes on the host
     # dirty docker enviornment
     assert volumes == created_volumes
 
-    assert len(volumes) == len(_VOLUMES_TO_CREATE) * volume_count
+    assert len(volumes) == len(VOLUMES_TO_CREATE) * volume_count
 
     count_vloumes_to_backup = 0
     count_volumes_to_skip = 0
@@ -207,14 +187,14 @@ async def test_doclker_utils_workflow(
         assert volume.startswith(PREFIX_DYNAMIC_SIDECAR_VOLUMES)
         await remove_volume(
             initialized_app,
-            volume_manager_docker_client,
+            volumes_manager_docker_client,
             volume_name=volume,
             requires_backup=requires_backup,
         )
 
     assert (
         count_vloumes_to_backup
-        == (len(_VOLUMES_TO_CREATE) - len(_VOLUMES_NOT_TO_BACKUP)) * volume_count
+        == (len(VOLUMES_TO_CREATE) - len(_VOLUMES_NOT_TO_BACKUP)) * volume_count
     )
     assert count_volumes_to_skip == len(_VOLUMES_NOT_TO_BACKUP) * volume_count
 
@@ -222,7 +202,7 @@ async def test_doclker_utils_workflow(
         count_vloumes_to_backup if requires_backup else 0
     )
 
-    volumes = await get_unused_dynamc_sidecar_volumes(volume_manager_docker_client)
+    volumes = await get_unused_dynamc_sidecar_volumes(volumes_manager_docker_client)
     assert len(volumes) == 0
 
 
@@ -230,11 +210,11 @@ async def test_doclker_utils_workflow(
 async def test_remove_misisng_volume_does_not_raise_error(
     requires_backup: bool,
     initialized_app: FastAPI,
-    volume_manager_docker_client: Docker,
+    volumes_manager_docker_client: Docker,
 ):
     await remove_volume(
         initialized_app,
-        volume_manager_docker_client,
+        volumes_manager_docker_client,
         volume_name="this-volume-does-not-exist",
         requires_backup=requires_backup,
     )
@@ -242,14 +222,14 @@ async def test_remove_misisng_volume_does_not_raise_error(
 
 async def test_get_volume_details(
     used_volume_path: Path,
-    volume_manager_docker_client: Docker,
+    volumes_manager_docker_client: Docker,
     create_dynamic_sidecar_volumes: Callable[[NodeID, bool], Awaitable[set[str]]],
 ):
 
     volume_names = await create_dynamic_sidecar_volumes(uuid4(), False)  # noqa: FBT003
     for volume_name in volume_names:
         volume_details = await get_volume_details(
-            volume_manager_docker_client, volume_name=volume_name
+            volumes_manager_docker_client, volume_name=volume_name
         )
         print(volume_details)
         volume_prefix = f"{used_volume_path}".replace("/", "_").strip("_")
