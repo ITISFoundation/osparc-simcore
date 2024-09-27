@@ -65,21 +65,19 @@ qx.Class.define("osparc.dashboard.MoveResourceTo", {
       let control;
       switch (id) {
         case "current-location": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          const intro = new qx.ui.basic.Label(this.tr("Current location"));
+          control.add(intro);
           const workspace = osparc.store.Workspaces.getInstance().getWorkspace(this.__currentWorkspaceId);
-          let currentLocation = workspace ? workspace.getName() : "My Workspace";
+          const workspaceText = workspace ? workspace.getName() : "My Workspace";
+          const workspaceLabel = new qx.ui.basic.Label(this.tr("- Workspace: ") + workspaceText);
+          control.add(workspaceLabel);
           const folder = osparc.store.Folders.getInstance().getFolder(this.__currentFolderId);
           if (folder) {
-            // OM intermediate folders missing
-            const path = [];
-            this.__getUpstreamFolders(folder, path);
-            path.forEach(folderId => {
-              const fldr = osparc.store.Folders.getInstance().getFolder(folderId);
-              if (fldr) {
-                currentLocation += " / " + fldr.getName();
-              }
-            });
+            const folderText = folder.getName();
+            const folderLabel = new qx.ui.basic.Label(this.tr("- Folder: ") + folderText);
+            control.add(folderLabel);
           }
-          control = new qx.ui.basic.Label(this.tr("Current location: ") + currentLocation);
           this._add(control);
           break;
         }

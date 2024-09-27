@@ -525,7 +525,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     _moveFolderToRequested: function(workspaceId, folderId) {
       const moveFolderTo = new osparc.dashboard.MoveResourceTo(this.getCurrentWorkspaceId(), this.getCurrentFolderId());
       const title = this.tr("Move to...");
-      const win = osparc.ui.window.Window.popUpInWindow(moveFolderTo, title, 350, 280);
+      const win = osparc.ui.window.Window.popUpInWindow(moveFolderTo, title, 400, 400);
       moveFolderTo.addListener("moveTo", e => {
         win.close();
         const data = e.getData();
@@ -1048,7 +1048,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const selection = this._resourcesContainer.getSelection();
         const title = this.tr("Move to...");
         const moveStudyTo = new osparc.dashboard.MoveResourceTo(this.getCurrentWorkspaceId(), this.getCurrentFolderId());
-        const win = osparc.ui.window.Window.popUpInWindow(moveStudyTo, title, 350, 280);
+        const win = osparc.ui.window.Window.popUpInWindow(moveStudyTo, title, 400, 400);
         moveStudyTo.addListener("moveTo", e => {
           win.close();
           const data = e.getData();
@@ -1389,7 +1389,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       moveToButton.addListener("tap", () => {
         const title = this.tr("Move to...");
         const moveStudyTo = new osparc.dashboard.MoveResourceTo(this.getCurrentWorkspaceId(), this.getCurrentFolderId());
-        const win = osparc.ui.window.Window.popUpInWindow(moveStudyTo, title, 350, 280);
+        const win = osparc.ui.window.Window.popUpInWindow(moveStudyTo, title, 400, 400);
         moveStudyTo.addListener("moveTo", e => {
           win.close();
           const data = e.getData();
