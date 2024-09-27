@@ -8,7 +8,9 @@ from dataclasses import dataclass, field
 from enum import Enum, unique
 from typing import Any, Final
 
-from playwright.sync_api import FrameLocator, Page, Request, WebSocket
+from playwright.sync_api import FrameLocator, Page, Request
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import WebSocket
 from pytest_simcore.helpers.logging_tools import log_context
 
 SECOND: Final[int] = 1000
@@ -194,6 +196,7 @@ class SocketIOOsparcMessagePrinter:
 class SocketIONodeProgressCompleteWaiter:
     node_id: str
     logger: logging.Logger
+    _last_call_return: bool = False
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
     )
@@ -226,20 +229,19 @@ class SocketIONodeProgressCompleteWaiter:
                             f"{json.dumps({k:round(v,1) for k,v in self._current_progress.items()})}",
                         )
 
-                return all(
+                self._last_call_return = all(
                     progress_type in self._current_progress
                     for progress_type in NodeProgressType.required_types_for_started_service()
                 ) and all(
                     round(progress, 1) == 1.0
                     for progress in self._current_progress.values()
                 )
-
+                return self._last_call_return
+        self._last_call_return = False
         return False
 
-    def is_progress_succesfully_finished(self) -> bool:
-        return all(
-            round(progress, 1) == 1.0 for progress in self._current_progress.values()
-        )
+    def get_last_call_return(self):
+        return self._last_call_return
 
     def get_current_progress(self):
         return self._current_progress.values()
@@ -340,16 +342,17 @@ def expected_service_running(
             with websocket.expect_event("framereceived", waiter, timeout=timeout):
                 if press_start_button:
                     _trigger_service_start(page, node_id)
-        except TimeoutError:
-            if waiter.is_progress_succesfully_finished() is False:
+
+                yield service_running
+
+        except PlaywrightTimeoutError:
+            if waiter.get_last_call_return() is False:
                 ctx.logger.warning(
-                    "⚠️ Progress bar didn't receive 100 percent: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
+                    "⚠️  Progress bar didn't receive 100 percent: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
                     waiter.get_current_progress(),
                 )
             else:
                 raise
-
-        yield service_running
 
     service_running.iframe_locator = page.frame_locator(
         f'[osparc-test-id="iframe_{node_id}"]'
