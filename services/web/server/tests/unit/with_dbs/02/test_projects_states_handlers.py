@@ -866,10 +866,10 @@ async def test_close_project(
 @pytest.mark.parametrize(
     "user_role, expected",
     [
-        # (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
         (UserRole.GUEST, status.HTTP_200_OK),
-        # (UserRole.USER, status.HTTP_200_OK),
-        # (UserRole.TESTER, status.HTTP_200_OK),
+        (UserRole.USER, status.HTTP_200_OK),
+        (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
 async def test_get_active_project(
@@ -1417,6 +1417,7 @@ async def test_open_shared_project_at_same_time(
                 num_assertions += 1
             elif data:
                 project_status = ProjectState(**data.pop("state"))
+                data.pop("folderId")
                 assert data == shared_project
                 assert project_status.locked.value
                 assert project_status.locked.owner

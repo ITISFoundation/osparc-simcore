@@ -97,8 +97,6 @@ class UserProjectAccessRightsWithWorkspace(BaseModel):
         orm_mode = True
 
 
-# class UserProjectAccessWithWork
-
 __all__: tuple[str, ...] = (
     "ProjectDict",
     "ProjectProxy",
