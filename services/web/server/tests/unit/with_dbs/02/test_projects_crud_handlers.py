@@ -168,6 +168,7 @@ async def _assert_get_same_project(
         # Optional fields are not part of reference 'project'
         project_state = data.pop("state")
         project_permalink = data.pop("permalink", None)
+        folder_id = data.pop("folderId", None)
 
         assert data == project
 
@@ -176,6 +177,8 @@ async def _assert_get_same_project(
 
         if project_permalink:
             assert parse_obj_as(ProjectPermalink, project_permalink)
+
+        assert folder_id is None
 
 
 async def _replace_project(
