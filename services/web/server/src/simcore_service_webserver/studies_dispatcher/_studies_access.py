@@ -361,7 +361,9 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             extra={"error_code": error_code},
         )
         raise RedirectToFrontEndPageError(
-            MSG_UNEXPECTED_ERROR.format(hint="while copying your study"),
+            MSG_UNEXPECTED_ERROR.format(
+                hint=f"while copying your study [{error_code}]"
+            ),
             error_code=error_code,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         ) from exc
