@@ -10,6 +10,9 @@ def model_dump_with_secrets(
     data = settings_obj.model_dump(**pydantic_export_options)
 
     for field_name in settings_obj.model_fields:
+        if field_name not in data:
+            continue
+
         field_data = data[field_name]
 
         if isinstance(field_data, SecretStr):
