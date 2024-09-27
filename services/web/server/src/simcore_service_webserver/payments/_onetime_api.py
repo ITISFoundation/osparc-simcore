@@ -23,7 +23,7 @@ from simcore_postgres_database.models.payments_transactions import (
 from simcore_postgres_database.utils_payments import insert_init_payment_transaction
 from yarl import URL
 
-from ..db.plugin import get_aiopg_engine
+from ..db.plugin import get_database_engine
 from ..products.api import get_product_stripe_info
 from ..resource_usage.api import add_credits_to_wallet
 from ..users.api import get_user_display_and_id_names, get_user_invoice_address
@@ -86,7 +86,7 @@ async def _fake_init_payment(
         .with_query(id=payment_id)
     )
     # (2) Annotate INIT transaction
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         await insert_init_payment_transaction(
             conn,
             payment_id=payment_id,

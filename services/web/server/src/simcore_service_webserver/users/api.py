@@ -20,7 +20,7 @@ from pydantic import EmailStr, ValidationError, parse_obj_as
 from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import GroupType, groups, user_to_groups, users
-from ..db.plugin import get_aiopg_engine
+from ..db.plugin import get_database_engine
 from ..groups.models import convert_groups_db_to_schema
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..security.api import clean_auth_policy_cache
@@ -47,7 +47,7 @@ async def get_user_profile(
     :raises UserNotFoundError:
     """
 
-    engine = get_aiopg_engine(app)
+    engine = get_database_engine(app)
     user_profile: dict[str, Any] = {}
     user_primary_group = all_group = {}
     user_standard_groups = []
@@ -149,7 +149,7 @@ async def update_user_profile(
     """
     user_id = _parse_as_user(user_id)
 
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         to_update = update.dict(
             include={
                 "first_name",
@@ -169,7 +169,7 @@ async def get_user_role(app: web.Application, user_id: UserID) -> UserRole:
     """
     user_id = _parse_as_user(user_id)
 
-    engine = get_aiopg_engine(app)
+    engine = get_database_engine(app)
     async with engine.acquire() as conn:
         user_role: RowProxy | None = await conn.scalar(
             sa.select(users.c.role).where(users.c.id == user_id)
@@ -195,7 +195,7 @@ async def get_user_name_and_email(
         (user, email)
     """
     row = await _db.get_user_or_raise(
-        get_aiopg_engine(app),
+        get_database_engine(app),
         user_id=_parse_as_user(user_id),
         return_column_names=["name", "email"],
     )
@@ -221,7 +221,7 @@ async def get_user_display_and_id_names(
         UserNotFoundError
     """
     row = await _db.get_user_or_raise(
-        get_aiopg_engine(app),
+        get_database_engine(app),
         user_id=_parse_as_user(user_id),
         return_column_names=["name", "email", "first_name", "last_name"],
     )
@@ -234,7 +234,7 @@ async def get_user_display_and_id_names(
 
 
 async def get_guest_user_ids_and_names(app: web.Application) -> list[tuple[int, str]]:
-    engine = get_aiopg_engine(app)
+    engine = get_database_engine(app)
     result: deque = deque()
     async with engine.acquire() as conn:
         async for row in conn.execute(
@@ -276,7 +276,7 @@ async def get_user_fullname(app: web.Application, user_id: UserID) -> FullNameDi
     """
     user_id = _parse_as_user(user_id)
 
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             sa.select(users.c.first_name, users.c.last_name).where(
                 users.c.id == user_id
@@ -296,12 +296,12 @@ async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:
     """
     :raises UserNotFoundError:
     """
-    row = await _db.get_user_or_raise(engine=get_aiopg_engine(app), user_id=user_id)
+    row = await _db.get_user_or_raise(engine=get_database_engine(app), user_id=user_id)
     return dict(row)
 
 
 async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> UserID:
-    engine = get_aiopg_engine(app)
+    engine = get_database_engine(app)
     async with engine.acquire() as conn:
         user_id: UserID = await conn.scalar(
             sa.select(users.c.id).where(users.c.primary_gid == primary_gid)
@@ -310,7 +310,7 @@ async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> UserID
 
 
 async def get_users_in_group(app: web.Application, gid: GroupID) -> set[UserID]:
-    engine = get_aiopg_engine(app)
+    engine = get_database_engine(app)
     async with engine.acquire() as conn:
         return await _db.get_users_ids_in_group(conn, gid)
 

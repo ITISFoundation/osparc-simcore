@@ -8,7 +8,7 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_users import UsersRepo
-from simcore_service_webserver.db.plugin import get_aiopg_engine
+from simcore_service_webserver.db.plugin import get_database_engine
 
 from .._meta import API_VTAG
 from ..products.api import Product, get_current_product
@@ -149,7 +149,7 @@ async def submit_request_to_change_email(request: web.Request):
     if user["email"] == request_body.email:
         return flash_response("Email changed")
 
-    async with get_aiopg_engine(request.app).acquire() as conn:
+    async with get_database_engine(request.app).acquire() as conn:
         if await UsersRepo.is_email_used(conn, email=request_body.email):
             raise web.HTTPUnprocessableEntity(reason="This email cannot be used")
 

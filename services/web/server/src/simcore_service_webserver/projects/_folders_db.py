@@ -16,7 +16,7 @@ from simcore_postgres_database.models.projects_to_folders import projects_to_fol
 from sqlalchemy import func, literal_column
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_aiopg_engine
+from ..db.plugin import get_database_engine
 
 _logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ async def insert_project_to_folder(
     folder_id: FolderID,
     private_workspace_user_id_or_none: UserID | None,
 ) -> ProjectToFolderDB:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             projects_to_folders.insert()
             .values(
@@ -76,7 +76,7 @@ async def get_project_to_folder(
         & (projects_to_folders.c.user_id == private_workspace_user_id_or_none)
     )
 
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
         row = await result.first()
         if row is None:
@@ -90,7 +90,7 @@ async def delete_project_to_folder(
     folder_id: FolderID,
     private_workspace_user_id_or_none: UserID | None,
 ) -> None:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         await conn.execute(
             projects_to_folders.delete().where(
                 (projects_to_folders.c.project_uuid == f"{project_id}")
@@ -104,7 +104,7 @@ async def delete_all_project_to_folder_by_project_id(
     app: web.Application,
     project_id: ProjectID,
 ) -> None:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         await conn.execute(
             projects_to_folders.delete().where(
                 projects_to_folders.c.project_uuid == f"{project_id}"

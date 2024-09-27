@@ -24,7 +24,7 @@ def setup_db(app: web.Application):
     # ensures keys exist
     app[APP_AIOPG_ENGINE_KEY] = None
 
-    # async connection to db
+    # init engines
     app.cleanup_ctx.append(_aiopg.postgres_cleanup_ctx)
     app.cleanup_ctx.append(_asyncpg.postgres_cleanup_ctx)
 
@@ -32,7 +32,7 @@ def setup_db(app: web.Application):
 # API
 
 # aiopg helpers
-get_aiopg_engine = _aiopg.get_database_engine
+get_database_engine = _aiopg.get_database_engine
 get_aiopg_engine_state = _aiopg.get_engine_state
 is_service_responsive = _aiopg.is_service_responsive
 is_service_enabled = _aiopg.is_service_enabled

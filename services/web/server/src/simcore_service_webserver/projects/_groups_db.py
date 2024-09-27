@@ -15,7 +15,7 @@ from sqlalchemy import func, literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_aiopg_engine
+from ..db.plugin import get_database_engine
 from .exceptions import ProjectGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ async def create_project_group(
     write: bool,
     delete: bool,
 ) -> ProjectGroupGetDB:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             project_to_groups.insert()
             .values(
@@ -79,7 +79,7 @@ async def list_project_groups(
         .where(project_to_groups.c.project_uuid == f"{project_id}")
     )
 
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
         rows = await result.fetchall() or []
         return parse_obj_as(list[ProjectGroupGetDB], rows)
@@ -106,7 +106,7 @@ async def get_project_group(
         )
     )
 
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
         row = await result.first()
         if row is None:
@@ -125,7 +125,7 @@ async def replace_project_group(
     write: bool,
     delete: bool,
 ) -> ProjectGroupGetDB:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             project_to_groups.update()
             .values(
@@ -156,7 +156,7 @@ async def update_or_insert_project_group(
     write: bool,
     delete: bool,
 ) -> None:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         insert_stmt = pg_insert(project_to_groups).values(
             project_uuid=f"{project_id}",
             gid=group_id,
@@ -183,7 +183,7 @@ async def delete_project_group(
     project_id: ProjectID,
     group_id: GroupID,
 ) -> None:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         await conn.execute(
             project_to_groups.delete().where(
                 (project_to_groups.c.project_uuid == f"{project_id}")
@@ -196,7 +196,7 @@ async def delete_all_project_groups(
     app: web.Application,
     project_id: ProjectID,
 ) -> None:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         await conn.execute(
             project_to_groups.delete().where(
                 project_to_groups.c.project_uuid == f"{project_id}"

@@ -27,7 +27,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
-from ..db.plugin import get_aiopg_engine
+from ..db.plugin import get_database_engine
 from ..login.decorators import login_required
 from ..products import api as products_api
 from ..security.decorators import permission_required
@@ -91,7 +91,7 @@ async def start_computation(request: web.Request) -> web.Response:
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         )
 
-        async with get_aiopg_engine(request.app).acquire() as conn:
+        async with get_database_engine(request.app).acquire() as conn:
             group_properties = (
                 await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
                     conn, user_id=req_ctx.user_id, product_name=req_ctx.product_name

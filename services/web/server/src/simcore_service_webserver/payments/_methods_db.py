@@ -16,7 +16,7 @@ from simcore_postgres_database.models.payments_methods import (
 from sqlalchemy import literal_column
 from sqlalchemy.sql import func
 
-from ..db.plugin import get_aiopg_engine
+from ..db.plugin import get_database_engine
 from .errors import (
     PaymentMethodAlreadyAckedError,
     PaymentMethodNotFoundError,
@@ -48,7 +48,7 @@ async def insert_init_payment_method(
     wallet_id: WalletID,
     initiated_at: datetime.datetime,
 ) -> None:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         try:
             await conn.execute(
                 payments_methods.insert().values(
@@ -70,7 +70,7 @@ async def list_successful_payment_methods(
     user_id: UserID,
     wallet_id: WalletID,
 ) -> list[PaymentsMethodsDB]:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result: ResultProxy = await conn.execute(
             payments_methods.select()
             .where(
@@ -91,7 +91,7 @@ async def get_successful_payment_method(
     wallet_id: WalletID,
     payment_method_id: PaymentMethodID,
 ) -> PaymentsMethodsDB:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result: ResultProxy = await conn.execute(
             payments_methods.select().where(
                 (payments_methods.c.user_id == user_id)
@@ -110,7 +110,7 @@ async def get_successful_payment_method(
 async def get_pending_payment_methods_ids(
     app: web.Application,
 ) -> list[PaymentMethodID]:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             sa.select(payments_methods.c.payment_method_id)
             .where(payments_methods.c.completed_at == None)  # noqa: E711
@@ -141,7 +141,7 @@ async def udpate_payment_method(
     if state_message:
         optional["state_message"] = state_message
 
-    async with get_aiopg_engine(app).acquire() as conn, conn.begin():
+    async with get_database_engine(app).acquire() as conn, conn.begin():
         row = await (
             await conn.execute(
                 sa.select(
@@ -178,7 +178,7 @@ async def delete_payment_method(
     wallet_id: WalletID,
     payment_method_id: PaymentMethodID,
 ):
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         await conn.execute(
             payments_methods.delete().where(
                 (payments_methods.c.user_id == user_id)

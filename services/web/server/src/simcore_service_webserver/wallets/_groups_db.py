@@ -14,7 +14,7 @@ from simcore_postgres_database.models.wallet_to_groups import wallet_to_groups
 from sqlalchemy import func, literal_column
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_aiopg_engine
+from ..db.plugin import get_database_engine
 from .errors import WalletGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ async def create_wallet_group(
     write: bool,
     delete: bool,
 ) -> WalletGroupGetDB:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             wallet_to_groups.insert()
             .values(
@@ -78,7 +78,7 @@ async def list_wallet_groups(
         .where(wallet_to_groups.c.wallet_id == wallet_id)
     )
 
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
         rows = await result.fetchall() or []
         return parse_obj_as(list[WalletGroupGetDB], rows)
@@ -105,7 +105,7 @@ async def get_wallet_group(
         )
     )
 
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
         row = await result.first()
         if row is None:
@@ -124,7 +124,7 @@ async def update_wallet_group(
     write: bool,
     delete: bool,
 ) -> WalletGroupGetDB:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             wallet_to_groups.update()
             .values(
@@ -151,7 +151,7 @@ async def delete_wallet_group(
     wallet_id: WalletID,
     group_id: GroupID,
 ) -> None:
-    async with get_aiopg_engine(app).acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         await conn.execute(
             wallet_to_groups.delete().where(
                 (wallet_to_groups.c.wallet_id == wallet_id)
