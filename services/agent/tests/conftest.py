@@ -14,7 +14,7 @@ from aiodocker.volumes import DockerVolume
 from models_library.basic_types import BootModeEnum
 from models_library.services import RunID
 from moto.server import ThreadedMotoServer
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import HttpUrl, TypeAdapter
 from settings_library.r_clone import S3Provider
 from simcore_service_agent.core.settings import ApplicationSettings
 
@@ -189,7 +189,6 @@ def caplog_info_debug(
 @pytest.fixture(scope="module")
 def mocked_s3_server_url(mocked_aws_server: ThreadedMotoServer) -> HttpUrl:
     # pylint: disable=protected-access
-    return parse_obj_as(
-        HttpUrl,
+    return TypeAdapter(HttpUrl).validate_python(
         f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # noqa: SLF001
     )
