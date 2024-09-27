@@ -84,7 +84,7 @@ def fake_granular_env_file_content() -> str:
 @pytest.fixture
 def export_as_dict() -> Callable:
     def _export(model_obj, **export_options):
-        return model_dump_with_secrets(model_obj, show_secret=True, **export_options)
+        return model_dump_with_secrets(model_obj, show_secrets=True, **export_options)
 
     return _export
 
