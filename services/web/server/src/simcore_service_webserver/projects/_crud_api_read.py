@@ -58,9 +58,7 @@ async def _append_fields(
         }
 
     # validate
-    return model_schema_cls.parse_obj(project).data(
-        exclude_unset=True
-    )  # <- MD: check whether if `folder_id` is None it will be not removed
+    return model_schema_cls.parse_obj(project).data(exclude_unset=True)
 
 
 async def list_projects(  # pylint: disable=too-many-arguments
