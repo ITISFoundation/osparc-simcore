@@ -15,7 +15,7 @@ would still have these invariants.
 from pydantic import ValidationInfo, field_validator
 from pydantic.fields import PydanticUndefined
 from pydantic_settings import BaseSettings
-from settings_library.base import _allows_none
+from models_library.utils.pydantic_fields_extension import is_nullable
 
 
 def assert_field_specs(
@@ -29,7 +29,7 @@ def assert_field_specs(
     print(info)
 
     assert info.is_required() == is_required
-    assert _allows_none(info) == is_nullable
+    assert is_nullable(info) == is_nullable
 
     if info.is_required():
         # in this case, default is not really used
@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     @classmethod
     def parse_none(cls, v, info: ValidationInfo):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
-        if info.field_name and _allows_none(cls.model_fields[info.field_name]):
+        if info.field_name and is_nullable(cls.model_fields[info.field_name]):
             if isinstance(v, str) and v.lower() in ("null", "none"):
                 return None
         return v
