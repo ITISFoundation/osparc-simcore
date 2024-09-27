@@ -225,18 +225,18 @@ class SocketIONodeProgressCompleteWaiter:
                         ] = new_progress
 
                         self.logger.info(
-                            "Current startup progress [expected number of states=%d]: %s",
+                            "Current startup progress [expected number of node-progress-types=%d]: %s",
                             NodeProgressType.required_types_for_started_service(),
                             f"{json.dumps({k:round(v,1) for k,v in self._current_progress.items()})}",
                         )
 
-                return self.received_required_node_progress_types() and all(
+                return self.got_expected_node_progress_types() and all(
                     round(progress, 1) == 1.0
                     for progress in self._current_progress.values()
                 )
         return False
 
-    def received_required_node_progress_types(self):
+    def got_expected_node_progress_types(self):
         return all(
             progress_type in self._current_progress
             for progress_type in NodeProgressType.required_types_for_started_service()
@@ -346,7 +346,7 @@ def expected_service_running(
                 yield service_running
 
         except PlaywrightTimeoutError:
-            if waiter.received_required_node_progress_types():
+            if waiter.got_expected_node_progress_types():
                 ctx.logger.warning(
                     "⚠️ Progress bar didn't receive 100 percent but all states are there: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
                     waiter.get_current_progress(),
