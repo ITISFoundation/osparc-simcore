@@ -2,7 +2,6 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from aiopg.sa import Engine
 from aiopg.sa.engine import Engine
 from servicelib.aiohttp.aiopg_utils import is_pg_responsive
 from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
