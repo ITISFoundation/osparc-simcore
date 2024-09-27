@@ -73,7 +73,7 @@ def print_as_json(
     typer.echo(
         json.dumps(
             model_dump_with_secrets(
-                settings_obj, show_secret=show_secrets, **pydantic_export_options
+                settings_obj, show_secrets=show_secrets, **pydantic_export_options
             ),
             indent=None if compact else 2,
         )
