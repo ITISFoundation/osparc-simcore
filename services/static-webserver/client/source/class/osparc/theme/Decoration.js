@@ -20,6 +20,27 @@ qx.Theme.define("osparc.theme.Decoration", {
   extend: osparc.theme.common.Decoration,
 
   decorations: {
+    "rounded": {
+      style: {
+        radius: 4
+      }
+    },
+
+    "border-simple": {
+      include: "border",
+      style: {
+        radius: 4
+      }
+    },
+
+    "no-border": {
+      style: {
+        radius: 4,
+        width: 1,
+        color: "transparent"
+      }
+    },
+
     "material-button-invalid": {},
     "material-button": {
       style: {
@@ -35,15 +56,9 @@ qx.Theme.define("osparc.theme.Decoration", {
     "indicator-border": {
       include: "material-button",
       style: {
-        radius: 2,
+        radius: 4,
         width: 1,
         color: "text"
-      }
-    },
-
-    "rounded": {
-      style: {
-        radius: 4
       }
     },
 
@@ -128,7 +143,7 @@ qx.Theme.define("osparc.theme.Decoration", {
         shadowBlurRadius: 0,
         shadowLength: 0,
         width: 0,
-        radius: 3,
+        radius: 4,
         transitionProperty: "opacity",
         transitionDuration: "0.05s",
         transitionTimingFunction: "ease-in"
@@ -154,7 +169,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     "service-window": {
       include: "window",
       style: {
-        radius: 3,
+        radius: 4,
         width: 1
       }
     },
@@ -182,7 +197,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "flash": {
       style: {
-        radius: 3,
+        radius: 4,
         transitionProperty: "top",
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
@@ -191,6 +206,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "flash-message": {
       style: {
+        radius: 4,
         width: 1,
         style: "solid"
       }
@@ -226,7 +242,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "flash-badge": {
       style: {
-        radius: 5
+        radius: 4
       }
     },
 
@@ -235,21 +251,6 @@ qx.Theme.define("osparc.theme.Decoration", {
         transitionProperty: "height",
         transitionDuration: "0.2s",
         transitionTimingFunction: "ease-in"
-      }
-    },
-
-    "border-simple": {
-      include: "border",
-      style: {
-        radius: 4
-      }
-    },
-
-    "no-border": {
-      style: {
-        radius: 4,
-        width: 1,
-        color: "transparent"
       }
     },
 
@@ -297,27 +298,27 @@ qx.Theme.define("osparc.theme.Decoration", {
     "border-editable": {
       style: {
         width: 1,
-        radius: 3,
+        radius: 4,
         color: "text-disabled"
       }
     },
 
     "hint": {
       style: {
-        radius: 3
+        radius: 4
       }
     },
 
     "chip": {
       style: {
-        radius: 9
+        radius: 4
       }
     },
 
     "chip-button": {
       style: {
         width: 1,
-        radius: 6,
+        radius: 4,
         color: "text",
         backgroundColor: "transparent"
       }
@@ -326,7 +327,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     "filter-toggle-button": {
       style: {
         width: 1,
-        radius: 8,
+        radius: 4,
         color: "transparent"
       }
     },
@@ -340,7 +341,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "pb-listitem": {
       style: {
-        radius: 5
+        radius: 4
       }
     },
 
@@ -358,12 +359,12 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "tag": {
       style: {
-        radius: 2
+        radius: 4
       }
     },
     "tagitem": {
       style: {
-        radius: 2
+        radius: 4
       }
     },
     "tagitem-colorbutton": {
@@ -400,7 +401,7 @@ qx.Theme.define("osparc.theme.Decoration", {
         style: "solid",
         width: [0, 0, 2, 0],
         color: "transparent",
-        radius: [3, 3, 0, 0]
+        radius: [4, 4, 0, 0]
       }
     },
     "tab-button-selected": {
@@ -408,7 +409,7 @@ qx.Theme.define("osparc.theme.Decoration", {
         style: "solid",
         width: [0, 0, 2, 0],
         color: "default-button-focus",
-        radius: [3, 3, 0, 0]
+        radius: [4, 4, 0, 0]
       }
     },
 
@@ -419,7 +420,7 @@ qx.Theme.define("osparc.theme.Decoration", {
         style: "solid",
         width: 1,
         color: "default-button",
-        radius: 5,
+        radius: 4,
         backgroundColor: "default-button"
       }
     },
@@ -428,7 +429,7 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         style: "solid",
         width: 1,
-        radius: 5,
+        radius: 4,
         color: "fab-background",
         backgroundColor: "fab-background",
         shadowSpreadRadius: 0,
@@ -512,7 +513,7 @@ qx.Theme.define("osparc.theme.Decoration", {
       include: "form-button-outlined",
       style: {
         width: [1, 1, 1, 1],
-        radius: [0, 5, 5, 0]
+        radius: [0, 4, 4, 0]
       }
     },
     "form-button-outlined-hovered-right": {
@@ -535,7 +536,7 @@ qx.Theme.define("osparc.theme.Decoration", {
       include: "form-button-outlined",
       style: {
         width: [1, 0, 1, 1],
-        radius: [5, 0, 0, 5]
+        radius: [4, 0, 0, 4]
       }
     },
     "form-button-outlined-hovered-left": {
@@ -652,7 +653,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     */
     "appmotion-buy-credits-input": {
       style: {
-        radius: 8
+        radius: 4
       }
     }
   }
