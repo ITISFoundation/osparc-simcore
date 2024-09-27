@@ -4,7 +4,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from simcore_service_webserver.projects._db_utils import PermissionStr
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_aiopg_engine
 from ..workspaces.api import get_workspace
 from ._access_rights_db import get_project_owner
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
@@ -20,7 +20,7 @@ async def validate_project_ownership(
         ProjectInvalidRightsError: if 'user_id' does not own 'project_uuid'
     """
     if (
-        await get_project_owner(get_database_engine(app), project_uuid=project_uuid)
+        await get_project_owner(get_aiopg_engine(app), project_uuid=project_uuid)
         != user_id
     ):
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)

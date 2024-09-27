@@ -6,7 +6,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 from simcore_postgres_database.utils_users import UsersRepo
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_aiopg_engine
 from ..groups.api import is_user_by_email_in_group
 from ..products.api import Product
 from ..security.api import check_password, encrypt_password
@@ -30,7 +30,7 @@ async def create_user(
     expires_at: datetime | None,
 ) -> dict[str, Any]:
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         user = await UsersRepo.new_user(
             conn,
             email=email,

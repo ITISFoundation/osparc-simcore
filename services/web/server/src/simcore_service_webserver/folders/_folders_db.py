@@ -22,7 +22,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import asc, desc, select
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_aiopg_engine
 from .errors import FolderAccessForbiddenError, FolderNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ async def create(
         user_id is not None and workspace_id is not None
     ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         result = await conn.execute(
             folders_v2.insert()
             .values(
@@ -117,7 +117,7 @@ async def list_(
         list_query = base_query.order_by(desc(getattr(folders_v2.c, order_by.field)))
     list_query = list_query.offset(offset).limit(limit)
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         count_result = await conn.execute(count_query)
         total_count = await count_result.scalar()
 
@@ -142,7 +142,7 @@ async def get(
         )
     )
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         result = await conn.execute(query)
         row = await result.first()
         if row is None:
@@ -178,7 +178,7 @@ async def get_for_user_or_workspace(
     else:
         query = query.where(folders_v2.c.workspace_id == workspace_id)
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         result = await conn.execute(query)
         row = await result.first()
         if row is None:
@@ -196,7 +196,7 @@ async def update(
     parent_folder_id: FolderID | None,
     product_name: ProductName,
 ) -> FolderDB:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_aiopg_engine(app).acquire() as conn:
         result = await conn.execute(
             folders_v2.update()
             .values(
@@ -222,7 +222,7 @@ async def delete_recursively(
     folder_id: FolderID,
     product_name: ProductName,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn, conn.begin():
+    async with get_aiopg_engine(app).acquire() as conn, conn.begin():
         # Step 1: Define the base case for the recursive CTE
         base_query = select(
             folders_v2.c.folder_id, folders_v2.c.parent_folder_id
@@ -276,7 +276,7 @@ async def get_projects_recursively_only_if_user_is_owner(
     or the `users_to_groups` table for private workspace projects.
     """
 
-    async with get_database_engine(app).acquire() as conn, conn.begin():
+    async with get_aiopg_engine(app).acquire() as conn, conn.begin():
         # Step 1: Define the base case for the recursive CTE
         base_query = select(
             folders_v2.c.folder_id, folders_v2.c.parent_folder_id
@@ -330,7 +330,7 @@ async def get_folders_recursively(
     folder_id: FolderID,
     product_name: ProductName,
 ) -> list[FolderID]:
-    async with get_database_engine(app).acquire() as conn, conn.begin():
+    async with get_aiopg_engine(app).acquire() as conn, conn.begin():
         # Step 1: Define the base case for the recursive CTE
         base_query = select(
             folders_v2.c.folder_id, folders_v2.c.parent_folder_id

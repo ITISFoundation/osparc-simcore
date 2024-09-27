@@ -90,7 +90,7 @@ def get_engine_state(app: web.Application) -> dict[str, Any]:
     return {}
 
 
-def get_database_engine(app: web.Application) -> Engine:
+def get_aiopg_engine(app: web.Application) -> Engine:
     return cast(Engine, app[APP_AIOPG_ENGINE_KEY])
 
 

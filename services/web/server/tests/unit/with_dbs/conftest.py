@@ -58,7 +58,7 @@ from simcore_postgres_database.models.groups_extra_properties import (
 from simcore_postgres_database.utils_products import get_default_product_name
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.db.plugin import get_database_engine
+from simcore_service_webserver.db.plugin import get_aiopg_engine
 from simcore_service_webserver.groups.api import (
     add_user_in_group,
     create_user_group,
@@ -225,7 +225,7 @@ def osparc_product_name() -> str:
 @pytest.fixture
 async def default_product_name(client: TestClient) -> ProductName:
     assert client.app
-    async with get_database_engine(client.app).acquire() as conn:
+    async with get_aiopg_engine(client.app).acquire() as conn:
         return await get_default_product_name(conn)
 
 
