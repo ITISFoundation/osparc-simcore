@@ -5,9 +5,6 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.prometheus_instrumentation import (
-    setup_prometheus_instrumentation,
-)
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import (
@@ -18,6 +15,7 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
+from ..services.instrumentation import setup_instrumentation
 from ..services.rabbitmq import setup_rabbitmq
 from ..services.volumes_manager import setup_volume_manager
 from .api.rest.routes import setup_rest_api
@@ -53,8 +51,7 @@ def create_app() -> FastAPI:
     override_fastapi_openapi_method(app)
     app.state.settings = settings
 
-    if app.state.settings.AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        setup_prometheus_instrumentation(app)
+    setup_instrumentation(app)
 
     setup_rabbitmq(app)
     setup_volume_manager(app)

@@ -12,9 +12,11 @@ from models_library.api_schemas_directorv2.services import (
 )
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from servicelib.logging_utils import log_catch, log_context
+from simcore_service_agent.core.settings import ApplicationSettings
 from starlette import status
 
 from .backup import backup_volume
+from .instrumentation import get_instrumentation
 from .models import VolumeDetails
 
 _logger = logging.getLogger(__name__)
@@ -79,6 +81,10 @@ async def _backup_volume(app: FastAPI, docker: Docker, *, volume_name: str) -> N
             _logger, logging.INFO, f"backup '{volume_name}'", log_duration=True
         ):
             volume_details = await get_volume_details(docker, volume_name=volume_name)
+            settings: ApplicationSettings = app.state.settings
+            get_instrumentation(app).agent_metrics.backedup_volumes(
+                settings.AGENT_DOCKER_NODE_ID
+            )
             await backup_volume(app, volume_details, volume_name)
     else:
         _logger.debug("No backup is required for '%s'", volume_name)
@@ -95,3 +101,8 @@ async def remove_volume(
             await _backup_volume(app, docker, volume_name=volume_name)
 
         await DockerVolume(docker, volume_name).delete()
+
+        settings: ApplicationSettings = app.state.settings
+        get_instrumentation(app).agent_metrics.remove_volumes(
+            settings.AGENT_DOCKER_NODE_ID
+        )
