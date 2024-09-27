@@ -10,7 +10,7 @@ from models_library.api_schemas_api_server.api_keys import ApiKeyInDB
 from models_library.basic_types import IdInt
 from models_library.products import ProductName
 from models_library.users import UserID
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from simcore_postgres_database.models.api_keys import api_keys
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -23,7 +23,7 @@ class ApiKeyRepo:
 
     @classmethod
     def create_from_app(cls, app: web.Application):
-        return cls(engine=app[APP_DB_ENGINE_KEY])
+        return cls(engine=app[APP_AIOPG_ENGINE_KEY])
 
     async def list_names(
         self, *, user_id: UserID, product_name: ProductName

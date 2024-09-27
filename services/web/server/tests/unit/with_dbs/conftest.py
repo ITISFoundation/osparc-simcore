@@ -46,7 +46,7 @@ from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
 from redis import Redis
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import ProgressPercent, TaskProgress
 from servicelib.common_aiopg_utils import DSN
@@ -193,7 +193,7 @@ def web_server(
 
     assert isinstance(postgres_db, sa.engine.Engine)
 
-    pg_settings = dict(e.split("=") for e in app[APP_DB_ENGINE_KEY].dsn.split())
+    pg_settings = dict(e.split("=") for e in app[APP_AIOPG_ENGINE_KEY].dsn.split())
     assert pg_settings["host"] == postgres_db.url.host
     assert int(pg_settings["port"]) == postgres_db.url.port
     assert pg_settings["user"] == postgres_db.url.username

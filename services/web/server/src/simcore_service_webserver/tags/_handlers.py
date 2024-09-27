@@ -3,7 +3,7 @@ import functools
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from pydantic import parse_obj_as
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -55,7 +55,7 @@ routes = web.RouteTableDef()
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def create_tag(request: web.Request):
-    engine: Engine = request.app[APP_DB_ENGINE_KEY]
+    engine: Engine = request.app[APP_AIOPG_ENGINE_KEY]
     req_ctx = TagRequestContext.parse_obj(request)
     new_tag = await parse_request_body_as(TagCreate, request)
 
@@ -77,7 +77,7 @@ async def create_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def list_tags(request: web.Request):
-    engine: Engine = request.app[APP_DB_ENGINE_KEY]
+    engine: Engine = request.app[APP_AIOPG_ENGINE_KEY]
     req_ctx = TagRequestContext.parse_obj(request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
@@ -93,7 +93,7 @@ async def list_tags(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def update_tag(request: web.Request):
-    engine: Engine = request.app[APP_DB_ENGINE_KEY]
+    engine: Engine = request.app[APP_AIOPG_ENGINE_KEY]
     req_ctx = TagRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
     tag_updates = await parse_request_body_as(TagUpdate, request)
@@ -112,7 +112,7 @@ async def update_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def delete_tag(request: web.Request):
-    engine: Engine = request.app[APP_DB_ENGINE_KEY]
+    engine: Engine = request.app[APP_AIOPG_ENGINE_KEY]
     req_ctx = TagRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
 

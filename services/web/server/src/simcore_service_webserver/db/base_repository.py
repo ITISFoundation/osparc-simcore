@@ -2,7 +2,7 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from models_library.users import UserID
 
-from .._constants import APP_DB_ENGINE_KEY, RQT_USERID_KEY
+from .._constants import APP_AIOPG_ENGINE_KEY, RQT_USERID_KEY
 
 
 class BaseRepository:
@@ -15,12 +15,13 @@ class BaseRepository:
     @classmethod
     def create_from_request(cls, request: web.Request):
         return cls(
-            engine=request.app[APP_DB_ENGINE_KEY], user_id=request.get(RQT_USERID_KEY)
+            engine=request.app[APP_AIOPG_ENGINE_KEY],
+            user_id=request.get(RQT_USERID_KEY),
         )
 
     @classmethod
     def create_from_app(cls, app: web.Application):
-        return cls(engine=app[APP_DB_ENGINE_KEY], user_id=None)
+        return cls(engine=app[APP_AIOPG_ENGINE_KEY], user_id=None)
 
     @property
     def engine(self) -> Engine:
