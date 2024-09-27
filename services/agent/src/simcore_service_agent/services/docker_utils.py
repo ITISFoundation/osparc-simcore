@@ -1,11 +1,13 @@
 import logging
 from typing import Final
 
+from aiodocker import DockerError
 from aiodocker.docker import Docker
 from aiodocker.volumes import DockerVolume
 from fastapi import FastAPI
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context
+from starlette import status
 
 from .backup_manager import backup_volume
 
@@ -52,11 +54,11 @@ async def _backup_volume(app: FastAPI, *, volume_name: str) -> None:
     """Backs up only volumes which require a backup"""
     if _does_volume_require_backup(volume_name):
         with log_context(
-            _logger, logging.INFO, f"backup {volume_name}", log_duration=True
+            _logger, logging.INFO, f"backup '{volume_name}'", log_duration=True
         ):
             await backup_volume(app, volume_name)
     else:
-        _logger.debug("No backup is required for %s", volume_name)
+        _logger.debug("No backup is required for '%s'", volume_name)
 
 
 async def remove_volume(
@@ -64,8 +66,15 @@ async def remove_volume(
 ) -> None:
     """Removes a volume and backs data up if required"""
     with log_context(
-        _logger, logging.INFO, f"removing {volume_name}", log_duration=True
+        _logger, logging.DEBUG, f"removing '{volume_name}'", log_duration=True
     ):
         if requires_backup:
             await _backup_volume(app, volume_name=volume_name)
-        await DockerVolume(docker, volume_name).delete()
+        with log_catch(_logger, reraise=False):
+            try:
+                await DockerVolume(docker, volume_name).delete()
+            except DockerError as e:
+                if e.status == status.HTTP_404_NOT_FOUND:
+                    _logger.info("Volume not found '%s'", volume_name)
+                else:
+                    raise

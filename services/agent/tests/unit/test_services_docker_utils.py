@@ -223,3 +223,17 @@ async def test_doclker_utils_workflow(
 
     volumes = await get_unused_dynamc_sidecar_volumes(volume_manager_docker_client)
     assert len(volumes) == 0
+
+
+@pytest.mark.parametrize("requires_backup", [True, False])
+async def test_remove_misisng_volume_does_not_raise_error(
+    requires_backup: bool,
+    initialized_app: FastAPI,
+    volume_manager_docker_client: Docker,
+):
+    await remove_volume(
+        initialized_app,
+        volume_manager_docker_client,
+        volume_name="this-volume-does-not-exist",
+        requires_backup=requires_backup,
+    )
