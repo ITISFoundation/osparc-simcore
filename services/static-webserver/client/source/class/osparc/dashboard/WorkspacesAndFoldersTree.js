@@ -108,11 +108,18 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("", "open", {
-            converter(value, model, source, target) {
+            converter(value, _model, _source, target) {
               const isOpen = target.isOpen();
-              if (isOpen && !value.getLoaded()) {
+              if (isOpen) {
                 // eslint-disable-next-line no-underscore-dangle
-                that.__populateFolder(value, value.getWorkspaceId(), value.getFolderId());
+                that.__populateFolder(value, value.getWorkspaceId(), value.getFolderId())
+                  .then(folderModels => {
+                    // load next level too
+                    folderModels.forEach(folderModel => {
+                      // eslint-disable-next-line no-underscore-dangle
+                      that.__populateFolder(folderModel, folderModel.getWorkspaceId(), folderModel.getFolderId());
+                    })
+                  });
               }
               that.fireEvent("openChanged");
               return isOpen;
@@ -159,6 +166,9 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const myWorkspaceModel = qx.data.marshal.Json.createModel(myWorkspaceData, true);
       this.__models.push(myWorkspaceModel);
       rootModel.getChildren().append(myWorkspaceModel);
+
+      // load next level too
+      this.__populateFolder(myWorkspaceModel, workspaceId, folderId);
     },
 
     __addSharedWorkspaces: function(rootModel) {
@@ -200,6 +210,9 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
 
       const sharedWorkspaceModel = this.__getModel(-1, null);
       sharedWorkspaceModel.getChildren().append(workspaceModel);
+
+      // load next level too
+      this.__populateFolder(workspaceModel, workspace.getWorkspaceId(), null);
     },
 
     __removeWorkspace: function(workspace) {
@@ -222,16 +235,22 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       this.__models.push(folderModel);
       folder.bind("name", folderModel, "label");
       parentModel.getChildren().push(folderModel);
+      return folderModel;
     },
 
     __populateFolder: function(model, workspaceId, folderId) {
-      osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
+      if (model.getLoaded()) {
+        return new Promise(resolve => resolve(model.getChildren()));
+      }
+      return osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
         .then(folders => {
           model.setLoaded(true);
           model.getChildren().removeAll();
+          const newFolderModels = [];
           folders.forEach(folder => {
-            this.__addFolder(folder, model);
+            newFolderModels.push(this.__addFolder(folder, model));
           });
+          return newFolderModels;
         });
     },
 
