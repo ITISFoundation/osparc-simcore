@@ -83,7 +83,9 @@ qx.Class.define("osparc.dashboard.MoveResourceTo", {
         }
         case "workspaces-and-folders-tree":
           control = new osparc.dashboard.WorkspacesAndFoldersTree();
-          this._add(control);
+          this._add(control, {
+            flex: 1
+          });
           break;
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({

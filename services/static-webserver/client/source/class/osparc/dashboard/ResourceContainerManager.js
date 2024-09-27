@@ -208,7 +208,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     resetSelection: function() {
-      if (this.getGroupBy() === null) {
+      if (this.getGroupBy() === null && this.__nonGroupedContainer) {
         this.__nonGroupedContainer.resetSelection();
       }
     },

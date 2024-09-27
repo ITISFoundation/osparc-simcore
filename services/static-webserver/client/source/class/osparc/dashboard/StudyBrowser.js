@@ -453,6 +453,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _changeContext: function(workspaceId, folderId) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        this.resetSelection();
+        this.setMultiSelection(false);
         this.set({
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
