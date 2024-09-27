@@ -2,6 +2,9 @@ import os
 from pathlib import Path
 from typing import Any
 
+from models_library.api_schemas_directorv2.services import (
+    CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import RunID
@@ -133,7 +136,12 @@ class DynamicSidecarVolumesPathsResolver:
         # and state folders are very long and share the same subdirectory path.
         # Reversing volume name to prevent these issues from happening.
         reversed_volume_name = cls.volume_name(path)[::-1]
-        unique_name = f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{run_id}_{node_uuid}_{reversed_volume_name}"
+
+        # ensure prefix size does not change
+        prefix = f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{run_id}_{node_uuid}"
+        assert len(prefix) == CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME - 1  # nosec
+
+        unique_name = f"{prefix}_{reversed_volume_name}"
         return unique_name[:255]
 
     @classmethod

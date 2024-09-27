@@ -9,6 +9,9 @@ from uuid import UUID
 import aiodocker
 import pytest
 from faker import Faker
+from models_library.api_schemas_directorv2.services import (
+    CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME,
+)
 from models_library.projects import ProjectID
 from models_library.services import RunID
 from models_library.users import UserID
@@ -144,6 +147,11 @@ def test_volumes_get_truncated_as_expected(faker: Faker):
         node_uuid=node_uuid,
         run_id=run_id,
     )
+
+    # if below fails the agent will have issues please check
+    constant_part = unique_volume_name[: CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME - 1]
+    assert constant_part == f"dyv_{run_id}_{node_uuid}"
+
     assert len(unique_volume_name) == 255
     assert f"{run_id}" in unique_volume_name
     assert f"{node_uuid}" in unique_volume_name
