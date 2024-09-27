@@ -13,6 +13,10 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+annotated-types==0.7.0
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 anyio==3.6.2
     # via
     #   -c requirements/_base.txt
@@ -81,8 +85,6 @@ ecdsa==0.19.0
     #   moto
     #   python-jose
     #   sshpubkeys
-exceptiongroup==1.2.2
-    # via pytest
 faker==27.0.0
     # via -r requirements/_test.in
 flask==3.0.3
@@ -178,11 +180,15 @@ pyasn1==0.6.0
     #   rsa
 pycparser==2.22
     # via cffi
-pydantic==1.10.2
+pydantic==2.9.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
+pydantic-core==2.23.4
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 pyparsing==3.1.2
     # via moto
 pyrsistent==0.19.2
@@ -257,16 +263,13 @@ sshpubkeys==3.3.1
     # via moto
 sympy==1.13.2
     # via cfn-lint
-tomli==2.0.1
-    # via
-    #   coverage
-    #   pytest
-typing-extensions==4.4.0
+typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   cfn-lint
     #   pydantic
+    #   pydantic-core
 urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
