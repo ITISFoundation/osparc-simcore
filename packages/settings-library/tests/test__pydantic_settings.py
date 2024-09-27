@@ -15,21 +15,21 @@ would still have these invariants.
 from pydantic import ValidationInfo, field_validator
 from pydantic.fields import PydanticUndefined
 from pydantic_settings import BaseSettings
-from settings_library.base import _allows_none
+from models_library.utils.pydantic_fields_extension import is_nullable
 
 
 def assert_field_specs(
     model_cls: type[BaseSettings],
     name: str,
-    is_required: bool,
-    is_nullable: bool,
+    required: bool,
+    nullable: bool,
     explicit_default,
 ):
     info = model_cls.model_fields[name]
     print(info)
 
-    assert info.is_required() == is_required
-    assert _allows_none(info) == is_nullable
+    assert info.is_required() == required
+    assert is_nullable(info) == nullable
 
     if info.is_required():
         # in this case, default is not really used
@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     @classmethod
     def parse_none(cls, v, info: ValidationInfo):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
-        if info.field_name and _allows_none(cls.model_fields[info.field_name]):
+        if info.field_name and is_nullable(cls.model_fields[info.field_name]):
             if isinstance(v, str) and v.lower() in ("null", "none"):
                 return None
         return v
@@ -69,32 +69,32 @@ def test_fields_declarations():
     assert_field_specs(
         Settings,
         "VALUE",
-        is_required=True,
-        is_nullable=False,
+        required=True,
+        nullable=False,
         explicit_default=PydanticUndefined,
     )
 
     assert_field_specs(
         Settings,
         "VALUE_DEFAULT",
-        is_required=False,
-        is_nullable=False,
+        required=False,
+        nullable=False,
         explicit_default=42,
     )
 
     assert_field_specs(
         Settings,
         "VALUE_NULLABLE_REQUIRED",
-        is_required=True,
-        is_nullable=True,
+        required=True,
+        nullable=True,
         explicit_default=Ellipsis,
     )
 
     assert_field_specs(
         Settings,
         "VALUE_NULLABLE_REQUIRED_AS_WELL",
-        is_required=True,
-        is_nullable=True,
+        required=True,
+        nullable=True,
         explicit_default=PydanticUndefined,  # <- difference wrt VALUE_NULLABLE_DEFAULT_NULL
     )
 
@@ -105,24 +105,24 @@ def test_fields_declarations():
     assert_field_specs(
         Settings,
         "VALUE_NULLABLE_DEFAULT_VALUE",
-        is_required=False,
-        is_nullable=True,
+        required=False,
+        nullable=True,
         explicit_default=42,
     )
 
     assert_field_specs(
         Settings,
         "VALUE_NULLABLE_DEFAULT_NULL",
-        is_required=False,
-        is_nullable=True,
+        required=False,
+        nullable=True,
         explicit_default=None,
     )
 
     assert_field_specs(
         Settings,
         "VALUE_REQUIRED_AS_WELL",
-        is_required=True,
-        is_nullable=False,
+        required=True,
+        nullable=False,
         explicit_default=Ellipsis,
     )
 

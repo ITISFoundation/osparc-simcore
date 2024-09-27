@@ -8,13 +8,16 @@ For twilio SMS services:
 
 from typing import Annotated, TypeAlias
 
-from pydantic import Field, StringConstraints, TypeAdapter
+from pydantic import BeforeValidator, Field, StringConstraints, TypeAdapter
 
 from .base import BaseCustomSettings
 
-
 # Based on https://countrycode.org/
-CountryCodeStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, pattern=r"^\d{1,4}")]
+CountryCodeStr: TypeAlias = Annotated[
+    str,
+    BeforeValidator(str),
+    StringConstraints(strip_whitespace=True, pattern=r"^\d{1,4}"),
+]
 
 
 class TwilioSettings(BaseCustomSettings):

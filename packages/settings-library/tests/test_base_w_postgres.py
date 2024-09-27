@@ -170,12 +170,12 @@ def test_parse_from_individual_envs(
     }
 
     s2 = S2()
-    assert s2.dict(exclude_unset=True) == {}
-    assert s2.dict() == {"WEBSERVER_POSTGRES_NULLABLE_OPTIONAL": None}
+    assert s2.model_dump(exclude_unset=True) == {}
+    assert s2.model_dump() == {"WEBSERVER_POSTGRES_NULLABLE_OPTIONAL": None}
 
     s3 = S3()
-    assert s3.dict(exclude_unset=True) == {}
-    assert s3.dict() == {
+    assert s3.model_dump(exclude_unset=True) == {}
+    assert s3.model_dump() == {
         "WEBSERVER_POSTGRES_DEFAULT_ENV": {
             "POSTGRES_HOST": "pg",
             "POSTGRES_USER": "test",
@@ -189,8 +189,8 @@ def test_parse_from_individual_envs(
     }
 
     s4 = S4()
-    assert s4.dict(exclude_unset=True) == {}
-    assert s4.dict() == {
+    assert s4.model_dump(exclude_unset=True) == {}
+    assert s4.model_dump() == {
         "WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV": {
             "POSTGRES_HOST": "pg",
             "POSTGRES_USER": "test",
@@ -204,8 +204,8 @@ def test_parse_from_individual_envs(
     }
 
     s5 = S5()
-    assert s5.dict(exclude_unset=True) == {}
-    assert s5.dict() == {"WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL": None}
+    assert s5.model_dump(exclude_unset=True) == {}
+    assert s5.model_dump() == {"WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL": None}
 
 
 def test_parse_compact_env(
@@ -229,7 +229,7 @@ def test_parse_compact_env(
         # test
         s1 = S1()
 
-        assert s1.dict(exclude_unset=True) == {
+        assert s1.model_dump(exclude_unset=True) == {
             "WEBSERVER_POSTGRES": {
                 "POSTGRES_HOST": "pg2",
                 "POSTGRES_USER": "test2",
@@ -237,7 +237,7 @@ def test_parse_compact_env(
                 "POSTGRES_DB": "db2",
             }
         }
-        assert s1.dict() == {
+        assert s1.model_dump() == {
             "WEBSERVER_POSTGRES": {
                 "POSTGRES_HOST": "pg2",
                 "POSTGRES_USER": "test2",
@@ -258,7 +258,7 @@ def test_parse_compact_env(
             """,
         )
         s2 = S2()
-        assert s2.dict(exclude_unset=True) == {
+        assert s2.model_dump(exclude_unset=True) == {
             "WEBSERVER_POSTGRES_NULLABLE_OPTIONAL": {
                 "POSTGRES_HOST": "pg2",
                 "POSTGRES_USER": "test2",
@@ -278,7 +278,7 @@ def test_parse_compact_env(
         # default until it is really needed. Here before it would
         # fail because default cannot be computed even if the final value can!
         s3 = S3()
-        assert s3.dict(exclude_unset=True) == {
+        assert s3.model_dump(exclude_unset=True) == {
             "WEBSERVER_POSTGRES_DEFAULT_ENV": {
                 "POSTGRES_HOST": "pg2",
                 "POSTGRES_USER": "test2",
@@ -295,7 +295,7 @@ def test_parse_compact_env(
             """,
         )
         s4 = S4()
-        assert s4.dict(exclude_unset=True) == {
+        assert s4.model_dump(exclude_unset=True) == {
             "WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV": {
                 "POSTGRES_HOST": "pg2",
                 "POSTGRES_USER": "test2",
@@ -312,7 +312,7 @@ def test_parse_compact_env(
             """,
         )
         s5 = S5()
-        assert s5.dict(exclude_unset=True) == {
+        assert s5.model_dump(exclude_unset=True) == {
             "WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL": {
                 "POSTGRES_HOST": "pg2",
                 "POSTGRES_USER": "test2",
@@ -348,7 +348,7 @@ def test_parse_from_mixed_envs(
 
         s1 = S1()
 
-        assert s1.dict() == {
+        assert s1.model_dump() == {
             "WEBSERVER_POSTGRES": {
                 "POSTGRES_HOST": "pg2",
                 "POSTGRES_USER": "test2",
@@ -363,7 +363,7 @@ def test_parse_from_mixed_envs(
         # NOTE how unset marks also applies to embedded fields
         # NOTE: (1) priority of json-compact over granulated
         # NOTE: (2) json-compact did not define this but granulated did
-        assert s1.dict(exclude_unset=True) == {
+        assert s1.model_dump(exclude_unset=True) == {
             "WEBSERVER_POSTGRES": {
                 "POSTGRES_HOST": "pg2",  # <- (1)
                 "POSTGRES_USER": "test2",  # <- (1)
@@ -380,7 +380,7 @@ def test_parse_from_mixed_envs(
         )
 
         s2 = S2()
-        assert s2.dict(exclude_unset=True) == {
+        assert s2.model_dump(exclude_unset=True) == {
             "WEBSERVER_POSTGRES_NULLABLE_OPTIONAL": {
                 "POSTGRES_HOST": "pg2",
                 "POSTGRES_USER": "test2",
@@ -397,7 +397,7 @@ def test_parse_from_mixed_envs(
         )
 
         s3 = S3()
-        assert s3.dict(exclude_unset=True) == {
+        assert s3.model_dump(exclude_unset=True) == {
             "WEBSERVER_POSTGRES_DEFAULT_ENV": {
                 "POSTGRES_HOST": "pg2",
                 "POSTGRES_USER": "test2",
@@ -414,7 +414,7 @@ def test_parse_from_mixed_envs(
         )
 
         s4 = S4()
-        assert s4.dict(exclude_unset=True) == {
+        assert s4.model_dump(exclude_unset=True) == {
             "WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV": {
                 "POSTGRES_HOST": "pg2",
                 "POSTGRES_USER": "test2",
@@ -431,7 +431,7 @@ def test_parse_from_mixed_envs(
         )
 
         s5 = S5()
-        assert s5.dict(exclude_unset=True) == {
+        assert s5.model_dump(exclude_unset=True) == {
             "WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL": {
                 "POSTGRES_HOST": "pg2",
                 "POSTGRES_USER": "test2",

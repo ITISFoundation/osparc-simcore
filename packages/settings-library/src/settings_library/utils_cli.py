@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from collections.abc import Callable
@@ -6,12 +7,12 @@ from typing import Any
 
 import rich
 import typer
+from models_library.utils.serialization import model_dump_with_secrets
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings
 
 from ._constants import HEADER_STR
 from .base import BaseCustomSettings
-from .utils_encoders import create_json_encoder_wo_secrets
 
 
 def print_as_envfile(
@@ -25,8 +26,9 @@ def print_as_envfile(
     exclude_unset = pydantic_export_options.get("exclude_unset", False)
 
     for name, field in settings_obj.model_fields.items():
-        auto_default_from_env = field.json_schema_extra is not None and field.json_schema_extra.get(
-            "auto_default_from_env", False  # type: ignore[union-attr]
+        auto_default_from_env = (
+            field.json_schema_extra is not None
+            and field.json_schema_extra.get("auto_default_from_env", False)
         )
 
         value = getattr(settings_obj, name)
@@ -39,7 +41,11 @@ def print_as_envfile(
 
         if isinstance(value, BaseSettings):
             if compact:
-                value = f"'{value.model_dump_json(**pydantic_export_options)}'"  # flat
+                value = json.dumps(
+                    model_dump_with_secrets(
+                        value, show_secrets=show_secrets, **pydantic_export_options
+                    )
+                )  # flat
             else:
                 if verbose:
                     typer.echo(f"\n# --- {name} --- ")
@@ -61,9 +67,16 @@ def print_as_envfile(
         typer.echo(f"{name}={value}")
 
 
-def print_as_json(settings_obj, *, compact=False, **pydantic_export_options):
+def print_as_json(
+    settings_obj, *, compact=False, show_secrets, **pydantic_export_options
+):
     typer.echo(
-        settings_obj.model_dump_json(indent=None if compact else 2, **pydantic_export_options)
+        json.dumps(
+            model_dump_with_secrets(
+                settings_obj, show_secrets=show_secrets, **pydantic_export_options
+            ),
+            indent=None if compact else 2,
+        )
     )
 
 
@@ -127,14 +140,14 @@ def create_settings_command(
             raise
 
         pydantic_export_options: dict[str, Any] = {"exclude_unset": exclude_unset}
-        if show_secrets:
-            # NOTE: this option is for json-only
-            pydantic_export_options["encoder"] = create_json_encoder_wo_secrets(
-                settings_cls
-            )
 
         if as_json:
-            print_as_json(settings_obj, compact=compact, **pydantic_export_options)
+            print_as_json(
+                settings_obj,
+                compact=compact,
+                show_secrets=show_secrets,
+                **pydantic_export_options,
+            )
         else:
             print_as_envfile(
                 settings_obj,

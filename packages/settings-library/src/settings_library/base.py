@@ -1,8 +1,12 @@
 import logging
 from functools import cached_property
-from types import UnionType
-from typing import Any, Final, Literal, get_args, get_origin
+from typing import Any, Final, get_origin
 
+from models_library.utils.pydantic_fields_extension import (
+    get_type,
+    is_literal,
+    is_nullable,
+)
 from pydantic import ValidationInfo, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined, ValidationError
@@ -21,25 +25,6 @@ class DefaultFromEnvFactoryError(ValueError):
         self.errors = errors
 
 
-def _allows_none(info: FieldInfo) -> bool:
-    origin = get_origin(info.annotation)  # X | None or Optional[X] will return Union
-    if origin is UnionType:
-        return any(x in get_args(info.annotation) for x in (type(None), Any))
-    return False
-
-
-def _get_type(info: FieldInfo) -> Any:
-    field_type = info.annotation
-    if args := get_args(info.annotation):
-        field_type = next(a for a in args if a != type(None))
-    return field_type
-
-
-def _is_literal(info: FieldInfo) -> bool:
-    origin = get_origin(info.annotation)
-    return origin is Literal
-
-
 def _create_settings_from_env(field_name: str, info: FieldInfo):
     # NOTE: Cannot pass only field.type_ because @prepare_field (when this function is called)
     #  this value is still not resolved (field.type_ at that moment has a weak_ref).
@@ -47,12 +32,12 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
 
     def _default_factory():
         """Creates default from sub-settings or None (if nullable)"""
-        field_settings_cls = _get_type(info)
+        field_settings_cls = get_type(info)
         try:
             return field_settings_cls()
 
         except ValidationError as err:
-            if _allows_none(info):
+            if is_nullable(info):
                 # e.g. Optional[PostgresSettings] would warn if defaults to None
                 _logger.warning(
                     _DEFAULTS_TO_NONE_MSG,
@@ -80,9 +65,9 @@ class BaseCustomSettings(BaseSettings):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
         if (
             info.field_name
-            and _allows_none(cls.model_fields[info.field_name])
+            and is_nullable(cls.model_fields[info.field_name])
             and isinstance(v, str)
-            and v.lower() in ("null", "none")
+            and v.lower() in ("none",)
         ):
             return None
         return v
@@ -93,6 +78,7 @@ class BaseCustomSettings(BaseSettings):
         frozen=True,
         validate_default=True,
         ignored_types=(cached_property,),
+        env_parse_none_str="null",
     )
 
     @classmethod
@@ -106,13 +92,13 @@ class BaseCustomSettings(BaseSettings):
                     "auto_default_from_env", False
                 )
             )
-            field_type = _get_type(field)
+            field_type = get_type(field)
 
             # Avoids issubclass raising TypeError. SEE test_issubclass_type_error_with_pydantic_models
             is_not_composed = (
                 get_origin(field_type) is None
             )  # is not composed as dict[str, Any] or Generic[Base]
-            is_not_literal = not _is_literal(field)
+            is_not_literal = not is_literal(field)
 
             if (
                 is_not_literal
