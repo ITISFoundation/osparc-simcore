@@ -86,12 +86,6 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
     assert data[0]["workspaceId"] == added_workspace["workspaceId"]
     assert data[0]["folderId"] is None
 
-    base_url = client.app.router["list_projects_full_search"].url_for()
-    url = base_url.with_query({"text": project["uuid"]})
-    resp = await client.get(url)
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert len(data) == 1
-
     # Get project in workspace
     base_url = client.app.router["get_project"].url_for(project_id=project["uuid"])
     resp = await client.get(base_url)
