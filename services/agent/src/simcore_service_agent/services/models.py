@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from models_library.api_schemas_directorv2.services import (
     CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME,
 )
@@ -22,5 +24,5 @@ class DynamicServiceVolumeLabels(BaseModel):
 
 
 class VolumeDetails(BaseModel):
-    mountpoint: str = Field(alias="Mountpoint")
+    mountpoint: Path = Field(alias="Mountpoint")
     labels: DynamicServiceVolumeLabels = Field(alias="Labels")
