@@ -1,4 +1,6 @@
 import logging
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Final
 
 from aiodocker import DockerError
@@ -8,36 +10,14 @@ from fastapi import FastAPI
 from models_library.api_schemas_directorv2.services import (
     CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME,
 )
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
-from models_library.services_types import RunID
-from models_library.users import UserID
-from pydantic import BaseModel, Field
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from servicelib.logging_utils import log_catch, log_context
 from starlette import status
 
 from .backup_manager import backup_volume
+from .models import VolumeDetails
 
 _logger = logging.getLogger(__name__)
-
-
-class DynamicServiceVolumeLabel(BaseModel):
-    node_uuid: NodeID
-    run_id: RunID
-    source: str
-    study_id: ProjectID
-    swarm_stack_name: str
-    user_id: UserID
-
-    @property
-    def directory_name(self) -> str:
-        return self.source[CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME:][::-1].strip("_")
-
-
-class VolumeDetails(BaseModel):
-    mountpoint: str = Field(alias="Mountpoint")
-    labels: DynamicServiceVolumeLabel = Field(alias="Labels")
 
 
 def _reverse_string(to_reverse: str) -> str:
@@ -76,13 +56,30 @@ async def get_unused_dynamc_sidecar_volumes(docker: Docker) -> set[str]:
     return {v for v in unused_volumes if v.startswith(PREFIX_DYNAMIC_SIDECAR_VOLUMES)}
 
 
-async def _backup_volume(app: FastAPI, *, volume_name: str) -> None:
+async def get_volume_details(docker: Docker, *, volume_name: str) -> VolumeDetails:
+    volume_details = await DockerVolume(docker, volume_name).show()
+    return VolumeDetails.parse_obj(volume_details)
+
+
+@contextmanager
+def _log_volume_not_found(volume_name: str) -> Iterator[None]:
+    try:
+        yield
+    except DockerError as e:
+        if e.status == status.HTTP_404_NOT_FOUND:
+            _logger.info("Volume not found '%s'", volume_name)
+        else:
+            raise
+
+
+async def _backup_volume(app: FastAPI, docker: Docker, *, volume_name: str) -> None:
     """Backs up only volumes which require a backup"""
     if _does_volume_require_backup(volume_name):
         with log_context(
             _logger, logging.INFO, f"backup '{volume_name}'", log_duration=True
         ):
-            await backup_volume(app, volume_name)
+            volume_details = await get_volume_details(docker, volume_name=volume_name)
+            await backup_volume(app, volume_details, volume_name)
     else:
         _logger.debug("No backup is required for '%s'", volume_name)
 
@@ -93,19 +90,8 @@ async def remove_volume(
     """Removes a volume and backs data up if required"""
     with log_context(
         _logger, logging.DEBUG, f"removing '{volume_name}'", log_duration=True
-    ):
+    ), log_catch(_logger, reraise=False), _log_volume_not_found(volume_name):
         if requires_backup:
-            await _backup_volume(app, volume_name=volume_name)
-        with log_catch(_logger, reraise=False):
-            try:
-                await DockerVolume(docker, volume_name).delete()
-            except DockerError as e:
-                if e.status == status.HTTP_404_NOT_FOUND:
-                    _logger.info("Volume not found '%s'", volume_name)
-                else:
-                    raise
+            await _backup_volume(app, docker, volume_name=volume_name)
 
-
-async def get_volume_details(docker: Docker, *, volume_name: str) -> VolumeDetails:
-    volume_details = await DockerVolume(docker, volume_name).show()
-    return VolumeDetails.parse_obj(volume_details)
+        await DockerVolume(docker, volume_name).delete()
