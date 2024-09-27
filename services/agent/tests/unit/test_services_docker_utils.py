@@ -162,7 +162,7 @@ def create_dynamic_sidecar_volumes(
 @pytest.fixture
 def volume_manager_docker_client(initialized_app: FastAPI) -> Docker:
     volume_manager = get_volume_manager(initialized_app)
-    return volume_manager._docker  # noqa: SLF001
+    return volume_manager.docker
 
 
 @pytest.fixture

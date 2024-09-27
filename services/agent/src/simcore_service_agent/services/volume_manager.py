@@ -11,10 +11,10 @@ _logger = logging.getLogger(__name__)
 @dataclass
 class VolumeManager:
     app: FastAPI
-    _docker: Docker = field(default_factory=Docker)
+    docker: Docker = field(default_factory=Docker)
 
     async def close(self) -> None:
-        await self._docker.close()
+        await self.docker.close()
 
     async def __aexit__(
         self,
