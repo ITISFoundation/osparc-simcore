@@ -29,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 @pytest.fixture
 def mock_asyncpg_in_setup_db(mocker: MockFixture) -> MockType:
+
     original_setup = setup_db
 
     mock_setup_db = mocker.patch(

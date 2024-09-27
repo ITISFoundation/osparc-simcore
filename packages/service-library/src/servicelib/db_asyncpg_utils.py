@@ -26,13 +26,17 @@ async def create_async_engine_and_pg_database_ready(
     - waits until db data is migrated (i.e. ready to use)
     - returns engine
     """
+    server_settings = None
+    if settings.POSTGRES_CLIENT_NAME:
+        server_settings = {
+            "application_name": settings.POSTGRES_CLIENT_NAME,
+        }
+
     engine: AsyncEngine = create_async_engine(
         settings.dsn_with_async_sqlalchemy,
         pool_size=settings.POSTGRES_MINSIZE,
         max_overflow=settings.POSTGRES_MAXSIZE - settings.POSTGRES_MINSIZE,
-        connect_args={
-            "server_settings": {"application_name": settings.POSTGRES_CLIENT_NAME}
-        },
+        connect_args={"server_settings": server_settings},
         pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
         future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
     )
