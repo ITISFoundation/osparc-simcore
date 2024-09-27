@@ -13,7 +13,6 @@ would still have these invariants.
 """
 
 
-from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from pydantic import BaseSettings, validator
 from pydantic.fields import ModelField, Undefined
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -52,8 +51,8 @@ class Settings(BaseSettings):
     @classmethod
     def _parse_none(cls, v, values, field: ModelField):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
-        if field.allow_none:
-            return null_or_none_str_to_none_validator(v)
+        if field.allow_none and isinstance(v, str) and v.lower() in ("null", "none"):
+            return None
         return v
 
 
