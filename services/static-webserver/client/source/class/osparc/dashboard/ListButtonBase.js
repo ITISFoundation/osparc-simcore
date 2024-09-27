@@ -41,7 +41,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
   },
 
   statics: {
-    ITEM_HEIGHT: 40,
+    ITEM_HEIGHT: 35,
     SPACING: 5,
     POS: {
       THUMBNAIL: 0,
@@ -68,9 +68,9 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       let control;
       switch (id) {
         case "icon": {
-          control = new osparc.ui.basic.Thumbnail(null, 40, this.self().ITEM_HEIGHT-2*5).set({
-            minHeight: 40,
-            minWidth: 40
+          control = new osparc.ui.basic.Thumbnail(null, this.self().ITEM_HEIGHT, this.self().ITEM_HEIGHT-2*5).set({
+            minHeight: this.self().ITEM_HEIGHT,
+            minWidth: this.self().ITEM_HEIGHT
           });
           control.getChildControl("image").set({
             anonymous: true,
