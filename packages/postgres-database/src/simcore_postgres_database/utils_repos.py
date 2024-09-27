@@ -8,7 +8,7 @@ _logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def get_or_create_connection(
+async def pass_or_acquire_connection(
     engine: AsyncEngine, connection: AsyncConnection | None = None
 ) -> AsyncIterator[AsyncConnection]:
     # NOTE: When connection is passed, the engine is actually not needed
@@ -30,7 +30,7 @@ async def get_or_create_connection(
 async def transaction_context(
     engine: AsyncEngine, connection: AsyncConnection | None = None
 ):
-    async with get_or_create_connection(engine, connection) as conn:
+    async with pass_or_acquire_connection(engine, connection) as conn:
         if conn.in_transaction():
             async with conn.begin_nested():  # inner transaction (savepoint)
                 yield conn

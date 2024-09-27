@@ -10,7 +10,7 @@ import pytest
 import sqlalchemy as sa
 from simcore_postgres_database.models.tags import tags
 from simcore_postgres_database.utils_repos import (
-    get_or_create_connection,
+    pass_or_acquire_connection,
     transaction_context,
 )
 from sqlalchemy.exc import IntegrityError
@@ -100,7 +100,7 @@ class OneResourceRepoDemo:
         *,
         row_id: int,
     ) -> dict[str, Any] | None:
-        async with get_or_create_connection(self.engine, connection) as conn:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
             result = await conn.execute(
                 sa.select(self.table).where(self.table.c.id == row_id)
             )
@@ -114,7 +114,7 @@ class OneResourceRepoDemo:
         limit: int,
         offset: int = 0,
     ) -> _PageTuple:
-        async with get_or_create_connection(self.engine, connection) as conn:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
             # Compute total count
             total_count_query = sa.select(sa.func.count()).select_from(self.table)
             total_count_result = await conn.execute(total_count_query)
