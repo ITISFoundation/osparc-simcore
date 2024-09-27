@@ -230,13 +230,13 @@ class SocketIONodeProgressCompleteWaiter:
                             f"{json.dumps({k:round(v,1) for k,v in self._current_progress.items()})}",
                         )
 
-                return self.has_progress_on_all_expected_node_states() and all(
+                return self.received_required_node_progress_types() and all(
                     round(progress, 1) == 1.0
                     for progress in self._current_progress.values()
                 )
         return False
 
-    def has_progress_on_all_expected_node_states(self):
+    def received_required_node_progress_types(self):
         return all(
             progress_type in self._current_progress
             for progress_type in NodeProgressType.required_types_for_started_service()
@@ -338,6 +338,7 @@ def expected_service_running(
         service_running = ServiceRunning(iframe_locator=None)
 
         try:
+
             with websocket.expect_event("framereceived", waiter, timeout=timeout):
                 if press_start_button:
                     _trigger_service_start(page, node_id)
@@ -345,7 +346,7 @@ def expected_service_running(
                 yield service_running
 
         except PlaywrightTimeoutError:
-            if waiter.has_progress_on_all_expected_node_states():
+            if waiter.received_required_node_progress_types():
                 ctx.logger.warning(
                     "⚠️ Progress bar didn't receive 100 percent but all states are there: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
                     waiter.get_current_progress(),
