@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 
 
 @dataclass
-class VolumeManager:
+class VolumesManager:
     app: FastAPI
     book_keeping_interval: timedelta
     volume_cleanup_interval: timedelta
@@ -120,26 +120,26 @@ class VolumeManager:
                 await self._remove_volume_safe(volume_name=volume, requires_backup=True)
 
 
-def get_volume_manager(app: FastAPI) -> VolumeManager:
-    volume_manager: VolumeManager = app.state.volume_manager
-    return volume_manager
+def get_volumes_manager(app: FastAPI) -> VolumesManager:
+    volumes_manager: VolumesManager = app.state.volumes_manager
+    return volumes_manager
 
 
 def setup_volume_manager(app: FastAPI) -> None:
     async def _on_startup() -> None:
         settings: ApplicationSettings = app.state.settings
 
-        volume_manager = app.state.volume_manager = VolumeManager(
+        volumes_manager = app.state.volumes_manager = VolumesManager(
             app=app,
             book_keeping_interval=settings.AGENT_VOLUMES_CLENUP_BOOK_KEEPING_INTERVAL,
             volume_cleanup_interval=settings.AGENT_VOLUMES_CLEANUP_INTERVAL,
             remove_volumes_inactive_for=settings.AGENT_VOLUMES_CLENUP_REMOVE_VOLUMES_INACTIVE_FOR.total_seconds(),
         )
-        await volume_manager.setup()
+        await volumes_manager.setup()
 
     async def _on_shutdown() -> None:
-        volume_manager: VolumeManager = app.state.volume_manager
-        await volume_manager.shutdown()
+        volumes_manager: VolumesManager = app.state.volumes_manager
+        await volumes_manager.shutdown()
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)

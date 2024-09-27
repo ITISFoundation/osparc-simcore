@@ -19,7 +19,7 @@ from .._meta import (
     VERSION,
 )
 from ..services.rabbitmq import setup_rabbitmq
-from ..services.volume_manager import setup_volume_manager
+from ..services.volumes_manager import setup_volume_manager
 from .api.rest.routes import setup_rest_api
 from .api.rpc.routes import setup_rpc_api_routes
 from .settings import ApplicationSettings
