@@ -81,7 +81,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   statics: {
-    PAGINATED_STUDIES: 10,
+    PAGINATED_STUDIES: 5,
     MIN_GRID_CARDS_PER_ROW: 3,
     SIDE_SPACER_WIDTH: 200,
 
