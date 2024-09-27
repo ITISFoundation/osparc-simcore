@@ -14,10 +14,8 @@ _logger = logging.getLogger(__name__)
 
 
 # API
-
-# aiopg helpers
 get_database_engine = _aiopg.get_database_engine
-get_aiopg_engine_state = _aiopg.get_engine_state
+get_engine_state = _aiopg.get_engine_state
 is_service_responsive = _aiopg.is_service_responsive
 is_service_enabled = _aiopg.is_service_enabled
 
