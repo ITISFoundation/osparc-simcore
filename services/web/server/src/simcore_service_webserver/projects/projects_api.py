@@ -180,17 +180,25 @@ async def get_project_for_user(
     db = ProjectDBAPI.get_from_app_context(app)
 
     product_name = await db.get_project_product(ProjectID(project_uuid))
-    await check_user_project_permission(
+    user_project_access = await check_user_project_permission(
         app,
         project_id=ProjectID(project_uuid),
         user_id=user_id,
         product_name=product_name,
         permission=cast(PermissionStr, check_permissions),
     )
+    workspace_is_private = user_project_access.workspace_id is None
 
     project, project_type = await db.get_project(
         project_uuid,
     )
+
+    # add folder id to the project base on the user
+    user_specific_project_data_db = await db.get_user_specific_project_data_db(
+        project_uuid=ProjectID(project_uuid),
+        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+    )
+    project["folderId"] = user_specific_project_data_db.folder_id
 
     # adds state if it is not a template
     if include_state:

@@ -444,7 +444,7 @@ async def replace_project(request: web.Request):
                 reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
             )
 
-        await check_user_project_permission(
+        user_project_permission = await check_user_project_permission(
             request.app,
             project_id=path_params.project_id,
             user_id=req_ctx.user_id,
@@ -483,6 +483,16 @@ async def replace_project(request: web.Request):
             is_template=False,
             app=request.app,
         )
+        # Appends folder ID
+        user_specific_project_data_db = await db.get_user_specific_project_data_db(
+            project_uuid=path_params.project_id,
+            private_workspace_user_id_or_none=(
+                req_ctx.user_id
+                if user_project_permission.workspace_id is None
+                else None
+            ),
+        )
+        data["folderId"] = user_specific_project_data_db.folder_id
 
         return web.json_response({"data": data}, dumps=json_dumps)
 
