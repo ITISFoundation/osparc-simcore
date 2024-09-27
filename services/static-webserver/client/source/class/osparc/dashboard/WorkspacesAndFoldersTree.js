@@ -156,8 +156,10 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
         icon: "shared",
         workspaceId: -1,
         folderId: null,
-        loaded: true,
-        children: [],
+        loaded: false,
+        children: [{
+          label: "Loading...",
+        }],
       }
       const sharedWorkspaceModel = qx.data.marshal.Json.createModel(sharedWorkspaceData, true);
       this.__models.push(sharedWorkspaceModel);
@@ -165,6 +167,8 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
 
       osparc.store.Workspaces.getInstance().fetchWorkspaces()
         .then(workspaces => {
+          sharedWorkspaceModel.setLoaded(true);
+          sharedWorkspaceModel.getChildren().removeAll();
           workspaces.forEach(workspace => {
             this.__addWorkspace(workspace);
           });
