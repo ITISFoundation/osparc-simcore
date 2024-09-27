@@ -288,6 +288,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _viewByChanged: function(viewMode) {
       this._resourcesContainer.setMode(viewMode);
       this._reloadCards();
+
+      if (this._resourceType === "study") {
+        osparc.utils.Utils.localCache.setLocalStorageItem("studiesViewMode", viewMode);
+      }
     },
 
     _addGroupByButton: function() {
