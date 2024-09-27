@@ -11,6 +11,7 @@ from uuid import uuid4
 import aiodocker
 import pytest
 from aiodocker.containers import DockerContainer
+from aiodocker.docker import Docker
 from aiodocker.volumes import DockerVolume
 from fastapi import FastAPI
 from models_library.projects import ProjectID
@@ -19,11 +20,14 @@ from models_library.services_types import RunID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
-from simcore_service_agent.services.service_volume_manager import (
+from simcore_service_agent.services.docker_utils import (
     _VOLUMES_NOT_TO_BACKUP,
-    VolumeManager,
     _does_volume_require_backup,
     _reverse_string,
+    get_unused_dynamc_sidecar_volumes,
+    remove_volume,
+)
+from simcore_service_agent.services.service_volume_manager import (
     get_service_volume_manager,
 )
 
@@ -158,21 +162,23 @@ def create_dynamic_sidecar_volumes(
 
 
 @pytest.fixture
-def volume_manager(initialized_app: FastAPI) -> VolumeManager:
-    return get_service_volume_manager(initialized_app)
+def volume_manager_docker_client(initialized_app: FastAPI) -> Docker:
+    volume_manager = get_service_volume_manager(initialized_app)
+    return volume_manager._docker  # noqa: SLF001
 
 
 @pytest.fixture
 def mock_backup_volume(mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch(
-        "simcore_service_agent.services.service_volume_manager.backup_volume"
-    )
+    return mocker.patch("simcore_service_agent.services.docker_utils.backup_volume")
 
 
-@pytest.mark.parametrize("volume_count", [0, 2])
-async def test_volume_manager_workflow_only_unmounted_volumes(
+@pytest.mark.parametrize("volume_count", [2])
+@pytest.mark.parametrize("requires_backup", [True, False])
+async def test_doclker_utils_workflow(
     volume_count: int,
-    volume_manager: VolumeManager,
+    requires_backup: bool,
+    initialized_app: FastAPI,
+    volume_manager_docker_client: Docker,
     create_dynamic_sidecar_volumes: Callable[[NodeID, bool], Awaitable[set[str]]],
     mock_backup_volume: AsyncMock,
 ):
@@ -183,7 +189,7 @@ async def test_volume_manager_workflow_only_unmounted_volumes(
         )
         created_volumes.update(created_volume)
 
-    volumes = await volume_manager._get_unused_dynamc_sidecar_volumes()  # noqa: SLF001
+    volumes = await get_unused_dynamc_sidecar_volumes(volume_manager_docker_client)
     # NOTE: if bleow check fails it's because there are exiting dy_sidecar volumes on the host
     # dirty docker enviornment
     assert volumes == created_volumes
@@ -200,7 +206,12 @@ async def test_volume_manager_workflow_only_unmounted_volumes(
             count_volumes_to_skip += 1
 
         assert volume.startswith(PREFIX_DYNAMIC_SIDECAR_VOLUMES)
-        await volume_manager._remove_volume(volume)  # noqa: SLF001
+        await remove_volume(
+            initialized_app,
+            volume_manager_docker_client,
+            volume_name=volume,
+            requires_backup=requires_backup,
+        )
 
     assert (
         count_vloumes_to_backup
@@ -208,7 +219,9 @@ async def test_volume_manager_workflow_only_unmounted_volumes(
     )
     assert count_volumes_to_skip == len(_VOLUMES_NOT_TO_BACKUP) * volume_count
 
-    assert mock_backup_volume.call_count == count_vloumes_to_backup
+    assert mock_backup_volume.call_count == (
+        count_vloumes_to_backup if requires_backup else 0
+    )
 
-    volumes = await volume_manager._get_unused_dynamc_sidecar_volumes()  # noqa: SLF001
+    volumes = await get_unused_dynamc_sidecar_volumes(volume_manager_docker_client)
     assert len(volumes) == 0
