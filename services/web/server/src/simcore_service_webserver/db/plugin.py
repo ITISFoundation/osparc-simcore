@@ -8,9 +8,18 @@ from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import _aiopg, _asyncpg
+from . import _aiopg
 
 _logger = logging.getLogger(__name__)
+
+
+# API
+
+# aiopg helpers
+get_database_engine = _aiopg.get_database_engine
+get_aiopg_engine_state = _aiopg.get_engine_state
+is_service_responsive = _aiopg.is_service_responsive
+is_service_enabled = _aiopg.is_service_enabled
 
 
 @app_module_setup(
@@ -23,19 +32,7 @@ def setup_db(app: web.Application):
 
     # ensures keys exist
     app[APP_AIOPG_ENGINE_KEY] = None
+    assert get_database_engine(app) is None  # nosec
 
     # init engines
     app.cleanup_ctx.append(_aiopg.postgres_cleanup_ctx)
-    app.cleanup_ctx.append(_asyncpg.postgres_cleanup_ctx)
-
-
-# API
-
-# aiopg helpers
-get_database_engine = _aiopg.get_database_engine
-get_aiopg_engine_state = _aiopg.get_engine_state
-is_service_responsive = _aiopg.is_service_responsive
-is_service_enabled = _aiopg.is_service_enabled
-
-# asyncpg helpers
-get_asyncpg_engine = _asyncpg.get_async_engine
