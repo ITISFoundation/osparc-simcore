@@ -43,7 +43,7 @@ def print_as_envfile(
             if compact:
                 value = json.dumps(
                     model_dump_with_secrets(
-                        value, show_secret=show_secrets, **pydantic_export_options
+                        value, show_secrets=show_secrets, **pydantic_export_options
                     )
                 )  # flat
             else:
