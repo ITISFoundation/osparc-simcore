@@ -7,36 +7,12 @@ from typing import Any
 
 import rich
 import typer
-from pydantic import SecretStr, ValidationError
+from models_library.utils.serialization import model_dump_with_secrets
+from pydantic import ValidationError
 from pydantic_settings import BaseSettings
 
 from ._constants import HEADER_STR
-from .base import BaseCustomSettings, _get_type
-
-
-def model_dump_with_secrets(
-    settings_obj: BaseSettings, show_secret: bool, **pydantic_export_options
-) -> dict[str, Any]:
-    data = settings_obj.model_dump(**pydantic_export_options)
-
-    for field_name in settings_obj.model_fields:
-        field_data = data[field_name]
-
-        if isinstance(field_data, SecretStr):
-            if show_secret:
-                data[field_name] = field_data.get_secret_value()  # Expose the raw value
-            else:
-                data[field_name] = str(field_data)
-        elif isinstance(field_data, dict):
-            field_type = _get_type(settings_obj.model_fields[field_name])
-            if issubclass(field_type, BaseSettings):
-                data[field_name] = model_dump_with_secrets(
-                    field_type.model_validate(field_data),
-                    show_secret,
-                    **pydantic_export_options,
-                )
-
-    return data
+from .base import BaseCustomSettings
 
 
 def print_as_envfile(
