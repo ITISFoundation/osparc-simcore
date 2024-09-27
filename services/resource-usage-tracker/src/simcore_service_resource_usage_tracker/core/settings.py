@@ -2,7 +2,7 @@ import datetime
 from functools import cached_property
 
 from models_library.basic_types import BootModeEnum
-from pydantic import Field, PositiveInt, validator
+from pydantic import AliasChoices, field_validator, Field, PositiveInt
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.postgres import PostgresSettings
@@ -44,18 +44,24 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     RESOURCE_USAGE_TRACKER_DEBUG: bool = Field(
         default=False,
         description="Debug mode",
-        env=["RESOURCE_USAGE_TRACKER_DEBUG", "DEBUG"],
+        validation_alias=AliasChoices(
+            "RESOURCE_USAGE_TRACKER_DEBUG",
+            "DEBUG",
+        ),
     )
     RESOURCE_USAGE_TRACKER_LOGLEVEL: LogLevel = Field(
         default=LogLevel.INFO,
-        env=["RESOURCE_USAGE_TRACKER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        validation_alias=AliasChoices(
+            "RESOURCE_USAGE_TRACKER_LOGLEVEL", 
+            "LOG_LEVEL", 
+            "LOGLEVEL"),
     )
     RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=AliasChoices(
             "RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
@@ -63,7 +69,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
         return self.RESOURCE_USAGE_TRACKER_LOGLEVEL
 
-    @validator("RESOURCE_USAGE_TRACKER_LOGLEVEL")
+    @field_validator("RESOURCE_USAGE_TRACKER_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
@@ -77,16 +83,18 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
     """
 
     RESOURCE_USAGE_TRACKER_PROMETHEUS: PrometheusSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env":True}
     )
 
     RESOURCE_USAGE_TRACKER_POSTGRES: PostgresSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env":True},
     )
 
-    RESOURCE_USAGE_TRACKER_REDIS: RedisSettings = Field(auto_default_from_env=True)
+    RESOURCE_USAGE_TRACKER_REDIS: RedisSettings = Field(
+        json_schema_extra={"auto_default_from_env":True},
+    )
     RESOURCE_USAGE_TRACKER_RABBITMQ: RabbitSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env":True},
     )
 
 
@@ -109,4 +117,6 @@ class ApplicationSettings(MinimalApplicationSettings):
         description="Heartbeat couter limit when RUT considers service as unhealthy.",
     )
     RESOURCE_USAGE_TRACKER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
-    RESOURCE_USAGE_TRACKER_S3: S3Settings | None = Field(auto_default_from_env=True)
+    RESOURCE_USAGE_TRACKER_S3: S3Settings | None = Field(
+        json_schema_extra={"auto_default_from_env":True},
+    )
