@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-import asyncio
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from contextlib import suppress
 from pathlib import Path
@@ -83,18 +82,13 @@ async def create_dynamic_sidecar_volume(
     swarm_stack_name: str,
     user_id: UserID,
     volumes_path: Path,
-) -> AsyncIterable[Callable[[NodeID, bool, str, Path | None], Awaitable[str]]]:
+) -> AsyncIterable[Callable[[NodeID, bool, str], Awaitable[str]]]:
     volumes_to_cleanup: list[DockerVolume] = []
     containers_to_cleanup: list[DockerContainer] = []
 
     async with aiodocker.Docker() as docker_client:
 
-        async def _(
-            node_id: NodeID,
-            in_use: bool,
-            volume_name: str,
-            path_to_copy: Path | None = None,
-        ) -> str:
+        async def _(node_id: NodeID, in_use: bool, volume_name: str) -> str:
             source = get_source(run_id, node_id, volumes_path / volume_name)
             volume = await docker_client.volumes.create(
                 {
@@ -123,22 +117,6 @@ async def create_dynamic_sidecar_volume(
                 await container.start()
                 containers_to_cleanup.append(container)
 
-                # copy files form fodler if it exists
-                if path_to_copy:
-                    await asyncio.gather(
-                        *(
-                            container.exec(
-                                [
-                                    "sh",
-                                    "-c",
-                                    f"echo '{file_path.read_text()}' > "
-                                    "f/{volumes_path}/{file_path.name}",
-                                ]
-                            )
-                            for file_path in path_to_copy.rglob("*")
-                        )
-                    )
-
             return source
 
         yield _
@@ -153,18 +131,12 @@ async def create_dynamic_sidecar_volume(
 
 @pytest.fixture
 def create_dynamic_sidecar_volumes(
-    create_dynamic_sidecar_volume: Callable[
-        [NodeID, bool, str, Path | None], Awaitable[str]
-    ]
+    create_dynamic_sidecar_volume: Callable[[NodeID, bool, str], Awaitable[str]]
 ) -> Callable[[NodeID, bool], Awaitable[set[str]]]:
-    async def _(
-        node_id: NodeID, in_use: bool, path_to_copy: Path | None = None
-    ) -> set[str]:
+    async def _(node_id: NodeID, in_use: bool) -> set[str]:
         volume_names: set[str] = set()
         for volume_name in VOLUMES_TO_CREATE:
-            name = await create_dynamic_sidecar_volume(
-                node_id, in_use, volume_name, path_to_copy
-            )
+            name = await create_dynamic_sidecar_volume(node_id, in_use, volume_name)
             volume_names.add(name)
 
         return volume_names

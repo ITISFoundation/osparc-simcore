@@ -68,15 +68,13 @@ async def test_doclker_utils_workflow(
     requires_backup: bool,
     initialized_app: FastAPI,
     volumes_manager_docker_client: Docker,
-    create_dynamic_sidecar_volumes: Callable[
-        [NodeID, bool, Path | None], Awaitable[set[str]]
-    ],
+    create_dynamic_sidecar_volumes: Callable[[NodeID, bool], Awaitable[set[str]]],
     mock_backup_volume: AsyncMock,
 ):
     created_volumes: set[str] = set()
     for _ in range(volume_count):
         created_volume = await create_dynamic_sidecar_volumes(
-            uuid4(), False, None  # noqa: FBT003
+            uuid4(), False  # noqa: FBT003
         )
         created_volumes.update(created_volume)
 
@@ -135,14 +133,10 @@ async def test_remove_misisng_volume_does_not_raise_error(
 async def test_get_volume_details(
     volumes_path: Path,
     volumes_manager_docker_client: Docker,
-    create_dynamic_sidecar_volumes: Callable[
-        [NodeID, bool, Path | None], Awaitable[set[str]]
-    ],
+    create_dynamic_sidecar_volumes: Callable[[NodeID, bool], Awaitable[set[str]]],
 ):
 
-    volume_names = await create_dynamic_sidecar_volumes(
-        uuid4(), False, None  # noqa: FBT003
-    )
+    volume_names = await create_dynamic_sidecar_volumes(uuid4(), False)  # noqa: FBT003
     for volume_name in volume_names:
         volume_details = await get_volume_details(
             volumes_manager_docker_client, volume_name=volume_name
