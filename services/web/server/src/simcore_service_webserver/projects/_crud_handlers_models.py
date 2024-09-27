@@ -150,3 +150,19 @@ class ProjectListWithJsonStrParams(ProjectListParams):
 
 class ProjectActiveParams(BaseModel):
     client_session_id: str
+
+
+class ProjectListFullSearchParams(PageQueryParameters):
+    text: str | None = Field(
+        default=None,
+        description="Multi column full text search, across all folders and workspaces",
+        max_length=100,
+        example="My Project",
+    )
+
+    @validator("text", pre=True)
+    @classmethod
+    def text_check_empty_string(cls, v):
+        if not v:
+            return None
+        return v

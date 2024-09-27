@@ -3291,6 +3291,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
+  /v0/projects:search:
+    get:
+      tags:
+      - projects
+      summary: List Projects Full Search
+      operationId: list_projects_full_search
+      parameters:
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      - required: false
+        schema:
+          title: Text
+          maxLength: 100
+          type: string
+        name: text
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ProjectListItem_'
   /v0/projects/{project_id}/inactivity:
     get:
       tags:
@@ -9148,18 +9187,6 @@ components:
           title: Userid
           type: string
           description: the user that started the service
-      example:
-        published_port: 30000
-        entrypoint: /the/entry/point/is/here
-        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        service_key: simcore/services/comp/itis/sleeper
-        service_version: 1.2.3
-        service_host: jupyter_E1O2E-LAH
-        service_port: 8081
-        service_basepath: /x/E1O2E-LAH
-        service_state: pending
-        service_message: no suitable node (insufficient resources on 1 node)
-        user_id: 123
     NodeGetIdle:
       title: NodeGetIdle
       required:
@@ -11601,13 +11628,14 @@ components:
     ServiceState:
       title: ServiceState
       enum:
+      - failed
       - pending
       - pulling
       - starting
       - running
-      - complete
-      - failed
       - stopping
+      - complete
+      - idle
       description: An enumeration.
     ServiceType:
       title: ServiceType
