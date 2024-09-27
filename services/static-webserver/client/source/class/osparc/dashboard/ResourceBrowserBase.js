@@ -251,6 +251,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this.__viewModeLayout = new qx.ui.toolbar.Part();
 
       const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ResourceContainerManager();
+      if (this._resourceType === "study") {
+        const viewMode = osparc.utils.Utils.localCache.getLocalStorageItem("studiesViewMode");
+        if (viewMode) {
+          this._resourcesContainer.setMode(viewMode);
+        }
+      }
       resourcesContainer.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourcesContainer.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
       resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
