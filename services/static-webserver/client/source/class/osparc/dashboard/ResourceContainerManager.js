@@ -224,7 +224,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         position: "bottom-right"
       });
       card.setMenu(menu);
-      card.subscribeToFilterGroup("searchBarFilter");
+      if (resourceData.type !== "study") {
+        // the backend will do the study:search
+        card.subscribeToFilterGroup("searchBarFilter");
+      }
 
       [
         "updateStudy",
@@ -345,7 +348,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __createWorkspaceCard: function(workspace) {
       const card = new osparc.dashboard.WorkspaceButtonItem(workspace);
-      card.subscribeToFilterGroup("searchBarFilter");
       [
         "workspaceSelected",
         "workspaceUpdated",
@@ -381,7 +383,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __createFolderCard: function(folder) {
       const card = new osparc.dashboard.FolderButtonItem(folder);
-      card.subscribeToFilterGroup("searchBarFilter");
       [
         "folderSelected",
         "folderUpdated",
