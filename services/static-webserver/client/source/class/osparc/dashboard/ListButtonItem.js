@@ -49,15 +49,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.LOCK_STATUS
           });
           break;
-        case "permission-icon":
-          control = new qx.ui.basic.Image(osparc.dashboard.CardBase.PERM_READ).set({
-            alignY: "middle",
-          });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.PERMISSION
-          });
-          break;
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
             alignY: "middle"
@@ -100,14 +91,17 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.TSR
           });
           break;
+        case "permission-icon":
+          control = new qx.ui.basic.Image(osparc.dashboard.CardBase.PERM_READ).set({
+            alignY: "middle",
+          });
+          this.getChildControl("icons-layout").add(control);
+          break;
         case "workbench-mode":
           control = new qx.ui.basic.Image().set({
             alignY: "middle"
           });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.UI_MODE
-          });
+          this.getChildControl("icons-layout").add(control);
           break;
         case "empty-workbench":
           control = this._getEmptyWorkbenchIcon();
@@ -115,10 +109,16 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             alignY: "middle",
             alignX: "center"
           });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.UPDATES
+          this.getChildControl("icons-layout").add(control);
+          break;
+        case "update-study":
+          control = new qx.ui.basic.Image().set({
+            alignY: "middle",
+            source: "@MaterialIcons/update/18",
+            visibility: "excluded"
           });
+          osparc.utils.Utils.setIdToWidget(control, "updateStudyBtn");
+          this.getChildControl("icons-layout").add(control);
           break;
         case "hits-service":
           control = new qx.ui.basic.Label().set({
@@ -128,18 +128,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.HITS
-          });
-          break;
-        case "update-study":
-          control = new qx.ui.basic.Image().set({
-            alignY: "middle",
-            source: "@MaterialIcons/update/18",
-            visibility: "excluded"
-          });
-          osparc.utils.Utils.setIdToWidget(control, "updateStudyBtn");
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.UPDATES
           });
           break;
         case "menu-selection-stack":

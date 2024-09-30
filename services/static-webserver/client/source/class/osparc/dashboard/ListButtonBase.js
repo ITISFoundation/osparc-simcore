@@ -50,16 +50,13 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       SPACER: 3,
       PROGRESS: 4,
       TAGS: 5,
-      UPDATES: 6,
-      UI_MODE: 7,
-      STATUS: 8,
-      PERMISSION: 9,
-      TSR: 10,
-      OWNER: 11,
-      SHARED: 12,
-      LAST_CHANGE: 13,
-      HITS: 14,
-      OPTIONS: 15
+      ICONS_LAYOUT: 6,
+      TSR: 7,
+      OWNER: 8,
+      SHARED: 9,
+      LAST_CHANGE: 10,
+      HITS: 11,
+      OPTIONS: 12
     }
   },
 
@@ -114,6 +111,15 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             column: osparc.dashboard.ListButtonBase.POS.OWNER
           });
           break;
+        case "icons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignY: "middle"
+          }))
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.ICONS_LAYOUT
+          });
+          break;
         case "project-status":
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
@@ -121,10 +127,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             height: 12,
             width: 12
           });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.STATUS
-          });
+          this.getChildControl("icons-layout").add(control);
           break;
       }
       return control || this.base(arguments, id);
