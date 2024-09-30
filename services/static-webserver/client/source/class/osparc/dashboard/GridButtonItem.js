@@ -224,7 +224,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       }
     },
 
-    createOwner: function(label) {
+    __createOwner: function(label) {
       if (label === osparc.auth.Data.getInstance().getEmail()) {
         const resourceAlias = osparc.utils.Utils.resourceTypeToAlias(this.getResourceType());
         return qx.locale.Manager.tr(`My ${resourceAlias}`);
@@ -235,7 +235,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     // overridden
     _applyOwner: function(value, old) {
       const label = this.getChildControl("subtitle-text");
-      const user = this.createOwner(value);
+      const user = this.__createOwner(value);
       label.setValue(user);
       label.setVisibility(value ? "visible" : "excluded");
     },
