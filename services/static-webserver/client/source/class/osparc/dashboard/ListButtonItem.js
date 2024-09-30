@@ -94,6 +94,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "tsr-rating":
           control = osparc.dashboard.CardBase.createTSRLayout();
+          this.__makeItemResponsive(control);
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.TSR
@@ -223,7 +224,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       const label = this.getChildControl("owner");
       const user = this.createOwner(value);
       label.setValue(user);
-      label.setVisibility(value ? "visible" : "excluded");
+      this.__makeItemResponsive(label);
       return;
     },
 
@@ -258,6 +259,18 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           tagsContainer.add(tagUI);
         });
       }
+    },
+
+    __makeItemResponsive: function(item) {
+      [
+        "appear",
+        "resize",
+      ].forEach(ev => {
+        this.addListener(ev, () => {
+          const bounds = this.getBounds() || this.getSizeHint();
+          item.setVisibility(bounds.width > 700 ? "visible" : "excluded");
+        });
+      });
     },
 
     // overridden
