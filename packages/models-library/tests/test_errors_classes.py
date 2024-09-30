@@ -155,7 +155,7 @@ def test_exception_context():
         msg_template = "{value} and {missing}"
 
     exc = MyError(value=42, missing="foo", extra="bar")
-    assert exc.ctx() == {"value": 42, "missing": "foo", "extra": "bar"}
+    assert exc.error_context() == {"value": 42, "missing": "foo", "extra": "bar"}
 
     exc = MyError(value=42)
-    assert exc.ctx() == {"value": 42}
+    assert exc.error_context() == {"value": 42}
