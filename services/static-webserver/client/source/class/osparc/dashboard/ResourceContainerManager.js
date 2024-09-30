@@ -130,10 +130,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         if (this.getGroupBy()) {
           // it will always go to the no-group group
           const noGroupContainer = this.__getGroupContainer("no-group");
-          noGroupContainer.add(card);
+          this.__addCardToContainer(card, noGroupContainer);
           this.self().sortListByPriority(noGroupContainer.getContentContainer());
         } else {
-          this.__nonGroupedContainer.add(card);
+          this.__addCardToContainer(card, this.__nonGroupedContainer);
           this.self().sortListByPriority(this.__nonGroupedContainer);
         }
       } else {
