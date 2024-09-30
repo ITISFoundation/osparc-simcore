@@ -153,10 +153,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __reloadFilteredResources: function(text) {
-      this.__reloadFilteredStudies(text);
-    },
-
     __reloadWorkspaces: function() {
       this.__setWorkspacesToList([]);
       osparc.store.Workspaces.getInstance().fetchWorkspaces()
@@ -169,7 +165,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         const folderId = this.getCurrentFolderId();
         const workspaceId = this.getCurrentWorkspaceId();
-        if (workspaceId === -1) {
+        if (workspaceId === -1 || workspaceId === -2) {
           return;
         }
         this.__setFoldersToList([]);
@@ -266,7 +262,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __reloadFilteredStudies: function(text) {
+    __reloadStudiesFiltered: function(text) {
       if (this._loadingResourcesBtn.isFetching()) {
         return;
       }
@@ -872,7 +868,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._createSearchBar();
       this._searchBarFilter.addListener("filterChanged", e => {
         const filterData = e.getData();
-        this.__filterChanged(filterData);
+        if (filterData.text) {
+          this._changeContext(-2, null);
+          this.__reloadStudiesFiltered(filterData.text);
+        } else {
+          this.__reloadFolders();
+          this.__reloadStudies();
+        }
       });
 
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
@@ -970,15 +972,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__reloadSortedByStudies();
       }, this);
       this._toolbar.add(sortByButton);
-    },
-
-    __filterChanged: function(filterData) {
-      if (filterData.text) {
-        this.__reloadFilteredResources(filterData.text);
-      } else {
-        this.__reloadFolders();
-        this.__reloadStudies();
-      }
     },
 
     __createLoadMoreButton: function() {
