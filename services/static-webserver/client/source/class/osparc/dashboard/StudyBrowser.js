@@ -658,6 +658,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       if (params.url.text) {
+        delete params.url.orderBy;
         return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
       } else if (params.url.orderBy) {
         return osparc.data.Resources.fetch("studies", "getPageSortBy", params, undefined, options);
@@ -672,8 +673,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addNewStudyButtons: function() {
-      if (this.getCurrentWorkspaceId()) {
-        const currentWorkspace = osparc.store.Workspaces.getInstance().getWorkspace(this.getCurrentWorkspaceId());
+      const currentWorkspaceId = this.getCurrentWorkspaceId();
+      if (currentWorkspaceId) {
+        if (currentWorkspaceId === -2) {
+          return;
+        }
+        const currentWorkspace = osparc.store.Workspaces.getInstance().getWorkspace(currentWorkspaceId);
         if (currentWorkspace && !currentWorkspace.getMyAccessRights()["write"]) {
           // If user can't write in workspace, do not show plus buttons
           return;
@@ -790,15 +795,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // LAYOUT //
     _createLayout: function() {
       this._createSearchBar();
-      this._searchBarFilter.addListener("filterChanged", e => {
-        const filterData = e.getData();
-        if (filterData.text) {
-          this._changeContext(-2, null);
-        } else {
-          this.__reloadFolders();
-          this.__reloadStudies();
-        }
-      });
 
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         const workspaceHeader = new osparc.dashboard.WorkspaceHeader();
@@ -1023,6 +1019,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }))
       });
       this.bind("multiSelection", selectButton, "value");
+      this.bind("currentWorkspaceId", selectButton, "visibility", {
+        converter: currentWorkspaceId => [-2, -1].includes(currentWorkspaceId) ? "excluded" : "visible"
+      });
       return selectButton;
     },
 
