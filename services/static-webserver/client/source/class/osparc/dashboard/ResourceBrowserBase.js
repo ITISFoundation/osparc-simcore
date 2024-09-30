@@ -47,7 +47,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     });
     mainLayoutWithSideSpacers.add(this.__leftFilters);
 
-    this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
     mainLayoutWithSideSpacers.add(this.__centerLayout);
 
     const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
