@@ -43,6 +43,9 @@ from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.wallets import wallets
+from simcore_postgres_database.models.workspaces_access_rights import (
+    workspaces_access_rights,
+)
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
@@ -325,6 +328,27 @@ class ProjectDBAPI(BaseProjectDB):
                 .on_conflict_do_nothing()
             )
 
+    access_rights_subquery = (
+        sa.select(
+            project_to_groups.c.project_uuid,
+            sa.func.jsonb_object_agg(
+                project_to_groups.c.gid,
+                sa.func.jsonb_build_object(
+                    "read",
+                    project_to_groups.c.read,
+                    "write",
+                    project_to_groups.c.write,
+                    "delete",
+                    project_to_groups.c.delete,
+                ),
+            )
+            .filter(
+                project_to_groups.c.read  # Filters out entries where "read" is False
+            )
+            .label("access_rights"),
+        ).group_by(project_to_groups.c.project_uuid)
+    ).subquery("access_rights_subquery")
+
     async def list_projects(  # pylint: disable=too-many-arguments
         self,
         *,
@@ -357,30 +381,9 @@ class ProjectDBAPI(BaseProjectDB):
 
         async with self.engine.acquire() as conn:
 
-            access_rights_subquery = (
-                sa.select(
-                    project_to_groups.c.project_uuid,
-                    sa.func.jsonb_object_agg(
-                        project_to_groups.c.gid,
-                        sa.func.jsonb_build_object(
-                            "read",
-                            project_to_groups.c.read,
-                            "write",
-                            project_to_groups.c.write,
-                            "delete",
-                            project_to_groups.c.delete,
-                        ),
-                    )
-                    .filter(
-                        project_to_groups.c.read  # Filters out entries where "read" is False
-                    )
-                    .label("access_rights"),
-                ).group_by(project_to_groups.c.project_uuid)
-            ).subquery("access_rights_subquery")
-
             _join_query = (
                 projects.join(projects_to_products, isouter=True)
-                .join(access_rights_subquery, isouter=True)
+                .join(self.access_rights_subquery, isouter=True)
                 .join(
                     projects_to_folders,
                     (
@@ -401,7 +404,7 @@ class ProjectDBAPI(BaseProjectDB):
                         for col in projects.columns
                         if col.name not in ["access_rights"]
                     ],
-                    access_rights_subquery.c.access_rights,
+                    self.access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -485,6 +488,149 @@ class ProjectDBAPI(BaseProjectDB):
                 prj_types,
                 total_number_of_projects,
             )
+
+    async def list_projects_full_search(
+        self,
+        *,
+        user_id: PositiveInt,
+        product_name: ProductName,
+        text: str | None = None,
+        offset: int | None = 0,
+        limit: int | None = None,
+    ) -> tuple[int, list[ProjectDict]]:
+        async with self.engine.acquire() as conn:
+            user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
+
+            workspace_access_rights_subquery = (
+                sa.select(
+                    workspaces_access_rights.c.workspace_id,
+                    sa.func.jsonb_object_agg(
+                        workspaces_access_rights.c.gid,
+                        sa.func.jsonb_build_object(
+                            "read",
+                            workspaces_access_rights.c.read,
+                            "write",
+                            workspaces_access_rights.c.write,
+                            "delete",
+                            workspaces_access_rights.c.delete,
+                        ),
+                    )
+                    .filter(workspaces_access_rights.c.read)
+                    .label("access_rights"),
+                ).group_by(workspaces_access_rights.c.workspace_id)
+            ).subquery("workspace_access_rights_subquery")
+
+            private_workspace_query = (
+                sa.select(
+                    *[
+                        col
+                        for col in projects.columns
+                        if col.name not in ["access_rights"]
+                    ],
+                    self.access_rights_subquery.c.access_rights,
+                    projects_to_products.c.product_name,
+                    projects_to_folders.c.folder_id,
+                )
+                .select_from(
+                    projects.join(self.access_rights_subquery, isouter=True)
+                    .join(projects_to_products)
+                    .join(
+                        projects_to_folders,
+                        (
+                            (projects_to_folders.c.project_uuid == projects.c.uuid)
+                            & (projects_to_folders.c.user_id == user_id)
+                        ),
+                        isouter=True,
+                    )
+                )
+                .where(
+                    (
+                        (projects.c.prj_owner == user_id)
+                        | sa.text(
+                            f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
+                        )
+                    )
+                    & (projects.c.workspace_id.is_(None))
+                    & (projects_to_products.c.product_name == product_name)
+                    & (projects.c.hidden.is_(False))
+                    & (projects.c.type == ProjectType.STANDARD)
+                    & (
+                        (projects.c.name.ilike(f"%{text}%"))
+                        | (projects.c.description.ilike(f"%{text}%"))
+                        | (projects.c.uuid.ilike(f"%{text}%"))
+                    )
+                )
+            )
+
+            shared_workspace_query = (
+                sa.select(
+                    *[
+                        col
+                        for col in projects.columns
+                        if col.name not in ["access_rights"]
+                    ],
+                    workspace_access_rights_subquery.c.access_rights,
+                    projects_to_products.c.product_name,
+                    projects_to_folders.c.folder_id,
+                )
+                .select_from(
+                    projects.join(
+                        workspace_access_rights_subquery,
+                        projects.c.workspace_id
+                        == workspace_access_rights_subquery.c.workspace_id,
+                    )
+                    .join(projects_to_products)
+                    .join(
+                        projects_to_folders,
+                        (
+                            (projects_to_folders.c.project_uuid == projects.c.uuid)
+                            & (projects_to_folders.c.user_id.is_(None))
+                        ),
+                        isouter=True,
+                    )
+                )
+                .where(
+                    (
+                        sa.text(
+                            f"jsonb_exists_any(workspace_access_rights_subquery.access_rights, {assemble_array_groups(user_groups)})"
+                        )
+                    )
+                    & (projects.c.workspace_id.is_not(None))
+                    & (projects_to_products.c.product_name == product_name)
+                    & (projects.c.hidden.is_(False))
+                    & (projects.c.type == ProjectType.STANDARD)
+                    & (
+                        (projects.c.name.ilike(f"%{text}%"))
+                        | (projects.c.description.ilike(f"%{text}%"))
+                        | (projects.c.uuid.ilike(f"%{text}%"))
+                    )
+                )
+            )
+
+            combined_query = sa.union_all(
+                private_workspace_query, shared_workspace_query
+            )
+
+            count_query = sa.select(func.count()).select_from(combined_query)
+            total_count = await conn.scalar(count_query)
+
+            list_query = combined_query.offset(offset).limit(limit)
+            result = await conn.execute(list_query)
+            rows = await result.fetchall() or []
+            results: list[UserSpecificProjectDataDB] = [
+                UserSpecificProjectDataDB.from_orm(row) for row in rows
+            ]
+
+            # NOTE: Additional adjustments to make it back compatible
+            list_of_converted_projects: list[ProjectDict] = []
+            for project in results:
+                user_email = await self._get_user_email(conn, project.prj_owner)
+                converted_project = convert_to_schema_names(project.dict(), user_email)
+                converted_project["tags"] = []  # <-- Tags not needed for now
+                converted_project["state"] = None
+                list_of_converted_projects.append(converted_project)
+
+            return cast(int, total_count), list_of_converted_projects
 
     async def list_projects_uuids(self, user_id: int) -> list[str]:
         async with self.engine.acquire() as conn:
