@@ -220,8 +220,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__getNextStudiesRequest()
         .then(resp => {
           if (
-            resp["params"]["url"].workspaceId !== this.getCurrentWorkspaceId() ||
-            resp["params"]["url"].folderId !== this.getCurrentFolderId()
+            "workspaceId" in resp["params"]["url"] &&
+            (
+              resp["params"]["url"].workspaceId !== this.getCurrentWorkspaceId() ||
+              resp["params"]["url"].folderId !== this.getCurrentFolderId()
+            )
           ) {
             // Context might have been changed while waiting for the response.
             // The new call is on the ways and this can be ignored.
@@ -636,10 +639,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           orderBy: JSON.stringify(this.getOrderBy()),
         }
       };
-      const filterData = this._searchBarFilter.getFilterData();
-      if (filterData.text) {
-        params.url["text"] = filterData.text; // name, description and uuid
-      }
 
       const nextRequestParams = this.__getNextRequestParams();
       if (nextRequestParams) {
@@ -650,8 +649,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      params.url.workspaceId = this.getCurrentWorkspaceId();
-      params.url.folderId = this.getCurrentFolderId();
+      const filterData = this._searchBarFilter.getFilterData();
+      if (filterData.text) {
+        params.url.text = filterData.text; // name, description and uuid
+      } else {
+        params.url.workspaceId = this.getCurrentWorkspaceId();
+        params.url.folderId = this.getCurrentFolderId();
+      }
+
       if (params.url.text) {
         return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
       } else if (params.url.orderBy) {
