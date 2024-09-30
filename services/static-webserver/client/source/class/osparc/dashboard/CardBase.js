@@ -425,7 +425,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
-          owner = resourceData.owner ? resourceData.owner : "";
+          owner = resourceData.owner ? resourceData.owner : resourceData.contact;
           defaultHits = 0;
           break;
       }
