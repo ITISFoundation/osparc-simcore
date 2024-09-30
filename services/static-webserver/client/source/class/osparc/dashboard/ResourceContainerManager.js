@@ -279,7 +279,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     reloadCards: function(resourceType) {
       this.__cleanAll();
-      if (resourceType === "studies") {
+      if (resourceType === "studies" && this.__foldersContainer.getChildren().length) {
         this._add(this.__foldersContainer);
       }
       if (this.getGroupBy()) {

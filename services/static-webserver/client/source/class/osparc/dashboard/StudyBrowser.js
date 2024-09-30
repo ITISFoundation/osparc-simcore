@@ -415,6 +415,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (workspaceId === -1) {
           this.__reloadWorkspaces();
         } else if (workspaceId === -2) {
+          this.__setFoldersToList([]);
           this.__reloadStudies();
         } else {
           this.__reloadFolders();
