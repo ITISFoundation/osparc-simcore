@@ -42,7 +42,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     const mainLayoutWithSideSpacers = new qx.ui.container.Composite(new qx.ui.layout.HBox(spacing))
     this._addToMainLayout(mainLayoutWithSideSpacers);
 
-    this.__leftFilters = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+    this.__leftFilters = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
       width: leftColumnWidth
     });
     mainLayoutWithSideSpacers.add(this.__leftFilters);
@@ -50,7 +50,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
     mainLayoutWithSideSpacers.add(this.__centerLayout);
 
-    const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     mainLayoutWithSideSpacers.add(rightColum, {
       flex: 1
     });
