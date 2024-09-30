@@ -2,10 +2,10 @@ import asyncio
 import logging
 
 from models_library.healthchecks import LivenessResult
+from servicelib.db_asyncpg_utils import check_postgres_liveness
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .payments_gateway import PaymentsGatewayApi
-from .postgres import check_postgres_liveness
 from .resource_usage_tracker import ResourceUsageTrackerApi
 
 _logger = logging.getLogger(__name__)

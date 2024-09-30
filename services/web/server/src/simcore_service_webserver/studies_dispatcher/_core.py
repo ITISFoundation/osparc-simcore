@@ -14,7 +14,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
-from .._constants import APP_DB_ENGINE_KEY
+from ..db.plugin import get_database_engine
 from ._errors import FileToLarge, IncompatibleService
 from ._models import ViewerInfo
 from .settings import get_plugin_settings
@@ -41,7 +41,7 @@ async def list_viewers_info(
     #
     consumers: deque = deque()
 
-    async with app[APP_DB_ENGINE_KEY].acquire() as conn:
+    async with get_database_engine(app).acquire() as conn:
         # FIXME: ADD CONDITION: service MUST be shared with EVERYBODY!
         query = services_consume_filetypes.select()
         if file_type:
@@ -119,7 +119,7 @@ async def validate_requested_viewer(
         return await get_default_viewer(app, file_type, file_size)
 
     if service_key and service_version:
-        async with app[APP_DB_ENGINE_KEY].acquire() as conn:
+        async with get_database_engine(app).acquire() as conn:
             query = (
                 services_consume_filetypes.select()
                 .where(
