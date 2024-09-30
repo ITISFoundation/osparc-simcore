@@ -265,50 +265,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __reloadStudiesFiltered: function(text) {
-      if (this._loadingResourcesBtn.isFetching()) {
-        return;
-      }
-      this.__resetStudiesList();
-      this._loadingResourcesBtn.setFetching(true);
-      this._loadingResourcesBtn.setVisibility("visible");
-      const request = this.__getTextFilteredNextRequest(text);
-      request
-        .then(resp => {
-          const filteredStudies = resp["data"];
-          this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
-          this.__addStudiesToList(filteredStudies);
-        })
-        .catch(err => console.error(err))
-        .finally(() => {
-          this._loadingResourcesBtn.setFetching(false);
-          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
-          this._moreResourcesRequired();
-        });
-    },
-
-    __reloadSortedByStudies: function() {
-      if (this._loadingResourcesBtn.isFetching()) {
-        return;
-      }
-      this.__resetStudiesList();
-      this._loadingResourcesBtn.setFetching(true);
-      this._loadingResourcesBtn.setVisibility("visible");
-      const request = this.__getSortedByNextRequest();
-      request
-        .then(resp => {
-          const sortedStudies = resp["data"];
-          this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
-          this.__addStudiesToList(sortedStudies);
-        })
-        .catch(err => console.error(err))
-        .finally(() => {
-          this._loadingResourcesBtn.setFetching(false);
-          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
-          this._moreResourcesRequired();
-        });
-    },
-
     __resetStudiesList: function() {
       this._resourcesList = [];
       this._reloadCards();
@@ -458,6 +414,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
         if (workspaceId === -1) {
           this.__reloadWorkspaces();
+        } else if (workspaceId === -2) {
+          this.__reloadStudies();
         } else {
           this.__reloadFolders();
           this.__reloadStudies();
@@ -681,6 +639,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           orderBy: JSON.stringify(this.getOrderBy()),
         }
       };
+      const filterData = this._searchBarFilter.getFilterData();
+      if (filterData.text) {
+        params.url["text"] = filterData.text; // name, description and uuid
+      }
+
       const nextRequestParams = this.__getNextRequestParams();
       if (nextRequestParams) {
         params.url.offset = nextRequestParams.offset;
@@ -692,56 +655,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       params.url.workspaceId = this.getCurrentWorkspaceId();
       params.url.folderId = this.getCurrentFolderId();
-      if (params.url.orderBy) {
+      if (params.url.text) {
+        return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
+      } else if (params.url.orderBy) {
         return osparc.data.Resources.fetch("studies", "getPageSortBy", params, undefined, options);
       }
       return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
-    },
-
-    __getTextFilteredNextRequest: function(text) {
-      const params = {
-        url: {
-          offset: 0,
-          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
-          // MD todo. orderBy: JSON.stringify(this.getOrderBy()),
-          text, // name, description and uuid
-          // MD todo. tags,
-        }
-      };
-      const nextRequestParams = this.__getNextRequestParams();
-      if (nextRequestParams) {
-        params.url.offset = nextRequestParams.offset;
-        params.url.limit = nextRequestParams.limit;
-      }
-      const options = {
-        resolveWResponse: true
-      };
-
-      params.url.workspaceId = this.getCurrentWorkspaceId();
-      params.url.folderId = this.getCurrentFolderId();
-      return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
-    },
-
-    __getSortedByNextRequest: function() {
-      const params = {
-        url: {
-          offset: 0,
-          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
-          orderBy: JSON.stringify(this.getOrderBy())
-        }
-      };
-      const nextRequestParams = this.__getNextRequestParams();
-      if (nextRequestParams) {
-        params.url.offset = nextRequestParams.offset;
-        params.url.limit = nextRequestParams.limit;
-      }
-      const options = {
-        resolveWResponse: true
-      };
-
-      params.url.workspaceId = this.getCurrentWorkspaceId();
-      params.url.folderId = this.getCurrentFolderId();
-      return osparc.data.Resources.fetch("studies", "getPageSortBy", params, undefined, options);
     },
 
     invalidateStudies: function() {
@@ -873,7 +792,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const filterData = e.getData();
         if (filterData.text) {
           this._changeContext(-2, null);
-          this.__reloadStudiesFiltered(filterData.text);
         } else {
           this.__reloadFolders();
           this.__reloadStudies();
@@ -972,7 +890,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Utils.setIdToWidget(sortByButton, "sortByButton");
       sortByButton.addListener("sortByChanged", e => {
         this.setOrderBy(e.getData())
-        this.__reloadSortedByStudies();
+        this.__resetStudiesList();
+        this.__reloadStudies();
       }, this);
       this._toolbar.add(sortByButton);
     },
