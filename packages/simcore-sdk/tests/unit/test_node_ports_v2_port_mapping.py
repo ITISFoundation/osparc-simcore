@@ -110,13 +110,13 @@ def test_validate_port_value_against_schema(fake_port_meta: dict[str, Any]):
 
     assert error["loc"] == ("value",)
     assert "-2 is less than the minimum of 0" in error["msg"]
-    assert error["type"] == "value_error.port_validation.schema_error"
+    assert error["type"] == "value_error"
 
     assert "ctx" in error
-    assert error["ctx"]["port_key"] == "port_1"
+    assert error["ctx"]["error"].port_key == "port_1"
 
-    schema_error_message = error["ctx"]["schema_error_message"]
-    schema_error_path = error["ctx"]["schema_error_path"]
+    schema_error_message = error["ctx"]["error"].schema_error_message
+    schema_error_path = error["ctx"]["error"].schema_error_path
 
     assert schema_error_message in error["msg"]
     assert schema_error_path == deque([1])
@@ -152,7 +152,7 @@ def test_validate_iolist_against_schema(fake_port_meta: dict[str, Any]):
     # ----
 
     with pytest.raises(ValidationError) as err_info:
-        InputsList.parse_obj({p["key"]: p for p in ports})
+        InputsList.model_validate({p["key"]: p for p in ports})
 
     # ---
     assert isinstance(err_info.value, ValidationError)
@@ -162,14 +162,13 @@ def test_validate_iolist_against_schema(fake_port_meta: dict[str, Any]):
     for error in err_info.value.errors():
         error_loc = error["loc"]
         assert "ctx" in error
-        port_key = error["ctx"].get("port_key")
+        port_key = error["ctx"]["error"].port_key
 
         # path hierachy
-        assert error_loc[0] == "__root__", f"{error_loc=}"
-        assert error_loc[1] == port_key, f"{error_loc=}"
-        assert error_loc[-1] == "value", f"{error_loc=}"
+        assert error_loc[0] == port_key, f"{error_loc=}"
+        assert error_loc[1] == "value", f"{error_loc=}"
 
-        assert error["type"] == "value_error.port_validation.schema_error"
+        assert error["type"] == "value_error"
         port_with_errors.append(port_key)
         pprint(error)
 

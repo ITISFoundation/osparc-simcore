@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 #  - Use 'code' to discriminate port_validation errors
 
 
-class PortValueError(OsparcErrorMixin, RuntimeError):
+class PortValueError(OsparcErrorMixin, ValueError):
     code = "port_validation.schema_error"
     msg_template = "Invalid value in port {port_key!r}: {schema_error_message}"
 
@@ -37,7 +37,7 @@ class PortValueError(OsparcErrorMixin, RuntimeError):
         )
 
 
-class PortUnitError(OsparcErrorMixin, RuntimeError):
+class PortUnitError(OsparcErrorMixin, ValueError):
     code = "port_validation.unit_error"
     msg_template = "Invalid unit in port {port_key!r}: {pint_error_msg}"
 

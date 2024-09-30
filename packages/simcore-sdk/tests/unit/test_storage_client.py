@@ -362,12 +362,28 @@ _HTTPS_URL: Final[str] = "https://a"
     [
         (True, _HTTP_URL, _HTTPS_URL),
         (False, _HTTP_URL, _HTTP_URL),
-        (True, TypeAdapter(AnyUrl).validate_python(_HTTP_URL), _HTTPS_URL),
-        (False, TypeAdapter(AnyUrl).validate_python(_HTTP_URL), _HTTP_URL),
+        (
+            True,
+            str(TypeAdapter(AnyUrl).validate_python(_HTTP_URL)).rstrip("/"),
+            _HTTPS_URL,
+        ),
+        (
+            False,
+            str(TypeAdapter(AnyUrl).validate_python(_HTTP_URL)).rstrip("/"),
+            _HTTP_URL,
+        ),
         (True, _HTTPS_URL, _HTTPS_URL),
         (False, _HTTPS_URL, _HTTPS_URL),
-        (True, TypeAdapter(AnyUrl).validate_python(_HTTPS_URL), _HTTPS_URL),
-        (False, TypeAdapter(AnyUrl).validate_python(_HTTPS_URL), _HTTPS_URL),
+        (
+            True,
+            str(TypeAdapter(AnyUrl).validate_python(_HTTPS_URL)).rstrip("/"),
+            _HTTPS_URL,
+        ),
+        (
+            False,
+            str(TypeAdapter(AnyUrl).validate_python(_HTTPS_URL)).rstrip("/"),
+            _HTTPS_URL,
+        ),
         (True, "http://http", "https://http"),
         (True, "https://http", "https://http"),
     ],
@@ -382,4 +398,4 @@ def test__get_secure_link(
     is_storage_secure.cache_clear()
 
     setenvs_from_dict(monkeypatch, {"STORAGE_SECURE": "1" if storage_secure else "0"})
-    assert _get_https_link_if_storage_secure(provided) == expected
+    assert _get_https_link_if_storage_secure(str(provided)) == expected

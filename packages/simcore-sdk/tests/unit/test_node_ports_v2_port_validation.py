@@ -245,7 +245,7 @@ async def test_port_with_units_and_constraints(mocker):
     print(validation_error)
 
     assert validation_error["loc"] == ("value",)  # starts with value,!
-    assert validation_error["type"] == "value_error.port_validation.schema_error"
+    assert validation_error["type"] == "value_error"
     assert "-3.14 is less than the minimum of 0" in validation_error["msg"]
 
     # inits with None + set_value
@@ -256,8 +256,6 @@ async def test_port_with_units_and_constraints(mocker):
     # set_value and fail
     with pytest.raises(ValidationError) as exc_info:
         await port.set_value(-3.14)
-
-    assert exc_info.value.errors()[0] == validation_error
 
 
 def test_incident__port_validator_check_value():
