@@ -19,7 +19,7 @@ from models_library.api_schemas_storage import (
     UploadedPart,
 )
 from moto.server import ThreadedMotoServer
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter, parse_obj_as
 from pytest_mock import MockerFixture
 from servicelib.aiohttp import status
 from servicelib.progress_bar import ProgressBarData
@@ -234,8 +234,8 @@ async def create_upload_links(
             chunk_size=chunk_size,
             urls=upload_links,
             links=FileUploadLinks(
-                abort_upload=parse_obj_as(AnyUrl, faker.uri()),
-                complete_upload=parse_obj_as(AnyUrl, faker.uri()),
+                abort_upload=TypeAdapter(AnyUrl).validate_python(faker.uri()),
+                complete_upload=TypeAdapter(AnyUrl).validate_python(faker.uri()),
             ),
         )
 
@@ -245,7 +245,12 @@ async def create_upload_links(
 @pytest.mark.skip(reason="this will allow to reproduce an issue")
 @pytest.mark.parametrize(
     "file_size,used_chunk_size",
-    [(parse_obj_as(ByteSize, 21800510238), parse_obj_as(ByteSize, 10485760))],
+    [
+        (
+            TypeAdapter(ByteSize).validate_python(21800510238),
+            TypeAdapter(ByteSize).validate_python(10485760),
+        )
+    ],
 )
 async def test_upload_file_to_presigned_links(
     client_session: ClientSession,

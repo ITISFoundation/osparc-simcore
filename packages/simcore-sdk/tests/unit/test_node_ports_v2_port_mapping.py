@@ -18,7 +18,7 @@ from utils_port_v2 import create_valid_port_config
 
 @pytest.mark.parametrize("port_class", [InputsList, OutputsList])
 def test_empty_ports_mapping(port_class: type[InputsList | OutputsList]):
-    port_mapping = port_class(__root__={})
+    port_mapping = port_class(root={})
     assert not port_mapping.items()
     assert not port_mapping.values()
     assert not port_mapping.keys()
@@ -36,10 +36,10 @@ def test_filled_ports_mapping(port_class: type[InputsList | OutputsList]):
         port_cfgs[port["key"]] = port
     port_cfgs["some_file"] = create_valid_port_config("data:*/*", key="some_file")
 
-    port_mapping = port_class(__root__=port_cfgs)
+    port_mapping = port_class(root=port_cfgs)
 
     # two ways to construct instances of __root__
-    assert port_class.parse_obj(port_cfgs) == port_mapping
+    assert port_class.model_validate(port_cfgs) == port_mapping
 
     assert len(port_mapping) == len(port_cfgs)
     for port_key, port_value in port_mapping.items():
@@ -61,8 +61,8 @@ def test_filled_ports_mapping(port_class: type[InputsList | OutputsList]):
 def test_io_ports_are_not_aliases():
     # prevents creating alises as InputsList = PortsMappings
 
-    inputs = InputsList(__root__={})
-    outputs = OutputsList(__root__={})
+    inputs = InputsList(root={})
+    outputs = OutputsList(root={})
 
     assert isinstance(inputs, InputsList)
     assert not isinstance(inputs, OutputsList)

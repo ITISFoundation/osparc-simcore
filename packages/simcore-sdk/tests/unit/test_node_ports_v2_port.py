@@ -22,8 +22,7 @@ from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet
 from models_library.projects_nodes_io import LocationID
-from pydantic import parse_obj_as
-from pydantic.error_wrappers import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from pytest_mock.plugin import MockerFixture
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
@@ -218,8 +217,7 @@ def e_tag_fixture() -> str:
 async def mock_filemanager(mocker: MockerFixture, e_tag: str, faker: Faker) -> None:
     mocker.patch(
         "simcore_sdk.node_ports_common.filemanager._get_file_meta_data",
-        return_value=parse_obj_as(
-            FileMetaDataGet,
+        return_value=TypeAdapter(FileMetaDataGet).validate_python(
             FileMetaDataGet.model_config["json_schema_extra"]["examples"][0],
         ),
     )
@@ -320,7 +318,7 @@ class PortParams(NamedTuple):
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/no_file/{this_node_file_name().name}",
-                    e_tag=e_tag(),
+                    eTag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "no_file"
@@ -343,7 +341,7 @@ class PortParams(NamedTuple):
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/no_file_with_default/{this_node_file_name().name}",
-                    e_tag=e_tag(),
+                    eTag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "no_file_with_default"
@@ -431,7 +429,7 @@ class PortParams(NamedTuple):
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/some_file_on_datcore/{this_node_file_name().name}",
-                    e_tag=e_tag(),
+                    eTag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "some_file_on_datcore"
@@ -460,7 +458,7 @@ class PortParams(NamedTuple):
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/download_link/{this_node_file_name().name}",
-                    e_tag=e_tag(),
+                    eTag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "download_link"
@@ -492,7 +490,7 @@ class PortParams(NamedTuple):
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/download_link_with_file_to_key/{this_node_file_name().name}",
-                    e_tag=e_tag(),
+                    eTag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "download_link_with_file_to_key"
@@ -523,7 +521,7 @@ class PortParams(NamedTuple):
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/file_port_link/{this_node_file_name().name}",
-                    e_tag=e_tag(),
+                    eTag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "file_port_link"
@@ -557,7 +555,7 @@ class PortParams(NamedTuple):
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/file_port_link_with_file_to_key_map/{this_node_file_name().name}",
-                    e_tag=e_tag(),
+                    eTag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "file_port_link_with_file_to_key_map"

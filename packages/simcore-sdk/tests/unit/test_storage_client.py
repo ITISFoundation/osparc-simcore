@@ -20,7 +20,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.aiohttp import status
 from simcore_sdk.node_ports_common import exceptions
@@ -176,7 +176,7 @@ async def test_get_file_metada(
         session=session, file_id=file_id, location_id=location_id, user_id=user_id
     )
     assert file_metadata
-    assert file_metadata == FileMetaDataGet.parse_obj(
+    assert file_metadata == FileMetaDataGet.model_validate(
         FileMetaDataGet.model_config["json_schema_extra"]["examples"][0]
     )
 
@@ -362,12 +362,12 @@ _HTTPS_URL: Final[str] = "https://a"
     [
         (True, _HTTP_URL, _HTTPS_URL),
         (False, _HTTP_URL, _HTTP_URL),
-        (True, parse_obj_as(AnyUrl, _HTTP_URL), _HTTPS_URL),
-        (False, parse_obj_as(AnyUrl, _HTTP_URL), _HTTP_URL),
+        (True, TypeAdapter(AnyUrl).validate_python(_HTTP_URL), _HTTPS_URL),
+        (False, TypeAdapter(AnyUrl).validate_python(_HTTP_URL), _HTTP_URL),
         (True, _HTTPS_URL, _HTTPS_URL),
         (False, _HTTPS_URL, _HTTPS_URL),
-        (True, parse_obj_as(AnyUrl, _HTTPS_URL), _HTTPS_URL),
-        (False, parse_obj_as(AnyUrl, _HTTPS_URL), _HTTPS_URL),
+        (True, TypeAdapter(AnyUrl).validate_python(_HTTPS_URL), _HTTPS_URL),
+        (False, TypeAdapter(AnyUrl).validate_python(_HTTPS_URL), _HTTPS_URL),
         (True, "http://http", "https://http"),
         (True, "https://http", "https://http"),
     ],

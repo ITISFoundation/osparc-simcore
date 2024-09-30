@@ -80,7 +80,7 @@ class Port(BaseServiceIOModel):
     widget: dict[str, Any] | None = None
     default_value: DataItemValue | None = Field(None, alias="defaultValue")
 
-    value: DataItemValue | None = Field(None, validate_default=True)
+    value: DataItemValue | None = Field(None, validate_default=True, union_mode="left_to_right")
 
     # Different states of "value"
     #   - e.g. typically after resolving a port's link, a download link, ...
