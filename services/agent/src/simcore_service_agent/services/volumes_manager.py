@@ -10,6 +10,13 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
+from tenacity import (
+    AsyncRetrying,
+    TryAgain,
+    before_sleep_log,
+    stop_after_delay,
+    wait_fixed,
+)
 
 from ..core.settings import ApplicationSettings
 from .docker_utils import get_unused_dynamc_sidecar_volumes, remove_volume
@@ -96,17 +103,46 @@ class VolumesManager:
             for volume in volumes_to_remove:
                 await self._remove_volume_safe(volume_name=volume, requires_backup=True)
 
+    async def _wait_for_service_volumes_to_become_unused(
+        self, node_id: NodeID
+    ) -> set[str]:
+        # NOTE: it usually takes a few seconds for volumes to become unused
+        # if agent does not wait for this operation to finish
+        # they will be removed and backed up by the background task
+        # causing unncecessary data transfer to S3
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            stop=stop_after_delay(60),
+            wait=wait_fixed(1),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
+        ):
+            with attempt:
+                current_unused_volumes = await get_unused_dynamc_sidecar_volumes(
+                    self.docker
+                )
+
+                service_volumes = {
+                    v for v in current_unused_volumes if f"{node_id}" in v
+                }
+                _logger.debug(
+                    "service %s found volumes to remove: %s", node_id, service_volumes
+                )
+                if len(service_volumes) == 0:
+                    raise TryAgain
+
+        return current_unused_volumes
+
     async def remove_service_volumes(self, node_id: NodeID) -> None:
         # bookkept volumes might not be up to date
-        current_unused_volumes = await get_unused_dynamc_sidecar_volumes(self.docker)
-
-        service_volumes: set[str] = set()
-        for volume in current_unused_volumes:
-            if f"{node_id}" in volume:
-                service_volumes.add(volume)
+        service_volumes = await self._wait_for_service_volumes_to_become_unused(node_id)
+        _logger.debug(
+            "will remove volumes for %s from service_volumes=%s",
+            node_id,
+            service_volumes,
+        )
 
         for volume_name in service_volumes:
-            # these volumes have already been saved to S3 by the sidecar, no longer requires a backup
+            # volumes already saved to S3 by the sidecar and no longer require backup
             await self._remove_volume_safe(
                 volume_name=volume_name, requires_backup=False
             )

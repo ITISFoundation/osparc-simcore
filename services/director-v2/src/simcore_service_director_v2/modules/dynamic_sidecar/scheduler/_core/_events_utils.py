@@ -27,6 +27,7 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.utils import limited_gather, logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import RetryError, TryAgain
@@ -230,9 +231,9 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
                 message="removing volumes", percent=ProgressPercent(0.3)
             )
             with log_context(_logger, logging.DEBUG, f"removing volumes '{node_uuid}'"):
-                rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
+                rabbit_rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
                 await remove_volumes_from_node(
-                    rabbitmq_client=rabbitmq_client,
+                    rabbit_rpc_client=rabbit_rpc_client,
                     docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
                     swarm_stack_name=swarm_stack_name,
                     node_id=scheduler_data.node_uuid,

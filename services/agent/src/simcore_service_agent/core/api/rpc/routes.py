@@ -15,7 +15,7 @@ def setup_rpc_api_routes(app: FastAPI) -> None:
     async def startup() -> None:
         rpc_server = get_rabbitmq_rpc_server(app)
         settings: ApplicationSettings = app.state.settings
-        namespace = RPCNamespace.from_entries(
+        rpc_namespace = RPCNamespace.from_entries(
             {
                 "service": "agent",
                 "docker_node_id": settings.AGENT_DOCKER_NODE_ID,
@@ -23,6 +23,6 @@ def setup_rpc_api_routes(app: FastAPI) -> None:
             }
         )
         for router in ROUTERS:
-            await rpc_server.register_router(router, namespace, app)
+            await rpc_server.register_router(router, rpc_namespace, app)
 
     app.add_event_handler("startup", startup)
