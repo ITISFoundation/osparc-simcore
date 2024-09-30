@@ -630,7 +630,7 @@ class ProjectDBAPI(BaseProjectDB):
                 private_workspace_query, shared_workspace_query
             )
 
-            count_query = sa.select([func.count()]).select_from(combined_query)
+            count_query = sa.select(func.count()).select_from(combined_query)
             total_count = await conn.scalar(count_query)
 
             list_query = combined_query.offset(offset).limit(limit)

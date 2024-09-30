@@ -12,7 +12,10 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
-from models_library.utils.common_validators import null_or_none_str_to_none_validator
+from models_library.utils.common_validators import (
+    empty_str_to_none_pre_validator,
+    null_or_none_str_to_none_validator,
+)
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, Extra, Field, Json, root_validator, validator
 from servicelib.common_headers import (
@@ -160,9 +163,6 @@ class ProjectListFullSearchParams(PageQueryParameters):
         example="My Project",
     )
 
-    @validator("text", pre=True)
-    @classmethod
-    def text_check_empty_string(cls, v):
-        if not v:
-            return None
-        return v
+    _empty_is_none = validator("text", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )
