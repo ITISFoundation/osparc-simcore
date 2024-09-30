@@ -174,7 +174,10 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       const title = this.getChildControl("title");
       if (workspaceId === -2) {
         this.__setIcon("@FontAwesome5Solid/search/24");
-        title.setValue(this.tr("Search results"));
+        title.set({
+          value: this.tr("Search results"),
+          cursor: "auto"
+        });
         return;
       }
 
