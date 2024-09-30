@@ -346,10 +346,6 @@ def get_log_record_extra(
     return extra or None
 
 
-def _un_capitalize(s: str) -> str:
-    return s[:1].lower() + s[1:] if s else ""
-
-
 def create_troubleshotting_log_message(
     message_to_user: str,
     error: BaseException,
@@ -377,6 +373,10 @@ def create_troubleshotting_log_message(
     )
 
     return f"{message_to_user}.\n{debug_data}"
+
+
+def _un_capitalize(s: str) -> str:
+    return s[:1].lower() + s[1:] if s else ""
 
 
 @contextmanager
