@@ -136,12 +136,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           this.__nonGroupedContainer.add(card);
           this.self().sortListByPriority(this.__nonGroupedContainer);
         }
-        /*
-        if (this.getMode() === "list") {
-          const width = this.getBounds().width - 15;
-          card.setWidth(width);
-        }
-        */
       } else {
         console.error("ToggleButtonContainer only allows ToggleButton as its children.");
       }
@@ -236,11 +230,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         resourceData: resourceData,
         tags
       });
-      if (this.getMode() === "list") {
-        const bounds = this.getBounds() || this.getSizeHint();
-        const width = bounds.width - 15;
-        card.setWidth(width);
-      }
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
@@ -260,6 +249,18 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __addCardToContainer: function(card, container) {
       container.add(card);
+
+      if (this.getMode() === "list") {
+        [
+          "appear",
+          "resize",
+        ].forEach(ev => {
+          container.addListener(ev, e => {
+            const data = e.getData();
+            card.setWidth(data.width);
+          });
+        });
+      }
     },
 
     setResourcesToList: function(resourcesList) {
