@@ -13,6 +13,7 @@ from uuid import UUID
 
 from models_library.basic_types import ConstrainedStr, KeyIDStr
 from pydantic import (
+    AfterValidator,
     AnyUrl,
     BaseModel,
     ConfigDict,
@@ -122,7 +123,9 @@ class PortLink(BaseModel):
 class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
-    download_link: AnyUrl = Field(..., alias="downloadLink")
+    download_link: Annotated[AnyUrl, AfterValidator(str)] = Field(
+        ..., alias="downloadLink"
+    )
     label: str | None = Field(default=None, description="Display name")
     model_config = ConfigDict(
         extra="forbid",

@@ -5,7 +5,7 @@ from collections.abc import Callable, Coroutine
 from copy import deepcopy
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
 from ..projects import Project
 from ..projects_nodes_io import NodeID, PortLink, UUIDStr
@@ -20,7 +20,7 @@ def project_node_io_payload_cb(
 
     async def node_io_payload_cb(node_id: NodeID) -> dict[str, Any]:
         node_io_payload: dict[str, Any] = {"inputs": None, "outputs": None}
-        node = project.workbench.get(UUIDStr(node_id))
+        node = project.workbench.get(TypeAdapter(UUIDStr).validate_python(node_id))
         if node:
             node_io_payload = {"inputs": node.inputs, "outputs": node.outputs}
 
