@@ -40,7 +40,7 @@ def _does_volume_require_backup(volume_name: str) -> bool:
 
 
 async def get_unused_dynamc_sidecar_volumes(docker: Docker) -> set[str]:
-    """Returns all unused volumes that are dropped by sidecars"""
+    """Returns all volumes unused by sidecars"""
     volumes = await docker.volumes.list()
     all_volumes: set[str] = {volume["Name"] for volume in volumes["Volumes"]}
 
