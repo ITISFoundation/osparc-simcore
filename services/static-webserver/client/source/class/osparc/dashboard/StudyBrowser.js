@@ -685,8 +685,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       params.url.folderId = this.getCurrentFolderId();
       if (params.url.orderBy) {
         return osparc.data.Resources.fetch("studies", "getPageSortBy", params, undefined, options);
-      } else if (params.url.search) {
-        return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
       }
       return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
     },
