@@ -144,7 +144,7 @@ def _construct_graylog_url(
         scheme, tail = product_url.split("://", 1)
     else:
         scheme, tail = "https", "<UNDEFINED>"
-    monitoring_url = f"{scheme}://monitoring.{tail}"
+    monitoring_url = f"{scheme}://monitoring.{tail}".rstrip("/")
 
     # build graylog URL
     query = f"from={start_time.strftime(_FORMAT)}&to={end_time.strftime(_FORMAT)}"
@@ -161,11 +161,13 @@ def pytest_runtest_makereport(item: pytest.Item, call):
         test_name = item.name
         test_location = item.location
         product_url = f"{item.config.getoption('--product-url', default=None)}"
+        is_billable = item.config.getoption("--product-billable", default=None)
 
         diagnostics = {
             "test_name": test_name,
             "test_location": test_location,
             "product_url": product_url,
+            "is_billable": is_billable,
         }
 
         # Get the start and end times of the test
@@ -182,7 +184,7 @@ def pytest_runtest_makereport(item: pytest.Item, call):
             logging.WARNING,
             f"ℹ️ Diagnostics report for {test_name} ---",  # noqa: RUF001
         ) as ctx:
-            ctx.logger.warning(json.dumps(diagnostics, indent=2))
+            ctx.logger.warning("\n%s", json.dumps(diagnostics, indent=2))
 
 
 @pytest.hookimpl(tryfirst=True)
