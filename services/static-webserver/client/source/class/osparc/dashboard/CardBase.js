@@ -425,7 +425,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
-          owner = resourceData.owner ? resourceData.owner : "";
+          owner = resourceData.owner ? resourceData.owner : resourceData.contact;
           defaultHits = 0;
           break;
       }
@@ -730,7 +730,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       this._getChildren().forEach(item => {
-        if (item) {
+        if (item && "setOpacity" in item) {
           item.setOpacity(enabled ? 1.0 : 0.7);
         }
       });

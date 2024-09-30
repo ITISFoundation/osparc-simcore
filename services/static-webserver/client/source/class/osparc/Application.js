@@ -301,7 +301,7 @@ qx.Class.define("osparc.Application", {
 
     __setDefaultIcons: function() {
       const {productName} = this.__getProductMetaData()
-      const resourcePath = `../resource/osparc/${productName}/icons`;
+      const resourcePath = `../resource/osparc/${productName}/icons/`;
       const favIconUrls = [
         "favicon-16x16.png",
         "favicon-32x32.png",
