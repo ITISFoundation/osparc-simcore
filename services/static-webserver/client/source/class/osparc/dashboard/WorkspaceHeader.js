@@ -170,13 +170,15 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     },
 
     __buildLayout: function(workspaceId) {
+      this.getChildControl("icon");
+      const title = this.getChildControl("title");
       if (workspaceId === -2) {
-        const title = this.getChildControl("title");
+        this.__setIcon("@FontAwesome5Solid/search/24");
         title.setValue(this.tr("Search results"));
+        return;
       }
 
-      this.getChildControl("icon");
-      const title = this.getChildControl("title").set({
+      title.set({
         cursor: "pointer"
       });
       title.addListener("tap", () => {
@@ -215,15 +217,21 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       this._add(spacer);
     },
 
-    __setIcon: function(source) {
+    __resetIcon: function() {
       const icon = this.getChildControl("icon");
       const image = icon.getChildControl("image");
       image.resetSource();
       icon.getContentElement().setStyles({
         "background-image": "none"
       });
+    },
 
+    __setIcon: function(source) {
+      this.__resetIcon();
+
+      const icon = this.getChildControl("icon");
       if (source.includes("@")) {
+        const image = icon.getChildControl("image");
         image.set({
           source
         });
