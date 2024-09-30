@@ -237,7 +237,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         tags
       });
       if (this.getMode() === "list") {
-        const width = this.getBounds().width - 15;
+        const bounds = this.getBounds() || this.getSizeHint();
+        const width = bounds.width - 15;
         card.setWidth(width);
       }
       const menu = new qx.ui.menu.Menu().set({
