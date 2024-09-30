@@ -45,7 +45,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Files to ignore when syncing to s3",
     )
     AGENT_VOLUMES_CLEANUP_INTERVAL: timedelta = Field(
-        timedelta(minutes=5), description="interval for running volumes removal"
+        timedelta(minutes=1), description="interval for running volumes removal"
     )
     AGENT_VOLUMES_CLENUP_BOOK_KEEPING_INTERVAL: timedelta = Field(
         timedelta(minutes=1),
