@@ -4,13 +4,15 @@ import functools
 import logging
 import types
 import zipfile
-from contextlib import AsyncExitStack, contextmanager
+from collections.abc import Awaitable, Callable, Iterator
+from contextlib import AsyncExitStack, contextmanager, suppress
 from functools import partial
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Final, Iterator
+from typing import Any, Final
 
 import tqdm
 from models_library.basic_types import IDStr
+from repro_zipfile import ReproducibleZipFile
 from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
 
 from .file_utils import remove_directory
@@ -22,7 +24,7 @@ _MIN: Final[int] = 60  # secs
 _MAX_UNARCHIVING_WORKER_COUNT: Final[int] = 2
 _CHUNK_SIZE: Final[int] = 1024 * 8
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ArchiveError(Exception):
@@ -56,7 +58,9 @@ def _iter_files_to_compress(
     dir_path: Path, exclude_patterns: set[str] | None
 ) -> Iterator[Path]:
     exclude_patterns = exclude_patterns if exclude_patterns else set()
-    for path in dir_path.rglob("*"):
+    # NOTE: make sure to sort paths othrwise between different runs
+    # the zip will have a different structure and hash
+    for path in sorted(dir_path.rglob("*")):
         if path.is_file() and not any(
             fnmatch.fnmatch(f"{path}", x) for x in exclude_patterns
         ):
@@ -64,11 +68,11 @@ def _iter_files_to_compress(
 
 
 def _strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
-    _to_strip = f"{str(to_strip)}/"
+    _to_strip = f"{to_strip}/"
     return Path(str(input_path).replace(_to_strip, ""))
 
 
-class _FastZipFileReader(zipfile.ZipFile):
+class _FastZipFileReader(ReproducibleZipFile):
     """
     Used to gain a speed boost of several orders of magnitude.
 
@@ -129,7 +133,7 @@ def _zipfile_single_file_extract_worker(
             desc=desc,
             **(
                 _TQDM_FILE_OPTIONS
-                | dict(miniters=_compute_tqdm_miniters(file_in_archive.file_size))
+                | {"miniters": _compute_tqdm_miniters(file_in_archive.file_size)}
             ),
         ) as pbar:
             while chunk := zip_fp.read(_CHUNK_SIZE):
@@ -139,7 +143,7 @@ def _zipfile_single_file_extract_worker(
 
 
 def _ensure_destination_subdirectories_exist(
-    zip_file_handler: zipfile.ZipFile, destination_folder: Path
+    zip_file_handler: ReproducibleZipFile, destination_folder: Path
 ) -> None:
     # assemble full destination paths
     full_destination_paths = {
@@ -177,7 +181,7 @@ async def unarchive_dir(
         )
     async with AsyncExitStack() as zip_stack:
         zip_file_handler = zip_stack.enter_context(
-            zipfile.ZipFile(  # pylint: disable=consider-using-with
+            ReproducibleZipFile(  # pylint: disable=consider-using-with
                 archive_to_extract,
                 mode="r",
             )
@@ -232,7 +236,7 @@ async def unarchive_dir(
                     extracted_path = await future
                     extracted_file_size = extracted_path.stat().st_size
                     if tqdm_progress.update(extracted_file_size) and log_cb:
-                        with log_catch(log, reraise=False):
+                        with log_catch(_logger, reraise=False):
                             await log_cb(f"{tqdm_progress}")
                     await sub_prog.update(extracted_file_size)
                     extracted_paths.append(extracted_path)
@@ -266,8 +270,8 @@ async def unarchive_dir(
 
 @contextmanager
 def _progress_enabled_zip_write_handler(
-    zip_file_handler: zipfile.ZipFile, progress_bar: tqdm.tqdm
-) -> Iterator[zipfile.ZipFile]:
+    zip_file_handler: ReproducibleZipFile, progress_bar: tqdm.tqdm
+) -> Iterator[ReproducibleZipFile]:
     """This function overrides the default zip write fct to allow to get progress using tqdm library"""
 
     def _write_with_progress(
@@ -308,11 +312,10 @@ def _add_to_archive(
         desc=f"{desc}\n",
         total=folder_size_bytes,
         **(
-            _TQDM_FILE_OPTIONS
-            | dict(miniters=_compute_tqdm_miniters(folder_size_bytes))
+            _TQDM_FILE_OPTIONS | {"miniters": _compute_tqdm_miniters(folder_size_bytes)}
         ),
     ) as progress_bar, _progress_enabled_zip_write_handler(
-        zipfile.ZipFile(destination, "w", compression=compression), progress_bar
+        ReproducibleZipFile(destination, "w", compression=compression), progress_bar
     ) as zip_file_handler:
         for file_to_add in _iter_files_to_compress(dir_to_compress, exclude_patterns):
             progress_bar.set_description(f"{desc}/{file_to_add.name}\n")
@@ -393,10 +396,11 @@ async def archive_dir(
             if destination.is_file():
                 destination.unlink(missing_ok=True)
 
-            raise ArchiveError(
+            msg = (
                 f"Failed archiving {dir_to_compress} -> {destination} due to {type(err)}."
                 f"Details: {err}"
-            ) from err
+            )
+            raise ArchiveError(msg) from err
 
         except BaseException:
             if destination.is_file():
@@ -453,11 +457,9 @@ class PrunableFolder:
             if path.is_file():
                 path.unlink()
             elif path.is_dir():
-                try:
+                # prevents deleting non-empty folders
+                with suppress(OSError):
                     path.rmdir()
-                except OSError:
-                    # prevents deleting non-empty folders
-                    pass
 
         # second pass to delete empty folders
         # after deleting files, some folders might have been left empty

@@ -121,6 +121,8 @@ mypy==1.11.2
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
+numpy==2.1.1
+    # via -r requirements/_test.in
 openapi-schema-validator==0.6.2
     # via
     #   -c requirements/_aiohttp.txt
@@ -137,6 +139,8 @@ pathable==0.4.3
     # via
     #   -c requirements/_aiohttp.txt
     #   jsonschema-path
+pillow==10.4.0
+    # via -r requirements/_test.in
 pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
