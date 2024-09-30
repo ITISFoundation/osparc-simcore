@@ -4,7 +4,7 @@
 from typing import Annotated, cast
 
 from fastapi import Depends, FastAPI, Request
-from servicelib.rabbitmq._client import RabbitMQClient
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 from .settings import ApplicationSettings
 
@@ -22,6 +22,6 @@ def get_settings(
 
 def get_rabbitmq_client(
     app: Annotated[FastAPI, Depends(get_application)]
-) -> RabbitMQClient:
-    assert isinstance(app.state.rabbitmq_rpc_server, RabbitMQClient)  # nosec
+) -> RabbitMQRPCClient:
+    assert isinstance(app.state.rabbitmq_rpc_server, RabbitMQRPCClient)  # nosec
     return app.state.rabbitmq_rpc_server
