@@ -188,7 +188,7 @@ def mock_env(
             "REGISTRY_USER": "test",
             "SC_BOOT_MODE": "production",
             "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
-            "SWARM_STACK_NAME": "test_swarm_name",
+            "SWARM_STACK_NAME": "pytest-simcore",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
         },
     )

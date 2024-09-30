@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 pytest_simcore_core_services_selection = [
+    "agent",
     "catalog",
     "director",
     "migration",
@@ -81,7 +82,7 @@ def mock_env(
     env_vars: EnvVarsDict = {
         "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
         "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
-        "SWARM_STACK_NAME": "test_swarm_name",
+        "SWARM_STACK_NAME": "pytest-simcore",
         "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
         "SC_BOOT_MODE": "production",
         "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",

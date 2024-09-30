@@ -52,14 +52,15 @@ DIRECTOR_V2_MODULES = "simcore_service_director_v2.modules"
 logger = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = [
+    "agent",
     "catalog",
     "director",
     "migration",
     "postgres",
     "rabbit",
     "redis",
-    "storage",
     "redis",
+    "storage",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
