@@ -15,6 +15,7 @@ from aiodocker.docker import Docker
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import RunID
+from simcore_service_agent.core.errors import NoServiceVolumesFoundError
 from simcore_service_agent.services.volumes_manager import VolumesManager
 from tenacity import (
     AsyncRetrying,
@@ -132,6 +133,25 @@ async def test_volumes_manager_remove_service_volumes(
     assert len(unused_volumes) == len(VOLUMES_TO_CREATE)
     for volume_name in unused_volumes:
         assert f"{node_id_to_remvoe}" not in volume_name
+
+
+@pytest.fixture
+async def mock_wait_for_unused_service_volumes(
+    mocker: pytest_mock.MockerFixture,
+) -> None:
+    mocker.patch(
+        "simcore_service_agent.services.volumes_manager._WAIT_FOR_UNUSED_SERVICE_VOLUMES",
+        timedelta(seconds=2),
+    )
+
+
+async def test_volumes_manager_remove_service_volumes_when_volume_does_not_exist(
+    mock_wait_for_unused_service_volumes: None,
+    volumes_manager: VolumesManager,
+):
+    not_existing_service = uuid4()
+    with pytest.raises(NoServiceVolumesFoundError):
+        await volumes_manager.remove_service_volumes(not_existing_service)
 
 
 async def test_volumes_manager_periodic_task_cleanup(

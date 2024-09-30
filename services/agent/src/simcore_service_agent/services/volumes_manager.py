@@ -2,6 +2,7 @@ import logging
 from asyncio import Lock, Task
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import Final
 
 import arrow
 from aiodocker.docker import Docker
@@ -10,18 +11,15 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
-from tenacity import (
-    AsyncRetrying,
-    TryAgain,
-    before_sleep_log,
-    stop_after_delay,
-    wait_fixed,
-)
+from tenacity import AsyncRetrying, before_sleep_log, stop_after_delay, wait_fixed
 
+from ..core.errors import NoServiceVolumesFoundError
 from ..core.settings import ApplicationSettings
 from .docker_utils import get_unused_dynamc_sidecar_volumes, remove_volume
 
 _logger = logging.getLogger(__name__)
+
+_WAIT_FOR_UNUSED_SERVICE_VOLUMES: Final[timedelta] = timedelta(minutes=1)
 
 
 @dataclass
@@ -112,7 +110,7 @@ class VolumesManager:
         # causing unncecessary data transfer to S3
         async for attempt in AsyncRetrying(
             reraise=True,
-            stop=stop_after_delay(60),
+            stop=stop_after_delay(_WAIT_FOR_UNUSED_SERVICE_VOLUMES.total_seconds()),
             wait=wait_fixed(1),
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         ):
@@ -128,7 +126,7 @@ class VolumesManager:
                     "service %s found volumes to remove: %s", node_id, service_volumes
                 )
                 if len(service_volumes) == 0:
-                    raise TryAgain
+                    raise NoServiceVolumesFoundError(node_id=node_id)
 
         return service_volumes
 
