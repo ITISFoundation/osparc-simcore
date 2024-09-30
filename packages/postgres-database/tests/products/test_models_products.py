@@ -26,14 +26,14 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
 async def test_load_products(
-    pg_engine: Engine, make_products_table: Callable, products_regex: dict
+    aiopg_engine: Engine, make_products_table: Callable, products_regex: dict
 ):
     exclude = {
         products.c.created,
         products.c.modified,
     }
 
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         await make_products_table(conn)
 
         stmt = sa.select(*[c for c in products.columns if c not in exclude])
@@ -49,14 +49,14 @@ async def test_load_products(
 
 
 async def test_jinja2_templates_table(
-    pg_engine: Engine, osparc_simcore_services_dir: Path
+    aiopg_engine: Engine, osparc_simcore_services_dir: Path
 ):
     templates_common_dir = (
         osparc_simcore_services_dir
         / "web/server/src/simcore_service_webserver/templates/common"
     )
 
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         templates = []
         # templates table
         for p in templates_common_dir.glob("*.jinja2"):
@@ -135,7 +135,7 @@ async def test_jinja2_templates_table(
 
 
 async def test_insert_select_product(
-    pg_engine: Engine,
+    aiopg_engine: Engine,
 ):
     osparc_product = {
         "name": "osparc",
@@ -174,7 +174,7 @@ async def test_insert_select_product(
 
     print(json.dumps(osparc_product))
 
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         # writes
         stmt = (
             pg_insert(products)
