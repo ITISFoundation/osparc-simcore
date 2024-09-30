@@ -260,7 +260,7 @@ async def sync_local_to_s3(
     """
     _raise_if_directory_is_file(local_directory_path)
 
-    upload_s3_path = re.sub(r"^s3://", "", upload_s3_link)
+    upload_s3_path = re.sub(r"^s3://", "", str(upload_s3_link))
     _logger.debug(" %s; %s", f"{upload_s3_link=}", f"{upload_s3_path=}")
 
     await _sync_sources(
