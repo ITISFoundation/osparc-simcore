@@ -358,6 +358,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         radioGroup.add(btn);
       });
 
+      if (this._resourceType === "study") {
+        const viewMode = osparc.utils.Utils.localCache.getLocalStorageItem("studiesViewMode");
+        if (viewMode) {
+          if (viewMode === "list") {
+            radioGroup.setSelection([listBtn]);
+          }
+        }
+      }
+
       this._toolbar.add(viewModeLayout);
     },
 
