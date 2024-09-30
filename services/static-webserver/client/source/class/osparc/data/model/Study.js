@@ -45,6 +45,7 @@ qx.Class.define("osparc.data.model.Study", {
     this.set({
       uuid: studyData.uuid || this.getUuid(),
       workspaceId: studyData.workspaceId || null,
+      folderId: studyData.folderId || null,
       name: studyData.name || this.getName(),
       description: studyData.description || this.getDescription(),
       thumbnail: studyData.thumbnail || this.getThumbnail(),
@@ -84,6 +85,13 @@ qx.Class.define("osparc.data.model.Study", {
       init: true,
       nullable: true,
       event: "changeWorkspaceId"
+    },
+
+    folderId: {
+      check: "Number",
+      init: true,
+      nullable: true,
+      event: "changeFolderId"
     },
 
     name: {
