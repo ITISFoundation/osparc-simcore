@@ -4,6 +4,7 @@
 from typing import Annotated, cast
 
 from fastapi import Depends, FastAPI, Request
+from servicelib.rabbitmq._client import RabbitMQClient
 
 from .settings import ApplicationSettings
 
@@ -17,3 +18,10 @@ def get_settings(
 ) -> ApplicationSettings:
     assert isinstance(app.state.settings, ApplicationSettings)  # nosec
     return app.state.settings
+
+
+def get_rabbitmq_client(
+    app: Annotated[FastAPI, Depends(get_application)]
+) -> RabbitMQClient:
+    assert isinstance(app.state.rabbitmq, RabbitMQClient)  # nosec
+    return app.state.rabbitmq
