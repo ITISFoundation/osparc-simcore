@@ -81,7 +81,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   statics: {
-    PAGINATED_STUDIES: 10,
+    PAGINATED_STUDIES: 5,
     MIN_GRID_CARDS_PER_ROW: 3,
     SIDE_SPACER_WIDTH: 200,
 
@@ -251,6 +251,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this.__viewModeLayout = new qx.ui.toolbar.Part();
 
       const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ResourceContainerManager();
+      if (this._resourceType === "study") {
+        const viewMode = osparc.utils.Utils.localCache.getLocalStorageItem("studiesViewMode");
+        if (viewMode) {
+          this._resourcesContainer.setMode(viewMode);
+        }
+      }
       resourcesContainer.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourcesContainer.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
       resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
@@ -258,8 +264,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
       resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
       resourcesContainer.addListener("folderUpdated", e => this._folderUpdated(e.getData()));
-      resourcesContainer.addListener("moveFolderToFolderRequested", e => this._moveFolderToFolderRequested(e.getData()));
-      resourcesContainer.addListener("moveFolderToWorkspaceRequested", e => this._moveFolderToWorkspaceRequested(e.getData()));
+      resourcesContainer.addListener("moveFolderToRequested", e => this._moveFolderToRequested(e.getData()));
       resourcesContainer.addListener("deleteFolderRequested", e => this._deleteFolderRequested(e.getData()));
       resourcesContainer.addListener("folderSelected", e => {
         const folderId = e.getData();
@@ -288,6 +293,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _viewByChanged: function(viewMode) {
       this._resourcesContainer.setMode(viewMode);
       this._reloadCards();
+
+      if (this._resourceType === "study") {
+        osparc.utils.Utils.localCache.setLocalStorageItem("studiesViewMode", viewMode);
+      }
     },
 
     _addGroupByButton: function() {
@@ -492,11 +501,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _moveFolderToFolderRequested: function(folderId) {
-      throw new Error("Abstract method called!");
-    },
-
-    _moveFolderToWorkspaceRequested: function(folderId) {
+    _moveFolderToRequested: function(folderId) {
       throw new Error("Abstract method called!");
     },
 
