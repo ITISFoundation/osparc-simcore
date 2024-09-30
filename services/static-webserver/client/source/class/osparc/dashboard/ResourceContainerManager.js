@@ -32,10 +32,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     this.__resourcesList = [];
     this.__groupedContainersList = [];
 
-    const containerHeader = this.__containerHeader = new osparc.dashboard.ContextBreadcrumbs();
-    this._add(containerHeader);
-    containerHeader.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
-
 
     const workspacesContainer = this.__workspacesContainer = new osparc.dashboard.ToggleButtonContainer();
     workspacesContainer.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
@@ -119,7 +115,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __resourcesList: null,
     __groupedContainersList: null,
     __foldersLayout: null,
-    __containerHeader: null,
     __foldersContainer: null,
     __workspacesContainer: null,
     __nonGroupedContainer: null,
@@ -162,10 +157,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       } else {
         this.__nonGroupedContainer.removeCard(uuid);
       }
-    },
-
-    getContainerHeader: function() {
-      return this.__containerHeader;
     },
 
     getFlatList: function() {
@@ -276,7 +267,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     reloadCards: function(resourceType) {
       this.__cleanAll();
       if (resourceType === "studies") {
-        this._add(this.__containerHeader);
         this._add(this.__foldersContainer);
       }
       if (this.getGroupBy()) {
@@ -326,7 +316,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     reloadWorkspaces: function() {
       this.__cleanAll();
-      this._add(this.__containerHeader);
       this._add(this.__workspacesContainer);
       let workspacesCards = [];
       this.__workspacesList.forEach(workspaceData => workspacesCards.push(this.__workspaceToCard(workspaceData)));
