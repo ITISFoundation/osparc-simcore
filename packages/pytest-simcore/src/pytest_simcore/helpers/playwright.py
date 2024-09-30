@@ -226,7 +226,7 @@ class SocketIONodeProgressCompleteWaiter:
 
                         self.logger.info(
                             "Current startup progress [expected number of node-progress-types=%d]: %s",
-                            NodeProgressType.required_types_for_started_service(),
+                            len(NodeProgressType.required_types_for_started_service()),
                             f"{json.dumps({k:round(v,1) for k,v in self._current_progress.items()})}",
                         )
 
