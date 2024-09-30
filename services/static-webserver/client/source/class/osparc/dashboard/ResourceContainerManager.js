@@ -113,7 +113,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __workspacesList: null,
     __resourcesList: null,
     __groupedContainersList: null,
-    __foldersLayout: null,
     __foldersContainer: null,
     __workspacesContainer: null,
     __nonGroupedContainer: null,
