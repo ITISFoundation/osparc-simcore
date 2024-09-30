@@ -153,11 +153,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __reloadFoldersAndStudies: function() {
-      this.__reloadFolders();
-      this.__reloadStudies();
-    },
-
     __reloadFilteredResources: function(text) {
       this.__reloadFilteredStudies(text);
     },
@@ -465,7 +460,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (workspaceId === -1) {
           this.__reloadWorkspaces();
         } else {
-          this.__reloadFoldersAndStudies();
+          this.__reloadFolders();
+          this.__reloadStudies();
         }
       }
     },
@@ -980,7 +976,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (filterData.text) {
         this.__reloadFilteredResources(filterData.text);
       } else {
-        this.__reloadFoldersAndStudies();
+        this.__reloadFolders();
+        this.__reloadStudies();
       }
     },
 
