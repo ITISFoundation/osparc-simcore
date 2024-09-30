@@ -182,7 +182,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return;
       }
       const workspaceId = this.getCurrentWorkspaceId();
-      if (workspaceId === -1) {
+      if (
+        workspaceId === -1 || // shared workspace listing
+        workspaceId === -2 // filtered studies listing
+      ) {
         return;
       }
 
