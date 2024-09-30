@@ -196,7 +196,6 @@ class SocketIOOsparcMessagePrinter:
 class SocketIONodeProgressCompleteWaiter:
     node_id: str
     logger: logging.Logger
-    _last_call_return: bool = False
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
     )
@@ -224,24 +223,24 @@ class SocketIONodeProgressCompleteWaiter:
                         self._current_progress[
                             node_progress_event.progress_type
                         ] = new_progress
+
                         self.logger.info(
-                            "current startup progress: %s",
+                            "Current startup progress [expected number of node-progress-types=%d]: %s",
+                            NodeProgressType.required_types_for_started_service(),
                             f"{json.dumps({k:round(v,1) for k,v in self._current_progress.items()})}",
                         )
 
-                self._last_call_return = all(
-                    progress_type in self._current_progress
-                    for progress_type in NodeProgressType.required_types_for_started_service()
-                ) and all(
+                return self.got_expected_node_progress_types() and all(
                     round(progress, 1) == 1.0
                     for progress in self._current_progress.values()
                 )
-                return self._last_call_return
-        self._last_call_return = False
         return False
 
-    def get_last_call_return(self):
-        return self._last_call_return
+    def got_expected_node_progress_types(self):
+        return all(
+            progress_type in self._current_progress
+            for progress_type in NodeProgressType.required_types_for_started_service()
+        )
 
     def get_current_progress(self):
         return self._current_progress.values()
@@ -339,6 +338,7 @@ def expected_service_running(
         service_running = ServiceRunning(iframe_locator=None)
 
         try:
+
             with websocket.expect_event("framereceived", waiter, timeout=timeout):
                 if press_start_button:
                     _trigger_service_start(page, node_id)
@@ -346,9 +346,9 @@ def expected_service_running(
                 yield service_running
 
         except PlaywrightTimeoutError:
-            if waiter.get_last_call_return() is False:
+            if waiter.got_expected_node_progress_types():
                 ctx.logger.warning(
-                    "⚠️  Progress bar didn't receive 100 percent: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
+                    "⚠️ Progress bar didn't receive 100 percent but all expected node-progress-types are in place: %s ⚠️",  # https://github.com/ITISFoundation/osparc-simcore/issues/6449
                     waiter.get_current_progress(),
                 )
             else:
