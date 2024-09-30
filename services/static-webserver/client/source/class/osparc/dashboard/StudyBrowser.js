@@ -696,7 +696,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         url: {
           offset: 0,
           limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
-          text
+          // MD will add it. orderBy: JSON.stringify(this.getOrderBy()),
+          text, // name, description and uuid
         }
       };
       const nextRequestParams = this.__getNextRequestParams();
