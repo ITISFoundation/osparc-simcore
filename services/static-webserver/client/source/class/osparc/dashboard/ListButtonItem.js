@@ -258,6 +258,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           tagUI.addListener("tap", () => this.fireDataEvent("tagClicked", tag));
           tagsContainer.add(tagUI);
         });
+        this.__makeItemResponsive(tagsContainer);
       }
     },
 
