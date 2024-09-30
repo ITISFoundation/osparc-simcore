@@ -316,12 +316,7 @@ qx.Class.define("osparc.study.Utils", {
       return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
 
-    canMoveToFolder: function(studyData) {
-      const blocked = this.__getBlockedState(studyData);
-      return ["UNKNOWN_SERVICES", false].includes(blocked);
-    },
-
-    canMoveToWorkspace: function(studyData) {
+    canMoveTo: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
       return ["UNKNOWN_SERVICES", false].includes(blocked);
     },

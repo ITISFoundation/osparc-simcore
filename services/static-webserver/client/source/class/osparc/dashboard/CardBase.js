@@ -784,13 +784,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         if (billingSettingsButton) {
           billingSettingsButton.setEnabled(osparc.study.Utils.canShowBillingOptions(resourceData));
         }
-        const moveToFolderButton = menuButtons.find(menuBtn => "moveToFolderButton" in menuBtn);
-        if (moveToFolderButton) {
-          moveToFolderButton.setEnabled(osparc.study.Utils.canMoveToFolder(resourceData));
-        }
-        const moveToWorkspaceButton = menuButtons.find(menuBtn => "moveToWorkspaceButton" in menuBtn);
-        if (moveToWorkspaceButton) {
-          moveToWorkspaceButton.setEnabled(osparc.study.Utils.canMoveToWorkspace(resourceData));
+        const moveToButton = menuButtons.find(menuBtn => "moveToButton" in menuBtn);
+        if (moveToButton) {
+          moveToButton.setEnabled(osparc.study.Utils.canMoveTo(resourceData));
         }
         const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
         if (deleteButton) {

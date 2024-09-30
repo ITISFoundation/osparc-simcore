@@ -30,19 +30,19 @@ qx.Class.define("osparc.dashboard.ListButtonLoadMore", {
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.LOADER);
 
     this._applyFetching(false);
+
+    this.set({
+      backgroundColor: "transparent"
+    });
   },
 
   members: {
     _applyFetching: function(value) {
-      const title = this.getChildControl("title");
+      this.setIcon(osparc.dashboard.CardBase.LOADING_ICON);
       if (value) {
-        title.setValue(this.tr("Loading..."));
-        this.setIcon(osparc.dashboard.CardBase.LOADING_ICON);
         this.getChildControl("icon").getChildControl("image").getContentElement()
           .addClass("rotate");
       } else {
-        title.setValue(this.tr("Load More"));
-        this.setIcon("@FontAwesome5Solid/paw/");
         this.getChildControl("icon").getChildControl("image").getContentElement()
           .removeClass("rotate");
       }

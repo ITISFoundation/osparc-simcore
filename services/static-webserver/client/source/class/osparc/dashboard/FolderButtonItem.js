@@ -45,8 +45,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
   events: {
     "folderSelected": "qx.event.type.Data",
     "folderUpdated": "qx.event.type.Data",
-    "moveFolderToFolderRequested": "qx.event.type.Data",
-    "moveFolderToWorkspaceRequested": "qx.event.type.Data",
+    "moveFolderToRequested": "qx.event.type.Data",
     "deleteFolderRequested": "qx.event.type.Data"
   },
 
@@ -191,13 +190,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       editButton.addListener("execute", () => this.__editFolder(), this);
       menu.add(editButton);
 
-      const moveToFolderButton = new qx.ui.menu.Button(this.tr("Move to Folder..."), "@FontAwesome5Solid/folder/12");
-      moveToFolderButton.addListener("execute", () => this.fireDataEvent("moveFolderToFolderRequested", this.getFolderId()), this);
-      menu.add(moveToFolderButton);
-
-      const moveToWorkspaceButton = new qx.ui.menu.Button(this.tr("Move to Workspace..."), osparc.store.Workspaces.iconPath(14));
-      moveToWorkspaceButton.addListener("execute", () => this.fireDataEvent("moveFolderToWorkspaceRequested", this.getFolderId()), this);
-      menu.add(moveToWorkspaceButton);
+      const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesome5Solid/folder/12");
+      moveToButton.addListener("execute", () => this.fireDataEvent("moveFolderToRequested", this.getFolderId()), this);
+      menu.add(moveToButton);
 
       menu.addSeparator();
 
