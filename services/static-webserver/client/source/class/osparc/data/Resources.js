@@ -130,7 +130,8 @@ qx.Class.define("osparc.data.Resources", {
           getPageSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&search={text}"
+            url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}"
+            // url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&tags={tags}&order_by={orderBy}"
           },
           getOne: {
             useCache: false,
