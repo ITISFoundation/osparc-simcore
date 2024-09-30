@@ -51,10 +51,10 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       PROGRESS: 4,
       TAGS: 5,
       ICONS_LAYOUT: 6,
-      TSR: 7,
+      SHARED: 7,
       OWNER: 8,
-      SHARED: 9,
-      LAST_CHANGE: 10,
+      LAST_CHANGE: 9,
+      TSR: 10,
       HITS: 11,
       OPTIONS: 12
     }
