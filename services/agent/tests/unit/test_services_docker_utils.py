@@ -79,9 +79,11 @@ async def test_doclker_utils_workflow(
         created_volumes.update(created_volume)
 
     volumes = await get_unused_dynamc_sidecar_volumes(volumes_manager_docker_client)
-    # NOTE: if bleow check fails it's because there are exiting dy_sidecar volumes on the host
-    # dirty docker enviornment
-    assert volumes == created_volumes
+    assert volumes == created_volumes, (
+        "Most likely you have a dirty working state, please check "
+        "that there are no previous docker volumes named `dyv_...` "
+        "currently present on the machine"
+    )
 
     assert len(volumes) == len(VOLUMES_TO_CREATE) * volume_count
 
