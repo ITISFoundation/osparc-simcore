@@ -170,6 +170,11 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     },
 
     __buildLayout: function(workspaceId) {
+      if (workspaceId === -2) {
+        const title = this.getChildControl("title");
+        title.setValue(this.tr("Search results"));
+      }
+
       this.getChildControl("icon");
       const title = this.getChildControl("title").set({
         cursor: "pointer"
