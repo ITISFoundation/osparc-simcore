@@ -3,7 +3,6 @@ import functools
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from pydantic import parse_obj_as
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -17,6 +16,7 @@ from simcore_postgres_database.utils_tags import (
 )
 
 from .._meta import API_VTAG as VTAG
+from ..db.plugin import get_database_engine
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
@@ -55,7 +55,7 @@ routes = web.RouteTableDef()
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def create_tag(request: web.Request):
-    engine: Engine = request.app[APP_DB_ENGINE_KEY]
+    engine: Engine = get_database_engine(request.app)
     req_ctx = TagRequestContext.parse_obj(request)
     new_tag = await parse_request_body_as(TagCreate, request)
 
@@ -77,7 +77,7 @@ async def create_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def list_tags(request: web.Request):
-    engine: Engine = request.app[APP_DB_ENGINE_KEY]
+    engine: Engine = get_database_engine(request.app)
     req_ctx = TagRequestContext.parse_obj(request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
@@ -93,7 +93,7 @@ async def list_tags(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def update_tag(request: web.Request):
-    engine: Engine = request.app[APP_DB_ENGINE_KEY]
+    engine: Engine = get_database_engine(request.app)
     req_ctx = TagRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
     tag_updates = await parse_request_body_as(TagUpdate, request)
@@ -112,7 +112,7 @@ async def update_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def delete_tag(request: web.Request):
-    engine: Engine = request.app[APP_DB_ENGINE_KEY]
+    engine: Engine = get_database_engine(request.app)
     req_ctx = TagRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
 

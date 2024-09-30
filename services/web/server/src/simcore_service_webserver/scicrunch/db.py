@@ -7,10 +7,10 @@ import logging
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import ResultProxy, RowProxy
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
 from sqlalchemy.dialects.postgresql import insert as sa_pg_insert
 
+from ..db.plugin import get_database_engine
 from .models import ResearchResource, ResearchResourceAtdB
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class ResearchResourceRepository:
     # WARNING: interfaces to both ResarchResource and ResearchResourceAtDB
 
     def __init__(self, app: web.Application):
-        self._engine = app[APP_DB_ENGINE_KEY]
+        self._engine = get_database_engine(app)
 
     async def list_resources(self) -> list[ResearchResource]:
         async with self._engine.acquire() as conn:

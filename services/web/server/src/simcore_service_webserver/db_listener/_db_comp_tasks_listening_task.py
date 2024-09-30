@@ -18,10 +18,10 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
+from ..db.plugin import get_database_engine
 from ..projects import exceptions, projects_api
 from ..projects.nodes_utils import update_node_outputs
 from ._utils import convert_state_from_db
@@ -159,7 +159,7 @@ async def _comp_tasks_listening_task(app: web.Application) -> None:
     while True:
         try:
             # create a special connection here
-            db_engine = app[APP_DB_ENGINE_KEY]
+            db_engine = get_database_engine(app)
             _logger.info("listening to comp_task events...")
             await _listen(app, db_engine)
         except asyncio.CancelledError:  # noqa: PERF203
