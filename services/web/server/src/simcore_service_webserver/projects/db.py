@@ -328,6 +328,27 @@ class ProjectDBAPI(BaseProjectDB):
                 .on_conflict_do_nothing()
             )
 
+    access_rights_subquery = (
+        sa.select(
+            project_to_groups.c.project_uuid,
+            sa.func.jsonb_object_agg(
+                project_to_groups.c.gid,
+                sa.func.jsonb_build_object(
+                    "read",
+                    project_to_groups.c.read,
+                    "write",
+                    project_to_groups.c.write,
+                    "delete",
+                    project_to_groups.c.delete,
+                ),
+            )
+            .filter(
+                project_to_groups.c.read  # Filters out entries where "read" is False
+            )
+            .label("access_rights"),
+        ).group_by(project_to_groups.c.project_uuid)
+    ).subquery("access_rights_subquery")
+
     async def list_projects(  # pylint: disable=too-many-arguments
         self,
         *,
@@ -360,30 +381,9 @@ class ProjectDBAPI(BaseProjectDB):
 
         async with self.engine.acquire() as conn:
 
-            access_rights_subquery = (
-                sa.select(
-                    project_to_groups.c.project_uuid,
-                    sa.func.jsonb_object_agg(
-                        project_to_groups.c.gid,
-                        sa.func.jsonb_build_object(
-                            "read",
-                            project_to_groups.c.read,
-                            "write",
-                            project_to_groups.c.write,
-                            "delete",
-                            project_to_groups.c.delete,
-                        ),
-                    )
-                    .filter(
-                        project_to_groups.c.read  # Filters out entries where "read" is False
-                    )
-                    .label("access_rights"),
-                ).group_by(project_to_groups.c.project_uuid)
-            ).subquery("access_rights_subquery")
-
             _join_query = (
                 projects.join(projects_to_products, isouter=True)
-                .join(access_rights_subquery, isouter=True)
+                .join(self.access_rights_subquery, isouter=True)
                 .join(
                     projects_to_folders,
                     (
@@ -404,7 +404,7 @@ class ProjectDBAPI(BaseProjectDB):
                         for col in projects.columns
                         if col.name not in ["access_rights"]
                     ],
-                    access_rights_subquery.c.access_rights,
+                    self.access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -501,25 +501,6 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
 
-            access_rights_subquery = (
-                sa.select(
-                    project_to_groups.c.project_uuid,
-                    sa.func.jsonb_object_agg(
-                        project_to_groups.c.gid,
-                        sa.func.jsonb_build_object(
-                            "read",
-                            project_to_groups.c.read,
-                            "write",
-                            project_to_groups.c.write,
-                            "delete",
-                            project_to_groups.c.delete,
-                        ),
-                    )
-                    .filter(project_to_groups.c.read)
-                    .label("access_rights"),
-                ).group_by(project_to_groups.c.project_uuid)
-            ).subquery("access_rights_subquery")
-
             workspace_access_rights_subquery = (
                 sa.select(
                     workspaces_access_rights.c.workspace_id,
@@ -546,12 +527,12 @@ class ProjectDBAPI(BaseProjectDB):
                         for col in projects.columns
                         if col.name not in ["access_rights"]
                     ],
-                    access_rights_subquery.c.access_rights,
+                    self.access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
                 .select_from(
-                    projects.join(access_rights_subquery, isouter=True)
+                    projects.join(self.access_rights_subquery, isouter=True)
                     .join(projects_to_products)
                     .join(
                         projects_to_folders,
