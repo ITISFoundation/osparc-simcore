@@ -557,7 +557,7 @@ class ProjectDBAPI(BaseProjectDB):
                         projects_to_folders,
                         (
                             (projects_to_folders.c.project_uuid == projects.c.uuid)
-                            & (projects_to_folders.c.user_id.is_(None))
+                            & (projects_to_folders.c.user_id == user_id)
                         ),
                         isouter=True,
                     )
@@ -603,7 +603,7 @@ class ProjectDBAPI(BaseProjectDB):
                         projects_to_folders,
                         (
                             (projects_to_folders.c.project_uuid == projects.c.uuid)
-                            & (projects_to_folders.c.user_id == user_id)
+                            & (projects_to_folders.c.user_id.is_(None))
                         ),
                         isouter=True,
                     )
