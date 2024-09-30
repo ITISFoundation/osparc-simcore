@@ -98,7 +98,7 @@ class Port(BaseServiceIOModel):
     # flags
     _used_default_value: bool = PrivateAttr(False)
 
-    model_configg = ConfigDict(validate_assignment=True)
+    model_config = ConfigDict(validate_assignment=True)
 
     @field_validator("value")
     @classmethod
@@ -216,7 +216,9 @@ class Port(BaseServiceIOModel):
 
             if isinstance(self.value, DownloadLink):
                 # generic download link for a file
-                url: AnyUrl = TypeAdapter(AnyUrl).validate_python(self.value.download_link)
+                url: AnyUrl = TypeAdapter(AnyUrl).validate_python(
+                    self.value.download_link
+                )
                 return url
 
             # otherwise, this is a BasicValueTypes
