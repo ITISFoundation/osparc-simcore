@@ -302,6 +302,8 @@ async def test_project_listing_inside_of_private_folder(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == user_project["uuid"]
+    assert data[0]["workspaceId"] is None
+    assert data[0]["folderId"] == original_user_folder["folderId"]
 
     # Create new user
     async with LoggedUser(client) as new_logged_user:
@@ -332,6 +334,8 @@ async def test_project_listing_inside_of_private_folder(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1
         assert data[0]["uuid"] == user_project["uuid"]
+        assert data[0]["workspaceId"] is None
+        assert data[0]["folderId"] is None
 
         # create a new folder
         url = client.app.router["create_folder"].url_for()
@@ -353,6 +357,8 @@ async def test_project_listing_inside_of_private_folder(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1
         assert data[0]["uuid"] == user_project["uuid"]
+        assert data[0]["workspaceId"] is None
+        assert data[0]["folderId"] == new_user_folder["folderId"]
 
 
 @pytest.fixture

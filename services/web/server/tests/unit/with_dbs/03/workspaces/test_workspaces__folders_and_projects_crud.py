@@ -83,12 +83,16 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == project["uuid"]
+    assert data[0]["workspaceId"] == added_workspace["workspaceId"]
+    assert data[0]["folderId"] is None
 
     # Get project in workspace
     base_url = client.app.router["get_project"].url_for(project_id=project["uuid"])
     resp = await client.get(base_url)
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["uuid"] == project["uuid"]
+    assert data["workspaceId"] == added_workspace["workspaceId"]
+    assert data["folderId"] is None
 
     # Create folder in workspace
     url = client.app.router["create_folder"].url_for()
@@ -131,6 +135,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == project["uuid"]
+    assert data[0]["folderId"] is first_folder["folderId"]
 
     # Create new user
     async with LoggedUser(client) as new_logged_user:
