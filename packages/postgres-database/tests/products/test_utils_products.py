@@ -19,24 +19,24 @@ from simcore_postgres_database.utils_products import (
 )
 
 
-async def test_default_product(pg_engine: Engine, make_products_table: Callable):
-    async with pg_engine.acquire() as conn:
+async def test_default_product(aiopg_engine: Engine, make_products_table: Callable):
+    async with aiopg_engine.acquire() as conn:
         await make_products_table(conn)
         default_product = await get_default_product_name(conn)
         assert default_product == "s4l"
 
 
 @pytest.mark.parametrize("pg_sa_engine", ["sqlModels"], indirect=True)
-async def test_default_product_undefined(pg_engine: Engine):
-    async with pg_engine.acquire() as conn:
+async def test_default_product_undefined(aiopg_engine: Engine):
+    async with aiopg_engine.acquire() as conn:
         with pytest.raises(ValueError):
             await get_default_product_name(conn)
 
 
 async def test_get_or_create_group_product(
-    pg_engine: Engine, make_products_table: Callable
+    aiopg_engine: Engine, make_products_table: Callable
 ):
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         await make_products_table(conn)
 
         async for product_row in await conn.execute(
@@ -105,13 +105,13 @@ async def test_get_or_create_group_product(
     reason="Not relevant. Will review in https://github.com/ITISFoundation/osparc-simcore/issues/3754"
 )
 async def test_get_or_create_group_product_concurrent(
-    pg_engine: Engine, make_products_table: Callable
+    aiopg_engine: Engine, make_products_table: Callable
 ):
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         await make_products_table(conn)
 
     async def _auto_create_products_groups():
-        async with pg_engine.acquire() as conn:
+        async with aiopg_engine.acquire() as conn:
             async for product_row in await conn.execute(
                 sa.select(products.c.name, products.c.group_id).order_by(
                     products.c.priority

@@ -193,7 +193,6 @@ class Product(BaseModel):
                         "invitation_form": True,
                         "name": "ACME",
                         "copyright": "© ACME correcaminos",
-                        "has_landing_page": False,
                     },
                     "issues": [
                         {
