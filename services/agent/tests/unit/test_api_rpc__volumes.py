@@ -10,7 +10,6 @@ import pytest_mock
 from fastapi import FastAPI
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.agent import volumes
-from simcore_service_agent.services.volumes_manager import get_volumes_manager
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -26,43 +25,43 @@ async def rpc_client(
 
 
 @pytest.fixture
-def spy_remove_service_volumes(
-    mocker: pytest_mock.MockerFixture, initialized_app: FastAPI
-) -> AsyncMock:
-    return mocker.spy(get_volumes_manager(initialized_app), "remove_service_volumes")
+def mocked_remove_service_volumes(mocker: pytest_mock.MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_agent.services.volumes_manager.VolumesManager.remove_service_volumes"
+    )
 
 
 @pytest.fixture
-def spy_remove_all_volumes(
-    mocker: pytest_mock.MockerFixture, initialized_app: FastAPI
-) -> AsyncMock:
-    return mocker.spy(get_volumes_manager(initialized_app), "remove_all_volumes")
+def mocked_remove_all_volumes(mocker: pytest_mock.MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_agent.services.volumes_manager.VolumesManager.remove_all_volumes"
+    )
 
 
 async def test_backup_and_remove_volumes_for_all_services(
     rpc_client: RabbitMQRPCClient,
     swarm_stack_name: str,
     docker_node_id: str,
-    spy_remove_all_volumes: AsyncMock,
+    mocked_remove_all_volumes: AsyncMock,
 ):
-    assert spy_remove_all_volumes.call_count == 0
+    assert mocked_remove_all_volumes.call_count == 0
     await volumes.backup_and_remove_volumes_for_all_services(
         rpc_client, docker_node_id=docker_node_id, swarm_stack_name=swarm_stack_name
     )
-    assert spy_remove_all_volumes.call_count == 1
+    assert mocked_remove_all_volumes.call_count == 1
 
 
 async def test_remove_volumes_without_backup_for_service(
     rpc_client: RabbitMQRPCClient,
     swarm_stack_name: str,
     docker_node_id: str,
-    spy_remove_service_volumes: AsyncMock,
+    mocked_remove_service_volumes: AsyncMock,
 ):
-    assert spy_remove_service_volumes.call_count == 0
+    assert mocked_remove_service_volumes.call_count == 0
     await volumes.remove_volumes_without_backup_for_service(
         rpc_client,
         docker_node_id=docker_node_id,
         swarm_stack_name=swarm_stack_name,
         node_id=uuid4(),
     )
-    assert spy_remove_service_volumes.call_count == 1
+    assert mocked_remove_service_volumes.call_count == 1
