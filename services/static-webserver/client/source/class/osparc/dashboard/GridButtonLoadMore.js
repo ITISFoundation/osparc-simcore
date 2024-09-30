@@ -29,22 +29,21 @@ qx.Class.define("osparc.dashboard.GridButtonLoadMore", {
 
     this._applyFetching(false);
 
+    // A minimalistic spinning wheel
+    this.getChildControl("header").exclude();
     this.getChildControl("footer").exclude();
+    this.set({
+      backgroundColor: "transparent"
+    });
   },
 
   members: {
     _applyFetching: function(value) {
-      const title = this.getChildControl("title");
-      const desc = this.getChildControl("subtitle-text");
       this.setIcon(osparc.dashboard.CardBase.LOADING_ICON);
       if (value) {
-        title.setValue(this.tr("Loading..."));
-        desc.setValue("");
         this.getChildControl("icon").getChildControl("image").getContentElement()
           .addClass("rotate");
       } else {
-        title.setValue(this.tr("Load More"));
-        desc.setValue(this.tr("Click to load more").toString());
         this.getChildControl("icon").getChildControl("image").getContentElement()
           .removeClass("rotate");
       }
