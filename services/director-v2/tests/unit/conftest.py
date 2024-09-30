@@ -35,10 +35,6 @@ from simcore_sdk.node_ports_v2 import FileLinkType
 from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
-    DIND_VERSION,
-    DockerVersion,
-)
 
 
 @pytest.fixture
@@ -341,8 +337,3 @@ def mock_docker_api(mocker: MockerFixture) -> None:
 async def async_docker_client() -> AsyncIterable[aiodocker.Docker]:
     async with aiodocker.Docker() as docker_client:
         yield docker_client
-
-
-@pytest.fixture
-async def docker_version() -> DockerVersion:
-    return parse_obj_as(DockerVersion, DIND_VERSION)
