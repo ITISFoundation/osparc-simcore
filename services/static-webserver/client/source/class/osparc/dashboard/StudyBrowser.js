@@ -777,10 +777,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       newStudyBtn.subscribeToFilterGroup("searchBarFilter");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
       newStudyBtn.addListener("execute", () => this.__newStudyBtnClicked(newStudyBtn));
-      if (this._resourcesContainer.getMode() === "list") {
-        const width = this._resourcesContainer.getBounds().width - 15;
-        newStudyBtn.setWidth(width);
-      }
       this._resourcesContainer.addNonResourceCard(newStudyBtn);
     },
 
@@ -798,10 +794,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                   newStudyBtn.setCardKey("new-study");
                   newStudyBtn.subscribeToFilterGroup("searchBarFilter");
                   osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
-                  if (this._resourcesContainer.getMode() === "list") {
-                    const width = this._resourcesContainer.getBounds().width - 15;
-                    newStudyBtn.setWidth(width);
-                  }
                   this._resourcesContainer.addNonResourceCard(newStudyBtn);
                   newStudyBtn.addListener("execute", () => {
                     newStudyBtn.setValue(false);
@@ -846,10 +838,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             newStudyFromServiceButton.setCardKey("new-"+key);
             osparc.utils.Utils.setIdToWidget(newStudyFromServiceButton, newButtonInfo.idToWidget);
             newStudyFromServiceButton.addListener("execute", () => this.__newStudyFromServiceBtnClicked(newStudyFromServiceButton, latestMetadata["key"], latestMetadata["version"], newButtonInfo.newStudyLabel));
-            if (this._resourcesContainer.getMode() === "list") {
-              const width = this._resourcesContainer.getBounds().width - 15;
-              newStudyFromServiceButton.setWidth(width);
-            }
             this._resourcesContainer.addNonResourceCard(newStudyFromServiceButton);
           })
       }
@@ -1466,11 +1454,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         null,
         true
       );
-
-      if (this._resourcesContainer.getMode() === "list") {
-        const width = this._resourcesContainer.getBounds().width - 15;
-        duplicatingStudyCard.setWidth(width);
-      }
       return duplicatingStudyCard;
     },
 
