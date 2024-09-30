@@ -79,7 +79,7 @@ class VolumesManager:
         self, *, volume_name: str, requires_backup: bool
     ) -> None:
         # NOTE: to avoid race conditions only one volume can be removed
-        # also avoids issues withaccessing the docker API in parallel for volume removal on this node
+        # also avoids issues with accessing the docker API in parallel
         async with self.removal_lock:
             await remove_volume(
                 self.app,
@@ -104,9 +104,9 @@ class VolumesManager:
     async def _wait_for_service_volumes_to_become_unused(
         self, node_id: NodeID
     ) -> set[str]:
-        # NOTE: it usually takes a few seconds for volumes to become unused
-        # if agent does not wait for this operation to finish
-        # they will be removed and backed up by the background task
+        # NOTE: it usually takes a few seconds for volumes to become unused,
+        # if agent does not wait for this operation to finish,
+        # volumes will be removed and backed up by the background task
         # causing unncecessary data transfer to S3
         async for attempt in AsyncRetrying(
             reraise=True,
