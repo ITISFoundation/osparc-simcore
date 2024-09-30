@@ -130,7 +130,7 @@ class VolumesManager:
                 if len(service_volumes) == 0:
                     raise TryAgain
 
-        return current_unused_volumes
+        return service_volumes
 
     async def remove_service_volumes(self, node_id: NodeID) -> None:
         # bookkept volumes might not be up to date
