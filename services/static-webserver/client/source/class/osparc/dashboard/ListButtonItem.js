@@ -51,7 +51,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "permission-icon":
           control = new qx.ui.basic.Image(osparc.dashboard.CardBase.PERM_READ).set({
-            minWidth: 50
+            alignY: "middle",
           });
           this._add(control, {
             row: 0,
@@ -71,7 +71,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "shared-icon":
           control = new qx.ui.basic.Image().set({
-            minWidth: 50,
+            minWidth: 30,
             alignY: "middle"
           });
           this._add(control, {
