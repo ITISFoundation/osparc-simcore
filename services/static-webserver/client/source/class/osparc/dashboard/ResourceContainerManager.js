@@ -60,7 +60,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       init: "grid",
       nullable: false,
       event: "changeMode",
-      apply: "reloadCards"
+      apply: "__reloadCards"
     },
 
     groupBy: {
@@ -224,7 +224,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       });
       card.setMenu(menu);
       if (resourceData.type !== "study") {
-        // the backend will do the study:search
+        // the backend will do the projects:search
         card.subscribeToFilterGroup("searchBarFilter");
       }
 
@@ -277,11 +277,14 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this._removeAll();
     },
 
+    __reloadCards: function(mode) {
+      this.reloadCards();
+    },
+
     reloadCards: function(resourceType) {
       this.__cleanAll();
-      if (resourceType === "studies" && this.__foldersContainer.getChildren().length) {
-        this._add(this.__foldersContainer);
-      }
+      // OM make its visibility dynamic
+      this._add(this.__foldersContainer);
       if (this.getGroupBy()) {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
         this.__groupedContainers.add(noGroupContainer);

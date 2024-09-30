@@ -433,7 +433,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addNewFolderButton: function() {
-      if (this.getCurrentWorkspaceId()) {
+      const currentWorkspaceId = this.getCurrentWorkspaceId();
+      if (currentWorkspaceId) {
+        if (currentWorkspaceId === -1 || currentWorkspaceId === -2) {
+          return;
+        }
         const currentWorkspace = osparc.store.Workspaces.getInstance().getWorkspace(this.getCurrentWorkspaceId());
         if (currentWorkspace && !currentWorkspace.getMyAccessRights()["write"]) {
           // If user can't write in workspace, do not show plus button
