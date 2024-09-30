@@ -15,7 +15,7 @@ from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
-from .._constants import APP_DB_ENGINE_KEY
+from ..db.plugin import get_database_engine
 from ..login.utils import notify_user_logout
 from ..security.api import clean_auth_policy_cache
 from ..users.api import update_expired_users
@@ -60,7 +60,7 @@ async def _update_expired_users(app: web.Application):
     """
     It is resilient, i.e. if update goes wrong, it waits a bit and retries
     """
-    engine: Engine = app[APP_DB_ENGINE_KEY]
+    engine: Engine = get_database_engine(app)
     assert engine  # nosec
 
     if updated := await update_expired_users(engine):

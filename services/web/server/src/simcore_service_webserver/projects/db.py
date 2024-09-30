@@ -34,7 +34,7 @@ from models_library.wallets import WalletDB, WalletID
 from models_library.workspaces import WorkspaceID
 from pydantic import parse_obj_as
 from pydantic.types import PositiveInt
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
@@ -106,11 +106,11 @@ ANY_USER = ANY_USER_ID_SENTINEL
 class ProjectDBAPI(BaseProjectDB):
     def __init__(self, app: web.Application) -> None:
         self._app = app
-        self._engine = cast(Engine, app.get(APP_DB_ENGINE_KEY))
+        self._engine = cast(Engine, app.get(APP_AIOPG_ENGINE_KEY))
 
     def _init_engine(self) -> None:
         # Delays creation of engine because it setup_db does it on_startup
-        self._engine = cast(Engine, self._app.get(APP_DB_ENGINE_KEY))
+        self._engine = cast(Engine, self._app.get(APP_AIOPG_ENGINE_KEY))
         if self._engine is None:
             msg = "Database subsystem was not initialized"
             raise ValueError(msg)
