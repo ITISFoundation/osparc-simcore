@@ -4,7 +4,6 @@
 """
 
 import asyncio
-import json
 import logging
 from collections.abc import Awaitable, Callable
 from typing import Any, Union
@@ -12,129 +11,177 @@ from typing import Any, Union
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
-from models_library.utils.json_serialization import json_dumps
+from models_library.rest_payloads import OneError
+from models_library.utils.fastapi_encoders import jsonable_encoder
 
+from ..error_codes import create_error_code
+from ..json_serialization import json_dumps, safe_json_loads
+from ..logging_utils import get_log_record_extra
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from ..utils import is_production_environ
-from .rest_models import ErrorItemType, ErrorType, LogMessageType
-from .rest_responses import (
-    create_data_response,
-    create_http_error,
-    is_enveloped_from_map,
-    is_enveloped_from_text,
-    wrap_as_envelope,
-)
-from .rest_utils import EnvelopeFactory
+from ..request_keys import RQT_USERID_KEY
+from ..rest_constants import RESPONSE_MODEL_POLICY
+from . import status
+from .rest_responses import create_enveloped_response, create_error_response
 from .typing_extension import Handler, Middleware
 
-DEFAULT_API_VERSION = "v0"
+_DEFAULT_API_VERSION = "v0"
+MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience! [{}]"
 
 
 _logger = logging.getLogger(__name__)
 
 
-def is_api_request(request: web.Request, api_version: str) -> bool:
+def _is_api_request(request: web.Request, api_version: str) -> bool:
     base_path = "/" + api_version.lstrip("/")
     return bool(request.path.startswith(base_path))
 
 
+def _has_body(request: web.BaseRequest, err: web.HTTPException) -> bool:
+    assert request  # nosec
+    assert err.reason  # nosec
+    assert str(err) == err.reason  # nosec
+
+    if not err.empty_body:
+        # By default exists if class method empty_body==False
+        assert err.text  # nosec
+        if err.text and not safe_json_loads(err.text):
+            return False
+
+    return True
+
+
+async def _handle_http_successful(
+    request: web.BaseRequest, err: web.HTTPSuccessful
+) -> web.Response:
+    """
+    Normalizes HTTPErrors used as `raise web.HTTPOk(reason="I am happy")`
+    creating an enveloped json-response
+    """
+    # NOTE: `await resp.json()` raises if wrong content-type even for NoContent!
+    err.content_type = MIMETYPE_APPLICATION_JSON
+
+    if not _has_body(request, err):
+        # NOTE:
+        # - aiohttp defaults `text={status}: {reason}` if not explictly defined and reason defaults
+        #   in http.HTTPStatus().phrase if not explicitly defined
+        # - These are scenarios created by a lack of
+        #   consistency on how we respond in the request handlers.
+        #   This overhead can be avoided by having a more strict
+        #   response policy.
+        # - Moreover there is an *concerning* asymmetry on how these responses are handled
+        #   depending whether the are returned or raised!!!!
+        err.text = json_dumps({"data": err.reason})
+
+    return err
+
+
+async def _handle_http_error(
+    request: web.BaseRequest, err: web.HTTPError
+) -> web.Response:
+    """
+    Normalizes HTTPErrors used as `raise web.HTTPUnauthorized(reason=MSG_USER_EXPIRED)`
+    creating an enveloped json-response
+    """
+    # NOTE: `await resp.json()` raises if wrong content-type even for NoContent!
+    err.content_type = MIMETYPE_APPLICATION_JSON
+
+    if not _has_body(request, err):
+        err.text = json_dumps(
+            jsonable_encoder(
+                {"error": OneError(msg=err.reason)}, **RESPONSE_MODEL_POLICY
+            )
+        )
+    return err
+
+
+async def _handle_unexpected_exception(
+    request: web.BaseRequest, err: Exception
+) -> web.Response:
+    """
+    This error handler is the last resource to catch unhandled exceptions. When
+    an exception reaches this point, it is converted into a web.HTTPInternalServerError
+    reponse (i.e. HTTP_500_INTERNAL_ERROR) for the client and the server logs
+    the error to be diagnosed
+
+    Its purpose is:
+        - respond the client with 500 and a reference OEC
+        - log sufficient information to diagnose the issue
+    """
+    error_code = create_error_code(err)
+
+    resp = web.json_response(
+        jsonable_encoder(
+            {
+                "error": OneError(
+                    msg=MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(error_code),
+                    type="unexpected",
+                )
+            },
+            **RESPONSE_MODEL_POLICY,
+        ),
+        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    )
+
+    _logger.exception(
+        "Request %s raised '%s' [%s]%s",
+        f"'{request.method} {request.path}'",
+        type(err).__name__,
+        error_code,
+        f"\n {request.remote=}\n request.headers={dict(request.raw_headers)}",
+        extra=get_log_record_extra(
+            error_code=error_code,
+            user_id=request.get(RQT_USERID_KEY),
+        ),
+    )
+    return resp
+
+
 def error_middleware_factory(
     api_version: str,
-    log_exceptions: bool = True,
 ) -> Middleware:
-    _is_prod: bool = is_production_environ()
-
-    def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
-        http_error = create_http_error(
-            err,
-            "Unexpected Server error",
-            web.HTTPInternalServerError,
-            skip_internal_error_details=_is_prod,
-        )
-
-        if log_exceptions:
-            _logger.error(
-                'Unexpected server error "%s" from access: %s "%s %s". Responding with status %s',
-                type(err),
-                request.remote,
-                request.method,
-                request.path,
-                http_error.status,
-                exc_info=err,
-                stack_info=True,
-            )
-        raise http_error
+    # pylint:disable=too-many-return-statements
 
     @web.middleware
-    async def _middleware_handler(request: web.Request, handler: Handler):
+    async def _middleware_handler(  # noqa: PLR0911
+        request: web.Request, handler: Handler
+    ):
         """
         Ensure all error raised are properly enveloped and json responses
         """
-        if not is_api_request(request, api_version):
+
+        if not _is_api_request(request, api_version):
             return await handler(request)
 
-        # FIXME: review when to send info to client and when not!
         try:
-            return await handler(request)
 
-        except web.HTTPError as err:
-            # TODO: differenciate between server/client error
-            if not err.reason:
-                err.set_status(err.status_code, reason="Unexpected error")
+            try:
+                return await handler(request)
 
-            err.content_type = MIMETYPE_APPLICATION_JSON
+            # NOTE: RETURN  and do NOT RAISE a response in exception handlers
+            except web.HTTPSuccessful as err_resp:  # 2XX
+                return await _handle_http_successful(request, err_resp)
 
-            if not err.text or not is_enveloped_from_text(err.text):
-                error = ErrorType(
-                    errors=[
-                        ErrorItemType.from_error(err),
-                    ],
-                    status=err.status,
-                    logs=[
-                        LogMessageType(message=err.reason, level="ERROR"),
-                    ],
-                    message=err.reason,
+            except web.HTTPRedirection as err_resp:  # 3XX
+                _logger.debug("Redirecting to '%s'", err_resp)
+                return err_resp
+
+            except web.HTTPError as err_resp:  # 5XX
+                return await _handle_http_error(request, err_resp)
+
+            except NotImplementedError as err:
+                return create_error_response(
+                    err,
+                    http_error_cls=web.HTTPNotImplemented,
                 )
-                err.text = EnvelopeFactory(error=error).as_text()
 
-            raise
-
-        except web.HTTPSuccessful as err:
-            err.content_type = MIMETYPE_APPLICATION_JSON
-            if err.text:
-                try:
-                    payload = json.loads(err.text)
-                    if not is_enveloped_from_map(payload):
-                        payload = wrap_as_envelope(data=payload)
-                        err.text = json_dumps(payload)
-                except Exception as other_error:  # pylint: disable=broad-except
-                    _process_and_raise_unexpected_error(request, other_error)
-            raise
-
-        except web.HTTPRedirection as err:
-            _logger.debug("Redirected to %s", err)
-            raise
-
-        except NotImplementedError as err:
-            http_error = create_http_error(
-                err,
-                f"{err}",
-                web.HTTPNotImplemented,
-                skip_internal_error_details=_is_prod,
-            )
-            raise http_error from err
-
-        except asyncio.TimeoutError as err:
-            http_error = create_http_error(
-                err,
-                f"{err}",
-                web.HTTPGatewayTimeout,
-                skip_internal_error_details=_is_prod,
-            )
-            raise http_error from err
+            except asyncio.TimeoutError as err:
+                return create_error_response(
+                    err,
+                    http_error_cls=web.HTTPGatewayTimeout,
+                )
 
         except Exception as err:  # pylint: disable=broad-except
-            _process_and_raise_unexpected_error(request, err)
+            return await _handle_unexpected_exception(request, err)
 
     # adds identifier (mostly for debugging)
     setattr(  # noqa: B010
@@ -150,8 +197,7 @@ MiddlewareFlexible = Callable[[Request, HandlerFlexible], Awaitable[StreamRespon
 
 
 def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
-    # FIXME: This data conversion is very error-prone. Use decorators instead!
-    _is_prod: bool = is_production_environ()
+    # FIXME: This data conversion is very error-prone. Use decorators instead!!!
 
     @web.middleware
     async def _middleware_handler(
@@ -161,25 +207,24 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
         Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
         ONLY for API-requests
         """
-        if not is_api_request(request, api_version):
+        if not _is_api_request(request, api_version):
             resp = await handler(request)
             assert isinstance(resp, StreamResponse)  # nosec
             return resp
 
-        # NOTE: the return values of this handler
-        resp = await handler(request)
+        # NOTE: the values returned by this handle might be direclty data!
+        resp_or_data = await handler(request)
 
-        if isinstance(resp, web.FileResponse):
-            return resp
+        if isinstance(resp_or_data, web.FileResponse):
+            return resp_or_data
 
-        if not isinstance(resp, StreamResponse):
-            resp = create_data_response(
-                data=resp,
-                skip_internal_error_details=_is_prod,
-            )
+        if not isinstance(resp_or_data, StreamResponse):
+            # NOTE: ensures envelopes if data is returned
+            # NOTE: at this point any response is expected to be enveloped!!
+            resp_or_data = create_enveloped_response(data=resp_or_data)
 
-        assert isinstance(resp, web.StreamResponse)  # nosec
-        return resp
+        assert isinstance(resp_or_data, web.StreamResponse)  # nosec
+        return resp_or_data
 
     # adds identifier (mostly for debugging)
     setattr(  # noqa: B010
@@ -190,7 +235,7 @@ def envelope_middleware_factory(api_version: str) -> MiddlewareFlexible:
 
 
 def append_rest_middlewares(
-    app: web.Application, api_version: str = DEFAULT_API_VERSION
+    app: web.Application, api_version: str = _DEFAULT_API_VERSION
 ):
     """Helper that appends rest-middlewares in the correct order"""
     app.middlewares.append(error_middleware_factory(api_version))

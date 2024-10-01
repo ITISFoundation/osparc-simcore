@@ -5,19 +5,41 @@
 
 import asyncio
 import json
+import logging
+from collections.abc import Callable
 from dataclasses import dataclass
+from http import HTTPStatus
 from typing import Any
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from models_library.utils.json_serialization import json_dumps
+from aiohttp.web_exceptions import (
+    HTTPMethodNotAllowed,
+    HTTPRequestEntityTooLarge,
+    HTTPUnavailableForLegalReasons,
+)
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import (
+    MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE,
     envelope_middleware_factory,
     error_middleware_factory,
 )
 from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
+from servicelib.aiohttp.web_exceptions_extension import (
+    STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS,
+    get_all_aiohttp_http_exceptions,
+)
+from servicelib.error_codes import parse_error_code
+from servicelib.json_serialization import json_dumps
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.status_codes_utils import (
+    get_http_status_codes,
+    is_2xx_success,
+    is_4xx_client_error,
+    is_5xx_server_error,
+    is_error,
+)
 
 
 @dataclass
@@ -26,9 +48,16 @@ class Data:
     y: str = "foo"
 
 
+class SomeUnexpectedError(Exception):
+    ...
+
+
+all_aiohttp_http_exceptions = get_all_aiohttp_http_exceptions()
+
+
 class Handlers:
     @staticmethod
-    async def get_health_wrong(request: web.Request):
+    async def get_health_wrong(_request: web.Request):
         return {
             "name": __name__.split(".")[0],
             "version": "1.0",
@@ -37,7 +66,7 @@ class Handlers:
         }
 
     @staticmethod
-    async def get_health(request: web.Request):
+    async def get_health(_request: web.Request):
         return {
             "name": __name__.split(".")[0],
             "version": "1.0",
@@ -46,59 +75,151 @@ class Handlers:
         }
 
     @staticmethod
-    async def get_dict(request: web.Request):
+    async def get_dict(_request: web.Request):
         return {"x": 3, "y": "3"}
 
     @staticmethod
-    async def get_envelope(request: web.Request):
+    async def get_envelope(_request: web.Request):
         data = {"x": 3, "y": "3"}
         return {"error": None, "data": data}
 
     @staticmethod
-    async def get_list(request: web.Request):
+    async def get_list(_request: web.Request):
         return [{"x": 3, "y": "3"}] * 3
 
     @staticmethod
-    async def get_attobj(request: web.Request):
+    async def get_obj(_request: web.Request):
         return Data(3, "3")
 
     @staticmethod
-    async def get_string(request: web.Request):
+    async def get_string(_request: web.Request):
         return "foo"
 
     @staticmethod
-    async def get_number(request: web.Request):
+    async def get_number(_request: web.Request):
         return 3
 
     @staticmethod
-    async def get_mixed(request: web.Request):
+    async def get_mixed(_request: web.Request):
         return [{"x": 3, "y": "3", "z": [Data(3, "3")] * 2}] * 3
 
     @classmethod
-    def get(cls, suffix):
+    def returns_value(cls, suffix):
         handlers = cls()
         coro = getattr(handlers, "get_" + suffix)
         loop = asyncio.get_event_loop()
-        data = loop.run_until_complete(coro(None))
+        returned_value = loop.run_until_complete(coro(None))
+        return json.loads(json_dumps(returned_value))
 
-        return json.loads(json_dumps(data))
+    EXPECTED_HTTP_RESPONSE_REASON = "custom reason for code {}"
+
+    @classmethod
+    async def get_http_response(cls, request: web.Request):
+        status_code = int(request.query["code"])
+        reason = cls.EXPECTED_HTTP_RESPONSE_REASON.format(status_code)
+
+        match status_code:
+            case status.HTTP_405_METHOD_NOT_ALLOWED:
+                raise HTTPMethodNotAllowed(
+                    method="GET", allowed_methods=["POST"], reason=reason
+                )
+            case status.HTTP_413_REQUEST_ENTITY_TOO_LARGE:
+                raise HTTPRequestEntityTooLarge(
+                    max_size=10, actual_size=12, reason=reason
+                )
+            case status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS:
+                raise HTTPUnavailableForLegalReasons(
+                    link="https://ilegal.it", reason=reason
+                )
+            case _:
+                http_response_cls = all_aiohttp_http_exceptions[status_code]
+                if is_error(status_code):
+                    # 4XX and 5XX are raised
+                    raise http_response_cls(reason=reason)
+
+                # otherwise returned
+                return http_response_cls(reason=reason)
+
+    EXPECTED_RAISE_UNEXPECTED_REASON = "Unexpected error"
+
+    @classmethod
+    async def raise_exception(cls, request: web.Request):
+        exc_name = request.query.get("exc")
+        match exc_name:
+            case NotImplementedError.__name__:
+                raise NotImplementedError
+            case asyncio.TimeoutError.__name__:
+                raise asyncio.TimeoutError
+            case web.HTTPOk.__name__:
+                raise web.HTTPOk  # 2XX
+            case web.HTTPUnauthorized.__name__:
+                raise web.HTTPUnauthorized  # 4XX
+            case web.HTTPServiceUnavailable.__name__:
+                raise web.HTTPServiceUnavailable  # 5XX
+            case _:  # unexpected
+                raise SomeUnexpectedError(cls.EXPECTED_RAISE_UNEXPECTED_REASON)
+
+    @staticmethod
+    async def raise_error(request: web.Request):
+        raise web.HTTPNotFound
+
+    @staticmethod
+    async def raise_error_with_reason(request: web.Request):
+        raise web.HTTPNotFound(reason="I did not find it")
+
+    @staticmethod
+    async def raise_success(request: web.Request):
+        raise web.HTTPOk
+
+    @staticmethod
+    async def raise_success_with_reason(request: web.Request):
+        raise web.HTTPOk(reason="I'm ok")
+
+    @staticmethod
+    async def raise_success_with_text(request: web.Request):
+        # NOTE: explicitly NOT enveloped!
+        raise web.HTTPOk(reason="I'm ok", text=json.dumps({"ok": True}))
 
 
 @pytest.fixture
-def client(event_loop, aiohttp_client):
+def client(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+):
     app = web.Application()
 
     # routes
     app.router.add_routes(
         [
-            web.get("/v1/health", Handlers.get_health, name="get_health"),
-            web.get("/v1/dict", Handlers.get_dict, name="get_dict"),
-            web.get("/v1/envelope", Handlers.get_envelope, name="get_envelope"),
-            web.get("/v1/list", Handlers.get_list, name="get_list"),
-            web.get("/v1/attobj", Handlers.get_attobj, name="get_attobj"),
-            web.get("/v1/string", Handlers.get_string, name="get_string"),
-            web.get("/v1/number", Handlers.get_number, name="get_number"),
-            web.get("/v1/mixed", Handlers.get_mixed, name="get_mixed"),
+            web.get(path, handler, name=handler.__name__)
+            for path, handler in [
+                ("/v1/health", Handlers.get_health),
+                ("/v1/dict", Handlers.get_dict),
+                ("/v1/envelope", Handlers.get_envelope),
+                ("/v1/list", Handlers.get_list),
+                ("/v1/obj", Handlers.get_obj),
+                ("/v1/string", Handlers.get_string),
+                ("/v1/number", Handlers.get_number),
+                ("/v1/mixed", Handlers.get_mixed),
+                ("/v1/get_http_response", Handlers.get_http_response),
+                # custom use cases
+                ("/v1/raise_exception", Handlers.raise_exception),
+                ("/v1/raise_error", Handlers.raise_error),
+                ("/v1/raise_error_with_reason", Handlers.raise_error_with_reason),
+                ("/v1/raise_success", Handlers.raise_success),
+                ("/v1/raise_success_with_reason", Handlers.raise_success_with_reason),
+                ("/v1/raise_success_with_text", Handlers.raise_success_with_text),
+            ]
+        ]
+    )
+
+    app.router.add_routes(
+        [
+            web.get(
+                "/free/raise_exception",
+                Handlers.raise_exception,
+                name="raise_exception_without_middleware",
+            )
         ]
     )
 
@@ -112,14 +233,14 @@ def client(event_loop, aiohttp_client):
 @pytest.mark.parametrize(
     "path,expected_data",
     [
-        ("/health", Handlers.get("health")),
-        ("/dict", Handlers.get("dict")),
-        ("/envelope", Handlers.get("envelope")["data"]),
-        ("/list", Handlers.get("list")),
-        ("/attobj", Handlers.get("attobj")),
-        ("/string", Handlers.get("string")),
-        ("/number", Handlers.get("number")),
-        ("/mixed", Handlers.get("mixed")),
+        ("/health", Handlers.returns_value("health")),
+        ("/dict", Handlers.returns_value("dict")),
+        ("/envelope", Handlers.returns_value("envelope")["data"]),
+        ("/list", Handlers.returns_value("list")),
+        ("/obj", Handlers.returns_value("obj")),
+        ("/string", Handlers.returns_value("string")),
+        ("/number", Handlers.returns_value("number")),
+        ("/mixed", Handlers.returns_value("mixed")),
     ],
 )
 async def test_envelope_middleware(path: str, expected_data: Any, client: TestClient):
@@ -133,7 +254,7 @@ async def test_envelope_middleware(path: str, expected_data: Any, client: TestCl
     assert data == expected_data
 
 
-async def test_404_not_found(client: TestClient):
+async def test_404_not_found_when_entrypoint_not_exposed(client: TestClient):
     response = await client.get("/some-invalid-address-outside-api")
     payload = await response.text()
     assert response.status == status.HTTP_404_NOT_FOUND, payload
@@ -147,3 +268,228 @@ async def test_404_not_found(client: TestClient):
     data, error = unwrap_envelope(payload)
     assert error
     assert not data
+
+
+def _is_server_error(code):
+    return (
+        code not in STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS
+        and is_5xx_server_error(code)
+    )
+
+
+@pytest.mark.parametrize("status_code", get_http_status_codes(status, _is_server_error))
+async def test_fails_with_http_5xx_server_error(client: TestClient, status_code: int):
+    response = await client.get("/v1/get_http_response", params={"code": status_code})
+    assert response.status == status_code
+
+    data, error = unwrap_envelope(await response.json())
+    assert not data
+    assert error
+    assert error["message"] == Handlers.EXPECTED_HTTP_RESPONSE_REASON.format(
+        status_code
+    )
+
+
+def _is_client_error(code):
+    return (
+        code not in STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS
+        and is_4xx_client_error(code)
+    )
+
+
+@pytest.mark.parametrize("status_code", get_http_status_codes(status, _is_client_error))
+async def test_fails_with_http_4xx_client_error(client: TestClient, status_code: int):
+    response = await client.get("/v1/get_http_response", params={"code": status_code})
+    assert response.status == status_code
+
+    data, error = unwrap_envelope(await response.json())
+    assert not data
+    assert error
+    assert error["message"] == Handlers.EXPECTED_HTTP_RESPONSE_REASON.format(
+        status_code
+    )
+    assert error["errors"]
+
+
+def _is_success(code):
+    return code not in STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS and is_2xx_success(
+        code
+    )
+
+
+@pytest.mark.parametrize("status_code", get_http_status_codes(status, _is_success))
+async def test_fails_with_http_successful(client: TestClient, status_code: int):
+    response = await client.get("/v1/get_http_response", params={"code": status_code})
+    assert response.status == status_code
+    assert response.reason == Handlers.EXPECTED_HTTP_RESPONSE_REASON.format(status_code)
+
+    # NOTE: non-json response are sometimes necessary mostly on redirects
+    # NOTE: this is how aiohttp defaults text using status and reason when empty_body is not expected
+    expected = (
+        ""
+        if all_aiohttp_http_exceptions[status_code].empty_body
+        else f"{response.status}: {response.reason}"
+    )
+    assert await response.text() == expected
+    # NOTE there is an concerning asymmetry between returning and raising web.HTTPSuccessful!!!
+
+
+@pytest.mark.parametrize(
+    "exception_cls,expected_code",
+    [
+        (NotImplementedError, status.HTTP_501_NOT_IMPLEMENTED),
+        (asyncio.TimeoutError, status.HTTP_504_GATEWAY_TIMEOUT),
+    ],
+)
+async def test_raised_exception(
+    client: TestClient,
+    exception_cls: type[Exception],
+    expected_code: int,
+    caplog: pytest.LogCaptureFixture,
+):
+    response = await client.get(
+        "/v1/raise_exception", params={"exc": exception_cls.__name__}
+    )
+    assert response.status == expected_code
+
+
+async def test_raised_unhandled_exception(
+    client: TestClient, caplog: pytest.LogCaptureFixture
+):
+    caplog.set_level(logging.ERROR)
+    response = await client.get("/v1/raise_exception")
+
+    # respond the client with 500
+    assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    # response model
+    data, error = unwrap_envelope(await response.json())
+    assert not data
+    assert error
+
+    # user friendly message with OEC reference
+    assert "OEC" in error["message"]
+    parsed_oec = parse_error_code(error["message"]).pop()
+    assert (
+        MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE.format(parsed_oec) == error["message"]
+    )
+
+    # avoids details
+    assert not error.get("errors")
+    assert not error.get("logs")
+
+    # - log sufficient information to diagnose the issue
+    #
+    #       ERROR servicelib.aiohttp.rest_middlewares:rest_middlewares.py:96 Request 'GET /v1/raise_exception' raised 'SomeUnhandledError' [OEC:140555466658464]
+    #         request.remote='127.0.0.1'
+    #         request.headers={b'Host': b'127.0.0.1:33461', b'Accept': b'*/*', b'Accept-Encoding': b'gzip, deflate', b'User-Agent': b'Python/3.10 aiohttp/3.8.6'}
+    #       Traceback (most recent call last):
+    #       File "osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 120, in _middleware_handler
+    #           return await handler(request)
+    #       File "osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 177, in _middleware_handler
+    #           resp_or_data = await handler(request)
+    #       File "osparc-simcore/packages/service-library/tests/aiohttp/test_rest_middlewares.py", line 107, in raise_exception
+    #           raise SomeUnhandledError(cls.EXPECTED_RAISE_UNEXPECTED_REASON)
+    #       tests.aiohttp.test_rest_middlewares.SomeUnhandledError: Unexpected error
+    #
+
+    assert response.method in caplog.text
+    assert response.url.path in caplog.text
+    assert "request.headers=" in caplog.text
+    assert "request.remote=" in caplog.text
+    assert SomeUnexpectedError.__name__ in caplog.text
+    assert Handlers.EXPECTED_RAISE_UNEXPECTED_REASON in caplog.text
+    # log OEC
+    assert "OEC:" in caplog.text
+
+
+async def test_aiohttp_exceptions_construction_policies(client: TestClient):
+
+    # using default constructor
+    err = web.HTTPOk()
+    assert err.status == status.HTTP_200_OK
+    assert err.content_type == "text/plain"
+    # reason is an exception property and is default to
+    assert err.reason == HTTPStatus(status.HTTP_200_OK).phrase
+    # default text if nothing set!
+    assert err.text == f"{err.status}: {err.reason}"
+
+    # This is how it is transformed into a response
+    #
+    # NOTE: that the reqson is somehow transmitted in the header
+    #
+    #   version = request.version
+    #   status_line = "HTTP/{}.{} {} {}".format(
+    #         version[0], version[1], self._status, self._reason
+    #    )
+    #    await writer.write_headers(status_line, self._headers)
+    #
+    #
+    assert client.app
+    assert (
+        client.app.router["raise_exception_without_middleware"].url_for().path
+        == "/free/raise_exception"
+    )
+
+    response = await client.get(
+        "/free/raise_exception", params={"exc": web.HTTPOk.__name__}
+    )
+    assert response.status == status.HTTP_200_OK
+    assert response.reason == err.reason  # I wonder how this is passed
+    assert response.content_type == err.content_type
+
+    text = await response.text()
+    assert err.text == f"{err.status}: {err.reason}"
+    print(text)
+
+
+async def test_raise_error(client: TestClient):
+    # w/o reason
+    resp1 = await client.get("/v1/raise_error")
+    assert resp1.status == status.HTTP_404_NOT_FOUND
+    assert resp1.content_type == MIMETYPE_APPLICATION_JSON
+    assert resp1.reason == HTTPStatus(resp1.status).phrase
+
+    body = await resp1.json()
+    assert body["error"]["message"] == resp1.reason
+
+    # without
+    resp2 = await client.get("/v1/raise_error_with_reason")
+    assert resp2.status == resp1.status
+    assert resp2.content_type == resp1.content_type
+    assert resp2.reason != resp1.reason
+
+    body = await resp2.json()
+    assert body["error"]["message"] == resp2.reason
+
+
+async def test_raise_success(client: TestClient):
+    # w/o reason
+    resp_default = await client.get("/v1/raise_success")
+    assert resp_default.status == status.HTTP_200_OK
+    assert resp_default.content_type == MIMETYPE_APPLICATION_JSON
+    assert resp_default.reason == HTTPStatus(resp_default.status).phrase
+
+    body = await resp_default.json()
+    assert body["data"] == resp_default.reason
+
+    # without
+    resp2 = await client.get("/v1/raise_success_with_reason")
+    assert resp2.status == resp_default.status
+    assert resp2.content_type == resp_default.content_type
+    assert resp2.reason != resp_default.reason
+
+    body = await resp2.json()
+    assert body["data"] == resp2.reason
+
+    # with text
+    # NOTE: in this case, when we enforce text, then `reason` does not reach front-end anymore!
+    resp3 = await client.get("/v1/raise_success_with_text")
+    assert resp3.status == resp_default.status
+    assert resp3.content_type == resp_default.content_type
+    assert resp3.reason != resp_default.reason
+
+    body = await resp3.json()
+    # explicitly NOT enveloped
+    assert "data" not in body
+    assert body == {"ok": True}

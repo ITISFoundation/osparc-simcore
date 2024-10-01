@@ -143,10 +143,7 @@ async def test_failing_task_returns_error(
     data, error = await assert_status(result, status.HTTP_500_INTERNAL_SERVER_ERROR)
     assert not data
     assert error
-    assert "errors" in error
-    assert len(error["errors"]) == 1
-    assert error["errors"][0]["code"] == "RuntimeError"
-    assert error["errors"][0]["message"] == "We were asked to fail!!"
+    assert "OEC" in error["message"]
 
 
 async def test_get_results_before_tasks_finishes_returns_404(

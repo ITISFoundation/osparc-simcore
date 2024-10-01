@@ -391,7 +391,7 @@ async def register_phone(request: web.Request):
                 "level": "INFO",
                 "logger": "user",
             },
-            status=status.HTTP_202_ACCEPTED,
+            status_code=status.HTTP_202_ACCEPTED,
         )
 
     except web.HTTPException:

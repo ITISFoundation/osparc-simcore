@@ -7,7 +7,7 @@ from pprint import pformat
 from aiohttp import ClientResponse
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import unwrap_envelope
-from servicelib.status_utils import get_code_display_name, is_error
+from servicelib.status_codes_utils import get_display_name, is_error
 
 
 async def assert_status(
@@ -81,13 +81,12 @@ def _do_assert_error(
 
     assert is_error(expected_status_code)
 
-    assert len(error["errors"]) == 1
+    assert error.get("message")  # required & non-nullable
 
-    err = error["errors"][0]
     if expected_msg:
-        assert expected_msg in err["message"]
+        assert expected_msg in error["errors"][0]["message"]
 
     if expected_error_code:
-        assert expected_error_code == err["code"]
+        assert expected_error_code == error["errors"][0]["code"]
 
     return data, error

@@ -7,6 +7,7 @@ from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
 from models_library.projects import ProjectID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
+from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
     start_long_running_task,
@@ -78,9 +79,7 @@ async def _copy_folders_from_project(
             task_progress=task_progress,
         )
 
-    raise web.HTTPCreated(
-        text=json_dumps(body.destination), content_type=MIMETYPE_APPLICATION_JSON
-    )
+    return web.json_response({"data": body.destination}, status=status.HTTP_201_CREATED)
 
 
 @routes.post(f"/{API_VTAG}/simcore-s3/folders", name="copy_folders_from_project")

@@ -87,9 +87,10 @@ async def test_wrong_confirm_pass(client: TestClient, new_password: str):
                     "code": "value_error",
                     "message": MSG_PASSWORD_MISMATCH,
                     "resource": "/v0/auth/change-password",
-                    "field": "confirm",
+                    "field": "body.confirm",
                 }
             ],
+            "message": "Invalid field/s 'body.confirm' in request",
         }
 
 

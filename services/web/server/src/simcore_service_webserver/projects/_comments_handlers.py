@@ -190,11 +190,13 @@ async def update_project_comment(request: web.Request):
         include_state=False,
     )
 
-    return await _comments_api.update_project_comment(
-        request=request,
-        comment_id=path_params.comment_id,
-        project_uuid=path_params.project_uuid,
-        contents=body_params.contents,
+    return envelope_json_response(
+        await _comments_api.update_project_comment(
+            request=request,
+            comment_id=path_params.comment_id,
+            project_uuid=path_params.project_uuid,
+            contents=body_params.contents,
+        )
     )
 
 
@@ -247,7 +249,9 @@ async def get_project_comment(request: web.Request):
         include_state=False,
     )
 
-    return await _comments_api.get_project_comment(
-        request=request,
-        comment_id=path_params.comment_id,
+    return envelope_json_response(
+        await _comments_api.get_project_comment(
+            request=request,
+            comment_id=path_params.comment_id,
+        )
     )
