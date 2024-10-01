@@ -120,7 +120,7 @@ def _handle_project_nodes_exceptions(handler: Handler):
             raise web.HTTPConflict(reason=f"{exc}") from exc
         except CatalogForbiddenError as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
-        except WalletAccessForbiddenError as err:
+        except WalletAccessForbiddenError as exc:
             raise web.HTTPForbidden(
                 reason=f"Payment required, but the user lacks access to the project's linked wallet.: {exc}"
             ) from exc
