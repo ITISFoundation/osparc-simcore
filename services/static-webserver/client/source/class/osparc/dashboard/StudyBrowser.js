@@ -960,7 +960,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
 
-        console.log("__changeContext", workspaceId, folderId);
         this.resetSelection();
         this.setMultiSelection(false);
         this.set({
