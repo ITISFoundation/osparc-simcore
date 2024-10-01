@@ -36,6 +36,9 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     });
 
     this.__spacers = [];
+
+    this.initCurrentWorkspaceId();
+    this.initCurrentFolderId();
   },
 
   events: {
