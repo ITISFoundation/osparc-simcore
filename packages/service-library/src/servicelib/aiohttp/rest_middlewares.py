@@ -50,13 +50,10 @@ def error_middleware_factory(
     def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
 
         error_code = create_error_code(err)
-        error_context = {
-            "request.remote",
-            request.remote,
-            "request.method",
-            request.method,
-            "request.path",
-            request.path,
+        error_context: dict[str, Any] = {
+            "request.remote": f"{request.remote}",
+            "request.method": f"{request.method}",
+            "request.path": f"{request.path}",
         }
         if isinstance(err, OsparcErrorMixin):
             error_context.update(err.error_context())
@@ -79,7 +76,7 @@ def error_middleware_factory(
             log_msg,
             extra=get_log_record_extra(
                 error_code=error_code,
-                user_id=error_context.get("user_id", None),
+                user_id=error_context.get("user_id"),
             ),
         )
         raise http_error
