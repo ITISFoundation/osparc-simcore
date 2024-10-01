@@ -837,8 +837,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
+    // Used in S4L products
     __addNewStudyFromServiceButtons: function(key, newButtonInfo) {
-      const versions = osparc.service.Utils.getVersions(key);
+      // Include deprecated versions, they should all be updatable to a non deprecated version
+      const versions = osparc.service.Utils.getVersions(key, false);
       if (versions.length && newButtonInfo) {
         // scale to latest compatible
         const latestVersion = versions[0];
