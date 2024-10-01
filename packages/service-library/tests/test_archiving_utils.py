@@ -609,9 +609,10 @@ def _touch_all_files_in_path(path_to_archive: Path) -> None:
 
 @pytest.fixture
 async def mixed_file_types(tmp_path: Path, faker: Faker) -> AsyncIterable[Path]:
-    """Directory with well known structure"""
     base_dir = tmp_path / "mixed_types_dir"
     base_dir.mkdir()
+
+    # mixed small text files and binary files
     (base_dir / "empty").mkdir()
     (base_dir / "d1").mkdir()
     (base_dir / "d1" / "f1.txt").write_text(faker.text())
@@ -621,7 +622,8 @@ async def mixed_file_types(tmp_path: Path, faker: Faker) -> AsyncIterable[Path]:
     (base_dir / "d1" / "sd1" / "b2.bin").write_bytes(faker.json_bytes())
     (base_dir / "images").mkdir()
 
-    # generate some data that can make the test fail, images
+    # images cause issues with zipping, below content prduced different
+    # hashes for zip files
     for i in range(2):
         image_dir = base_dir / f"images{i}"
         image_dir.mkdir()
@@ -640,14 +642,14 @@ async def mixed_file_types(tmp_path: Path, faker: Faker) -> AsyncIterable[Path]:
     assert not base_dir.exists()
 
 
-# strangely enough no issues here
 @pytest.mark.parametrize(
     "store_relative_path, compress",
     [
-        pytest.param(True, False, id="nodeports_options"),
+        # test that all possible combinations still work
         pytest.param(False, False, id="no_relative_path_no_compress"),
-        pytest.param(True, True, id="with_relative_path_with_compression"),
         pytest.param(False, True, id="no_relative_path_with_compression"),
+        pytest.param(True, False, id="nodeports_options"),
+        pytest.param(True, True, id="with_relative_path_with_compression"),
     ],
 )
 async def test_regression_archive_hash_does_not_change(
