@@ -54,10 +54,7 @@ def setup_rest(app: web.Application):
     # NOTE: using safe get here since some tests use incomplete configs
     app.middlewares.extend(
         [
-            error_middleware_factory(
-                api_version=API_VTAG,
-                log_exceptions=not is_diagnostics_enabled,
-            ),
+            error_middleware_factory(api_version=API_VTAG),
             envelope_middleware_factory(api_version=API_VTAG),
         ]
     )
