@@ -161,7 +161,9 @@ qx.Class.define("osparc.tours.Manager", {
     },
 
     __getVisibleElement: function(selector) {
+      // get all elements...
       const elements = document.querySelectorAll(`[${selector}]`);
+      // ...and use the first on screen match
       const element = [...elements].find(el => osparc.utils.Utils.isElementOnScreen(el));
       return element;
     },
