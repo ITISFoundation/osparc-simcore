@@ -45,8 +45,6 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
 def error_middleware_factory(
     api_version: str,
 ) -> Middleware:
-    _is_prod: bool = is_production_environ()
-
     def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
 
         error_code = create_error_code(err)
@@ -70,7 +68,7 @@ def error_middleware_factory(
             err,
             frontend_msg,
             web.HTTPInternalServerError,
-            skip_internal_error_details=_is_prod,
+            skip_internal_error_details=True,
         )
         _logger.exception(
             log_msg,
