@@ -17,7 +17,6 @@ Service for executing commands on docker nodes
 
 To develop this project, just
 
-
 ```cmd
 make help
 
