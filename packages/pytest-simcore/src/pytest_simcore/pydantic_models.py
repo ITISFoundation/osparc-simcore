@@ -64,7 +64,7 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
             model_cls: type[BaseModel], example_name: int, example_data: Any
         ):
             print(example_name, ":", json.dumps(example_data))
-            assert model_cls.parse_obj(example_data)
+            assert model_cls.model_validate(example_data)
     """
 
     def _is_model_cls(obj) -> bool:

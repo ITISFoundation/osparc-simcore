@@ -14,6 +14,6 @@ from pytest_simcore.pydantic_models import walk_model_examples_in_package
 def test_all_settings_library_models_config_examples(
     model_cls: type[BaseModel], example_name: int, example_data: Any
 ):
-    assert model_cls.parse_obj(
+    assert model_cls.model_validate(
         example_data
     ), f"Failed {example_name} : {json.dumps(example_data)}"

@@ -123,7 +123,9 @@ class TasksManager:
                 logger.warning(
                     "Removing stale task '%s' with status '%s'",
                     task_id,
-                    self.get_task_status(task_id, with_task_context=None).json(),
+                    self.get_task_status(
+                        task_id, with_task_context=None
+                    ).model_dump_json(),
                 )
                 await self.remove_task(
                     task_id, with_task_context=None, reraise_errors=False
@@ -210,7 +212,7 @@ class TasksManager:
         task = tracked_task.task
         done = task.done()
 
-        return TaskStatus.parse_obj(
+        return TaskStatus.model_validate(
             {
                 "task_progress": tracked_task.task_progress,
                 "done": done,

@@ -107,7 +107,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
                 "62237c33-8d6c-4709-aa92-c3cf693dd6d2",
             ],
         }
-    returned_computation = ComputationTask.parse_obj(
+    returned_computation = ComputationTask.model_validate(
         ComputationTask.model_config["json_schema_extra"]["examples"][0]
     ).copy(
         update={
@@ -131,7 +131,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
     state = RunningState.NOT_STARTED
     pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
-    returned_computation = ComputationTask.parse_obj(
+    returned_computation = ComputationTask.model_validate(
         ComputationTask.model_config["json_schema_extra"]["examples"][0]
     ).copy(
         update={
@@ -169,7 +169,7 @@ def list_clusters_cb(url, **kwargs) -> CallbackResult:
         body=json.dumps(
             [
                 json.loads(
-                    Cluster.parse_obj(
+                    Cluster.model_validate(
                         random.choice(
                             Cluster.model_config["json_schema_extra"]["examples"]
                         )
@@ -187,7 +187,7 @@ def get_cluster_cb(url, **kwargs) -> CallbackResult:
     return CallbackResult(
         status=200,
         payload=json.loads(
-            Cluster.parse_obj(
+            Cluster.model_validate(
                 {
                     **random.choice(
                         Cluster.model_config["json_schema_extra"]["examples"]
@@ -218,7 +218,7 @@ def patch_cluster_cb(url, **kwargs) -> CallbackResult:
     return CallbackResult(
         status=200,
         payload=json.loads(
-            Cluster.parse_obj(
+            Cluster.model_validate(
                 {
                     **random.choice(
                         Cluster.model_config["json_schema_extra"]["examples"]

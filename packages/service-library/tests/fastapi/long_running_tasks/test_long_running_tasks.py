@@ -124,7 +124,7 @@ def wait_for_task() -> Callable[
             with attempt:
                 result = await client.get(f"{status_url}")
                 assert result.status_code == status.HTTP_200_OK
-                task_status = long_running_tasks.server.TaskStatus.parse_obj(
+                task_status = long_running_tasks.server.TaskStatus.model_validate(
                     result.json()
                 )
                 assert task_status
@@ -183,7 +183,7 @@ async def test_workflow(
     result = await client.get(f"{result_url}")
     # NOTE: this is DIFFERENT than with aiohttp where we return the real result
     assert result.status_code == status.HTTP_200_OK
-    task_result = long_running_tasks.server.TaskResult.parse_obj(result.json())
+    task_result = long_running_tasks.server.TaskResult.model_validate(result.json())
     assert not task_result.error
     assert task_result.result == [f"{x}" for x in range(10)]
     # getting the result again should raise a 404
@@ -222,7 +222,7 @@ async def test_failing_task_returns_error(
     result_url = app.url_path_for("get_task_result", task_id=task_id)
     result = await client.get(f"{result_url}")
     assert result.status_code == status.HTTP_200_OK
-    task_result = long_running_tasks.server.TaskResult.parse_obj(result.json())
+    task_result = long_running_tasks.server.TaskResult.model_validate(result.json())
 
     assert not task_result.result
     assert task_result.error

@@ -140,7 +140,7 @@ def parse_request_path_parameters_as(
         use_error_v1=use_enveloped_error_v1,
     ):
         data = dict(request.match_info)
-        return parameters_schema_cls.parse_obj(data)
+        return parameters_schema_cls.model_validate(data)
 
 
 def parse_request_query_parameters_as(

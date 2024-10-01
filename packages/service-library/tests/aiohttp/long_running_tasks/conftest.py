@@ -122,7 +122,7 @@ def wait_for_task() -> Callable[[TestClient, TaskId, TaskContext], Awaitable[Non
                 data, error = await assert_status(result, status.HTTP_200_OK)
                 assert data
                 assert not error
-                task_status = long_running_tasks.server.TaskStatus.parse_obj(data)
+                task_status = long_running_tasks.server.TaskStatus.model_validate(data)
                 assert task_status
                 assert task_status.done
 

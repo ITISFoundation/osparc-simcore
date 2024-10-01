@@ -144,7 +144,7 @@ async def get_storage_locations(
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}"},
     ) as response:
-        locations_enveloped = Envelope[FileLocationArray].parse_obj(
+        locations_enveloped = Envelope[FileLocationArray].model_validate(
             await response.json()
         )
         if locations_enveloped.data is None:
@@ -173,7 +173,7 @@ async def get_download_file_link(
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}", "link_type": link_type.value},
     ) as response:
-        presigned_link_enveloped = Envelope[PresignedLink].parse_obj(
+        presigned_link_enveloped = Envelope[PresignedLink].model_validate(
             await response.json()
         )
         if not presigned_link_enveloped.data or not presigned_link_enveloped.data.link:
@@ -215,7 +215,7 @@ async def get_upload_file_links(
         expected_status=status.HTTP_200_OK,
         params=query_params,
     ) as response:
-        file_upload_links_enveloped = Envelope[FileUploadSchema].parse_obj(
+        file_upload_links_enveloped = Envelope[FileUploadSchema].model_validate(
             await response.json()
         )
     if file_upload_links_enveloped.data is None:
@@ -245,7 +245,7 @@ async def get_file_metadata(
             # NOTE: keeps backwards compatibility
             raise exceptions.S3InvalidPathError(file_id)
 
-        file_metadata_enveloped = Envelope[FileMetaDataGet].parse_obj(payload)
+        file_metadata_enveloped = Envelope[FileMetaDataGet].model_validate(payload)
         assert file_metadata_enveloped.data  # nosec
         return file_metadata_enveloped.data
 
@@ -265,7 +265,7 @@ async def list_file_metadata(
         expected_status=status.HTTP_200_OK,
         params={"user_id": f"{user_id}", "uuid_filter": uuid_filter},
     ) as resp:
-        envelope = Envelope[list[FileMetaDataGet]].parse_obj(await resp.json())
+        envelope = Envelope[list[FileMetaDataGet]].model_validate(await resp.json())
         assert envelope.data is not None  # nosec
         file_meta_data: list[FileMetaDataGet] = envelope.data
         return file_meta_data
