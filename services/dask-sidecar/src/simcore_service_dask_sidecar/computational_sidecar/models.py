@@ -3,7 +3,7 @@ import re
 from models_library.basic_regex import SIMPLE_VERSION_RE
 from models_library.services import ServiceMetaDataPublished
 from packaging import version
-from pydantic import BaseModel, ByteSize, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ByteSize, ConfigDict, Field, ValidationInfo, field_validator
 
 LEGACY_INTEGRATION_VERSION = version.Version("0")
 PROGRESS_REGEXP: re.Pattern[str] = re.compile(
@@ -44,16 +44,16 @@ class ContainerHostConfig(BaseModel):
 
     @field_validator("memory_swap", mode="before")
     @classmethod
-    def ensure_no_memory_swap_means_no_swap(cls, v, values):
+    def ensure_no_memory_swap_means_no_swap(cls, v, info: ValidationInfo):
         if v is None:
             # if not set it will be the same value as memory to ensure swap is disabled
-            return values["memory"]
+            return info.data["memory"]
         return v
 
     @field_validator("memory_swap")
     @classmethod
-    def ensure_memory_swap_cannot_be_unlimited_nor_smaller_than_memory(cls, v, values):
-        if v < values["memory"]:
+    def ensure_memory_swap_cannot_be_unlimited_nor_smaller_than_memory(cls, v, info: ValidationInfo):
+        if v < info.data["memory"]:
             msg = "Memory swap cannot be set to a smaller value than memory"
             raise ValueError(msg)
         return v
