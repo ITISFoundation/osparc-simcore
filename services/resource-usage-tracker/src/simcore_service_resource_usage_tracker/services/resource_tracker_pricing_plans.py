@@ -96,7 +96,7 @@ async def list_connected_services_to_pricing_plan_by_pricing_plan(
     ] = await resource_tracker_repo.list_connected_services_to_pricing_plan_by_pricing_plan(
         product_name=product_name, pricing_plan_id=pricing_plan_id
     )
-    return [PricingPlanToServiceGet.parse_obj(item) for item in output_list]
+    return [PricingPlanToServiceGet.model_validate(item) for item in output_list]
 
 
 async def connect_service_to_pricing_plan(
@@ -116,7 +116,7 @@ async def connect_service_to_pricing_plan(
             service_version=service_version,
         )
     )
-    return PricingPlanToServiceGet.parse_obj(output)
+    return PricingPlanToServiceGet.model_validate(output)
 
 
 async def list_pricing_plans_by_product(

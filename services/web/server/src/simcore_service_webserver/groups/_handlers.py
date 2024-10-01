@@ -82,7 +82,7 @@ async def list_groups(request: web.Request):
     """
 
     product: Product = get_current_product(request)
-    req_ctx = _GroupsRequestContext.parse_obj(request)
+    req_ctx = _GroupsRequestContext.model_validate(request)
 
     primary_group, user_groups, all_group = await api.list_user_groups_with_read_access(
         request.app, req_ctx.user_id
@@ -120,7 +120,7 @@ class _GroupPathParams(BaseModel):
 @_handle_groups_exceptions
 async def get_group(request: web.Request):
     """Get one group details"""
-    req_ctx = _GroupsRequestContext.parse_obj(request)
+    req_ctx = _GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
 
     group = await api.get_user_group(request.app, req_ctx.user_id, path_params.gid)
@@ -134,7 +134,7 @@ async def get_group(request: web.Request):
 @_handle_groups_exceptions
 async def create_group(request: web.Request):
     """Creates organization groups"""
-    req_ctx = _GroupsRequestContext.parse_obj(request)
+    req_ctx = _GroupsRequestContext.model_validate(request)
     new_group = await request.json()
 
     created_group = await api.create_user_group(request.app, req_ctx.user_id, new_group)
@@ -149,7 +149,7 @@ async def create_group(request: web.Request):
 @permission_required("groups.*")
 @_handle_groups_exceptions
 async def update_group(request: web.Request):
-    req_ctx = _GroupsRequestContext.parse_obj(request)
+    req_ctx = _GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
     new_group_values = await request.json()
 
@@ -165,7 +165,7 @@ async def update_group(request: web.Request):
 @permission_required("groups.*")
 @_handle_groups_exceptions
 async def delete_group(request: web.Request):
-    req_ctx = _GroupsRequestContext.parse_obj(request)
+    req_ctx = _GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
 
     await api.delete_user_group(request.app, req_ctx.user_id, path_params.gid)
@@ -177,7 +177,7 @@ async def delete_group(request: web.Request):
 @permission_required("groups.*")
 @_handle_groups_exceptions
 async def get_group_users(request: web.Request):
-    req_ctx = _GroupsRequestContext.parse_obj(request)
+    req_ctx = _GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
 
     group_user = await api.list_users_in_group(
@@ -195,7 +195,7 @@ async def add_group_user(request: web.Request):
     """
     Adds a user in an organization group
     """
-    req_ctx = _GroupsRequestContext.parse_obj(request)
+    req_ctx = _GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
     new_user_in_group = await request.json()
 
@@ -234,7 +234,7 @@ async def get_group_user(request: web.Request):
     """
     Gets specific user in group
     """
-    req_ctx = _GroupsRequestContext.parse_obj(request)
+    req_ctx = _GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_GroupUserPathParams, request)
     user = await api.get_user_in_group(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
@@ -251,7 +251,7 @@ async def update_group_user(request: web.Request):
     """
     Modify specific user in group
     """
-    req_ctx = _GroupsRequestContext.parse_obj(request)
+    req_ctx = _GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_GroupUserPathParams, request)
     new_values_for_user_in_group = await request.json()
     user = await api.update_user_in_group(
@@ -270,7 +270,7 @@ async def update_group_user(request: web.Request):
 @permission_required("groups.*")
 @_handle_groups_exceptions
 async def delete_group_user(request: web.Request):
-    req_ctx = _GroupsRequestContext.parse_obj(request)
+    req_ctx = _GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_GroupUserPathParams, request)
     await api.delete_user_in_group(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid

@@ -383,7 +383,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
             self, *args, **kwargs
         ) -> list[DynamicServiceGet]:  # noqa: ARG002
             return [
-                DynamicServiceGet.parse_obj(
+                DynamicServiceGet.model_validate(
                     DynamicServiceGet.Config.schema_extra["examples"][1]
                     | {"service_uuid": service_uuid, "project_id": user_project["uuid"]}
                 )

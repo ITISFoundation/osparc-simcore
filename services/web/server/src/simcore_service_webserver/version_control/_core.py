@@ -136,7 +136,7 @@ async def get_workbench(
 
     # prefer actual project to snapshot
     content = await vc_repo.get_workbench_view(repo_id, commit_id)
-    return WorkbenchView.parse_obj(content)
+    return WorkbenchView.model_validate(content)
 
 
 #

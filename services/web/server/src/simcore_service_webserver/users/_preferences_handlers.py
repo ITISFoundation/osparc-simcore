@@ -55,7 +55,7 @@ def _handle_users_exceptions(handler: Handler):
 @login_required
 @_handle_users_exceptions
 async def set_frontend_preference(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     req_body = await parse_request_body_as(PatchRequestBody, request)
     req_path_params = parse_request_path_parameters_as(PatchPathParams, request)
 

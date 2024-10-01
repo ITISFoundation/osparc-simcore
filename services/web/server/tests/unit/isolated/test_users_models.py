@@ -134,5 +134,5 @@ def test_parsing_output_of_get_user_profile():
         },
     }
 
-    profile = ProfileGet.parse_obj(result_from_db_query_and_composition)
+    profile = ProfileGet.model_validate(result_from_db_query_and_composition)
     assert "password" not in profile.dict(exclude_unset=True)

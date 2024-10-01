@@ -198,7 +198,7 @@ def sleeper_task(
     list_of_files = [file_on_s3_server() for _ in range(NUM_FILES)]
 
     # defines the inputs of the task
-    input_data = TaskInputData.parse_obj(
+    input_data = TaskInputData.model_validate(
         {
             "input_1": 23,
             "input_23": "a string input",
@@ -276,7 +276,7 @@ def sleeper_task(
         "pytest_bool": False,
     }
     output_file_url = s3_remote_file_url(file_path="output_file")
-    expected_output_keys = TaskOutputDataSchema.parse_obj(
+    expected_output_keys = TaskOutputDataSchema.model_validate(
         {
             **(
                 {k: {"required": True} for k in jsonable_outputs}
@@ -295,7 +295,7 @@ def sleeper_task(
             ),
         }
     )
-    expected_output_data = TaskOutputData.parse_obj(
+    expected_output_data = TaskOutputData.model_validate(
         {
             **(
                 jsonable_outputs
@@ -395,10 +395,10 @@ def sidecar_task(
             service_version="latest",
             command=command
             or ["/bin/bash", "-c", "echo 'hello I'm an empty ubuntu task!"],
-            input_data=TaskInputData.parse_obj({}),
-            output_data_keys=TaskOutputDataSchema.parse_obj({}),
+            input_data=TaskInputData.model_validate({}),
+            output_data_keys=TaskOutputDataSchema.model_validate({}),
             log_file_url=s3_remote_file_url(file_path="log.dat"),
-            expected_output_data=TaskOutputData.parse_obj({}),
+            expected_output_data=TaskOutputData.model_validate({}),
             expected_logs=[],
             integration_version=integration_version,
             task_envs={},

@@ -46,7 +46,7 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 @pytest.fixture
 def mock_s3_settings() -> S3Settings:
-    return S3Settings.parse_obj(S3Settings.Config.schema_extra["examples"][0])
+    return S3Settings.model_validate(S3Settings.Config.schema_extra["examples"][0])
 
 
 @pytest.fixture
@@ -112,14 +112,14 @@ def swarm_network_id() -> str:
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
     # overwrites global fixture
-    return SimcoreServiceLabels.parse_obj(
+    return SimcoreServiceLabels.model_validate(
         SimcoreServiceLabels.Config.schema_extra["examples"][2]
     )
 
 
 @pytest.fixture
 def hardware_info() -> HardwareInfo:
-    return HardwareInfo.parse_obj(HardwareInfo.Config.schema_extra["examples"][0])
+    return HardwareInfo.model_validate(HardwareInfo.Config.schema_extra["examples"][0])
 
 
 @pytest.fixture
@@ -134,7 +134,7 @@ def expected_dynamic_sidecar_spec(
     return {
         "endpoint_spec": {},
         "labels": {
-            "io.simcore.scheduler-data": SchedulerData.parse_obj(
+            "io.simcore.scheduler-data": SchedulerData.model_validate(
                 {
                     "compose_spec": '{"version": "2.3", "services": {"rt-web": {"image": '
                     '"${SIMCORE_REGISTRY}/simcore/services/dynamic/sim4life:${SERVICE_VERSION}", '
@@ -432,7 +432,7 @@ async def test_get_dynamic_proxy_spec(
         == minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
     )
 
-    expected_dynamic_sidecar_spec_model = AioDockerServiceSpec.parse_obj(
+    expected_dynamic_sidecar_spec_model = AioDockerServiceSpec.model_validate(
         expected_dynamic_sidecar_spec
     )
     assert expected_dynamic_sidecar_spec_model.TaskTemplate
@@ -553,7 +553,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     )
     assert dynamic_sidecar_spec
     dynamic_sidecar_spec_dict = dynamic_sidecar_spec.dict()
-    expected_dynamic_sidecar_spec_dict = AioDockerServiceSpec.parse_obj(
+    expected_dynamic_sidecar_spec_dict = AioDockerServiceSpec.model_validate(
         expected_dynamic_sidecar_spec
     ).dict()
     # ensure some entries are sorted the same to prevent flakyness
@@ -582,7 +582,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     )
     assert user_service_specs
     assert "sidecar" in user_service_specs
-    user_aiodocker_service_spec = AioDockerServiceSpec.parse_obj(
+    user_aiodocker_service_spec = AioDockerServiceSpec.model_validate(
         user_service_specs["sidecar"]
     )
     assert user_aiodocker_service_spec

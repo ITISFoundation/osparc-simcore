@@ -99,7 +99,7 @@ async def get_app_status(request: web.Request):
 
         return info
 
-    check = AppStatusCheck.parse_obj(
+    check = AppStatusCheck.model_validate(
         {
             "app_name": APP_NAME,
             "version": API_VERSION,

@@ -148,7 +148,7 @@ class DirectorApi:
         # NOTE: the fact that it returns a list of one element is a defect of the director API
         assert isinstance(data, list)  # nosec
         assert len(data) == 1  # nosec
-        return ServiceMetaDataPublished.parse_obj(data[0])
+        return ServiceMetaDataPublished.model_validate(data[0])
 
 
 async def setup_director(app: FastAPI) -> None:

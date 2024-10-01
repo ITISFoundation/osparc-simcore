@@ -181,7 +181,7 @@ def _get_outputs_in_workbench(workbench: dict[NodeID, Node]) -> dict[NodeID, Any
         if port.node.inputs:
             try:
                 # Every port is associated to the output of a task
-                port_link = _NonStrictPortLink.parse_obj(
+                port_link = _NonStrictPortLink.model_validate(
                     port.node.inputs[KeyIDStr("in_1")]
                 )
                 # Here we resolve which task and which tasks' output is associated to this port?

@@ -64,7 +64,7 @@ routes = web.RouteTableDef()
 @_handle_projects_nodes_pricing_unit_exceptions
 async def get_project_node_pricing_unit(request: web.Request):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
@@ -113,7 +113,7 @@ class _ProjectNodePricingUnitPathParams(BaseModel):
 @_handle_projects_nodes_pricing_unit_exceptions
 async def connect_pricing_unit_to_project_node(request: web.Request):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectNodePricingUnitPathParams, request
     )

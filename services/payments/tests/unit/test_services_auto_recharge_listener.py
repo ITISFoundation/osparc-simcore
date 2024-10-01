@@ -200,7 +200,7 @@ async def mock_rpc_server(
         dollar_amount: Decimal,
         product_name: ProductName,
     ) -> InvoiceDataGet:
-        return InvoiceDataGet.parse_obj(
+        return InvoiceDataGet.model_validate(
             InvoiceDataGet.Config.schema_extra["examples"][0]
         )
 

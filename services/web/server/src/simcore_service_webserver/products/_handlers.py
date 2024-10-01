@@ -36,7 +36,7 @@ class _ProductsRequestContext(RequestParams):
 @login_required
 @permission_required("product.price.read")
 async def _get_current_product_price(request: web.Request):
-    req_ctx = _ProductsRequestContext.parse_obj(request)
+    req_ctx = _ProductsRequestContext.model_validate(request)
     price_info = await _api.get_current_product_credit_price_info(request)
 
     credit_price = GetCreditPrice(
@@ -57,7 +57,7 @@ class _ProductsRequestParams(StrictRequestParams):
 @login_required
 @permission_required("product.details.*")
 async def _get_product(request: web.Request):
-    req_ctx = _ProductsRequestContext.parse_obj(request)
+    req_ctx = _ProductsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProductsRequestParams, request)
 
     if path_params.product_name == "current":
@@ -86,7 +86,7 @@ class _ProductTemplateParams(_ProductsRequestParams):
 @login_required
 @permission_required("product.details.*")
 async def update_product_template(request: web.Request):
-    req_ctx = _ProductsRequestContext.parse_obj(request)
+    req_ctx = _ProductsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProductTemplateParams, request)
 
     assert req_ctx  # nosec

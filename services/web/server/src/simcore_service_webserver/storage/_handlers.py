@@ -237,7 +237,7 @@ async def upload_file(request: web.Request) -> web.Response:
 
     payload, status = await _forward_request_to_storage(request, "PUT", body=None)
     data, _ = unwrap_envelope(payload)
-    file_upload_schema = FileUploadSchema.parse_obj(data)
+    file_upload_schema = FileUploadSchema.model_validate(data)
     file_upload_schema.links.complete_upload = _from_storage_url(
         request, file_upload_schema.links.complete_upload
     )
@@ -265,7 +265,7 @@ async def complete_upload_file(request: web.Request) -> web.Response:
         request, "POST", body=body_item.dict()
     )
     data, _ = unwrap_envelope(payload)
-    file_upload_complete = FileUploadCompleteResponse.parse_obj(data)
+    file_upload_complete = FileUploadCompleteResponse.model_validate(data)
     file_upload_complete.links.state = _from_storage_url(
         request, file_upload_complete.links.state
     )

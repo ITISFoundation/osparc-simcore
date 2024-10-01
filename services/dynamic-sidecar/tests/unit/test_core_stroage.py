@@ -60,7 +60,7 @@ def mock_storage_app(username: str | None, password: str | None) -> FastAPI:
 def storage_auth_settings(
     username: str | None, password: str | None
 ) -> StorageAuthSettings:
-    return StorageAuthSettings.parse_obj(
+    return StorageAuthSettings.model_validate(
         {
             "STORAGE_HOST": "localhost",
             "STORAGE_PORT": 44332,

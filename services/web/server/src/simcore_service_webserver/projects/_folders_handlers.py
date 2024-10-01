@@ -59,7 +59,7 @@ class _ProjectsFoldersPathParams(BaseModel):
 @permission_required("project.folders.*")
 @_handle_projects_folders_exceptions
 async def replace_project_folder(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectsFoldersPathParams, request)
 
     await _folders_api.move_project_into_folder(

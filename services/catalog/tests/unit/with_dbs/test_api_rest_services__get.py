@@ -90,7 +90,7 @@ def test_get_service_with_details(
 
     assert response.status_code == 200
 
-    got = ServiceGet.parse_obj(response.json())
+    got = ServiceGet.model_validate(response.json())
     assert got.key == service_key
     assert got.version == service_version
 

@@ -49,7 +49,7 @@ routes = web.RouteTableDef()
 @permission_required("project.wallet.*")
 @_handle_project_wallet_exceptions
 async def get_project_wallet(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # ensure the project exists
@@ -82,7 +82,7 @@ class _ProjectWalletPathParams(BaseModel):
 @permission_required("project.wallet.*")
 @_handle_project_wallet_exceptions
 async def connect_wallet_to_project(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectWalletPathParams, request)
 
     # ensure the project exists

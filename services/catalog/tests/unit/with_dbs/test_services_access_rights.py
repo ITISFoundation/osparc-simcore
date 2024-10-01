@@ -27,7 +27,7 @@ pytest_simcore_ops_services_selection = [
 
 
 def test_reduce_access_rights():
-    sample = ServiceAccessRightsAtDB.parse_obj(
+    sample = ServiceAccessRightsAtDB.model_validate(
         {
             "key": "simcore/services/dynamic/sim4life",
             "version": "1.0.9",
@@ -102,7 +102,7 @@ async def test_auto_upgrade_policy(
     data["gid"] = everyone_gid
     mocker.patch(
         "simcore_service_catalog.services.access_rights.GroupsRepository.get_everyone_group",
-        return_value=GroupAtDB.parse_obj(data),
+        return_value=GroupAtDB.model_validate(data),
     )
     mocker.patch(
         "simcore_service_catalog.services.access_rights.GroupsRepository.get_user_gid_from_email",
@@ -111,7 +111,7 @@ async def test_auto_upgrade_policy(
 
     # SETUP ---
     MOST_UPDATED_EXAMPLE = -1
-    new_service_metadata = ServiceMetaDataPublished.parse_obj(
+    new_service_metadata = ServiceMetaDataPublished.model_validate(
         ServiceMetaDataPublished.Config.schema_extra["examples"][MOST_UPDATED_EXAMPLE]
     )
     new_service_metadata.version = parse_obj_as(ServiceVersion, "1.0.11")

@@ -122,7 +122,7 @@ async def test_remove_orphaned_services_with_no_running_services_does_nothing(
 @pytest.fixture
 def faker_dynamic_service_get() -> Callable[[], DynamicServiceGet]:
     def _() -> DynamicServiceGet:
-        return DynamicServiceGet.parse_obj(
+        return DynamicServiceGet.model_validate(
             DynamicServiceGet.Config.schema_extra["examples"][1]
         )
 

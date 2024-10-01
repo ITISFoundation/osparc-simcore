@@ -151,10 +151,10 @@ class ComputationalAutoscaling(BaseAutoscaling):
                 for i in instances
             )
         )
-        counter = collections.Counter({k: 0 for k in Resources.__fields__})
+        counter = collections.Counter({k: 0 for k in Resources.model_fields})
         for result in list_of_used_resources:
             counter.update(result.dict())
-        return Resources.parse_obj(dict(counter))
+        return Resources.model_validate(dict(counter))
 
     @staticmethod
     async def compute_cluster_total_resources(

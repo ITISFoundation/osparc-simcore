@@ -103,7 +103,7 @@ routes = web.RouteTableDef()
 @permission_required("project.read")
 @_handle_project_exceptions
 async def get_project_inputs(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     assert request.app  # nosec
@@ -129,7 +129,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
 @_handle_project_exceptions
 async def update_project_inputs(request: web.Request) -> web.Response:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     inputs_updates = await parse_request_body_as(list[ProjectInputUpdate], request)
 
@@ -192,7 +192,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @_handle_project_exceptions
 async def get_project_outputs(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     assert request.app  # nosec
@@ -239,7 +239,7 @@ class ProjectMetadataPortGet(BaseModel):
 @permission_required("project.read")
 @_handle_project_exceptions
 async def list_project_metadata_ports(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     assert request.app  # nosec

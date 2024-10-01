@@ -56,7 +56,7 @@ def simcore_services_network_name() -> str:
 
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
-    simcore_service_labels = SimcoreServiceLabels.parse_obj(
+    simcore_service_labels = SimcoreServiceLabels.model_validate(
         SimcoreServiceLabels.Config.schema_extra["examples"][1]
     )
     simcore_service_labels.callbacks_mapping = parse_obj_as(CallbacksMapping, {})
@@ -65,7 +65,7 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 @pytest.fixture
 def dynamic_service_create() -> DynamicServiceCreate:
-    return DynamicServiceCreate.parse_obj(
+    return DynamicServiceCreate.model_validate(
         DynamicServiceCreate.Config.schema_extra["example"]
     )
 
@@ -225,7 +225,7 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
     # the service specifications follow the Docker service creation available
     # https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     return {
-        "sidecar": DockerServiceSpec.parse_obj(
+        "sidecar": DockerServiceSpec.model_validate(
             {
                 "Labels": {"label_one": faker.pystr(), "label_two": faker.pystr()},
                 "TaskTemplate": {

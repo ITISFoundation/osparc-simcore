@@ -86,6 +86,6 @@ async def test_update_profile(
     )
     assert resp.status_code == status.HTTP_200_OK, resp.text
 
-    profile = Profile.parse_obj(resp.json())
+    profile = Profile.model_validate(resp.json())
     assert profile.first_name == "Oliver"
     assert profile.last_name == "Heaviside"

@@ -68,7 +68,7 @@ async def assert_and_wait_for_pipeline_status(
         assert (
             response.status_code == status.HTTP_200_OK
         ), f"response code is {response.status_code}, error: {response.text}"
-        task_out = ComputationGet.parse_obj(response.json())
+        task_out = ComputationGet.model_validate(response.json())
         assert task_out.id == project_uuid
         assert task_out.url.path == f"/v2/computations/{project_uuid}"
         print(

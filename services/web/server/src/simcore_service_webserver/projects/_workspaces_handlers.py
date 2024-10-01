@@ -69,7 +69,7 @@ class _ProjectWorkspacesPathParams(BaseModel):
 @permission_required("project.workspaces.*")
 @_handle_projects_workspaces_exceptions
 async def replace_project_workspace(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectWorkspacesPathParams, request
     )

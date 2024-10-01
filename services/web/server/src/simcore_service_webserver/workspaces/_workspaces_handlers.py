@@ -101,7 +101,7 @@ class WorkspacesListWithJsonStrQueryParams(PageQueryParameters):
 @permission_required("workspaces.*")
 @handle_workspaces_exceptions
 async def create_workspace(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     body_params = await parse_request_body_as(CreateWorkspaceBodyParams, request)
 
     workspace: WorkspaceGet = await _workspaces_api.create_workspace(
@@ -121,7 +121,7 @@ async def create_workspace(request: web.Request):
 @permission_required("workspaces.*")
 @handle_workspaces_exceptions
 async def list_workspaces(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     query_params: WorkspacesListWithJsonStrQueryParams = (
         parse_request_query_parameters_as(WorkspacesListWithJsonStrQueryParams, request)
     )
@@ -135,7 +135,7 @@ async def list_workspaces(request: web.Request):
         order_by=parse_obj_as(OrderBy, query_params.order_by),
     )
 
-    page = Page[WorkspaceGet].parse_obj(
+    page = Page[WorkspaceGet].model_validate(
         paginate_data(
             chunk=workspaces.items,
             request_url=request.url,
@@ -155,7 +155,7 @@ async def list_workspaces(request: web.Request):
 @permission_required("workspaces.*")
 @handle_workspaces_exceptions
 async def get_workspace(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
     workspace: WorkspaceGet = await _workspaces_api.get_workspace(
@@ -176,7 +176,7 @@ async def get_workspace(request: web.Request):
 @permission_required("workspaces.*")
 @handle_workspaces_exceptions
 async def replace_workspace(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
     body_params = await parse_request_body_as(PutWorkspaceBodyParams, request)
 
@@ -200,7 +200,7 @@ async def replace_workspace(request: web.Request):
 @permission_required("workspaces.*")
 @handle_workspaces_exceptions
 async def delete_workspace(request: web.Request):
-    req_ctx = WorkspacesRequestContext.parse_obj(request)
+    req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
     await _workspaces_api.delete_workspace(

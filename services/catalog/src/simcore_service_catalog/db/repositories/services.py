@@ -617,5 +617,5 @@ class ServicesRepository(BaseRepository):
         if merged_specifications := _merge_specs(
             everyone_specs, teams_specs, primary_specs
         ):
-            return ServiceSpecifications.parse_obj(merged_specifications)
+            return ServiceSpecifications.model_validate(merged_specifications)
         return None  # mypy

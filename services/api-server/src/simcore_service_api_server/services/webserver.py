@@ -282,7 +282,7 @@ class AuthSession:
         )
         response.raise_for_status()
         result = await self._wait_for_long_running_task_results(response)
-        return ProjectGet.parse_obj(result)
+        return ProjectGet.model_validate(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
     async def clone_project(
@@ -307,7 +307,7 @@ class AuthSession:
         )
         response.raise_for_status()
         result = await self._wait_for_long_running_task_results(response)
-        return ProjectGet.parse_obj(result)
+        return ProjectGet.model_validate(result)
 
     @_exception_mapper(_JOB_STATUS_MAP)
     async def get_project(self, *, project_id: UUID) -> ProjectGet:

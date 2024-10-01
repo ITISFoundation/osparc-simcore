@@ -70,7 +70,7 @@ def cluster_simple_authentication(faker: Faker) -> Callable[[], dict[str, Any]]:
             "username": faker.user_name(),
             "password": faker.password(),
         }
-        assert SimpleAuthentication.parse_obj(simple_auth)
+        assert SimpleAuthentication.model_validate(simple_auth)
         return simple_auth
 
     return creator
@@ -430,7 +430,7 @@ async def test_update_own_cluster(
             json=cluster_patch.dict(**_PATCH_EXPORT),
         )
         assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-        returned_cluster = ClusterGet.parse_obj(response.json())
+        returned_cluster = ClusterGet.model_validate(response.json())
 
         expected_modified_cluster.access_rights[user_2["primary_gid"]] = rights
         assert returned_cluster.dict(
@@ -447,7 +447,7 @@ async def test_update_own_cluster(
         ),
     )
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-    returned_cluster = ClusterGet.parse_obj(response.json())
+    returned_cluster = ClusterGet.model_validate(response.json())
     expected_modified_cluster.owner = user_2["primary_gid"]
     expected_modified_cluster.access_rights[
         user_2["primary_gid"]

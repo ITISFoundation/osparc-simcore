@@ -150,7 +150,7 @@ async def test_copying_large_project_and_retrieving_copy_task(
     create_url = create_url.with_query(from_study=user_project["uuid"])
     resp = await client.post(f"{create_url}", json={})
     data, error = await assert_status(resp, expected.accepted)
-    created_copy_task = TaskGet.parse_obj(data)
+    created_copy_task = TaskGet.model_validate(data)
     # list current tasks
     list_task_url = client.app.router["list_tasks"].url_for()
     resp = await client.get(f"{list_task_url}")

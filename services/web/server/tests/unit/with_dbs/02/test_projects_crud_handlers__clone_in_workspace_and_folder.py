@@ -80,7 +80,7 @@ async def _request_clone_project(client: TestClient, url: URL) -> ProjectGet:
             data = await long_running_task.result()
 
     assert data is not None
-    return ProjectGet.parse_obj(data)
+    return ProjectGet.model_validate(data)
 
 
 @pytest.mark.parametrize(

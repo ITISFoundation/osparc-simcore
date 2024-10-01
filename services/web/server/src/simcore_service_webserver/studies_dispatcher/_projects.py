@@ -60,7 +60,7 @@ def _create_file_picker(download_link: str, output_label: str | None):
         data["label"] = Path(output_label).name
     elif url.path:
         data["label"] = Path(url.path).name
-    output = DownloadLink.parse_obj(data)
+    output = DownloadLink.model_validate(data)
 
     output_id = "outFile"
     node = Node(

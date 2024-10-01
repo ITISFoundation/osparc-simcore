@@ -21,7 +21,7 @@ def test_compute_workbench_checksum(fake_project: ProjectDict):
     # as a dict
     sha1_w_dict = compute_workbench_checksum(fake_project["workbench"])
 
-    workbench = WorkbenchModel.parse_obj(fake_project["workbench"])
+    workbench = WorkbenchModel.model_validate(fake_project["workbench"])
 
     # with pydantic models, i.e. Nodes
     #

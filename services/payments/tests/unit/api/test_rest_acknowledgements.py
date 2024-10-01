@@ -108,7 +108,7 @@ async def test_payments_api_authentication(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.json()
-    error = DefaultApiError.parse_obj(response.json())
+    error = DefaultApiError.model_validate(response.json())
     assert PaymentNotFoundError.msg_template.format(payment_id=payments_id) == str(
         error.detail
     )
@@ -138,7 +138,7 @@ async def test_payments_methods_api_authentication(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.json()
-    error = DefaultApiError.parse_obj(response.json())
+    error = DefaultApiError.model_validate(response.json())
     assert PaymentMethodNotFoundError.msg_template.format(
         payment_method_id=payment_method_id
     ) == str(error.detail)

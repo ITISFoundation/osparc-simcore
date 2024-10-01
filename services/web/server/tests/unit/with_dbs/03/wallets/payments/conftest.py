@@ -79,7 +79,7 @@ def create_new_wallet(client: TestClient, faker: Faker) -> Callable:
             },
         )
         data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-        return WalletGet.parse_obj(data)
+        return WalletGet.model_validate(data)
 
     return _create
 

@@ -107,7 +107,7 @@ def fake_workbench_computational_pipeline_details(
 ) -> PipelineDetails:
     adjacency_list = json.loads(fake_workbench_computational_adjacency_file.read_text())
     node_states = json.loads(fake_workbench_node_states_file.read_text())
-    return PipelineDetails.parse_obj(
+    return PipelineDetails.model_validate(
         {"adjacency_list": adjacency_list, "node_states": node_states, "progress": 0}
     )
 
@@ -718,7 +718,7 @@ async def test_abort_computation(
     assert (
         response.status_code == status.HTTP_202_ACCEPTED
     ), f"response code is {response.status_code}, error: {response.text}"
-    task_out = ComputationGet.parse_obj(response.json())
+    task_out = ComputationGet.model_validate(response.json())
     assert task_out.url.path == f"/v2/computations/{sleepers_project.uuid}:stop"
     assert task_out.stop_url is None
 

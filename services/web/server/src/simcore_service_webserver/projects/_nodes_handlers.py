@@ -137,7 +137,7 @@ class NodePathParams(ProjectPathParams):
 @permission_required("project.node.create")
 @_handle_project_nodes_exceptions
 async def create_node(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     body = await parse_request_body_as(NodeCreate, request)
 
@@ -180,7 +180,7 @@ async def create_node(request: web.Request) -> web.Response:
 @_handle_project_nodes_exceptions
 # NOTE: Careful, this endpoint is actually "get_node_state," and it doesn't return a Node resource.
 async def get_node(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
@@ -222,7 +222,7 @@ async def get_node(request: web.Request) -> web.Response:
 @permission_required("project.node.update")
 @_handle_project_nodes_exceptions
 async def patch_project_node(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_patch = await parse_request_body_as(NodePatch, request)
 
@@ -243,7 +243,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
 @permission_required("project.node.delete")
 @_handle_project_nodes_exceptions
 async def delete_node(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
@@ -291,7 +291,7 @@ async def retrieve_node(request: web.Request) -> web.Response:
 @permission_required("project.node.update")
 @_handle_project_nodes_exceptions
 async def update_node_outputs(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_outputs = await parse_request_body_as(NodeOutputs, request)
 
@@ -319,7 +319,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
 @_handle_project_nodes_exceptions
 async def start_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     await projects_api.start_project_node(
@@ -363,7 +363,7 @@ async def _stop_dynamic_service_task(
 @_handle_project_nodes_exceptions
 async def stop_node(request: web.Request) -> web.Response:
     """Has only effect on nodes associated to dynamic services"""
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     save_state = await has_user_project_access_rights(
@@ -426,7 +426,7 @@ async def restart_node(request: web.Request) -> web.Response:
 @permission_required("project.node.read")
 @_handle_project_nodes_exceptions
 async def get_node_resources(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
@@ -459,7 +459,7 @@ async def get_node_resources(request: web.Request) -> web.Response:
 @permission_required("project.node.update")
 @_handle_project_nodes_exceptions
 async def replace_node_resources(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     body = await parse_request_body_as(ServiceResourcesDict, request)
 
@@ -520,7 +520,7 @@ class _ProjectGroupAccess(BaseModel):
 async def get_project_services_access_for_gid(
     request: web.Request,
 ) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     query_params: _ServicesAccessQuery = parse_request_query_parameters_as(
         _ServicesAccessQuery, request
@@ -636,7 +636,7 @@ class _ProjectNodePreview(BaseModel):
 @permission_required("project.read")
 @_handle_project_nodes_exceptions
 async def list_project_nodes_previews(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     assert req_ctx  # nosec
 
@@ -646,7 +646,7 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
     )
-    project = Project.parse_obj(project_data)
+    project = Project.model_validate(project_data)
 
     for node_id, node in project.workbench.items():
         screenshots = await get_node_screenshots(
@@ -676,7 +676,7 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @_handle_project_nodes_exceptions
 async def get_project_node_preview(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     assert req_ctx  # nosec
 
@@ -686,7 +686,7 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
     )
 
-    project = Project.parse_obj(project_data)
+    project = Project.model_validate(project_data)
 
     node = project.workbench.get(NodeIDStr(path_params.node_id))
     if node is None:

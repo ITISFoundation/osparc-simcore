@@ -292,7 +292,7 @@ async def list_project_iterations(request: web.Request) -> web.Response:
         for item in iterations_range.items
     ]
 
-    page = Page[ProjectIterationItem].parse_obj(
+    page = Page[ProjectIterationItem].model_validate(
         paginate_data(
             chunk=page_items,
             request_url=request.url,
@@ -395,7 +395,7 @@ async def list_project_iterations_results(
         for item in iterations_range.items
     ]
 
-    page = Page[ProjectIterationResultItem].parse_obj(
+    page = Page[ProjectIterationResultItem].model_validate(
         paginate_data(
             chunk=page_items,
             request_url=request.url,

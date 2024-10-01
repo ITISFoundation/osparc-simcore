@@ -499,7 +499,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         }
         if run_id:
             obj_dict["run_id"] = run_id
-        return cls.parse_obj(obj_dict)
+        return cls.model_validate(obj_dict)
 
     @validator("user_preferences_path", pre=True)
     @classmethod

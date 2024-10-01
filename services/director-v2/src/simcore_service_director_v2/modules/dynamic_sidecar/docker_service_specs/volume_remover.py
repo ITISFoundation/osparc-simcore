@@ -182,4 +182,4 @@ def spec_volume_removal_service(
             },
         },
     }
-    return AioDockerServiceSpec.parse_obj(create_service_params)
+    return AioDockerServiceSpec.model_validate(create_service_params)

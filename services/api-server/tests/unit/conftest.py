@@ -511,7 +511,7 @@ def patch_webserver_long_running_project_tasks(
             if from_study := query.get("from_study"):
                 return self.clone_project_task(request=request, project_id=from_study)
             project_create = json.loads(request.content)
-            project_get = ProjectGet.parse_obj(
+            project_get = ProjectGet.model_validate(
                 {
                     "creationDate": "2018-07-01T11:13:43Z",
                     "lastChangeDate": "2018-07-01T11:13:43Z",
@@ -525,7 +525,7 @@ def patch_webserver_long_running_project_tasks(
         def clone_project_task(self, request: httpx.Request, *, project_id: str):
             assert GET_PROJECT.response_body
 
-            project_get = ProjectGet.parse_obj(
+            project_get = ProjectGet.model_validate(
                 {
                     "creationDate": "2018-07-01T11:13:43Z",
                     "lastChangeDate": "2018-07-01T11:13:43Z",

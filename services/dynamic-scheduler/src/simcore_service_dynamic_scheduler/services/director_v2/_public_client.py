@@ -43,9 +43,9 @@ class DirectorV2Client(
             # in case of legacy version
             # we need to transfer the correct format!
             if "data" in dict_response:
-                return NodeGet.parse_obj(dict_response["data"])
+                return NodeGet.model_validate(dict_response["data"])
 
-            return DynamicServiceGet.parse_obj(dict_response)
+            return DynamicServiceGet.model_validate(dict_response)
         except UnexpectedStatusError as e:
             if (
                 e.response.status_code  # type: ignore[attr-defined] # pylint:disable=no-member
@@ -62,9 +62,9 @@ class DirectorV2Client(
 
         # legacy services
         if "data" in dict_response:
-            return NodeGet.parse_obj(dict_response["data"])
+            return NodeGet.model_validate(dict_response["data"])
 
-        return DynamicServiceGet.parse_obj(dict_response)
+        return DynamicServiceGet.model_validate(dict_response)
 
     async def stop_dynamic_service(
         self,

@@ -131,7 +131,7 @@ async def test_iterators_workflow(
         project_id=project_data["uuid"]
     )
     for node_id, node_data in modifications["workbench"].items():
-        node = Node.parse_obj(node_data)
+        node = Node.model_validate(node_data)
         response = await client.post(
             f"{create_node_url}",
             json={
@@ -188,7 +188,7 @@ async def test_iterators_workflow(
         f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations?offset=0"
     )
     body = await response.json()
-    first_iterlist = Page[ProjectIterationItem].parse_obj(body).data
+    first_iterlist = Page[ProjectIterationItem].model_validate(body).data
 
     assert len(first_iterlist) == 3
 
@@ -232,7 +232,7 @@ async def test_iterators_workflow(
     assert response.status == status.HTTP_200_OK, await response.text()
     body = await response.json()
 
-    assert Page[ProjectIterationResultItem].parse_obj(body).data is not None
+    assert Page[ProjectIterationResultItem].model_validate(body).data is not None
 
     # GET project and MODIFY iterator values----------------------------------------------
     #  - Change iterations from 0:4 -> HEAD+1
@@ -246,7 +246,7 @@ async def test_iterators_workflow(
     # Dict keys are usually some sort of identifier, typically a UUID or
     # and index but nothing prevents a dict from using any other type of key types
     #
-    project = Project.parse_obj(body["data"])
+    project = Project.model_validate(body["data"])
     new_project = project.copy(
         update={
             # TODO: HACK to overcome export from None -> string
@@ -291,7 +291,7 @@ async def test_iterators_workflow(
     )
     body = await response.json()
     assert response.status == status.HTTP_200_OK, f"{body=}"  # nosec
-    second_iterlist = Page[ProjectIterationItem].parse_obj(body).data
+    second_iterlist = Page[ProjectIterationItem].model_validate(body).data
 
     assert len(second_iterlist) == 4
     assert len({it.workcopy_project_id for it in second_iterlist}) == len(

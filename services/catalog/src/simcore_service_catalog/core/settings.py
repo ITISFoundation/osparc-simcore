@@ -43,7 +43,7 @@ _DEFAULT_RESOURCES: Final[ResourcesDict] = parse_obj_as(
 
 _DEFAULT_SERVICE_SPECIFICATIONS: Final[
     ServiceSpecifications
-] = ServiceSpecifications.parse_obj({})
+] = ServiceSpecifications.model_validate({})
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):

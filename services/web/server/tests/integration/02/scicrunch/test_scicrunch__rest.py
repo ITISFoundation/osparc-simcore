@@ -145,7 +145,7 @@ async def test_scicrunch_get_fields_from_invalid_rrid(
 
 async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSettings):
 
-    expected: list[dict[str, Any]] = ListOfResourceHits.parse_obj(
+    expected: list[dict[str, Any]] = ListOfResourceHits.model_validate(
         [
             {
                 "rid": "SCR_000860",

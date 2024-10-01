@@ -40,7 +40,7 @@ async def test_status_no_rabbit(
     response = await async_client.get("/status")
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK
-    status_response = _StatusGet.parse_obj(response.json())
+    status_response = _StatusGet.model_validate(response.json())
     assert status_response
 
     assert status_response.rabbitmq.is_enabled is False
@@ -60,7 +60,7 @@ async def test_status(
     response = await async_client.get("/status")
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK
-    status_response = _StatusGet.parse_obj(response.json())
+    status_response = _StatusGet.model_validate(response.json())
     assert status_response
 
     assert status_response.rabbitmq.is_enabled is True
@@ -75,7 +75,7 @@ async def test_status(
     response = await async_client.get("/status")
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK
-    status_response = _StatusGet.parse_obj(response.json())
+    status_response = _StatusGet.model_validate(response.json())
     assert status_response
 
     assert status_response.rabbitmq.is_enabled is True

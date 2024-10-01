@@ -185,7 +185,7 @@ async def test_list_announcements_filtered(
 def test_model_examples(
     model_cls: type[BaseModel], example_name: int, example_data: Any
 ):
-    assert model_cls.parse_obj(
+    assert model_cls.model_validate(
         example_data
     ), f"Failed {example_name} : {json.dumps(example_data)}"
 
@@ -193,7 +193,7 @@ def test_model_examples(
 def test_invalid_announcement(faker: Faker):
     now = arrow.utcnow()
     with pytest.raises(ValidationError):
-        Announcement.parse_obj(
+        Announcement.model_validate(
             {
                 "id": "Student_Competition_2023",
                 "products": ["s4llite", "osparc"],
@@ -209,7 +209,7 @@ def test_invalid_announcement(faker: Faker):
 
 def test_announcement_expired(faker: Faker):
     now = arrow.utcnow()
-    model = Announcement.parse_obj(
+    model = Announcement.model_validate(
         {
             "id": "Student_Competition_2023",
             "products": ["s4llite", "osparc"],

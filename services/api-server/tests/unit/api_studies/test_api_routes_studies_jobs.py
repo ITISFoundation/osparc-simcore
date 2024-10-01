@@ -358,7 +358,7 @@ async def test_get_job_logs(
         f"{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs/log-links", auth=auth
     )
     assert response.status_code == status.HTTP_200_OK
-    _ = JobLogsMap.parse_obj(response.json())
+    _ = JobLogsMap.model_validate(response.json())
 
 
 async def test_get_study_outputs(
@@ -394,17 +394,17 @@ async def test_get_study_outputs(
         },
     )
     assert response.status_code == status.HTTP_200_OK
-    _job = Job.parse_obj(response.json())
+    _job = Job.model_validate(response.json())
     _job_id = _job.id
 
     response = await client.post(
         f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}:start", auth=auth
     )
     assert response.status_code == status.HTTP_202_ACCEPTED
-    _ = JobStatus.parse_obj(response.json())
+    _ = JobStatus.model_validate(response.json())
 
     response = await client.post(
         f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs", auth=auth
     )
     assert response.status_code == status.HTTP_200_OK
-    _ = JobOutputs.parse_obj(response.json())
+    _ = JobOutputs.model_validate(response.json())

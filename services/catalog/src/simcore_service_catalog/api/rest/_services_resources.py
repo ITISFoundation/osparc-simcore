@@ -277,7 +277,7 @@ async def get_service_resources(
                     spec_service_resources, user_specific_service_specs.service
                 )
 
-        service_to_resources[spec_key] = ImageResources.parse_obj(
+        service_to_resources[spec_key] = ImageResources.model_validate(
             {
                 "image": image,
                 "resources": spec_service_resources,

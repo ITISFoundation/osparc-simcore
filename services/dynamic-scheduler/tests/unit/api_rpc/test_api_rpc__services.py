@@ -52,14 +52,14 @@ def node_not_found(faker: Faker) -> NodeID:
 
 @pytest.fixture
 def service_status_new_style() -> DynamicServiceGet:
-    return DynamicServiceGet.parse_obj(
+    return DynamicServiceGet.model_validate(
         DynamicServiceGet.Config.schema_extra["examples"][1]
     )
 
 
 @pytest.fixture
 def service_status_legacy() -> NodeGet:
-    return NodeGet.parse_obj(NodeGet.Config.schema_extra["example"])
+    return NodeGet.model_validate(NodeGet.Config.schema_extra["example"])
 
 
 @pytest.fixture
@@ -173,7 +173,7 @@ async def test_get_state(
 @pytest.fixture
 def dynamic_service_start() -> DynamicServiceStart:
     # one for legacy and one for new style?
-    return DynamicServiceStart.parse_obj(
+    return DynamicServiceStart.model_validate(
         DynamicServiceStart.Config.schema_extra["example"]
     )
 

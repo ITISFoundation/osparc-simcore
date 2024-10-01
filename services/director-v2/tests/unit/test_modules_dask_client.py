@@ -372,11 +372,11 @@ def _mocked_node_ports(mocker: MockerFixture) -> None:
 
     mocker.patch(
         "simcore_service_director_v2.modules.dask_client.dask_utils.compute_input_data",
-        return_value=TaskInputData.parse_obj({}),
+        return_value=TaskInputData.model_validate({}),
     )
     mocker.patch(
         "simcore_service_director_v2.modules.dask_client.dask_utils.compute_output_data_schema",
-        return_value=TaskOutputDataSchema.parse_obj({}),
+        return_value=TaskOutputDataSchema.model_validate({}),
     )
     mocker.patch(
         "simcore_service_director_v2.modules.dask_client.dask_utils.compute_service_log_file_upload_link",
@@ -487,7 +487,7 @@ def task_labels(comp_run_metadata: RunMetadataDict) -> ContainerLabelsDict:
 
 @pytest.fixture
 def hardware_info() -> HardwareInfo:
-    return HardwareInfo.parse_obj(HardwareInfo.Config.schema_extra["examples"][0])
+    return HardwareInfo.model_validate(HardwareInfo.Config.schema_extra["examples"][0])
 
 
 @pytest.fixture
@@ -534,7 +534,7 @@ async def test_send_computation_task(
         event = distributed.Event(_DASK_EVENT_NAME)
         event.wait(timeout=25)
 
-        return TaskOutputData.parse_obj({"some_output_key": 123})
+        return TaskOutputData.model_validate({"some_output_key": 123})
 
     # NOTE: We pass another fct so it can run in our localy created dask cluster
     # NOTE2: since there is only 1 task here, it's ok to pass the nodeID
@@ -650,7 +650,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
         task = worker.state.tasks.get(worker.get_current_task())
         assert task is not None
 
-        return TaskOutputData.parse_obj({"some_output_key": 123})
+        return TaskOutputData.model_validate({"some_output_key": 123})
 
     # NOTE: We pass another fct so it can run in our localy created dask cluster
     published_computation_task = await dask_client.send_computation_tasks(
@@ -742,7 +742,7 @@ async def test_abort_computation_tasks(
             print("--> raising cancellation error now")
             raise TaskCancelledError
 
-        return TaskOutputData.parse_obj({"some_output_key": 123})
+        return TaskOutputData.model_validate({"some_output_key": 123})
 
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
@@ -1088,7 +1088,7 @@ async def test_get_tasks_status(
         if fail_remote_fct:
             err_msg = "We fail because we're told to!"
             raise ValueError(err_msg)
-        return TaskOutputData.parse_obj({"some_output_key": 123})
+        return TaskOutputData.model_validate({"some_output_key": 123})
 
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
@@ -1179,7 +1179,7 @@ async def test_dask_sub_handlers(
         published_event = Event(name=_DASK_START_EVENT)
         published_event.set()
 
-        return TaskOutputData.parse_obj({"some_output_key": 123})
+        return TaskOutputData.model_validate({"some_output_key": 123})
 
     # run the computation
     published_computation_task = await dask_client.send_computation_tasks(
@@ -1255,7 +1255,7 @@ async def test_get_cluster_details(
         event = distributed.Event(_DASK_EVENT_NAME)
         event.wait(timeout=25)
 
-        return TaskOutputData.parse_obj({"some_output_key": 123})
+        return TaskOutputData.model_validate({"some_output_key": 123})
 
     # NOTE: We pass another fct so it can run in our localy created dask cluster
     published_computation_task = await dask_client.send_computation_tasks(

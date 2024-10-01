@@ -264,7 +264,7 @@ async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
             }
         )
 
-    return Resources.parse_obj(dict(cluster_resources_counter))
+    return Resources.model_validate(dict(cluster_resources_counter))
 
 
 def get_max_resources_from_docker_task(task: Task) -> Resources:
@@ -370,7 +370,7 @@ async def compute_node_used_resources(
                     "cpus": task_reservations.get("NanoCPUs", 0) / _NANO_CPU,
                 }
             )
-    return Resources.parse_obj(dict(cluster_resources_counter))
+    return Resources.model_validate(dict(cluster_resources_counter))
 
 
 async def compute_cluster_used_resources(
@@ -380,11 +380,11 @@ async def compute_cluster_used_resources(
     list_of_used_resources = await logged_gather(
         *(compute_node_used_resources(docker_client, node) for node in nodes)
     )
-    counter = collections.Counter({k: 0 for k in Resources.__fields__})
+    counter = collections.Counter({k: 0 for k in Resources.model_fields})
     for result in list_of_used_resources:
         counter.update(result.dict())
 
-    return Resources.parse_obj(dict(counter))
+    return Resources.model_validate(dict(counter))
 
 
 _COMMAND_TIMEOUT_S = 10

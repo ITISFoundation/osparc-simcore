@@ -861,7 +861,7 @@ async def test_get_computation_from_empty_project(
     )
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
-    returned_computation = ComputationGet.parse_obj(response.json())
+    returned_computation = ComputationGet.model_validate(response.json())
     assert returned_computation
     expected_computation = ComputationGet(
         id=proj.uuid,
@@ -910,7 +910,7 @@ async def test_get_computation_from_not_started_computation_task(
     comp_tasks = tasks(user=user, project=proj)
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
-    returned_computation = ComputationGet.parse_obj(response.json())
+    returned_computation = ComputationGet.model_validate(response.json())
     assert returned_computation
     expected_computation = ComputationGet(
         id=proj.uuid,
@@ -980,7 +980,7 @@ async def test_get_computation_from_published_computation_task(
     )
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
-    returned_computation = ComputationGet.parse_obj(response.json())
+    returned_computation = ComputationGet.model_validate(response.json())
     assert returned_computation
     expected_stop_url = async_client.base_url.join(
         f"/v2/computations/{proj.uuid}:stop?user_id={user['id']}"

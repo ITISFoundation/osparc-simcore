@@ -112,10 +112,10 @@ async def test_get_and_update_job_metadata(
                 "title": "Temperature",
                 "enabled": True,
             }
-        ).dict(),
+        ).model_dump(),
     )
     assert resp.status_code == status.HTTP_201_CREATED
-    job = Job.parse_obj(resp.json())
+    job = Job.model_validate(resp.json())
 
     # Get metadata
     resp = await client.get(
@@ -123,7 +123,7 @@ async def test_get_and_update_job_metadata(
         auth=auth,
     )
     assert resp.status_code == status.HTTP_200_OK
-    job_meta = JobMetadata.parse_obj(resp.json())
+    job_meta = JobMetadata.model_validate(resp.json())
 
     assert job_meta.metadata == {}
 
@@ -132,11 +132,11 @@ async def test_get_and_update_job_metadata(
     resp = await client.patch(
         f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job.id}/metadata",
         auth=auth,
-        json=JobMetadataUpdate(metadata=my_metadata).dict(),
+        json=JobMetadataUpdate(metadata=my_metadata).model_dump(),
     )
     assert resp.status_code == status.HTTP_200_OK
 
-    job_meta = JobMetadata.parse_obj(resp.json())
+    job_meta = JobMetadata.model_validate(resp.json())
     assert job_meta.metadata == my_metadata
 
     # Get metadata after update
@@ -145,7 +145,7 @@ async def test_get_and_update_job_metadata(
         auth=auth,
     )
     assert resp.status_code == status.HTTP_200_OK
-    job_meta = JobMetadata.parse_obj(resp.json())
+    job_meta = JobMetadata.model_validate(resp.json())
 
     assert job_meta.metadata == my_metadata
 

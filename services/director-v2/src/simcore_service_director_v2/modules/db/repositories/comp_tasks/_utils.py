@@ -105,7 +105,7 @@ def _compute_node_requirements(
             node_defined_resources[resource_name] = node_defined_resources.get(
                 resource_name, 0
             ) + min(resource_value.limit, resource_value.reservation)
-    return NodeRequirements.parse_obj(node_defined_resources)
+    return NodeRequirements.model_validate(node_defined_resources)
 
 
 def _compute_node_boot_mode(node_resources: ServiceResourcesDict) -> BootMode:
@@ -187,7 +187,7 @@ async def _generate_task_image(
         data.update(envs=_compute_node_envs(node_labels))
     if node_extras and node_extras.container_spec:
         data.update(command=node_extras.container_spec.command)
-    return Image.parse_obj(data)
+    return Image.model_validate(data)
 
 
 async def _get_pricing_and_hardware_infos(
@@ -430,7 +430,7 @@ async def generate_tasks_list_from_project(
         task_db = CompTaskAtDB(
             project_id=project.uuid,
             node_id=NodeID(node_id),
-            schema=NodeSchema.parse_obj(
+            schema=NodeSchema.model_validate(
                 node_details.dict(
                     exclude_unset=True, by_alias=True, include={"inputs", "outputs"}
                 )

@@ -82,7 +82,7 @@ def test_echo_dotenv(cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
     environs = load_dotenv(result.stdout)
 
     envs = setenvs_from_dict(monkeypatch, environs)
-    settings_from_obj = ApplicationSettings.parse_obj(envs)
+    settings_from_obj = ApplicationSettings.model_validate(envs)
     settings_from_envs = ApplicationSettings.create_from_envs()
 
     assert settings_from_envs == settings_from_obj

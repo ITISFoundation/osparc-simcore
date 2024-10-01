@@ -62,7 +62,7 @@ def _to_api_model(
     if transaction.invoice_url:
         data["invoice_url"] = transaction.invoice_url
 
-    return PaymentTransaction.parse_obj(data)
+    return PaymentTransaction.model_validate(data)
 
 
 @log_decorator(_logger, level=logging.INFO)

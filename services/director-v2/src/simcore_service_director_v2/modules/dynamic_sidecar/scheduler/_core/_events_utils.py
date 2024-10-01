@@ -509,7 +509,7 @@ async def get_allow_metrics_collection(
             bool, AllowMetricsCollectionFrontendUserPreference.get_default_value()
         )
 
-    allow_metrics_collection = AllowMetricsCollectionFrontendUserPreference.parse_obj(
-        preference
+    allow_metrics_collection = (
+        AllowMetricsCollectionFrontendUserPreference.model_validate(preference)
     )
     return allow_metrics_collection.value

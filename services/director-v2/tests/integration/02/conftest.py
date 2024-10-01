@@ -64,7 +64,7 @@ def mock_projects_networks_repository(mocker: MockerFixture) -> None:
             "simcore_service_director_v2.modules.db.repositories."
             "projects_networks.ProjectsNetworksRepository.get_projects_networks"
         ),
-        return_value=ProjectsNetworks.parse_obj(
+        return_value=ProjectsNetworks.model_validate(
             {"project_uuid": uuid4(), "networks_with_aliases": {}}
         ),
     )
@@ -81,7 +81,7 @@ def service_resources() -> ServiceResourcesDict:
 @pytest.fixture
 def mock_resource_usage_tracker(mocker: MockerFixture) -> None:
     base_module = "simcore_service_director_v2.modules.resource_usage_tracker_client"
-    service_pricing_plan = PricingPlanGet.parse_obj(
+    service_pricing_plan = PricingPlanGet.model_validate(
         PricingPlanGet.Config.schema_extra["examples"][1]
     )
     for unit in service_pricing_plan.pricing_units:

@@ -160,7 +160,7 @@ async def mock_retrieve_features(
         assert_all_mocked=True,
     ) as respx_mock:
         if is_legacy:
-            service_details = RunningDynamicServiceDetails.parse_obj(
+            service_details = RunningDynamicServiceDetails.model_validate(
                 RunningDynamicServiceDetails.Config.schema_extra["examples"][0]
             )
             respx_mock.post(
@@ -244,7 +244,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
             raise DynamicSidecarNotFoundError(node_uuid)
 
-        return RunningDynamicServiceDetails.parse_obj(
+        return RunningDynamicServiceDetails.model_validate(
             RunningDynamicServiceDetails.Config.schema_extra["examples"][0]
         )
 
@@ -314,7 +314,7 @@ def test_create_dynamic_services(
     exp_status_code: int,
     is_legacy: bool,
 ):
-    post_data = DynamicServiceCreate.parse_obj(service)
+    post_data = DynamicServiceCreate.model_validate(service)
 
     response = client.post(
         "/v2/dynamic_services",
@@ -498,7 +498,7 @@ def test_delete_service_waiting_for_manual_intervention(
     is_legacy: bool,
     dynamic_sidecar_scheduler: DynamicSidecarsScheduler,
 ):
-    post_data = DynamicServiceCreate.parse_obj(service)
+    post_data = DynamicServiceCreate.model_validate(service)
 
     response = client.post(
         "/v2/dynamic_services",

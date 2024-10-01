@@ -120,4 +120,4 @@ async def autocomplete_by_name(
     ) as resp:
         body = await resp.json()
         assert body.get("success")  # nosec
-        return ListOfResourceHits.parse_obj(body.get("data", []))
+        return ListOfResourceHits.model_validate(body.get("data", []))

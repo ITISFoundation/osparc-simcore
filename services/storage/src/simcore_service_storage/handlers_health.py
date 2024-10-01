@@ -31,7 +31,7 @@ async def get_health(request: web.Request) -> web.Response:
     assert request  # nosec
     return web.json_response(
         {
-            "data": HealthCheck.parse_obj(
+            "data": HealthCheck.model_validate(
                 {
                     "name": PROJECT_NAME,
                     "version": f"{VERSION}",
@@ -69,7 +69,7 @@ async def get_status(request: web.Request) -> web.Response:
             "connected" if await is_pg_responsive(request.app) else "failed"
         )
 
-    status = AppStatusCheck.parse_obj(
+    status = AppStatusCheck.model_validate(
         {
             "app_name": PROJECT_NAME,
             "version": f"{VERSION}",

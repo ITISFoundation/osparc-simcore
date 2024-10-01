@@ -102,7 +102,7 @@ async def test_one_time_payment_worfklow(
     data, error = await assert_status(response, expected_status)
 
     if not error:
-        payment = WalletPaymentInitiated.parse_obj(data)
+        payment = WalletPaymentInitiated.model_validate(data)
 
         assert payment.payment_id
         assert payment.payment_form_url
@@ -197,7 +197,7 @@ async def test_multiple_payments(
         data, error = await assert_status(response, status.HTTP_201_CREATED)
         assert data
         assert not error
-        payment = WalletPaymentInitiated.parse_obj(data)
+        payment = WalletPaymentInitiated.model_validate(data)
 
         if n % 2:
             transaction = await _ack_creation_of_wallet_payment(
@@ -283,7 +283,7 @@ async def test_complete_payment_errors(
     assert mock_rpc_payments_service_api["init_payment"].called
 
     data, _ = await assert_status(response, status.HTTP_201_CREATED)
-    payment = WalletPaymentInitiated.parse_obj(data)
+    payment = WalletPaymentInitiated.model_validate(data)
 
     # Cannot complete as PENDING
     with pytest.raises(ValueError):

@@ -23,4 +23,4 @@ async def test_get_credits_price(
 
     response = await client.get(f"{API_VTAG}/credits/price", auth=auth)
     assert response.status_code == status.HTTP_200_OK
-    _ = GetCreditPrice.parse_obj(response.json())
+    _ = GetCreditPrice.model_validate(response.json())

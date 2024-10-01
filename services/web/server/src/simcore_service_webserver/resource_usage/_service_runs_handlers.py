@@ -155,7 +155,7 @@ routes = web.RouteTableDef()
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_resource_usage_services(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     query_params: _ListServicesResourceUsagesQueryParamsWithPagination = (
         parse_request_query_parameters_as(
             _ListServicesResourceUsagesQueryParamsWithPagination, request
@@ -173,7 +173,7 @@ async def list_resource_usage_services(request: web.Request):
         filters=parse_obj_as(ServiceResourceUsagesFilters | None, query_params.filters),  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
     )
 
-    page = Page[dict[str, Any]].parse_obj(
+    page = Page[dict[str, Any]].model_validate(
         paginate_data(
             chunk=services.items,
             request_url=request.url,
@@ -196,7 +196,7 @@ async def list_resource_usage_services(request: web.Request):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_osparc_credits_aggregated_usages(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     query_params: _ListServicesAggregatedUsagesQueryParams = (
         parse_request_query_parameters_as(
             _ListServicesAggregatedUsagesQueryParams, request
@@ -216,7 +216,7 @@ async def list_osparc_credits_aggregated_usages(request: web.Request):
         )
     )
 
-    page = Page[dict[str, Any]].parse_obj(
+    page = Page[dict[str, Any]].model_validate(
         paginate_data(
             chunk=aggregated_services.items,
             request_url=request.url,
@@ -236,7 +236,7 @@ async def list_osparc_credits_aggregated_usages(request: web.Request):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def export_resource_usage_services(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     query_params: _ListServicesResourceUsagesQueryParams = (
         parse_request_query_parameters_as(
             _ListServicesResourceUsagesQueryParams, request

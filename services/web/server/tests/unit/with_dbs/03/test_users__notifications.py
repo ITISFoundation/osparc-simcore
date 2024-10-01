@@ -71,7 +71,7 @@ def _create_notification(
     notification_categories = tuple(NotificationCategory)
 
     notification: UserNotification = UserNotification.create_from_request_data(
-        UserNotificationCreate.parse_obj(
+        UserNotificationCreate.model_validate(
             {
                 "user_id": user_id,
                 "category": random.choice(notification_categories),

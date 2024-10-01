@@ -14,7 +14,7 @@ from simcore_service_webserver.users._notifications import (
 
 @pytest.mark.parametrize("raw_data", UserNotification.Config.schema_extra["examples"])
 def test_user_notification(raw_data: dict[str, Any]):
-    assert UserNotification.parse_obj(raw_data)
+    assert UserNotification.model_validate(raw_data)
 
 
 @pytest.mark.parametrize("user_id", [10])
@@ -26,7 +26,7 @@ def test_get_notification_key(user_id: UserID):
     "request_data",
     [
         pytest.param(
-            UserNotificationCreate.parse_obj(
+            UserNotificationCreate.model_validate(
                 {
                     "user_id": "1",
                     "category": NotificationCategory.NEW_ORGANIZATION,
@@ -40,7 +40,7 @@ def test_get_notification_key(user_id: UserID):
             id="normal_usage",
         ),
         pytest.param(
-            UserNotificationCreate.parse_obj(
+            UserNotificationCreate.model_validate(
                 {
                     "user_id": "1",
                     "category": NotificationCategory.NEW_ORGANIZATION,
@@ -55,7 +55,7 @@ def test_get_notification_key(user_id: UserID):
             id="read_is_always_set_false",
         ),
         pytest.param(
-            UserNotificationCreate.parse_obj(
+            UserNotificationCreate.model_validate(
                 {
                     "id": "some_id",
                     "user_id": "1",
@@ -70,7 +70,7 @@ def test_get_notification_key(user_id: UserID):
             id="a_new_id_is_alway_recreated",
         ),
         pytest.param(
-            UserNotificationCreate.parse_obj(
+            UserNotificationCreate.model_validate(
                 {
                     "id": "some_id",
                     "user_id": "1",
@@ -85,7 +85,7 @@ def test_get_notification_key(user_id: UserID):
             id="category_from_string",
         ),
         pytest.param(
-            UserNotificationCreate.parse_obj(
+            UserNotificationCreate.model_validate(
                 {
                     "id": "some_id",
                     "user_id": "1",

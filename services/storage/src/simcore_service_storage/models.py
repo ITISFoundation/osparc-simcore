@@ -128,7 +128,7 @@ class FileMetaData(FileMetaDataGet):
             "is_directory": False,
         }
         fmd_kwargs.update(**file_meta_data_kwargs)
-        return cls.parse_obj(fmd_kwargs)
+        return cls.model_validate(fmd_kwargs)
 
 
 @dataclass

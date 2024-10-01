@@ -96,8 +96,8 @@ async def mocked_directorv2_service(
     stop_time: Final[datetime] = datetime.now() + timedelta(seconds=5)
 
     def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
-        task = ComputationTaskGet.parse_obj(
-            ComputationTaskGet.Config.schema_extra["examples"][0]
+        task = ComputationTaskGet.model_validate(
+            ComputationTaskGet.model_config["json_schema_extra"]["examples"][0]
         )
         if datetime.now() > stop_time:
             task.state = RunningState.SUCCESS

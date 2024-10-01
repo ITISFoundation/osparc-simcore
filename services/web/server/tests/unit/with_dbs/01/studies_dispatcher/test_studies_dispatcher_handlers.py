@@ -241,7 +241,7 @@ def test_model_examples(
     model_cls: type[BaseModel], example_name: int, example_data: Any
 ):
     print(example_name, ":", json_dumps(example_data))
-    model = model_cls.parse_obj(example_data)
+    model = model_cls.model_validate(example_data)
     assert model
 
 

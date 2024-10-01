@@ -732,7 +732,7 @@ def host_memory_total() -> ByteSize:
 def osparc_docker_label_keys(
     faker: Faker,
 ) -> StandardSimcoreDockerLabels:
-    return StandardSimcoreDockerLabels.parse_obj(
+    return StandardSimcoreDockerLabels.model_validate(
         {
             "user_id": faker.pyint(),
             "project_id": faker.uuid4(),

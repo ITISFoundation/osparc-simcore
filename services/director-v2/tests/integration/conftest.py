@@ -98,7 +98,7 @@ async def create_pipeline(
         response.raise_for_status()
         assert response.status_code == status.HTTP_201_CREATED
 
-        computation_task = ComputationGet.parse_obj(response.json())
+        computation_task = ComputationGet.model_validate(response.json())
         created_comp_tasks.append((user_id, computation_task))
         return computation_task
 

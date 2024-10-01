@@ -56,7 +56,7 @@ async def test_role_access_to_generate_invitation(
     )
     data, error = await assert_status(response, expected_status)
     if not error:
-        got = InvitationGenerated.parse_obj(data)
+        got = InvitationGenerated.model_validate(data)
         assert got.guest == guest_email
     else:
         assert error
@@ -99,7 +99,7 @@ async def test_product_owner_generates_invitation(
     data, error = await assert_status(response, expected_status)
     assert not error
 
-    got = InvitationGenerated.parse_obj(data)
+    got = InvitationGenerated.model_validate(data)
     expected = {
         "issuer": logged_user["email"][:_MAX_LEN],
         **request_model.dict(exclude_none=True),
@@ -186,7 +186,7 @@ async def test_pre_registration_and_invitation_workflow(
         response = await client.post("/v0/invitation:generate", json=invitation)
         data, _ = await assert_status(response, status.HTTP_200_OK)
         assert data["guest"] == guest_email
-        got_invitation = InvitationGenerated.parse_obj(data)
+        got_invitation = InvitationGenerated.model_validate(data)
 
     # register user
     assert got_invitation.invitation_link.fragment

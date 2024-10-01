@@ -32,4 +32,4 @@ async def get_or_create_api_key_and_secret(
         name=name,
         expiration=expiration,
     )
-    return ApiKeyGet.parse_obj(result)
+    return ApiKeyGet.model_validate(result)

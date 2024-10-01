@@ -47,7 +47,7 @@ def mock_rpc_client(
 
 @pytest.fixture
 def dynamic_service_start() -> DynamicServiceStart:
-    return DynamicServiceStart.parse_obj(
+    return DynamicServiceStart.model_validate(
         DynamicServiceStart.Config.schema_extra["example"]
     )
 
@@ -55,9 +55,9 @@ def dynamic_service_start() -> DynamicServiceStart:
 @pytest.mark.parametrize(
     "expected_response",
     [
-        NodeGet.parse_obj(NodeGet.Config.schema_extra["example"]),
-        NodeGetIdle.parse_obj(NodeGetIdle.Config.schema_extra["example"]),
-        DynamicServiceGet.parse_obj(
+        NodeGet.model_validate(NodeGet.Config.schema_extra["example"]),
+        NodeGetIdle.model_validate(NodeGetIdle.Config.schema_extra["example"]),
+        DynamicServiceGet.model_validate(
             DynamicServiceGet.Config.schema_extra["examples"][0]
         ),
     ],
@@ -98,8 +98,8 @@ async def test_get_service_status_raises_rpc_server_error(
 @pytest.mark.parametrize(
     "expected_response",
     [
-        NodeGet.parse_obj(NodeGet.Config.schema_extra["example"]),
-        DynamicServiceGet.parse_obj(
+        NodeGet.model_validate(NodeGet.Config.schema_extra["example"]),
+        DynamicServiceGet.model_validate(
             DynamicServiceGet.Config.schema_extra["examples"][0]
         ),
     ],

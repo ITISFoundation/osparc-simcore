@@ -98,7 +98,7 @@ async def list_services_latest(request: Request):
     assert page_meta.limit == query_params.limit  # nosec
     assert page_meta.offset == query_params.offset  # nosec
 
-    page = Page[CatalogServiceGet].parse_obj(
+    page = Page[CatalogServiceGet].model_validate(
         paginate_data(
             chunk=page_items,
             request_url=request.url,
@@ -133,7 +133,7 @@ async def get_service(request: Request):
         service_version=path_params.service_version,
     )
 
-    return envelope_json_response(CatalogServiceGet.parse_obj(service))
+    return envelope_json_response(CatalogServiceGet.model_validate(service))
 
 
 @routes.patch(
@@ -164,7 +164,7 @@ async def update_service(request: Request):
         unit_registry=request_ctx.unit_registry,
     )
 
-    return envelope_json_response(CatalogServiceGet.parse_obj(updated))
+    return envelope_json_response(CatalogServiceGet.model_validate(updated))
 
 
 @routes.get(

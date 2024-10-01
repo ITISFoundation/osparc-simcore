@@ -247,7 +247,7 @@ async def test_run_solver_job(
     ).respond(
         status.HTTP_201_CREATED,
         json=jsonable_encoder(
-            ComputationTaskGet.parse_obj(
+            ComputationTaskGet.model_validate(
                 {
                     "id": project_id,
                     "state": "UNKNOWN",
@@ -358,7 +358,7 @@ async def test_run_solver_job(
     assert mocked_webserver_service_api["get_task_status"].called
     assert mocked_webserver_service_api["get_task_result"].called
 
-    job = Job.parse_obj(resp.json())
+    job = Job.model_validate(resp.json())
 
     # Start Job
     resp = await client.post(
@@ -369,5 +369,5 @@ async def test_run_solver_job(
     assert resp.status_code == status.HTTP_202_ACCEPTED
     assert mocked_directorv2_service_api["inspect_computation"].called
 
-    job_status = JobStatus.parse_obj(resp.json())
+    job_status = JobStatus.model_validate(resp.json())
     assert job_status.progress == 0.0
