@@ -169,7 +169,7 @@ qx.Class.define("osparc.tours.Manager", {
     __toStepCheck: function(idx = 0) {
       const steps = this.getSteps();
       if (idx >= steps.length) {
-        idx = 0;
+        return;
       }
 
       this.__removeCurrentBubble();
