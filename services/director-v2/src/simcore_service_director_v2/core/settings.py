@@ -19,7 +19,14 @@ from models_library.clusters import (
     ClusterTypeInModel,
     NoAuthentication,
 )
-from pydantic import AnyHttpUrl, AnyUrl, Field, NonNegativeInt, validator
+from pydantic import (
+    AliasChoices,
+    AnyHttpUrl,
+    AnyUrl,
+    Field,
+    NonNegativeInt,
+    field_validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
@@ -46,18 +53,20 @@ class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_V0_ENABLED: bool = True
 
     DIRECTOR_HOST: str = "director"
-    DIRECTOR_PORT: PortInt = PortInt(8080)
+    DIRECTOR_PORT: PortInt = 8080
     DIRECTOR_V0_VTAG: VersionTag = Field(
         default="v0", description="Director-v0 service API's version tag"
     )
 
     @cached_property
     def endpoint(self) -> str:
-        url: str = AnyHttpUrl.build(
-            scheme="http",
-            host=self.DIRECTOR_HOST,
-            port=f"{self.DIRECTOR_PORT}",
-            path=f"/{self.DIRECTOR_V0_VTAG}",
+        url: str = str(
+            AnyHttpUrl.build(
+                scheme="http",
+                host=self.DIRECTOR_HOST,
+                port=self.DIRECTOR_PORT,
+                path=f"/{self.DIRECTOR_V0_VTAG}",
+            )
         )
         return url
 
@@ -105,7 +114,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
             type=ClusterTypeInModel.ON_PREMISE,
         )
 
-    @validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", pre=True)
+    @field_validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", mode="before")
     @classmethod
     def _empty_auth_is_none(cls, v):
         if not v:
@@ -120,14 +129,14 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
-        env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        validation_alias=AliasChoices("DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
     )
     DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=AliasChoices(
             "DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
@@ -159,7 +168,9 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_REMOTE_DEBUGGING_PORT: PortInt | None
 
     # extras
-    SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
+    SWARM_STACK_NAME: str = Field(
+        "undefined-please-check", validation_alias="SWARM_STACK_NAME"
+    )
     SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
         default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
         description="Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)"
@@ -181,34 +192,48 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # debug settings
-    CLIENT_REQUEST: ClientRequestSettings = Field(auto_default_from_env=True)
-
-    # App modules settings ---------------------
-    DIRECTOR_V2_STORAGE: StorageSettings = Field(auto_default_from_env=True)
-    DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH: StorageAuthSettings | None = Field(
-        auto_default_from_env=True
+    CLIENT_REQUEST: ClientRequestSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
     )
 
-    DIRECTOR_V2_CATALOG: CatalogSettings | None = Field(auto_default_from_env=True)
+    # App modules settings ---------------------
+    DIRECTOR_V2_STORAGE: StorageSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+    DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH: StorageAuthSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    DIRECTOR_V0: DirectorV0Settings = Field(auto_default_from_env=True)
+    DIRECTOR_V2_CATALOG: CatalogSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    DYNAMIC_SERVICES: DynamicServicesSettings = Field(auto_default_from_env=True)
+    DIRECTOR_V0: DirectorV0Settings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
+    DYNAMIC_SERVICES: DynamicServicesSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    REDIS: RedisSettings = Field(auto_default_from_env=True)
+    POSTGRES: PostgresSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    DIRECTOR_V2_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
+    REDIS: RedisSettings = Field(json_schema_extra={"auto_default_from_env": True})
+
+    DIRECTOR_V2_RABBITMQ: RabbitSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
 
     DIRECTOR_V2_COMPUTATIONAL_BACKEND: ComputationalBackendSettings = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(
-        auto_default_from_env=True,
+        json_schema_extra={"auto_default_from_env": True},
         description="settings for the private registry deployed with the platform",
     )
     DIRECTOR_V2_DOCKER_HUB_REGISTRY: RegistrySettings | None = Field(
@@ -216,7 +241,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DIRECTOR_V2_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings = Field(
-        auto_default_from_env=True,
+        json_schema_extra={"auto_default_from_env": True},
         description="resource usage tracker service client's plugin",
     )
 
@@ -225,7 +250,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Base URL used to access the public api e.g. http://127.0.0.1:6000 for development or https://api.osparc.io",
     )
 
-    @validator("LOG_LEVEL", pre=True)
+    @field_validator("LOG_LEVEL", mode="before")
     @classmethod
     def _validate_loglevel(cls, value: str) -> str:
         log_level: str = cls.validate_log_level(value)
