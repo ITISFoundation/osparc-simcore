@@ -284,7 +284,9 @@ async def test_put_volumes(
             {
                 "metrics_params": parse_obj_as(
                     CreateServiceMetricsAdditionalParams,
-                    CreateServiceMetricsAdditionalParams.Config.schema_extra["example"],
+                    CreateServiceMetricsAdditionalParams.model_config[
+                        "json_schema_extra"
+                    ]["example"],
                 )
             },
             id="post_containers_tasks",

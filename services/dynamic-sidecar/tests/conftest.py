@@ -332,7 +332,9 @@ def mock_stop_heart_beat_task(mocker: MockerFixture) -> AsyncMock:
 def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
     return parse_obj_as(
         CreateServiceMetricsAdditionalParams,
-        CreateServiceMetricsAdditionalParams.Config.schema_extra["example"],
+        CreateServiceMetricsAdditionalParams.model_config["json_schema_extra"][
+            "example"
+        ],
     )
 
 

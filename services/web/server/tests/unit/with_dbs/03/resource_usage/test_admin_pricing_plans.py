@@ -36,7 +36,8 @@ def mock_rpc_resource_usage_tracker_service_api(
             autospec=True,
             return_value=[
                 parse_obj_as(
-                    PricingPlanGet, PricingPlanGet.Config.schema_extra["examples"][0]
+                    PricingPlanGet,
+                    PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
                 )
             ],
         ),
@@ -44,21 +45,24 @@ def mock_rpc_resource_usage_tracker_service_api(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_plans.get_pricing_plan",
             autospec=True,
             return_value=parse_obj_as(
-                PricingPlanGet, PricingPlanGet.Config.schema_extra["examples"][0]
+                PricingPlanGet,
+                PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
         "create_pricing_plan": mocker.patch(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_plans.create_pricing_plan",
             autospec=True,
             return_value=parse_obj_as(
-                PricingPlanGet, PricingPlanGet.Config.schema_extra["examples"][0]
+                PricingPlanGet,
+                PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
         "update_pricing_plan": mocker.patch(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_plans.update_pricing_plan",
             autospec=True,
             return_value=parse_obj_as(
-                PricingPlanGet, PricingPlanGet.Config.schema_extra["examples"][0]
+                PricingPlanGet,
+                PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
         ## Pricing units
@@ -66,21 +70,24 @@ def mock_rpc_resource_usage_tracker_service_api(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_units.get_pricing_unit",
             autospec=True,
             return_value=parse_obj_as(
-                PricingUnitGet, PricingUnitGet.Config.schema_extra["examples"][0]
+                PricingUnitGet,
+                PricingUnitGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
         "create_pricing_unit": mocker.patch(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_units.create_pricing_unit",
             autospec=True,
             return_value=parse_obj_as(
-                PricingUnitGet, PricingUnitGet.Config.schema_extra["examples"][0]
+                PricingUnitGet,
+                PricingUnitGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
         "update_pricing_unit": mocker.patch(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_units.update_pricing_unit",
             autospec=True,
             return_value=parse_obj_as(
-                PricingUnitGet, PricingUnitGet.Config.schema_extra["examples"][0]
+                PricingUnitGet,
+                PricingUnitGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
         ## Pricing plan to service
@@ -90,7 +97,9 @@ def mock_rpc_resource_usage_tracker_service_api(
             return_value=[
                 parse_obj_as(
                     PricingPlanToServiceGet,
-                    PricingPlanToServiceGet.Config.schema_extra["examples"][0],
+                    PricingPlanToServiceGet.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
                 )
             ],
         ),
@@ -99,7 +108,9 @@ def mock_rpc_resource_usage_tracker_service_api(
             autospec=True,
             return_value=parse_obj_as(
                 PricingPlanToServiceGet,
-                PricingPlanToServiceGet.Config.schema_extra["examples"][0],
+                PricingPlanToServiceGet.model_config["json_schema_extra"]["examples"][
+                    0
+                ],
             ),
         ),
     }

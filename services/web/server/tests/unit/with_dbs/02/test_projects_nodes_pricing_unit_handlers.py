@@ -99,7 +99,7 @@ def mock_rut_api_responses(
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 
     pricing_unit_get_base = parse_obj_as(
-        PricingUnitGet, PricingUnitGet.Config.schema_extra["examples"][0]
+        PricingUnitGet, PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
     )
     pricing_unit_get_1 = pricing_unit_get_base.copy()
     pricing_unit_get_1.pricing_unit_id = _PRICING_UNIT_ID_1

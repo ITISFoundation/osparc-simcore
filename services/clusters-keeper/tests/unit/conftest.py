@@ -119,7 +119,9 @@ def app_environment(
                 {
                     random.choice(  # noqa: S311
                         ec2_instances
-                    ): EC2InstanceBootSpecific.Config.schema_extra["examples"][
+                    ): EC2InstanceBootSpecific.model_config["json_schema_extra"][
+                        "examples"
+                    ][
                         1
                     ]  # NOTE: we use example with custom script
                 }
@@ -137,7 +139,9 @@ def app_environment(
             "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
+                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
+                            "examples"
+                        ]
                     )
                     for ec2_type_name in ec2_instances
                 }

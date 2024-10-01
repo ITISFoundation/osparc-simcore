@@ -243,7 +243,9 @@ def create_mock_director_service_labels(
             },
             parse_obj_as(
                 ServiceResourcesDict,
-                ServiceResourcesDictHelpers.Config.schema_extra["examples"][1],
+                ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][1],
             ),
             "simcore/services/dynamic/sim4life-dy",
             "3.0.0",

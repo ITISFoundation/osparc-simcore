@@ -12,7 +12,9 @@ from simcore_service_webserver.users._notifications import (
 )
 
 
-@pytest.mark.parametrize("raw_data", UserNotification.Config.schema_extra["examples"])
+@pytest.mark.parametrize(
+    "raw_data", UserNotification.model_config["json_schema_extra"]["examples"]
+)
 def test_user_notification(raw_data: dict[str, Any]):
     assert UserNotification.model_validate(raw_data)
 

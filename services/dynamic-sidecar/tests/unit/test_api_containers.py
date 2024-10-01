@@ -267,10 +267,10 @@ def not_started_containers() -> list[str]:
 def mock_outputs_labels() -> dict[str, ServiceOutput]:
     return {
         "output_port_1": ServiceOutput.model_validate(
-            ServiceOutput.Config.schema_extra["examples"][3]
+            ServiceOutput.model_config["json_schema_extra"]["examples"][3]
         ),
         "output_port_2": ServiceOutput.model_validate(
-            ServiceOutput.Config.schema_extra["examples"][3]
+            ServiceOutput.model_config["json_schema_extra"]["examples"][3]
         ),
     }
 

@@ -34,7 +34,7 @@ def mock_catalog_service_api_responses(
 
     service_resources = parse_obj_as(
         ServiceResourcesDict,
-        ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
+        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
     )
     jsonable_service_resources = ServiceResourcesDictHelpers.create_jsonable(
         service_resources

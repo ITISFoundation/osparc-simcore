@@ -33,12 +33,12 @@ def mock_rut_api_responses(
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 
     pricing_unit_get = parse_obj_as(
-        PricingUnitGet, PricingUnitGet.Config.schema_extra["examples"][0]
+        PricingUnitGet, PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
     )
 
     service_pricing_plan_get = parse_obj_as(
         PricingPlanGet,
-        PricingPlanGet.Config.schema_extra["examples"][0],
+        PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
     )
 
     aioresponses_mocker.get(

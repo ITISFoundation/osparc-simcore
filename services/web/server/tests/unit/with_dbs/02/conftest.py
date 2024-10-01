@@ -41,7 +41,7 @@ from simcore_service_webserver.projects.models import ProjectDict
 def mock_service_resources() -> ServiceResourcesDict:
     return parse_obj_as(
         ServiceResourcesDict,
-        ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
+        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
     )
 
 

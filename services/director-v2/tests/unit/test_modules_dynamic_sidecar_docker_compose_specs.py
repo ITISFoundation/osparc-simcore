@@ -156,7 +156,7 @@ async def test_inject_resource_limits_and_reservations(
     [
         pytest.param(
             json.loads(
-                SimcoreServiceLabels.Config.schema_extra["examples"][2][
+                SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2][
                     "simcore.service.compose-spec"
                 ]
             ),

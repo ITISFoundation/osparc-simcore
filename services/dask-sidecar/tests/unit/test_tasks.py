@@ -438,7 +438,8 @@ def mocked_get_image_labels(
     integration_version: version.Version, mocker: MockerFixture
 ) -> mock.Mock:
     labels: ImageLabels = parse_obj_as(
-        ImageLabels, ServiceMetaDataPublished.Config.schema_extra["examples"][0]
+        ImageLabels,
+        ServiceMetaDataPublished.model_config["json_schema_extra"]["examples"][0],
     )
     labels.integration_version = f"{integration_version}"
     return mocker.patch(

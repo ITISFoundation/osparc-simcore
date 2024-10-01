@@ -44,7 +44,7 @@ async def enable_prometheus_metrics(
         monkeypatch,
         {
             "DY_SIDECAR_CALLBACKS_MAPPING": json.dumps(
-                CallbacksMapping.Config.schema_extra["examples"][2]
+                CallbacksMapping.model_config["json_schema_extra"]["examples"][2]
             )
         },
     )

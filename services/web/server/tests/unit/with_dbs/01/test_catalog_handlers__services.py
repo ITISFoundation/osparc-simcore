@@ -56,7 +56,8 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert user_id
 
         items = parse_obj_as(
-            list[ServiceGetV2], ServiceGetV2.Config.schema_extra["examples"]
+            list[ServiceGetV2],
+            ServiceGetV2.model_config["json_schema_extra"]["examples"],
         )
         total_count = len(items)
 
@@ -80,7 +81,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert user_id
 
         got = parse_obj_as(
-            ServiceGetV2, ServiceGetV2.Config.schema_extra["examples"][0]
+            ServiceGetV2, ServiceGetV2.model_config["json_schema_extra"]["examples"][0]
         )
         got.version = service_version
         got.key = service_key
@@ -101,7 +102,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert user_id
 
         got = parse_obj_as(
-            ServiceGetV2, ServiceGetV2.Config.schema_extra["examples"][0]
+            ServiceGetV2, ServiceGetV2.model_config["json_schema_extra"]["examples"][0]
         )
         got.version = service_version
         got.key = service_key

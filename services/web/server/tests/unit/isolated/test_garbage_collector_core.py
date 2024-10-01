@@ -123,7 +123,7 @@ async def test_remove_orphaned_services_with_no_running_services_does_nothing(
 def faker_dynamic_service_get() -> Callable[[], DynamicServiceGet]:
     def _() -> DynamicServiceGet:
         return DynamicServiceGet.model_validate(
-            DynamicServiceGet.Config.schema_extra["examples"][1]
+            DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
         )
 
     return _

@@ -339,7 +339,9 @@ def service_name() -> str:
 @pytest.fixture(
     params=[
         SimcoreServiceLabels.model_validate(example)
-        for example in SimcoreServiceLabels.Config.schema_extra["examples"]
+        for example in SimcoreServiceLabels.model_config["json_schema_extra"][
+            "examples"
+        ]
     ],
 )
 def labels_example(request: pytest.FixtureRequest) -> SimcoreServiceLabels:
