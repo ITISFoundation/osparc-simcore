@@ -134,7 +134,7 @@ def error_middleware_factory(
                 err,
                 f"{err}",
                 web.HTTPNotImplemented,
-                skip_internal_error_details=_is_prod,
+                skip_internal_error_details=True,
             )
             raise http_error from err
 
@@ -143,7 +143,7 @@ def error_middleware_factory(
                 err,
                 f"{err}",
                 web.HTTPGatewayTimeout,
-                skip_internal_error_details=_is_prod,
+                skip_internal_error_details=True,
             )
             raise http_error from err
 
