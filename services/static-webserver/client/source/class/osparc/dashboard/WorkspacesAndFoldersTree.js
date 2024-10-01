@@ -93,7 +93,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
 
   events: {
     "openChanged": "qx.event.type.Event",
-    "contextChanged": "qx.event.type.Event",
+    "contextChanged": "qx.event.type.Data",
   },
 
   properties: {

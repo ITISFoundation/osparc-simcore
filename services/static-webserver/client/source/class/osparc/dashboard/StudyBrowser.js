@@ -990,7 +990,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
-        workspacesAndFoldersTree.contextChanged(workspaceId, folderId);
       }
     },
 

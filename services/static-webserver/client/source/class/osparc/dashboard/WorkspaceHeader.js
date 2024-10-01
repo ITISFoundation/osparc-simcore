@@ -39,6 +39,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
   },
 
   events: {
+    "contextChanged": "qx.event.type.Data",
     "workspaceUpdated": "qx.event.type.Data",
     "deleteWorkspaceRequested": "qx.event.type.Data"
   },
@@ -105,12 +106,13 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
           break;
         case "breadcrumbs":
           control = new osparc.dashboard.ContextBreadcrumbs();
-          /*
           this.bind("currentWorkspaceId", control, "currentWorkspaceId");
           this.bind("currentFolderId", control, "currentFolderId");
           control.bind("currentWorkspaceId", this, "currentWorkspaceId");
           control.bind("currentFolderId", this, "currentFolderId");
-          */
+          control.addListener("contextChanged", e => {
+            this.fireDataEvent("contextChanged", e.getData())
+          });
           this._add(control);
           break;
         case "edit-button":
@@ -179,6 +181,10 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       title.addListener("tap", () => {
         const folderId = null;
         this.setCurrentFolderId(folderId);
+        this.fireDataEvent("contextChanged", {
+          workspaceId,
+          folderId,
+        });
       });
 
       this.getChildControl("breadcrumbs");
