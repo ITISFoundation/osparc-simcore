@@ -30,6 +30,7 @@ from simcore_postgres_database.utils_tags_sql import (
     set_tag_access_rights_stmt,
     update_tag_stmt,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
@@ -75,7 +76,11 @@ async def other_user(
 
 
 async def test_tags_access_with_primary_groups(
-    connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
+    asyncpg_engine: AsyncEngine,
+    connection: SAConnection,
+    user: RowProxy,
+    group: RowProxy,
+    other_user: RowProxy,
 ):
     conn = connection
 
@@ -102,22 +107,29 @@ async def test_tags_access_with_primary_groups(
         ),
     ]
 
-    tags_repo = TagsRepo(user_id=user.id)
+    tags_repo = TagsRepo(asyncpg_engine)
 
     # repo has access
     assert (
-        await tags_repo.access_count(conn, tag_id, read=True, write=True, delete=True)
+        await tags_repo.access_count(
+            user_id=user.id, tag_id=tag_id, read=True, write=True, delete=True
+        )
         == 1
     )
-    assert await tags_repo.access_count(conn, tag_id, read=True, write=True) == 1
-    assert await tags_repo.access_count(conn, tag_id, read=True) == 1
-    assert await tags_repo.access_count(conn, tag_id, write=True) == 1
+    assert (
+        await tags_repo.access_count(
+            user_id=user.id, tag_id=tag_id, read=True, write=True
+        )
+        == 1
+    )
+    assert await tags_repo.access_count(user_id=user.id, tag_id=tag_id, read=True) == 1
+    assert await tags_repo.access_count(user_id=user.id, tag_id=tag_id, write=True) == 1
 
     # changing access conditions
     assert (
         await tags_repo.access_count(
-            conn,
-            tag_id,
+            user_id=user.id,
+            tag_id=tag_id,
             read=True,
             write=True,
             delete=False,  # <---
@@ -128,15 +140,20 @@ async def test_tags_access_with_primary_groups(
     # user will have NO access to other user's tags even matching access rights
     assert (
         await tags_repo.access_count(
-            conn, other_tag_id, read=True, write=True, delete=True
+            user_id=user.id, tag_id=other_tag_id, read=True, write=True, delete=True
         )
         == 0
     )
 
 
 async def test_tags_access_with_multiple_groups(
-    connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
+    asyncpg_engine: AsyncEngine,
+    connection: SAConnection,
+    user: RowProxy,
+    group: RowProxy,
+    other_user: RowProxy,
 ):
+
     conn = connection
 
     (tag_id, other_tag_id, group_tag_id, everyone_tag_id) = [
@@ -182,30 +199,58 @@ async def test_tags_access_with_multiple_groups(
         ),
     ]
 
-    tags_repo = TagsRepo(user_id=user.id)
-    other_repo = TagsRepo(user_id=other_user.id)
+    tags_repo = TagsRepo(asyncpg_engine)
+    other_repo = TagsRepo(asyncpg_engine)
 
     # tag_id
     assert (
-        await tags_repo.access_count(conn, tag_id, read=True, write=True, delete=True)
+        await tags_repo.access_count(
+            user_id=user.id, tag_id=tag_id, read=True, write=True, delete=True
+        )
         == 1
     )
     assert (
-        await other_repo.access_count(conn, tag_id, read=True, write=True, delete=True)
+        await other_repo.access_count(
+            user_id=other_user.id, tag_id=tag_id, read=True, write=True, delete=True
+        )
         == 0
     )
 
     # other_tag_id
-    assert await tags_repo.access_count(conn, other_tag_id, read=True) == 0
-    assert await other_repo.access_count(conn, other_tag_id, read=True) == 1
+    assert (
+        await tags_repo.access_count(user_id=user.id, tag_id=other_tag_id, read=True)
+        == 0
+    )
+    assert (
+        await other_repo.access_count(
+            user_id=other_user.id, tag_id=other_tag_id, read=True
+        )
+        == 1
+    )
 
     # group_tag_id
-    assert await tags_repo.access_count(conn, group_tag_id, read=True) == 1
-    assert await other_repo.access_count(conn, group_tag_id, read=True) == 0
+    assert (
+        await tags_repo.access_count(user_id=user.id, tag_id=group_tag_id, read=True)
+        == 1
+    )
+    assert (
+        await other_repo.access_count(
+            user_id=other_user.id, tag_id=group_tag_id, read=True
+        )
+        == 0
+    )
 
     # everyone_tag_id
-    assert await tags_repo.access_count(conn, everyone_tag_id, read=True) == 1
-    assert await other_repo.access_count(conn, everyone_tag_id, read=True) == 1
+    assert (
+        await tags_repo.access_count(user_id=user.id, tag_id=everyone_tag_id, read=True)
+        == 1
+    )
+    assert (
+        await other_repo.access_count(
+            user_id=other_user.id, tag_id=everyone_tag_id, read=True
+        )
+        == 1
+    )
 
     # now group adds read for all tags
     for t in (tag_id, other_tag_id, everyone_tag_id):
@@ -218,19 +263,29 @@ async def test_tags_access_with_multiple_groups(
             delete=False,
         )
 
-    assert await tags_repo.access_count(conn, tag_id, read=True) == 2
-    assert await tags_repo.access_count(conn, other_tag_id, read=True) == 1
-    assert await tags_repo.access_count(conn, everyone_tag_id, read=True) == 2
+    assert await tags_repo.access_count(user_id=user.id, tag_id=tag_id, read=True) == 2
+    assert (
+        await tags_repo.access_count(user_id=user.id, tag_id=other_tag_id, read=True)
+        == 1
+    )
+    assert (
+        await tags_repo.access_count(user_id=user.id, tag_id=everyone_tag_id, read=True)
+        == 2
+    )
 
 
 async def test_tags_repo_list_and_get(
-    connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
+    asyncpg_engine: AsyncEngine,
+    connection: SAConnection,
+    user: RowProxy,
+    group: RowProxy,
+    other_user: RowProxy,
 ):
     conn = connection
-    tags_repo = TagsRepo(user_id=user.id)
+    tags_repo = TagsRepo(asyncpg_engine)
 
     # (1) no tags
-    listed_tags = await tags_repo.list_all(conn)
+    listed_tags = await tags_repo.list_all(user_id=user.id)
     assert not listed_tags
 
     # (2) one tag
@@ -247,7 +302,7 @@ async def test_tags_repo_list_and_get(
         )
     ]
 
-    listed_tags = await tags_repo.list_all(conn)
+    listed_tags = await tags_repo.list_all(user_id=user.id)
     assert listed_tags
     assert [t["id"] for t in listed_tags] == expected_tags_ids
 
@@ -265,7 +320,7 @@ async def test_tags_repo_list_and_get(
         )
     )
 
-    listed_tags = await tags_repo.list_all(conn)
+    listed_tags = await tags_repo.list_all(user_id=user.id)
     assert {t["id"] for t in listed_tags} == set(expected_tags_ids)
 
     # (4) add another tag from a differnt user
@@ -282,7 +337,7 @@ async def test_tags_repo_list_and_get(
 
     # same as before
     prev_listed_tags = listed_tags
-    listed_tags = await tags_repo.list_all(conn)
+    listed_tags = await tags_repo.list_all(user_id=user.id)
     assert listed_tags == prev_listed_tags
 
     # (5) add a global tag
@@ -297,7 +352,7 @@ async def test_tags_repo_list_and_get(
         delete=False,
     )
 
-    listed_tags = await tags_repo.list_all(conn)
+    listed_tags = await tags_repo.list_all(user_id=user.id)
     assert listed_tags == [
         {
             "id": 1,
@@ -328,8 +383,8 @@ async def test_tags_repo_list_and_get(
         },
     ]
 
-    other_repo = TagsRepo(user_id=other_user.id)
-    assert await other_repo.list_all(conn) == [
+    other_repo = TagsRepo(asyncpg_engine)
+    assert await other_repo.list_all(user_id=other_user.id) == [
         {
             "id": 3,
             "name": "T3",
@@ -351,7 +406,7 @@ async def test_tags_repo_list_and_get(
     ]
 
     # exclusive to user
-    assert await tags_repo.get(conn, tag_id=2) == {
+    assert await tags_repo.get(user_id=user.id, tag_id=2) == {
         "id": 2,
         "name": "T2",
         "description": "tag via std group",
@@ -363,9 +418,9 @@ async def test_tags_repo_list_and_get(
 
     # exclusive ot other user
     with pytest.raises(TagNotFoundError):
-        assert await tags_repo.get(conn, tag_id=3)
+        assert await tags_repo.get(user_id=user.id, tag_id=3)
 
-    assert await other_repo.get(conn, tag_id=3) == {
+    assert await other_repo.get(user_id=other_user.id, tag_id=3) == {
         "id": 3,
         "name": "T3",
         "description": "tag for 2",
@@ -376,14 +431,20 @@ async def test_tags_repo_list_and_get(
     }
 
     # a common tag
-    assert await tags_repo.get(conn, tag_id=4) == await other_repo.get(conn, tag_id=4)
+    assert await tags_repo.get(user_id=user.id, tag_id=4) == await other_repo.get(
+        user_id=user.id, tag_id=4
+    )
 
 
 async def test_tags_repo_update(
-    connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
+    asyncpg_engine: AsyncEngine,
+    connection: SAConnection,
+    user: RowProxy,
+    group: RowProxy,
+    other_user: RowProxy,
 ):
     conn = connection
-    tags_repo = TagsRepo(user_id=user.id)
+    tags_repo = TagsRepo(asyncpg_engine)
 
     # Tags with different access rights
     readonly_tid, readwrite_tid, other_tid = [
@@ -420,10 +481,12 @@ async def test_tags_repo_update(
     ]
 
     with pytest.raises(TagOperationNotAllowedError):
-        await tags_repo.update(conn, tag_id=readonly_tid, description="modified")
+        await tags_repo.update(
+            user_id=user.id, tag_id=readonly_tid, description="modified"
+        )
 
     assert await tags_repo.update(
-        conn, tag_id=readwrite_tid, description="modified"
+        user_id=user.id, tag_id=readwrite_tid, description="modified"
     ) == {
         "id": readwrite_tid,
         "name": "T2",
@@ -435,14 +498,20 @@ async def test_tags_repo_update(
     }
 
     with pytest.raises(TagOperationNotAllowedError):
-        await tags_repo.update(conn, tag_id=other_tid, description="modified")
+        await tags_repo.update(
+            user_id=user.id, tag_id=other_tid, description="modified"
+        )
 
 
 async def test_tags_repo_delete(
-    connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
+    asyncpg_engine: AsyncEngine,
+    connection: SAConnection,
+    user: RowProxy,
+    group: RowProxy,
+    other_user: RowProxy,
 ):
     conn = connection
-    tags_repo = TagsRepo(user_id=user.id)
+    tags_repo = TagsRepo(asyncpg_engine)
 
     # Tags with different access rights
     readonly_tid, delete_tid, other_tid = [
@@ -480,28 +549,32 @@ async def test_tags_repo_delete(
 
     # cannot delete
     with pytest.raises(TagOperationNotAllowedError):
-        await tags_repo.delete(conn, tag_id=readonly_tid)
+        await tags_repo.delete(user_id=user.id, tag_id=readonly_tid)
 
     # can delete
-    await tags_repo.get(conn, tag_id=delete_tid)
-    await tags_repo.delete(conn, tag_id=delete_tid)
+    await tags_repo.get(user_id=user.id, tag_id=delete_tid)
+    await tags_repo.delete(user_id=user.id, tag_id=delete_tid)
 
     with pytest.raises(TagNotFoundError):
-        await tags_repo.get(conn, tag_id=delete_tid)
+        await tags_repo.get(user_id=user.id, tag_id=delete_tid)
 
     # cannot delete
     with pytest.raises(TagOperationNotAllowedError):
-        await tags_repo.delete(conn, tag_id=other_tid)
+        await tags_repo.delete(user_id=user.id, tag_id=other_tid)
 
 
 async def test_tags_repo_create(
-    connection: SAConnection, user: RowProxy, group: RowProxy, other_user: RowProxy
+    asyncpg_engine: AsyncEngine,
+    connection: SAConnection,
+    user: RowProxy,
+    group: RowProxy,
+    other_user: RowProxy,
 ):
     conn = connection
-    tags_repo = TagsRepo(user_id=user.id)
+    tags_repo = TagsRepo(asyncpg_engine)
 
     tag_1 = await tags_repo.create(
-        conn,
+        user_id=user.id,
         name="T1",
         description="my first tag",
         color="pink",
