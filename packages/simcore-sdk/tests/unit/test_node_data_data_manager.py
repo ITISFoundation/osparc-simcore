@@ -40,7 +40,7 @@ def create_files() -> Iterator[Callable[..., list[Path]]]:
 
 @pytest.fixture
 def r_clone_settings(faker: Faker) -> RCloneSettings:
-    return RCloneSettings.parse_obj(
+    return RCloneSettings.model_validate(
         {
             "R_CLONE_S3": {
                 "S3_ENDPOINT": faker.url(),

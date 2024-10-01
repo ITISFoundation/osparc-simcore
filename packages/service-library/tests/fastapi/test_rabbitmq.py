@@ -132,6 +132,6 @@ async def test_post_message(
                 f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, {attempt.retry_state.retry_object.statistics}"
             )
             mocked_message_handler.assert_called_once_with(
-                rabbit_message.json().encode()
+                rabbit_message.model_dump_json().encode()
             )
             print("... message received")

@@ -24,7 +24,7 @@ class RabbitMessage(Protocol):
 class RPCNamespacedMethodName(ConstrainedStr):
     min_length: int = 1
     max_length: int = 255
-    regex: re.Pattern[str] | None = re.compile(REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS)
+    pattern: str = REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS
 
     @classmethod
     def from_namespace_and_method(

@@ -102,13 +102,13 @@ def _assert_progress_report_values(
     # check first progress
     assert mocked_progress_cb.call_args_list[0].args[0].dict(
         exclude={"message"}
-    ) == ProgressReport(actual_value=0, total=total, unit="Byte").dict(
+    ) == ProgressReport(actual_value=0, total=total, unit="Byte").model_dump(
         exclude={"message"}
     )
     # check last progress
     assert mocked_progress_cb.call_args_list[-1].args[0].dict(
         exclude={"message"}
-    ) == ProgressReport(actual_value=total, total=total, unit="Byte").dict(
+    ) == ProgressReport(actual_value=total, total=total, unit="Byte").model_dump(
         exclude={"message"}
     )
 

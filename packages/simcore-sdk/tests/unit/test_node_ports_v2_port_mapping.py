@@ -18,7 +18,7 @@ from utils_port_v2 import create_valid_port_config
 
 @pytest.mark.parametrize("port_class", [InputsList, OutputsList])
 def test_empty_ports_mapping(port_class: type[InputsList | OutputsList]):
-    port_mapping = port_class(__root__={})
+    port_mapping = port_class(root={})
     assert not port_mapping.items()
     assert not port_mapping.values()
     assert not port_mapping.keys()
@@ -36,10 +36,10 @@ def test_filled_ports_mapping(port_class: type[InputsList | OutputsList]):
         port_cfgs[port["key"]] = port
     port_cfgs["some_file"] = create_valid_port_config("data:*/*", key="some_file")
 
-    port_mapping = port_class(__root__=port_cfgs)
+    port_mapping = port_class(root=port_cfgs)
 
     # two ways to construct instances of __root__
-    assert port_class.parse_obj(port_cfgs) == port_mapping
+    assert port_class.model_validate(port_cfgs) == port_mapping
 
     assert len(port_mapping) == len(port_cfgs)
     for port_key, port_value in port_mapping.items():
@@ -61,8 +61,8 @@ def test_filled_ports_mapping(port_class: type[InputsList | OutputsList]):
 def test_io_ports_are_not_aliases():
     # prevents creating alises as InputsList = PortsMappings
 
-    inputs = InputsList(__root__={})
-    outputs = OutputsList(__root__={})
+    inputs = InputsList(root={})
+    outputs = OutputsList(root={})
 
     assert isinstance(inputs, InputsList)
     assert not isinstance(inputs, OutputsList)
@@ -110,13 +110,13 @@ def test_validate_port_value_against_schema(fake_port_meta: dict[str, Any]):
 
     assert error["loc"] == ("value",)
     assert "-2 is less than the minimum of 0" in error["msg"]
-    assert error["type"] == "value_error.port_validation.schema_error"
+    assert error["type"] == "value_error"
 
     assert "ctx" in error
-    assert error["ctx"]["port_key"] == "port_1"
+    assert error["ctx"]["error"].port_key == "port_1"
 
-    schema_error_message = error["ctx"]["schema_error_message"]
-    schema_error_path = error["ctx"]["schema_error_path"]
+    schema_error_message = error["ctx"]["error"].schema_error_message
+    schema_error_path = error["ctx"]["error"].schema_error_path
 
     assert schema_error_message in error["msg"]
     assert schema_error_path == deque([1])
@@ -152,7 +152,7 @@ def test_validate_iolist_against_schema(fake_port_meta: dict[str, Any]):
     # ----
 
     with pytest.raises(ValidationError) as err_info:
-        InputsList.parse_obj({p["key"]: p for p in ports})
+        InputsList.model_validate({p["key"]: p for p in ports})
 
     # ---
     assert isinstance(err_info.value, ValidationError)
@@ -162,14 +162,13 @@ def test_validate_iolist_against_schema(fake_port_meta: dict[str, Any]):
     for error in err_info.value.errors():
         error_loc = error["loc"]
         assert "ctx" in error
-        port_key = error["ctx"].get("port_key")
+        port_key = error["ctx"]["error"].port_key
 
         # path hierachy
-        assert error_loc[0] == "__root__", f"{error_loc=}"
-        assert error_loc[1] == port_key, f"{error_loc=}"
-        assert error_loc[-1] == "value", f"{error_loc=}"
+        assert error_loc[0] == port_key, f"{error_loc=}"
+        assert error_loc[1] == "value", f"{error_loc=}"
 
-        assert error["type"] == "value_error.port_validation.schema_error"
+        assert error["type"] == "value_error"
         port_with_errors.append(port_key)
         pprint(error)
 

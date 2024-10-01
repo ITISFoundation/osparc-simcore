@@ -175,7 +175,7 @@ class TaskOutputData(DictModel[ServicePortKey, PortValue]):
                 msg = f"Could not locate '{output_key}' in {output_data_file}"
                 raise ValueError(msg)
 
-        return cls.parse_obj(data)
+        return cls.model_validate(data)
 
     model_config = ConfigDict(
         json_schema_extra={

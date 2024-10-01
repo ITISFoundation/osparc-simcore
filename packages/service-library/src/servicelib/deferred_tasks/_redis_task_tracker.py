@@ -43,7 +43,9 @@ class RedisTaskTracker(BaseTaskTracker):
         return await self._get_raw(_get_key(task_uid))
 
     async def save(self, task_uid: TaskUID, task_schedule: TaskScheduleModel) -> None:
-        await self.redis_client_sdk.redis.set(_get_key(task_uid), task_schedule.json())
+        await self.redis_client_sdk.redis.set(
+            _get_key(task_uid), task_schedule.model_dump_json()
+        )
 
     async def remove(self, task_uid: TaskUID) -> None:
         await self.redis_client_sdk.redis.delete(_get_key(task_uid))

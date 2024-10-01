@@ -412,9 +412,9 @@ async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same
     assert len(project1_nodes) == 1
     project2_nodes = await project2_repo.add(connection, nodes=[shared_node])
     assert len(project2_nodes) == 1
-    assert project1_nodes[0].dict(
+    assert project1_nodes[0].model_dump(
         include=ProjectNodeCreate.get_field_names(exclude={"created", "modified"})
-    ) == project2_nodes[0].dict(
+    ) == project2_nodes[0].model_dump(
         include=ProjectNodeCreate.get_field_names(exclude={"created", "modified"})
     )
     with pytest.raises(ProjectNodesNonUniqueNodeFoundError):

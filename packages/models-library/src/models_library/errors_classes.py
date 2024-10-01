@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic.errors import PydanticErrorMixin
 
 
@@ -14,8 +16,8 @@ class OsparcErrorMixin(PydanticErrorMixin):
             cls.code = cls._get_full_class_name()  # type: ignore[assignment]
         return super().__new__(cls)
 
-    def __init__(self, *_args, **kwargs) -> None:
-        self.__dict__ = kwargs
+    def __init__(self, **ctx: Any) -> None:
+        self.__dict__ = ctx
         super().__init__(message=self._build_message(), code=self.code)
 
     def __str__(self) -> str:

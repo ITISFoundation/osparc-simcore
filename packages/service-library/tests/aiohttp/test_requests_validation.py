@@ -55,7 +55,7 @@ class MyRequestQueryParams(BaseModel):
     label: str
 
     def as_params(self, **kwargs) -> dict[str, str]:
-        data = self.dict(**kwargs)
+        data = self.model_dump(**kwargs)
         return {k: f"{v}" for k, v in data.items()}
 
     @classmethod
@@ -324,7 +324,7 @@ async def test_parse_request_with_invalid_json_body(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
         data=b"[ 1 2, 3 'broken-json' ]",
-        headers=headers_params.dict(by_alias=True),
+        headers=headers_params.model_dump(by_alias=True),
     )
 
     body = await r.text()
@@ -342,8 +342,8 @@ async def test_parse_request_with_invalid_headers_params(
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
-        json=body.dict(),
-        headers=headers_params.dict(),  # we pass the wrong names
+        json=body.model_dump(),
+        headers=headers_params.model_dump(),  # we pass the wrong names
     )
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
