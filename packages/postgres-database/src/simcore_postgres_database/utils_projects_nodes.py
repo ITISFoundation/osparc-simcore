@@ -83,7 +83,7 @@ class ProjectNodesRepo:
                 [
                     {
                         "project_uuid": f"{self.project_uuid}",
-                        **node.dict(),
+                        **node.model_dump(),
                     }
                     for node in nodes
                 ]

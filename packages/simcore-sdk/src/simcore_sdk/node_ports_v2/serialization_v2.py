@@ -115,7 +115,7 @@ async def dump(nodeports: Nodeports) -> None:
         "dumping node_ports_v2 object %s",
         pformat(nodeports, indent=2),
     )
-    _nodeports_cfg = nodeports.dict(
+    _nodeports_cfg = nodeports.model_dump(
         include={"internal_inputs", "internal_outputs"},
         by_alias=True,
         exclude_unset=True,

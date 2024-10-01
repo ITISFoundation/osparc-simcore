@@ -143,7 +143,7 @@ async def test_port_with_array_of_object(mocker):
         "contentSchema": content_schema,
     }
     sample = [{"i": 5, "s": "x", "l": [1, 2]}, {"i": 6, "s": "y", "l": [2]}]
-    expected_value = [A(**i).dict() for i in sample]
+    expected_value = [A(**i).model_dump() for i in sample]
 
     print(json.dumps(port_meta, indent=1))
     print(json.dumps(expected_value, indent=1))

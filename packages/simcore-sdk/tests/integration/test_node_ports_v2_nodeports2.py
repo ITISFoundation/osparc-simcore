@@ -91,7 +91,7 @@ async def _check_port_valid(
             assert port.value
             assert isinstance(port.value, DownloadLink | PortLink | BaseFileLink)
             assert (
-                port.value.dict(by_alias=True, exclude_unset=True)
+                port.value.model_dump(by_alias=True, exclude_unset=True)
                 == port_values[key_name]
             )
         else:
