@@ -432,8 +432,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _workspaceSelected: function(workspaceId) {
-      this.setCurrentWorkspaceId(workspaceId);
-      this.__changeContext(this.getCurrentWorkspaceId(), null);
+      this.__changeContext(workspaceId, null);
     },
 
     _workspaceUpdated: function() {
@@ -489,7 +488,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _folderSelected: function(folderId) {
-      this.setCurrentFolderId(folderId);
       this.__changeContext(this.getCurrentWorkspaceId(), folderId);
     },
 
@@ -936,29 +934,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __connectContexts: function() {
-      // It can only change one at a time, therefore its properties can be bound
       const workspaceHeader = this.__workspaceHeader;
-      [
-        "changeCurrentWorkspaceId",
-        "changeCurrentFolderId",
-      ].forEach(ev => {
-        workspaceHeader.addListener(ev, () => {
-          const workspaceId = workspaceHeader.getCurrentWorkspaceId();
-          const folderId = workspaceHeader.getCurrentFolderId();
-          this.__changeContext(workspaceId, folderId);
-        }, this);
-      });
+      workspaceHeader.addListener("contextChanged", () => {
+        const workspaceId = workspaceHeader.getCurrentWorkspaceId();
+        const folderId = workspaceHeader.getCurrentFolderId();
+        this.__changeContext(workspaceId, folderId);
+      }, this);
 
-      // It can change both at the same time at the time, don't bind
       const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
-      workspacesAndFoldersTree.getSelection().addListener("change", () => {
-        const selection = workspacesAndFoldersTree.getSelection();
-        if (selection.getLength() > 0) {
-          const item = selection.getItem(0);
-          const workspaceId = item.getWorkspaceId();
-          const folderId = item.getFolderId();
-          this.__changeContext(workspaceId, folderId);
-        }
+      workspacesAndFoldersTree.addListener("contextChanged", e => {
+        const context = e.getData();
+        const workspaceId = context["workspaceId"];
+        const folderId = context["folderId"];
+        this.__changeContext(workspaceId, folderId);
       }, this);
     },
 
@@ -994,6 +982,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
+        workspaceHeader.contextChanged(workspaceId, folderId);
 
         // notify workspacesAndFoldersTree
         const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
