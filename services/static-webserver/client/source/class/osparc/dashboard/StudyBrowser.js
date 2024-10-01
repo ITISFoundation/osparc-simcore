@@ -124,7 +124,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // "Starting..." page
           this._hideLoadingPage();
         })
-        .catch(console.error);
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+        });
     },
 
     __getActiveStudy: function() {
@@ -257,7 +260,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             }
           }
         })
-        .catch(err => console.error(err))
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+        })
         .finally(() => {
           this._loadingResourcesBtn.setFetching(false);
           this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
@@ -656,7 +662,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const filterData = this._searchBarFilter.getFilterData();
       if (filterData.text) {
-        params.url.text = filterData.text; // name, description and uuid
+        params.url.text = encodeURIComponent(filterData.text); // name, description and uuid
       } else {
         params.url.workspaceId = this.getCurrentWorkspaceId();
         params.url.folderId = this.getCurrentFolderId();
@@ -965,7 +971,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                 this.__moveStudyToFolder(studyData, destFolderId),
               ])
                 .then(() => this.__removeFromStudyList(studyData["uuid"]))
-                .catch(err => console.error(err));
+                .catch(err => {
+                  console.error(err);
+                  osparc.FlashMessenger.logAs(err.message, "ERROR");
+                });
             });
             this.resetSelection();
             this.setMultiSelection(false);
@@ -1264,7 +1273,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this._updateStudyData(studyData))
         .catch(err => {
           console.error(err);
-          const msg = this.tr("Something went wrong Renaming");
+          const msg = err.message || this.tr("Something went wrong Renaming");
           osparc.FlashMessenger.logAs(msg, "ERROR");
         });
     },
@@ -1274,7 +1283,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this._updateStudyData(studyData))
         .catch(err => {
           console.error(err);
-          const msg = this.tr("Something went wrong updating the Thumbnail");
+          const msg = err.message || this.tr("Something went wrong updating the Thumbnail");
           osparc.FlashMessenger.logAs(msg, "ERROR");
         });
     },
@@ -1315,7 +1324,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               this.__moveStudyToFolder(studyData, destFolderId),
             ])
               .then(() => this.__removeFromStudyList(studyData["uuid"]))
-              .catch(err => console.error(err));
+              .catch(err => {
+                console.error(err);
+                osparc.FlashMessenger.logAs(err.message, "ERROR");
+              });
           };
           if (destWorkspaceId === currentWorkspaceId) {
             moveStudy();
@@ -1448,8 +1460,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)
         .then(task => this.__taskDuplicateReceived(task, studyData["name"]))
-        .catch(errMsg => {
-          const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
+        .catch(err => {
+          console.error(err);
+          const msg = err.message || this.tr("Something went wrong Duplicating");
           osparc.FlashMessenger.logAs(msg, "ERROR");
         });
     },
@@ -1467,8 +1480,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         exportTask.setSubtitle(textSuccess);
       };
       osparc.utils.Utils.downloadLink(url, "POST", null, progressCB)
-        .catch(e => {
-          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(e.response)) || this.tr("Something went wrong Exporting the study");
+        .catch(err => {
+          console.error(err);
+          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(err.response)) || this.tr("Something went wrong Exporting the study");
           osparc.FlashMessenger.logAs(msg, "ERROR");
         })
         .finally(() => {
