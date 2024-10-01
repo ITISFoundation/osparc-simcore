@@ -18,7 +18,7 @@ from .basic_types import PortInt
 class PostgresSettings(BaseCustomSettings):
     # entrypoint
     POSTGRES_HOST: str
-    POSTGRES_PORT: PortInt = PortInt(5432)
+    POSTGRES_PORT: PortInt = 5432
 
     # auth
     POSTGRES_USER: str
