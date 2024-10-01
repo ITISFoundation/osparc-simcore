@@ -263,6 +263,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.logAs(err.message, "ERROR");
+          // stop fetching
+          this._resourcesContainer.getFlatList().nextRequest = null;
         })
         .finally(() => {
           this._loadingResourcesBtn.setFetching(false);
