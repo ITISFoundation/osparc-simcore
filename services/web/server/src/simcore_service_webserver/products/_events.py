@@ -2,7 +2,6 @@ import logging
 import tempfile
 from collections import OrderedDict
 from pathlib import Path
-from typing import cast
 
 from aiohttp import web
 from aiopg.sa.engine import Engine
@@ -14,7 +13,8 @@ from simcore_postgres_database.utils_products import (
     get_or_create_product_group,
 )
 
-from .._constants import APP_DB_ENGINE_KEY, APP_PRODUCTS_KEY
+from .._constants import APP_PRODUCTS_KEY
+from ..db.plugin import get_database_engine
 from ..statics._constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
 from ._db import get_product_payment_fields, iter_products
 from ._model import Product
@@ -46,7 +46,7 @@ async def auto_create_products_groups(app: web.Application) -> None:
     NOTE: could not add this in 'setup_groups' (groups plugin)
     since it has to be executed BEFORE 'load_products_on_startup'
     """
-    engine = cast(Engine, app[APP_DB_ENGINE_KEY])
+    engine = get_database_engine(app)
 
     async with engine.acquire() as connection:
         async for row in iter_products(connection):
@@ -76,7 +76,7 @@ async def load_products_on_startup(app: web.Application):
     Loads info on products stored in the database into app's storage (i.e. memory)
     """
     app_products: OrderedDict[str, Product] = OrderedDict()
-    engine: Engine = app[APP_DB_ENGINE_KEY]
+    engine: Engine = get_database_engine(app)
     async with engine.acquire() as connection:
         async for row in iter_products(connection):
             assert isinstance(row, RowProxy)  # nosec
