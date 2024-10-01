@@ -281,10 +281,29 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this.reloadCards();
     },
 
+    __addFoldersContainer: function() {
+      // add foldersContainer dynamically
+      [
+        "addChildWidget",
+        "removeChildWidget"
+      ].forEach(ev => {
+        this.__foldersContainer.addListener(ev, () => {
+          const children = this.__foldersContainer.getChildren();
+          if (children.length && !children.includes(this.__foldersContainer)) {
+            this._addAt(this.__foldersContainer, 0);
+            return;
+          }
+          if (children.length === 0 && children.includes(this.__foldersContainer)) {
+            this._remove(this.__foldersContainer);
+            return;
+          }
+        })
+      });
+    },
+
     reloadCards: function(resourceType) {
       this.__cleanAll();
-      // OM make its visibility dynamic
-      this._add(this.__foldersContainer);
+      this.__addFoldersContainer();
       if (this.getGroupBy()) {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
         this.__groupedContainers.add(noGroupContainer);
