@@ -12,6 +12,7 @@ from typing import Any, Final
 
 import tqdm
 from models_library.basic_types import IDStr
+from pydantic import NonNegativeFloat
 from repro_zipfile import ReproducibleZipFile  # type: ignore[import-untyped]
 from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
 
@@ -23,6 +24,7 @@ from .progress_bar import ProgressBarData
 _MIN: Final[int] = 60  # secs
 _MAX_UNARCHIVING_WORKER_COUNT: Final[int] = 2
 _CHUNK_SIZE: Final[int] = 1024 * 8
+_UNIT_MULTIPLIER: Final[NonNegativeFloat] = 1024.0
 
 _logger = logging.getLogger(__name__)
 
@@ -37,10 +39,10 @@ def _human_readable_size(size, decimal_places=3):
     human_readable_file_size = float(size)
     unit = "B"
     for t_unit in ["B", "KiB", "MiB", "GiB", "TiB"]:
-        if human_readable_file_size < 1024.0:
+        if human_readable_file_size < _UNIT_MULTIPLIER:
             unit = t_unit
             break
-        human_readable_file_size /= 1024.0
+        human_readable_file_size /= _UNIT_MULTIPLIER
 
     return f"{human_readable_file_size:.{decimal_places}f}{unit}"
 
@@ -111,7 +113,7 @@ def _zipfile_single_file_extract_worker(
     zip_file_path: Path,
     file_in_archive: zipfile.ZipInfo,
     destination_folder: Path,
-    is_dir: bool,
+    is_dir: bool,  # noqa: FBT001
 ) -> Path:
     """Extracts file_in_archive from the archive zip_file_path -> destination_folder/file_in_archive
 
