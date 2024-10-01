@@ -21,10 +21,6 @@ asgi-lifespan==2.1.0
     # via -r requirements/_test.in
 async-asgi-testclient==1.4.11
     # via -r requirements/_test.in
-async-timeout==4.0.3
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
 attrs==23.2.0
     # via
     #   -c requirements/_base.txt
@@ -47,10 +43,6 @@ coverage==7.6.1
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.0
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
 faker==27.0.0
     # via -r requirements/_test.in
 flaky==3.8.1
@@ -111,7 +103,9 @@ python-dateutil==2.9.0.post0
     #   botocore
     #   faker
 python-dotenv==1.0.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 requests==2.32.3
     # via
     #   async-asgi-testclient
@@ -133,11 +127,6 @@ sqlalchemy==1.4.52
     #   -r requirements/_test.in
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-tomli==2.0.1
-    # via
-    #   coverage
-    #   mypy
-    #   pytest
 types-aiobotocore-s3==2.13.2
     # via -r requirements/_test.in
 types-aiofiles==24.1.0.20240626
