@@ -181,3 +181,6 @@ tests/public-api/osparc_python_wheels/*
 
 # osparc-config repo files
 repo.config
+
+# scripts resolved with .env s
+services/postgres/scripts/create-readonly-user.sql
