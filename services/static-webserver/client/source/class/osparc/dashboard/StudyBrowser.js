@@ -847,6 +847,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const latestCompatible = osparc.service.Utils.getLatestCompatible(key, latestVersion);
         osparc.store.Services.getService(latestCompatible["key"], latestCompatible["version"])
           .then(latestMetadata => {
+            // make sure this one is not deprecated
+            if (osparc.service.Utils.isDeprecated(latestMetadata)) {
+              return;
+            }
             const title = newButtonInfo.title + " " + osparc.service.Utils.extractVersionDisplay(latestMetadata);
             const desc = newButtonInfo.description;
             const mode = this._resourcesContainer.getMode();
