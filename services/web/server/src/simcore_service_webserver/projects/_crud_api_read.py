@@ -5,7 +5,6 @@ Read operations are list, get
 
 """
 
-
 from aiohttp import web
 from models_library.access_rights import AccessRights
 from models_library.api_schemas_webserver._base import OutputSchema
@@ -141,6 +140,28 @@ async def list_projects(  # pylint: disable=too-many-arguments
     )
 
     return projects, total_number_projects
+
+
+async def list_projects_full_search(
+    app,
+    *,
+    user_id: UserID,
+    product_name: str,
+    offset: NonNegativeInt,
+    limit: int,
+    text: str | None,
+) -> tuple[list[ProjectDict], int]:
+    db = ProjectDBAPI.get_from_app_context(app)
+
+    total_number_projects, db_projects = await db.list_projects_full_search(
+        user_id=user_id,
+        product_name=product_name,
+        text=text,
+        offset=offset,
+        limit=limit,
+    )
+
+    return db_projects, total_number_projects
 
 
 async def get_project(

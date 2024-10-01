@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
-from aiopg.sa import Engine
+from aiopg.sa.engine import Engine
 from servicelib.aiohttp.aiopg_utils import is_pg_responsive
 from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
@@ -13,7 +13,7 @@ from simcore_postgres_database.utils_aiopg import (
 )
 from tenacity import retry
 
-from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from .constants import APP_AIOPG_ENGINE_KEY, APP_CONFIG_KEY
 
 _logger = logging.getLogger(__name__)
 
@@ -46,7 +46,8 @@ async def postgres_cleanup_ctx(app: web.Application):
     ) as engine:
 
         assert engine  # nosec
-        app[APP_DB_ENGINE_KEY] = engine
+        app[APP_AIOPG_ENGINE_KEY] = engine
+
         _logger.info("Created pg engine for %s", dsn)
         yield  # ----------
         _logger.info("Deleting pg engine for %s", dsn)
@@ -55,11 +56,11 @@ async def postgres_cleanup_ctx(app: web.Application):
 
 async def is_service_responsive(app: web.Application) -> bool:
     """Returns true if the app can connect to db service"""
-    return await is_pg_responsive(engine=app[APP_DB_ENGINE_KEY])
+    return await is_pg_responsive(engine=app[APP_AIOPG_ENGINE_KEY])
 
 
 def get_engine_state(app: web.Application) -> dict[str, Any]:
-    engine: Engine | None = app.get(APP_DB_ENGINE_KEY)
+    engine: Engine | None = app.get(APP_AIOPG_ENGINE_KEY)
     if engine:
         engine_info: dict[str, Any] = get_pg_engine_stateinfo(engine)
         return engine_info
@@ -67,7 +68,7 @@ def get_engine_state(app: web.Application) -> dict[str, Any]:
 
 
 def setup_db(app: web.Application):
-    app[APP_DB_ENGINE_KEY] = None
+    app[APP_AIOPG_ENGINE_KEY] = None
 
     # app is created at this point but not yet started
     _logger.debug("Setting up %s [service: %s] ...", __name__, "postgres")

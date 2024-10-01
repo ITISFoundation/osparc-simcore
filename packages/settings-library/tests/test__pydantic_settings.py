@@ -15,6 +15,7 @@ would still have these invariants.
 
 from pydantic import BaseSettings, validator
 from pydantic.fields import ModelField, Undefined
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 
 
 def assert_field_specs(
@@ -48,11 +49,10 @@ class Settings(BaseSettings):
 
     @validator("*", pre=True)
     @classmethod
-    def parse_none(cls, v, values, field: ModelField):
+    def _parse_none(cls, v, values, field: ModelField):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
-        if field.allow_none:
-            if isinstance(v, str) and v.lower() in ("null", "none"):
-                return None
+        if field.allow_none and isinstance(v, str) and v.lower() in ("null", "none"):
+            return None
         return v
 
 
@@ -132,15 +132,21 @@ def test_fields_declarations():
 def test_construct(monkeypatch):
     # from __init__
     settings_from_init = Settings(
-        VALUE=1, VALUE_ALSO_REQUIRED=10, VALUE_NULLABLE_REQUIRED=None
+        VALUE=1,
+        VALUE_ALSO_REQUIRED=10,
+        VALUE_NULLABLE_REQUIRED=None,
     )
+
     print(settings_from_init.json(exclude_unset=True, indent=1))
 
     # from env vars
-    monkeypatch.setenv("VALUE", "1")
-    monkeypatch.setenv("VALUE_ALSO_REQUIRED", "10")
-    monkeypatch.setenv(
-        "VALUE_NULLABLE_REQUIRED", "null"
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "VALUE": "1",
+            "VALUE_ALSO_REQUIRED": "10",
+            "VALUE_NULLABLE_REQUIRED": "null",
+        },
     )  # WARNING: set this env to None would not work w/o ``parse_none`` validator! bug???
 
     settings_from_env = Settings()

@@ -21,7 +21,7 @@ from typing import Final
 APP_CONFIG_KEY: Final[str] = f"{__name__ }.config"
 APP_SETTINGS_KEY: Final[str] = f"{__name__ }.settings"
 
-APP_DB_ENGINE_KEY: Final[str] = f"{__name__ }.db_engine"
+APP_AIOPG_ENGINE_KEY: Final[str] = f"{__name__ }.aiopg_engine"
 
 APP_CLIENT_SESSION_KEY: Final[str] = f"{__name__ }.session"
 

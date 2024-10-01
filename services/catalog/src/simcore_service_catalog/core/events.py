@@ -3,7 +3,7 @@ from collections.abc import Awaitable, Callable
 from typing import TypeAlias
 
 from fastapi import FastAPI
-from servicelib.db_async_engine import close_db_connection, connect_to_db
+from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to_db
 from servicelib.logging_utils import log_context
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
