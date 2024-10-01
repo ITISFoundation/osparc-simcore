@@ -101,6 +101,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
   members: {
     __dontShowTutorial: null,
+    __workspaceHeader: null,
     __workspacesList: null,
     __foldersList: null,
 
@@ -432,7 +433,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _workspaceSelected: function(workspaceId) {
       this.setCurrentWorkspaceId(workspaceId);
-      this._changeContext(this.getCurrentWorkspaceId(), null);
+      this.__changeContext(this.getCurrentWorkspaceId(), null);
     },
 
     _workspaceUpdated: function() {
@@ -451,7 +452,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
     // /WORKSPACES
 
-    _changeContext: function(workspaceId, folderId) {
+    __changeContext: function(workspaceId, folderId) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         this.resetSelection();
         this.setMultiSelection(false);
@@ -508,7 +509,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _folderSelected: function(folderId) {
       this.setCurrentFolderId(folderId);
-      this._changeContext(this.getCurrentWorkspaceId(), folderId);
+      this.__changeContext(this.getCurrentWorkspaceId(), folderId);
     },
 
     _folderUpdated: function() {
@@ -876,21 +877,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._createSearchBar();
 
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const workspaceHeader = new osparc.dashboard.WorkspaceHeader();
-        this.bind("currentWorkspaceId", workspaceHeader, "currentWorkspaceId");
-        this.bind("currentFolderId", workspaceHeader, "currentFolderId");
-        [
-          "changeCurrentWorkspaceId",
-          "changeCurrentFolderId",
-        ].forEach(ev => {
-          workspaceHeader.addListener(ev, () => {
-            const workspaceId = workspaceHeader.getCurrentWorkspaceId();
-            const folderId = workspaceHeader.getCurrentFolderId();
-            this._changeContext(workspaceId, folderId);
-            this._resourceFilter.contextChanged(workspaceId, folderId);
-          }, this);
-        });
-
+        const workspaceHeader = this.__workspaceHeader = new osparc.dashboard.WorkspaceHeader();
         this._addToLayout(workspaceHeader);
       }
 
@@ -923,6 +910,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._addViewModeButton();
 
       this._addResourceFilter();
+
+      this.__connectContexts();
 
       this.__addNewStudyButtons();
 
@@ -957,6 +946,37 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
       return this._resourcesContainer;
+    },
+
+    __connectContexts: function() {
+      const workspaceHeader = this.__workspaceHeader;
+      const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
+
+      this.bind("currentWorkspaceId", workspaceHeader, "currentWorkspaceId");
+      this.bind("currentFolderId", workspaceHeader, "currentFolderId");
+      [
+        "changeCurrentWorkspaceId",
+        "changeCurrentFolderId",
+      ].forEach(ev => {
+        workspaceHeader.addListener(ev, () => {
+          const workspaceId = workspaceHeader.getCurrentWorkspaceId();
+          const folderId = workspaceHeader.getCurrentFolderId();
+          this.__changeContext(workspaceId, folderId);
+          // this._resourceFilter.contextChanged(workspaceId, folderId);
+        }, this);
+      });
+
+      workspacesAndFoldersTree.getSelection().addListener("change", () => {
+        const selection = workspacesAndFoldersTree.getSelection();
+        if (selection.getLength() > 0) {
+          const item = selection.getItem(0);
+          const workspaceId = item.getWorkspaceId();
+          const folderId = item.getFolderId();
+          this.__changeContext(workspaceId, folderId);
+        }
+      }, this);
+      this.bind("currentWorkspaceId", workspacesAndFoldersTree, "currentWorkspaceId");
+      this.bind("currentFolderId", workspacesAndFoldersTree, "currentFolderId");
     },
 
     __addSortByButton: function() {
