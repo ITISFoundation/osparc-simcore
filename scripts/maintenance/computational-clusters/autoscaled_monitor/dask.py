@@ -112,12 +112,13 @@ async def _list_all_tasks(
 
         return dict(task_state_to_tasks)
 
+    list_of_tasks: dict[TaskState, list[TaskId]] = []
     try:
-        list_of_tasks: dict[TaskState, list[TaskId]] = await client.run_on_scheduler(
+        list_of_tasks = await client.run_on_scheduler(
             _list_tasks
         )  # type: ignore
     except TypeError:
-        rich.print(f"ERROR while recoverring unrunnable tasks using {dask_client=}")
+        rich.print(f"ERROR while recoverring unrunnable tasks using {dask_client=}. Defaulting to empty list of tasks!!")
     return list_of_tasks
 
 
