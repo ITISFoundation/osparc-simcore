@@ -452,25 +452,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
     // /WORKSPACES
 
-    __changeContext: function(workspaceId, folderId) {
-      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        this.resetSelection();
-        this.setMultiSelection(false);
-        this.set({
-          currentWorkspaceId: workspaceId,
-          currentFolderId: folderId,
-        });
-        this.invalidateStudies();
-        this._resourcesContainer.setResourcesToList([]);
-
-        if (workspaceId === -1) {
-          this.__reloadWorkspaces();
-        } else {
-          this.__reloadFoldersAndStudies();
-        }
-      }
-    },
-
     // FOLDERS
     __reloadFolderCards: function() {
       this._resourcesContainer.setFoldersToList(this.__foldersList);
@@ -959,11 +940,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const workspaceId = workspaceHeader.getCurrentWorkspaceId();
           const folderId = workspaceHeader.getCurrentFolderId();
           this.__changeContext(workspaceId, folderId);
-          // this._resourceFilter.contextChanged(workspaceId, folderId);
         }, this);
       });
-      this.bind("currentWorkspaceId", workspaceHeader, "currentWorkspaceId");
-      this.bind("currentFolderId", workspaceHeader, "currentFolderId");
 
       // It can change both at the same time at the time, don't bind
       const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
@@ -976,8 +954,45 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__changeContext(workspaceId, folderId);
         }
       }, this);
-      this.bind("currentWorkspaceId", workspacesAndFoldersTree, "currentWorkspaceId");
-      this.bind("currentFolderId", workspacesAndFoldersTree, "currentFolderId");
+    },
+
+    __changeContext: function(workspaceId, folderId) {
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        if (
+          this.getCurrentWorkspaceId() === workspaceId &&
+          this.getCurrentFolderId() === folderId
+        ) {
+          // didn't really change
+          return;
+        }
+
+        console.log("__changeContext", workspaceId, folderId);
+        this.resetSelection();
+        this.setMultiSelection(false);
+        this.set({
+          currentWorkspaceId: workspaceId,
+          currentFolderId: folderId,
+        });
+        this.invalidateStudies();
+        this._resourcesContainer.setResourcesToList([]);
+
+        if (workspaceId === -1) {
+          this.__reloadWorkspaces();
+        } else {
+          this.__reloadFoldersAndStudies();
+        }
+
+        // notify workspaceHeader
+        const workspaceHeader = this.__workspaceHeader;
+        workspaceHeader.set({
+          currentWorkspaceId: workspaceId,
+          currentFolderId: folderId,
+        });
+
+        // notify workspacesAndFoldersTree
+        const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
+        workspacesAndFoldersTree.contextChanged(workspaceId, folderId);
+      }
     },
 
     __addSortByButton: function() {
