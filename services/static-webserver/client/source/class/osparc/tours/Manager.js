@@ -192,7 +192,7 @@ qx.Class.define("osparc.tours.Manager", {
           } else {
             targetWidget.execute();
           }
-          setTimeout(() => this.__toStep(steps, idx), 100);
+          setTimeout(() => this.__toStep(steps, idx), 150);
         } else {
           // target not found, move to the next step
           this.__toStepCheck(this.__currentIdx+1);
