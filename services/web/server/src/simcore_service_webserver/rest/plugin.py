@@ -16,7 +16,6 @@ from servicelib.aiohttp.rest_middlewares import (
     error_middleware_factory,
 )
 
-from .._constants import APP_SETTINGS_KEY
 from .._meta import API_VTAG
 from ..security.plugin import setup_security
 from . import _handlers
@@ -37,10 +36,6 @@ def setup_rest(app: web.Application):
     settings: RestSettings = get_plugin_settings(app)
 
     setup_security(app)
-
-    is_diagnostics_enabled: bool = (
-        app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS is not None
-    )
 
     spec_path = get_openapi_specs_path(api_version_dir=API_VTAG)
 
