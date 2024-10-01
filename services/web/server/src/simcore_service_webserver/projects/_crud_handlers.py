@@ -58,6 +58,7 @@ from ._crud_handlers_models import (
     ProjectActiveParams,
     ProjectCreateHeaders,
     ProjectCreateParams,
+    ProjectListFullSearchParams,
     ProjectListWithJsonStrParams,
 )
 from ._permalink_api import update_or_pop_permalink_in_project
@@ -209,6 +210,40 @@ async def list_projects(request: web.Request):
         order_by=parse_obj_as(OrderBy, query_params.order_by),
         folder_id=query_params.folder_id,
         workspace_id=query_params.workspace_id,
+    )
+
+    page = Page[ProjectDict].parse_obj(
+        paginate_data(
+            chunk=projects,
+            request_url=request.url,
+            total=total_number_of_projects,
+            limit=query_params.limit,
+            offset=query_params.offset,
+        )
+    )
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
+
+
+@routes.get(f"/{VTAG}/projects:search", name="list_projects_full_search")
+@login_required
+@permission_required("project.read")
+@_handle_projects_exceptions
+async def list_projects_full_search(request: web.Request):
+    req_ctx = RequestContext.parse_obj(request)
+    query_params: ProjectListFullSearchParams = parse_request_query_parameters_as(
+        ProjectListFullSearchParams, request
+    )
+
+    projects, total_number_of_projects = await _crud_api_read.list_projects_full_search(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        limit=query_params.limit,
+        offset=query_params.offset,
+        text=query_params.text,
     )
 
     page = Page[ProjectDict].parse_obj(
