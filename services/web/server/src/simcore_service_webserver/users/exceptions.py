@@ -50,3 +50,7 @@ class AlreadyPreRegisteredError(UsersBaseError):
 class BillingDetailsNotFoundError(UsersBaseError):
     # NOTE: this is for internal log and should not be transmitted to the final user
     msg_template = "Billing details are missing for user_id={user_id}. TIP: Check whether this user is pre-registered"
+
+
+class MissingGroupExtraPropertiesForProductError(UsersBaseError):
+    msg_template = "Missing group_extra_property for product_name={product_name}"
