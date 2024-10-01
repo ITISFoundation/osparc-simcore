@@ -949,11 +949,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __connectContexts: function() {
+      // It can only change one at a time, therefore its properties can be bound
       const workspaceHeader = this.__workspaceHeader;
-      const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
-
-      this.bind("currentWorkspaceId", workspaceHeader, "currentWorkspaceId");
-      this.bind("currentFolderId", workspaceHeader, "currentFolderId");
       [
         "changeCurrentWorkspaceId",
         "changeCurrentFolderId",
@@ -965,7 +962,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // this._resourceFilter.contextChanged(workspaceId, folderId);
         }, this);
       });
+      this.bind("currentWorkspaceId", workspaceHeader, "currentWorkspaceId");
+      this.bind("currentFolderId", workspaceHeader, "currentFolderId");
 
+      // It can change both at the same time at the time, don't bind
+      const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
       workspacesAndFoldersTree.getSelection().addListener("change", () => {
         const selection = workspacesAndFoldersTree.getSelection();
         if (selection.getLength() > 0) {

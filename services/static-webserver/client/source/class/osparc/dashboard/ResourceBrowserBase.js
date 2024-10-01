@@ -269,12 +269,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("folderSelected", e => {
         const folderId = e.getData();
         this._folderSelected(folderId);
-        this._resourceFilter.folderSelected(folderId);
       }, this);
       resourcesContainer.addListener("workspaceSelected", e => {
         const workspaceId = e.getData();
         this._workspaceSelected(workspaceId);
-        this._resourceFilter.workspaceSelected(workspaceId);
       }, this);
       resourcesContainer.addListener("workspaceUpdated", e => this._workspaceUpdated(e.getData()));
       resourcesContainer.addListener("deleteWorkspaceRequested", e => this._deleteWorkspaceRequested(e.getData()));
