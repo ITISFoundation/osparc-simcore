@@ -276,6 +276,18 @@ jobs:
       fail-fast: false
     name: "[build] docker images"
     steps:
+      - name: Remove unused software
+        run: |
+          echo "Available storage before:"
+          sudo df -h
+          echo
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          echo "Available storage after:"
+          sudo df -h
+          echo
       - uses: actions/checkout@v4
       - name: setup docker buildx
         id: buildx
@@ -2484,7 +2496,6 @@ jobs:
         with:
           name: ${{ github.job }}_tracing
           path: tests/e2e-playwright/test-results
-
 
   system-test-environment-setup:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
