@@ -12,7 +12,7 @@ from typing import Any, Final
 
 import tqdm
 from models_library.basic_types import IDStr
-from repro_zipfile import ReproducibleZipFile
+from repro_zipfile import ReproducibleZipFile  # type: ignore[import-untyped]
 from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect
 
 from .file_utils import remove_directory
@@ -90,7 +90,7 @@ class _FastZipFileReader(ReproducibleZipFile):
     files contained in the archive.
     """
 
-    def _RealGetContents(self):
+    def _RealGetContents(self):  # noqa: N802
         """method disabled"""
 
 
@@ -275,7 +275,10 @@ def _progress_enabled_zip_write_handler(
     """This function overrides the default zip write fct to allow to get progress using tqdm library"""
 
     def _write_with_progress(
-        original_write_fct, self, data, pbar  # pylint: disable=unused-argument
+        original_write_fct,
+        self,  # pylint: disable=unused-argument  # noqa: ARG001
+        data,
+        pbar,
     ):
         pbar.update(len(data))
         return original_write_fct(data)
@@ -283,21 +286,21 @@ def _progress_enabled_zip_write_handler(
     # Replace original write() with a wrapper to track progress
     assert zip_file_handler.fp  # nosec
     old_write_method = zip_file_handler.fp.write
-    zip_file_handler.fp.write = types.MethodType(  # type: ignore[assignment]
+    zip_file_handler.fp.write = types.MethodType(
         partial(_write_with_progress, old_write_method, pbar=progress_bar),
         zip_file_handler.fp,
     )
     try:
         yield zip_file_handler
     finally:
-        zip_file_handler.fp.write = old_write_method  # type: ignore[method-assign]
+        zip_file_handler.fp.write = old_write_method
 
 
 def _add_to_archive(
     dir_to_compress: Path,
     destination: Path,
-    compress: bool,
-    store_relative_path: bool,
+    compress: bool,  # noqa: FBT001
+    store_relative_path: bool,  # noqa: FBT001
     update_progress,
     loop,
     exclude_patterns: set[str] | None = None,
