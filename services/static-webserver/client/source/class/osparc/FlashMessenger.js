@@ -111,9 +111,16 @@ qx.Class.define("osparc.FlashMessenger", {
       }
       this.__displayedMessagesCount++;
 
+      const message = flashMessage.getMessage();
+      if (!message) {
+        // If message is "", null or undefined, do not show it
+        this.removeMessage(flashMessage);
+        return;
+      }
+
       let duration = flashMessage.getDuration();
       if (duration === null) {
-        const wordCount = flashMessage.getMessage() ? flashMessage.getMessage().split(" ").length : 20;
+        const wordCount = message.split(" ").length;
         duration = Math.max(5500, wordCount*500); // An average reader takes 300ms to read a word
       }
       if (duration !== 0) {

@@ -1301,23 +1301,13 @@ qx.Class.define("osparc.data.Resources", {
         }, this);
 
         res.addListenerOnce(endpoint + "Error", e => {
-          let message = null;
-          let status = null;
+          const status = e.getRequest().getStatus();
+          let message = null; // required
+          let errorType = null; // optional
           if (e.getData().error) {
             const errorData = e.getData().error;
-            const logs = errorData.logs || null;
-            if (logs && logs.length) {
-              message = logs[0].message;
-            }
-            const errors = errorData.errors || [];
-            if (message === null && errors && errors.length) {
-              message = errors[0].message;
-            }
-            status = errorData.status;
-          } else {
-            const req = e.getRequest();
-            message = req.getResponse();
-            status = req.getStatus();
+            message = errorData.message
+            errorType = errorData.type || null;
           }
           res.dispose();
 
@@ -1335,12 +1325,19 @@ qx.Class.define("osparc.data.Resources", {
               });
           }
 
-          if ([404, 503].includes(status)) {
-            message += "<br>Please try again later and/or contact support";
+          if (status == 500) {
+            console.error(message);
+            // Show Flash message...
+            osparc.FlashMessenger.getInstance().logAs(message, "ERROR");
+            // ...and do not propagate message
+            message = "";
+          } else if ([404, 503].includes(status)) {
+            message += "<br>"+qx.locale.Manager.tr("Please try again later");
           }
-          const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
-          if (status) {
-            err.status = status;
+          const err = Error(message);
+          err.status = status;
+          if (errorType) {
+            err.type = errorType
           }
           reject(err);
         });
