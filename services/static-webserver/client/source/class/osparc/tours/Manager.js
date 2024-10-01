@@ -160,6 +160,12 @@ qx.Class.define("osparc.tours.Manager", {
       }
     },
 
+    __getVisibleElement: function(selector) {
+      const elements = document.querySelectorAll(`[${selector}]`);
+      const element = [...elements].find(el => osparc.utils.Utils.isElementOnScreen(el));
+      return element;
+    },
+
     __toStepCheck: function(idx = 0) {
       const steps = this.getSteps();
       if (idx >= steps.length) {
@@ -171,16 +177,25 @@ qx.Class.define("osparc.tours.Manager", {
       this.__currentIdx = idx;
       const step = steps[idx];
       if (step.beforeClick && step.beforeClick.selector) {
-        const element = document.querySelector(`[${step.beforeClick.selector}]`);
-        const widget = qx.ui.core.Widget.getWidgetByElement(element);
-        if (step.beforeClick.action) {
-          widget[step.beforeClick.action]();
-        } else if (step.beforeClick.event) {
-          widget.fireEvent(step.beforeClick.event);
-        } else {
-          widget.execute();
+        let targetWidget = null;
+        const element = this.__getVisibleElement(step.beforeClick.selector);
+        if (element) {
+          targetWidget = qx.ui.core.Widget.getWidgetByElement(element);
         }
-        setTimeout(() => this.__toStep(steps, idx), 100);
+        if (targetWidget) {
+          if (step.beforeClick.action) {
+            targetWidget[step.beforeClick.action]();
+          } else if (step.beforeClick.event) {
+            targetWidget.fireEvent(step.beforeClick.event);
+          } else {
+            targetWidget.execute();
+          }
+          setTimeout(() => this.__toStep(steps, idx), 100);
+        } else {
+          // target not found, move to the next step
+          this.__toStepCheck(this.__currentIdx+1);
+          return;
+        }
       } else {
         this.__toStep(steps, idx);
       }
@@ -207,8 +222,11 @@ qx.Class.define("osparc.tours.Manager", {
       const step = steps[idx];
       const stepWidget = this.__currentBubble = this.__createStep();
       if (step.anchorEl) {
-        const el = document.querySelector(`[${step.anchorEl}]`);
-        const targetWidget = qx.ui.core.Widget.getWidgetByElement(el);
+        let targetWidget = null;
+        const element = this.__getVisibleElement(step.anchorEl);
+        if (element) {
+          targetWidget = qx.ui.core.Widget.getWidgetByElement(element);
+        }
         if (targetWidget) {
           stepWidget.setElement(targetWidget);
           if (step.placement) {
@@ -224,6 +242,7 @@ qx.Class.define("osparc.tours.Manager", {
         // intro text, it will be centered
         stepWidget.getChildControl("caret").exclude();
       }
+
       if (step.title) {
         stepWidget.setTitle(step.title);
       }
