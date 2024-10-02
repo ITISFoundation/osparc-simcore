@@ -5,10 +5,9 @@ from typing import Any, TypeAlias
 from aiopg.sa.result import RowProxy
 from models_library.basic_types import HttpUrlWithCustomMinLength
 from models_library.folders import FolderID
-from models_library.projects import ClassifierID, NodesDict, ProjectID
-from models_library.projects_access import AccessRights
+from models_library.projects import ClassifierID, ProjectID
 from models_library.projects_ui import StudyUI
-from models_library.users import GroupID, UserID
+from models_library.users import UserID
 from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
@@ -65,10 +64,8 @@ class ProjectDB(BaseModel):
     )
 
 
-class UserSpecificListProjectDB(ProjectDB):
+class UserSpecificProjectDataDB(ProjectDB):
     folder_id: FolderID | None
-    workbench: NodesDict
-    access_rights: dict[GroupID, AccessRights]
 
     class Config:
         orm_mode = True

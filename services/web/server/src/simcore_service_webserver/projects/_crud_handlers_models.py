@@ -123,7 +123,7 @@ class ProjectListParams(PageQueryParameters):
     )(null_or_none_str_to_none_validator)
 
 
-class ProjectListWithJsonStrParams(ProjectListParams):
+class ProjectListWithOrderByParams(BaseModel):
     order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
         default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
@@ -151,16 +151,25 @@ class ProjectListWithJsonStrParams(ProjectListParams):
         extra = Extra.forbid
 
 
+class ProjectListWithJsonStrParams(ProjectListParams, ProjectListWithOrderByParams):
+    ...
+
+
 class ProjectActiveParams(BaseModel):
     client_session_id: str
 
 
-class ProjectListFullSearchParams(PageQueryParameters):
+class ProjectListFullSearchParams(PageQueryParameters, ProjectListWithOrderByParams):
     text: str | None = Field(
         default=None,
         description="Multi column full text search, across all folders and workspaces",
         max_length=100,
         example="My Project",
+    )
+    tag_id: int | list[int] | None = Field(
+        default=None,
+        description="Search by tag id (multiple tag id parameters might be provided)",
+        example="1",
     )
 
     _empty_is_none = validator("text", allow_reuse=True, pre=True)(

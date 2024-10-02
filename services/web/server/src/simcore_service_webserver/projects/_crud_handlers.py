@@ -238,12 +238,14 @@ async def list_projects_full_search(request: web.Request):
     )
 
     projects, total_number_of_projects = await _crud_api_read.list_projects_full_search(
-        request.app,
+        request,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         limit=query_params.limit,
         offset=query_params.offset,
         text=query_params.text,
+        order_by=query_params.order_by,
+        tag_id=query_params.tag_id,
     )
 
     page = Page[ProjectDict].parse_obj(

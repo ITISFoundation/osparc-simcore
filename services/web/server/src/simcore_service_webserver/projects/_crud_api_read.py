@@ -143,25 +143,61 @@ async def list_projects(  # pylint: disable=too-many-arguments
 
 
 async def list_projects_full_search(
-    app,
+    request,
     *,
     user_id: UserID,
     product_name: str,
     offset: NonNegativeInt,
     limit: int,
     text: str | None,
+    order_by: OrderBy,
+    tag_id: int | list[int] | None,
 ) -> tuple[list[ProjectDict], int]:
-    db = ProjectDBAPI.get_from_app_context(app)
+    if tag_id is None:
+        tag_ids = []
+    elif isinstance(tag_id, int):
+        tag_ids = [tag_id]
+    elif isinstance(tag_id, list):
+        tag_ids = tag_id
 
-    total_number_projects, db_projects = await db.list_projects_full_search(
+    db = ProjectDBAPI.get_from_app_context(request.app)
+
+    user_available_services: list[dict] = await get_services_for_user_in_product(
+        request.app, user_id, product_name, only_key_versions=True
+    )
+
+    (
+        db_projects,
+        db_project_types,
+        total_number_projects,
+    ) = await db.list_projects_full_search(
         user_id=user_id,
         product_name=product_name,
+        filter_by_services=user_available_services,
         text=text,
         offset=offset,
         limit=limit,
+        order_by=order_by,
+        tag_ids=tag_ids,
     )
 
-    return db_projects, total_number_projects
+    projects: list[ProjectDict] = await logged_gather(
+        *(
+            _append_fields(
+                request,
+                user_id=user_id,
+                project=prj,
+                is_template=prj_type == ProjectTypeDB.TEMPLATE,
+                workspace_access_rights=None,
+                model_schema_cls=ProjectListItem,
+            )
+            for prj, prj_type in zip(db_projects, db_project_types)
+        ),
+        reraise=True,
+        max_concurrency=100,
+    )
+
+    return projects, total_number_projects
 
 
 async def get_project(
