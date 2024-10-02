@@ -229,7 +229,7 @@ async def test_create_tags_with_order_index(
     url = client.app.router["create_tag"].url_for()
     num_tags = 3
     expected_tags: list[Any] = [None] * num_tags
-    for creation_index, priority_index in enumerate(range(num_tags, 0, -1)):
+    for creation_index, priority_index in enumerate(range(num_tags - 1, -1, -1)):
         resp = await client.post(
             f"{url}",
             json={
@@ -266,11 +266,11 @@ async def test_create_tags_with_order_index(
     # (3) new tag without priority should get last (because is last created)
     resp = await client.post(
         f"{url}",
-        json={"name": "New", "description": "w/o priority"},
+        json={"name": "New", "color": "#f00", "description": "w/o priority"},
     )
     last_created, _ = await assert_status(resp, status.HTTP_200_OK)
 
     url = client.app.router["list_tags"].url_for()
     resp = await client.get(f"{url}")
     got, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert got == [expected_tags[::-1], last_created]
+    assert got == [*expected_tags[::-1], last_created]
