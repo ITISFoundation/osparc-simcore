@@ -89,6 +89,7 @@ def list_tags_stmt(*, user_id: int):
             )
         )
         .group_by(tags.c.id)  # makes it tag.id uniqueness
+        .order_by(tags.c.priority.nulls_last())
         .order_by(tags.c.id)
     )
 

@@ -88,14 +88,17 @@ class TagsRepo:
         read: bool = True,
         write: bool = True,
         delete: bool = True,
+        priority: int | None = None,
     ) -> TagDict:
         """Creates tag and defaults to full access rights to `user_id`"""
-        values = {
+        values: dict[str, str | int] = {
             "name": name,
             "color": color,
         }
         if description:
             values["description"] = description
+        if priority is not None:
+            values["priority"] = priority
 
         async with transaction_context(self.engine, connection) as conn:
             # insert new tag
@@ -184,7 +187,7 @@ class TagsRepo:
             updates = {
                 name: value
                 for name, value in fields.items()
-                if name in {"name", "color", "description"}
+                if name in {"name", "color", "description", "priority"}
             }
 
             if not updates:
