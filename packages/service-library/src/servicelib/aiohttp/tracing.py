@@ -73,9 +73,25 @@ def setup_tracing(
 
     # Add the span processor to the tracer provider
     tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))  # type: ignore[attr-defined] # https://github.com/open-telemetry/opentelemetry-python/issues/3713
-    # Instrument aiohttp server and client
+    # Instrument aiohttp server
     AioHttpServerInstrumentor().instrument()
+    # Explanation for extra call DK 10/2024:
+    # OpenTelemetry Aiohttp autoinstrumentation is meant to be used by only calling `AioHttpServerInstrumentor().instrument()`
+    # But, the call `AioHttpServerInstrumentor().instrument()` monkeypatches the __init__() of aiohttp's web.application() to in
+    # the init inject the tracing middleware.
+    # In simcore, we want to switch tracing on or off and thus depend on the simcore-settings library when we call `AioHttpServerInstrumentor().instrument()`
+    # The simcore-settings library in turn depends on the instance of web.application(), i.e. the aiohttp webserver, to exist. So here we face a hen-and-egg problem.
+    #
+    # Since the code that is provided (monkeypatched) in the __init__ that the opentelemetry-autoinstrumentation-library provides is only 4 lines,
+    # literally just adding a middleware, we are free to simply execute this "missed call" [since we can't call the monkeypatch'ed __init__()] in this following line:
     app.middlewares.append(middleware)
+    # Code of the aiohttp server instrumentation: github.com/open-telemetry/opentelemetry-python-contrib/blob/eccb05c808a7d797ef5b6ecefed3590664426fbf/instrumentation/opentelemetry-instrumentation-aiohttp-server/src/opentelemetry/instrumentation/aiohttp_server/__init__.py#L246
+    # For reference, the above statement was written for:
+    # - osparc-simcore 1.77.x
+    # - opentelemetry-api==1.27.0
+    # - opentelemetry-instrumentation==0.48b0
+
+    # Instrument aiohttp client
     AioHttpClientInstrumentor().instrument()
     if instrument_aiopg:
         AiopgInstrumentor().instrument()
