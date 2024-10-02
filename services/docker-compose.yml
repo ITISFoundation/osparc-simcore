@@ -1091,6 +1091,33 @@ services:
       - interactive_services_subnet
       - storage_subnet
 
+  manual-service:
+    image: containous/whoami
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    deploy:
+      labels:
+        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+        - traefik.enable=true
+        - traefik.docker.network=${SIMCORE_SERVICES_NETWORK_NAME}
+        # auth
+        #- traefik.http.middlewares.${SWARM_STACK_NAME}_manual-service-auth.forwardauth.address=http://10.43.201.15.nip.io:9081/v0/me
+        #- traefik.http.middlewares.${SWARM_STACK_NAME}_manual-service-auth.forwardauth.trustForwardHeader=true
+        #- traefik.http.middlewares.${SWARM_STACK_NAME}_manual-service-auth.forwardauth.authResponseHeaders=Set-Cookie,osparc-sc
+        # routing
+        - traefik.http.services.${SWARM_STACK_NAME}_manual-service.loadbalancer.server.port=80
+        - traefik.http.services.${SWARM_STACK_NAME}_manual-service.loadbalancer.healthcheck.path=/
+        - traefik.http.services.${SWARM_STACK_NAME}_manual-service.loadbalancer.healthcheck.interval=2000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_manual-service.loadbalancer.healthcheck.timeout=1000ms
+        - traefik.http.routers.${SWARM_STACK_NAME}_manual-service.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_manual-service.priority=10
+        - traefik.http.routers.${SWARM_STACK_NAME}_manual-service.rule=HostRegexp(`manual\.(?P<host>.+)`)
+        #, ${SWARM_STACK_NAME}_manual-service-auth
+        - traefik.http.routers.${SWARM_STACK_NAME}_manual-service.middlewares=${SWARM_STACK_NAME}_gzip@swarm
+    networks:
+      - default
+      - interactive_services_subnet # for legacy dynamic services
+
   rabbit:
     image: itisfoundation/rabbitmq:3.11.2-management
     init: true
