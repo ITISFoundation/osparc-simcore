@@ -58,7 +58,7 @@ from ._crud_handlers_models import (
     ProjectActiveParams,
     ProjectCreateHeaders,
     ProjectCreateParams,
-    ProjectListFullSearchParams,
+    ProjectListFullSearchWithJsonStrParams,
     ProjectListWithJsonStrParams,
 )
 from ._permalink_api import update_or_pop_permalink_in_project
@@ -237,8 +237,10 @@ async def list_projects(request: web.Request):
 @_handle_projects_exceptions
 async def list_projects_full_search(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
-    query_params: ProjectListFullSearchParams = parse_request_query_parameters_as(
-        ProjectListFullSearchParams, request
+    query_params: ProjectListFullSearchWithJsonStrParams = (
+        parse_request_query_parameters_as(
+            ProjectListFullSearchWithJsonStrParams, request
+        )
     )
     if query_params.tag_ids:
         try:
