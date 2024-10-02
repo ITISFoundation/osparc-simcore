@@ -68,13 +68,13 @@ async def start_long_running_task(
             "sockname"
         )  # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
         status_url = TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{ip_addr}:{port}{request_.app.router['get_task_status'].url_for(task_id=task_id)}"
+            f"http://{ip_addr}:{port}{request_.app.router['get_task_status'].url_for(task_id=task_id)}" # NOSONAR
         )
         result_url = TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{ip_addr}:{port}{request_.app.router['get_task_result'].url_for(task_id=task_id)}"
+            f"http://{ip_addr}:{port}{request_.app.router['get_task_result'].url_for(task_id=task_id)}" # NOSONAR
         )
         abort_url = TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{ip_addr}:{port}{request_.app.router['cancel_and_delete_task'].url_for(task_id=task_id)}"
+            f"http://{ip_addr}:{port}{request_.app.router['cancel_and_delete_task'].url_for(task_id=task_id)}"  # NOSONAR
         )
         task_get = TaskGet(
             task_id=task_id,
