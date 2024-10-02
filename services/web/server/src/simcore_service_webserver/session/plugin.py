@@ -38,7 +38,7 @@ class SharedCookieEncryptedCookieStorage(EncryptedCookieStorage):
         params = self._cookie_params.copy()
 
         # share cookie accross all subdomains
-        # overwrite domain from `None` to reqest domain
+        # overwrite domain from `None` (browser sets `example.com`) to `.example.com`
         request = response._req  # pylint:disable=protected-access  # noqa: SLF001
         assert isinstance(request, URL)  # nosec
         params["domain"] = f".{request.url.host}"
