@@ -9,7 +9,7 @@ from operator import attrgetter
 from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceMetaDataPublished, ServiceType
-from pydantic import ConfigDict, ValidationError, parse_obj_as, parse_raw_as
+from pydantic import ConfigDict, TypeAdapter, ValidationError
 from settings_library.catalog import CatalogSettings
 from simcore_service_api_server.exceptions.backend_errors import (
     ListSolversOrStudiesError,
@@ -68,6 +68,17 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
 
 _exception_mapper = partial(service_exception_mapper, "Catalog")
 
+_TRUNCATED_CATALOG_SERVICE_OUT_ADAPTER: TypeAdapter[
+    TruncatedCatalogServiceOut
+] = TypeAdapter(TruncatedCatalogServiceOut)
+_LIST_OF_TRUNCATED_CATALOG_SERVICE_OUT_ADAPTER: TypeAdapter[
+    list[TruncatedCatalogServiceOut]
+] = TypeAdapter(list[TruncatedCatalogServiceOut])
+
+
+def _parse_response(type_adapter: TypeAdapter, response):
+    return type_adapter.validate_json(response.text)
+
 
 @dataclass
 class CatalogApi(BaseServiceClientApi):
@@ -97,7 +108,10 @@ class CatalogApi(BaseServiceClientApi):
         services: list[
             TruncatedCatalogServiceOut
         ] = await asyncio.get_event_loop().run_in_executor(
-            None, parse_raw_as, list[TruncatedCatalogServiceOut], response.text
+            None,
+            _parse_response,
+            _LIST_OF_TRUNCATED_CATALOG_SERVICE_OUT_ADAPTER,
+            response.text,
         )
         solvers = []
         for service in services:
@@ -113,7 +127,7 @@ class CatalogApi(BaseServiceClientApi):
                 #       invalid items instead of returning error
                 _logger.warning(
                     "Skipping invalid service returned by catalog '%s': %s",
-                    service.json(),
+                    service.model_dump_json(),
                     err,
                 )
         return solvers
@@ -138,7 +152,7 @@ class CatalogApi(BaseServiceClientApi):
         service: (
             TruncatedCatalogServiceOut
         ) = await asyncio.get_event_loop().run_in_executor(
-            None, parse_raw_as, TruncatedCatalogServiceOut, response.text
+            None, _parse_response, _TRUNCATED_CATALOG_SERVICE_OUT_ADAPTER, response.text
         )
         assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
@@ -165,7 +179,7 @@ class CatalogApi(BaseServiceClientApi):
 
         response.raise_for_status()
 
-        return parse_obj_as(list[SolverPort], response.json())
+        return TypeAdapter(list[SolverPort]).validate_python(response.json())
 
     async def list_latest_releases(
         self, *, user_id: int, product_name: str

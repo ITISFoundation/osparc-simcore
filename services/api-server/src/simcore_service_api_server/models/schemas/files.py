@@ -17,8 +17,9 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
+    TypeAdapter,
+    ValidationInfo,
     field_validator,
-    parse_obj_as,
 )
 from servicelib.file_utils import create_sha256_checksum
 
@@ -79,9 +80,9 @@ class File(BaseModel):
 
     @field_validator("content_type", mode="before")
     @classmethod
-    def guess_content_type(cls, v, values):
+    def guess_content_type(cls, v, info: ValidationInfo):
         if v is None:
-            filename = values.get("filename")
+            filename = info.data.get("filename")
             if filename:
                 mime_content_type, _ = guess_type(filename, strict=False)
                 return mime_content_type
@@ -136,8 +137,8 @@ class File(BaseModel):
 
     @classmethod
     async def create_from_quoted_storage_id(cls, quoted_storage_id: str) -> "File":
-        storage_file_id: StorageFileID = parse_obj_as(
-            StorageFileID, _unquote(quoted_storage_id)  # type: ignore[arg-type]
+        storage_file_id: StorageFileID = TypeAdapter(StorageFileID).validate_python(
+            _unquote(quoted_storage_id)
         )
         _, fid, fname = Path(storage_file_id).parts
         return cls(id=UUID(fid), filename=fname, checksum=None)
@@ -149,8 +150,8 @@ class File(BaseModel):
     @property
     def storage_file_id(self) -> StorageFileID:
         """Get the StorageFileId associated with this file"""
-        return parse_obj_as(
-            StorageFileID, f"api/{self.id}/{self.filename}"  # type: ignore[arg-type]
+        return TypeAdapter(StorageFileID).validate_python(
+            f"api/{self.id}/{self.filename}"
         )
 
     @property

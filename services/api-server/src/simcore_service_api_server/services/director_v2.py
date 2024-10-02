@@ -14,7 +14,7 @@ from pydantic import (
     ConfigDict,
     Field,
     PositiveInt,
-    parse_raw_as,
+    TypeAdapter,
 )
 from simcore_service_api_server.exceptions.backend_errors import (
     JobNotFoundError,
@@ -47,8 +47,8 @@ class ComputationTaskGet(ComputationTask):
     def guess_progress(self) -> PercentageInt:
         # guess progress based on self.state
         if self.state in [RunningState.SUCCESS, RunningState.FAILED]:
-            return PercentageInt(100)
-        return PercentageInt(0)
+            return 100
+        return 0
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -187,7 +187,9 @@ class DirectorV2Api(BaseServiceClientApi):
         response.raise_for_status()
 
         log_links: list[LogLink] = []
-        for r in parse_raw_as(list[TaskLogFileGet], response.text or "[]"):
+        for r in TypeAdapter(list[TaskLogFileGet]).validate_python(
+            response.text or "[]"
+        ):
             if r.download_link:
                 log_links.append(
                     LogLink(node_name=f"{r.task_id}", download_link=r.download_link)

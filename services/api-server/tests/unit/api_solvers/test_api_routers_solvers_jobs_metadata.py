@@ -10,7 +10,7 @@ import httpx
 import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
-from pydantic import parse_file_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
@@ -45,8 +45,8 @@ def mocked_backend(
 
     captures = {
         c.name: c
-        for c in parse_file_as(
-            list[HttpApiCallCaptureModel], project_tests_dir / "mocks" / mock_name
+        for c in TypeAdapter(list[HttpApiCallCaptureModel]).validate_json(
+            Path(project_tests_dir / "mocks" / mock_name).read_text()
         )
     }
 
