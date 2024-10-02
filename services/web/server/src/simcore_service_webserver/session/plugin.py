@@ -10,7 +10,6 @@ from aiohttp import web
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
-from yarl import URL
 
 from .settings import SessionSettings, get_plugin_settings
 
@@ -40,7 +39,7 @@ class SharedCookieEncryptedCookieStorage(EncryptedCookieStorage):
         # share cookie accross all subdomains
         # overwrite domain from `None` (browser sets `example.com`) to `.example.com`
         request = response._req  # pylint:disable=protected-access  # noqa: SLF001
-        assert isinstance(request, URL)  # nosec
+        assert isinstance(request, web.Request)  # nosec
         params["domain"] = f".{request.url.host}"
 
         if max_age is not None:
