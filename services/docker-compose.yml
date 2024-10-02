@@ -1111,7 +1111,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_manual-service.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.routers.${SWARM_STACK_NAME}_manual-service.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_manual-service.priority=10
-        - traefik.http.routers.${SWARM_STACK_NAME}_manual-service.rule=HostRegexp(`manual\.(?P<host>.+)`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_manual-service.rule=HostRegexp(`s4l\.manual\.(?P<host>.+)`)
         - traefik.http.routers.${SWARM_STACK_NAME}_manual-service.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME}_manual-service-auth
     networks:
       - default
