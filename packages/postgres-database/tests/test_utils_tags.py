@@ -27,6 +27,7 @@ from simcore_postgres_database.utils_tags_sql import (
     get_tag_stmt,
     get_tags_for_project_stmt,
     get_tags_for_services_stmt,
+    list_tags_stmt,
     set_tag_access_rights_stmt,
     update_tag_stmt,
 )
@@ -436,6 +437,49 @@ async def test_tags_repo_list_and_get(
     )
 
 
+async def test_tags_repo_uniquely_list_shared_tags(
+    asyncpg_engine: AsyncEngine,
+    connection: SAConnection,
+    user: RowProxy,
+    group: RowProxy,
+):
+    conn = connection
+    tags_repo = TagsRepo(asyncpg_engine)
+
+    # (setup): create a tag and share with group
+    expected_tag_id = await create_tag(
+        conn,
+        name="T1",
+        description=f"tag for {user.id}",
+        color="blue",
+        group_id=user.primary_gid,
+        read=True,
+        write=False,  # <-- cannot write
+        delete=True,
+    )
+    await create_tag_access(
+        conn,
+        tag_id=expected_tag_id,
+        group_id=group.gid,
+        read=True,
+        write=True,  # < -- group can write
+        delete=False,
+    )
+
+    # (check) can read
+    got = await tags_repo.get(user_id=user.id, tag_id=expected_tag_id)
+    assert got
+    assert got["write"] is False
+
+    user_tags = await tags_repo.list_all(user_id=user.id)
+    assert len(user_tags) == 1
+    # checks that the agregattion is the MOST permisive
+    assert user_tags[0]["id"] == expected_tag_id
+    assert user_tags[0]["read"] is True
+    assert user_tags[0]["write"] is True
+    assert user_tags[0]["delete"] is True
+
+
 async def test_tags_repo_update(
     asyncpg_engine: AsyncEngine,
     connection: SAConnection,
@@ -618,6 +662,11 @@ def test_building_tags_sql_statements():
     project_index = 1
     service_key = "simcore/services/comp/isolve"
     service_version = "2.0.85"
+
+    _check(
+        list_tags_stmt,
+        user_id=user_id,
+    )
 
     _check(
         get_tag_stmt,
