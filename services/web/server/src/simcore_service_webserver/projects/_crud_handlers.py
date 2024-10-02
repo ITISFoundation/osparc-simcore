@@ -25,7 +25,7 @@ from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
-from pydantic import parse_obj_as
+from pydantic import ValidationError, parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -69,6 +69,7 @@ from .exceptions import (
     ProjectInvalidUsageError,
     ProjectNotFoundError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
+    WrongTagIdsInQueryError,
 )
 from .lock import get_project_locked_state
 from .models import ProjectDict
@@ -101,7 +102,10 @@ def _handle_projects_exceptions(handler: Handler):
             WorkspaceNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
-        except ProjectOwnerNotFoundInTheProjectAccessRightsError as exc:
+        except (
+            ProjectOwnerNotFoundInTheProjectAccessRightsError,
+            WrongTagIdsInQueryError,
+        ) as exc:
             raise web.HTTPBadRequest(reason=f"{exc}") from exc
         except (
             ProjectInvalidRightsError,
@@ -237,7 +241,11 @@ async def list_projects_full_search(request: web.Request):
         ProjectListFullSearchParams, request
     )
     if query_params.tag_ids:
-        tag_ids_list = list(map(int, query_params.tag_ids.split(",")))
+        try:
+            tag_ids_list = list(map(int, query_params.tag_ids.split(",")))
+            parse_obj_as(list[int], tag_ids_list)
+        except ValidationError as exc:
+            raise WrongTagIdsInQueryError from exc
     else:
         tag_ids_list = []
 

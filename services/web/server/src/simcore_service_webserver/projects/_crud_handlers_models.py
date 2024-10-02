@@ -159,7 +159,7 @@ class ProjectActiveParams(BaseModel):
     client_session_id: str
 
 
-class ProjectListFullSearchParams(PageQueryParameters, ProjectListWithOrderByParams):
+class ProjectListFullSearchParams(PageQueryParameters):
     text: str | None = Field(
         default=None,
         description="Multi column full text search, across all folders and workspaces",
@@ -175,3 +175,9 @@ class ProjectListFullSearchParams(PageQueryParameters, ProjectListWithOrderByPar
     _empty_is_none = validator("text", allow_reuse=True, pre=True)(
         empty_str_to_none_pre_validator
     )
+
+
+class ProjectListFullSearchWithJsonStrParams(
+    ProjectListFullSearchParams, ProjectListWithOrderByParams
+):
+    ...
