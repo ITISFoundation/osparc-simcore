@@ -23,8 +23,9 @@ class SharedCookieEncryptedCookieStorage(EncryptedCookieStorage):
         response: web.StreamResponse,
         session: aiohttp_session.Session,
     ) -> None:
-        # ensure request URL is accessible in response
+        # link response to originating request (allows to detect the orginal request url)
         response._req = request  # pylint:disable=protected-access  # noqa: SLF001
+
         await super().save_session(request, response, session)
 
     def save_cookie(
