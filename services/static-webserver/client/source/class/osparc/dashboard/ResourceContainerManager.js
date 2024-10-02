@@ -284,11 +284,30 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this._removeAll();
     },
 
+    __addFoldersContainer: function() {
+      // add foldersContainer dynamically
+      [
+        "addChildWidget",
+        "removeChildWidget"
+      ].forEach(ev => {
+        this.__foldersContainer.addListener(ev, () => {
+          const children = this.__foldersContainer.getChildren();
+          if (children.length && !children.includes(this.__foldersContainer)) {
+            this._addAt(this.__foldersContainer, 0);
+            return;
+          }
+          if (children.length === 0 && children.includes(this.__foldersContainer)) {
+            this._remove(this.__foldersContainer);
+            return;
+          }
+        })
+      });
+    },
+
     reloadCards: function(resourceType) {
       this.__cleanAll();
-      if (resourceType === "studies") {
-        this._add(this.__containerHeader);
-        this._add(this.__foldersContainer);
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        this.__addFoldersContainer();
       }
       if (this.getGroupBy()) {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
