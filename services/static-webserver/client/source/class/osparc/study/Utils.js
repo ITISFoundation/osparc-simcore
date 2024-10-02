@@ -175,7 +175,7 @@ qx.Class.define("osparc.study.Utils", {
               resolve(resultData);
             });
             task.addListener("pollingError", e => {
-              reject("Polling Error");
+              reject(new Error("Polling Error"));
             });
           })
           .catch(err => reject(err));

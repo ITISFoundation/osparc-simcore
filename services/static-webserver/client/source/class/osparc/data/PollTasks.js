@@ -55,7 +55,7 @@ qx.Class.define("osparc.data.PollTasks", {
               throw Error("Status missing");
             }
           })
-          .catch(errMsg => reject(errMsg));
+          .catch(err => reject(err));
       });
     },
 
