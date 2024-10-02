@@ -6,6 +6,7 @@
 import asyncio
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -131,7 +132,13 @@ class Handlers:
 
 
 @pytest.fixture
-def client(event_loop, aiohttp_client):
+def client(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("SC_BUILD_TARGET", "production")
+
     app = web.Application()
 
     # routes
@@ -217,57 +224,57 @@ async def test_404_not_found_when_entrypoint_not_exposed(client: TestClient):
 async def test_raised_unhandled_exception(
     client: TestClient, caplog: pytest.LogCaptureFixture
 ):
-    caplog.set_level(logging.ERROR)
-    response = await client.get("/v1/raise_exception")
+    with caplog.at_level(logging.ERROR):
+        response = await client.get("/v1/raise_exception")
 
-    # respond the client with 500
-    assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
+        # respond the client with 500
+        assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
 
-    # response model
-    data, error = unwrap_envelope(await response.json())
-    assert not data
-    assert error
+        # response model
+        data, error = unwrap_envelope(await response.json())
+        assert not data
+        assert error
 
-    # user friendly message with OEC reference
-    assert "OEC" in error["message"]
-    parsed_oec = parse_error_code(error["message"]).pop()
-    assert FMSG_INTERNAL_ERROR_USER_FRIENDLY.format(parsed_oec) == error["message"]
+        # user friendly message with OEC reference
+        assert "OEC" in error["message"]
+        parsed_oec = parse_error_code(error["message"]).pop()
+        assert FMSG_INTERNAL_ERROR_USER_FRIENDLY.format(parsed_oec) == error["message"]
 
-    # avoids details
-    assert not error.get("errors")
-    assert not error.get("logs")
+        # avoids details
+        assert not error.get("errors")
+        assert not error.get("logs")
 
-    # - log sufficient information to diagnose the issue
-    #
-    # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:75 We apologize ... [OEC:128594540599840].
-    # {
-    # "exception_details": "Unexpected error",
-    # "error_code": "OEC:128594540599840",
-    # "context": {
-    #     "request.remote": "127.0.0.1",
-    #     "request.method": "GET",
-    #     "request.path": "/v1/raise_exception"
-    # },
-    # "tip": null
-    # }
-    # Traceback (most recent call last):
-    # File "/osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 94, in _middleware_handler
-    #     return await handler(request)
-    #         ^^^^^^^^^^^^^^^^^^^^^^
-    # File "/osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 186, in _middleware_handler
-    #     resp = await handler(request)
-    #         ^^^^^^^^^^^^^^^^^^^^^^
-    # File "/osparc-simcore/packages/service-library/tests/aiohttp/test_rest_middlewares.py", line 109, in raise_exception
-    #     raise SomeUnexpectedError(cls.EXPECTED_RAISE_UNEXPECTED_REASON)
-    # tests.aiohttp.test_rest_middlewares.SomeUnexpectedError: Unexpected error
+        # - log sufficient information to diagnose the issue
+        #
+        # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:75 We apologize ... [OEC:128594540599840].
+        # {
+        # "exception_details": "Unexpected error",
+        # "error_code": "OEC:128594540599840",
+        # "context": {
+        #     "request.remote": "127.0.0.1",
+        #     "request.method": "GET",
+        #     "request.path": "/v1/raise_exception"
+        # },
+        # "tip": null
+        # }
+        # Traceback (most recent call last):
+        # File "/osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 94, in _middleware_handler
+        #     return await handler(request)
+        #         ^^^^^^^^^^^^^^^^^^^^^^
+        # File "/osparc-simcore/packages/service-library/src/servicelib/aiohttp/rest_middlewares.py", line 186, in _middleware_handler
+        #     resp = await handler(request)
+        #         ^^^^^^^^^^^^^^^^^^^^^^
+        # File "/osparc-simcore/packages/service-library/tests/aiohttp/test_rest_middlewares.py", line 109, in raise_exception
+        #     raise SomeUnexpectedError(cls.EXPECTED_RAISE_UNEXPECTED_REASON)
+        # tests.aiohttp.test_rest_middlewares.SomeUnexpectedError: Unexpected error
 
-    assert response.method in caplog.text
-    assert response.url.path in caplog.text
-    assert "exception_details" in caplog.text
-    assert "request.remote" in caplog.text
-    assert "context" in caplog.text
-    assert SomeUnexpectedError.__name__ in caplog.text
-    assert Handlers.EXPECTED_RAISE_UNEXPECTED_REASON in caplog.text
+        assert response.method in caplog.text
+        assert response.url.path in caplog.text
+        assert "exception_details" in caplog.text
+        assert "request.remote" in caplog.text
+        assert "context" in caplog.text
+        assert SomeUnexpectedError.__name__ in caplog.text
+        assert Handlers.EXPECTED_RAISE_UNEXPECTED_REASON in caplog.text
 
-    # log OEC
-    assert "OEC:" in caplog.text
+        # log OEC
+        assert "OEC:" in caplog.text
