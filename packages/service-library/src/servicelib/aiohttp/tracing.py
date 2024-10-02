@@ -1,6 +1,7 @@
 """ Adds aiohttp middleware for tracing using opentelemetry instrumentation.
 
 """
+
 import logging
 
 from aiohttp import web
@@ -8,19 +9,23 @@ from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
-from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
-from opentelemetry.instrumentation.aiohttp_server import (
+from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-name-in-module
+    AioHttpClientInstrumentor,
+)
+from opentelemetry.instrumentation.aiohttp_server import (  # pylint:disable=no-name-in-module
     AioHttpServerInstrumentor,
     middleware,
 )
-from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
+from opentelemetry.instrumentation.aiopg import (  # pylint:disable=no-name-in-module
+    AiopgInstrumentor,
+)
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from settings_library.tracing import TracingSettings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def setup_tracing(
@@ -32,15 +37,22 @@ def setup_tracing(
     """
     Sets up this service for a distributed tracing system (opentelemetry)
     """
+    _ = app
     opentelemetry_collector_endpoint = (
         tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
     )
     opentelemetry_collector_port = tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
     if not opentelemetry_collector_endpoint and not opentelemetry_collector_port:
-        log.warning("Skipping opentelemetry tracing setup")
+        _logger.warning("Skipping opentelemetry tracing setup")
         return
     if not opentelemetry_collector_endpoint or not opentelemetry_collector_port:
-        msg = f"Variable opentelemetry_collector_endpoint [{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}] or opentelemetry_collector_port [{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT}] unset. Tracing options incomplete."
+        msg = (
+            "Variable opentelemetry_collector_endpoint "
+            f"[{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}] "
+            "or opentelemetry_collector_port "
+            f"[{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT}] "
+            "unset. Provide both or remove both."
+        )
         raise RuntimeError(msg)
     resource = Resource(attributes={"service.name": service_name})
     trace.set_tracer_provider(TracerProvider(resource=resource))
@@ -49,7 +61,7 @@ def setup_tracing(
         f"{opentelemetry_collector_endpoint}:{opentelemetry_collector_port}/v1/traces"
     )
 
-    log.info(
+    _logger.info(
         "Trying to connect service %s to tracing collector at %s.",
         service_name,
         tracing_destination,
