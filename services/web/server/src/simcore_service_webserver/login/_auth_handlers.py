@@ -309,6 +309,13 @@ async def logout(request: web.Request) -> web.Response:
 @routes.get(f"/{API_VTAG}/auth:check", name="check_authentication")
 @login_required
 async def check_auth(request: web.Request) -> web.Response:
-    # this is meant as a lightweight endpoint for checking if users are authenticated
+    # lightweight endpoint for checking if users are authenticated
+    # used primarily by Traefik auth middleware to verify session cookies
+
+    # NOTE: for future development
+    # if databse access is added here, services like jupyter-math
+    # which load a lot of resources will have a big performance hit
+    # consider caching some properties required by this endpoit or rely on Redis
+
     _ = request
     return envelope_response(CheckAuthBody())
