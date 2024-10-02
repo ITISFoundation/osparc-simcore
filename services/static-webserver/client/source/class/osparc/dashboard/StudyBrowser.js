@@ -265,11 +265,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           console.error(err);
           osparc.FlashMessenger.logAs(err.message, "ERROR");
           // stop fetching
-          this._resourcesContainer.getFlatList().nextRequest = null;
+          if (this._resourcesContainer.getFlatList()) {
+            this._resourcesContainer.getFlatList().nextRequest = null;
+          }
         })
         .finally(() => {
           this._loadingResourcesBtn.setFetching(false);
-          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
+          if (this._resourcesContainer.getFlatList()) {
+            this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
+          }
           this._moreResourcesRequired();
         });
     },
