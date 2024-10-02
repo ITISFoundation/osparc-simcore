@@ -182,5 +182,5 @@ class Project(BaseProjectModel):
     model_config = ConfigDict(
         title="osparc-simcore project",
         extra="forbid",
-        json_schema_extra=_patch_json_schema_extra,  # type: ignore[typeddict-item]
+        json_schema_extra=_patch_json_schema_extra,
     )

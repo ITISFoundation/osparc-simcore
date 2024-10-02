@@ -246,5 +246,5 @@ class Node(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra=_patch_json_schema_extra,  # type: ignore[typeddict-item]
+        json_schema_extra=_patch_json_schema_extra,
     )
