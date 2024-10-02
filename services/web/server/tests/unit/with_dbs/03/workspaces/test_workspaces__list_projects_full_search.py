@@ -87,6 +87,8 @@ async def test_workspaces__list_projects_full_search(
     assert data[0]["uuid"] == project_1["uuid"]
     assert data[0]["workspaceId"] == added_workspace["workspaceId"]
     assert data[0]["folderId"] is None
+    assert data[0]["workbench"]
+    assert data[0]["accessRights"]
 
     # Create projects in private workspace
     project_data = deepcopy(fake_project)

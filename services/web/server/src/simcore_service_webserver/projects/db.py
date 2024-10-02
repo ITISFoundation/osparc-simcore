@@ -94,7 +94,7 @@ from .models import (
     ProjectDB,
     ProjectDict,
     UserProjectAccessRightsDB,
-    UserSpecificProjectDataDB,
+    UserSpecificListProjectDB,
 )
 
 _logger = logging.getLogger(__name__)
@@ -617,8 +617,8 @@ class ProjectDBAPI(BaseProjectDB):
             list_query = combined_query.offset(offset).limit(limit)
             result = await conn.execute(list_query)
             rows = await result.fetchall() or []
-            results: list[UserSpecificProjectDataDB] = [
-                UserSpecificProjectDataDB.from_orm(row) for row in rows
+            results: list[UserSpecificListProjectDB] = [
+                UserSpecificListProjectDB.from_orm(row) for row in rows
             ]
 
             # NOTE: Additional adjustments to make it back compatible
@@ -703,7 +703,7 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def get_user_specific_project_data_db(
         self, project_uuid: ProjectID, private_workspace_user_id_or_none: UserID | None
-    ) -> UserSpecificProjectDataDB:
+    ) -> UserSpecificListProjectDB:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
                 sa.select(
@@ -727,7 +727,7 @@ class ProjectDBAPI(BaseProjectDB):
             row = await result.fetchone()
             if row is None:
                 raise ProjectNotFoundError(project_uuid=project_uuid)
-            return UserSpecificProjectDataDB.from_orm(row)
+            return UserSpecificListProjectDB.from_orm(row)
 
     async def get_pure_project_access_rights_without_workspace(
         self, user_id: UserID, project_uuid: ProjectID

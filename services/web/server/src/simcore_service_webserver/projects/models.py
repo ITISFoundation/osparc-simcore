@@ -65,7 +65,7 @@ class ProjectDB(BaseModel):
     )
 
 
-class UserSpecificProjectDataDB(ProjectDB):
+class UserSpecificListProjectDB(ProjectDB):
     folder_id: FolderID | None
     workbench: NodesDict
     access_rights: dict[GroupID, AccessRights]
