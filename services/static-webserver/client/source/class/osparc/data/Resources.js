@@ -1337,6 +1337,9 @@ qx.Class.define("osparc.data.Resources", {
 
           if ([404, 503].includes(status)) {
             message += "<br>Please try again later and/or contact support";
+          } else if (status == 500) {
+            console.error(message);
+            message += "<br>Please contact support";
           }
           const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {
