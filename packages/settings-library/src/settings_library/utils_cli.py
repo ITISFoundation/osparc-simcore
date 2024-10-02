@@ -60,9 +60,8 @@ def print_as_envfile(
         elif show_secrets and hasattr(value, "get_secret_value"):
             value = value.get_secret_value()
 
-        if verbose:
-            if field.description:
-                typer.echo(f"# {field.description}")
+        if verbose and field.description:
+            typer.echo(f"# {field.description}")
 
         typer.echo(f"{name}={value}")
 

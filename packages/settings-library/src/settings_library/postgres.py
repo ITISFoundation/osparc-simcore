@@ -49,7 +49,7 @@ class PostgresSettings(BaseCustomSettings):
     @field_validator("POSTGRES_MAXSIZE")
     @classmethod
     def _check_size(cls, v, info: ValidationInfo):
-        if not (info.data["POSTGRES_MINSIZE"] <= v):
+        if info.data["POSTGRES_MINSIZE"] > v:
             msg = f"assert POSTGRES_MINSIZE={info.data['POSTGRES_MINSIZE']} <= POSTGRES_MAXSIZE={v}"
             raise ValueError(msg)
         return v
