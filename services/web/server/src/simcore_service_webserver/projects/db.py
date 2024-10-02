@@ -526,12 +526,12 @@ class ProjectDBAPI(BaseProjectDB):
                 ).group_by(workspaces_access_rights.c.workspace_id)
             ).subquery("workspace_access_rights_subquery")
 
-            # project_tags_subquery = (
-            #     sa.select(
-            #         projects_tags.c.project_id,
-            #         sa.func.array_agg(projects_tags.c.tag_id).label("tags"),
-            #     ).group_by(projects_tags.c.project_id)
-            # ).subquery("project_tags_subquery")
+            project_tags_subquery = (
+                sa.select(
+                    projects_tags.c.project_id,
+                    sa.func.array_agg(projects_tags.c.tag_id).label("tags"),
+                ).group_by(projects_tags.c.project_id)
+            ).subquery("project_tags_subquery")
 
             private_workspace_query = (
                 sa.select(
@@ -543,7 +543,10 @@ class ProjectDBAPI(BaseProjectDB):
                     self.access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
-                    # project_tags_subquery.c.tags,
+                    sa.func.coalesce(
+                        project_tags_subquery.c.tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
+                    ).label("tags"),
                 )
                 .select_from(
                     projects.join(self.access_rights_subquery, isouter=True)
@@ -556,7 +559,7 @@ class ProjectDBAPI(BaseProjectDB):
                         ),
                         isouter=True,
                     )
-                    # .join(project_tags_subquery, isouter=True)
+                    .join(project_tags_subquery, isouter=True)
                 )
                 .where(
                     (
@@ -577,6 +580,14 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             )
 
+            if tag_ids:
+                private_workspace_query = private_workspace_query.where(
+                    sa.func.coalesce(
+                        project_tags_subquery.c.tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
+                    ).op("@>")(tag_ids)
+                )
+
             shared_workspace_query = (
                 sa.select(
                     *[
@@ -587,6 +598,10 @@ class ProjectDBAPI(BaseProjectDB):
                     workspace_access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
+                    sa.func.coalesce(
+                        project_tags_subquery.c.tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
+                    ).label("tags"),
                 )
                 .select_from(
                     projects.join(
@@ -603,6 +618,7 @@ class ProjectDBAPI(BaseProjectDB):
                         ),
                         isouter=True,
                     )
+                    .join(project_tags_subquery, isouter=True)
                 )
                 .where(
                     (
@@ -621,6 +637,14 @@ class ProjectDBAPI(BaseProjectDB):
                     )
                 )
             )
+
+            if tag_ids:
+                shared_workspace_query = shared_workspace_query.where(
+                    sa.func.coalesce(
+                        project_tags_subquery.c.tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
+                    ).op("@>")(tag_ids)
+                )
 
             combined_query = sa.union_all(
                 private_workspace_query, shared_workspace_query

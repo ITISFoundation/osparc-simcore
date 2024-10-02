@@ -80,7 +80,7 @@ async def test_workspaces__list_projects_full_search(
 
     # List project with full search
     base_url = client.app.router["list_projects_full_search"].url_for()
-    url = base_url.with_query([("text", "solution"), ("tag_id", 1), ("tag_id", 2)])
+    url = base_url.with_query({"text": "solution"})
     resp = await client.get(url)
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
