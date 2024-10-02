@@ -110,7 +110,7 @@ def create_http_error(
         error = ErrorType(
             errors=items,
             status=http_error_cls.status_code,
-            message=items[0].message if items else default_message,
+            message=default_message,
         )
 
     assert not http_error_cls.empty_body  # nosec
