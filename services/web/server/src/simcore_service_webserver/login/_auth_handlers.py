@@ -311,4 +311,4 @@ async def logout(request: web.Request) -> web.Response:
 async def check_auth(request: web.Request) -> web.Response:
     # this is meant as a lightweight endpoint for checking if users are authenticated
     _ = request
-    return envelope_response({})
+    return envelope_response(CheckAuthBody())
