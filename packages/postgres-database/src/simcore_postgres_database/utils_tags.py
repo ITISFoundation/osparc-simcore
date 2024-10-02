@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .utils_repos import pass_or_acquire_connection, transaction_context
 from .utils_tags_sql import (
-    count_users_with_given_access_rights_stmt,
+    count_groups_with_given_access_rights_stmt,
     create_tag_stmt,
     delete_tag_stmt,
     get_tag_stmt,
@@ -67,7 +67,7 @@ class TagsRepo:
         Returns >0 if it does and represents the number of groups granting this access to the user
         """
         async with pass_or_acquire_connection(self.engine, connection) as conn:
-            count_stmt = count_users_with_given_access_rights_stmt(
+            count_stmt = count_groups_with_given_access_rights_stmt(
                 user_id=user_id, tag_id=tag_id, read=read, write=write, delete=delete
             )
             permissions_count: int | None = await conn.scalar(count_stmt)
@@ -237,7 +237,7 @@ class TagsRepo:
         write: bool,
         delete: bool,
     ):
-        ...
+        raise NotImplementedError
 
     async def update_access_rights(
         self,
@@ -250,9 +250,13 @@ class TagsRepo:
         write: bool,
         delete: bool,
     ):
-        ...
+        raise NotImplementedError
 
     async def delete_access_rights(
-        self, connection: AsyncConnection | None = None, *, user_id: int, tag_id: int
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        user_id: int,
+        tag_id: int,
     ):
-        ...
+        raise NotImplementedError

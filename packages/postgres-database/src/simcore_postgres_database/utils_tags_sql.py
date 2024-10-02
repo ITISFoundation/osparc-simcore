@@ -54,12 +54,22 @@ def get_tag_stmt(
     user_id: int,
     tag_id: int,
 ):
-    return sa.select(*_TAG_COLUMNS, *_ACCESS_RIGHTS_COLUMNS).select_from(
-        _join_user_to_given_tag(
-            access_condition=tags_access_rights.c.read.is_(True),
-            tag_id=tag_id,  # makes it unique result or None
-            user_id=user_id,
+    return (
+        sa.select(
+            *_TAG_COLUMNS,
+            # aggregation ensures MOST PERMISSIVE policy of access-rights
+            sa.func.bool_or(tags_access_rights.c.read).label("read"),
+            sa.func.bool_or(tags_access_rights.c.write).label("write"),
+            sa.func.bool_or(tags_access_rights.c.delete).label("delete")
         )
+        .select_from(
+            _join_user_to_given_tag(
+                access_condition=tags_access_rights.c.read.is_(True),
+                tag_id=tag_id,
+                user_id=user_id,
+            )
+        )
+        .group_by(tags.c.id)
     )
 
 
@@ -67,7 +77,7 @@ def list_tags_stmt(*, user_id: int):
     return (
         sa.select(
             *_TAG_COLUMNS,
-            # MOST permisive aggregation of access-rights
+            # aggregation ensures MOST PERMISSIVE policy of access-rights
             sa.func.bool_or(tags_access_rights.c.read).label("read"),
             sa.func.bool_or(tags_access_rights.c.write).label("write"),
             sa.func.bool_or(tags_access_rights.c.delete).label("delete")
@@ -87,7 +97,7 @@ def create_tag_stmt(**values):
     return tags.insert().values(**values).returning(*_TAG_COLUMNS)
 
 
-def count_users_with_given_access_rights_stmt(
+def count_groups_with_given_access_rights_stmt(
     *,
     user_id: int,
     tag_id: int,
@@ -96,7 +106,7 @@ def count_users_with_given_access_rights_stmt(
     delete: bool | None
 ):
     """
-    How many users are given EXACTLY these access permissions
+    How many groups (from this user_id) are given EXACTLY these access permissions
     """
     access = []
     if read is not None:

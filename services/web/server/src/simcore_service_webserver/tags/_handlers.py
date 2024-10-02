@@ -39,7 +39,7 @@ def _handle_tags_exceptions(handler: Handler):
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
         except TagOperationNotAllowedError as exc:
-            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
+            raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return wrapper
 
@@ -110,6 +110,11 @@ async def delete_tag(request: web.Request):
     raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
+#
+# tags ACCESS RIGHTS is exposed as a sub-resource groups
+#
+
+
 @routes.get(f"/{VTAG}/tags/{{tag_id}}/groups", name="list_tag_groups")
 @login_required
 @permission_required("tag.crud.*")
@@ -121,11 +126,6 @@ async def list_tag_groups(request: web.Request):
     assert envelope_json_response(parse_obj_as(list[TagGroupGet], []))
 
     raise NotImplementedError
-
-
-#
-# tags ACCESS RIGHTS is exposed as a sub-resource groups
-#
 
 
 @routes.post(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="create_tag_group")

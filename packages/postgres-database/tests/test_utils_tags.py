@@ -437,7 +437,7 @@ async def test_tags_repo_list_and_get(
     )
 
 
-async def test_tags_repo_uniquely_list_shared_tags(
+async def test_tags_repo_uniquely_list_or_get_shared_tags(
     asyncpg_engine: AsyncEngine,
     connection: SAConnection,
     user: RowProxy,
@@ -446,7 +446,7 @@ async def test_tags_repo_uniquely_list_shared_tags(
     conn = connection
     tags_repo = TagsRepo(asyncpg_engine)
 
-    # (setup): create a tag and share with group
+    # (1) create a tag which cannot be written
     expected_tag_id = await create_tag(
         conn,
         name="T1",
@@ -457,6 +457,15 @@ async def test_tags_repo_uniquely_list_shared_tags(
         write=False,  # <-- cannot write
         delete=True,
     )
+
+    got = await tags_repo.get(user_id=user.id, tag_id=expected_tag_id)
+    assert got
+    assert got["id"] == expected_tag_id
+    assert got["read"] is True
+    assert got["write"] is False  # <--
+    assert got["delete"] is True
+
+    # (2) share with standard group
     await create_tag_access(
         conn,
         tag_id=expected_tag_id,
@@ -466,18 +475,17 @@ async def test_tags_repo_uniquely_list_shared_tags(
         delete=False,
     )
 
-    # (check) can read
+    # checks that the agregattion is the MOST permisive
+    # checks that user_id has now full access via its primary and its stadard group
     got = await tags_repo.get(user_id=user.id, tag_id=expected_tag_id)
     assert got
-    assert got["write"] is False
+    assert got["id"] == expected_tag_id
+    assert got["read"] is True
+    assert got["write"] is True  # <--
+    assert got["delete"] is True
 
     user_tags = await tags_repo.list_all(user_id=user.id)
-    assert len(user_tags) == 1
-    # checks that the agregattion is the MOST permisive
-    assert user_tags[0]["id"] == expected_tag_id
-    assert user_tags[0]["read"] is True
-    assert user_tags[0]["write"] is True
-    assert user_tags[0]["delete"] is True
+    assert user_tags == [got]
 
 
 async def test_tags_repo_update(
