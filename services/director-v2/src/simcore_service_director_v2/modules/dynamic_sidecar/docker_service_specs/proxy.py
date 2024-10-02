@@ -10,6 +10,7 @@ from models_library.services_resources import (
 from pydantic import ByteSize
 from servicelib.common_headers import X_SIMCORE_USER_AGENT
 from settings_library import webserver
+from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 
 from ....core.dynamic_services_settings import DynamicServicesSettings
 from ....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
@@ -97,7 +98,7 @@ def get_dynamic_proxy_spec(
             # auth
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": f"{webserver_settings.api_base_url}/auth:check",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.trustForwardHeader": "true",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.authResponseHeaders": "Set-Cookie,osparc-sc",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.authResponseHeaders": f"Set-Cookie,{DEFAULT_SESSION_COOKIE_NAME}",
             # routing
             f"traefik.http.services.{scheduler_data.proxy_service_name}.loadbalancer.server.port": "80",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.entrypoints": "http",
