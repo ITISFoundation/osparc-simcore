@@ -87,6 +87,12 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
     appearance: {
       init: "window-small-cap",
       refine: true
+    },
+
+    isMovable: {
+      check: "Boolean",
+      init: true,
+      nullable: false
     }
   },
 
@@ -272,7 +278,7 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
     // override qx.ui.core.MMovable
     _onMovePointerMove: function(e) {
       // Only react when dragging is active
-      if (!this.hasState("move")) {
+      if (!this.hasState("move") || !this.getIsMovable()) {
         return;
       }
       e.stopPropagation();
@@ -290,7 +296,7 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
       }
 
       // Only react when dragging is active
-      if (!this.hasState("move")) {
+      if (!this.hasState("move") || !this.getIsMovable()) {
         return;
       }
 
