@@ -113,6 +113,13 @@ class ProjectAtDB(BaseProjectModel):
     )
 
 
+def _patch_json_schema_extra(schema: dict) -> None:
+    # Patch to allow jsonschema nullable
+    # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
+    state_pydantic_schema = deepcopy(schema["properties"]["state"])
+    schema["properties"]["state"] = {"anyOf": [{"type": "null"}, state_pydantic_schema]}
+
+
 class Project(BaseProjectModel):
     # NOTE: This is the pydantic pendant of project-v0.0.1.json used in the API of the webserver/webclient
     # NOT for usage with DB!!
@@ -171,14 +178,6 @@ class Project(BaseProjectModel):
         description="To which workspace project belongs. If None, belongs to private user workspace.",
         alias="workspaceId",
     )
-
-    def _patch_json_schema_extra(self, schema: dict) -> None:
-        # Patch to allow jsonschema nullable
-        # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
-        state_pydantic_schema = deepcopy(schema["properties"]["state"])
-        schema["properties"]["state"] = {
-            "anyOf": [{"type": "null"}, state_pydantic_schema]
-        }
 
     model_config = ConfigDict(
         title="osparc-simcore project",

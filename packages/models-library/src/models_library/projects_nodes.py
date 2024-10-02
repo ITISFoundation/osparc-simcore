@@ -113,6 +113,16 @@ class NodeState(BaseModel):
     )
 
 
+def _patch_json_schema_extra(schema: dict) -> None:
+    # NOTE: exporting without this trick does not make runHash as nullable.
+    # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
+    for prop_name in ["parent", "runHash"]:
+        if prop_name in schema.get("properties", {}):
+            prop = deepcopy(schema["properties"][prop_name])
+            prop["nullable"] = True
+            schema["properties"][prop_name] = prop
+
+
 class Node(BaseModel):
     key: ServiceKey = Field(
         ...,
@@ -233,15 +243,6 @@ class Node(BaseModel):
             running_state_value = cls.convert_old_enum_name(v)
             return NodeState(currentStatus=running_state_value)
         return v
-
-    def _patch_json_schema_extra(self, schema: dict) -> None:
-        # NOTE: exporting without this trick does not make runHash as nullable.
-        # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
-        for prop_name in ["parent", "runHash"]:
-            if prop_name in schema.get("properties", {}):
-                prop = deepcopy(schema["properties"][prop_name])
-                prop["nullable"] = True
-                schema["properties"][prop_name] = prop
 
     model_config = ConfigDict(
         extra="forbid",
