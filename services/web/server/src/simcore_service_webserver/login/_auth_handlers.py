@@ -77,6 +77,10 @@ class LoginNextPage(NextPage[CodePageParams]):
     ...
 
 
+class CheckAuthBody(BaseModel):
+    ...
+
+
 @routes.post(f"/{API_VTAG}/auth/login", name="auth_login")
 @on_success_grant_session_access_to(
     name="auth_register_phone",
@@ -300,3 +304,11 @@ async def logout(request: web.Request) -> web.Response:
         await forget_identity(request, response)
 
         return response
+
+
+@routes.get(f"/{API_VTAG}/auth:check", name="check_authentication")
+@login_required
+async def check_auth(request: web.Request) -> web.Response:
+    # this is meant as a lightweight endpoint for checking if users are authenticated
+    _ = request
+    return envelope_response({})

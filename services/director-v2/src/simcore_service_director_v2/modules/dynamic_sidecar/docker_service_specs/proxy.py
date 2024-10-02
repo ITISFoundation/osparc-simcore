@@ -91,7 +91,7 @@ def get_dynamic_proxy_spec(
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolmaxage": "100",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.addvaryheader": "true",
             # auth
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": "http://wb-api-server:8080/v0/me",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": "http://wb-api-server:8080/v0/auth:check",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.trustForwardHeader": "true",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.authResponseHeaders": "Set-Cookie,osparc-sc",
             # routing
@@ -99,7 +99,13 @@ def get_dynamic_proxy_spec(
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.entrypoints": "http",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.priority": "10",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": rf"HostRegexp(`{scheduler_data.node_uuid}\.services\.(?P<host>.+)`)",
-            f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}_gzip@swarm, {scheduler_data.proxy_service_name}-security-headers, {scheduler_data.proxy_service_name}-auth",
+            f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": ",".join(
+                [
+                    f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}_gzip@swarm",
+                    f"{scheduler_data.proxy_service_name}-security-headers",
+                    f"{scheduler_data.proxy_service_name}-auth",
+                ]
+            ),
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
         }
         | StandardSimcoreDockerLabels(

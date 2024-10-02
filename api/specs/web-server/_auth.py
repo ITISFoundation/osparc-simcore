@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.login._2fa_handlers import Resend2faBody
 from simcore_service_webserver.login._auth_handlers import (
+    CheckAuthBody,
     LoginBody,
     LoginNextPage,
     LoginTwoFactorAuthBody,
@@ -153,6 +154,21 @@ async def resend_2fa_code(resend: Resend2faBody):
 )
 async def logout(_body: LogoutBody):
     """user logout"""
+
+
+@router.get(
+    "/auth:check",
+    response_model=Envelope[CheckAuthBody],
+    operation_id="check_authentication",
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": Envelope[Error],
+            "description": "unauthorized reset due to invalid token code",
+        }
+    },
+)
+async def check_auth():
+    """checks if user is autheticated in the platform"""
 
 
 @router.post(

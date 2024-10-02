@@ -1101,7 +1101,7 @@ services:
         - traefik.enable=true
         - traefik.docker.network=${SWARM_STACK_NAME}_interactive_services_subnet
         # auth
-        - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-service-auth.forwardauth.address=http://${WB_API_WEBSERVER_HOST}:${WB_API_WEBSERVER_PORT}/v0/me
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-service-auth.forwardauth.address=http://${WB_API_WEBSERVER_HOST}:${WB_API_WEBSERVER_PORT}/v0/auth:check
         - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-service-auth.forwardauth.trustForwardHeader=true
         - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-service-auth.forwardauth.authResponseHeaders=Set-Cookie,osparc-sc
         # routing
