@@ -1,9 +1,8 @@
 from math import ceil
 from typing import Any, Protocol, TypedDict, Union, runtime_checkable
 
-from pydantic import TypeAdapter
+from pydantic import AnyHttpUrl, TypeAdapter
 
-from .basic_types import AnyHttpUrl
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
 # NOTE: In this repo we use two type of URL-like data structures:
@@ -30,6 +29,7 @@ class _StarletteURL(Protocol):
 
 
 _URLType = Union[_YarlURL, _StarletteURL]
+_ANY_HTTP_URL_ADAPTER: TypeAdapter = TypeAdapter(AnyHttpUrl)
 
 
 def _replace_query(url: _URLType, query: dict[str, Any]) -> str:
@@ -73,21 +73,21 @@ def paginate_data(
         ),
         _links=PageLinks(
             self=(
-                TypeAdapter(AnyHttpUrl).validate_python(
+                _ANY_HTTP_URL_ADAPTER.validate_python(
                     _replace_query(request_url, {"offset": offset, "limit": limit}),
                 )
             ),
-            first=TypeAdapter(AnyHttpUrl).validate_python(
+            first=_ANY_HTTP_URL_ADAPTER.validate_python(
                 _replace_query(request_url, {"offset": 0, "limit": limit})
             ),
-            prev=TypeAdapter(AnyHttpUrl).validate_python(
+            prev=_ANY_HTTP_URL_ADAPTER.validate_python(
                 _replace_query(
                     request_url, {"offset": max(offset - limit, 0), "limit": limit}
                 ),
             )
             if offset > 0
             else None,
-            next=TypeAdapter(AnyHttpUrl).validate_python(
+            next=_ANY_HTTP_URL_ADAPTER.validate_python(
                 _replace_query(
                     request_url,
                     {"offset": min(offset + limit, last_page * limit), "limit": limit},
@@ -95,7 +95,7 @@ def paginate_data(
             )
             if offset < (last_page * limit)
             else None,
-            last=TypeAdapter(AnyHttpUrl).validate_python(
+            last=_ANY_HTTP_URL_ADAPTER.validate_python(
                 _replace_query(
                     request_url, {"offset": last_page * limit, "limit": limit}
                 ),
