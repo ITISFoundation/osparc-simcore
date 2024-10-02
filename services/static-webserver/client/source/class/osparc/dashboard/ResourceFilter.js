@@ -83,31 +83,6 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     getWorkspacesAndFoldersTree: function() {
       return this.__workspacesAndFoldersTree;
     },
-
-    contextChanged: function(workspaceId, folderId) {
-      this.__workspacesAndFoldersTree.set({
-        currentWorkspaceId: workspaceId,
-        currentFolderId: folderId,
-      });
-      this.__workspacesAndFoldersTree.contextChanged();
-    },
-
-    workspaceSelected: function(workspaceId) {
-      this.__workspacesAndFoldersTree.set({
-        currentWorkspaceId: workspaceId,
-        currentFolderId: null,
-      });
-      this.__workspacesAndFoldersTree.contextChanged();
-    },
-
-    folderSelected: function(folderId) {
-      const workspaceId = this.__workspacesAndFoldersTree.getCurrentWorkspaceId();
-      this.__workspacesAndFoldersTree.set({
-        currentWorkspaceId: workspaceId,
-        currentFolderId: folderId,
-      });
-      this.__workspacesAndFoldersTree.contextChanged();
-    },
     /* /WORKSPACES AND FOLDERS */
 
     /* SHARED WITH */
