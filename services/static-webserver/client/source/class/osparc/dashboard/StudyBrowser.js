@@ -1781,8 +1781,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._updateStudyData(duplicatedStudyData);
       });
       task.addListener("pollingError", e => {
-        const errMsg = e.getData();
-        const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
+        const err = e.getData();
+        const msg = this.tr("Something went wrong Duplicating the study<br>") + err.message;
         finished(msg, "ERROR");
       });
     }

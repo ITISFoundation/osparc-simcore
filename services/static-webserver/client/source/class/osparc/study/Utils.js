@@ -175,7 +175,8 @@ qx.Class.define("osparc.study.Utils", {
               resolve(resultData);
             });
             task.addListener("pollingError", e => {
-              reject(new Error("Polling Error"));
+              const err = e.getData();
+              reject(err);
             });
           })
           .catch(err => reject(err));
@@ -250,8 +251,8 @@ qx.Class.define("osparc.study.Utils", {
               resolve(studyData["uuid"]);
             }, this);
             task.addListener("pollingError", e => {
-              const errMsg = e.getData();
-              reject(errMsg);
+              const err = e.getData();
+              reject(err);
             }, this);
           })
           .catch(err => reject(err));
