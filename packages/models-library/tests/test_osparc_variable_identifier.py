@@ -41,6 +41,11 @@ INVALID_IDENTIFIERS: list[str] = [
 ]
 
 
+_OSPARC_VARIABLE_IDENTIFIER_ADAPTER: TypeAdapter[
+    OsparcVariableIdentifier
+] = TypeAdapter(OsparcVariableIdentifier)
+
+
 @pytest.fixture(params=VALID_IDENTIFIERS)
 def osparc_variable_identifier_str(request: pytest.FixtureRequest) -> str:
     return request.param
@@ -50,7 +55,7 @@ def osparc_variable_identifier_str(request: pytest.FixtureRequest) -> str:
 def identifier(
     osparc_variable_identifier_str: str,
 ) -> OsparcVariableIdentifier:
-    return TypeAdapter(OsparcVariableIdentifier).validate_python(
+    return _OSPARC_VARIABLE_IDENTIFIER_ADAPTER.validate_python(
         osparc_variable_identifier_str
     )
 
@@ -58,7 +63,7 @@ def identifier(
 @pytest.mark.parametrize("invalid_var_name", INVALID_IDENTIFIERS)
 def test_osparc_variable_identifier_does_not_validate(invalid_var_name: str):
     with pytest.raises(ValidationError):
-        TypeAdapter(OsparcVariableIdentifier).validate_python(invalid_var_name)
+        _OSPARC_VARIABLE_IDENTIFIER_ADAPTER.validate_python(invalid_var_name)
 
 
 def test_raise_if_unresolved(identifier: OsparcVariableIdentifier):
@@ -78,17 +83,17 @@ class Example(BaseModel):
 @pytest.mark.parametrize(
     "object_template",
     [
-        TypeAdapter(OsparcVariableIdentifier).validate_python("$OSPARC_VARIABLE_1"),
-        [TypeAdapter(OsparcVariableIdentifier).validate_python("$OSPARC_VARIABLE_1")],
-        (TypeAdapter(OsparcVariableIdentifier).validate_python("$OSPARC_VARIABLE_1"),),
-        {TypeAdapter(OsparcVariableIdentifier).validate_python("$OSPARC_VARIABLE_1")},
+        _OSPARC_VARIABLE_IDENTIFIER_ADAPTER.validate_python("$OSPARC_VARIABLE_1"),
+        [_OSPARC_VARIABLE_IDENTIFIER_ADAPTER.validate_python("$OSPARC_VARIABLE_1")],
+        (_OSPARC_VARIABLE_IDENTIFIER_ADAPTER.validate_python("$OSPARC_VARIABLE_1"),),
+        {_OSPARC_VARIABLE_IDENTIFIER_ADAPTER.validate_python("$OSPARC_VARIABLE_1")},
         {
-            "test": TypeAdapter(OsparcVariableIdentifier).validate_python(
+            "test": _OSPARC_VARIABLE_IDENTIFIER_ADAPTER.validate_python(
                 "$OSPARC_VARIABLE_1"
             )
         },
         Example(
-            nested_objects=TypeAdapter(OsparcVariableIdentifier).validate_python(
+            nested_objects=_OSPARC_VARIABLE_IDENTIFIER_ADAPTER.validate_python(
                 "$OSPARC_VARIABLE_1"
             )
         ),
@@ -155,7 +160,7 @@ def test_osparc_variable_name_and_default_value(
     expected_osparc_variable_name: str,
     expected_default_value: str | None,
 ):
-    osparc_variable_identifer = TypeAdapter(OsparcVariableIdentifier).validate_python(
+    osparc_variable_identifer = _OSPARC_VARIABLE_IDENTIFIER_ADAPTER.validate_python(
         str_identifier
     )
     assert osparc_variable_identifer.name == expected_osparc_variable_name

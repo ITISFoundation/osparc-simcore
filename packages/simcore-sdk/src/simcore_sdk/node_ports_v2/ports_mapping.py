@@ -9,9 +9,8 @@ from .port import Port
 
 class BasePortsMapping(RootModel[dict[ServicePortKey, Port]]):
     def __getitem__(self, key: int | ServicePortKey) -> Port:
-        if isinstance(key, int):
-            if key < len(self.root):
-                key = list(self.root.keys())[key]
+        if isinstance(key, int) and key < len(self.root):
+            key = list(self.root.keys())[key]
         if key not in self.root:
             raise UnboundPortError(key)
         assert isinstance(key, str)  # nosec

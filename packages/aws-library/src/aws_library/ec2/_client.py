@@ -41,7 +41,7 @@ class SimcoreEC2API:
         session = aioboto3.Session()
         session_client = session.client(
             "ec2",
-            endpoint_url=str(settings.EC2_ENDPOINT),
+            endpoint_url=settings.EC2_ENDPOINT,
             aws_access_key_id=settings.EC2_ACCESS_KEY_ID,
             aws_secret_access_key=settings.EC2_SECRET_ACCESS_KEY,
             region_name=settings.EC2_REGION_NAME,

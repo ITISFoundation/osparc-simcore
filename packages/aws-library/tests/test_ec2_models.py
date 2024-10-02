@@ -110,12 +110,12 @@ def test_resources_create_as_empty():
         (
             Resources(cpus=0, ram=ByteSize(34)),
             Resources(cpus=1, ram=ByteSize(0)),
-            Resources.construct(cpus=-1, ram=ByteSize(34)),
+            Resources.model_construct(cpus=-1, ram=ByteSize(34)),
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(34)),
             Resources(cpus=1, ram=ByteSize(1)),
-            Resources.construct(cpus=-0.9, ram=ByteSize(33)),
+            Resources.model_construct(cpus=-0.9, ram=ByteSize(33)),
         ),
     ],
 )

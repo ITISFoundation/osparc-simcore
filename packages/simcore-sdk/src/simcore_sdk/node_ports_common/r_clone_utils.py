@@ -12,6 +12,8 @@ from ._utils import BaseLogParser
 _logger = logging.getLogger(__name__)
 
 
+
+
 class _RCloneSyncMessageBase(BaseModel):
     level: str = Field(..., description="log level")
     msg: str

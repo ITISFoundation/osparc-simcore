@@ -23,6 +23,8 @@ from ...long_running_tasks._models import (
 
 DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
 
+_ANY_HTTP_URL_ADAPTER: TypeAdapter[AnyHttpUrl] = TypeAdapter(AnyHttpUrl)
+
 logger = logging.getLogger(__name__)
 
 
@@ -129,10 +131,9 @@ class Client:
         return output
 
     def _get_url(self, path: str) -> AnyHttpUrl:
-        output: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(
+        return _ANY_HTTP_URL_ADAPTER.validate_python(
             f"{self._base_url}{self._client_configuration.router_prefix}{path}",
         )
-        return output
 
     @retry_on_http_errors
     async def get_task_status(

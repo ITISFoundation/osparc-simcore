@@ -9,7 +9,7 @@ from .basic_types import VersionTag
 
 class PrometheusSettings(BaseCustomSettings, MixinServiceSettings):
     PROMETHEUS_URL: AnyUrl
-    PROMETHEUS_VTAG: VersionTag = VersionTag("v1")
+    PROMETHEUS_VTAG: VersionTag = "v1"
     PROMETHEUS_USERNAME: str | None = None
     PROMETHEUS_PASSWORD: SecretStr | None = None
 

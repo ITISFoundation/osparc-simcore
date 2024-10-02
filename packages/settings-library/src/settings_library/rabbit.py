@@ -1,6 +1,5 @@
 from functools import cached_property
 
-from pydantic import TypeAdapter
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
 
@@ -15,7 +14,7 @@ class RabbitDsn(AnyUrl):
 class RabbitSettings(BaseCustomSettings):
     # host
     RABBIT_HOST: str
-    RABBIT_PORT: PortInt = TypeAdapter(PortInt).validate_python(5672)
+    RABBIT_PORT: PortInt = 5672
     RABBIT_SECURE: bool
 
     # auth

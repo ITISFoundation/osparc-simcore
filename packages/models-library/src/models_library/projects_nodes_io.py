@@ -6,16 +6,15 @@
         - Link to another port: PortLink
 """
 
-import re
 from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
 from models_library.basic_types import ConstrainedStr, KeyIDStr
 from pydantic import (
-    AfterValidator,
     AnyUrl,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     StringConstraints,
@@ -46,13 +45,16 @@ SimcoreS3FileID: TypeAlias = Annotated[
 ]
 
 
+_ANY_URL_ADAPTER: TypeAdapter[AnyUrl] = TypeAdapter(AnyUrl)
+
+
 class SimcoreS3DirectoryID(ConstrainedStr):
     """
     A simcore directory has the following structure:
         `{project_id}/{node_id}/simcore-dir-name/`
     """
 
-    pattern: re.Pattern[str] | None = re.compile(SIMCORE_S3_DIRECTORY_ID_RE)
+    pattern: str = SIMCORE_S3_DIRECTORY_ID_RE
 
     @staticmethod
     def _get_parent(s3_object: str, *, parent_index: int) -> str:
@@ -123,9 +125,9 @@ class PortLink(BaseModel):
 class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
-    download_link: Annotated[AnyUrl, AfterValidator(str)] = Field(
-        ..., alias="downloadLink"
-    )
+    download_link: Annotated[
+        str, BeforeValidator(lambda x: str(_ANY_URL_ADAPTER.validate_python(x)))
+    ] = Field(..., alias="downloadLink")
     label: str | None = Field(default=None, description="Display name")
     model_config = ConfigDict(
         extra="forbid",

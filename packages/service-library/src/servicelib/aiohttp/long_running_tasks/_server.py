@@ -28,6 +28,8 @@ from ._error_handlers import base_long_running_error_handler
 
 _logger = logging.getLogger(__name__)
 
+_ANY_HTTP_URL_ADAPTER: TypeAdapter[AnyHttpUrl] = TypeAdapter(AnyHttpUrl)
+
 
 def no_ops_decorator(handler: Handler):
     return handler
@@ -67,14 +69,14 @@ async def start_long_running_task(
         ip_addr, port = request_.transport.get_extra_info(
             "sockname"
         )  # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
-        status_url = TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{ip_addr}:{port}{request_.app.router['get_task_status'].url_for(task_id=task_id)}"
+        status_url = _ANY_HTTP_URL_ADAPTER.validate_python(
+            f"http://{ip_addr}:{port}{request_.app.router['get_task_status'].url_for(task_id=task_id)}"  # NOSONAR
         )
-        result_url = TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{ip_addr}:{port}{request_.app.router['get_task_result'].url_for(task_id=task_id)}"
+        result_url = _ANY_HTTP_URL_ADAPTER.validate_python(
+            f"http://{ip_addr}:{port}{request_.app.router['get_task_result'].url_for(task_id=task_id)}"  # NOSONAR
         )
-        abort_url = TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{ip_addr}:{port}{request_.app.router['cancel_and_delete_task'].url_for(task_id=task_id)}"
+        abort_url = _ANY_HTTP_URL_ADAPTER.validate_python(
+            f"http://{ip_addr}:{port}{request_.app.router['cancel_and_delete_task'].url_for(task_id=task_id)}"  # NOSONAR
         )
         task_get = TaskGet(
             task_id=task_id,

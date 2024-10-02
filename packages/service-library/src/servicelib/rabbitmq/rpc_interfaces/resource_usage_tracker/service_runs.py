@@ -28,6 +28,8 @@ _logger = logging.getLogger(__name__)
 
 _DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 20
 
+_RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName)
+
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def get_service_run_page(
@@ -44,7 +46,7 @@ async def get_service_run_page(
 ) -> ServiceRunPage:
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_service_run_page"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_service_run_page"),
         user_id=user_id,
         product_name=product_name,
         limit=limit,
@@ -74,7 +76,7 @@ async def get_osparc_credits_aggregated_usages_page(
 ) -> OsparcCreditsAggregatedUsagesPage:
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python(
+        _RPC_METHOD_NAME_ADAPTER.validate_python(
             "get_osparc_credits_aggregated_usages_page"
         ),
         user_id=user_id,
@@ -104,7 +106,7 @@ async def export_service_runs(
 ) -> AnyUrl:
     result: AnyUrl = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("export_service_runs"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("export_service_runs"),
         user_id=user_id,
         product_name=product_name,
         wallet_id=wallet_id,

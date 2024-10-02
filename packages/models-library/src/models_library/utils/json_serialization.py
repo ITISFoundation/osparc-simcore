@@ -56,8 +56,8 @@ def decimal_encoder(dec_value: Decimal) -> int | float:
     """
     if dec_value.as_tuple().exponent >= 0:  # type: ignore[operator]
         return int(dec_value)
-    else:
-        return float(dec_value)
+
+    return float(dec_value)
 
 
 ENCODERS_BY_TYPE: dict[type[Any], Callable[[Any], Any]] = {
@@ -95,7 +95,8 @@ def pydantic_encoder(obj: Any) -> Any:
 
     if isinstance(obj, BaseModel):
         return obj.model_dump()
-    elif is_dataclass(obj):
+
+    if is_dataclass(obj):
         return asdict(obj)  # type: ignore[call-overload]
 
     # Check the class type and its superclasses for a matching encoder

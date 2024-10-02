@@ -49,14 +49,16 @@ class SimcoreSSMAPI:
         session = aioboto3.Session()
         session_client = session.client(
             "ssm",
-            endpoint_url=str(settings.SSM_ENDPOINT),
+            endpoint_url=settings.SSM_ENDPOINT,
             aws_access_key_id=settings.SSM_ACCESS_KEY_ID.get_secret_value(),
             aws_secret_access_key=settings.SSM_SECRET_ACCESS_KEY.get_secret_value(),
             region_name=settings.SSM_REGION_NAME,
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
-        ec2_client = cast(SSMClient, await exit_stack.enter_async_context(session_client))
+        ec2_client = cast(
+            SSMClient, await exit_stack.enter_async_context(session_client)
+        )
         return cls(ec2_client, session, exit_stack)
 
     async def close(self) -> None:
