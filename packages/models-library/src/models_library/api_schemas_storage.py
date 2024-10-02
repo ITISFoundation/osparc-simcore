@@ -8,12 +8,10 @@
 
 from datetime import datetime
 from enum import Enum
-from functools import partial
 from typing import Annotated, Any, TypeAlias
 from uuid import UUID
 
 from pydantic import (
-    AfterValidator,
     BaseModel,
     ByteSize,
     ConfigDict,
@@ -26,7 +24,7 @@ from pydantic import (
 )
 from pydantic.networks import AnyUrl
 
-from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE, validate_re
+from .basic_regex import DATCORE_DATASET_NAME_RE, S3_BUCKET_NAME_RE
 from .basic_types import SHA256Str
 from .generics import ListModel
 from .projects_nodes_io import (
@@ -39,9 +37,7 @@ from .projects_nodes_io import (
 
 ETag: TypeAlias = str
 
-S3BucketName: TypeAlias = Annotated[
-    str, AfterValidator(partial(validate_re, S3_BUCKET_NAME_RE))
-]
+S3BucketName: TypeAlias = Annotated[str, StringConstraints(pattern=S3_BUCKET_NAME_RE)]
 
 DatCoreDatasetName: TypeAlias = Annotated[
     str, StringConstraints(pattern=DATCORE_DATASET_NAME_RE)

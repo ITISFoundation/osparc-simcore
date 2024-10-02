@@ -6,7 +6,6 @@
         - Link to another port: PortLink
 """
 
-import re
 from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID
@@ -52,7 +51,7 @@ class SimcoreS3DirectoryID(ConstrainedStr):
         `{project_id}/{node_id}/simcore-dir-name/`
     """
 
-    pattern: re.Pattern[str] | None = re.compile(SIMCORE_S3_DIRECTORY_ID_RE)
+    pattern: str = SIMCORE_S3_DIRECTORY_ID_RE
 
     @staticmethod
     def _get_parent(s3_object: str, *, parent_index: int) -> str:

@@ -50,13 +50,6 @@ class TaskProgressEvent(BaseTaskEvent):
             task_owner=task_owner,
         )
 
-    @field_validator("progress")
-    @classmethod
-    def ensure_between_0_1(cls, v):
-        if 0 <= v <= 1:
-            return v
-        return min(max(0, v), 1)
-
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
@@ -85,6 +78,13 @@ class TaskProgressEvent(BaseTaskEvent):
             ]
         }
     )
+
+    @field_validator("progress")
+    @classmethod
+    def ensure_between_0_1(cls, v):
+        if 0 <= v <= 1:
+            return v
+        return min(max(0, v), 1)
 
 
 LogMessageStr: TypeAlias = str

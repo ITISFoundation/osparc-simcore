@@ -12,8 +12,7 @@ def get_type(info: FieldInfo) -> Any:
 
 
 def is_literal(info: FieldInfo) -> bool:
-    origin = get_origin(info.annotation)
-    return origin is Literal
+    return get_origin(info.annotation) is Literal
 
 
 def is_nullable(info: FieldInfo) -> bool:
