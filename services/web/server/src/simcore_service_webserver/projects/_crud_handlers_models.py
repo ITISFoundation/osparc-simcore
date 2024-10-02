@@ -166,10 +166,10 @@ class ProjectListFullSearchParams(PageQueryParameters, ProjectListWithOrderByPar
         max_length=100,
         example="My Project",
     )
-    tag_id: int | list[int] | None = Field(
+    tag_ids: str | None = Field(
         default=None,
-        description="Search by tag id (multiple tag id parameters might be provided)",
-        example="1",
+        description="Search by tag ID (multiple tag IDs may be provided separated by column)",
+        example="1,3",
     )
 
     _empty_is_none = validator("text", allow_reuse=True, pre=True)(

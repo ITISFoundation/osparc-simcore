@@ -236,6 +236,7 @@ async def list_projects_full_search(request: web.Request):
     query_params: ProjectListFullSearchParams = parse_request_query_parameters_as(
         ProjectListFullSearchParams, request
     )
+    tag_ids_list = list(map(int, query_params.tag_ids.split(",")))
 
     projects, total_number_of_projects = await _crud_api_read.list_projects_full_search(
         request,
@@ -245,7 +246,7 @@ async def list_projects_full_search(request: web.Request):
         offset=query_params.offset,
         text=query_params.text,
         order_by=query_params.order_by,
-        tag_id=query_params.tag_id,
+        tag_ids_list=tag_ids_list,
     )
 
     page = Page[ProjectDict].parse_obj(

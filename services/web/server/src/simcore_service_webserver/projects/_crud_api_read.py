@@ -151,15 +151,8 @@ async def list_projects_full_search(
     limit: int,
     text: str | None,
     order_by: OrderBy,
-    tag_id: int | list[int] | None,
+    tag_ids_list: list[int] | None,
 ) -> tuple[list[ProjectDict], int]:
-    if tag_id is None:
-        tag_ids = []
-    elif isinstance(tag_id, int):
-        tag_ids = [tag_id]
-    elif isinstance(tag_id, list):
-        tag_ids = tag_id
-
     db = ProjectDBAPI.get_from_app_context(request.app)
 
     user_available_services: list[dict] = await get_services_for_user_in_product(
@@ -178,7 +171,7 @@ async def list_projects_full_search(
         offset=offset,
         limit=limit,
         order_by=order_by,
-        tag_ids=tag_ids,
+        tag_ids_list=tag_ids_list,
     )
 
     projects: list[ProjectDict] = await logged_gather(

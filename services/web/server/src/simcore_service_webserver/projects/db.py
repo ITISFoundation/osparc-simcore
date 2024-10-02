@@ -499,7 +499,7 @@ class ProjectDBAPI(BaseProjectDB):
         text: str | None = None,
         offset: int | None = 0,
         limit: int | None = None,
-        tag_ids: list[int],
+        tag_ids_list: list[int] | None,
         order_by: OrderBy = OrderBy(
             field=IDStr("last_change_date"), direction=OrderDirection.DESC
         ),
@@ -580,12 +580,12 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             )
 
-            if tag_ids:
+            if tag_ids_list:
                 private_workspace_query = private_workspace_query.where(
                     sa.func.coalesce(
                         project_tags_subquery.c.tags,
                         sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
-                    ).op("@>")(tag_ids)
+                    ).op("@>")(tag_ids_list)
                 )
 
             shared_workspace_query = (
@@ -638,12 +638,12 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             )
 
-            if tag_ids:
+            if tag_ids_list:
                 shared_workspace_query = shared_workspace_query.where(
                     sa.func.coalesce(
                         project_tags_subquery.c.tags,
                         sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
-                    ).op("@>")(tag_ids)
+                    ).op("@>")(tag_ids_list)
                 )
 
             combined_query = sa.union_all(
