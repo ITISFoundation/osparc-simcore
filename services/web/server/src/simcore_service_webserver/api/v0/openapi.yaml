@@ -11931,6 +11931,9 @@ components:
           title: Color
           pattern: ^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$
           type: string
+        priority:
+          title: Priority
+          type: integer
     TagGet:
       title: TagGet
       required:
@@ -12020,6 +12023,9 @@ components:
           title: Color
           pattern: ^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$
           type: string
+        priority:
+          title: Priority
+          type: integer
     TaskCounts:
       title: TaskCounts
       type: object
