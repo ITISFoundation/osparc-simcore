@@ -4,10 +4,11 @@
 services:
 
   s4l-manual:
-    image: containous/whoami  # TODO: repplace with something coming from env vars
+    image: ${VENDOR_MANUAL_IMAGE}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     deploy:
+      replicas: ${VENDOR_MANUAL_REPLICAS}
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         - traefik.enable=true
@@ -23,7 +24,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_manual.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.routers.${SWARM_STACK_NAME}_manual.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_manual.priority=10
-        - traefik.http.routers.${SWARM_STACK_NAME}_manual.rule=HostRegexp(`s4l\.manual\.(?P<host>.+)`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_manual.rule=HostRegexp(`${VENDOR_MANUAL_SUBDOMAIN}\.(?P<host>.+)`)
         - traefik.http.routers.${SWARM_STACK_NAME}_manual.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME}_manual-auth
     networks:
       - simcore_default
