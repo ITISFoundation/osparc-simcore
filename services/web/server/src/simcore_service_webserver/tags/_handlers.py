@@ -46,6 +46,10 @@ def _handle_tags_exceptions(handler: Handler):
 
 routes = web.RouteTableDef()
 
+#
+# tags CRUD standard operations
+#
+
 
 @routes.post(f"/{VTAG}/tags", name="create_tag")
 @login_required
@@ -117,6 +121,11 @@ async def list_tag_groups(request: web.Request):
     assert envelope_json_response(parse_obj_as(list[TagGroupGet], []))
 
     raise NotImplementedError
+
+
+#
+# tags ACCESS RIGHTS is exposed as a sub-resource groups
+#
 
 
 @routes.post(f"/{VTAG}/tags/{{tag_id}}/groups/{{group_id}}", name="create_tag_group")
