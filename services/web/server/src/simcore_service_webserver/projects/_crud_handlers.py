@@ -236,7 +236,10 @@ async def list_projects_full_search(request: web.Request):
     query_params: ProjectListFullSearchParams = parse_request_query_parameters_as(
         ProjectListFullSearchParams, request
     )
-    tag_ids_list = list(map(int, query_params.tag_ids.split(",")))
+    if query_params.tag_ids:
+        tag_ids_list = list(map(int, query_params.tag_ids.split(",")))
+    else:
+        tag_ids_list = []
 
     projects, total_number_of_projects = await _crud_api_read.list_projects_full_search(
         request,

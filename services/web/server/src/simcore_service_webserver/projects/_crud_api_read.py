@@ -151,7 +151,7 @@ async def list_projects_full_search(
     limit: int,
     text: str | None,
     order_by: OrderBy,
-    tag_ids_list: list[int] | None,
+    tag_ids_list: list[int],
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(request.app)
 

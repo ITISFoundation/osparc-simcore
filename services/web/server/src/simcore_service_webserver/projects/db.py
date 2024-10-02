@@ -499,7 +499,7 @@ class ProjectDBAPI(BaseProjectDB):
         text: str | None = None,
         offset: int | None = 0,
         limit: int | None = None,
-        tag_ids_list: list[int] | None,
+        tag_ids_list: list[int],
         order_by: OrderBy = OrderBy(
             field=IDStr("last_change_date"), direction=OrderDirection.DESC
         ),
