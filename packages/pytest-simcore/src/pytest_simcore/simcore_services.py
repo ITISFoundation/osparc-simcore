@@ -30,7 +30,6 @@ log = logging.getLogger(__name__)
 _SERVICES_TO_SKIP = {
     "agent",  # global mode deploy (NO exposed ports, has http API)
     "dask-sidecar",  # global mode deploy (NO exposed ports, **NO** http API)
-    "manual",
     "migration",
     "postgres",
     "rabbit",
