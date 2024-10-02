@@ -1,14 +1,18 @@
-from pydantic import AnyHttpUrl, Field
+from typing import Annotated
+
+from pydantic import AnyHttpUrl, BeforeValidator, Field, TypeAdapter
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
 
+ANY_HTTP_URL_ADAPTER: TypeAdapter = TypeAdapter(AnyHttpUrl)
+
 
 class EC2Settings(BaseCustomSettings):
     EC2_ACCESS_KEY_ID: str
-    EC2_ENDPOINT: AnyHttpUrl | None = Field(
-        default=None, description="do not define if using standard AWS"
-    )
+    EC2_ENDPOINT: Annotated[
+        str, BeforeValidator(lambda x: str(ANY_HTTP_URL_ADAPTER.validate_python(x)))
+    ] | None = Field(default=None, description="do not define if using standard AWS")
     EC2_REGION_NAME: str = "us-east-1"
     EC2_SECRET_ACCESS_KEY: str
 
