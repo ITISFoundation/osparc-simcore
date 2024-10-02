@@ -25,6 +25,8 @@ _logger = logging.getLogger(__name__)
 
 _DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 20
 
+_RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName)
+
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def get_pricing_unit(
@@ -36,7 +38,7 @@ async def get_pricing_unit(
 ) -> PricingUnitGet:
     result: PricingUnitGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_pricing_unit"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_pricing_unit"),
         product_name=product_name,
         pricing_plan_id=pricing_plan_id,
         pricing_unit_id=pricing_unit_id,
@@ -55,7 +57,7 @@ async def create_pricing_unit(
 ) -> PricingUnitGet:
     result: PricingUnitGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("create_pricing_unit"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("create_pricing_unit"),
         product_name=product_name,
         data=data,
         timeout_s=_DEFAULT_TIMEOUT_S,
@@ -73,7 +75,7 @@ async def update_pricing_unit(
 ) -> PricingUnitGet:
     result: PricingUnitGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("update_pricing_unit"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("update_pricing_unit"),
         product_name=product_name,
         data=data,
         timeout_s=_DEFAULT_TIMEOUT_S,
