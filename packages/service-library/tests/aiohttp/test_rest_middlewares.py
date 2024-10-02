@@ -239,7 +239,7 @@ async def test_raised_unhandled_exception(
 
     # - log sufficient information to diagnose the issue
     #
-    # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:75 Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience! [OEC:128594540599840].
+    # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:75 We apologize ... [OEC:128594540599840].
     # {
     # "exception_details": "Unexpected error",
     # "error_code": "OEC:128594540599840",

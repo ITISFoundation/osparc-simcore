@@ -31,7 +31,7 @@ from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 
 DEFAULT_API_VERSION = "v0"
-FMSG_INTERNAL_ERROR_USER_FRIENDLY = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience! [{}]"
+FMSG_INTERNAL_ERROR_USER_FRIENDLY = "We apologize for the inconvenience. Our team has recorded the issue and is working to resolve it as quickly as possible. Thank you for your patience [{}]"
 
 
 _logger = logging.getLogger(__name__)
