@@ -303,7 +303,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     reloadCards: function(resourceType) {
       this.__cleanAll();
-      this.__addFoldersContainer();
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        this.__addFoldersContainer();
+      }
       if (this.getGroupBy()) {
         const noGroupContainer = this.__createGroupContainer("no-group", "No Group", "transparent");
         this.__groupedContainers.add(noGroupContainer);

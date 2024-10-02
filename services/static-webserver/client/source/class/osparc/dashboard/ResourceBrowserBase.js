@@ -285,12 +285,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("folderSelected", e => {
         const folderId = e.getData();
         this._folderSelected(folderId);
-        this._resourceFilter.folderSelected(folderId);
       }, this);
       resourcesContainer.addListener("workspaceSelected", e => {
         const workspaceId = e.getData();
         this._workspaceSelected(workspaceId);
-        this._resourceFilter.workspaceSelected(workspaceId);
       }, this);
       resourcesContainer.addListener("workspaceUpdated", e => this._workspaceUpdated(e.getData()));
       resourcesContainer.addListener("deleteWorkspaceRequested", e => this._deleteWorkspaceRequested(e.getData()));
@@ -394,34 +392,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
 
       resourceFilter.addListener("changeSharedWith", e => {
-        if (this._resourceType === "study") {
-          this.setCurrentWorkspaceId(null);
-        }
         const sharedWith = e.getData();
         this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
-      }, this);
-
-      if (this._resourceType === "study" && osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const workspacesAndFoldersTree = resourceFilter.getWorkspacesAndFoldersTree();
-        workspacesAndFoldersTree.getSelection().addListener("change", () => {
-          const selection = workspacesAndFoldersTree.getSelection();
-          if (selection.getLength() > 0) {
-            const item = selection.getItem(0);
-            const workspaceId = item.getWorkspaceId();
-            const folderId = item.getFolderId();
-            this._changeContext(workspaceId, folderId);
-          }
-        }, this);
-        this.bind("currentWorkspaceId", workspacesAndFoldersTree, "currentWorkspaceId");
-        this.bind("currentFolderId", workspacesAndFoldersTree, "currentFolderId");
-      }
-
-      resourceFilter.addListener("changeWorkspace", e => {
-        const workspaceId = e.getData();
-        this.setCurrentWorkspaceId(workspaceId);
-        if (this._resourceType === "study") {
-          this._searchBarFilter.resetSharedWithActiveFilter();
-        }
       }, this);
 
       resourceFilter.addListener("changeSelectedTags", e => {
@@ -511,10 +483,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _deleteResourceRequested: function(resourceId) {
-      throw new Error("Abstract method called!");
-    },
-
-    _changeContext: function(workspaceId, folderId) {
       throw new Error("Abstract method called!");
     },
 

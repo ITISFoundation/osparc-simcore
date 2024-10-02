@@ -76,10 +76,24 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const workspace = e.getData();
       this.__removeWorkspace(workspace);
     }, this);
+
+    this.getSelection().addListener("change", () => {
+      const selection = this.getSelection();
+      if (selection.getLength() > 0) {
+        const item = selection.getItem(0);
+        const workspaceId = item.getWorkspaceId();
+        const folderId = item.getFolderId();
+        this.fireDataEvent("contextChanged", {
+          workspaceId,
+          folderId,
+        });
+      }
+    }, this);
   },
 
   events: {
     "openChanged": "qx.event.type.Event",
+    "contextChanged": "qx.event.type.Data",
   },
 
   properties: {
@@ -87,14 +101,12 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeCurrentWorkspaceId",
     },
 
     currentFolderId: {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeCurrentFolderId",
     },
   },
 

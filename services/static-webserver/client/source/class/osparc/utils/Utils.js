@@ -287,27 +287,27 @@ qx.Class.define("osparc.utils.Utils", {
       return title;
     },
 
-    checkIsOnScreen: function(elem) {
-      const isInViewport = element => {
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          const html = document.documentElement;
-          return (
-            rect.width > 0 &&
-            rect.height > 0 &&
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            // a bit of tolerance to deal with zooming factors
-            rect.bottom*0.95 <= (window.innerHeight || html.clientHeight) &&
-            rect.right*0.95 <= (window.innerWidth || html.clientWidth)
-          );
-        }
-        return false;
-      };
+    isElementOnScreen: function(element) {
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        const html = document.documentElement;
+        return (
+          rect.width > 0 &&
+          rect.height > 0 &&
+          rect.top >= 0 &&
+          rect.left >= 0 &&
+          // a bit of tolerance to deal with zooming factors
+          rect.bottom*0.95 <= (window.innerHeight || html.clientHeight) &&
+          rect.right*0.95 <= (window.innerWidth || html.clientWidth)
+        );
+      }
+      return false;
+    },
 
-      const domElem = elem.getContentElement().getDomElement();
-      const checkIsOnScreen = isInViewport(domElem);
-      return checkIsOnScreen;
+    isWidgetOnScreen: function(widget) {
+      const domElem = widget.getContentElement().getDomElement();
+      const isWidgetOnScreen = this.isElementOnScreen(domElem);
+      return isWidgetOnScreen;
     },
 
     growSelectBox: function(selectBox, maxWidth) {

@@ -26,6 +26,10 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
     }));
   },
 
+  events: {
+    "contextChanged": "qx.event.type.Data",
+  },
+
   properties: {
     currentWorkspaceId: {
       check: "Number",
@@ -89,6 +93,10 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
       this.set({
         currentWorkspaceId: workspaceId,
         currentFolderId: folderId,
+      });
+      this.fireDataEvent("contextChanged", {
+        workspaceId,
+        folderId,
       });
     },
 
