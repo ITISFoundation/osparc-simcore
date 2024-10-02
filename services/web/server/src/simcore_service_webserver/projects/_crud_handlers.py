@@ -246,7 +246,7 @@ async def list_projects_full_search(request: web.Request):
         try:
             tag_ids_list = list(map(int, query_params.tag_ids.split(",")))
             parse_obj_as(list[int], tag_ids_list)
-        except ValidationError as exc:
+        except (ValidationError, ValueError) as exc:
             raise WrongTagIdsInQueryError from exc
     else:
         tag_ids_list = []
