@@ -1,15 +1,17 @@
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
 
 from models_library import projects, projects_nodes_io
 from models_library.utils import pydantic_tools_extension
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import AnyUrl, BaseModel, BeforeValidator, Field, TypeAdapter
 
 from .. import api_resources
 from . import solvers
 
 StudyID: TypeAlias = projects.ProjectID
 NodeName: TypeAlias = str
-DownloadLink: TypeAlias = AnyUrl
+DownloadLink: TypeAlias = Annotated[
+    str, BeforeValidator(lambda x: str(TypeAdapter(AnyUrl).validate_python(x)))
+]
 
 
 class Study(BaseModel):
