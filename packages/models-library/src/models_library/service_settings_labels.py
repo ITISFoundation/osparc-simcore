@@ -43,8 +43,7 @@ class ContainerSpec(BaseModel):
         max_length=2,
     )
 
-    model_config = ConfigDict(
-        **_BaseConfig,
+    model_config = _BaseConfig | ConfigDict(
         json_schema_extra={
             "examples": [
                 {"Command": ["executable"]},
@@ -102,8 +101,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
             return "Resources"
         return v
 
-    model_config = ConfigDict(
-        **_BaseConfig,
+    model_config = _BaseConfig | ConfigDict(
         populate_by_name=True,
         json_schema_extra={
             "examples": [
@@ -221,8 +219,7 @@ class PathMappingsLabel(BaseModel):
         output: str | None = v
         return output
 
-    model_config = ConfigDict(
-        **_BaseConfig,
+    model_config = _BaseConfig | ConfigDict(
         json_schema_extra={
             "examples": [
                 {

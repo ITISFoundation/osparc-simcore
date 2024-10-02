@@ -12,9 +12,9 @@ from uuid import UUID
 
 from models_library.basic_types import ConstrainedStr, KeyIDStr
 from pydantic import (
-    AfterValidator,
     AnyUrl,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     StringConstraints,
@@ -43,6 +43,9 @@ LocationName = str
 SimcoreS3FileID: TypeAlias = Annotated[
     str, StringConstraints(pattern=SIMCORE_S3_FILE_ID_RE)
 ]
+
+
+_ANY_URL_ADAPTER: TypeAdapter[AnyUrl] = TypeAdapter(AnyUrl)
 
 
 class SimcoreS3DirectoryID(ConstrainedStr):
@@ -122,9 +125,9 @@ class PortLink(BaseModel):
 class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
-    download_link: Annotated[AnyUrl, AfterValidator(str)] = Field(
-        ..., alias="downloadLink"
-    )
+    download_link: Annotated[
+        str, BeforeValidator(lambda x: str(_ANY_URL_ADAPTER.validate_python(x)))
+    ] = Field(..., alias="downloadLink")
     label: str | None = Field(default=None, description="Display name")
     model_config = ConfigDict(
         extra="forbid",

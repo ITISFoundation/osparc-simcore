@@ -310,7 +310,7 @@ FolderName: TypeAlias = Annotated[
 
 class FolderEntry(BaseModel):
     id: _FolderID
-    parent_folder: _FolderID | None = Field(None, alias="traversal_parent_id")
+    parent_folder: _FolderID | None = Field(alias="traversal_parent_id")
     name: str
     description: str
     owner: _GroupID = Field(alias="created_by")
