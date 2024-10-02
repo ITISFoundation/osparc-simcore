@@ -893,8 +893,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __changeContext: function(workspaceId, folderId) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         if (
-          this.getCurrentWorkspaceId() === workspaceId &&
-          this.getCurrentFolderId() === folderId
+          workspaceId !== -2 && // reload studies for a new search
+          workspaceId === this.getCurrentWorkspaceId() &&
+          folderId === this.getCurrentFolderId()
         ) {
           // didn't really change
           return;
