@@ -477,6 +477,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateNodeUIData: function(nodeUIData) {
+      // Check with Matus
+      // if ("position" in nodeUIData) {
       if (nodeUIData["position"]) {
         this.setPosition(nodeUIData.position);
       }
@@ -499,6 +501,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateStates: function(nodeData) {
+      // Check with Matus
+      // if ("progress" in nodeData) {
       if ("progress" in nodeData && nodeData["progress"] !== null) {
         const progress = Number.parseInt(nodeData["progress"]);
         const oldProgress = this.getStatus().getProgress();
