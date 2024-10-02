@@ -79,18 +79,27 @@ class ApplicationSettings(BasicSettings):
     # DOCKER BOOT
     SC_BOOT_MODE: BootModeEnum | None
 
-    API_SERVER_POSTGRES: PostgresSettings | None = Field(auto_default_from_env=True)
+    API_SERVER_POSTGRES: PostgresSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     API_SERVER_RABBITMQ: RabbitSettings | None = Field(
-        auto_default_from_env=True, description="settings for service/rabbitmq"
+        json_schema_extra={"auto_default_from_env": True},
+        description="settings for service/rabbitmq",
     )
 
     # SERVICES with http API
-    API_SERVER_WEBSERVER: WebServerSettings | None = Field(auto_default_from_env=True)
-    API_SERVER_CATALOG: CatalogSettings | None = Field(auto_default_from_env=True)
-    API_SERVER_STORAGE: StorageSettings | None = Field(auto_default_from_env=True)
+    API_SERVER_WEBSERVER: WebServerSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+    API_SERVER_CATALOG: CatalogSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+    API_SERVER_STORAGE: StorageSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
     API_SERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
     API_SERVER_LOG_CHECK_TIMEOUT_SECONDS: NonNegativeInt = 3 * 60
     API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True

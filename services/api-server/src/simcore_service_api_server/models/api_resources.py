@@ -1,7 +1,8 @@
+import re
 import urllib.parse
 from typing import Annotated, Any, TypeAlias
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, TypeAdapter
 from pydantic.types import StringConstraints
 
 # RESOURCE NAMES https://cloud.google.com/apis/design/resource_names
@@ -38,7 +39,7 @@ RelativeResourceName: TypeAlias = Annotated[
 
 
 def parse_last_resource_id(resource_name: RelativeResourceName) -> str:
-    if match := RelativeResourceName.regex.match(resource_name):
+    if match := re.match(_RELATIVE_RESOURCE_NAME_RE, resource_name):
         last_quoted_part = match.group(1)
         return urllib.parse.unquote_plus(last_quoted_part)
     msg = f"Invalid '{resource_name=}' does not match RelativeResourceName"
@@ -50,7 +51,7 @@ def compose_resource_name(*collection_or_resource_ids) -> RelativeResourceName:
         urllib.parse.quote_plus(f"{_id}".lstrip("/"))
         for _id in collection_or_resource_ids
     ]
-    return RelativeResourceName("/".join(quoted_parts))
+    return TypeAdapter(RelativeResourceName).validate_python("/".join(quoted_parts))
 
 
 def split_resource_name(resource_name: RelativeResourceName) -> list[str]:
