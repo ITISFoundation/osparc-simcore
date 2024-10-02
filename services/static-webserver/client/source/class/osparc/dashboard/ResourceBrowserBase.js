@@ -237,21 +237,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
 
-      if (this._resourceType === "study") {
-        this._searchBarFilter.addListener("filterChanged", e => {
-          const filterData = e.getData();
-          const tree = this._resourceFilter.getWorkspacesAndFoldersTree();
-          if (filterData.text) {
-            this._changeContext(-2, null);
-            tree.contextChanged(-2, null);
-          } else {
-            // Back to My Workspace
-            this._changeContext(null, null);
-            tree.contextChanged(null, null);
-          }
-        });
-      }
-
       this._addToLayout(searchBarFilter);
     },
 

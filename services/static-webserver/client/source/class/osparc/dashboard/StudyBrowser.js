@@ -878,6 +878,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const folderId = context["folderId"];
         this.__changeContext(workspaceId, folderId);
       }, this);
+
+      this._searchBarFilter.addListener("filterChanged", e => {
+        const filterData = e.getData();
+        if (filterData.text) {
+          this.__changeContext(-2, null);
+        } else {
+          // Back to My Workspace
+          this.__changeContext(null, null);
+        }
+      });
     },
 
     __changeContext: function(workspaceId, folderId) {
