@@ -5,7 +5,7 @@ from typing import TypedDict
 
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from .base_repo import pass_or_acquire_connection, transaction_context
+from .utils_repos import pass_or_acquire_connection, transaction_context
 from .utils_tags_sql import (
     count_users_with_access_rights_stmt,
     create_tag_stmt,
