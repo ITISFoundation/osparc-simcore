@@ -9,6 +9,7 @@ from models_library.services_resources import (
 )
 from pydantic import ByteSize
 from servicelib.common_headers import X_SIMCORE_USER_AGENT
+from settings_library import webserver
 
 from ....core.dynamic_services_settings import DynamicServicesSettings
 from ....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
@@ -42,6 +43,9 @@ def get_dynamic_proxy_spec(
     )
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
         dynamic_services_settings.DYNAMIC_SCHEDULER
+    )
+    webserver_settings: webserver.WebServerSettings = (
+        dynamic_services_settings.WEBSERVER_SETTINGS
     )
 
     mounts = [
@@ -91,7 +95,7 @@ def get_dynamic_proxy_spec(
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolmaxage": "100",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.addvaryheader": "true",
             # auth
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": "http://wb-api-server:8080/v0/auth:check",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": f"{webserver_settings.api_base_url}/auth:check",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.trustForwardHeader": "true",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.authResponseHeaders": "Set-Cookie,osparc-sc",
             # routing
