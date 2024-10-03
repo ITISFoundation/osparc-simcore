@@ -9,6 +9,11 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.error_codes import create_error_code
+from servicelib.logging_utils import (
+    create_troubleshotting_log_message,
+    get_log_record_extra,
+)
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -19,8 +24,13 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _api, api
+from ._constants import FMSG_MISSING_CONFIG_WITH_OEC
 from ._schemas import PreUserProfile
-from .exceptions import AlreadyPreRegisteredError, UserNotFoundError
+from .exceptions import (
+    AlreadyPreRegisteredError,
+    MissingGroupExtraPropertiesForProductError,
+    UserNotFoundError,
+)
 from .schemas import ProfileGet, ProfileUpdate
 
 _logger = logging.getLogger(__name__)
@@ -42,6 +52,25 @@ def _handle_users_exceptions(handler: Handler):
 
         except UserNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
+        except MissingGroupExtraPropertiesForProductError as exc:
+            error_code = create_error_code(exc)
+            frontend_msg = FMSG_MISSING_CONFIG_WITH_OEC.format(error_code)
+            log_msg = create_troubleshotting_log_message(
+                message_to_user=frontend_msg,
+                error=exc,
+                error_code=error_code,
+                error_context=exc.error_context(),
+                tip="Row in `groups_extra_properties` for this product is missing.",
+            )
+
+            _logger.exception(
+                log_msg,
+                extra=get_log_record_extra(
+                    error_code=error_code,
+                    user_id=exc.error_context().get("user_id", None),
+                ),
+            )
+            raise web.HTTPServiceUnavailable(reason=frontend_msg) from exc
 
     return wrapper
 
