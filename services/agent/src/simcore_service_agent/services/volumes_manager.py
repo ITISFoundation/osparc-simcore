@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat
 from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
     NoServiceVolumesFoundRPCError,
@@ -25,7 +26,7 @@ _WAIT_FOR_UNUSED_SERVICE_VOLUMES: Final[timedelta] = timedelta(minutes=1)
 
 
 @dataclass
-class VolumesManager:
+class VolumesManager(SingletonInAppStateMixin):
     app: FastAPI
     book_keeping_interval: timedelta
     volume_cleanup_interval: timedelta
@@ -38,6 +39,8 @@ class VolumesManager:
     _unused_volumes: dict[str, datetime] = field(default_factory=dict)
 
     _task_periodic_volume_cleanup: Task | None = None
+
+    app_state_name: str = "volumes_manager"
 
     async def setup(self) -> None:
         self._task_bookkeeping = start_periodic_task(
@@ -160,25 +163,24 @@ class VolumesManager:
 
 
 def get_volumes_manager(app: FastAPI) -> VolumesManager:
-    volumes_manager: VolumesManager = app.state.volumes_manager
-    return volumes_manager
+    return VolumesManager.get_from_app_state(app)
 
 
 def setup_volume_manager(app: FastAPI) -> None:
     async def _on_startup() -> None:
         settings: ApplicationSettings = app.state.settings
 
-        volumes_manager = app.state.volumes_manager = VolumesManager(
+        volumes_manager = VolumesManager(
             app=app,
             book_keeping_interval=settings.AGENT_VOLUMES_CLENUP_BOOK_KEEPING_INTERVAL,
             volume_cleanup_interval=settings.AGENT_VOLUMES_CLEANUP_INTERVAL,
             remove_volumes_inactive_for=settings.AGENT_VOLUMES_CLENUP_REMOVE_VOLUMES_INACTIVE_FOR.total_seconds(),
         )
+        volumes_manager.set_to_app_state(app)
         await volumes_manager.setup()
 
     async def _on_shutdown() -> None:
-        volumes_manager: VolumesManager = app.state.volumes_manager
-        await volumes_manager.shutdown()
+        await VolumesManager.get_from_app_state(app).shutdown()
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)

@@ -16,7 +16,7 @@ from pydantic import NonNegativeInt
 from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.services.backup import backup_volume
 from simcore_service_agent.services.docker_utils import get_volume_details
-from simcore_service_agent.services.volumes_manager import get_volumes_manager
+from simcore_service_agent.services.volumes_manager import VolumesManager
 from utils import VOLUMES_TO_CREATE
 
 pytest_simcore_core_services_selection = [
@@ -60,7 +60,8 @@ async def test_backup_volume(
 
     for volume in volumes:
         volume_details = await get_volume_details(
-            get_volumes_manager(initialized_app).docker, volume_name=volume
+            VolumesManager.get_from_app_state(initialized_app).docker,
+            volume_name=volume,
         )
         # root permissions are required to access the /var/docker data
         # overwriting with a mocked path for this test

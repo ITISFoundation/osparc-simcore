@@ -21,7 +21,7 @@ from simcore_service_agent.services.docker_utils import (
     get_volume_details,
     remove_volume,
 )
-from simcore_service_agent.services.volumes_manager import get_volumes_manager
+from simcore_service_agent.services.volumes_manager import VolumesManager
 from utils import VOLUMES_TO_CREATE, get_source
 
 pytest_simcore_core_services_selection = [
@@ -52,7 +52,7 @@ def test__does_volume_require_backup(
 
 @pytest.fixture
 def volumes_manager_docker_client(initialized_app: FastAPI) -> Docker:
-    volumes_manager = get_volumes_manager(initialized_app)
+    volumes_manager = VolumesManager.get_from_app_state(initialized_app)
     return volumes_manager.docker
 
 
