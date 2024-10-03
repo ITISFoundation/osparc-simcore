@@ -421,14 +421,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       // callback for events
       if (!socket.slotExists("serviceStatus")) {
         socket.on("serviceStatus", data => {
-          if (this.getStudy().getUuid() !== data["project_id"]) {
-            return;
-          }
           const nodeId = data["service_uuid"];
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
-          if (node && node.getIframeHandler()) {
-            node.getIframeHandler().onNodeState(data);
+          if (node) {
+            if (node.getIframeHandler()) {
+              node.getIframeHandler().onNodeState(data);
+            }
+          } else if (osparc.data.Permissions.getInstance().isTester()) {
+            console.log("Ignored ws 'progress' msg", data);
           }
         }, this);
       }
