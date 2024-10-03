@@ -14,13 +14,13 @@ services_tags = sa.Table(
         "service_key",
         sa.String,
         nullable=False,
-        doc="Service Key Identifier",
+        doc="Key name identifier for the service, without specifiying its versions",
     ),
     sa.Column(
         "service_version",
         sa.String,
         nullable=False,
-        doc="Service version",
+        doc="Version of the service. Combined with 'service_key', it forms a unique identifier for this service.",
     ),
     # Tag
     sa.Column(
@@ -28,6 +28,7 @@ services_tags = sa.Table(
         sa.BigInteger,
         sa.ForeignKey(tags.c.id, onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
+        doc="Identifier of the tag assigned to this specific service (service_key, service_version).",
     ),
     # Constraints
     sa.ForeignKeyConstraint(
