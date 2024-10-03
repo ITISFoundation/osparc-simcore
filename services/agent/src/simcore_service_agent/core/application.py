@@ -15,11 +15,11 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
+from ..api.rest.routes import setup_rest_api
+from ..api.rpc.routes import setup_rpc_api_routes
 from ..services.instrumentation import setup_instrumentation
 from ..services.rabbitmq import setup_rabbitmq
 from ..services.volumes_manager import setup_volume_manager
-from .api.rest.routes import setup_rest_api
-from .api.rpc.routes import setup_rpc_api_routes
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)

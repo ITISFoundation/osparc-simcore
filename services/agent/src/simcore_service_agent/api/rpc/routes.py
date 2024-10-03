@@ -3,7 +3,7 @@ from models_library.rabbitmq_basic_types import RPCNamespace
 from servicelib.rabbitmq import RPCRouter
 from simcore_service_agent.core.settings import ApplicationSettings
 
-from ....services.rabbitmq import get_rabbitmq_rpc_server
+from ...services.rabbitmq import get_rabbitmq_rpc_server
 from . import _volumes
 
 ROUTERS: list[RPCRouter] = [

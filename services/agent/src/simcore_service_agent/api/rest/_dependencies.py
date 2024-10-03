@@ -6,7 +6,7 @@ from typing import Annotated, cast
 from fastapi import Depends, FastAPI, Request
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
-from ...settings import ApplicationSettings
+from ...core.settings import ApplicationSettings
 
 
 def get_application(request: Request) -> FastAPI:
