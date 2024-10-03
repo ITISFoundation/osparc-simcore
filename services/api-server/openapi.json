@@ -1869,13 +1869,132 @@
         ]
       }
     },
+    "/v0/solvers/{solver_key}/releases/{version}/pricing_plan": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Solver Pricing Plan",
+        "description": "Gets solver pricing plan\n\nNew in *version 0.7*",
+        "operationId": "get_solver_pricing_plan",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Solver Key"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            },
+            "name": "version",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicePricingPlanGet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
     "/v0/solvers/{solver_key}/releases/{version}/jobs": {
       "get": {
         "tags": [
           "solvers"
         ],
         "summary": "List Jobs",
-        "description": "List of jobs in a specific released solver (limited to 20 jobs)\n\nSEE `get_jobs_page` for paginated version of this function",
+        "description": "List of jobs in a specific released solver (limited to 20 jobs)\n\nSEE `get_jobs_page` for paginated version of this function\nNOTE: This implementation and returned values are deprecated and the\n      will be replaced by that of get_jobs_page",
         "operationId": "list_jobs",
         "parameters": [
           {
@@ -1995,6 +2114,7 @@
             }
           }
         },
+        "deprecated": true,
         "security": [
           {
             "HTTPBasic": []
@@ -2080,6 +2200,275 @@
                 }
               }
             }
+          },
+          "402": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job/wallet/pricing details not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Job",
+        "description": "Gets job of a given solver",
+        "operationId": "get_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Solver Key"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job/wallet/pricing details not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Delete Job",
+        "description": "Deletes an existing solver job\n\nNew in *version 0.7*",
+        "operationId": "delete_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Solver Key"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "402": {
             "description": "Payment required",
@@ -2614,14 +3003,14 @@
         ]
       }
     },
-    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}": {
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/metadata": {
       "get": {
         "tags": [
           "solvers"
         ],
-        "summary": "Get Job",
-        "description": "Gets job of a given solver",
-        "operationId": "get_job",
+        "summary": "Get Job Custom Metadata",
+        "description": "Gets custom metadata from a job\n\nNew in *version 0.7*",
+        "operationId": "get_job_custom_metadata",
         "parameters": [
           {
             "required": true,
@@ -2660,7 +3049,286 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Job"
+                  "$ref": "#/components/schemas/JobMetadata"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metadata not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Replace Job Custom Metadata",
+        "description": "Updates custom metadata from a job\n\nNew in *version 0.7*",
+        "operationId": "replace_job_custom_metadata",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Solver Key"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobMetadataUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobMetadata"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Metadata not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/page": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Jobs Page",
+        "description": "List of jobs on a specific released solver (includes pagination)\n\nNew in *version 0.7*",
+        "operationId": "get_jobs_page",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Solver Key"
+            },
+            "name": "solver_key",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            },
+            "name": "version",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "default": 50
+            },
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "title": "Offset",
+              "default": 0
+            },
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Job_"
                 }
               }
             }
@@ -3965,6 +4633,221 @@
         ]
       }
     },
+    "/v0/wallets/default": {
+      "get": {
+        "tags": [
+          "wallets"
+        ],
+        "summary": "Get Default Wallet",
+        "description": "Get default wallet\n\nNew in *version 0.7*",
+        "operationId": "get_default_wallet",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletGetWithAvailableCredits"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Wallet not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access to wallet is not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
+    "/v0/wallets/{wallet_id}": {
+      "get": {
+        "tags": [
+          "wallets"
+        ],
+        "summary": "Get Wallet",
+        "description": "Get wallet\n\nNew in *version 0.7*",
+        "operationId": "get_wallet",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Wallet Id"
+            },
+            "name": "wallet_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletGetWithAvailableCredits"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Wallet not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access to wallet is not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
+      }
+    },
     "/v0/credits/price": {
       "get": {
         "tags": [
@@ -4438,6 +5321,79 @@
         ],
         "title": "JobLogsMap"
       },
+      "JobMetadata": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id",
+            "description": "Parent Job"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Metadata",
+            "description": "Custom key-value map"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Url",
+            "description": "Link to get this resource (self)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "metadata",
+          "url"
+        ],
+        "title": "JobMetadata"
+      },
+      "JobMetadataUpdate": {
+        "properties": {
+          "metadata": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Metadata",
+            "description": "Custom key-value map"
+          }
+        },
+        "type": "object",
+        "title": "JobMetadataUpdate"
+      },
       "JobOutputs": {
         "properties": {
           "job_id": {
@@ -4730,6 +5686,41 @@
         ],
         "title": "Page[File]"
       },
+      "Page_Job_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Job"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Offset"
+          },
+          "links": {
+            "$ref": "#/components/schemas/Links"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "links"
+        ],
+        "title": "Page[Job]"
+      },
       "Page_Study_": {
         "properties": {
           "items": {
@@ -4764,6 +5755,49 @@
           "links"
         ],
         "title": "Page[Study]"
+      },
+      "PricingPlanClassification": {
+        "type": "string",
+        "enum": [
+          "TIER"
+        ],
+        "title": "PricingPlanClassification",
+        "description": "An enumeration."
+      },
+      "PricingUnitGet": {
+        "properties": {
+          "pricingUnitId": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricingunitid",
+            "minimum": 0
+          },
+          "unitName": {
+            "type": "string",
+            "title": "Unitname"
+          },
+          "unitExtraInfo": {
+            "type": "object",
+            "title": "Unitextrainfo"
+          },
+          "currentCostPerUnit": {
+            "type": "number",
+            "title": "Currentcostperunit"
+          },
+          "default": {
+            "type": "boolean",
+            "title": "Default"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricingUnitId",
+          "unitName",
+          "unitExtraInfo",
+          "currentCostPerUnit",
+          "default"
+        ],
+        "title": "PricingUnitGet"
       },
       "Profile": {
         "properties": {
@@ -4866,6 +5900,54 @@
         ],
         "title": "RunningState",
         "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
+      },
+      "ServicePricingPlanGet": {
+        "properties": {
+          "pricingPlanId": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricingplanid",
+            "minimum": 0
+          },
+          "displayName": {
+            "type": "string",
+            "title": "Displayname"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "classification": {
+            "$ref": "#/components/schemas/PricingPlanClassification"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "pricingPlanKey": {
+            "type": "string",
+            "title": "Pricingplankey"
+          },
+          "pricingUnits": {
+            "items": {
+              "$ref": "#/components/schemas/PricingUnitGet"
+            },
+            "type": "array",
+            "title": "Pricingunits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricingPlanId",
+          "displayName",
+          "description",
+          "classification",
+          "createdAt",
+          "pricingPlanKey",
+          "pricingUnits"
+        ],
+        "title": "ServicePricingPlanGet"
       },
       "Solver": {
         "properties": {
@@ -5129,6 +6211,73 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WalletGetWithAvailableCredits": {
+        "properties": {
+          "walletId": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Walletid",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "owner": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Owner",
+            "minimum": 0
+          },
+          "thumbnail": {
+            "type": "string",
+            "title": "Thumbnail"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WalletStatus"
+          },
+          "created": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created"
+          },
+          "modified": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Modified"
+          },
+          "availableCredits": {
+            "type": "number",
+            "title": "Availablecredits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "walletId",
+          "name",
+          "owner",
+          "status",
+          "created",
+          "modified",
+          "availableCredits"
+        ],
+        "title": "WalletGetWithAvailableCredits"
+      },
+      "WalletStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "INACTIVE"
+        ],
+        "title": "WalletStatus",
+        "description": "An enumeration."
       }
     },
     "securitySchemes": {
