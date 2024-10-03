@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from settings_library.utils_r_clone import resolve_provider
 
 from ..core.settings import ApplicationSettings
-from .models import DynamicServiceVolumeLabels, VolumeDetails
+from ..models.volumes import DynamicServiceVolumeLabels, VolumeDetails
 
 _logger = logging.getLogger(__name__)
 

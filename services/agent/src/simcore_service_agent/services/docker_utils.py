@@ -15,9 +15,9 @@ from servicelib.logging_utils import log_catch, log_context
 from simcore_service_agent.core.settings import ApplicationSettings
 from starlette import status
 
+from ..models.volumes import VolumeDetails
 from .backup import backup_volume
 from .instrumentation import get_instrumentation
-from .models import VolumeDetails
 
 _logger = logging.getLogger(__name__)
 
