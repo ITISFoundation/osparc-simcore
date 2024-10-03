@@ -4,6 +4,9 @@ from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RPCRouter
+from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
+    NoServiceVolumesFoundRPCError,
+)
 from simcore_service_agent.services.volumes_manager import get_volumes_manager
 
 _logger = logging.getLogger(__name__)
@@ -11,7 +14,7 @@ _logger = logging.getLogger(__name__)
 router = RPCRouter()
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(NoServiceVolumesFoundRPCError,))
 async def remove_volumes_without_backup_for_service(
     app: FastAPI, *, node_id: NodeID
 ) -> None:
