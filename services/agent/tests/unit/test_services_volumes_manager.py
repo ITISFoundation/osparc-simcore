@@ -15,7 +15,9 @@ from aiodocker.docker import Docker
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import RunID
-from simcore_service_agent.core.errors import NoServiceVolumesFoundError
+from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
+    NoServiceVolumesFoundRPCError,
+)
 from simcore_service_agent.services.volumes_manager import VolumesManager
 from tenacity import (
     AsyncRetrying,
@@ -150,7 +152,7 @@ async def test_volumes_manager_remove_service_volumes_when_volume_does_not_exist
     volumes_manager: VolumesManager,
 ):
     not_existing_service = uuid4()
-    with pytest.raises(NoServiceVolumesFoundError):
+    with pytest.raises(NoServiceVolumesFoundRPCError):
         await volumes_manager.remove_service_volumes(not_existing_service)
 
 

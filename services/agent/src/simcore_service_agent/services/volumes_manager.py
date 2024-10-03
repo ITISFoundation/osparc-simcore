@@ -11,9 +11,11 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
+from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
+    NoServiceVolumesFoundRPCError,
+)
 from tenacity import AsyncRetrying, before_sleep_log, stop_after_delay, wait_fixed
 
-from ..core.errors import NoServiceVolumesFoundError
 from ..core.settings import ApplicationSettings
 from .docker_utils import get_unused_dynamc_sidecar_volumes, remove_volume
 
@@ -126,7 +128,7 @@ class VolumesManager:
                     "service %s found volumes to remove: %s", node_id, service_volumes
                 )
                 if len(service_volumes) == 0:
-                    raise NoServiceVolumesFoundError(
+                    raise NoServiceVolumesFoundRPCError(
                         period=_WAIT_FOR_UNUSED_SERVICE_VOLUMES.total_seconds(),
                         node_id=node_id,
                     )
