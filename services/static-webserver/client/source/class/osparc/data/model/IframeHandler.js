@@ -87,7 +87,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         .resetSequence();
 
       this.__unresponsiveRetries = 5;
-      this.__nodeState(false);
+      this.__nodeState();
 
       this.getIFrame().resetSource();
     },
@@ -156,7 +156,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       return statusText + " " + node.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + versionDisplay + "</sub></span>";
     },
 
-    __nodeState: function(starting=true) {
+    __nodeState: function() {
       // Check if study is still there
       if (this.getStudy() === null || this.__stopRequestingStatus === true) {
         this.setPolling(false);
@@ -176,7 +176,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         }
       };
       osparc.data.Resources.fetch("studies", "getNode", params)
-        .then(data => this.__onNodeState(data, starting))
+        .then(data => this.onNodeState(data))
         .catch(err => {
           let errorMsg = `Error retrieving ${node.getLabel()} status: ${err}`;
           if ("status" in err && err.status === 406) {
@@ -203,8 +203,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             };
             node.fireDataEvent("showInLogger", retryMsgData);
             this.__unresponsiveRetries--;
-            const interval = Math.floor(Math.random() * 5000) + 3000;
-            setTimeout(() => this.__nodeState(), interval);
           } else {
             this.setPolling(false);
             node.getStatus().setInteractive("failed");
@@ -213,20 +211,18 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         });
     },
 
-    __onNodeState: function(data, starting=true) {
+    onNodeState: function(data) {
       const serviceState = data["service_state"];
       const nodeId = data["service_uuid"];
       const node = this.getNode();
       const status = node.getStatus();
-      let nextPollIn = null;
       let pollingInNextStage = null;
       switch (serviceState) {
         case "idle": {
           status.setInteractive(serviceState);
-          if (starting && this.__unresponsiveRetries>0) {
+          if (this.__unresponsiveRetries>0) {
             // a bit of a hack. We will get rid of it when the backend pushes the states
             this.__unresponsiveRetries--;
-            nextPollIn = 2000;
           } else {
             this.setPolling(false);
           }
@@ -248,7 +244,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             node.fireDataEvent("showInLogger", msgData);
           }
           status.setInteractive(serviceState);
-          nextPollIn = 10000;
           break;
         }
         case "stopping":
@@ -256,16 +251,10 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         case "starting":
         case "pulling": {
           status.setInteractive(serviceState);
-          nextPollIn = 5000;
           break;
         }
         case "running": {
           if (nodeId !== node.getNodeId()) {
-            break;
-          }
-          if (!starting) {
-            status.setInteractive("stopping");
-            nextPollIn = 5000;
             break;
           }
           const {
@@ -297,9 +286,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
           console.error(serviceState, "service state not supported");
           break;
       }
-      if (nextPollIn) {
-        qx.event.Timer.once(() => this.__nodeState(starting), this, nextPollIn);
-      } else if (pollingInNextStage !== true) {
+      if (pollingInNextStage !== true) {
         this.setPolling(false);
       }
     },
