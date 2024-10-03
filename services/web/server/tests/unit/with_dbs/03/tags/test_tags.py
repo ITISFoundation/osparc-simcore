@@ -89,6 +89,8 @@ async def test_tags_to_studies(
         ),
         exclude_unset=True,
     )
+    user_project["folderId"] = None
+
     data = await assert_get_same_project(client, user_project, status.HTTP_200_OK)
 
     # Delete tag0
