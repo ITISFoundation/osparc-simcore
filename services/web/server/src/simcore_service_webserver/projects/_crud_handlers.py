@@ -25,7 +25,7 @@ from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
-from pydantic import ValidationError, parse_obj_as
+from pydantic import parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -242,14 +242,7 @@ async def list_projects_full_search(request: web.Request):
             ProjectListFullSearchWithJsonStrParams, request
         )
     )
-    if query_params.tag_ids:
-        try:
-            tag_ids_list = list(map(int, query_params.tag_ids.split(",")))
-            parse_obj_as(list[int], tag_ids_list)
-        except (ValidationError, ValueError) as exc:
-            raise WrongTagIdsInQueryError from exc
-    else:
-        tag_ids_list = []
+    tag_ids_list = query_params.tag_ids_list()
 
     projects, total_number_of_projects = await _crud_api_read.list_projects_full_search(
         request,

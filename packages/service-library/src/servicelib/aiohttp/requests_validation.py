@@ -8,7 +8,6 @@ but adapted to parse&validate path, query and body of an aiohttp's request
 """
 
 import json.decoder
-from collections import defaultdict
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import TypeAlias, TypeVar, Union
@@ -167,15 +166,9 @@ def parse_request_query_parameters_as(
         resource_name=request.rel_url.path,
         use_error_v1=use_enveloped_error_v1,
     ):
-        tmp_data = defaultdict(list)
-        for key, value in request.query.items():
-            tmp_data[key].append(value)
-        # Convert defaultdict to a normal dictionary
-        # And if a key has only one value, store it as that value instead of a list
-        data = {
-            key: value if len(value) > 1 else value[0]
-            for key, value in tmp_data.items()
-        }
+        # NOTE: Currently, this does not take into consideration cases where there are multiple
+        # query parameters with the same key. However, we are not using such cases anywhere at the moment.
+        data = dict(request.query)
 
         if hasattr(parameters_schema_cls, "parse_obj"):
             return parameters_schema_cls.parse_obj(data)
