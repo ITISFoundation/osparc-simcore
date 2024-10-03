@@ -306,6 +306,10 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     },
 
     __statusInteractiveChanged: function(status, oldStatus) {
+      if (status === oldStatus) {
+        return;
+      }
+
       const node = this.getNode();
 
       const loadingPage = node.getLoadingPage();
@@ -324,21 +328,28 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       }
 
       if (status === "ready") {
-        const srvUrl = node.getServiceUrl();
-        const msg = "Service ready on " + srvUrl;
+        const msg = `Service ${node.getLabel()} ${status}`;
         const msgData = {
           nodeId: node.getNodeId(),
           msg,
           level: "INFO"
         };
         node.fireDataEvent("showInLogger", msgData);
+
         // will switch to iframe's content
         this.__restartIFrame();
         if (!node.isDynamicV2()) {
           node.callRetrieveInputs();
         }
-      }
-      if (status === "idle" && oldStatus) {
+      } else if (["idle", "failed"].includes(status) && oldStatus) {
+        const msg = `Service ${node.getLabel()} ${status}`;
+        const msgData = {
+          nodeId: node.getNodeId(),
+          msg,
+          level: "INFO"
+        };
+        node.fireDataEvent("showInLogger", msgData);
+
         // will switch to loading page
         this.getIFrame().resetSource();
         this.fireEvent("iframeChanged");
