@@ -122,9 +122,11 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       this.setLoadingPage(loadingPage);
     },
 
-    __getLoadingPageHeader: function() {
+    __getLoadingPageHeader: function(status) {
       const node = this.getNode();
-      const status = node.getStatus().getInteractive();
+      if (status === undefined) {
+        status = node.getStatus().getInteractive();
+      }
       const statusText = status ? (status.charAt(0).toUpperCase() + status.slice(1)) : this.tr("Starting");
       const metadata = node.getMetaData();
       const versionDisplay = osparc.service.Utils.extractVersionDisplay(metadata);
@@ -234,7 +236,9 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             srvUrl &&
             srvUrl !== node.getServiceUrl() // if it's already connected, do not restart the connection process
           ) {
-            status.setInteractive("connecting");
+            // OM check this
+            // status.setInteractive("connecting");
+            this.__statusInteractiveChanged("connecting", node.getStatus().getInteractive());
             this.__retriesLeft = 40;
             this.__waitForServiceReady(srvUrl);
           }
@@ -344,7 +348,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         if (!node.isDynamicV2()) {
           node.callRetrieveInputs();
         }
-      } else if (["idle", "failed"].includes(status) && oldStatus) {
+      } else if (["idle", "failed", "stopping"].includes(status) && oldStatus) {
         const msg = `Service ${node.getLabel()} ${status}`;
         const msgData = {
           nodeId: node.getNodeId(),
@@ -353,7 +357,8 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         };
         node.fireDataEvent("showInLogger", msgData);
 
-        // will switch to loading page
+        // will switch to the loading page
+        node.resetServiceUrl();
         this.getIFrame().resetSource();
         this.fireEvent("iframeChanged");
       }
