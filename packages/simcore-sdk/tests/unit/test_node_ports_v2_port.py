@@ -318,7 +318,7 @@ class PortParams(NamedTuple):
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/no_file/{this_node_file_name().name}",
-                    eTag=e_tag(),
+                    e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "no_file"
