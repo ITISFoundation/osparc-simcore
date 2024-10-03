@@ -69,7 +69,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     __stopRequestingStatus: null,
     __retriesLeft: null,
 
-    startPolling: function() {
+    checkState: function() {
       this.getNode().getStatus().getProgressSequence()
         .resetSequence();
 
