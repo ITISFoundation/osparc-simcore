@@ -52,7 +52,6 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
@@ -379,7 +378,7 @@ async def get_job_custom_metadata(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/wallet",
     response_model=WalletGetWithAvailableCredits | None,
     responses=WALLET_STATUS_CODES,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    description=("Get job wallet\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")),
 )
 async def get_job_wallet(
     solver_key: SolverKeyId,
@@ -399,7 +398,9 @@ async def get_job_wallet(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/pricing_unit",
     response_model=PricingUnitGet | None,
     responses=_PRICING_UNITS_STATUS_CODES,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    description=(
+        "Get job pricing unit\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")
+    ),
 )
 async def get_job_pricing_unit(
     solver_key: SolverKeyId,
