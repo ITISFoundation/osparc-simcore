@@ -23,6 +23,12 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     this.setStudy(study);
     this.setNode(node);
 
+    node.getStatus().addListener("changeInteractive", e => {
+      const newStatus = e.getData();
+      const oldStatus = e.getData();
+      this.__statusInteractiveChanged(newStatus, oldStatus);
+    });
+
     this.__initLoadingPage();
     this.__initIFrame();
   },
@@ -245,6 +251,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
           } = osparc.utils.Utils.computeServiceUrl(data);
           node.setDynamicV2(isDynamicV2);
           if (srvUrl) {
+            status.setInteractive("connecting");
             this.__retriesLeft = 40;
             this.__waitForServiceReady(srvUrl);
           }
@@ -270,8 +277,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     },
 
     __waitForServiceReady: function(srvUrl) {
-      this.getNode().getStatus().setInteractive("connecting");
-
       if (this.__retriesLeft === 0) {
         return;
       }
@@ -318,16 +323,29 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const node = this.getNode();
       node.setServiceUrl(srvUrl);
       node.getStatus().setInteractive("ready");
-      const msg = "Service ready on " + srvUrl;
-      const msgData = {
-        nodeId: node.getNodeId(),
-        msg,
-        level: "INFO"
-      };
-      node.fireDataEvent("showInLogger", msgData);
-      this.__restartIFrame();
-      if (!node.isDynamicV2()) {
-        node.callRetrieveInputs();
+    },
+
+    __statusInteractiveChanged: function(newStatus, oldStatus) {
+      const node = this.getNode();
+
+      if (newStatus === "ready") {
+        const srvUrl = node.getServiceUrl();
+        const msg = "Service ready on " + srvUrl;
+        const msgData = {
+          nodeId: node.getNodeId(),
+          msg,
+          level: "INFO"
+        };
+        node.fireDataEvent("showInLogger", msgData);
+        // will switch to iframe's content
+        this.__restartIFrame();
+        if (!node.isDynamicV2()) {
+          node.callRetrieveInputs();
+        }
+      }
+      if (oldStatus === "ready") {
+        // will switch to loading page
+        this.__restartIFrame();
       }
     },
 
