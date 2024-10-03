@@ -83,9 +83,9 @@ class ServiceWithHistoryFromDB(BaseModel):
 
 
 assert (  # nosec
-    set(ReleaseFromDB.__fields__)
+    set(ReleaseFromDB.model_fields)
     .difference({"compatibility_policy"})
-    .issubset(set(ServiceWithHistoryFromDB.__fields__))
+    .issubset(set(ServiceWithHistoryFromDB.model_fields))
 )
 
 
