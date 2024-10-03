@@ -119,7 +119,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
           control = new qx.ui.basic.Image().set({
             alignY: "middle"
           });
-          this.getChildControl("message-layout").add(control);
+          this.getChildControl("message-layout").addAt(control, 0);
           break;
         case "message":
           control = new qx.ui.basic.Label().set({
@@ -127,7 +127,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
             selectable: true,
             rich: true
           });
-          this.getChildControl("message-layout").add(control, {
+          this.getChildControl("message-layout").addAt(control, 1, {
             flex: 1
           });
           break;
@@ -135,7 +135,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
           control = new osparc.ui.basic.IconButton("@MaterialIcons/close/16", () => this.fireEvent("closeMessage")).set({
             alignY: "middle"
           });
-          this.getChildControl("message-layout").add(control);
+          this.getChildControl("message-layout").addAt(control, 2);
           break;
       }
       return control || this.base(arguments, id);
