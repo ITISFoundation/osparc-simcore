@@ -287,6 +287,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__listenToNodeProgress();
       this.__listenToNoMoreCreditsEvents();
       this.__listenToEvent();
+      this.__listenToServiceStatus();
     },
 
     __listenToLogger: function() {
@@ -409,6 +410,25 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               const text = `New inputs for service ${label}. Please reload to refresh service.`;
               osparc.FlashMessenger.getInstance().logAs(text, "INFO");
             }
+          }
+        }, this);
+      }
+    },
+
+    __listenToServiceStatus: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      // callback for events
+      if (!socket.slotExists("serviceStatus")) {
+        socket.on("serviceStatus", data => {
+          if (this.getStudy().getUuid() !== data["project_id"]) {
+            return;
+          }
+          const nodeId = data["service_uuid"];
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          if (node && node.getIframeHandler()) {
+            node.getIframeHandler().onNodeState(data);
           }
         }, this);
       }
