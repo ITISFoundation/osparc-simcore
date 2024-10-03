@@ -934,20 +934,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __connectContexts: function() {
-      const workspaceHeader = this.__workspaceHeader;
-      workspaceHeader.addListener("contextChanged", () => {
-        const workspaceId = workspaceHeader.getCurrentWorkspaceId();
-        const folderId = workspaceHeader.getCurrentFolderId();
-        this.__changeContext(workspaceId, folderId);
-      }, this);
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        const workspaceHeader = this.__workspaceHeader;
+        workspaceHeader.addListener("contextChanged", () => {
+          const workspaceId = workspaceHeader.getCurrentWorkspaceId();
+          const folderId = workspaceHeader.getCurrentFolderId();
+          this.__changeContext(workspaceId, folderId);
+        }, this);
 
-      const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
-      workspacesAndFoldersTree.addListener("contextChanged", e => {
-        const context = e.getData();
-        const workspaceId = context["workspaceId"];
-        const folderId = context["folderId"];
-        this.__changeContext(workspaceId, folderId);
-      }, this);
+        const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
+        workspacesAndFoldersTree.addListener("contextChanged", e => {
+          const context = e.getData();
+          const workspaceId = context["workspaceId"];
+          const folderId = context["folderId"];
+          this.__changeContext(workspaceId, folderId);
+        }, this);
+      }
     },
 
     __changeContext: function(workspaceId, folderId) {
