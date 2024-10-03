@@ -116,7 +116,6 @@ router = APIRouter()
     "/{solver_key:path}/releases/{version}/jobs",
     response_model=list[Job],
     responses=JOBS_STATUS_CODES,
-    deprecated=True,
 )
 async def list_jobs(
     solver_key: SolverKeyId,
@@ -129,9 +128,8 @@ async def list_jobs(
 ):
     """List of jobs in a specific released solver (limited to 20 jobs)
 
-    SEE `get_jobs_page` for paginated version of this function
-    NOTE: This implementation and returned values are deprecated and the
-          will be replaced by that of get_jobs_page
+    - DEPRECATION: This implementation and returned values are deprecated and the will be replaced by that of get_jobs_page
+    - SEE `get_jobs_page` for paginated version of this function
     """
 
     solver = await catalog_client.get_service(
