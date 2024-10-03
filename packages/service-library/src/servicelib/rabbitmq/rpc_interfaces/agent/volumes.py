@@ -1,13 +1,16 @@
 import logging
 from datetime import timedelta
+from typing import Final
 
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
-from pydantic import parse_obj_as
+from pydantic import NonNegativeInt, parse_obj_as
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
+
+_REQUEST_TIMEOUT: Final[NonNegativeInt] = int(timedelta(minutes=60).total_seconds())
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -28,9 +31,9 @@ async def remove_volumes_without_backup_for_service(
         ),
         parse_obj_as(RPCMethodName, "remove_volumes_without_backup_for_service"),
         node_id=node_id,
-        timeout_s=int(timedelta(minutes=60).total_seconds()),
+        timeout_s=_REQUEST_TIMEOUT,
     )
-    assert result is None  # noec
+    assert result is None  # nosec
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -49,6 +52,6 @@ async def backup_and_remove_volumes_for_all_services(
             }
         ),
         parse_obj_as(RPCMethodName, "backup_and_remove_volumes_for_all_services"),
-        timeout_s=int(timedelta(minutes=60).total_seconds()),
+        timeout_s=_REQUEST_TIMEOUT,
     )
-    assert result is None  # noec
+    assert result is None  # nosec
