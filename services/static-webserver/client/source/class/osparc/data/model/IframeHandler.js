@@ -51,12 +51,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       check: "osparc.widget.PersistentIframe",
       init: null,
       nullable: true
-    },
-
-    polling: {
-      check: "Boolean",
-      init: null,
-      nullable: true
     }
   },
 
@@ -70,11 +64,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     __retriesLeft: null,
 
     startPolling: function() {
-      if (this.isPolling()) {
-        return;
-      }
-      this.setPolling(true);
-
       this.getNode().getStatus().getProgressSequence()
         .resetSequence();
 
@@ -159,12 +148,10 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     __nodeState: function() {
       // Check if study is still there
       if (this.getStudy() === null || this.__stopRequestingStatus === true) {
-        this.setPolling(false);
         return;
       }
       // Check if node is still there
       if (this.getStudy().getWorkbench().getNode(this.getNode().getNodeId()) === null) {
-        this.setPolling(false);
         return;
       }
 
@@ -191,7 +178,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
           };
           node.fireDataEvent("showInLogger", errorMsgData);
           if ("status" in err && err.status === 406) {
-            this.setPolling(false);
             return;
           }
           if (this.__unresponsiveRetries > 0) {
@@ -204,7 +190,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             node.fireDataEvent("showInLogger", retryMsgData);
             this.__unresponsiveRetries--;
           } else {
-            this.setPolling(false);
             node.getStatus().setInteractive("failed");
             osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error starting") + " " + node.getLabel(), "ERROR");
           }
@@ -216,15 +201,12 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const nodeId = data["service_uuid"];
       const node = this.getNode();
       const status = node.getStatus();
-      let pollingInNextStage = null;
       switch (serviceState) {
         case "idle": {
           status.setInteractive(serviceState);
           if (this.__unresponsiveRetries>0) {
             // a bit of a hack. We will get rid of it when the backend pushes the states
             this.__unresponsiveRetries--;
-          } else {
-            this.setPolling(false);
           }
           break;
         }
@@ -266,7 +248,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             this.__retriesLeft = 40;
             this.__waitForServiceReady(srvUrl);
           }
-          pollingInNextStage = true;
           break;
         }
         case "complete":
@@ -286,16 +267,12 @@ qx.Class.define("osparc.data.model.IframeHandler", {
           console.error(serviceState, "service state not supported");
           break;
       }
-      if (pollingInNextStage !== true) {
-        this.setPolling(false);
-      }
     },
 
     __waitForServiceReady: function(srvUrl) {
       this.getNode().getStatus().setInteractive("connecting");
 
       if (this.__retriesLeft === 0) {
-        this.setPolling(false);
         return;
       }
 
@@ -304,7 +281,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
 
         // Check if node is still there
         if (this.getStudy().getWorkbench().getNode(this.getNode().getNodeId()) === null) {
-          this.setPolling(false);
           return;
         }
         const interval = 5000;
@@ -322,7 +298,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
               console.log("Connecting: fetch's response status", response.status);
             }
             if (response.status < 400) {
-              this.setPolling(false);
               this.__serviceReadyIn(srvUrl);
             } else {
               console.log(`Connecting: ${srvUrl} is not reachable. Status: ${response.status}`);
