@@ -116,6 +116,7 @@ router = APIRouter()
     "/{solver_key:path}/releases/{version}/jobs",
     response_model=list[Job],
     responses=JOBS_STATUS_CODES,
+    deprecated=True,
 )
 async def list_jobs(
     solver_key: SolverKeyId,
@@ -129,6 +130,8 @@ async def list_jobs(
     """List of jobs in a specific released solver (limited to 20 jobs)
 
     SEE `get_jobs_page` for paginated version of this function
+    NOTE: This implementation and returned values are deprecated and the
+          will be replaced by that of get_jobs_page
     """
 
     solver = await catalog_client.get_service(
@@ -158,7 +161,6 @@ async def list_jobs(
     "/{solver_key:path}/releases/{version}/jobs/page",
     response_model=Page[Job],
     responses=JOBS_STATUS_CODES,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     description=(
         "List of jobs on a specific released solver (includes pagination)\n\n"
         + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")
@@ -349,9 +351,8 @@ async def get_job_output_logfile(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadata,
     responses=METADATA_STATUS_CODES,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     description="Gets custom metadata from a job\n\n"
-    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
+    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
 )
 async def get_job_custom_metadata(
     solver_key: SolverKeyId,
