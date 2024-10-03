@@ -230,7 +230,10 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             isDynamicV2
           } = osparc.utils.Utils.computeServiceUrl(data);
           node.setDynamicV2(isDynamicV2);
-          if (srvUrl) {
+          if (
+            srvUrl &&
+            srvUrl !== node.getServiceUrl() // if it's already connected, do not restart the connection process
+          ) {
             status.setInteractive("connecting");
             this.__retriesLeft = 40;
             this.__waitForServiceReady(srvUrl);
