@@ -309,7 +309,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     __serviceReadyIn: function(srvUrl) {
       const node = this.getNode();
       node.setServiceUrl(srvUrl);
-      node.getStatus().setInteractive("ready");
+      this.__setCustomInteractive("ready");
     },
 
     __setCustomInteractive: function(customStatus) {
@@ -396,7 +396,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const node = this.getNode();
       const status = node.getStatus().getInteractive();
       // it might have been stopped
-      if (status === "ready") {
+      if (status === "running") {
         this.getIFrame().resetSource();
         this.getIFrame().setSource(node.getServiceUrl());
 
