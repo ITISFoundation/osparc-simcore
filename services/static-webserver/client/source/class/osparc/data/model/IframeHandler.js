@@ -238,7 +238,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
           ) {
             // OM check this
             // status.setInteractive("connecting");
-            this.__statusInteractiveChanged("connecting", node.getStatus().getInteractive());
+            this.__setCustomInteractive("connecting");
             this.__retriesLeft = 40;
             this.__waitForServiceReady(srvUrl);
           }
@@ -310,6 +310,13 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const node = this.getNode();
       node.setServiceUrl(srvUrl);
       node.getStatus().setInteractive("ready");
+    },
+
+    __setCustomInteractive: function(customStatus) {
+      const node = this.getNode();
+      if (node) {
+        this.__statusInteractiveChanged(customStatus, node.getStatus().getInteractive());
+      }
     },
 
     __statusInteractiveChanged: function(status, oldStatus) {
