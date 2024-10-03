@@ -126,7 +126,10 @@ class VolumesManager:
                     "service %s found volumes to remove: %s", node_id, service_volumes
                 )
                 if len(service_volumes) == 0:
-                    raise NoServiceVolumesFoundError(node_id=node_id)
+                    raise NoServiceVolumesFoundError(
+                        period=_WAIT_FOR_UNUSED_SERVICE_VOLUMES.total_seconds(),
+                        node_id=node_id,
+                    )
 
         return service_volumes
 

@@ -11,4 +11,7 @@ class AgentRuntimeError(OsparcErrorMixin, RuntimeError):
 
 
 class NoServiceVolumesFoundError(AgentRuntimeError):
-    msg_template: str = "Could not find any unused volumes for service {node_id}"
+    msg_template: str = (
+        "Could not detect any unused volumes after waiting '{period}' seconds for "
+        "volumes to be released after closing all container for service='{node_id}'"
+    )
