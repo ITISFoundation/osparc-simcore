@@ -320,7 +320,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const node = this.getNode();
 
       const loadingPage = node.getLoadingPage();
-      loadingPage.setHeader(this.__getLoadingPageHeader());
+      loadingPage.setHeader(this.__getLoadingPageHeader(status));
       loadingPage.clearMessages();
       if (["idle", "failed"].includes(status)) {
         const startButton = new qx.ui.form.Button().set({
