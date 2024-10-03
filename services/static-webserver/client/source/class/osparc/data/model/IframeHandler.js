@@ -119,33 +119,13 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       });
       loadingPage.addExtraWidget(sequenceWidget);
 
-      nodeStatus.addListener("changeInteractive", () => {
-        loadingPage.setHeader(this.__getLoadingPageHeader());
-        const status = nodeStatus.getInteractive();
-        if (["idle", "failed"].includes(status)) {
-          const startButton = new qx.ui.form.Button().set({
-            label: this.tr("Start"),
-            icon: "@FontAwesome5Solid/play/18",
-            font: "text-18",
-            allowGrowX: false,
-            height: 32
-          });
-          startButton.addListener("execute", () => node.requestStartNode());
-          loadingPage.addWidgetToMessages(startButton);
-        } else {
-          loadingPage.setMessages([]);
-        }
-      }, this);
       this.setLoadingPage(loadingPage);
     },
 
     __getLoadingPageHeader: function() {
       const node = this.getNode();
-      let statusText = this.tr("Starting");
       const status = node.getStatus().getInteractive();
-      if (status) {
-        statusText = status.charAt(0).toUpperCase() + status.slice(1);
-      }
+      const statusText = status ? (status.charAt(0).toUpperCase() + status.slice(1)) : this.tr("Starting");
       const metadata = node.getMetaData();
       const versionDisplay = osparc.service.Utils.extractVersionDisplay(metadata);
       return statusText + " " + node.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + versionDisplay + "</sub></span>";
@@ -325,10 +305,25 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       node.getStatus().setInteractive("ready");
     },
 
-    __statusInteractiveChanged: function(newStatus, oldStatus) {
+    __statusInteractiveChanged: function(status, oldStatus) {
       const node = this.getNode();
 
-      if (newStatus === "ready") {
+      const loadingPage = node.getLoadingPage();
+      loadingPage.setHeader(this.__getLoadingPageHeader());
+      loadingPage.clearMessages();
+      if (["idle", "failed"].includes(status)) {
+        const startButton = new qx.ui.form.Button().set({
+          label: this.tr("Start"),
+          icon: "@FontAwesome5Solid/play/18",
+          font: "text-18",
+          allowGrowX: false,
+          height: 32
+        });
+        startButton.addListener("execute", () => node.requestStartNode());
+        loadingPage.addWidgetToMessages(startButton);
+      }
+
+      if (status === "ready") {
         const srvUrl = node.getServiceUrl();
         const msg = "Service ready on " + srvUrl;
         const msgData = {
@@ -343,9 +338,10 @@ qx.Class.define("osparc.data.model.IframeHandler", {
           node.callRetrieveInputs();
         }
       }
-      if (oldStatus === "ready") {
+      if (status === "idle" && oldStatus) {
         // will switch to loading page
-        this.__restartIFrame();
+        this.getIFrame().resetSource();
+        this.fireEvent("iframeChanged");
       }
     },
 
