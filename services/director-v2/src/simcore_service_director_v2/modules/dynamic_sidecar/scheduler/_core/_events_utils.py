@@ -28,6 +28,9 @@ from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
+    NoServiceVolumesFoundRPCError,
+)
 from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
     remove_volumes_without_backup_for_service,
 )
@@ -234,12 +237,15 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
             )
             with log_context(_logger, logging.DEBUG, f"removing volumes '{node_uuid}'"):
                 rabbit_rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
-                await remove_volumes_without_backup_for_service(
-                    rabbit_rpc_client,
-                    docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
-                    swarm_stack_name=swarm_stack_name,
-                    node_id=scheduler_data.node_uuid,
-                )
+                try:
+                    await remove_volumes_without_backup_for_service(
+                        rabbit_rpc_client,
+                        docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                        swarm_stack_name=swarm_stack_name,
+                        node_id=scheduler_data.node_uuid,
+                    )
+                except NoServiceVolumesFoundRPCError as e:
+                    _logger.info("Could not remove volumes, reason: %s", e)
 
     _logger.debug(
         "Removed dynamic-sidecar services and crated container for '%s'",
