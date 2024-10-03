@@ -25,7 +25,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
 
     node.getStatus().addListener("changeInteractive", e => {
       const newStatus = e.getData();
-      const oldStatus = e.getData();
+      const oldStatus = e.getOldData();
       this.__statusInteractiveChanged(newStatus, oldStatus);
     });
 
