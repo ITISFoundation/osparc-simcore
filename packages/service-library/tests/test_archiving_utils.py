@@ -622,7 +622,7 @@ async def mixed_file_types(tmp_path: Path, faker: Faker) -> AsyncIterable[Path]:
     (base_dir / "d1" / "sd1" / "b2.bin").write_bytes(faker.json_bytes())
     (base_dir / "images").mkdir()
 
-    # images cause issues with zipping, below content prduced different
+    # images cause issues with zipping, below content produced different
     # hashes for zip files
     for i in range(2):
         image_dir = base_dir / f"images{i}"
