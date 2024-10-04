@@ -3298,6 +3298,18 @@ paths:
       summary: List Projects Full Search
       operationId: list_projects_full_search
       parameters:
+      - description: Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date)
+          and direction (asc|desc). The default sorting order is ascending.
+        required: false
+        schema:
+          title: Order By
+          description: Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date)
+            and direction (asc|desc). The default sorting order is ascending.
+          default:
+          - '{"field": "last_change_date", "direction": "desc"}'
+        example: '{"field": "last_change_date", "direction": "desc"}'
+        name: order_by
+        in: query
       - required: false
         schema:
           title: Limit
@@ -3323,13 +3335,19 @@ paths:
           type: string
         name: text
         in: query
+      - required: false
+        schema:
+          title: Tag Ids
+          type: string
+        name: tag_ids
+        in: query
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page_ProjectListItem_'
+                $ref: '#/components/schemas/Page_ProjectListFullSearchParams_'
   /v0/projects/{project_id}/inactivity:
     get:
       tags:
@@ -9555,6 +9573,25 @@ components:
             $ref: '#/components/schemas/ProjectIterationResultItem'
       additionalProperties: false
       description: Paginated response model of ItemTs
+    Page_ProjectListFullSearchParams_:
+      title: Page[ProjectListFullSearchParams]
+      required:
+      - _meta
+      - _links
+      - data
+      type: object
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectListFullSearchParams'
+      additionalProperties: false
+      description: Paginated response model of ItemTs
     Page_ProjectListItem_:
       title: Page[ProjectListItem]
       required:
@@ -10414,6 +10451,37 @@ components:
           format: uri
         results:
           $ref: '#/components/schemas/ExtractedResults'
+    ProjectListFullSearchParams:
+      title: ProjectListFullSearchParams
+      type: object
+      properties:
+        limit:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          description: maximum number of items to return (pagination)
+          default: 20
+          maximum: 50
+        offset:
+          title: Offset
+          minimum: 0
+          type: integer
+          description: index to the first item to return (pagination)
+          default: 0
+        text:
+          title: Text
+          maxLength: 100
+          type: string
+          description: Multi column full text search, across all folders and workspaces
+          example: My Project
+        tag_ids:
+          title: Tag Ids
+          type: string
+          description: Search by tag ID (multiple tag IDs may be provided separated
+            by column)
+          example: 1,3
+      description: Use as pagination options in query parameters
     ProjectListItem:
       title: ProjectListItem
       required:

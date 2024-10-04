@@ -58,7 +58,7 @@ from ._crud_handlers_models import (
     ProjectActiveParams,
     ProjectCreateHeaders,
     ProjectCreateParams,
-    ProjectListFullSearchParams,
+    ProjectListFullSearchWithJsonStrParams,
     ProjectListWithJsonStrParams,
 )
 from ._permalink_api import update_or_pop_permalink_in_project
@@ -69,6 +69,7 @@ from .exceptions import (
     ProjectInvalidUsageError,
     ProjectNotFoundError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
+    WrongTagIdsInQueryError,
 )
 from .lock import get_project_locked_state
 from .models import ProjectDict
@@ -101,7 +102,10 @@ def _handle_projects_exceptions(handler: Handler):
             WorkspaceNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
-        except ProjectOwnerNotFoundInTheProjectAccessRightsError as exc:
+        except (
+            ProjectOwnerNotFoundInTheProjectAccessRightsError,
+            WrongTagIdsInQueryError,
+        ) as exc:
             raise web.HTTPBadRequest(reason=f"{exc}") from exc
         except (
             ProjectInvalidRightsError,
@@ -233,17 +237,22 @@ async def list_projects(request: web.Request):
 @_handle_projects_exceptions
 async def list_projects_full_search(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
-    query_params: ProjectListFullSearchParams = parse_request_query_parameters_as(
-        ProjectListFullSearchParams, request
+    query_params: ProjectListFullSearchWithJsonStrParams = (
+        parse_request_query_parameters_as(
+            ProjectListFullSearchWithJsonStrParams, request
+        )
     )
+    tag_ids_list = query_params.tag_ids_list()
 
     projects, total_number_of_projects = await _crud_api_read.list_projects_full_search(
-        request.app,
+        request,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         limit=query_params.limit,
         offset=query_params.offset,
         text=query_params.text,
+        order_by=query_params.order_by,
+        tag_ids_list=tag_ids_list,
     )
 
     page = Page[ProjectDict].parse_obj(

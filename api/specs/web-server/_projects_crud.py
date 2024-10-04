@@ -142,10 +142,17 @@ async def clone_project(
 
 @router.get(
     "/projects:search",
-    response_model=Page[ProjectListItem],
+    response_model=Page[ProjectListFullSearchParams],
 )
 async def list_projects_full_search(
     _params: Annotated[ProjectListFullSearchParams, Depends()],
+    order_by: Annotated[
+        Json,
+        Query(
+            description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
+            example='{"field": "last_change_date", "direction": "desc"}',
+        ),
+    ] = ('{"field": "last_change_date", "direction": "desc"}',),
 ):
     ...
 
