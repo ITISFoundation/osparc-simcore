@@ -26,8 +26,8 @@ class _ContentWithShortNames(InvitationContent):
     @classmethod
     def serialize(cls, model_obj: InvitationContent) -> str:
         """Exports to json using *short* aliases and values in order to produce shorter codes"""
-        model_w_short_aliases_json: str = cls.construct(
-            **model_obj.dict(exclude_unset=True)
+        model_w_short_aliases_json: str = cls.model_construct(
+            **model_obj.model_dump(exclude_unset=True)
         ).model_dump_json(exclude_unset=True, by_alias=True)
         # NOTE: json arguments try to minimize the amount of data
         # serialized. The CONS is that it relies on models in the code
@@ -38,9 +38,9 @@ class _ContentWithShortNames(InvitationContent):
     @classmethod
     def deserialize(cls, raw_json: str) -> InvitationContent:
         """Parses a json string and returns InvitationContent model"""
-        model_w_short_aliases = cls.parse_raw(raw_json)
-        return InvitationContent.construct(
-            **model_w_short_aliases.dict(exclude_unset=True)
+        model_w_short_aliases = cls.model_validate_json(raw_json)
+        return InvitationContent.model_construct(
+            **model_w_short_aliases.model_dump(exclude_unset=True)
         )
 
     model_config = ConfigDict(
