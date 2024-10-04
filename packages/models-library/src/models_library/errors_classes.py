@@ -18,7 +18,7 @@ class OsparcErrorMixin(PydanticErrorMixin):
 
     def __init__(self, **ctx: Any) -> None:
         self.__dict__ = ctx
-        super().__init__(message=self._build_message(), code=self.code)
+        super().__init__(message=self._build_message(), code=None)
 
     def __str__(self) -> str:
         return self._build_message()
