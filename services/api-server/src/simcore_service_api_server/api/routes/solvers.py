@@ -265,7 +265,8 @@ async def list_solver_ports(
 @router.get(
     "/{solver_key:path}/releases/{version}/pricing_plan",
     response_model=ServicePricingPlanGet,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    description="Gets solver pricing plan\n\n"
+    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
     responses=_SOLVER_STATUS_CODES,
 )
 async def get_solver_pricing_plan(

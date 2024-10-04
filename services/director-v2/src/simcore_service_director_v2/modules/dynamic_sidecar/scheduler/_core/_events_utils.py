@@ -27,6 +27,13 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
+    NoServiceVolumesFoundRPCError,
+)
+from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
+    remove_volumes_without_backup_for_service,
+)
 from servicelib.utils import limited_gather, logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import RetryError, TryAgain
@@ -67,11 +74,9 @@ from ...docker_api import (
     get_projects_networks_containers,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
-    remove_volumes_from_node,
     try_to_remove_network,
 )
 from ...errors import EntrypointContainerNotFoundError
-from ...volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
 if TYPE_CHECKING:
     # NOTE: TYPE_CHECKING is True when static type checkers are running,
@@ -230,30 +235,17 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
             task_progress.update(
                 message="removing volumes", percent=ProgressPercent(0.3)
             )
-            unique_volume_names = [
-                DynamicSidecarVolumesPathsResolver.source(
-                    path=volume_path,
-                    node_uuid=scheduler_data.node_uuid,
-                    run_id=scheduler_data.run_id,
-                )
-                for volume_path in [
-                    DY_SIDECAR_SHARED_STORE_PATH,
-                    scheduler_data.paths_mapping.inputs_path,
-                    scheduler_data.paths_mapping.outputs_path,
-                    *scheduler_data.paths_mapping.state_paths,
-                ]
-            ]
-            with log_context(
-                _logger, logging.DEBUG, f"removing volumes via service for {node_uuid}"
-            ):
-                await remove_volumes_from_node(
-                    swarm_stack_name=swarm_stack_name,
-                    volume_names=unique_volume_names,
-                    docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
-                    user_id=scheduler_data.user_id,
-                    project_id=scheduler_data.project_id,
-                    node_uuid=scheduler_data.node_uuid,
-                )
+            with log_context(_logger, logging.DEBUG, f"removing volumes '{node_uuid}'"):
+                rabbit_rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
+                try:
+                    await remove_volumes_without_backup_for_service(
+                        rabbit_rpc_client,
+                        docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                        swarm_stack_name=swarm_stack_name,
+                        node_id=scheduler_data.node_uuid,
+                    )
+                except NoServiceVolumesFoundRPCError as e:
+                    _logger.info("Could not remove volumes, reason: %s", e)
 
     _logger.debug(
         "Removed dynamic-sidecar services and crated container for '%s'",
