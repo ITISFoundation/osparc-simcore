@@ -15,7 +15,7 @@ from pydantic import (
 
 from .utils.common_validators import none_to_empty_list_pre_validator
 
-_ANY_HTTP_URL_ADAPTER: TypeAdapter = TypeAdapter(AnyHttpUrl)
+_ANY_HTTP_URL_ADAPTER: Final[TypeAdapter[AnyHttpUrl]] = TypeAdapter(AnyHttpUrl)
 
 # Default limit values
 #  - Using same values across all pagination entrypoints simplifies
