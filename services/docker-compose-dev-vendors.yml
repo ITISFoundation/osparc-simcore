@@ -4,7 +4,7 @@
 
 services:
 
-  s4l-manual:
+  manual:
     image: ${VENDOR_DEV_MANUAL_IMAGE}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
