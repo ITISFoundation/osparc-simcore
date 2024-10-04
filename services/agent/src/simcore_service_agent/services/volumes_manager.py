@@ -26,7 +26,9 @@ _WAIT_FOR_UNUSED_SERVICE_VOLUMES: Final[timedelta] = timedelta(minutes=1)
 
 
 @dataclass
-class VolumesManager(SingletonInAppStateMixin):
+class VolumesManager(  # pylint:disable=too-many-instance-attributes
+    SingletonInAppStateMixin
+):
     app: FastAPI
     book_keeping_interval: timedelta
     volume_cleanup_interval: timedelta
