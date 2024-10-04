@@ -25,12 +25,14 @@ class TagUpdate(InputSchema):
     name: str | None = None
     description: str | None = None
     color: ColorStr | None = None
+    priority: int | None = None
 
 
 class TagCreate(InputSchema):
     name: str
     description: str | None = None
     color: ColorStr
+    priority: int | None = None
 
 
 class TagAccessRights(OutputSchema):

@@ -5,7 +5,6 @@
 
 
 from collections.abc import AsyncIterator, Callable, Iterator
-from http import HTTPStatus
 from typing import Any
 
 import pytest
@@ -46,12 +45,16 @@ def fake_tags(faker: Faker) -> list[dict[str, Any]]:
     ]
 
 
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+@pytest.fixture
+def user_role() -> UserRole:
+    # All tests in test_tags assume USER's role
+    # i.e. Used in `logged_user` and `user_project`
+    return UserRole.USER
+
+
 async def test_tags_to_studies(
     client: TestClient,
-    logged_user: UserInfoDict,
     user_project: ProjectDict,
-    expected: HTTPStatus,
     fake_tags: dict[str, Any],
     catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
 ):
@@ -64,7 +67,7 @@ async def test_tags_to_studies(
     for tag in fake_tags:
         url = client.app.router["create_tag"].url_for()
         resp = await client.post(f"{url}", json=tag)
-        added_tag, _ = await assert_status(resp, expected)
+        added_tag, _ = await assert_status(resp, status.HTTP_200_OK)
         added_tags.append(added_tag)
 
         # Add tag to study
@@ -72,7 +75,7 @@ async def test_tags_to_studies(
             project_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id"))
         )
         resp = await client.post(f"{url}")
-        data, _ = await assert_status(resp, expected)
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
 
         # Tag is included in response
         assert added_tag["id"] in data["tags"]
@@ -87,7 +90,8 @@ async def test_tags_to_studies(
         exclude_unset=True,
     )
     user_project["folderId"] = None
-    data = await assert_get_same_project(client, user_project, expected)
+
+    data = await assert_get_same_project(client, user_project, status.HTTP_200_OK)
 
     # Delete tag0
     url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[0].get("id")))
@@ -96,7 +100,7 @@ async def test_tags_to_studies(
 
     # Get project and check that tag is no longer there
     user_project["tags"].remove(added_tags[0]["id"])
-    data = await assert_get_same_project(client, user_project, expected)
+    data = await assert_get_same_project(client, user_project, status.HTTP_200_OK)
     assert added_tags[0].get("id") not in data.get("tags")
 
     # Remove tag1 from project
@@ -104,11 +108,11 @@ async def test_tags_to_studies(
         project_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id"))
     )
     resp = await client.post(f"{url}")
-    await assert_status(resp, expected)
+    await assert_status(resp, status.HTTP_200_OK)
 
     # Get project and check that tag is no longer there
     user_project["tags"].remove(added_tags[1]["id"])
-    data = await assert_get_same_project(client, user_project, expected)
+    data = await assert_get_same_project(client, user_project, status.HTTP_200_OK)
     assert added_tags[1].get("id") not in data.get("tags")
 
     # Delete tag1
@@ -138,11 +142,6 @@ async def everybody_tag_id(client: TestClient) -> AsyncIterator[int]:
         yield tag_id
 
         await delete_tag(conn, tag_id=tag_id)
-
-
-@pytest.fixture
-def user_role() -> UserRole:
-    return UserRole.USER
 
 
 async def test_read_tags(
@@ -181,8 +180,10 @@ async def test_create_and_update_tags(
 
     assert user_role == UserRole.USER
 
+    # (1) create tag
+    url = client.app.router["create_tag"].url_for()
     resp = await client.post(
-        f"{client.app.router['create_tag'].url_for()}",
+        f"{url}",
         json={"name": "T", "color": "#f00"},
     )
     created, _ = await assert_status(resp, status.HTTP_200_OK)
@@ -195,6 +196,7 @@ async def test_create_and_update_tags(
         "accessRights": {"read": True, "write": True, "delete": True},
     }
 
+    # (2) update created tag
     url = client.app.router["update_tag"].url_for(tag_id=f"{created['id']}")
     resp = await client.patch(
         f"{url}",
@@ -205,10 +207,72 @@ async def test_create_and_update_tags(
     created.update(description="This is my tag")
     assert updated == created
 
+    # (3) Cannot update tag because it has not enough access rights
     url = client.app.router["update_tag"].url_for(tag_id=f"{everybody_tag_id}")
     resp = await client.patch(
         f"{url}",
         json={"description": "I have NO WRITE ACCESS TO THIS TAG"},
     )
-    _, error = await assert_status(resp, status.HTTP_401_UNAUTHORIZED)
+    _, error = await assert_status(resp, status.HTTP_403_FORBIDDEN)
     assert error
+
+
+async def test_create_tags_with_order_index(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    _clean_tags_table: None,
+):
+    assert client.app
+
+    assert user_role == UserRole.USER
+
+    # (1) create tags but set the order in reverse order of creation
+    url = client.app.router["create_tag"].url_for()
+    num_tags = 3
+    expected_tags: list[Any] = [None] * num_tags
+    for creation_index, priority_index in enumerate(range(num_tags - 1, -1, -1)):
+        resp = await client.post(
+            f"{url}",
+            json={
+                "name": f"T{creation_index}-{priority_index}",
+                "description": f"{creation_index=}, {priority_index=}",
+                "color": "#f00",
+                "priority": priority_index,
+            },
+        )
+        created, _ = await assert_status(resp, status.HTTP_200_OK)
+        expected_tags[priority_index] = created
+
+    url = client.app.router["list_tags"].url_for()
+    resp = await client.get(f"{url}")
+    got, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert got == expected_tags
+
+    # (2) lets update all priorities in reverse order
+    for new_order_index, tag in enumerate(reversed(expected_tags)):
+        url = client.app.router["update_tag"].url_for(tag_id=f"{tag['id']}")
+        resp = await client.patch(
+            f"{url}",
+            json={"priority": new_order_index},
+        )
+        updated, _ = await assert_status(resp, status.HTTP_200_OK)
+        # NOTE: priority is not included in TagGet for now
+        assert updated == tag
+
+    url = client.app.router["list_tags"].url_for()
+    resp = await client.get(f"{url}")
+    got, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert got == expected_tags[::-1]
+
+    # (3) new tag without priority should get last (because is last created)
+    resp = await client.post(
+        f"{url}",
+        json={"name": "New", "color": "#f00", "description": "w/o priority"},
+    )
+    last_created, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    url = client.app.router["list_tags"].url_for()
+    resp = await client.get(f"{url}")
+    got, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert got == [*expected_tags[::-1], last_created]
