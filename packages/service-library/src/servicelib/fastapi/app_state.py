@@ -15,7 +15,7 @@ class SingletonInAppStateMixin:
 
     @classmethod
     def get_from_app_state(cls: type[T], app: FastAPI) -> T:
-        return getattr(app.state, cls.app_state_name)
+        return getattr(app.state, cls.app_state_name)  # type:ignore[no-any-return]
 
     def set_to_app_state(self, app: FastAPI):
         if (exists := getattr(app.state, self.app_state_name, None)) and self.frozen:
@@ -26,11 +26,11 @@ class SingletonInAppStateMixin:
         return self.get_from_app_state(app)
 
     @classmethod
-    def pop_from_app_state(cls: type[T], app: FastAPI) -> None:
+    def pop_from_app_state(cls: type[T], app: FastAPI) -> T:
         """
         Raises:
             AttributeError: if instance is not in app.state
         """
-        old = getattr(app.state, cls.app_state_name)
+        old = cls.get_from_app_state(app)
         delattr(app.state, cls.app_state_name)
         return old
