@@ -1,30 +1,25 @@
-import datetime
 from typing import Annotated
 
+import arrow
 from fastapi import APIRouter, Depends
 from models_library.api_schemas__common.health import HealthCheckGet
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.rabbitmq import RabbitMQClient
 
-from ...api.dependencies.rabbitmq import get_rabbitmq_client_from_request
+from ._dependencies import get_rabbitmq_client
+
+router = APIRouter()
 
 
 class HealthCheckError(RuntimeError):
     """Failed a health check"""
 
 
-router = APIRouter()
-
-
-@router.get("/", response_model=HealthCheckGet)
+@router.get("/health", response_model=HealthCheckGet)
 async def check_service_health(
-    rabbitmq_client: Annotated[
-        RabbitMQClient, Depends(get_rabbitmq_client_from_request)
-    ]
+    rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)]
 ):
     if not rabbitmq_client.healthy:
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
-    return {
-        "timestamp": f"{__name__}@{datetime.datetime.now(tz=datetime.timezone.utc).isoformat()}"
-    }
+    return HealthCheckGet(timestamp=f"{__name__}@{arrow.utcnow().datetime.isoformat()}")
