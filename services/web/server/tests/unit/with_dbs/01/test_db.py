@@ -7,12 +7,9 @@ from pathlib import Path
 
 import aiopg.sa
 import asyncpg
-import pytest
 import sqlalchemy as sa
 import yaml
-from aiohttp import web
 from aiohttp.test_utils import TestServer
-from pytest_mock import MockFixture, MockType
 from simcore_service_webserver.application_settings import (
     ApplicationSettings,
     get_application_settings,
@@ -21,36 +18,12 @@ from simcore_service_webserver.db import _aiopg, _asyncpg
 from simcore_service_webserver.db.plugin import (
     is_service_enabled,
     is_service_responsive,
-    setup_db,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
-@pytest.fixture
-def mock_asyncpg_in_setup_db(mocker: MockFixture) -> MockType:
-
-    original_setup = setup_db
-
-    mock_setup_db = mocker.patch(
-        "simcore_service_webserver.application.setup_db", autospec=True
-    )
-
-    def _wrapper_setup_db(app: web.Application):
-        original_setup(app)
-
-        # NEW engine !
-        app.cleanup_ctx.append(_asyncpg.postgres_cleanup_ctx)
-
-    mock_setup_db.side_effect = _wrapper_setup_db
-    return mock_setup_db
-
-
-async def test_all_pg_engines_in_app(
-    mock_asyncpg_in_setup_db: MockType, web_server: TestServer
-):
-    assert mock_asyncpg_in_setup_db.called
-
+async def test_all_pg_engines_in_app(web_server: TestServer):
     app = web_server.app
     assert app
 
