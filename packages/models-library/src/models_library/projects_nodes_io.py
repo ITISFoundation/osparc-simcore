@@ -7,7 +7,7 @@
 """
 
 from pathlib import Path
-from typing import Annotated, TypeAlias
+from typing import Annotated, Final, TypeAlias
 from uuid import UUID
 
 from models_library.basic_types import ConstrainedStr, KeyIDStr
@@ -45,7 +45,7 @@ SimcoreS3FileID: TypeAlias = Annotated[
 ]
 
 
-_ANY_URL_ADAPTER: TypeAdapter[AnyUrl] = TypeAdapter(AnyUrl)
+_ANY_URL_ADAPTER: Final[TypeAdapter[AnyUrl]] = TypeAdapter(AnyUrl)
 
 
 class SimcoreS3DirectoryID(ConstrainedStr):

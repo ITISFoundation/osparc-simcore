@@ -19,7 +19,7 @@ from models_library.api_schemas_storage import (
     UploadedPart,
 )
 from moto.server import ThreadedMotoServer
-from pydantic import AnyUrl, ByteSize, TypeAdapter, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib.aiohttp import status
 from servicelib.progress_bar import ProgressBarData
@@ -212,8 +212,7 @@ async def create_upload_links(
         assert "UploadId" in response
         upload_id = response["UploadId"]
 
-        upload_links = parse_obj_as(
-            list[AnyUrl],
+        upload_links = TypeAdapter(list[AnyUrl]).validate_python(
             await asyncio.gather(
                 *[
                     aiobotocore_s3_client.generate_presigned_url(
@@ -258,6 +257,7 @@ async def test_upload_file_to_presigned_links(
     create_file_of_size: Callable[[ByteSize], Path],
     file_size: ByteSize,
     used_chunk_size: ByteSize,
+    faker: Faker,
 ):
     """This test is here to reproduce the issue https://github.com/ITISFoundation/osparc-simcore/issues/3531
     One theory is that something might be wrong in how the chunking is done and that AWS times out
@@ -272,11 +272,11 @@ async def test_upload_file_to_presigned_links(
     """
     local_file = create_file_of_size(file_size)
     num_links = 2080
-    effective_chunk_size = parse_obj_as(ByteSize, local_file.stat().st_size / num_links)
+    effective_chunk_size = TypeAdapter(ByteSize).validate_python(local_file.stat().st_size / num_links)
     assert effective_chunk_size <= used_chunk_size
     upload_links = await create_upload_links(num_links, used_chunk_size)
     assert len(upload_links.urls) == num_links
-    async with ProgressBarData(num_steps=1) as progress_bar:
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         uploaded_parts: list[UploadedPart] = await upload_file_to_presigned_links(
             session=client_session,
             file_upload_links=upload_links,
