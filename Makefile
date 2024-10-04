@@ -272,7 +272,7 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 .stack-vendor-services.yml: .env $(docker-compose-configs)
 	# Creating config for stack with '$(DOCKER_REGISTRY)/{service}:${DOCKER_IMAGE_TAG}' to $@
 	@scripts/docker/docker-stack-config.bash -e $< \
-		services/docker-compose-vendors.yml \
+		services/docker-compose-dev-vendors.yml \
 		> $@
 
 .stack-ops.yml: .env $(docker-compose-configs)
