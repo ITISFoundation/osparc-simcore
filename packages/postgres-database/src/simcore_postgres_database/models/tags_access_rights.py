@@ -22,7 +22,7 @@ tags_access_rights = sa.Table(
             name="fk_tag_to_group_tag_id",
         ),
         nullable=False,
-        doc="Tag unique ID",
+        doc="References the unique identifier of the tag that these access rights apply to.",
     ),
     sa.Column(
         "group_id",
@@ -34,7 +34,7 @@ tags_access_rights = sa.Table(
             name="fk_tag_to_group_group_id",
         ),
         nullable=False,
-        doc="Group unique ID",
+        doc="References the unique identifier of the group that has access rights to the tag.",
     ),
     # ACCESS RIGHTS ---
     sa.Column(
@@ -42,22 +42,24 @@ tags_access_rights = sa.Table(
         sa.Boolean(),
         nullable=False,
         server_default=sa.sql.expression.true(),
-        doc="If true, group can *read* a tag."
-        "This column can be used to set the tag invisible",
+        doc="Indicates whether the group has permission to view the tag. "
+        "A value of 'True' allows the group to access the tag's details.",
     ),
     sa.Column(
         "write",
         sa.Boolean(),
         nullable=False,
         server_default=sa.sql.expression.false(),
-        doc="If true, group can *create* and *update* a tag",
+        doc="Indicates whether the group has permission to modify the tag. "
+        "A value of 'True' grants write access to the group.",
     ),
     sa.Column(
         "delete",
         sa.Boolean(),
         nullable=False,
         server_default=sa.sql.expression.false(),
-        doc="If true, group can *delete* the tag",
+        doc="Indicates whether the group has permission to delete the tag. "
+        "A value of 'True' allows the group to remove the tag.",
     ),
     # TIME STAMPS ----
     column_created_datetime(timezone=False),

@@ -40,6 +40,7 @@ from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
+from simcore_postgres_database.models.projects_tags import projects_tags
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.wallets import wallets
@@ -494,10 +495,15 @@ class ProjectDBAPI(BaseProjectDB):
         *,
         user_id: PositiveInt,
         product_name: ProductName,
+        filter_by_services: list[dict] | None = None,
         text: str | None = None,
         offset: int | None = 0,
         limit: int | None = None,
-    ) -> tuple[int, list[ProjectDict]]:
+        tag_ids_list: list[int],
+        order_by: OrderBy = OrderBy(
+            field=IDStr("last_change_date"), direction=OrderDirection.DESC
+        ),
+    ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
         async with self.engine.acquire() as conn:
             user_groups: list[RowProxy] = await self._list_user_groups(conn, user_id)
 
@@ -520,6 +526,13 @@ class ProjectDBAPI(BaseProjectDB):
                 ).group_by(workspaces_access_rights.c.workspace_id)
             ).subquery("workspace_access_rights_subquery")
 
+            project_tags_subquery = (
+                sa.select(
+                    projects_tags.c.project_id,
+                    sa.func.array_agg(projects_tags.c.tag_id).label("tags"),
+                ).group_by(projects_tags.c.project_id)
+            ).subquery("project_tags_subquery")
+
             private_workspace_query = (
                 sa.select(
                     *[
@@ -530,6 +543,10 @@ class ProjectDBAPI(BaseProjectDB):
                     self.access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
+                    sa.func.coalesce(
+                        project_tags_subquery.c.tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
+                    ).label("tags"),
                 )
                 .select_from(
                     projects.join(self.access_rights_subquery, isouter=True)
@@ -542,6 +559,7 @@ class ProjectDBAPI(BaseProjectDB):
                         ),
                         isouter=True,
                     )
+                    .join(project_tags_subquery, isouter=True)
                 )
                 .where(
                     (
@@ -562,6 +580,14 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             )
 
+            if tag_ids_list:
+                private_workspace_query = private_workspace_query.where(
+                    sa.func.coalesce(
+                        project_tags_subquery.c.tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
+                    ).op("@>")(tag_ids_list)
+                )
+
             shared_workspace_query = (
                 sa.select(
                     *[
@@ -572,6 +598,10 @@ class ProjectDBAPI(BaseProjectDB):
                     workspace_access_rights_subquery.c.access_rights,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
+                    sa.func.coalesce(
+                        project_tags_subquery.c.tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
+                    ).label("tags"),
                 )
                 .select_from(
                     projects.join(
@@ -588,6 +618,7 @@ class ProjectDBAPI(BaseProjectDB):
                         ),
                         isouter=True,
                     )
+                    .join(project_tags_subquery, isouter=True)
                 )
                 .where(
                     (
@@ -607,6 +638,14 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             )
 
+            if tag_ids_list:
+                shared_workspace_query = shared_workspace_query.where(
+                    sa.func.coalesce(
+                        project_tags_subquery.c.tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
+                    ).op("@>")(tag_ids_list)
+                )
+
             combined_query = sa.union_all(
                 private_workspace_query, shared_workspace_query
             )
@@ -614,23 +653,27 @@ class ProjectDBAPI(BaseProjectDB):
             count_query = sa.select(func.count()).select_from(combined_query)
             total_count = await conn.scalar(count_query)
 
-            list_query = combined_query.offset(offset).limit(limit)
-            result = await conn.execute(list_query)
-            rows = await result.fetchall() or []
-            results: list[UserSpecificProjectDataDB] = [
-                UserSpecificProjectDataDB.from_orm(row) for row in rows
-            ]
+            if order_by.direction == OrderDirection.ASC:
+                combined_query = combined_query.order_by(
+                    sa.asc(getattr(projects.c, order_by.field))
+                )
+            else:
+                combined_query = combined_query.order_by(
+                    sa.desc(getattr(projects.c, order_by.field))
+                )
 
-            # NOTE: Additional adjustments to make it back compatible
-            list_of_converted_projects: list[ProjectDict] = []
-            for project in results:
-                user_email = await self._get_user_email(conn, project.prj_owner)
-                converted_project = convert_to_schema_names(project.dict(), user_email)
-                converted_project["tags"] = []  # <-- Tags not needed for now
-                converted_project["state"] = None
-                list_of_converted_projects.append(converted_project)
+            prjs, prj_types = await self._execute_without_permission_check(
+                conn,
+                user_id=user_id,
+                select_projects_query=combined_query.offset(offset).limit(limit),
+                filter_by_services=filter_by_services,
+            )
 
-            return cast(int, total_count), list_of_converted_projects
+            return (
+                prjs,
+                prj_types,
+                cast(int, total_count),
+            )
 
     async def list_projects_uuids(self, user_id: int) -> list[str]:
         async with self.engine.acquire() as conn:
