@@ -278,7 +278,7 @@ async def test_users_sessions_resources_registry(
             client_session_id = tabs[socket_id]
 
             with managed_resource(user_id, client_session_id, redis_enabled_app) as rt:
-                await rt.remove_socket_id()
+                await rt.remove_socket_id_after_disconnection()
 
                 num_sockets_for_user = len(await rt.find_socket_ids())
                 assert num_sockets_for_user == (NUM_SOCKET_IDS - socket - 1)

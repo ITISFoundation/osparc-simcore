@@ -108,7 +108,7 @@ class UserSessionResourcesRegistry:
 
         await self._registry.set_key_alive(self._resource_key(), 1)
 
-    async def remove_socket_id(self) -> None:
+    async def remove_socket_id_after_disconnection(self) -> None:
         _logger.debug(
             "user %s/tab %s removing socket from registry...",
             self.user_id,
@@ -116,10 +116,11 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
 
+        # why not remove alive key as well together with all this
         await self._registry.remove_resource(self._resource_key(), _SOCKET_ID_FIELDNAME)
-        await self._registry.set_key_alive(
-            self._resource_key(), _get_service_deletion_timeout(self.app)
-        )
+        # when the tab is closed the alive key is also removed immediately,
+        # there is no reason to keep it active
+        await self._registry.set_key_alive(self._resource_key(), 1)
 
     async def set_heartbeat(self) -> None:
         """Extends TTL to avoid expiration of all resources under this session"""
