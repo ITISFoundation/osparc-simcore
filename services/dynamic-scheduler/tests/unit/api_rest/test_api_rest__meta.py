@@ -1,7 +1,7 @@
-import pytest
-
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
+
+import pytest
 from fastapi import status
 from httpx import AsyncClient
 from pytest_simcore.helpers.typing_env import EnvVarsDict
