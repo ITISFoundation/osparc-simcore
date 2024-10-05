@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "simcore-service-dynamic-scheduler web API",
-    "description": " Service that manages lifecycle of dynamic services",
+    "description": "Service that manages lifecycle of dynamic services",
     "version": "1.0.0"
   },
   "paths": {
@@ -44,10 +44,322 @@
           }
         }
       }
+    },
+    "/v1/services": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "List Services",
+        "operationId": "list_services_v1_services_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/TrackedServiceModel"
+                  },
+                  "type": "object",
+                  "title": "Response List Services V1 Services Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/services/{node_id}": {
+      "delete": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Remove Service",
+        "operationId": "remove_service_v1_services__node_id__delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Node Id"
+            },
+            "name": "node_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "BootMode": {
+        "type": "string",
+        "enum": [
+          "CPU",
+          "GPU",
+          "MPI"
+        ],
+        "title": "BootMode",
+        "description": "An enumeration."
+      },
+      "DynamicServiceStart": {
+        "properties": {
+          "service_key": {
+            "type": "string",
+            "pattern": "^simcore/services/dynamic/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+            "title": "Service Key",
+            "description": "distinctive name for the node based on the docker registry path"
+          },
+          "service_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "title": "Service Version",
+            "description": "semantic version number of the node"
+          },
+          "user_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "User Id",
+            "minimum": 0
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "service_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Service Uuid"
+          },
+          "service_basepath": {
+            "type": "string",
+            "format": "path",
+            "title": "Service Basepath",
+            "description": "predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint."
+          },
+          "service_resources": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ImageResources"
+            },
+            "type": "object",
+            "title": "Service Resources"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name",
+            "description": "Current product name"
+          },
+          "can_save": {
+            "type": "boolean",
+            "title": "Can Save",
+            "description": "the service data must be saved when closing"
+          },
+          "wallet_info": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WalletInfo"
+              }
+            ],
+            "title": "Wallet Info",
+            "description": "contains information about the wallet used to bill the running service"
+          },
+          "pricing_info": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PricingInfo"
+              }
+            ],
+            "title": "Pricing Info",
+            "description": "contains pricing information (ex. pricing plan and unit ids)"
+          },
+          "hardware_info": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HardwareInfo"
+              }
+            ],
+            "title": "Hardware Info",
+            "description": "contains harware information (ex. aws_ec2_instances)"
+          },
+          "request_dns": {
+            "type": "string",
+            "title": "Request Dns"
+          },
+          "request_scheme": {
+            "type": "string",
+            "title": "Request Scheme"
+          },
+          "simcore_user_agent": {
+            "type": "string",
+            "title": "Simcore User Agent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "service_key",
+          "service_version",
+          "user_id",
+          "project_id",
+          "service_uuid",
+          "service_resources",
+          "product_name",
+          "can_save",
+          "request_dns",
+          "request_scheme",
+          "simcore_user_agent"
+        ],
+        "title": "DynamicServiceStart",
+        "example": {
+          "product_name": "osparc",
+          "can_save": true,
+          "user_id": 234,
+          "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+          "service_key": "simcore/services/dynamic/3dviewer",
+          "service_version": "2.4.5",
+          "service_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+          "request_dns": "some.local",
+          "request_scheme": "http",
+          "simcore_user_agent": "",
+          "service_resources": {
+            "container": {
+              "image": "simcore/services/dynamic/jupyter-math:2.0.5",
+              "resources": {
+                "CPU": {
+                  "limit": 0.1,
+                  "reservation": 0.1
+                },
+                "RAM": {
+                  "limit": 2147483648,
+                  "reservation": 2147483648
+                }
+              },
+              "boot_modes": [
+                "CPU"
+              ]
+            }
+          },
+          "wallet_info": {
+            "wallet_id": 1,
+            "wallet_name": "My Wallet",
+            "wallet_credit_amount": 10
+          },
+          "pricing_info": {
+            "pricing_plan_id": 1,
+            "pricing_unit_id": 1,
+            "pricing_unit_cost_id": 1
+          },
+          "hardware_info": {
+            "aws_ec2_instances": [
+              "c6a.4xlarge"
+            ]
+          }
+        }
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HardwareInfo": {
+        "properties": {
+          "aws_ec2_instances": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Aws Ec2 Instances"
+          }
+        },
+        "type": "object",
+        "required": [
+          "aws_ec2_instances"
+        ],
+        "title": "HardwareInfo"
+      },
+      "ImageResources": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "pattern": "^(?:([a-z0-9-]+(?:\\.[a-z0-9-]+)+(?::\\d+)?|[a-z0-9-]+:\\d+)/)?((?:[a-z0-9][a-z0-9_.-]*/)*[a-z0-9-_]+[a-z0-9])(?::([\\w][\\w.-]{0,127}))?(\\@sha256:[a-fA-F0-9]{32,64})?$",
+            "title": "Image",
+            "description": "Used by the frontend to provide a context for the users.Services with a docker-compose spec will have multiple entries.Using the `image:version` instead of the docker-compose spec is more helpful for the end user."
+          },
+          "resources": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ResourceValue"
+            },
+            "type": "object",
+            "title": "Resources"
+          },
+          "boot_modes": {
+            "items": {
+              "$ref": "#/components/schemas/BootMode"
+            },
+            "type": "array",
+            "description": "describe how a service shall be booted, using CPU, MPI, openMP or GPU",
+            "default": [
+              "CPU"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "image",
+          "resources"
+        ],
+        "title": "ImageResources",
+        "example": {
+          "image": "simcore/service/dynamic/pretty-intense:1.0.0",
+          "resources": {
+            "CPU": {
+              "limit": 4,
+              "reservation": 0.1
+            },
+            "RAM": {
+              "limit": 103079215104,
+              "reservation": 536870912
+            },
+            "VRAM": {
+              "limit": 1,
+              "reservation": 1
+            },
+            "AIRAM": {
+              "limit": 1,
+              "reservation": 1
+            },
+            "ANY_resource": {
+              "limit": "some_value",
+              "reservation": "some_value"
+            }
+          }
+        }
+      },
       "Meta": {
         "properties": {
           "name": {
@@ -58,6 +370,15 @@
             "type": "string",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "title": "Version"
+          },
+          "released": {
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+            },
+            "type": "object",
+            "title": "Released",
+            "description": "Maps every route's path tag with a released version"
           },
           "docs_url": {
             "type": "string",
@@ -79,6 +400,234 @@
           "version": "2.4.45",
           "docs_url": "https://foo.io/doc"
         }
+      },
+      "PricingInfo": {
+        "properties": {
+          "pricing_plan_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricing Plan Id",
+            "minimum": 0
+          },
+          "pricing_unit_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricing Unit Id",
+            "minimum": 0
+          },
+          "pricing_unit_cost_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Pricing Unit Cost Id",
+            "minimum": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricing_plan_id",
+          "pricing_unit_id",
+          "pricing_unit_cost_id"
+        ],
+        "title": "PricingInfo"
+      },
+      "ResourceValue": {
+        "properties": {
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Limit"
+          },
+          "reservation": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Reservation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "limit",
+          "reservation"
+        ],
+        "title": "ResourceValue"
+      },
+      "SchedulerServiceState": {
+        "type": "string",
+        "enum": [
+          "RUNNING",
+          "IDLE",
+          "UNEXPECTED_OUTCOME",
+          "STARTING",
+          "STOPPING",
+          "UNKNOWN"
+        ],
+        "title": "SchedulerServiceState",
+        "description": "An enumeration."
+      },
+      "TrackedServiceModel": {
+        "properties": {
+          "dynamic_service_start": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DynamicServiceStart"
+              }
+            ],
+            "title": "Dynamic Service Start",
+            "description": "used to create the service in any given moment if the requested_state is RUNNINGcan be set to None only when stopping the service"
+          },
+          "user_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "User Id",
+            "description": "required for propagating status changes to the frontend",
+            "minimum": 0
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id",
+            "description": "required for propagating status changes to the frontend"
+          },
+          "requested_state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRequestedState"
+              }
+            ],
+            "description": "status of the service desidered by the user RUNNING or STOPPED"
+          },
+          "current_state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SchedulerServiceState"
+              }
+            ],
+            "description": "to set after parsing the incoming state via the API calls",
+            "default": "UNKNOWN"
+          },
+          "scheduled_to_run": {
+            "type": "boolean",
+            "title": "Scheduled To Run",
+            "description": "set when a job will be immediately scheduled",
+            "default": false
+          },
+          "service_status": {
+            "type": "string",
+            "title": "Service Status",
+            "description": "stored for debug mainly this is used to compute ``current_state``",
+            "default": ""
+          },
+          "service_status_task_uid": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Service Status Task Uid",
+            "description": "uid of the job currently fetching the status"
+          },
+          "check_status_after": {
+            "type": "number",
+            "title": "Check Status After",
+            "description": "used to determine when to poll the status again"
+          },
+          "last_status_notification": {
+            "type": "number",
+            "title": "Last Status Notification",
+            "description": "used to determine when was the last time the status was notified",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "dynamic_service_start",
+          "user_id",
+          "project_id",
+          "requested_state"
+        ],
+        "title": "TrackedServiceModel"
+      },
+      "UserRequestedState": {
+        "type": "string",
+        "enum": [
+          "RUNNING",
+          "STOPPED"
+        ],
+        "title": "UserRequestedState",
+        "description": "An enumeration."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WalletInfo": {
+        "properties": {
+          "wallet_id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "title": "Wallet Id",
+            "minimum": 0
+          },
+          "wallet_name": {
+            "type": "string",
+            "title": "Wallet Name"
+          },
+          "wallet_credit_amount": {
+            "type": "number",
+            "title": "Wallet Credit Amount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "wallet_id",
+          "wallet_name",
+          "wallet_credit_amount"
+        ],
+        "title": "WalletInfo"
       }
     }
   }
