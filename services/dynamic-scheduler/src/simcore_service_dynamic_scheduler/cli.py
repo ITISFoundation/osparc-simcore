@@ -1,8 +1,6 @@
 import logging
-import os
 
 import typer
-from settings_library.rabbit import RabbitSettings
 from settings_library.utils_cli import (
     create_settings_command,
     create_version_callback,
@@ -40,19 +38,7 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True):
     # Nonetheless, if the caller of this CLI has already some **valid** env vars in the environment we want to use them ...
     # and that is why we use `os.environ`.
 
-    settings = ApplicationSettings.create_from_envs(
-        DYNAMIC_SCHEDULER_RABBITMQ=os.environ.get(
-            "DYNAMIC_SCHEDULER_RABBITMQ",
-            RabbitSettings.create_from_envs(
-                RABBIT_HOST=os.environ.get("RABBIT_HOST", "replace-with-rabbit-host"),
-                RABBIT_SECURE=os.environ.get("RABBIT_SECURE", "0"),
-                RABBIT_USER=os.environ.get("RABBIT_USER", "replace-with-rabbit-user"),
-                RABBIT_PASSWORD=os.environ.get(
-                    "RABBIT_PASSWORD", "replace-with-rabbit-user"
-                ),
-            ),
-        ),
-    )
+    settings = ApplicationSettings.create_from_envs()
 
     print_as_envfile(
         settings,

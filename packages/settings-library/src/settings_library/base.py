@@ -44,7 +44,7 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
                     field_name,
                 )
                 return None
-
+            _logger.warning("Validation errors=%s", err.errors())
             raise DefaultFromEnvFactoryError(errors=err.errors()) from err
 
     return _default_factory
