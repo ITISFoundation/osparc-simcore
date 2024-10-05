@@ -750,7 +750,10 @@ async def test_containers_activity_command_failed(
 ):
     response = await test_client.get(f"/{API_VTAG}/containers/activity")
     assert response.status_code == 200, response.text
-    assert response.json() == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
+    assert (
+        response.json()
+        == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME).model_dump()
+    )
 
 
 async def test_containers_activity_no_inactivity_defined(
@@ -773,7 +776,7 @@ def mock_inactive_since_command_response(
 ) -> None:
     mocker.patch(
         "simcore_service_dynamic_sidecar.api.containers.run_command_in_container",
-        return_value=activity_response.json(),
+        return_value=activity_response.model_dump_json(),
     )
 
 
@@ -786,7 +789,7 @@ async def test_containers_activity_inactive_since(
 ):
     response = await test_client.get(f"/{API_VTAG}/containers/activity")
     assert response.status_code == 200, response.text
-    assert response.json() == activity_response
+    assert response.json() == activity_response.model_dump()
 
 
 @pytest.fixture
@@ -805,4 +808,7 @@ async def test_containers_activity_unexpected_response(
 ):
     response = await test_client.get(f"/{API_VTAG}/containers/activity")
     assert response.status_code == 200, response.text
-    assert response.json() == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
+    assert (
+        response.json()
+        == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME).model_dump()
+    )

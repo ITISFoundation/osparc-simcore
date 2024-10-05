@@ -14,7 +14,7 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
@@ -59,7 +59,7 @@ async def app(mock_rabbitmq_envs: EnvVarsDict, app: FastAPI) -> AsyncIterable[Fa
 
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
+    return TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io")
 
 
 @pytest.fixture
@@ -71,7 +71,7 @@ async def httpx_async_client(
 ) -> AsyncIterable[AsyncClient]:
     async with AsyncClient(
         app=app,
-        base_url=backend_url,
+        base_url=f"{backend_url}",
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client

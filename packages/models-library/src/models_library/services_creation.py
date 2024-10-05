@@ -30,6 +30,7 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
                 "wallet_name": "a private wallet for me",
                 "pricing_plan_id": 1,
                 "pricing_unit_id": 1,
+                "pricing_unit_cost_id": 1,
                 "pricing_unit_detail_id": 1,
                 "product_name": "osparc",
                 "simcore_user_agent": "undefined",

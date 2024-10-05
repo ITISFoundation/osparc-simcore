@@ -187,7 +187,7 @@ async def httpx_async_client(
     # crete dir here
     async with AsyncClient(
         app=app,
-        base_url=backend_url,
+        base_url=f"{backend_url}",
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
@@ -388,9 +388,11 @@ async def test_create_containers_task(
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ) -> None:
-    last_progress_message: tuple[str, float] | None = None
+    last_progress_message: tuple[ProgressMessage, ProgressPercent | None] | None = None
 
-    async def create_progress(message: str, percent: float, _: TaskId) -> None:
+    async def create_progress(
+        message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
+    ) -> None:
         nonlocal last_progress_message
         last_progress_message = (message, percent)
         print(message, percent)

@@ -155,7 +155,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     RABBIT_SETTINGS: RabbitSettings = Field(auto_default_from_env=True)
 
     DY_DEPLOYMENT_REGISTRY_SETTINGS: RegistrySettings = Field()
-    DY_DOCKER_HUB_REGISTRY_SETTINGS: RegistrySettings | None = Field()
+    DY_DOCKER_HUB_REGISTRY_SETTINGS: RegistrySettings | None = Field(default=None)
 
     RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
 

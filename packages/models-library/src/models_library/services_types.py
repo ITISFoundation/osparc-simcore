@@ -2,7 +2,8 @@ from typing import Annotated, TypeAlias
 from uuid import uuid4
 
 import arrow
-from pydantic import StringConstraints
+from models_library.basic_types import ConstrainedStr
+from pydantic import StringConstraints, TypeAdapter
 
 from .basic_regex import PROPERTY_KEY_RE, SIMPLE_VERSION_RE
 from .services_regex import (
@@ -19,9 +20,13 @@ FileName: TypeAlias = Annotated[str, StringConstraints(pattern=FILENAME_RE)]
 
 ServiceKey: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_KEY_RE)]
 
-ServiceKeyEncoded: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_ENCODED_KEY_RE)]
+ServiceKeyEncoded: TypeAlias = Annotated[
+    str, StringConstraints(pattern=SERVICE_ENCODED_KEY_RE)
+]
 
-DynamicServiceKey: TypeAlias = Annotated[str, StringConstraints(pattern=DYNAMIC_SERVICE_KEY_RE)]
+DynamicServiceKey: TypeAlias = Annotated[
+    str, StringConstraints(pattern=DYNAMIC_SERVICE_KEY_RE)
+]
 
 ComputationalServiceKey: TypeAlias = Annotated[
     str, StringConstraints(pattern=COMPUTATIONAL_SERVICE_KEY_RE)
@@ -30,7 +35,7 @@ ComputationalServiceKey: TypeAlias = Annotated[
 ServiceVersion: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
 
 
-class RunID(str):
+class RunID(ConstrainedStr):
     """
     Used to assign a unique identifier to the run of a service.
 
@@ -41,8 +46,6 @@ class RunID(str):
     and gives the osparc-agent an opportunity to back it up.
     """
 
-    __slots__ = ()
-
     @classmethod
     def create(cls) -> "RunID":
         # NOTE: there was a legacy version of this RunID
@@ -52,4 +55,4 @@ class RunID(str):
         #   '1690203099_0ac3ed64-665b-42d2-95f7-e59e0db34242'
         utc_int_timestamp: int = arrow.utcnow().int_timestamp
         run_id_format = f"{utc_int_timestamp}_{uuid4()}"
-        return cls(run_id_format)
+        return TypeAdapter(cls).validate_python(run_id_format)
