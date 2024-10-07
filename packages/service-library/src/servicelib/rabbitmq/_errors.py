@@ -1,6 +1,6 @@
 from typing import Final
 
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 _ERROR_PREFIX: Final[str] = "rabbitmq_error"
 

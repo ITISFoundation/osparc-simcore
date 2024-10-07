@@ -10,7 +10,7 @@ from typing import Annotated, Any, ClassVar, Final, TypeAlias, cast
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 from pydantic import (
     BaseModel,
     ConfigDict,

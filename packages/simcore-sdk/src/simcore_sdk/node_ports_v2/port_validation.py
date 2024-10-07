@@ -2,7 +2,7 @@ import logging
 import re
 from typing import Any
 
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 from models_library.projects_nodes import UnitStr
 from models_library.utils.json_schema import (
     JsonSchemaValidationError,

@@ -1,5 +1,5 @@
 # pylint: disable=too-many-ancestors
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
 class EC2BaseError(OsparcErrorMixin, Exception):
