@@ -168,14 +168,12 @@ ENV SC_BUILD_TARGET=production \
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/efs
-# ensure home folder is read/writable for user efs
-RUN chown -R efs /home/efs
 
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
-COPY --chown=efs:efs --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
-COPY --chown=efs:efs services/efs-guardian/docker services/efs-guardian/docker
+COPY services/efs-guardian/docker services/efs-guardian/docker
 RUN chmod +x services/efs-guardian/docker/*.sh
 
 
@@ -205,7 +203,7 @@ ENV SC_BUILD_TARGET=development \
 
 WORKDIR /devel
 
-RUN chown -R efs:efs "${VIRTUAL_ENV}"
+RUN chown -R root:root "${VIRTUAL_ENV}"
 
 ENTRYPOINT ["/bin/sh", "services/efs-guardian/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/efs-guardian/docker/boot.sh"]
