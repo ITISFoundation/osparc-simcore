@@ -32,7 +32,7 @@ TEST_REQUIREMENTS = tuple(
 SETUP = {
     "name": "simcore-common-library",
     "version": Path(CURRENT_DIR / "VERSION").read_text().strip(),
-    "author": "Sylvain Anderegg (sanderegg)",
+    "author": "Giancarlo Romeo (giancarloromeo)",
     "description": "Core service library for simcore pydantic common",
     "python_requires": "~=3.10",
     "classifiers": [
@@ -40,7 +40,7 @@ SETUP = {
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     "long_description": Path(CURRENT_DIR / "README.md").read_text(),
     "license": "MIT license",

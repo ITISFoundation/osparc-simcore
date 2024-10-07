@@ -1,0 +1,2 @@
+class Initial:
+    pass
