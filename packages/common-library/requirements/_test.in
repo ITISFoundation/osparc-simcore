@@ -1,5 +1,5 @@
 #
-# Specifies dependencies required to run 'models-library'
+# Specifies dependencies required to run 'common-library'
 #
 --constraint ../../../requirements/constraints.txt
 

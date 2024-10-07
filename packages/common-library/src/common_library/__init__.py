@@ -1,4 +1,4 @@
-""" osparc's service models library
+""" osparc's service common library
 
 """
 
