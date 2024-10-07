@@ -54,6 +54,7 @@ jobs:
       aws-library: ${{ steps.filter.outputs.aws-library }}
       dask-task-models-library: ${{ steps.filter.outputs.dask-task-models-library }}
       models-library: ${{ steps.filter.outputs.models-library }}
+      common-library: ${{ steps.filter.outputs.common-library }}
       notifications-library: ${{ steps.filter.outputs.notifications-library }}
       postgres-database: ${{ steps.filter.outputs.postgres-database }}
       service-integration: ${{ steps.filter.outputs.service-integration }}
@@ -110,6 +111,8 @@ jobs:
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
               - 'mypy.ini'
+            common-library:
+              - 'packages/common-library/**'
             notifications-library:
               - 'packages/notifications-library/**'
               - 'packages/postgres-database/**'
@@ -1593,6 +1596,47 @@ jobs:
         with:
           flags: unittests #optional
 
+  unit-test-common-library:
+    needs: changes
+    if: ${{ needs.changes.outputs.common-library == 'true' || github.event_name == 'push' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] common-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-22.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+      - name: setup python environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: install uv
+        uses: yezz123/setup-uv@v4
+      - uses: actions/cache@v4
+        id: cache-uv
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - name: install
+        run: ./ci/github/unit-testing/common-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/common-library.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/common-library.bash test
+      - uses: codecov/codecov-action@v4.5.0
+        with:
+          flags: unittests #optional
+
   unit-test-notifications-library:
     needs: changes
     if: ${{ needs.changes.outputs.notifications-library == 'true' || github.event_name == 'push' }}
@@ -1704,6 +1748,7 @@ jobs:
         unit-test-efs-guardian,
         unit-test-frontend,
         unit-test-models-library,
+        unit-test-common-library,
         unit-test-notifications-library,
         unit-test-osparc-gateway-server,
         unit-test-payments,

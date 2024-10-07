@@ -9,8 +9,8 @@ class _DefaultDict(dict):
 
 
 class OsparcErrorMixin(PydanticErrorMixin):
-    msg_template: str
     code: str   # type: ignore[assignment]
+    msg_template: str
 
     def __new__(cls, *_args, **_kwargs):
         if not hasattr(cls, "code"):
