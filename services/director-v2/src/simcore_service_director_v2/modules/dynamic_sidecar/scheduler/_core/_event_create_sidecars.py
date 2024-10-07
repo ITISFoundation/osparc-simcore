@@ -218,7 +218,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         scheduler_data.run_id = RunID.create()
 
         # telemetry configuration
-        is_telemetry_enabled = await groups_extra_properties.is_telemetry_enabled(
+        user_extra_properties = await groups_extra_properties.get_user_extra_properties(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
         )
 
@@ -237,7 +237,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
             allow_internet_access=allow_internet_access,
             metrics_collection_allowed=metrics_collection_allowed,
-            telemetry_enabled=is_telemetry_enabled,
+            user_extra_properties=user_extra_properties,
             rpc_client=rpc_client,
         )
 

@@ -38,6 +38,9 @@ from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
 )
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.catalog import CatalogClient
+from simcore_service_director_v2.modules.db.repositories.groups_extra_properties import (
+    UserExtraProperties,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
     get_dynamic_sidecar_spec,
 )
@@ -453,7 +456,11 @@ async def test_get_dynamic_proxy_spec(
             has_quota_support=False,
             allow_internet_access=False,
             metrics_collection_allowed=True,
-            telemetry_enabled=True,
+            user_extra_properties=UserExtraProperties(
+                is_internet_enabled=True,
+                is_telemetry_enabled=False,
+                is_efs_enabled=False,
+            ),
             rpc_client=Mock(),
         )
 
@@ -548,7 +555,11 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         has_quota_support=False,
         allow_internet_access=False,
         metrics_collection_allowed=True,
-        telemetry_enabled=True,
+        user_extra_properties=UserExtraProperties(
+            is_internet_enabled=True,
+            is_telemetry_enabled=False,
+            is_efs_enabled=False,
+        ),
         rpc_client=Mock(),
     )
     assert dynamic_sidecar_spec
