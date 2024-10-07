@@ -88,7 +88,8 @@ if stat $DOCKER_MOUNT >/dev/null 2>&1; then
 fi
 
 echo "$INFO Starting $* ..."
-echo "  $EFS_USER_NAME rights    : $(id "$EFS_USER_NAME")"
+echo "  $(whoami) rights    : $(id $whoami))"
 echo "  local dir : $(ls -al)"
 
-exec gosu "$EFS_USER_NAME" "$@"
+# exec gosu "$EFS_USER_NAME" "$@"
+exec "$@"
