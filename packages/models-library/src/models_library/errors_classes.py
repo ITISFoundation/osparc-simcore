@@ -10,15 +10,16 @@ class _DefaultDict(dict):
 
 class OsparcErrorMixin(PydanticErrorMixin):
     msg_template: str
+    code: str   # type: ignore[assignment]
 
     def __new__(cls, *_args, **_kwargs):
         if not hasattr(cls, "code"):
-            cls.code = cls._get_full_class_name()  # type: ignore[assignment]
+            cls.code = cls._get_full_class_name()
         return super().__new__(cls)
 
     def __init__(self, **ctx: Any) -> None:
         self.__dict__ = ctx
-        super().__init__(message=self._build_message(), code=self.code)
+        super().__init__(message=self._build_message(), code=self.code) # type: ignore[arg-type]
 
     def __str__(self) -> str:
         return self._build_message()
