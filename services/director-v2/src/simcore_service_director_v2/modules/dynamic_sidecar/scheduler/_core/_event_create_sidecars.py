@@ -181,7 +181,8 @@ class CreateSidecars(DynamicSchedulerEvent):
         groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
 
         assert scheduler_data.product_name is not None  # nosec
-        allow_internet_access: bool = await groups_extra_properties.has_internet_access(
+
+        user_extra_properties = await groups_extra_properties.get_user_extra_properties(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
         )
 
@@ -194,7 +195,7 @@ class CreateSidecars(DynamicSchedulerEvent):
                 "uuid": f"{scheduler_data.node_uuid}",  # needed for removal when project is closed
             },
             "Attachable": True,
-            "Internal": not allow_internet_access,
+            "Internal": not user_extra_properties.is_internet_enabled,
         }
         dynamic_sidecar_network_id = await create_network(network_config)
 
@@ -216,11 +217,6 @@ class CreateSidecars(DynamicSchedulerEvent):
         # Each time a new dynamic-sidecar service is created
         # generate a new `run_id` to avoid resource collisions
         scheduler_data.run_id = RunID.create()
-
-        # telemetry configuration
-        user_extra_properties = await groups_extra_properties.get_user_extra_properties(
-            user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
-        )
 
         rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
 
