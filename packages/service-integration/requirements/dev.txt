@@ -11,6 +11,7 @@
 --requirement _test.txt
 --requirement _tools.txt
 
+--editable ../common-library/
 --editable ../models-library/
 --editable ../pytest-simcore/
 

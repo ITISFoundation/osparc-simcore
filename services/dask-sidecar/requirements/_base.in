@@ -11,6 +11,7 @@
 #   - Added as constraints instead of requirements in order to avoid polluting base.txt
 #   - Will be installed when prod.txt or dev.txt
 #
+--requirement ../../../packages/common-library/requirements/_base.in
 --requirement ../../../packages/dask-task-models-library/requirements/_base.in
 --requirement ../../../packages/models-library/requirements/_base.in
 --requirement ../../../packages/service-library/requirements/_base.in

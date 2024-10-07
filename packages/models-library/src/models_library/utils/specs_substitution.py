@@ -1,6 +1,7 @@
 from typing import Any, NamedTuple, TypeAlias, cast
 
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
+
 from pydantic import StrictBool, StrictFloat, StrictInt
 
 from .json_serialization import json_dumps, json_loads

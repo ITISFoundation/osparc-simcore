@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any
 
 import pytest
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
 def test_get_full_class_name():

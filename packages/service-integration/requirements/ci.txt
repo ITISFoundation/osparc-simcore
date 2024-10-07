@@ -10,6 +10,7 @@
 --requirement _base.txt
 --requirement _test.txt
 
+simcore-common-library @ ../common-library
 simcore-models-library @ ../models-library
 pytest-simcore @ ../pytest-simcore
 
