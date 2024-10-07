@@ -12,7 +12,7 @@
 
 # installs this repo's packages
 pytest-simcore @ ../pytest-simcore
-simcore-models-library @ ../models-library
+simcore-common-library @ ../common-library
 
 # current module
 simcore-settings-library @ .
