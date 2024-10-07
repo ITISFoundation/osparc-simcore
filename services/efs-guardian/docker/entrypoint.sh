@@ -91,5 +91,4 @@ echo "$INFO Starting $* ..."
 echo "  $(whoami) rights    : $(id $whoami))"
 echo "  local dir : $(ls -al)"
 
-# exec gosu "$EFS_USER_NAME" "$@"
 exec "$@"
