@@ -28,10 +28,10 @@ qx.Class.define("osparc.po.PreRegistration", {
           this._add(control);
           break;
         case "finding-status":
-          control = new qx.ui.basic.Label();
-          this._add(control, {
+          control = new qx.ui.basic.Label().set({
             rich: true
           });
+          this._add(control);
           break;
         case "pre-registration-container":
           control = new qx.ui.container.Scroll();
