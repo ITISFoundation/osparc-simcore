@@ -147,7 +147,9 @@ async def remove_disconnected_user_resources(
             )
             await logged_gather(
                 *[
-                    registry.remove_resource(key, resource_name)
+                    registry.remove_resource(
+                        key, resource_name
+                    )  # why not remove the alive key as well? this makes no sense
                     for key in keys_to_update
                 ],
                 reraise=False,
