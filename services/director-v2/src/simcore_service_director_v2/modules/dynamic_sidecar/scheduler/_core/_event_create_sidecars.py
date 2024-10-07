@@ -235,7 +235,6 @@ class CreateSidecars(DynamicSchedulerEvent):
             app_settings=app.state.settings,
             hardware_info=scheduler_data.hardware_info,
             has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
-            allow_internet_access=allow_internet_access,
             metrics_collection_allowed=metrics_collection_allowed,
             user_extra_properties=user_extra_properties,
             rpc_client=rpc_client,
