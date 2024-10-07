@@ -193,7 +193,7 @@ class UserSessionResourcesRegistry:
         await self._registry.remove_resource(self._resource_key(), key)
 
     @staticmethod
-    async def find_users_of_resource(  # used for notifications of closed/used projects to block them in the UI?
+    async def find_users_of_resource(
         app: web.Application, key: str, value: str
     ) -> list[UserSessionID]:
         registry = get_registry(app)
