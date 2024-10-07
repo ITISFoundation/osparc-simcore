@@ -77,10 +77,6 @@ class LoginNextPage(NextPage[CodePageParams]):
     ...
 
 
-class CheckAuthBody(BaseModel):
-    ...
-
-
 @routes.post(f"/{API_VTAG}/auth/login", name="auth_login")
 @on_success_grant_session_access_to(
     name="auth_register_phone",
@@ -313,9 +309,10 @@ async def check_auth(request: web.Request) -> web.Response:
     # used primarily by Traefik auth middleware to verify session cookies
 
     # NOTE: for future development
-    # if databse access is added here, services like jupyter-math
+    # if database access is added here, services like jupyter-math
     # which load a lot of resources will have a big performance hit
-    # consider caching some properties required by this endpoit or rely on Redis
+    # consider caching some properties required by this endpoint or rely on Redis
 
-    _ = request
-    return envelope_response(CheckAuthBody())
+    assert request  # nosec
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

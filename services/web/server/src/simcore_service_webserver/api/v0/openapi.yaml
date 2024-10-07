@@ -238,15 +238,11 @@ paths:
       tags:
       - auth
       summary: Check Auth
-      description: checks if user is autheticated in the platform
+      description: checks if user is authenticated in the platform
       operationId: check_authentication
       responses:
-        '200':
+        '204':
           description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_CheckAuthBody_'
         '401':
           description: unauthorized reset due to invalid token code
           content:
@@ -4335,7 +4331,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -6487,10 +6483,6 @@ components:
           format: password
           writeOnly: true
       additionalProperties: false
-    CheckAuthBody:
-      title: CheckAuthBody
-      type: object
-      properties: {}
     CheckpointAnnotations:
       title: CheckpointAnnotations
       type: object
@@ -7138,14 +7130,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/CatalogServiceGet'
-        error:
-          title: Error
-    Envelope_CheckAuthBody_:
-      title: Envelope[CheckAuthBody]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/CheckAuthBody'
         error:
           title: Error
     Envelope_CheckpointApiModel_:

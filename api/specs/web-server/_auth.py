@@ -19,7 +19,6 @@ from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.login._2fa_handlers import Resend2faBody
 from simcore_service_webserver.login._auth_handlers import (
-    CheckAuthBody,
     LoginBody,
     LoginNextPage,
     LoginTwoFactorAuthBody,
@@ -158,8 +157,8 @@ async def logout(_body: LogoutBody):
 
 @router.get(
     "/auth:check",
-    response_model=Envelope[CheckAuthBody],
     operation_id="check_authentication",
+    status_code=status.HTTP_204_NO_CONTENT,
     responses={
         status.HTTP_401_UNAUTHORIZED: {
             "model": Envelope[Error],
@@ -168,7 +167,7 @@ async def logout(_body: LogoutBody):
     },
 )
 async def check_auth():
-    """checks if user is autheticated in the platform"""
+    """checks if user is authenticated in the platform"""
 
 
 @router.post(
