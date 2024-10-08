@@ -1,7 +1,10 @@
 import datetime
 from functools import cached_property
 
-from pydantic import Field, field_validator, parse_obj_as, validator
+from common_library.pydantic_settings_validators import (
+    validate_timedelta_in_legacy_mode,
+)
+from pydantic import Field, parse_obj_as, validator
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
 from settings_library.director_v2 import DirectorV2Settings
@@ -43,22 +46,9 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     )
 
-    # TODO: this should be a common validator put in some common library and not here to allow reuse
-    # wherever we used timedelta this should be in place otherwise it will fail where we overwrite the
-    # values via env vars
-    # GCR we need to talk where to place this one
-    @field_validator("DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT", mode="before")
-    @classmethod
-    def interpret_t_as_seconds(
-        cls, v: datetime.timedelta | str | float
-    ) -> datetime.timedelta | float | str:
-        if isinstance(v, str):
-            try:
-                return float(v)
-            except ValueError:
-                # returns format like "1:00:00"
-                return v
-        return v
+    _legacy_parsing_dynamic_scheduler_stop_service_timeout = (
+        validate_timedelta_in_legacy_mode("DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT")
+    )
 
     @cached_property
     def LOG_LEVEL(self):  # noqa: N802

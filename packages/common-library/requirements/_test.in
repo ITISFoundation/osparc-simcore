@@ -10,6 +10,7 @@
 
 coverage
 faker
+pydantic-settings
 pytest
 pytest-asyncio
 pytest-cov
