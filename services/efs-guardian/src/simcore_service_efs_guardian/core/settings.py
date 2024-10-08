@@ -12,6 +12,7 @@ from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -76,6 +77,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings = Field(auto_default_from_env=True)
     EFS_GUARDIAN_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
+    EFS_GUARDIAN_REDIS: RedisSettings = Field(auto_default_from_env=True)
     EFS_GUARDIAN_TRACING: TracingSettings | None = Field(
         auto_default_from_env=True, description="settings for opentelemetry tracing"
     )

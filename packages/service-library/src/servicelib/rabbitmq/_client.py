@@ -151,6 +151,7 @@ class RabbitMQClient(RabbitMQClientBase):
         message_ttl: NonNegativeInt = RABBIT_QUEUE_MESSAGE_DEFAULT_TTL_MS,
         unexpected_error_retry_delay_s: float = _DEFAULT_UNEXPECTED_ERROR_RETRY_DELAY_S,
         unexpected_error_max_attempts: int = _DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS,
+        queue_name: str | None = None,
     ) -> str:
         """subscribe to exchange_name calling ``message_handler`` for every incoming message
         - exclusive_queue: True means that every instance of this application will
@@ -216,6 +217,7 @@ class RabbitMQClient(RabbitMQClientBase):
                 exclusive_queue=exclusive_queue,
                 message_ttl=message_ttl,
                 arguments={"x-dead-letter-exchange": delayed_exchange_name},
+                queue_name=queue_name,
             )
             if topics is None:
                 await queue.bind(exchange, routing_key="")
@@ -235,6 +237,7 @@ class RabbitMQClient(RabbitMQClientBase):
                 exclusive_queue=exclusive_queue,
                 message_ttl=int(unexpected_error_retry_delay_s * 1000),
                 arguments={"x-dead-letter-exchange": exchange.name},
+                queue_name=queue_name,
             )
             await delayed_queue.bind(delayed_exchange)
 
