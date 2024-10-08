@@ -1,6 +1,6 @@
 from typing import Annotated, TypeAlias
 
-from pydantic import AfterValidator, AnyHttpUrl, AnyUrl
+from pydantic import AfterValidator, AnyHttpUrl, AnyUrl, HttpUrl
 
 
 def _strip_last_slash(url: str) -> str:
@@ -12,3 +12,5 @@ AnyHttpUrlLegacy: TypeAlias = Annotated[
 ]
 
 AnyUrlLegacy: TypeAlias = Annotated[str, AnyUrl, AfterValidator(_strip_last_slash)]
+
+HttpUrlLegacy: TypeAlias = Annotated[str, HttpUrl, AfterValidator(_strip_last_slash)]

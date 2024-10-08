@@ -223,7 +223,7 @@ class Job(BaseModel):
     @classmethod
     def create_solver_job(cls, *, solver: Solver, inputs: JobInputs):
         return Job.create_now(
-            parent_name=solver.name,  # type: ignore
+            parent_name=solver.name,
             inputs_checksum=inputs.compute_checksum(),
         )
 

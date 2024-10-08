@@ -12,11 +12,11 @@ from collections.abc import Callable
 from contextlib import suppress
 
 import httpx
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from httpx import URL, HTTPStatusError
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
-from models_library.error_classes import OsparcErrorMixin
 from pydantic import TypeAdapter, ValidationError
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import (

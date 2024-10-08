@@ -81,14 +81,6 @@ setuptools==69.1.1
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   pip-tools
-tomli==2.0.1
-    # via
-    #   -c requirements/_test.txt
-    #   black
-    #   build
-    #   mypy
-    #   pip-tools
-    #   pylint
 tomlkit==0.13.2
     # via pylint
 types-cachetools==5.5.0.20240820
