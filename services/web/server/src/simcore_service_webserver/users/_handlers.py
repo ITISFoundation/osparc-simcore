@@ -54,7 +54,7 @@ def _handle_users_exceptions(handler: Handler):
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except MissingGroupExtraPropertiesForProductError as exc:
             error_code = create_error_code(exc)
-            frontend_msg = FMSG_MISSING_CONFIG_WITH_OEC.format(error_code)
+            frontend_msg = FMSG_MISSING_CONFIG_WITH_OEC.format(error_code=error_code)
             log_msg = create_troubleshotting_log_message(
                 message_to_user=frontend_msg,
                 error=exc,
