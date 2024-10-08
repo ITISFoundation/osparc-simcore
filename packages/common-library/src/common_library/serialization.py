@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Any
 
 from common_library.pydantic_fields_extension import get_type
@@ -14,6 +15,9 @@ def model_dump_with_secrets(
             continue
 
         field_data = data[field_name]
+
+        if isinstance(field_data, timedelta):
+            data[field_name] = field_data.total_seconds()
 
         if isinstance(field_data, SecretStr):
             if show_secrets:

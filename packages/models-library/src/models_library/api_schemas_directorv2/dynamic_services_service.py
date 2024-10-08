@@ -33,7 +33,7 @@ class CommonServiceDetails(BaseModel):
 
 
 class ServiceDetails(CommonServiceDetails):
-    basepath: Path = Field(
+    basepath: Path | None = Field(
         default=None,
         description="predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
         alias="service_basepath",
@@ -68,7 +68,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
     internal_port: PortInt = Field(
         ..., description="the service swarm internal port", alias="service_port"
     )
-    published_port: PortInt = Field(
+    published_port: PortInt | None = Field(
         default=None,
         description="the service swarm published port if any",
         deprecated=True,

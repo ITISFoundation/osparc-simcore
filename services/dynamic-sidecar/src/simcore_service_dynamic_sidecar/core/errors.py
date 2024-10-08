@@ -1,7 +1,7 @@
 from typing import Any
 
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import status
-from models_library.errors_classes import OsparcErrorMixin
 from models_library.services import RunID
 
 
