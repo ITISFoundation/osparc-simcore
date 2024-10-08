@@ -1,11 +1,11 @@
 from functools import cached_property
 
+from common_library.pydantic_networks_extension import HttpUrlLegacy
 from models_library.basic_types import NonNegativeDecimal
 from pydantic import (
     AliasChoices,
     EmailStr,
     Field,
-    HttpUrl,
     PositiveFloat,
     SecretStr,
     TypeAdapter,
@@ -65,7 +65,7 @@ class ApplicationSettings(_BaseApplicationSettings):
     These settings includes extra configuration for the http-API
     """
 
-    PAYMENTS_GATEWAY_URL: HttpUrl = Field(
+    PAYMENTS_GATEWAY_URL: HttpUrlLegacy = Field(
         ..., description="Base url to the payment gateway"
     )
 
@@ -125,7 +125,7 @@ class ApplicationSettings(_BaseApplicationSettings):
         json_schema_extra={"auto_default_from_env": True},
     )
 
-    PAYMENTS_STRIPE_URL: HttpUrl = Field(
+    PAYMENTS_STRIPE_URL: HttpUrlLegacy = Field(
         ..., description="Base url to the payment Stripe"
     )
     PAYMENTS_STRIPE_API_SECRET: SecretStr = Field(
