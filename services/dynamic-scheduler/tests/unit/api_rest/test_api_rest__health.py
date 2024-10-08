@@ -20,6 +20,21 @@ class MockHealth:
 
 
 @pytest.fixture
+def app_environment(
+    disable_rabbitmq_setup: None,
+    disable_redis_setup: None,
+    disable_service_tracker_setup: None,
+    disable_deferred_manager_setup: None,
+    disable_notifier_setup: None,
+    disable_status_monitor_setup: None,
+    mock_rabbitmq_clients: None,
+    mock_redis_client: None,
+    app_environment: EnvVarsDict,
+) -> EnvVarsDict:
+    return app_environment
+
+
+@pytest.fixture
 def mock_rabbitmq_clients(
     mocker: MockerFixture,
     rabbit_client_ok: bool,
@@ -46,15 +61,6 @@ def mock_redis_client(
         f"{base_path}.get_all_redis_clients",
         return_value={0: MockHealth(redis_client_ok)},
     )
-
-
-@pytest.fixture
-def app_environment(
-    mock_rabbitmq_clients: None,
-    mock_redis_client: None,
-    app_environment: EnvVarsDict,
-) -> EnvVarsDict:
-    return app_environment
 
 
 @pytest.mark.parametrize(
