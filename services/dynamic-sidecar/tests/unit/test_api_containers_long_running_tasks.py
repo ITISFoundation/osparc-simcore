@@ -200,7 +200,7 @@ async def httpx_async_client(
 def client(
     app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
 ) -> Client:
-    return Client(app=app, async_client=httpx_async_client, base_url=backend_url)
+    return Client(app=app, async_client=httpx_async_client, base_url=f"{backend_url}")
 
 
 @pytest.fixture

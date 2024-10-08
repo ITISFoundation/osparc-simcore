@@ -6,11 +6,11 @@ from contextlib import suppress
 from datetime import timedelta
 from functools import partial
 
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.basic_types import IDStr
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
-from pydantic.errors import PydanticErrorMixin
 from servicelib import progress_bar
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_catch, log_context
@@ -26,12 +26,11 @@ logger = logging.getLogger(__name__)
 
 async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -> None:
     task.cancel()
-    with suppress(CancelledError):
-        with log_catch(logger, reraise=False):
-            await wait((task,), timeout=task_cancellation_timeout_s)
+    with suppress(CancelledError), log_catch(logger, reraise=False):
+        await wait((task,), timeout=task_cancellation_timeout_s)
 
 
-class UploadPortsFailed(PydanticErrorMixin, RuntimeError):
+class UploadPortsFailedError(OsparcErrorMixin, RuntimeError):
     code: str = "dynamic_sidecar.outputs_manager.failed_while_uploading"
     msg_template: str = "Failed while uploading: failures={failures}"
 
@@ -247,7 +246,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             True for v in self._last_upload_error_tracker.values() if v is not None
         )
         if any_failed_upload:
-            raise UploadPortsFailed(failures=self._last_upload_error_tracker)
+            raise UploadPortsFailedError(failures=self._last_upload_error_tracker)
 
 
 def setup_outputs_manager(app: FastAPI) -> None:
