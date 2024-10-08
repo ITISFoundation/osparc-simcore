@@ -233,6 +233,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Log_'
+  /v0/auth:check:
+    get:
+      tags:
+      - auth
+      summary: Check Auth
+      description: checks if user is authenticated in the platform
+      operationId: check_authentication
+      responses:
+        '204':
+          description: Successful Response
+        '401':
+          description: unauthorized reset due to invalid token code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Error_'
   /v0/auth/reset-password:
     post:
       tags:
@@ -4315,7 +4331,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':

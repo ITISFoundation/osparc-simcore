@@ -9,6 +9,8 @@ from models_library.services_resources import (
 )
 from pydantic import ByteSize
 from servicelib.common_headers import X_SIMCORE_USER_AGENT
+from settings_library import webserver
+from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 
 from ....core.dynamic_services_settings import DynamicServicesSettings
 from ....core.dynamic_services_settings.proxy import DynamicSidecarProxySettings
@@ -42,6 +44,9 @@ def get_dynamic_proxy_spec(
     )
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
         dynamic_services_settings.DYNAMIC_SCHEDULER
+    )
+    webserver_settings: webserver.WebServerSettings = (
+        dynamic_services_settings.WEBSERVER_SETTINGS
     )
 
     mounts = [
@@ -77,9 +82,11 @@ def get_dynamic_proxy_spec(
             "io.simcore.zone": f"{dynamic_services_scheduler_settings.TRAEFIK_SIMCORE_ZONE}",
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",
+            # security
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowcredentials": "true",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {scheduler_data.request_dns} {scheduler_data.node_uuid}.services.{scheduler_data.request_dns}",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowheaders": f"{X_SIMCORE_USER_AGENT}",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowheaders": f"{X_SIMCORE_USER_AGENT},Set-Cookie",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accessControlAllowOriginList": ",".join(
                 [
                     f"{scheduler_data.request_scheme}://{scheduler_data.request_dns}",
@@ -88,11 +95,22 @@ def get_dynamic_proxy_spec(
             ),
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolmaxage": "100",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.addvaryheader": "true",
+            # auth
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": f"{webserver_settings.api_base_url}/auth:check",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.trustForwardHeader": "true",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.authResponseHeaders": f"Set-Cookie,{DEFAULT_SESSION_COOKIE_NAME}",
+            # routing
             f"traefik.http.services.{scheduler_data.proxy_service_name}.loadbalancer.server.port": "80",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.entrypoints": "http",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.priority": "10",
             f"traefik.http.routers.{scheduler_data.proxy_service_name}.rule": rf"HostRegexp(`{scheduler_data.node_uuid}\.services\.(?P<host>.+)`)",
-            f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}_gzip@swarm, {scheduler_data.proxy_service_name}-security-headers",
+            f"traefik.http.routers.{scheduler_data.proxy_service_name}.middlewares": ",".join(
+                [
+                    f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}_gzip@swarm",
+                    f"{scheduler_data.proxy_service_name}-security-headers",
+                    f"{scheduler_data.proxy_service_name}-auth",
+                ]
+            ),
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
         }
         | StandardSimcoreDockerLabels(
