@@ -1,7 +1,11 @@
+from asyncio import Task
+import traceback
 import logging
 from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
+
+from pydantic_core import InitErrorDetails
 
 from models_library.api_schemas_storage import LinkType
 from models_library.basic_types import IDStr
@@ -25,6 +29,16 @@ from .ports_mapping import InputsList, OutputsList
 
 log = logging.getLogger(__name__)
 
+
+def _format_error(task:Task)-> str:
+    # pylint:disable=protected-access
+    assert task._exception #nosec
+    error_list= traceback.format_exception(type(task._exception), task._exception, task._exception.__traceback__)
+    return "\n".join(error_list)
+
+def _get_error_details(task:Task, port_key:str)->InitErrorDetails:
+    # pylint:disable=protected-access
+    return InitErrorDetails(type="value_error", loc=(f"{port_key}",), input=_format_error(task), ctx={"error":task._exception})
 
 class Nodeports(BaseModel):
     """
@@ -180,9 +194,8 @@ class Nodeports(BaseModel):
             await self.save_to_db_cb(self)
 
         # groups all ValidationErrors pre-pending 'port_key' to loc and raises ValidationError
-        if errors := [
-            list(flatten_errors([r], self.__config__, loc=(f"{port_key}",)))
+        if error_details:= [
+            _get_error_details(r, port_key)
             for port_key, r in zip(port_values.keys(), results)
-            if isinstance(r, ValidationError)
         ]:
-            raise ValidationError(errors, model=type(self))
+            raise ValidationError.from_exception_data(title="Multiple port_key errors",line_errors=error_details)

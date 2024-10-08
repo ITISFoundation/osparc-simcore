@@ -3,6 +3,7 @@
 import logging
 from collections.abc import AsyncIterable, Iterable
 from typing import Final
+from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 
 import arrow
 import pytest
@@ -77,7 +78,8 @@ async def thick_client(request_timeout: int) -> AsyncIterable[FakeThickClient]:
 
 @pytest.fixture
 def test_url() -> str:
-    return str(TypeAdapter(AnyHttpUrl).validate_python("http://missing-host:1111"))
+    url =TypeAdapter(AnyHttpUrlLegacy).validate_python("http://missing-host:1111")
+    return f"{url}"
 
 
 async def test_connection_error(
