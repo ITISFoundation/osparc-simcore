@@ -7,7 +7,7 @@ from typing import Any
 
 import rich
 import typer
-from models_library.utils.serialization import model_dump_with_secrets
+from common_library.serialization import model_dump_with_secrets
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings
 
