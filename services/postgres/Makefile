@@ -7,8 +7,8 @@ ifneq (,$(wildcard $(DOT_ENV_FILE)))
 endif
 
 
-.PHONY: scripts/create-readonly-user.sql
-scripts/create-readonly-user.sql: scripts/create-readonly-user.sql.template
-	@echo "Generating SQL script from $<..."
+
+scripts/%.sql: scripts/%.sql.template
+	@echo "Generating SQL script from '$<'..."
 	@envsubst < $< > $@
-	@echo "SQL script generated as $@"
+	@echo "SQL script generated as '$@'"
