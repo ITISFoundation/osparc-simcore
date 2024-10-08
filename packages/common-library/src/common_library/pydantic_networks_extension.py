@@ -8,20 +8,20 @@ def _strip_last_slash(url: str) -> str:
 
 
 AnyUrlLegacy: TypeAlias = Annotated[
-    str,
     AnyUrl,
+    AfterValidator(str),
     AfterValidator(_strip_last_slash),
 ]
 
 AnyHttpUrlLegacy: TypeAlias = Annotated[
-    str,
     AnyHttpUrl,
+    AfterValidator(str),
     AfterValidator(_strip_last_slash),
 ]
 
 
 HttpUrlLegacy: TypeAlias = Annotated[
-    str,
     HttpUrl,
+    AfterValidator(str),
     AfterValidator(_strip_last_slash),
 ]
