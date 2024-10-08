@@ -16,7 +16,7 @@ from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_sdk.node_ports_v2 import Nodeports, exceptions, ports
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import create_valid_port_mapping
-from pytest_mock import MockerFixture
+
 
 @pytest.mark.parametrize(
     "auto_update",

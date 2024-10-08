@@ -197,5 +197,6 @@ class Nodeports(BaseModel):
         if error_details:= [
             _get_error_details(r, port_key)
             for port_key, r in zip(port_values.keys(), results)
+            if r is not None
         ]:
             raise ValidationError.from_exception_data(title="Multiple port_key errors",line_errors=error_details)
