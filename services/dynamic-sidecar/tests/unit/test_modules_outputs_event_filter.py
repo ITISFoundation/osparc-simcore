@@ -7,7 +7,7 @@ from typing import AsyncIterator, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
-from pydantic import ByteSize, NonNegativeFloat, NonNegativeInt, parse_obj_as
+from pydantic import ByteSize, NonNegativeFloat, NonNegativeInt, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._event_filter import (
@@ -224,8 +224,8 @@ def test_default_delay_policy():
     wait_policy = DefaultDelayPolicy()
 
     # below items are defined by the default policy
-    LOWER_BOUND = parse_obj_as(ByteSize, "1mib")
-    UPPER_BOUND = parse_obj_as(ByteSize, "500mib")
+    LOWER_BOUND = TypeAdapter(ByteSize).validate_python("1mib")
+    UPPER_BOUND = TypeAdapter(ByteSize).validate_python("500mib")
 
     assert wait_policy.get_min_interval() == 1.0
 
@@ -237,4 +237,7 @@ def test_default_delay_policy():
     assert wait_policy.get_wait_interval(UPPER_BOUND - 1) < 10.0
     assert wait_policy.get_wait_interval(UPPER_BOUND) == 10.0
     assert wait_policy.get_wait_interval(UPPER_BOUND + 1) == 10.0
-    assert wait_policy.get_wait_interval(parse_obj_as(ByteSize, "1Tib")) == 10.0
+    assert (
+        wait_policy.get_wait_interval(TypeAdapter(ByteSize).validate_python("1Tib"))
+        == 10.0
+    )
