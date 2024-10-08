@@ -7,10 +7,21 @@ def _strip_last_slash(url: str) -> str:
     return url.rstrip("/")
 
 
-AnyHttpUrlLegacy: TypeAlias = Annotated[
-    str, AnyHttpUrl, AfterValidator(_strip_last_slash)
+AnyUrlLegacy: TypeAlias = Annotated[
+    AnyUrl,
+    AfterValidator(str),
+    AfterValidator(_strip_last_slash),
 ]
 
-AnyUrlLegacy: TypeAlias = Annotated[str, AnyUrl, AfterValidator(_strip_last_slash)]
+AnyHttpUrlLegacy: TypeAlias = Annotated[
+    AnyHttpUrl,
+    AfterValidator(str),
+    AfterValidator(_strip_last_slash),
+]
 
-HttpUrlLegacy: TypeAlias = Annotated[str, HttpUrl, AfterValidator(_strip_last_slash)]
+
+HttpUrlLegacy: TypeAlias = Annotated[
+    HttpUrl,
+    AfterValidator(str),
+    AfterValidator(_strip_last_slash),
+]

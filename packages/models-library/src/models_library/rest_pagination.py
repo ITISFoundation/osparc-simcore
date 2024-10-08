@@ -1,7 +1,7 @@
 from typing import Annotated, Final, Generic, TypeAlias, TypeVar
 
+from common_library.pydantic_type_adapters import AnyHttpUrlLegacyAdapter
 from pydantic import (
-    AnyHttpUrl,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -14,8 +14,6 @@ from pydantic import (
 )
 
 from .utils.common_validators import none_to_empty_list_pre_validator
-
-_ANY_HTTP_URL_ADAPTER: Final[TypeAdapter[AnyHttpUrl]] = TypeAdapter(AnyHttpUrl)
 
 # Default limit values
 #  - Using same values across all pagination entrypoints simplifies
@@ -101,7 +99,7 @@ class PageLinks(
     PageRefs[
         Annotated[
             str,
-            BeforeValidator(lambda x: str(_ANY_HTTP_URL_ADAPTER.validate_python(x))),
+            BeforeValidator(lambda x: str(AnyHttpUrlLegacyAdapter.validate_python(x))),
         ]
     ]
 ):
