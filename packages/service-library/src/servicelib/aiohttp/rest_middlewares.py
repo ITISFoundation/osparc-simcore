@@ -62,7 +62,7 @@ def error_middleware_factory(
         if isinstance(err, OsparcErrorMixin):
             error_context.update(err.error_context())
 
-        frontend_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY.format(error_code)
+        frontend_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY.format(error_code=error_code)
         log_msg = create_troubleshotting_log_message(
             message_to_user=frontend_msg,
             error=err,
