@@ -30,6 +30,7 @@ from ....core.dynamic_services_settings.scheduler import (
 from ....core.dynamic_services_settings.sidecar import DynamicSidecarSettings
 from ....core.settings import AppSettings
 from ....models.dynamic_services_scheduler import SchedulerData
+from ....modules.db.repositories.groups_extra_properties import UserExtraProperties
 from .._namespace import get_compose_namespace
 from ..volumes import DynamicSidecarVolumesPathsResolver
 from ._constants import DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS
@@ -220,6 +221,7 @@ async def _get_mounts(
     app_settings: AppSettings,
     has_quota_support: bool,
     rpc_client: RabbitMQRPCClient,
+    is_efs_enabled: bool,
 ) -> list[dict[str, Any]]:
     mounts: list[dict[str, Any]] = [
         # docker socket needed to use the docker api
@@ -270,18 +272,9 @@ async def _get_mounts(
             )
         )
 
-    # We check whether user has access to EFS feature
-    use_efs = False
-    efs_settings = dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS
-    if (
-        efs_settings
-        and scheduler_data.user_id in efs_settings.EFS_ONLY_ENABLED_FOR_USERIDS
-    ):
-        use_efs = True
-
     # state paths now get mounted via different driver and are synced to s3 automatically
     for path_to_mount in scheduler_data.paths_mapping.state_paths:
-        if use_efs:
+        if is_efs_enabled:
             assert dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS  # nosec
 
             _storage_directory_name = DynamicSidecarVolumesPathsResolver.volume_name(
@@ -411,10 +404,9 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
     app_settings: AppSettings,
     *,
     has_quota_support: bool,
-    allow_internet_access: bool,
     hardware_info: HardwareInfo | None,
     metrics_collection_allowed: bool,
-    telemetry_enabled: bool,
+    user_extra_properties: UserExtraProperties,
     rpc_client: RabbitMQRPCClient,
 ) -> AioDockerServiceSpec:
     """
@@ -434,6 +426,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         app_settings=app_settings,
         has_quota_support=has_quota_support,
         rpc_client=rpc_client,
+        is_efs_enabled=user_extra_properties.is_efs_enabled,
     )
 
     ports = _get_ports(
@@ -512,9 +505,9 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
                     compose_namespace,
                     scheduler_data,
                     app_settings,
-                    allow_internet_access=allow_internet_access,
+                    allow_internet_access=user_extra_properties.is_internet_enabled,
                     metrics_collection_allowed=metrics_collection_allowed,
-                    telemetry_enabled=telemetry_enabled,
+                    telemetry_enabled=user_extra_properties.is_telemetry_enabled,
                 ),
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
