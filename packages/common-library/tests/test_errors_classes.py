@@ -38,8 +38,7 @@ def test_get_full_class_name():
 
 def test_error_codes_and_msg_template():
     class MyBaseError(OsparcErrorMixin, Exception):
-        def __init__(self, **ctx: Any) -> None:
-            super().__init__(**ctx)  # Do not forget this for base exceptions!
+        pass
 
     class MyValueError(MyBaseError, ValueError):
         msg_template = "Wrong value {value}"

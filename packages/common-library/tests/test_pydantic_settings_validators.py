@@ -24,19 +24,19 @@ def test_validate_timedelta_in_legacy_mode(
         model_config = SettingsConfigDict()
 
     app_name = faker.pystr()
-    env_vars: dict[str, str] = {"APP_NAME": app_name}
+    env_vars: dict[str, str | bool] = {"APP_NAME": app_name}
 
     # without timedelta
     setenvs_from_dict(monkeypatch, env_vars)
     settings = Settings()
     print(settings.model_dump())
-    assert settings.APP_NAME == app_name
-    assert settings.REQUEST_TIMEOUT == timedelta(seconds=40)
+    assert app_name == settings.APP_NAME
+    assert timedelta(seconds=40) == settings.REQUEST_TIMEOUT
 
     # with timedelta in seconds
     env_vars["REQUEST_TIMEOUT"] = "5555"
     setenvs_from_dict(monkeypatch, env_vars)
     settings = Settings()
     print(settings.model_dump())
-    assert settings.APP_NAME == app_name
-    assert settings.REQUEST_TIMEOUT == timedelta(seconds=5555)
+    assert app_name == settings.APP_NAME
+    assert timedelta(seconds=5555) == settings.REQUEST_TIMEOUT
