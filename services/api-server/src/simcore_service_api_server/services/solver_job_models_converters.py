@@ -69,7 +69,7 @@ def create_node_inputs_from_job_inputs(
             # FIXME: ensure this aligns with storage policy
             node_inputs[KeyIDStr(name)] = SimCoreFileLink(
                 store=0,
-                path=f"api/{value.id}/{value.filename}",  # type: ignore[arg-type]
+                path=f"api/{value.id}/{value.filename}",
                 label=value.filename,
                 eTag=value.e_tag,
             )
@@ -90,7 +90,7 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
     for name, value in inputs.items():
         assert TypeAdapter(InputID).validate_python(name) == name  # nosec
         assert (  # nosec
-            TypeAdapter(InputTypes).validate_python(value) == value  # type: ignore[arg-type]
+            TypeAdapter(InputTypes).validate_python(value) == value
         )
 
         if isinstance(value, SimCoreFileLink):
