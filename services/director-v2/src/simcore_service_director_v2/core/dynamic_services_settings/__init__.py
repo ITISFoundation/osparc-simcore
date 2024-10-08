@@ -1,5 +1,6 @@
 from pydantic import Field
 from settings_library.base import BaseCustomSettings
+from settings_library.webserver import WebServerSettings
 
 from .egress_proxy import EgressProxySettings
 from .proxy import DynamicSidecarProxySettings
@@ -29,3 +30,5 @@ class DynamicServicesSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: PlacementSettings = Field(
         auto_default_from_env=True
     )
+
+    WEBSERVER_SETTINGS: WebServerSettings = Field(auto_default_from_env=True)
