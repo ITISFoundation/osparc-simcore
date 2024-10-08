@@ -4,9 +4,10 @@ import logging
 import warnings
 from typing import Any, Awaitable, Callable, Final
 
+from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
-from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
+from pydantic import PositiveFloat, TypeAdapter
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -23,7 +24,7 @@ from ...long_running_tasks._models import (
 
 DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
 
-_ANY_HTTP_URL_ADAPTER: TypeAdapter[AnyHttpUrl] = TypeAdapter(AnyHttpUrl)
+_ANY_HTTP_URL_LEGACY_ADAPTER: TypeAdapter[AnyHttpUrlLegacy] = TypeAdapter(AnyHttpUrlLegacy)
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +116,7 @@ class Client:
     status, result and/or cancel of a long running task.
     """
 
-    def __init__(self, app: FastAPI, async_client: AsyncClient, base_url: AnyHttpUrl):
+    def __init__(self, app: FastAPI, async_client: AsyncClient, base_url: str):
         """
         `app`: used byt the `Client` to recover the `ClientConfiguration`
         `async_client`: an AsyncClient instance used by `Client`
@@ -130,8 +131,8 @@ class Client:
         output: ClientConfiguration = self.app.state.long_running_client_configuration
         return output
 
-    def _get_url(self, path: str) -> AnyHttpUrl:
-        return _ANY_HTTP_URL_ADAPTER.validate_python(
+    def _get_url(self, path: str) -> str:
+        return _ANY_HTTP_URL_LEGACY_ADAPTER.validate_python(
             f"{self._base_url}{self._client_configuration.router_prefix}{path}",
         )
 
@@ -141,7 +142,7 @@ class Client:
     ) -> TaskStatus:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.get(
-            str(self._get_url(f"/task/{task_id}")),
+            self._get_url(f"/task/{task_id}"),
             timeout=timeout,
         )
         if result.status_code != status.HTTP_200_OK:
@@ -160,7 +161,7 @@ class Client:
     ) -> Any | None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.get(
-            str(self._get_url(f"/task/{task_id}/result")),
+            self._get_url(f"/task/{task_id}/result"),
             timeout=timeout,
         )
         if result.status_code != status.HTTP_200_OK:
@@ -182,7 +183,7 @@ class Client:
     ) -> None:
         timeout = timeout or self._client_configuration.default_timeout
         result = await self._async_client.delete(
-            str(self._get_url(f"/task/{task_id}")),
+            self._get_url(f"/task/{task_id}"),
             timeout=timeout,
         )
 

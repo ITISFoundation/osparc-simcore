@@ -1,11 +1,7 @@
 from typing import Literal
 
 import pytest
-from models_library.utils.pydantic_fields_extension import (
-    get_type,
-    is_literal,
-    is_nullable,
-)
+from common_library.pydantic_fields_extension import get_type, is_literal, is_nullable
 from pydantic import BaseModel, Field
 
 

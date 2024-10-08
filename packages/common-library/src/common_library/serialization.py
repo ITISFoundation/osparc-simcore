@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Any
 
-from models_library.utils.pydantic_fields_extension import get_type
+from common_library.pydantic_fields_extension import get_type
 from pydantic import BaseModel, SecretStr
 
 

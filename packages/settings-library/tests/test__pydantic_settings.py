@@ -15,7 +15,7 @@ would still have these invariants.
 from pydantic import ValidationInfo, field_validator
 from pydantic.fields import PydanticUndefined
 from pydantic_settings import BaseSettings
-from models_library.utils.pydantic_fields_extension import is_nullable
+from common_library.utils.pydantic_fields_extension import is_nullable
 
 
 def assert_field_specs(

@@ -11,8 +11,8 @@
 --requirement _test.txt
 
 # installs this repo's packages
+simcore-common-library @ ../common-library/
 pytest-simcore @ ../pytest-simcore
-simcore-models-library @ ../models-library
 
 # current module
 simcore-settings-library @ .

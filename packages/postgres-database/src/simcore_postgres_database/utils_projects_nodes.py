@@ -5,7 +5,7 @@ from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
