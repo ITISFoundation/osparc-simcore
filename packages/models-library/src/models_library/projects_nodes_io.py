@@ -7,12 +7,12 @@
 """
 
 from pathlib import Path
-from typing import Annotated, Final, TypeAlias
+from typing import Annotated, TypeAlias
 from uuid import UUID
 
+from common_library.pydantic_type_adapters import AnyUrlLegacyAdapter
 from models_library.basic_types import ConstrainedStr, KeyIDStr
 from pydantic import (
-    AnyUrl,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -43,9 +43,6 @@ LocationName = str
 SimcoreS3FileID: TypeAlias = Annotated[
     str, StringConstraints(pattern=SIMCORE_S3_FILE_ID_RE)
 ]
-
-
-_ANY_URL_ADAPTER: Final[TypeAdapter[AnyUrl]] = TypeAdapter(AnyUrl)
 
 
 class SimcoreS3DirectoryID(ConstrainedStr):
@@ -126,7 +123,7 @@ class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
     download_link: Annotated[
-        str, BeforeValidator(lambda x: str(_ANY_URL_ADAPTER.validate_python(x)))
+        str, BeforeValidator(lambda x: str(AnyUrlLegacyAdapter.validate_python(x)))
     ] = Field(..., alias="downloadLink")
     label: str | None = Field(default=None, description="Display name")
     model_config = ConfigDict(
@@ -176,9 +173,7 @@ class BaseFileLink(BaseModel):
             return int(v)
         return v
 
-    model_config = ConfigDict(
-        populate_by_name=True
-    )
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class SimCoreFileLink(BaseFileLink):

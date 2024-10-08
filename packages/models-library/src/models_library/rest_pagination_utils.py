@@ -1,7 +1,7 @@
 from math import ceil
 from typing import Any, Protocol, TypedDict, Union, runtime_checkable
 
-from pydantic import AnyHttpUrl, TypeAdapter
+from common_library.pydantic_type_adapters import AnyHttpUrlLegacyAdapter
 
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
@@ -29,7 +29,6 @@ class _StarletteURL(Protocol):
 
 
 _URLType = Union[_YarlURL, _StarletteURL]
-_ANY_HTTP_URL_ADAPTER: TypeAdapter = TypeAdapter(AnyHttpUrl)
 
 
 def _replace_query(url: _URLType, query: dict[str, Any]) -> str:
@@ -73,21 +72,21 @@ def paginate_data(
         ),
         _links=PageLinks(
             self=(
-                _ANY_HTTP_URL_ADAPTER.validate_python(
+                AnyHttpUrlLegacyAdapter.validate_python(
                     _replace_query(request_url, {"offset": offset, "limit": limit}),
                 )
             ),
-            first=_ANY_HTTP_URL_ADAPTER.validate_python(
+            first=AnyHttpUrlLegacyAdapter.validate_python(
                 _replace_query(request_url, {"offset": 0, "limit": limit})
             ),
-            prev=_ANY_HTTP_URL_ADAPTER.validate_python(
+            prev=AnyHttpUrlLegacyAdapter.validate_python(
                 _replace_query(
                     request_url, {"offset": max(offset - limit, 0), "limit": limit}
                 ),
             )
             if offset > 0
             else None,
-            next=_ANY_HTTP_URL_ADAPTER.validate_python(
+            next=AnyHttpUrlLegacyAdapter.validate_python(
                 _replace_query(
                     request_url,
                     {"offset": min(offset + limit, last_page * limit), "limit": limit},
@@ -95,7 +94,7 @@ def paginate_data(
             )
             if offset < (last_page * limit)
             else None,
-            last=_ANY_HTTP_URL_ADAPTER.validate_python(
+            last=AnyHttpUrlLegacyAdapter.validate_python(
                 _replace_query(
                     request_url, {"offset": last_page * limit, "limit": limit}
                 ),
