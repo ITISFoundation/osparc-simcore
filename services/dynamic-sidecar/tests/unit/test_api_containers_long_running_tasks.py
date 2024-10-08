@@ -16,6 +16,7 @@ import pytest
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
+from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import AsyncClient
@@ -24,7 +25,7 @@ from models_library.api_schemas_long_running_tasks.base import (
     ProgressPercent,
 )
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.fastapi.long_running_tasks.client import (
@@ -157,7 +158,9 @@ def compose_spec(request: pytest.FixtureRequest) -> str:
 
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
+    return TypeAdapter(AnyHttpUrlLegacy).validate_python(
+        "http://backgroud.testserver.io"
+    )
 
 
 @pytest.fixture
