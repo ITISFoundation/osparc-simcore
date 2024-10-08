@@ -10,9 +10,9 @@ from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
-from common_library.pydantic_type_adapters import AnyUrlLegacyAdapter
 from models_library.basic_types import ConstrainedStr, KeyIDStr
 from pydantic import (
+    AnyUrl,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -123,7 +123,7 @@ class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
     download_link: Annotated[
-        str, BeforeValidator(lambda x: str(AnyUrlLegacyAdapter.validate_python(x)))
+        str, BeforeValidator(lambda x: str(TypeAdapter(AnyUrl).validate_python(x)))
     ] = Field(..., alias="downloadLink")
     label: str | None = Field(default=None, description="Display name")
     model_config = ConfigDict(
