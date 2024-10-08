@@ -4,6 +4,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import cast
 
+from common_library.pydantic_settings_validators import (
+    validate_timedelta_in_legacy_mode,
+)
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.products import ProductName
@@ -29,6 +32,9 @@ class ResourceTrackingSettings(BaseCustomSettings):
     RESOURCE_TRACKING_HEARTBEAT_INTERVAL: timedelta = Field(
         default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
         description="each time the status of the service is propagated",
+    )
+    _validate_legacy_heartbeat_interval = validate_timedelta_in_legacy_mode(
+        "RESOURCE_TRACKING_HEARTBEAT_INTERVAL"
     )
 
 
