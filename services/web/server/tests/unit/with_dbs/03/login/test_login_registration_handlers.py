@@ -73,7 +73,7 @@ async def test_check_auth(client: TestClient, logged_user: UserInfoDict):
     await assert_status(response, status.HTTP_204_NO_CONTENT)
 
     response = await client.post("/v0/auth/logout")
-    await assert_status(response, status.HTTP_202_ACCEPTED)
+    await assert_status(response, status.HTTP_200_OK)
 
     response = await client.get("/v0/auth:check")
     await assert_status(response, status.HTTP_401_UNAUTHORIZED)
