@@ -16,7 +16,7 @@ from aiohttp.test_utils import TestClient
 from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import (
-    _FMSG_INTERNAL_ERROR_USER_FRIENDLY,
+    _FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC,
     envelope_middleware_factory,
     error_middleware_factory,
 )
@@ -239,7 +239,7 @@ async def test_raised_unhandled_exception(
         assert "OEC" in error["message"]
         parsed_oec = parse_error_code(error["message"]).pop()
         assert (
-            _FMSG_INTERNAL_ERROR_USER_FRIENDLY.format(error_code=parsed_oec)
+            _FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC.format(error_code=parsed_oec)
             == error["message"]
         )
 
