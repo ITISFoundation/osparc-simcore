@@ -1,7 +1,7 @@
 """ Dask task exceptions
 
 """
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
 class TaskValueError(OsparcErrorMixin, ValueError):

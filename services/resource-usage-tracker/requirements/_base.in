@@ -7,6 +7,7 @@
 
 # intra-repo required dependencies
 --requirement ../../../packages/aws-library/requirements/_base.in
+--requirement ../../../packages/common-library/requirements/_base.in
 --requirement ../../../packages/models-library/requirements/_base.in
 --requirement ../../../packages/settings-library/requirements/_base.in
 --requirement ../../../packages/postgres-database/requirements/_base.in

@@ -1,8 +1,9 @@
 from copy import deepcopy
 from typing import Any, TypeVar
 
+from common_library.errors_classes import OsparcErrorMixin
 from models_library.basic_types import ConstrainedStr
-from models_library.errors_classes import OsparcErrorMixin
+
 from pydantic import BaseModel
 
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX

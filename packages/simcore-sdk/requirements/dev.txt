@@ -15,6 +15,7 @@
 --editable ../pytest-simcore/
 
 --editable ../postgres-database
+--editable ../common-library/
 --editable ../models-library/
 --editable ../settings-library/
 

@@ -5,7 +5,7 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Final
 
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
