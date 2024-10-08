@@ -1,6 +1,6 @@
 astroid==3.3.5
     # via pylint
-black==24.8.0
+black==24.10.0
     # via -r requirements/../../../requirements/devenv.txt
 build==1.2.2.post1
     # via pip-tools

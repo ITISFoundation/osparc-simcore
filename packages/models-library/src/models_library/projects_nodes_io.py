@@ -176,6 +176,10 @@ class BaseFileLink(BaseModel):
             return int(v)
         return v
 
+    model_config = ConfigDict(
+        populate_by_name=True
+    )
+
 
 class SimCoreFileLink(BaseFileLink):
     """I/O port type to hold a link to a file in simcore S3 storage"""

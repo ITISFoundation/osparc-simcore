@@ -16,8 +16,8 @@ from typing import Any, Protocol
 import psutil
 import pytest
 from aiohttp.test_utils import unused_port
+from common_library.serialization import model_dump_with_secrets
 from models_library.utils.json_serialization import json_dumps
-from models_library.utils.serialization import model_dump_with_secrets
 from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_mock import MockerFixture
 from servicelib import redis as servicelib_redis
