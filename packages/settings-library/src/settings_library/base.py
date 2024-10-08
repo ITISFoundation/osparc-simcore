@@ -2,11 +2,7 @@ import logging
 from functools import cached_property
 from typing import Any, Final, get_origin
 
-from models_library.utils.pydantic_fields_extension import (
-    get_type,
-    is_literal,
-    is_nullable,
-)
+from common_library.pydantic_fields_extension import get_type, is_literal, is_nullable
 from pydantic import ValidationInfo, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined, ValidationError
@@ -44,7 +40,7 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
                     field_name,
                 )
                 return None
-
+            _logger.warning("Validation errors=%s", err.errors())
             raise DefaultFromEnvFactoryError(errors=err.errors()) from err
 
     return _default_factory

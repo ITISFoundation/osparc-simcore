@@ -2,7 +2,7 @@ import datetime
 import re
 import tempfile
 from dataclasses import dataclass
-from typing import Annotated, TypeAlias
+from typing import Annotated, Final, TypeAlias
 
 import sh  # type: ignore[import-untyped]
 from models_library.docker import DockerGenericTag
@@ -68,17 +68,21 @@ class EC2InstanceType:
 InstancePrivateDNSName: TypeAlias = str
 
 
+AWS_TAG_KEY_MIN_LENGTH: Final[int] = 1
+AWS_TAG_KEY_MAX_LENGTH: Final[int] = 128
 AWSTagKey: TypeAlias = Annotated[
     # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
     str,
     StringConstraints(
-        min_length=1,
-        max_length=128,
+        min_length=AWS_TAG_KEY_MIN_LENGTH,
+        max_length=AWS_TAG_KEY_MAX_LENGTH,
         pattern=re.compile(r"^(?!(_index|\.{1,2})$)[a-zA-Z0-9\+\-=\._:@]+$"),
     ),
 ]
 
 
+AWS_TAG_VALUE_MIN_LENGTH: Final[int] = 0
+AWS_TAG_VALUE_MAX_LENGTH: Final[int] = 256
 AWSTagValue: TypeAlias = Annotated[
     # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
     # quotes []{} were added as it allows to json encode. it seems to be accepted as a value

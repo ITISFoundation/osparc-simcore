@@ -1,7 +1,8 @@
 #
-# Specifies third-party dependencies for 'models-library'
+# Specifies third-party dependencies for 'settings-library'
 #
 --constraint ../../../requirements/constraints.txt
+--requirement ../../../packages/common-library/requirements/_base.in
 
 pydantic
 pydantic-settings

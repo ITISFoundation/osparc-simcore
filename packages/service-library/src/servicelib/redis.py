@@ -10,7 +10,7 @@ from uuid import uuid4
 
 import redis.asyncio as aioredis
 import redis.exceptions
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 from pydantic import NonNegativeFloat, NonNegativeInt
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry

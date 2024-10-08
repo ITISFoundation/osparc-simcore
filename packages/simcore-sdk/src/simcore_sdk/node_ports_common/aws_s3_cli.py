@@ -6,7 +6,7 @@ import shlex
 from asyncio.streams import StreamReader
 from pathlib import Path
 
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 from aiocache import cached  # type: ignore[import-untyped]
 from models_library.basic_types import IDStr

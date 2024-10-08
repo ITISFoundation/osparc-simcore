@@ -1,6 +1,9 @@
 import datetime
 from functools import cached_property
 
+from common_library.pydantic_settings_validators import (
+    validate_timedelta_in_legacy_mode,
+)
 from pydantic import Field, parse_obj_as, validator
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
@@ -41,6 +44,10 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             "Time to wait before timing out when stopping a dynamic service. "
             "Since services require data to be stopped, this operation is timed out after 1 hour"
         ),
+    )
+
+    _legacy_parsing_dynamic_scheduler_stop_service_timeout = (
+        validate_timedelta_in_legacy_mode("DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT")
     )
 
     @cached_property
