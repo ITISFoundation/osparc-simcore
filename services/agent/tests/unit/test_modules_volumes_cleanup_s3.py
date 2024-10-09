@@ -149,7 +149,7 @@ async def test_store_to_s3(
     )
 
     await _download_files_from_bucket(
-        endpoint=mocked_s3_server_url,
+        endpoint=f"{mocked_s3_server_url}",
         access_key="xxx",
         secret_key="xxx",
         bucket_name=bucket,
