@@ -694,11 +694,11 @@ async def test_create_single_presigned_download_link(
         object_key=with_uploaded_file_on_s3.s3_key,
         expiration_secs=default_expiration_time_seconds,
     )
-    assert isinstance(download_url, AnyUrl)
+    assert download_url
 
     dest_file = tmp_path / faker.file_name()
     async with ClientSession() as session:
-        response = await session.get(str(download_url))
+        response = await session.get(download_url)
         response.raise_for_status()
         with dest_file.open("wb") as fp:
             fp.write(await response.read())
@@ -744,7 +744,7 @@ async def test_create_single_presigned_upload_link(
     create_file_of_size: Callable[[ByteSize], Path],
     default_expiration_time_seconds: int,
     upload_to_presigned_link: Callable[
-        [Path, AnyUrl, S3BucketName, S3ObjectKey], Awaitable[None]
+        [Path, str, S3BucketName, S3ObjectKey], Awaitable[None]
     ],
 ):
     file = create_file_of_size(_BYTE_SIZE_ADAPTER.validate_python("1Mib"))
