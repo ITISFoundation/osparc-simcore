@@ -34,7 +34,7 @@ def _raise_as_stripe_error():
         yield
 
     except HTTPStatusError as err:
-        raise StripeRuntimeError from err
+        raise StripeRuntimeError() from err
 
 
 def _handle_status_errors(coro: Callable):
