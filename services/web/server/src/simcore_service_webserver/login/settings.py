@@ -37,7 +37,7 @@ class LoginSettings(BaseCustomSettings):
 
     LOGIN_TWILIO: TwilioSettings | None = Field(
         description="Twilio service settings. Used to send SMS for 2FA",
-        json_schema_extra={"auto_default_from_env=True": True}
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     LOGIN_2FA_CODE_EXPIRATION_SEC: PositiveInt = Field(
