@@ -52,6 +52,7 @@ class ProjectDB(BaseModel):
     workspace_id: WorkspaceID | None
     model_config = ConfigDict(
         from_attributes=True,
+        arbitrary_types_allowed=True,
     )
 
     # validators
