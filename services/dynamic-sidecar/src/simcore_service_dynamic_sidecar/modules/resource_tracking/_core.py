@@ -81,6 +81,7 @@ async def _heart_beat_task(app: FastAPI):
         dyn_message = DynamicServiceRunningMessage(
             project_id=settings.DY_SIDECAR_PROJECT_ID,
             node_id=settings.DY_SIDECAR_NODE_ID,
+            user_id=settings.DY_SIDECAR_USER_ID,
             product_name=settings.DY_SIDECAR_PRODUCT_NAME,
         )
         await asyncio.gather(

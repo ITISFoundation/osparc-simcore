@@ -28,7 +28,7 @@ async def get_size_bash_async(path) -> ByteSize:
         raise e
 
 
-async def remove_write_permissions_bash_async(path) -> ByteSize:
+async def remove_write_permissions_bash_async(path) -> None:
     try:
         # Create the subprocess
         process = await asyncio.create_subprocess_exec(
@@ -44,9 +44,7 @@ async def remove_write_permissions_bash_async(path) -> ByteSize:
         stdout, stderr = await process.communicate()
 
         if process.returncode == 0:
-            # Parse the output
-            size = ByteSize(stdout.decode().split()[0])
-            return size
+            return
         else:
             print(f"Error: {stderr.decode()}")
             raise ValueError

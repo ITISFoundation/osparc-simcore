@@ -10,7 +10,7 @@ from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis_utils import start_exclusive_periodic_task
 
 from .background_tasks import removal_policy_task
-from .modules.redis import get_redis_client
+from .modules.redis import get_redis_lock_client
 
 _logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
             # Setup periodic tasks
             for task in _EFS_GUARDIAN_BACKGROUND_TASKS:
                 exclusive_task = start_exclusive_periodic_task(
-                    get_redis_client(app),
+                    get_redis_lock_client(app),
                     task["task_func"],
                     task_period=timedelta(seconds=60),  # 1 minute
                     retry_after=timedelta(seconds=60),  # 5 minutes

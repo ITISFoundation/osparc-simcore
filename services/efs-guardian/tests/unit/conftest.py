@@ -12,8 +12,10 @@ import pytest
 import simcore_service_efs_guardian
 import yaml
 from asgi_lifespan import LifespanManager
+from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from httpx import ASGITransport
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
@@ -29,6 +31,7 @@ pytest_plugins = [
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
+    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
@@ -139,3 +142,9 @@ async def rpc_client(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
 ) -> RabbitMQRPCClient:
     return await rabbitmq_rpc_client("client")
+
+
+@pytest.fixture
+async def mocked_redis_server(mocker: MockerFixture) -> None:
+    mock_redis = FakeRedis()
+    mocker.patch("redis.asyncio.from_url", return_value=mock_redis)

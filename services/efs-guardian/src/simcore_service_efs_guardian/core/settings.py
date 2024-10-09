@@ -8,7 +8,7 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from pydantic import Field, PositiveInt, validator
+from pydantic import ByteSize, Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.rabbit import RabbitSettings
@@ -57,6 +57,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     EFS_GROUP_NAME: str = Field(
         description="Linux group name that the EFS and Simcore linux users are part of"
+    )
+    EFS_DEFAULT_USER_SERVICE_SIZE_BYTES: ByteSize = Field(
+        default=536870912000  # 500GiB = 534GB
     )
 
     # RUNTIME  -----------------------------------------------------------

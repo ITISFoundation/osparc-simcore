@@ -28,7 +28,11 @@ def app_environment(
     )
 
 
-async def test_healthcheck(rabbit_service: RabbitSettings, client: httpx.AsyncClient):
+async def test_healthcheck(
+    rabbit_service: RabbitSettings,
+    mocked_redis_server,
+    client: httpx.AsyncClient,
+):
     response = await client.get("/")
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK

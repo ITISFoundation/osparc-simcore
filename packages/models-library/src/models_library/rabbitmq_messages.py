@@ -201,6 +201,7 @@ class DynamicServiceRunningMessage(RabbitMessageBase):
 
     project_id: ProjectID
     node_id: NodeID
+    user_id: UserID
     product_name: ProductName | None
     created_at: datetime.datetime = Field(
         default_factory=lambda: arrow.utcnow().datetime,
