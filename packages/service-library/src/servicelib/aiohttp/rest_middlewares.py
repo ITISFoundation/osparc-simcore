@@ -31,7 +31,11 @@ from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 
 DEFAULT_API_VERSION = "v0"
-FMSG_INTERNAL_ERROR_USER_FRIENDLY = "We apologize for the inconvenience. Our team has recorded the issue and is working to resolve it as quickly as possible. Thank you for your patience [{}]"
+_FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC = (
+    "We apologize for the inconvenience."
+    " Our team has recorded the issue [{error_code}] and is working to resolve it as quickly as possible."
+    " Thank you for your patience"
+)
 
 
 _logger = logging.getLogger(__name__)
@@ -58,7 +62,9 @@ def error_middleware_factory(
         if isinstance(err, OsparcErrorMixin):
             error_context.update(err.error_context())
 
-        frontend_msg = FMSG_INTERNAL_ERROR_USER_FRIENDLY.format(error_code)
+        frontend_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC.format(
+            error_code=error_code
+        )
         log_msg = create_troubleshotting_log_message(
             message_to_user=frontend_msg,
             error=err,
