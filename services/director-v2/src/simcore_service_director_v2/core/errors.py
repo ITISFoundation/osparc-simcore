@@ -19,10 +19,10 @@ translate into something like
 }
 """
 
+from common_library.errors_classes import OsparcErrorMixin
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic.errors import PydanticErrorMixin
 
 
 class DirectorError(Exception):
@@ -114,15 +114,15 @@ class PipelineNotFoundError(DirectorError):
         super().__init__(f"pipeline {pipeline_id} not found")
 
 
-class ComputationalRunNotFoundError(PydanticErrorMixin, DirectorError):
+class ComputationalRunNotFoundError(OsparcErrorMixin, DirectorError):
     msg_template = "Computational run not found"
 
 
-class ComputationalTaskNotFoundError(PydanticErrorMixin, DirectorError):
+class ComputationalTaskNotFoundError(OsparcErrorMixin, DirectorError):
     msg_template = "Computational task {node_id} not found"
 
 
-class WalletNotEnoughCreditsError(PydanticErrorMixin, DirectorError):
+class WalletNotEnoughCreditsError(OsparcErrorMixin, DirectorError):
     msg_template = "Wallet '{wallet_name}' has {wallet_credit_amount} credits."
 
 
@@ -227,38 +227,38 @@ class PortsValidationError(TaskSchedulingError):
         return value_errors
 
 
-class ComputationalSchedulerChangedError(PydanticErrorMixin, SchedulerError):
+class ComputationalSchedulerChangedError(OsparcErrorMixin, SchedulerError):
     code = "computational_backend.scheduler_changed"
     msg_template = "The dask scheduler ID changed from '{original_scheduler_id}' to '{current_scheduler_id}'"
 
 
-class ComputationalBackendNotConnectedError(PydanticErrorMixin, SchedulerError):
+class ComputationalBackendNotConnectedError(OsparcErrorMixin, SchedulerError):
     code = "computational_backend.not_connected"
     msg_template = "The dask computational backend is not connected"
 
 
-class ComputationalBackendNoS3AccessError(PydanticErrorMixin, SchedulerError):
+class ComputationalBackendNoS3AccessError(OsparcErrorMixin, SchedulerError):
     msg_template = "The S3 backend is not ready, please try again later"
 
 
-class ComputationalBackendTaskNotFoundError(PydanticErrorMixin, SchedulerError):
+class ComputationalBackendTaskNotFoundError(OsparcErrorMixin, SchedulerError):
     code = "computational_backend.task_not_found"
     msg_template = (
         "The dask computational backend does not know about the task '{job_id}'"
     )
 
 
-class ComputationalBackendTaskResultsNotReadyError(PydanticErrorMixin, SchedulerError):
+class ComputationalBackendTaskResultsNotReadyError(OsparcErrorMixin, SchedulerError):
     code = "computational_backend.task_result_not_ready"
     msg_template = "The task result is not ready yet for job '{job_id}'"
 
 
-class ClustersKeeperNotAvailableError(PydanticErrorMixin, SchedulerError):
+class ClustersKeeperNotAvailableError(OsparcErrorMixin, SchedulerError):
     code = "computational_backend.clusters_keeper_not_available"
     msg_template = "clusters-keeper service is not available!"
 
 
-class ComputationalBackendOnDemandNotReadyError(PydanticErrorMixin, SchedulerError):
+class ComputationalBackendOnDemandNotReadyError(OsparcErrorMixin, SchedulerError):
     code = "computational_backend.on_demand_cluster.not_ready"
     msg_template = (
         "The on demand computational cluster is not ready 'est. remaining time: {eta}'"
@@ -268,16 +268,16 @@ class ComputationalBackendOnDemandNotReadyError(PydanticErrorMixin, SchedulerErr
 #
 # SCHEDULER/CLUSTER ERRORS
 #
-class ClusterNotFoundError(PydanticErrorMixin, SchedulerError):
+class ClusterNotFoundError(OsparcErrorMixin, SchedulerError):
     code = "cluster.not_found"
     msg_template = "The cluster '{cluster_id}' not found"
 
 
-class ClusterAccessForbiddenError(PydanticErrorMixin, SchedulerError):
+class ClusterAccessForbiddenError(OsparcErrorMixin, SchedulerError):
     msg_template = "Insufficient rights to access cluster '{cluster_id}'"
 
 
-class ClusterInvalidOperationError(PydanticErrorMixin, SchedulerError):
+class ClusterInvalidOperationError(OsparcErrorMixin, SchedulerError):
     msg_template = "Invalid operation on cluster '{cluster_id}'"
 
 
@@ -286,24 +286,24 @@ class ClusterInvalidOperationError(PydanticErrorMixin, SchedulerError):
 #
 
 
-class DaskClientRequestError(PydanticErrorMixin, SchedulerError):
+class DaskClientRequestError(OsparcErrorMixin, SchedulerError):
     code = "dask_client.request.error"
     msg_template = (
         "The dask client to cluster on '{endpoint}' did an invalid request '{error}'"
     )
 
 
-class DaskClusterError(PydanticErrorMixin, SchedulerError):
+class DaskClusterError(OsparcErrorMixin, SchedulerError):
     code = "cluster.error"
     msg_template = "The dask cluster on '{endpoint}' encountered an error: '{error}'"
 
 
-class DaskGatewayServerError(PydanticErrorMixin, SchedulerError):
+class DaskGatewayServerError(OsparcErrorMixin, SchedulerError):
     code = "gateway.error"
     msg_template = "The dask gateway on '{endpoint}' encountered an error: '{error}'"
 
 
-class DaskClientAcquisisitonError(PydanticErrorMixin, SchedulerError):
+class DaskClientAcquisisitonError(OsparcErrorMixin, SchedulerError):
     code = "dask_client.acquisition.error"
     msg_template = (
         "The dask client to cluster '{cluster}' encountered an error '{error}'"
