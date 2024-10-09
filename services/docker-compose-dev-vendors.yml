@@ -17,7 +17,7 @@ services:
         # auth
         - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.address=http://${WEBSERVER_HOST}:${WEBSERVER_PORT}/v0/auth:check
         - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.trustForwardHeader=true
-        - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.authResponseHeaders=Set-Cookie,osparc-sc
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.authResponseHeaders=Set-Cookie,osparc-sc-v2
         # routing
         - traefik.http.services.${SWARM_STACK_NAME}_manual.loadbalancer.server.port=80
         - traefik.http.services.${SWARM_STACK_NAME}_manual.loadbalancer.healthcheck.path=/
