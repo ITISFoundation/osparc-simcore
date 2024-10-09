@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
-from pydantic import BaseModel, Extra, validator
+from pydantic import ConfigDict, BaseModel, field_validator
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -41,13 +41,11 @@ routes = web.RouteTableDef()
 class _ProjectsFoldersPathParams(BaseModel):
     project_id: ProjectID
     folder_id: FolderID | None
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     # validators
-    _null_or_none_str_to_none_validator = validator(
-        "folder_id", allow_reuse=True, pre=True
+    _null_or_none_str_to_none_validator = field_validator(
+        "folder_id", mode="before"
     )(null_or_none_str_to_none_validator)
 
 

@@ -1,11 +1,11 @@
 import logging
-from datetime import datetime, timedelta
-from typing import Any, ClassVar, Literal
+from datetime import datetime, timedelta, timezone
+from typing import Literal
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, Field, PositiveInt, SecretStr, validator
+from pydantic import ConfigDict, BaseModel, Field, PositiveInt, SecretStr, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.error_codes import create_error_code
@@ -114,12 +114,11 @@ class RegisterBody(InputSchema):
     confirm: SecretStr | None = Field(None, description="Password confirmation")
     invitation: str | None = Field(None, description="Invitation code")
 
-    _password_confirm_match = validator("confirm", allow_reuse=True)(
+    _password_confirm_match = field_validator("confirm")(
         check_confirm_password_match
     )
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "email": "foo@mymail.com",
@@ -129,6 +128,7 @@ class RegisterBody(InputSchema):
                 }
             ]
         }
+    )
 
 
 @routes.post(f"/{API_VTAG}/auth/register", name="auth_register")
@@ -203,7 +203,7 @@ async def register(request: web.Request):
             app=request.app,
         )
         if invitation.trial_account_days:
-            expires_at = datetime.utcnow() + timedelta(invitation.trial_account_days)
+            expires_at = datetime.now(timezone.utc) + timedelta(invitation.trial_account_days)
 
     #  get authorized user or create new
     user = await _auth_api.get_user_by_email(request.app, email=registration.email)

@@ -11,7 +11,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.utils.change_case import snake_to_camel
-from pydantic import AnyHttpUrl, parse_obj_as, root_validator, validator
+from pydantic import AliasChoices, TypeAdapter, field_validator, model_validator, AnyHttpUrl
 from pydantic.fields import Field, ModelField
 from pydantic.types import PositiveInt
 from settings_library.base import BaseCustomSettings
@@ -53,7 +53,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = APP_NAME
-    API_VTAG: VersionTag = parse_obj_as(VersionTag, API_VTAG)
+    API_VTAG: VersionTag = TypeAdapter(VersionTag).validate_python(API_VTAG)
 
     # IMAGE BUILDTIME ------------------------------------------------------
     # @Makefile
@@ -119,52 +119,52 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="host name to serve within the container."
         "NOTE that this different from WEBSERVER_HOST env which is the host seen outside the container",
     )
-    WEBSERVER_HOST: str | None = Field(None, env=["WEBSERVER_HOST", "HOST", "HOSTNAME"])
-    WEBSERVER_PORT: PortInt = parse_obj_as(PortInt, DEFAULT_AIOHTTP_PORT)
+    WEBSERVER_HOST: str | None = Field(None, validation_alias=AliasChoices("WEBSERVER_HOST", "HOST", "HOSTNAME"))
+    WEBSERVER_PORT: PortInt = TypeAdapter(PortInt).validate_python(DEFAULT_AIOHTTP_PORT)
 
     WEBSERVER_FRONTEND: FrontEndAppSettings | None = Field(
-        auto_default_from_env=True, description="front-end static settings"
+        json_schema_extra={"auto_default_from_env": True}, description="front-end static settings"
     )
 
     # PLUGINS ----------------
 
     WEBSERVER_ACTIVITY: PrometheusSettings | None = Field(
-        auto_default_from_env=True,
+        json_schema_extra={"auto_default_from_env": True},
         description="activity plugin",
     )
     WEBSERVER_CATALOG: CatalogSettings | None = Field(
-        auto_default_from_env=True, description="catalog service client's plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="catalog service client's plugin"
     )
     # TODO: Shall be required
     WEBSERVER_DB: PostgresSettings | None = Field(
-        auto_default_from_env=True, description="database plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="database plugin"
     )
     WEBSERVER_DIAGNOSTICS: DiagnosticsSettings | None = Field(
-        auto_default_from_env=True, description="diagnostics plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="diagnostics plugin"
     )
     WEBSERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
-        auto_default_from_env=True, description="director-v2 service client's plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="director-v2 service client's plugin"
     )
     WEBSERVER_EMAIL: SMTPSettings | None = Field(
-        auto_default_from_env=True, description="email plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="email plugin"
     )
     WEBSERVER_EXPORTER: ExporterSettings | None = Field(
-        auto_default_from_env=True, description="exporter plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="exporter plugin"
     )
     WEBSERVER_GARBAGE_COLLECTOR: GarbageCollectorSettings | None = Field(
-        auto_default_from_env=True, description="garbage collector plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="garbage collector plugin"
     )
 
     WEBSERVER_INVITATIONS: InvitationsSettings | None = Field(
-        auto_default_from_env=True, description="invitations plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="invitations plugin"
     )
 
     WEBSERVER_LOGIN: LoginSettings | None = Field(
-        auto_default_from_env=True, description="login plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="login plugin"
     )
 
     WEBSERVER_PAYMENTS: PaymentsSettings | None = Field(
-        auto_default_from_env=True, description="payments plugin settings"
+        json_schema_extra={"auto_default_from_env": True}, description="payments plugin settings"
     )
 
     WEBSERVER_DYNAMIC_SCHEDULER: DynamicSchedulerSettings | None = Field(
@@ -241,7 +241,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "Currently this is a system plugin and cannot be disabled",
     )
 
-    @root_validator()
+    @model_validator(mode="after")
     @classmethod
     def build_vcs_release_url_if_unset(cls, values):
         release_url = values.get("SIMCORE_VCS_RELEASE_URL")
@@ -259,14 +259,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
         return values
 
-    @validator(
+    @field_validator(
         # List of plugins under-development (keep up-to-date)
         # TODO: consider mark as dev-feature in field extras of Config attr.
         # Then they can be automtically advertised
         "WEBSERVER_META_MODELING",
         "WEBSERVER_VERSION_CONTROL",
-        pre=True,
-        always=True,
+        mode="before"
     )
     @classmethod
     def enable_only_if_dev_features_allowed(cls, v, values, field: ModelField):
@@ -286,12 +285,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         level: int = getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
         return level
 
-    @validator("WEBSERVER_LOGLEVEL")
+    @field_validator("WEBSERVER_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value):
         return cls.validate_log_level(value)
 
-    @validator("SC_HEALTHCHECK_TIMEOUT", pre=True)
+    @field_validator("SC_HEALTHCHECK_TIMEOUT", mode="before")
     @classmethod
     def get_healthcheck_timeout_in_seconds(cls, v):
         # Ex. HEALTHCHECK --interval=5m --timeout=3s

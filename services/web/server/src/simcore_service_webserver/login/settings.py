@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Final, Literal
 
 from aiohttp import web
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from pydantic.fields import Field
 from pydantic.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
@@ -54,7 +54,7 @@ class LoginSettings(BaseCustomSettings):
         description="Minimum length of password",
     )
 
-    @validator("LOGIN_2FA_REQUIRED")
+    @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod
     def login_2fa_needs_email_registration(cls, v, values):
         # NOTE: this constraint ensures that a phone is registered in current workflow
@@ -63,7 +63,7 @@ class LoginSettings(BaseCustomSettings):
             raise ValueError(msg)
         return v
 
-    @validator("LOGIN_2FA_REQUIRED")
+    @field_validator("LOGIN_2FA_REQUIRED")
     @classmethod
     def login_2fa_needs_sms_service(cls, v, values):
         if v and values.get("LOGIN_TWILIO") is None:

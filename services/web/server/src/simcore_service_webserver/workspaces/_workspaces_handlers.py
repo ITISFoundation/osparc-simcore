@@ -14,7 +14,7 @@ from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
-from pydantic import Extra, Field, Json, parse_obj_as, validator
+from pydantic import TypeAdapter, field_validator, ConfigDict, Field, Json
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
     StrictRequestParams,
@@ -74,11 +74,11 @@ class WorkspacesListWithJsonStrQueryParams(PageQueryParameters):
     order_by: Json[OrderBy] = Field(
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
         description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
-        example='{"field": "name", "direction": "desc"}',
+        examples=['{"field": "name", "direction": "desc"}'],
         alias="order_by",
     )
 
-    @validator("order_by", check_fields=False)
+    @field_validator("order_by", check_fields=False)
     @classmethod
     def validate_order_by_field(cls, v):
         if v.field not in {
@@ -91,9 +91,9 @@ class WorkspacesListWithJsonStrQueryParams(PageQueryParameters):
         if v.field == "modified_at":
             v.field = "modified"
         return v
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
 
 @routes.post(f"/{VTAG}/workspaces", name="create_workspace")
@@ -132,7 +132,7 @@ async def list_workspaces(request: web.Request):
         product_name=req_ctx.product_name,
         offset=query_params.offset,
         limit=query_params.limit,
-        order_by=parse_obj_as(OrderBy, query_params.order_by),
+        order_by=TypeAdapter(OrderBy).validate_python(query_params.order_by),
     )
 
     page = Page[WorkspaceGet].model_validate(
@@ -145,7 +145,7 @@ async def list_workspaces(request: web.Request):
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
 

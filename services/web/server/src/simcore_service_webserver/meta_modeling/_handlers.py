@@ -9,7 +9,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import field_validator, BaseModel, ValidationError
 from pydantic.fields import Field
 from pydantic.networks import HttpUrl
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -33,7 +33,7 @@ class ParametersModel(PageQueryParameters):
     project_uuid: ProjectID
     ref_id: CommitID
 
-    @validator("ref_id", pre=True)
+    @field_validator("ref_id", mode="before")
     @classmethod
     def tags_as_refid_not_implemented(cls, v):
         try:

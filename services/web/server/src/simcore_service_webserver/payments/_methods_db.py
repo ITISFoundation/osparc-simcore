@@ -8,7 +8,7 @@ from aiopg.sa.result import ResultProxy
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, parse_obj_as
+from pydantic import ConfigDict, BaseModel, TypeAdapter
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
@@ -36,8 +36,9 @@ class PaymentsMethodsDB(BaseModel):
     state: InitPromptAckFlowState
     state_message: str | None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 async def insert_init_payment_method(
@@ -81,7 +82,7 @@ async def list_successful_payment_methods(
             .order_by(payments_methods.c.created.desc())
         )  # newest first
         rows = await result.fetchall() or []
-        return parse_obj_as(list[PaymentsMethodsDB], rows)
+        return TypeAdapter(list[PaymentsMethodsDB]).validate_python(rows)
 
 
 async def get_successful_payment_method(
@@ -104,7 +105,7 @@ async def get_successful_payment_method(
         if row is None:
             raise PaymentMethodNotFoundError(payment_method_id=payment_method_id)
 
-        return PaymentsMethodsDB.from_orm(row)
+        return PaymentsMethodsDB.model_validate(row)
 
 
 async def get_pending_payment_methods_ids(
@@ -117,7 +118,7 @@ async def get_pending_payment_methods_ids(
             .order_by(payments_methods.c.initiated_at.asc())  # oldest first
         )
         rows = await result.fetchall() or []
-        return [parse_obj_as(PaymentMethodID, row.payment_method_id) for row in rows]
+        return [TypeAdapter(PaymentMethodID).validate_python(row.payment_method_id) for row in rows]
 
 
 async def udpate_payment_method(
@@ -168,7 +169,7 @@ async def udpate_payment_method(
         row = await result.first()
         assert row, "execute above should have caught this"  # nosec
 
-        return PaymentsMethodsDB.from_orm(row)
+        return PaymentsMethodsDB.model_validate(row)
 
 
 async def delete_payment_method(

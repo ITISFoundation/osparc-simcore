@@ -8,7 +8,7 @@ from models_library.api_schemas_webserver.users_preferences import AggregatedPre
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import FirstNameStr, LastNameStr, UserID
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import field_validator, model_validator, ConfigDict, BaseModel, Field
 from simcore_postgres_database.models.users import UserRole
 
 from ..utils import gravatar_hash
@@ -27,14 +27,14 @@ class ThirdPartyToken(BaseModel):
     )
     token_key: UUID = Field(..., description="basic token key")
     token_secret: UUID | None = None
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "service": "github-api-v1",
                 "token_key": "5f21abf5-c596-47b7-bfd1-c0e436ef1107",
             }
         }
+    )
 
 
 class TokenCreate(ThirdPartyToken):
@@ -49,14 +49,14 @@ class TokenCreate(ThirdPartyToken):
 class ProfileUpdate(BaseModel):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "first_name": "Pedro",
                 "last_name": "Crespo",
             }
         }
+    )
 
 
 class ProfileGet(BaseModel):
@@ -74,13 +74,9 @@ class ProfileGet(BaseModel):
     )
     preferences: AggregatedPreferences
 
-    class Config:
-        # NOTE: old models have an hybrid between snake and camel cases!
-        # Should be unified at some point
-        allow_population_by_field_name = True
-        json_dumps = json_dumps
-
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
             "examples": [
                 {
                     "id": 1,
@@ -98,8 +94,9 @@ class ProfileGet(BaseModel):
                 },
             ]
         }
+    )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def _auto_generate_gravatar(cls, values):
         gravatar_id = values.get("gravatar_id")
@@ -108,7 +105,7 @@ class ProfileGet(BaseModel):
             values["gravatar_id"] = gravatar_hash(email)
         return values
 
-    @validator("role", pre=True)
+    @field_validator("role", mode="before")
     @classmethod
     def _to_upper_string(cls, v):
         if isinstance(v, str):

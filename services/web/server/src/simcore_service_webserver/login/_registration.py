@@ -14,13 +14,11 @@ from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from pydantic import (
-    BaseModel,
+    TypeAdapter, field_validator, BaseModel,
     Field,
     Json,
     PositiveInt,
     ValidationError,
-    parse_obj_as,
-    validator,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.confirmations import ConfirmationAction
@@ -76,7 +74,7 @@ class _InvitationValidator(BaseModel):
     action: ConfirmationAction
     data: Json[InvitationData]  # pylint: disable=unsubscriptable-object
 
-    @validator("action", pre=True)
+    @field_validator("action", mode="before")
     @classmethod
     def ensure_enum(cls, v):
         if isinstance(v, ConfirmationAction):
@@ -190,7 +188,7 @@ async def create_invitation_token(
     return await db.create_confirmation(
         user_id=user_id,
         action=ConfirmationAction.INVITATION.name,
-        data=data_model.json(),
+        data=data_model.model_dump_json(),
     )
 
 
@@ -233,7 +231,7 @@ async def extract_email_from_invitation(
     """Returns associated email"""
     with _invitations_request_context(invitation_code=invitation_code) as url:
         content = await extract_invitation(app, invitation_url=f"{url}")
-        return parse_obj_as(LowerCaseEmailStr, content.guest)
+        return TypeAdapter(LowerCaseEmailStr).validate_python(content.guest)
 
 
 async def check_and_consume_invitation(

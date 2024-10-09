@@ -4,16 +4,16 @@
 
 
 from models_library.projects import NodesDict
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.version_control.db import compute_workbench_checksum
 
 
 class WorkbenchModel(BaseModel):
     __root__: NodesDict
-
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
 
 def test_compute_workbench_checksum(fake_project: ProjectDict):

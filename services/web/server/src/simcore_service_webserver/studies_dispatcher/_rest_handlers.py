@@ -7,9 +7,10 @@ from typing import Any, ClassVar
 
 from aiohttp import web
 from aiohttp.web import Request
+from common_library.pydantic_networks_extension import HttpUrlLegacy
 from models_library.services import ServiceKey
 from models_library.services_types import ServiceVersion
-from pydantic import BaseModel, Field, ValidationError, parse_obj_as, validator
+from pydantic import TypeAdapter, field_validator, ConfigDict, BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
@@ -32,11 +33,11 @@ def _compose_file_and_service_dispatcher_prefix_url(
     request: web.Request, viewer: ViewerInfo
 ) -> HttpUrl:
     """This is denoted PREFIX URL because it needs to append extra query parameters"""
-    params = ViewerQueryParams.from_viewer(viewer).dict()
+    params = ViewerQueryParams.from_viewer(viewer).model_dump()
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
     )
-    absolute_url_: HttpUrl = parse_obj_as(HttpUrl, f"{absolute_url}")
+    absolute_url_: HttpUrl = TypeAdapter(HttpUrlLegacy).validate_python(f"{absolute_url}")
     return absolute_url_
 
 
@@ -44,13 +45,13 @@ def _compose_service_only_dispatcher_prefix_url(
     request: web.Request, service_key: str, service_version: str
 ) -> HttpUrl:
     params = ViewerQueryParams(
-        viewer_key=ServiceKey(service_key),
-        viewer_version=ServiceVersion(service_version),
-    ).dict(exclude_none=True, exclude_unset=True)
+        viewer_key=TypeAdapter(ServiceKey).validate_python(service_key),
+        viewer_version=TypeAdapter(ServiceVersion).validate_python(service_version),
+    ).model_dump(exclude_none=True, exclude_unset=True)
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
     )
-    absolute_url_: HttpUrl = parse_obj_as(HttpUrl, f"{absolute_url}")
+    absolute_url_: HttpUrl = TypeAdapter(HttpUrlLegacy).validate_python(f"{absolute_url}")
     return absolute_url_
 
 
@@ -125,15 +126,14 @@ class ServiceGet(BaseModel):
             **asdict(meta),
         )
 
-    @validator("file_extensions")
+    @field_validator("file_extensions")
     @classmethod
     def remove_dot_prefix_from_extension(cls, v):
         if v:
             return [ext.removeprefix(".") for ext in v]
         return v
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "key": "simcore/services/dynamic/sim4life",
                 "title": "Sim4Life Mattermost",
@@ -143,6 +143,7 @@ class ServiceGet(BaseModel):
                 "view_url": "https://host.com/view?viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=1.2.3",
             }
         }
+    )
 
 
 #
@@ -177,7 +178,7 @@ async def list_viewers(request: Request):
     file_type: str | None = request.query.get("file_type", None)
 
     viewers = [
-        Viewer.create(request, viewer).dict()
+        Viewer.create(request, viewer).model_dump()
         for viewer in await list_viewers_info(request.app, file_type=file_type)
     ]
     return envelope_json_response(viewers)
@@ -189,7 +190,7 @@ async def list_default_viewers(request: Request):
     file_type: str | None = request.query.get("file_type", None)
 
     viewers = [
-        Viewer.create(request, viewer).dict()
+        Viewer.create(request, viewer).model_dump()
         for viewer in await list_viewers_info(
             request.app, file_type=file_type, only_default=True
         )

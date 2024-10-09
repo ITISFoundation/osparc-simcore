@@ -9,7 +9,7 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, HttpUrl, PositiveInt, parse_obj_as
+from pydantic import ConfigDict, BaseModel, HttpUrl, PositiveInt, parse_obj_as
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
     payments_transactions,
@@ -44,9 +44,7 @@ class PaymentsTransactionsDB(BaseModel):
     completed_at: datetime.datetime | None
     state: PaymentTransactionState
     state_message: str | None
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 async def list_user_payment_transactions(

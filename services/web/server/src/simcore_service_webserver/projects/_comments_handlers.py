@@ -15,7 +15,7 @@ from models_library.rest_pagination import (
     Page,
 )
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import BaseModel, Extra, Field, NonNegativeInt
+from pydantic import ConfigDict, BaseModel, Field, NonNegativeInt
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -59,24 +59,18 @@ routes = web.RouteTableDef()
 
 class _ProjectCommentsPathParams(BaseModel):
     project_uuid: ProjectID
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class _ProjectCommentsWithCommentPathParams(BaseModel):
     project_uuid: ProjectID
     comment_id: CommentID
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class _ProjectCommentsBodyParams(BaseModel):
     contents: str
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.post(
@@ -118,9 +112,7 @@ class _ListProjectCommentsQueryParams(BaseModel):
     offset: NonNegativeInt = Field(
         default=0, description="index to the first item to return (pagination)"
     )
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.get(f"/{VTAG}/projects/{{project_uuid}}/comments", name="list_project_comments")
