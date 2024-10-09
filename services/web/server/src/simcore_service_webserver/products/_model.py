@@ -2,7 +2,6 @@ import logging
 import string
 from typing import (  # noqa: UP035 # pydantic does not validate with re.Pattern
     Any,
-    ClassVar,
     Pattern,
 )
 
@@ -14,7 +13,7 @@ from models_library.basic_types import NonNegativeDecimal
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.utils.change_case import snake_to_camel
-from pydantic import field_validator, ConfigDict, BaseModel, Field, PositiveInt, field_validator
+from pydantic import ConfigDict, BaseModel, Field, PositiveInt, field_validator
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
