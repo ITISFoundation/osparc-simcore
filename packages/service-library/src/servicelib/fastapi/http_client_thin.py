@@ -7,7 +7,7 @@ from typing import Any
 
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -30,7 +30,7 @@ Exception hierarchy:
 """
 
 
-class BaseClientError(PydanticErrorMixin, Exception):
+class BaseClientError(OsparcErrorMixin, Exception):
     """Used as based for all the raised errors"""
 
     msg_template: str = "{message}"

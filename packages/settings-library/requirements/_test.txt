@@ -2,8 +2,6 @@ coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-exceptiongroup==1.2.2
-    # via pytest
 faker==27.0.0
     # via -r requirements/_test.in
 iniconfig==2.0.0
@@ -34,12 +32,10 @@ pytest-sugar==1.0.0
 python-dateutil==2.9.0.post0
     # via faker
 python-dotenv==1.0.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 six==1.16.0
     # via python-dateutil
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via
-    #   coverage
-    #   pytest

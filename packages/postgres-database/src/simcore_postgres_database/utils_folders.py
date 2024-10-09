@@ -5,21 +5,22 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from functools import reduce
-from typing import Any, ClassVar, Final, TypeAlias, cast
+from typing import Annotated, Any, ClassVar, Final, TypeAlias, cast
 
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
+from common_library.errors_classes import OsparcErrorMixin
 from pydantic import (
     BaseModel,
-    ConstrainedStr,
+    ConfigDict,
     Field,
     NonNegativeInt,
     PositiveInt,
+    StringConstraints,
+    TypeAdapter,
     ValidationError,
-    parse_obj_as,
 )
-from pydantic.errors import PydanticErrorMixin
 from simcore_postgres_database.utils_ordering import OrderByDict
 from sqlalchemy import Column, func
 from sqlalchemy.dialects import postgresql
@@ -63,8 +64,8 @@ FoldersError
 """
 
 
-class FoldersError(PydanticErrorMixin, RuntimeError):
-    pass
+class FoldersError(OsparcErrorMixin, RuntimeError):
+    ...
 
 
 class InvalidFolderNameError(FoldersError):
@@ -294,13 +295,17 @@ def _get_filter_for_enabled_permissions(
 ###
 
 
-class FolderName(ConstrainedStr):
-    regex = re.compile(
-        r'^(?!.*[<>:"/\\|?*\]])(?!.*\b(?:LPT9|COM1|LPT1|COM2|LPT3|LPT4|CON|COM5|COM3|COM4|AUX|PRN|LPT2|LPT5|COM6|LPT7|NUL|COM8|LPT6|COM9|COM7|LPT8)\b).+$',
-        re.IGNORECASE,
-    )
-    min_length = 1
-    max_length = 255
+FolderName: TypeAlias = Annotated[
+    str,
+    StringConstraints(
+        min_length=1,
+        max_length=255,
+        pattern=re.compile(
+            r'^(?!.*[<>:"/\\|?*\]])(?!.*\b(?:LPT9|COM1|LPT1|COM2|LPT3|LPT4|CON|COM5|COM3|COM4|AUX|PRN|LPT2|LPT5|COM6|LPT7|NUL|COM8|LPT6|COM9|COM7|LPT8)\b).+$',
+            re.IGNORECASE,
+        ),
+    ),
+]
 
 
 class FolderEntry(BaseModel):
@@ -313,9 +318,7 @@ class FolderEntry(BaseModel):
     modified: datetime = Field(alias="access_modified")
     my_access_rights: _FolderPermissions
     access_rights: dict[_GroupID, _FolderPermissions]
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class _ResolvedAccessRights(BaseModel):
@@ -327,9 +330,7 @@ class _ResolvedAccessRights(BaseModel):
     write: bool
     delete: bool
     level: int
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 async def _get_resolved_access_rights(
@@ -529,7 +530,7 @@ async def folder_create(
         RootFolderRequiresAtLeastOnePrimaryGroupError
     """
     try:
-        parse_obj_as(FolderName, name)
+        TypeAdapter(FolderName).validate_python(name)
     except ValidationError as exc:
         raise InvalidFolderNameError(name=name, reason=f"{exc}") from exc
 

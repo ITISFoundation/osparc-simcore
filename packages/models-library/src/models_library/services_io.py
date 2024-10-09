@@ -211,7 +211,7 @@ class ServiceInput(BaseServiceIOModel):
     def from_json_schema(cls, port_schema: dict[str, Any]) -> "ServiceInput":
         """Creates input port model from a json-schema"""
         data = cls._from_json_schema_base_implementation(port_schema)
-        return cls.parse_obj(data)
+        return cls.model_validate(data)
 
 
 class ServiceOutput(BaseServiceIOModel):
@@ -258,4 +258,4 @@ class ServiceOutput(BaseServiceIOModel):
     def from_json_schema(cls, port_schema: dict[str, Any]) -> "ServiceOutput":
         """Creates output port model from a json-schema"""
         data = cls._from_json_schema_base_implementation(port_schema)
-        return cls.parse_obj(data)
+        return cls.model_validate(data)

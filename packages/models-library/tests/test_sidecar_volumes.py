@@ -14,4 +14,4 @@ def test_volume_state_equality_does_not_use_last_changed(status: VolumeStatus):
     #  at the moment of the creation of the object.
     assert VolumeState(status=status) == VolumeState(status=status)
     schema_property_count = len(VolumeState.schema()["properties"])
-    assert len(VolumeState(status=status).dict()) == schema_property_count
+    assert len(VolumeState(status=status).model_dump()) == schema_property_count

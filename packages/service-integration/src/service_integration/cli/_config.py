@@ -25,7 +25,7 @@ def _get_labels_or_raise(build_labels) -> dict[str, str]:
         return dict(item.strip().split("=") for item in build_labels)
     if isinstance(build_labels, dict):
         return build_labels
-    if labels__root__ := build_labels.__root__:
+    if labels__root__ := build_labels.root:
         assert isinstance(labels__root__, dict)  # nosec
         return labels__root__
     raise InvalidLabelsError(build_labels=build_labels)
@@ -39,7 +39,7 @@ def _create_config_from_compose_spec(
 ):
     rich.print(f"Creating osparc config files from {compose_spec_path}")
 
-    compose_spec = ComposeSpecification.parse_obj(
+    compose_spec = ComposeSpecification.model_validate(
         yaml.safe_load(compose_spec_path.read_text())
     )
 
@@ -56,7 +56,7 @@ def _create_config_from_compose_spec(
             rich.print(f"Creating {output_path} ...", end="")
 
             with output_path.open("wt") as fh:
-                data = json.loads(model.json(by_alias=True, exclude_none=True))
+                data = json.loads(model.model_dump_json(by_alias=True, exclude_none=True))
                 yaml.safe_dump(data, fh, sort_keys=False)
 
             rich.print("DONE")

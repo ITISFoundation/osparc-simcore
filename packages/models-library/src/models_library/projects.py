@@ -1,7 +1,6 @@
 """
     Models a study's project document
 """
-from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from typing import Any, Final, TypeAlias
@@ -172,16 +171,7 @@ class Project(BaseProjectModel):
         alias="workspaceId",
     )
 
-    def _patch_json_schema_extra(self, schema: dict) -> None:
-        # Patch to allow jsonschema nullable
-        # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
-        state_pydantic_schema = deepcopy(schema["properties"]["state"])
-        schema["properties"]["state"] = {
-            "anyOf": [{"type": "null"}, state_pydantic_schema]
-        }
-
     model_config = ConfigDict(
         title="osparc-simcore project",
         extra="forbid",
-        json_schema_extra=_patch_json_schema_extra,  # type: ignore[typeddict-item]
     )

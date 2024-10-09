@@ -39,8 +39,8 @@ def test_schema():
 
 def test_only_required():
     model = MyModel(a=1, b=2)
-    assert model.dict() == {"a": 1, "b": 2, "c": 42, "d": None, "e": None}
-    assert model.dict(exclude_unset=True) == {"a": 1, "b": 2}
+    assert model.model_dump() == {"a": 1, "b": 2, "c": 42, "d": None, "e": None}
+    assert model.model_dump(exclude_unset=True) == {"a": 1, "b": 2}
 
 
 def test_parse_obj_or_none():

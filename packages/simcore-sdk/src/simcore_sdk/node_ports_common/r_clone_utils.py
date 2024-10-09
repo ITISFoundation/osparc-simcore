@@ -3,13 +3,15 @@ import logging
 from typing import Union
 
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, ByteSize, Field, parse_raw_as
+from pydantic import BaseModel, ByteSize, ConfigDict, Field, TypeAdapter
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
 
 from ._utils import BaseLogParser
 
 _logger = logging.getLogger(__name__)
+
+
 
 
 class _RCloneSyncMessageBase(BaseModel):
@@ -31,9 +33,7 @@ class _RCloneSyncTransferCompletedMessage(_RCloneSyncMessageBase):
 class _RCloneSyncTransferringStats(BaseModel):
     bytes: ByteSize
     total_bytes: ByteSize
-
-    class Config:
-        alias_generator = snake_to_camel
+    model_config = ConfigDict(alias_generator=snake_to_camel)
 
 
 class _RCloneSyncTransferringMessage(_RCloneSyncMessageBase):
@@ -77,8 +77,7 @@ class SyncProgressLogParser(BaseLogParser):
     async def __call__(self, logs: str) -> None:
         _logger.debug("received logs: %s", logs)
         with log_catch(_logger, reraise=False):
-            rclone_message: _RCloneSyncMessages = parse_raw_as(
-                _RCloneSyncMessages,  # type: ignore[arg-type]
+            rclone_message: _RCloneSyncMessages = TypeAdapter(_RCloneSyncMessages).validate_strings(
                 logs,
             )
 

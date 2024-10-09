@@ -4,9 +4,10 @@ import logging
 import warnings
 from typing import Any, Awaitable, Callable, Final
 
+from common_library.pydantic_type_adapters import AnyHttpUrlLegacyAdapter
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
-from pydantic import AnyHttpUrl, PositiveFloat, parse_obj_as
+from pydantic import PositiveFloat
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -22,6 +23,7 @@ from ...long_running_tasks._models import (
 )
 
 DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
+
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +115,7 @@ class Client:
     status, result and/or cancel of a long running task.
     """
 
-    def __init__(self, app: FastAPI, async_client: AsyncClient, base_url: AnyHttpUrl):
+    def __init__(self, app: FastAPI, async_client: AsyncClient, base_url: str):
         """
         `app`: used byt the `Client` to recover the `ClientConfiguration`
         `async_client`: an AsyncClient instance used by `Client`
@@ -128,12 +130,9 @@ class Client:
         output: ClientConfiguration = self.app.state.long_running_client_configuration
         return output
 
-    def _get_url(self, path: str) -> AnyHttpUrl:
-        output: AnyHttpUrl = parse_obj_as(
-            AnyHttpUrl,
-            f"{self._base_url}{self._client_configuration.router_prefix}{path}",
-        )
-        return output
+    def _get_url(self, path: str) -> str:
+        url = f"{self._base_url}{self._client_configuration.router_prefix}{path}"
+        return f"{AnyHttpUrlLegacyAdapter.validate_python(url)}"
 
     @retry_on_http_errors
     async def get_task_status(
@@ -152,7 +151,7 @@ class Client:
                 body=result.text,
             )
 
-        return TaskStatus.parse_obj(result.json())
+        return TaskStatus.model_validate(result.json())
 
     @retry_on_http_errors
     async def get_task_result(
@@ -171,7 +170,7 @@ class Client:
                 body=result.text,
             )
 
-        task_result = TaskResult.parse_obj(result.json())
+        task_result = TaskResult.model_validate(result.json())
         if task_result.error is not None:
             raise TaskClientResultError(message=task_result.error)
         return task_result.result

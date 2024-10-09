@@ -20,7 +20,7 @@ def test_dict_base_model():
         "another key": "a string value",
         "yet another key": Path("some_path"),
     }
-    some_instance = DictModel[str, Any].parse_obj(some_dict)
+    some_instance = DictModel[str, Any].model_validate(some_dict)
     assert some_instance
 
     # test some typical dict methods
@@ -78,10 +78,10 @@ def test_enveloped_data_builtin(builtin_type: type, builtin_value: Any):
     assert envelope == Envelope[builtin_type].from_data(builtin_value)
 
     # exports
-    assert envelope.dict(exclude_unset=True, exclude_none=True) == {
+    assert envelope.model_dump(exclude_unset=True, exclude_none=True) == {
         "data": builtin_value
     }
-    assert envelope.dict() == {"data": builtin_value, "error": None}
+    assert envelope.model_dump() == {"data": builtin_value, "error": None}
 
 
 def test_enveloped_data_model():
@@ -92,7 +92,9 @@ def test_enveloped_data_model():
     enveloped = Envelope[User](data={"idr": 3})
 
     assert isinstance(enveloped.data, User)
-    assert enveloped.dict(exclude_unset=True, exclude_none=True) == {"data": {"idr": 3}}
+    assert enveloped.model_dump(exclude_unset=True, exclude_none=True) == {
+        "data": {"idr": 3}
+    }
 
 
 def test_enveloped_data_dict():

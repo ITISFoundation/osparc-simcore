@@ -30,7 +30,7 @@ def test_io_models_examples(model_cls, model_cls_examples):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
 
-        model_instance = model_cls.parse_obj(example)
+        model_instance = model_cls.model_validate(example)
 
         assert model_instance, f"Failed with {name}"
         print(name, ":", model_instance)
@@ -69,9 +69,11 @@ def _create_fake_outputs(
 def test_create_task_output_from_task_with_optional_fields_as_required(
     tmp_path: Path, optional_fields_set: bool, faker: Faker
 ):
-    for schema_example in TaskOutputDataSchema.Config.schema_extra["examples"]:
+    for schema_example in TaskOutputDataSchema.model_config["json_schema_extra"][
+        "examples"
+    ]:
 
-        task_output_schema = TaskOutputDataSchema.parse_obj(schema_example)
+        task_output_schema = TaskOutputDataSchema.model_validate(schema_example)
         outputs_file_name = _create_fake_outputs(
             task_output_schema, tmp_path, optional_fields_set, faker
         )
@@ -92,7 +94,7 @@ def test_create_task_output_from_task_with_optional_fields_as_required(
 def test_create_task_output_from_task_throws_when_there_are_missing_files(
     tmp_path: Path, faker: Faker
 ):
-    task_output_schema = TaskOutputDataSchema.parse_obj(
+    task_output_schema = TaskOutputDataSchema.model_validate(
         {
             "required_file_output": {
                 "required": True,
@@ -113,7 +115,7 @@ def test_create_task_output_from_task_throws_when_there_are_missing_files(
 def test_create_task_output_from_task_does_not_throw_when_there_are_optional_missing_files(
     tmp_path: Path, faker: Faker
 ):
-    task_output_schema = TaskOutputDataSchema.parse_obj(
+    task_output_schema = TaskOutputDataSchema.model_validate(
         {
             "optional_file_output": {
                 "required": False,
@@ -134,7 +136,7 @@ def test_create_task_output_from_task_does_not_throw_when_there_are_optional_mis
 def test_create_task_output_from_task_throws_when_there_are_entries(
     tmp_path: Path, faker: Faker
 ):
-    task_output_schema = TaskOutputDataSchema.parse_obj(
+    task_output_schema = TaskOutputDataSchema.model_validate(
         {
             "some_output": {
                 "required": True,
@@ -153,7 +155,7 @@ def test_create_task_output_from_task_throws_when_there_are_entries(
 def test_create_task_output_from_task_does_not_throw_when_there_are_optional_entries(
     tmp_path: Path, faker: Faker
 ):
-    task_output_schema = TaskOutputDataSchema.parse_obj(
+    task_output_schema = TaskOutputDataSchema.model_validate(
         {
             "some_output": {
                 "required": False,
@@ -182,6 +184,6 @@ def test_objects_are_compatible_with_dask_requirements(model_cls, model_cls_exam
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
 
-        model_instance = model_cls.parse_obj(example)
+        model_instance = model_cls.model_validate(example)
         reloaded_instance = loads(dumps(model_instance))
         assert reloaded_instance == model_instance

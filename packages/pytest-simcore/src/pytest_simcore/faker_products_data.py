@@ -14,7 +14,7 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr, TypeAdapter
 
 from .helpers.faker_factories import random_product
 
@@ -51,8 +51,7 @@ def product_name() -> ProductName:
 def support_email(
     request: pytest.FixtureRequest, product_name: ProductName
 ) -> EmailStr:
-    return parse_obj_as(
-        EmailStr,
+    return TypeAdapter(EmailStr).validate_python(
         request.config.getoption("--faker-support-email", default=None)
         or f"support@{product_name}.info",
     )
@@ -60,8 +59,7 @@ def support_email(
 
 @pytest.fixture
 def bcc_email(request: pytest.FixtureRequest, product_name: ProductName) -> EmailStr:
-    return parse_obj_as(
-        EmailStr,
+    return TypeAdapter(EmailStr).validate_python(
         request.config.getoption("--faker-bcc-email", default=None)
         or f"finance@{product_name}-department.info",
     )

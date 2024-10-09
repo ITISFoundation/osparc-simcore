@@ -106,9 +106,9 @@ def external_registry_settings(
     if external_envfile_dict:
         config = {
             field: external_envfile_dict.get(field, None)
-            for field in RegistrySettings.__fields__
+            for field in RegistrySettings.model_fields
         }
-        return RegistrySettings.parse_obj(config)
+        return RegistrySettings.model_validate(config)
     return None
 
 

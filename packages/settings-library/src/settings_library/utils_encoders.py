@@ -12,7 +12,7 @@ def create_json_encoder_wo_secrets(model_cls: type[BaseModel]):
         show_secrets_encoder = create_json_encoder_wo_secrets(type(model))
         model.dict(encoder=show_secrets_encoder)['my_secret'] == "secret"
     """
-    current_encoders = getattr(model_cls.Config, "json_encoders", {})
+    current_encoders = getattr(model_cls.model_config, "json_encoders", {})
     return partial(
         custom_pydantic_encoder,
         {

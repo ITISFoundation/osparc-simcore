@@ -18,7 +18,7 @@ from typing import Optional
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from pydantic import create_model, parse_obj_as
+from pydantic import TypeAdapter, create_model
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks._server import (
@@ -108,7 +108,7 @@ async def test_list_tasks(
     result = await client_with_task_context.get(f"{list_url}")
     data, error = await assert_status(result, status.HTTP_200_OK)
     assert not error
-    list_of_tasks = parse_obj_as(list[TaskGet], data)
+    list_of_tasks = TypeAdapter(list[TaskGet]).validate_python(data)
     assert len(list_of_tasks) == 0
 
     # the list should be full if we pass the expected context
@@ -117,7 +117,7 @@ async def test_list_tasks(
     )
     data, error = await assert_status(result, status.HTTP_200_OK)
     assert not error
-    list_of_tasks = parse_obj_as(list[TaskGet], data)
+    list_of_tasks = TypeAdapter(list[TaskGet]).validate_python(data)
     assert len(list_of_tasks) == 1
 
 

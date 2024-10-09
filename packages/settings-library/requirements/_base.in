@@ -2,12 +2,10 @@
 # Specifies third-party dependencies for 'settings-library'
 #
 --constraint ../../../requirements/constraints.txt
-
-# intra-repo required dependencies
 --requirement ../../../packages/common-library/requirements/_base.in
 
-pydantic>=1.9
-
+pydantic
+pydantic-settings
 
 # extra
 rich

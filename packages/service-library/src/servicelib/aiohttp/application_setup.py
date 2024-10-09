@@ -8,7 +8,7 @@ from typing import Any, Protocol, TypedDict
 
 import arrow
 from aiohttp import web
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from .application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 
@@ -94,7 +94,9 @@ def _is_addon_enabled_from_config(
         for part in parts:
             if section and part == "enabled":
                 # if section exists, no need to explicitly enable it
-                return parse_obj_as(bool, searched_config.get(part, True))
+                return TypeAdapter(bool).validate_python(
+                    searched_config.get(part, True)
+                )
             searched_config = searched_config[part]
 
     except KeyError as ee:

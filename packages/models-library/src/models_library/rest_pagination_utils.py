@@ -1,9 +1,8 @@
 from math import ceil
 from typing import Any, Protocol, TypedDict, Union, runtime_checkable
 
-from pydantic import parse_obj_as
+from common_library.pydantic_type_adapters import AnyHttpUrlLegacyAdapter
 
-from .basic_types import AnyHttpUrl
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
 # NOTE: In this repo we use two type of URL-like data structures:
@@ -39,7 +38,9 @@ def _replace_query(url: _URLType, query: dict[str, Any]) -> str:
         new_url = url.update_query(query)
     else:
         new_url = url.replace_query_params(**query)
-    return f"{new_url}"
+
+    new_url_str = f"{new_url}"
+    return f"{AnyHttpUrlLegacyAdapter.validate_python(new_url_str)}"
 
 
 class PageDict(TypedDict):
@@ -61,7 +62,7 @@ def paginate_data(
     Usage:
 
         obj: PageDict = paginate_data( ... )
-        model = Page[MyModelItem].parse_obj(obj)
+        model = Page[MyModelItem].model_validate(obj)
 
     raises ValidationError
     """
@@ -72,37 +73,21 @@ def paginate_data(
             total=total, count=len(chunk), limit=limit, offset=offset
         ),
         _links=PageLinks(
-            self=(
-                parse_obj_as(
-                    AnyHttpUrl,
-                    _replace_query(request_url, {"offset": offset, "limit": limit}),
-                )
-            ),
-            first=parse_obj_as(
-                AnyHttpUrl, _replace_query(request_url, {"offset": 0, "limit": limit})
-            ),
-            prev=parse_obj_as(
-                AnyHttpUrl,
-                _replace_query(
-                    request_url, {"offset": max(offset - limit, 0), "limit": limit}
-                ),
+            self=_replace_query(request_url, {"offset": offset, "limit": limit}),
+            first=_replace_query(request_url, {"offset": 0, "limit": limit}),
+            prev=_replace_query(
+                request_url, {"offset": max(offset - limit, 0), "limit": limit}
             )
             if offset > 0
             else None,
-            next=parse_obj_as(
-                AnyHttpUrl,
-                _replace_query(
-                    request_url,
-                    {"offset": min(offset + limit, last_page * limit), "limit": limit},
-                ),
+            next=_replace_query(
+                request_url,
+                {"offset": min(offset + limit, last_page * limit), "limit": limit},
             )
             if offset < (last_page * limit)
             else None,
-            last=parse_obj_as(
-                AnyHttpUrl,
-                _replace_query(
-                    request_url, {"offset": last_page * limit, "limit": limit}
-                ),
+            last=_replace_query(
+                request_url, {"offset": last_page * limit, "limit": limit}
             ),
         ),
         data=chunk,

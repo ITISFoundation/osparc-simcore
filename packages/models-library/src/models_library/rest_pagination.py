@@ -1,8 +1,9 @@
 from typing import Annotated, Final, Generic, TypeAlias, TypeVar
 
+from common_library.pydantic_type_adapters import AnyHttpUrlLegacyAdapter
 from pydantic import (
-    AnyHttpUrl,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     NonNegativeInt,
@@ -20,7 +21,9 @@ from .utils.common_validators import none_to_empty_list_pre_validator
 MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE: Final[int] = 50
 
 
-PageLimitInt: TypeAlias = Annotated[int, Field(ge=1, lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE)]
+PageLimitInt: TypeAlias = Annotated[
+    int, Field(ge=1, lt=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE)
+]
 
 DEFAULT_NUMBER_OF_ITEMS_PER_PAGE: Final[PageLimitInt] = TypeAdapter(
     PageLimitInt
@@ -92,7 +95,14 @@ class PageRefs(BaseModel, Generic[RefT]):
     model_config = ConfigDict(extra="forbid")
 
 
-class PageLinks(PageRefs[Annotated[str, AnyHttpUrl]]):
+class PageLinks(
+    PageRefs[
+        Annotated[
+            str,
+            BeforeValidator(lambda x: str(AnyHttpUrlLegacyAdapter.validate_python(x))),
+        ]
+    ]
+):
     ...
 
 

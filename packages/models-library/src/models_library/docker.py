@@ -33,7 +33,9 @@ class DockerLabelKey(ConstrainedStr):
 
 
 # NOTE: https://docs.docker.com/engine/reference/commandline/tag/#description
-DockerGenericTag: TypeAlias = Annotated[str, StringConstraints(pattern=DOCKER_GENERIC_TAG_KEY_RE)]
+DockerGenericTag: TypeAlias = Annotated[
+    str, StringConstraints(pattern=DOCKER_GENERIC_TAG_KEY_RE)
+]
 
 
 class DockerPlacementConstraint(ConstrainedStr):
@@ -139,7 +141,7 @@ class StandardSimcoreDockerLabels(BaseModel):
         """returns a dictionary of strings as required by docker"""
         return {
             to_simcore_runtime_docker_label_key(k): f"{v}"
-            for k, v in sorted(self.dict().items())
+            for k, v in sorted(self.model_dump().items())
         }
 
     @classmethod

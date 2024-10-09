@@ -2,7 +2,7 @@ from typing import Dict
 from uuid import uuid4
 
 import pytest
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 
 

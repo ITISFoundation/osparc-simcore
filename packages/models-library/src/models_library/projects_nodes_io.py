@@ -6,7 +6,6 @@
         - Link to another port: PortLink
 """
 
-import re
 from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID
@@ -15,6 +14,7 @@ from models_library.basic_types import ConstrainedStr, KeyIDStr
 from pydantic import (
     AnyUrl,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     StringConstraints,
@@ -40,8 +40,9 @@ LocationID = int
 LocationName = str
 
 
-class SimcoreS3FileID(ConstrainedStr):
-    pattern: re.Pattern[str] | None = re.compile(SIMCORE_S3_FILE_ID_RE)
+SimcoreS3FileID: TypeAlias = Annotated[
+    str, StringConstraints(pattern=SIMCORE_S3_FILE_ID_RE)
+]
 
 
 class SimcoreS3DirectoryID(ConstrainedStr):
@@ -50,7 +51,7 @@ class SimcoreS3DirectoryID(ConstrainedStr):
         `{project_id}/{node_id}/simcore-dir-name/`
     """
 
-    pattern: re.Pattern[str] | None = re.compile(SIMCORE_S3_DIRECTORY_ID_RE)
+    pattern: str = SIMCORE_S3_DIRECTORY_ID_RE
 
     @staticmethod
     def _get_parent(s3_object: str, *, parent_index: int) -> str:
@@ -87,9 +88,7 @@ class SimcoreS3DirectoryID(ConstrainedStr):
         return TypeAdapter(cls).validate_python(f"{parent_path}/")
 
 
-class DatCoreFileID(ConstrainedStr):
-    regex: re.Pattern[str] | None = re.compile(DATCORE_FILE_ID_RE)
-
+DatCoreFileID: TypeAlias = Annotated[str, StringConstraints(pattern=DATCORE_FILE_ID_RE)]
 
 StorageFileID: TypeAlias = SimcoreS3FileID | DatCoreFileID
 
@@ -123,7 +122,9 @@ class PortLink(BaseModel):
 class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
-    download_link: Annotated[str, AnyUrl] = Field(..., alias="downloadLink")
+    download_link: Annotated[
+        str, BeforeValidator(lambda x: str(TypeAdapter(AnyUrl).validate_python(x)))
+    ] = Field(..., alias="downloadLink")
     label: str | None = Field(default=None, description="Display name")
     model_config = ConfigDict(
         extra="forbid",
@@ -145,11 +146,13 @@ class BaseFileLink(BaseModel):
     store: LocationID = Field(
         ...,
         description="The store identifier: 0 for simcore S3, 1 for datcore",
+        validate_default=True,
     )
 
     path: StorageFileID = Field(
         ...,
         description="The path to the file in the storage provider domain",
+        union_mode="left_to_right",
     )
 
     label: str | None = Field(
@@ -169,6 +172,8 @@ class BaseFileLink(BaseModel):
         if isinstance(v, str):
             return int(v)
         return v
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class SimCoreFileLink(BaseFileLink):

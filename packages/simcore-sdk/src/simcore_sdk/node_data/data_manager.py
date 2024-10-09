@@ -6,7 +6,7 @@ from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.users import UserID
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from servicelib.archiving_utils import unarchive_dir
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
@@ -25,7 +25,9 @@ def __create_s3_object_key(
     project_id: ProjectID, node_uuid: NodeID, file_path: Path | str
 ) -> StorageFileID:
     file_name = file_path.name if isinstance(file_path, Path) else file_path
-    return parse_obj_as(StorageFileID, f"{project_id}/{node_uuid}/{file_name}")  # type: ignore[arg-type]
+    return TypeAdapter(StorageFileID).validate_python(
+        f"{project_id}/{node_uuid}/{file_name}"
+    )
 
 
 def __get_s3_name(path: Path, *, is_archive: bool) -> str:

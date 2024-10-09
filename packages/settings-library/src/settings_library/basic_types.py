@@ -3,21 +3,17 @@
 #       This is a minor evil to avoid the maintenance burden that creates
 #       an extra dependency to a larger models_library (intra-repo library)
 
-import re
 from enum import Enum
+from typing import Annotated, TypeAlias
 
-from pydantic import ConstrainedInt, ConstrainedStr
-
+from pydantic import Field, StringConstraints
 
 # port number range
-class PortInt(ConstrainedInt):
-    gt = 0
-    lt = 65535
+PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
 
 
 # e.g. 'v5'
-class VersionTag(ConstrainedStr):
-    regex = re.compile(r"^v\d$")
+VersionTag: TypeAlias = Annotated[str, StringConstraints(pattern=r"^v\d$")]
 
 
 class LogLevel(str, Enum):
@@ -55,7 +51,6 @@ class BuildTargetEnum(str, Enum):
 
 # non-empty bounded string used as identifier
 # e.g. "123" or "name_123" or "fa327c73-52d8-462a-9267-84eeaf0f90e3" but NOT ""
-class IDStr(ConstrainedStr):
-    strip_whitespace = True
-    min_length = 1
-    max_length = 50
+IDStr: TypeAlias = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)
+]

@@ -59,12 +59,12 @@ def validate_csv_exported_pg_project(
             pid = row.get("uuid", index + 1)
 
             try:
-                model = ProjectFromCsv.parse_obj(row)
+                model = ProjectFromCsv.model_validate(row)
 
                 if verbose > 1:
                     typer.secho(f"{pid} OK", fg=typer.colors.GREEN)
                     if verbose > 2:
-                        typer.echo(model.json(indent=2))
+                        typer.echo(model.model_dump_json(indent=2))
             except ValidationError as err:
                 failed.append(pid)
                 typer.secho(

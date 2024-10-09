@@ -1,17 +1,15 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import field_validator, model_validator, ConfigDict, BaseModel, Field
 
 from .httpx_calls_capture_errors import OpenApiSpecError
 
 
 class CapturedParameterSchema(BaseModel):
-    title: str | None
-    type_: Literal["str", "int", "float", "bool"] | None = Field(
-        None, alias="type", optional=True
-    )
+    title: str | None = None
+    type_: Literal["str", "int", "float", "bool"] | None = Field(None, alias="type")
     pattern: str | None
-    format_: Literal["uuid"] | None = Field(None, alias="format", optional=True)
+    format_: Literal["uuid"] | None = Field(None, alias="format")
     exclusiveMinimum: bool | None
     minimum: int | None
     anyOf: list["CapturedParameterSchema"] | None
@@ -22,7 +20,7 @@ class CapturedParameterSchema(BaseModel):
         validate_always = True
         allow_population_by_field_name = True
 
-    @validator("type_", pre=True)
+    @field_validator("type_", mode="before")
     @classmethod
     def preprocess_type_(cls, val):
         if val == "string":
@@ -33,7 +31,7 @@ class CapturedParameterSchema(BaseModel):
             val = "bool"
         return val
 
-    @root_validator(pre=False)
+    @model_validator(mode="after")
     @classmethod
     def check_compatibility(cls, values):
         type_ = values.get("type_")
@@ -100,10 +98,7 @@ class CapturedParameter(BaseModel):
     response_value: str | None = (
         None  # attribute for storing the params value in a concrete response
     )
-
-    class Config:
-        validate_always = True
-        allow_population_by_field_name = True
+    model_config = ConfigDict(validate_default=True, populate_by_name=True)
 
     def __hash__(self):
         return hash(

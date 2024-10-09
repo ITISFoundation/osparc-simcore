@@ -51,7 +51,7 @@ def walk_model_examples_in_package(package: ModuleType) -> Iterator[ModelExample
 
 
 def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
-    """Iterates on all examples defined as BaseModelClass.Config.schema_extra["example"]
+    """Iterates on all examples defined as BaseModelClass.model_config["json_schema_extra"]["example"]
 
 
     Usage:
@@ -64,7 +64,7 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
             model_cls: type[BaseModel], example_name: int, example_data: Any
         ):
             print(example_name, ":", json.dumps(example_data))
-            assert model_cls.parse_obj(example_data)
+            assert model_cls.model_validate(example_data)
     """
 
     def _is_model_cls(obj) -> bool:

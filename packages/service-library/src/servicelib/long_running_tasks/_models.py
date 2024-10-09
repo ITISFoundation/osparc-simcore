@@ -15,7 +15,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskResult,
     TaskStatus,
 )
-from pydantic import BaseModel, Field, PositiveFloat
+from pydantic import BaseModel, ConfigDict, Field, PositiveFloat
 
 TaskName: TypeAlias = str
 
@@ -46,9 +46,9 @@ class TrackedTask(BaseModel):
             "polled by the client who created it"
         ),
     )
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 
 class ClientConfiguration(BaseModel):

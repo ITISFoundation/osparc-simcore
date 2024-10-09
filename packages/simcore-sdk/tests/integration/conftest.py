@@ -142,7 +142,7 @@ def create_store_link(
         async with ClientSession() as session:
             async with session.put(url) as resp:
                 resp.raise_for_status()
-                presigned_links_enveloped = Envelope[FileUploadSchema].parse_obj(
+                presigned_links_enveloped = Envelope[FileUploadSchema].model_validate(
                     await resp.json()
                 )
             assert presigned_links_enveloped.data

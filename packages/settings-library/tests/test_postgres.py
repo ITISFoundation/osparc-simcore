@@ -14,23 +14,20 @@ def env_file():
 
 def test_cached_property_dsn(mock_environment: dict):
 
-    settings = PostgresSettings()
+    settings = PostgresSettings()   # type: ignore[call-arg]
 
     # all are upper-case
-    assert all(key == key.upper() for key in settings.dict())
-
-    # dsn is computed from the other fields
-    assert "dsn" not in settings.dict()
-
-    # causes cached property to be computed and stored on the instance
+    assert all(key == key.upper() for key in settings.model_dump())
+    
     assert settings.dsn
 
-    assert "dsn" in settings.dict()
+    # dsn is computed from the other fields
+    assert "dsn" not in settings.model_dump()
 
 
 def test_dsn_with_query(mock_environment: dict, monkeypatch):
 
-    settings = PostgresSettings()
+    settings = PostgresSettings()   # type: ignore[call-arg]
 
     assert not settings.POSTGRES_CLIENT_NAME
     assert settings.dsn == "postgresql://foo:secret@localhost:5432/foodb"
@@ -38,7 +35,7 @@ def test_dsn_with_query(mock_environment: dict, monkeypatch):
     # now with app
     monkeypatch.setenv("POSTGRES_CLIENT_NAME", "Some &43 funky name")
 
-    settings_with_app = PostgresSettings()
+    settings_with_app = PostgresSettings()  # type: ignore[call-arg]
 
     assert settings_with_app.POSTGRES_CLIENT_NAME
     assert (

@@ -12,7 +12,7 @@ import pytest
 from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.progress_bar import ProgressReport
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib import progress_bar
 from servicelib.docker_utils import pull_image
@@ -46,8 +46,7 @@ async def test_retrieve_image_layer_information(
     if "sha256" in service_tag:
         image_name = f"{service_repo}@{service_tag}"
     await remove_images_from_host([image_name])
-    docker_image = parse_obj_as(
-        DockerGenericTag,
+    docker_image = TypeAdapter(DockerGenericTag).validate_python(
         f"{registry_settings.REGISTRY_URL}/{osparc_service['image']['name']}:{osparc_service['image']['tag']}",
     )
     layer_information = await retrieve_image_layer_information(
@@ -103,13 +102,13 @@ def _assert_progress_report_values(
     # check first progress
     assert mocked_progress_cb.call_args_list[0].args[0].dict(
         exclude={"message"}
-    ) == ProgressReport(actual_value=0, total=total, unit="Byte").dict(
+    ) == ProgressReport(actual_value=0, total=total, unit="Byte").model_dump(
         exclude={"message"}
     )
     # check last progress
     assert mocked_progress_cb.call_args_list[-1].args[0].dict(
         exclude={"message"}
-    ) == ProgressReport(actual_value=total, total=total, unit="Byte").dict(
+    ) == ProgressReport(actual_value=total, total=total, unit="Byte").model_dump(
         exclude={"message"}
     )
 
@@ -202,7 +201,7 @@ async def test_pull_image_without_layer_information(
     assert layer_information
     print(f"{image=} has {layer_information.layers_total_size=}")
 
-    fake_number_of_steps = parse_obj_as(ByteSize, "200MiB")
+    fake_number_of_steps = TypeAdapter(ByteSize).validate_python("200MiB")
     assert fake_number_of_steps > layer_information.layers_total_size
     async with progress_bar.ProgressBarData(
         num_steps=fake_number_of_steps,

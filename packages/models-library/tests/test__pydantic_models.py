@@ -50,7 +50,7 @@ def test_json_type():
         "items": {"type": "integer"},
     }
 
-    assert x_annotation.dict() == {
+    assert x_annotation.model_dump() == {
         "name": "x",
         "data_schema": {
             "title": "schema[x]",
@@ -64,7 +64,7 @@ def test_json_type():
     #
     # the constructor would expect a raw string but we produced a nested dict
     with pytest.raises(ValidationError) as exc_info:
-        ArgumentAnnotation(**x_annotation.dict())
+        ArgumentAnnotation(**x_annotation.model_dump())
 
     assert exc_info.value.errors()[0] == {
         "input": {"items": {"type": "integer"}, "title": "schema[x]", "type": "array"},
@@ -147,7 +147,7 @@ def test_union_types_coercion():
     assert model.input == {"w": 42, "z": False}
     assert model.output == "some/path/or/string"
 
-    # (undefined) json string vs SimCoreFileLink.dict() ------------
+    # (undefined) json string vs SimCoreFileLink.model_dump() ------------
     MINIMAL = 2  # <--- index of the example with the minimum required fields
     assert SimCoreFileLink in get_args(OutputTypes)
     example = SimCoreFileLink.model_validate(

@@ -31,7 +31,7 @@ from models_library.service_settings_nat_rule import (
 )
 from models_library.services_resources import DEFAULT_SINGLE_SERVICE_NAME
 from models_library.utils.string_substitution import TextTemplate
-from pydantic import BaseModel, TypeAdapter, ValidationError, parse_obj_as
+from pydantic import BaseModel, TypeAdapter, ValidationError
 from pydantic.json import pydantic_encoder
 
 
@@ -69,12 +69,12 @@ def test_simcore_service_labels(example: dict, items: int, uses_dynamic_sidecar:
     simcore_service_labels = SimcoreServiceLabels.model_validate(example)
 
     assert simcore_service_labels
-    assert len(simcore_service_labels.dict(exclude_unset=True)) == items
+    assert len(simcore_service_labels.model_dump(exclude_unset=True)) == items
     assert simcore_service_labels.needs_dynamic_sidecar == uses_dynamic_sidecar
 
 
 def test_service_settings():
-    simcore_settings_settings_label = SimcoreServiceSettingsLabel.parse_obj(
+    simcore_settings_settings_label = SimcoreServiceSettingsLabel.model_validate(
         SimcoreServiceSettingLabelEntry.model_config["json_schema_extra"]["examples"]
     )
     assert simcore_settings_settings_label
@@ -126,7 +126,7 @@ def test_path_mappings_json_encoding():
         path_mappings = PathMappingsLabel.model_validate(example)
         print(path_mappings)
         assert (
-            PathMappingsLabel.parse_raw(path_mappings.model_dump_json())
+            PathMappingsLabel.model_validate_json(path_mappings.model_dump_json())
             == path_mappings
         )
 
@@ -262,7 +262,7 @@ def test_container_outgoing_permit_list_and_container_allow_internet_with_compos
         "simcore.service.container-http-entrypoint": container_name_1,
     }
 
-    instance = DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+    instance = DynamicSidecarServiceLabels.model_validate_json(json.dumps(dict_data))
     assert (
         instance.containers_allowed_outgoing_permit_list[container_name_1][0]
         == expected_host_permit_list_policy
@@ -291,7 +291,7 @@ def test_container_outgoing_permit_list_and_container_allow_internet_without_com
             )
         },
     ):
-        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+        assert TypeAdapter(DynamicSidecarServiceLabels).validate_json(json.dumps(dict_data))
 
 
 def test_container_allow_internet_no_compose_spec_not_ok():
@@ -299,7 +299,7 @@ def test_container_allow_internet_no_compose_spec_not_ok():
         "simcore.service.containers-allowed-outgoing-internet": json.dumps(["hoho"]),
     }
     with pytest.raises(ValidationError) as exec_info:
-        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+        assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(dict_data))
 
     assert "Expected only 1 entry 'container' not '{'hoho'}" in f"{exec_info.value}"
 
@@ -312,7 +312,7 @@ def test_container_allow_internet_compose_spec_not_ok():
         "simcore.service.containers-allowed-outgoing-internet": json.dumps(["hoho"]),
     }
     with pytest.raises(ValidationError) as exec_info:
-        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+        assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(dict_data))
 
     assert f"container='hoho' not found in {compose_spec=}" in f"{exec_info.value}"
 
@@ -331,7 +331,7 @@ def test_container_outgoing_permit_list_no_compose_spec_not_ok():
         ),
     }
     with pytest.raises(ValidationError) as exec_info:
-        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+        assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(dict_data))
     assert (
         f"Expected only one entry '{DEFAULT_SINGLE_SERVICE_NAME}' not 'container_name'"
         in f"{exec_info.value}"
@@ -355,7 +355,7 @@ def test_container_outgoing_permit_list_compose_spec_not_ok():
         "simcore.service.compose-spec": json.dumps(compose_spec),
     }
     with pytest.raises(ValidationError) as exec_info:
-        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+        assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(dict_data))
     assert (
         f"Trying to permit list container='container_name' which was not found in {compose_spec=}"
         in f"{exec_info.value}"
@@ -378,7 +378,7 @@ def test_not_allowed_in_both_permit_list_and_outgoing_internet():
     }
 
     with pytest.raises(ValidationError) as exec_info:
-        DynamicSidecarServiceLabels.parse_raw(json.dumps(dict_data))
+        DynamicSidecarServiceLabels.model_validate_json(json.dumps(dict_data))
 
     assert (
         f"Not allowed common_containers={{'{container_name}'}} detected"
@@ -520,30 +520,27 @@ def test_can_parse_labels_with_osparc_identifiers(
     vendor_environments: dict[str, Any], service_labels: dict[str, str]
 ):
     # can load OSPARC_VARIABLE_ identifiers!!
-    service_meta = SimcoreServiceLabels.parse_obj(service_labels)
+    service_meta = SimcoreServiceLabels.model_validate(service_labels)
 
     assert service_meta.containers_allowed_outgoing_permit_list
     nat_rule: NATRule = service_meta.containers_allowed_outgoing_permit_list[
         "s4l-core"
     ][0]
-    assert nat_rule.hostname == parse_obj_as(
-        OsparcVariableIdentifier,
+    assert nat_rule.hostname == TypeAdapter(OsparcVariableIdentifier).validate_python(
         "${OSPARC_VARIABLE_VENDOR_SECRET_LICENSE_SERVER_HOSTNAME}",
     )
     assert nat_rule.tcp_ports == [
-        parse_obj_as(
-            OsparcVariableIdentifier,
+        TypeAdapter(OsparcVariableIdentifier).validate_python(
             "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_1",
         ),
-        parse_obj_as(
-            OsparcVariableIdentifier,
+        TypeAdapter(OsparcVariableIdentifier).validate_python(
             "$OSPARC_VARIABLE_VENDOR_SECRET_TCP_PORTS_2",
         ),
         3,
     ]
 
     service_meta = replace_osparc_variable_identifier(service_meta, vendor_environments)
-    service_meta_str = service_meta.json()
+    service_meta_str = service_meta.model_dump_json()
 
     not_replaced_vars = {"OSPARC_VARIABLE_OS_TYPE_LINUX"}
 
@@ -552,7 +549,7 @@ def test_can_parse_labels_with_osparc_identifiers(
             continue
         assert osparc_variable_name not in service_meta_str
 
-    service_meta_str = service_meta.json(
+    service_meta_str = service_meta.model_dump_json(
         include={"containers_allowed_outgoing_permit_list"}
     )
 
@@ -568,7 +565,7 @@ def test_resolving_some_service_labels_at_load_time(
     vendor_environments: dict[str, Any], service_labels: dict[str, str]
 ):
     print(json.dumps(service_labels, indent=1))
-    service_meta = SimcoreServiceLabels.parse_obj(service_labels)
+    service_meta = SimcoreServiceLabels.model_validate(service_labels)
 
     # NOTE: replacing all OsparcVariableIdentifier instances nested inside objects
     # this also does a partial replacement if there is no entry inside the vendor_environments
@@ -593,7 +590,7 @@ def test_resolving_some_service_labels_at_load_time(
     # NOTE: that this model needs all values to be resolved before parsing them
     # otherwise it might fail!! The question is whether these values can be resolved at this point
     # NOTE: vendor values are in the database and therefore are available at this point
-    labels = SimcoreServiceLabels.parse_obj(service_labels)
+    labels = SimcoreServiceLabels.model_validate(service_labels)
 
     print("After", labels.model_dump_json(indent=1))
     formatted_json = service_meta.model_dump_json(indent=1)
@@ -613,4 +610,4 @@ def test_user_preferences_path_is_part_of_exiting_volume():
         ),
     }
     with pytest.raises(ValidationError, match="user_preferences_path=/tmp/outputs"):
-        assert DynamicSidecarServiceLabels.parse_raw(json.dumps(labels_data))
+        assert DynamicSidecarServiceLabels.model_validate_json(json.dumps(labels_data))

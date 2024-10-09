@@ -14,7 +14,7 @@ from typing import TypeAlias, TypeVar, Union
 
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Extra, ValidationError, parse_obj_as
+from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from . import status
@@ -31,8 +31,9 @@ class RequestParams(BaseModel):
 class StrictRequestParams(BaseModel):
     """Use a base class for context, path and query parameters"""
 
-    class Config:
-        extra = Extra.forbid  # strict
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
 
 @contextmanager
@@ -139,7 +140,7 @@ def parse_request_path_parameters_as(
         use_error_v1=use_enveloped_error_v1,
     ):
         data = dict(request.match_info)
-        return parameters_schema_cls.parse_obj(data)
+        return parameters_schema_cls.model_validate(data)
 
 
 def parse_request_query_parameters_as(
@@ -168,8 +169,8 @@ def parse_request_query_parameters_as(
     ):
         data = dict(request.query)
         if hasattr(parameters_schema_cls, "parse_obj"):
-            return parameters_schema_cls.parse_obj(data)
-        model: ModelClass = parse_obj_as(parameters_schema_cls, data)
+            return parameters_schema_cls.model_validate(data)
+        model: ModelClass = TypeAdapter(parameters_schema_cls).validate_python(data)
         return model
 
 
@@ -185,7 +186,7 @@ def parse_request_headers_as(
         use_error_v1=use_enveloped_error_v1,
     ):
         data = dict(request.headers)
-        return parameters_schema_cls.parse_obj(data)
+        return parameters_schema_cls.model_validate(data)
 
 
 async def parse_request_body_as(
@@ -224,7 +225,7 @@ async def parse_request_body_as(
             # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError
             # with issubclass(model_schema, BaseModel)
             assert issubclass(model_schema_cls, BaseModel)  # nosec
-            return model_schema_cls.parse_obj(body)  # type: ignore [return-value]
+            return model_schema_cls.model_validate(body)  # type: ignore [return-value]
 
         # used for model_schema like 'list[T]' or 'dict[T]'
-        return parse_obj_as(model_schema_cls, body)
+        return TypeAdapter(model_schema_cls).validate_python(body)  # type: ignore[no-any-return]

@@ -31,7 +31,7 @@ class PageRefsParams(PageRefs[PageQueryParameters]):
     @classmethod
     def create(cls, total: int, limit: int, offset: int) -> "PageRefsParams":
         last_page = ceil(total / limit) - 1
-        return cls.parse_obj(
+        return cls.model_validate(
             {
                 "self": {"offset": offset, "limit": limit},
                 "first": {"offset": 0, "limit": limit},

@@ -12,11 +12,11 @@ from pydantic import (
     Field,
     Json,
     PrivateAttr,
+    TypeAdapter,
     ValidationError,
     ValidationInfo,
     field_validator,
     model_validator,
-    parse_obj_as,
 )
 
 from .callbacks_mapping import CallbacksMapping
@@ -43,8 +43,7 @@ class ContainerSpec(BaseModel):
         max_length=2,
     )
 
-    model_config = ConfigDict(
-        **_BaseConfig,
+    model_config = _BaseConfig | ConfigDict(
         json_schema_extra={
             "examples": [
                 {"Command": ["executable"]},
@@ -102,8 +101,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
             return "Resources"
         return v
 
-    model_config = ConfigDict(
-        **_BaseConfig,
+    model_config = _BaseConfig | ConfigDict(
         populate_by_name=True,
         json_schema_extra={
             "examples": [
@@ -203,7 +201,7 @@ class PathMappingsLabel(BaseModel):
         for path_str, size_str in v.items():
             # checks that format is correct
             try:
-                parse_obj_as(ByteSize, size_str)
+                TypeAdapter(ByteSize).validate_python(size_str)
             except ValidationError as e:
                 msg = f"Provided size='{size_str}' contains invalid charactes: {e!s}"
                 raise ValueError(msg) from e
@@ -221,8 +219,7 @@ class PathMappingsLabel(BaseModel):
         output: str | None = v
         return output
 
-    model_config = ConfigDict(
-        **_BaseConfig,
+    model_config = _BaseConfig | ConfigDict(
         json_schema_extra={
             "examples": [
                 {

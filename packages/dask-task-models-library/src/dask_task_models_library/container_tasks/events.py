@@ -1,10 +1,10 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
 import dask.typing
 from distributed.worker import get_worker
-from pydantic import BaseModel, Extra, validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from .protocol import TaskOwner
 
@@ -19,8 +19,7 @@ class BaseTaskEvent(BaseModel, ABC):
     def topic_name() -> str:
         raise NotImplementedError
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 def _dask_key_to_dask_task_id(key: dask.typing.Key) -> str:
@@ -51,8 +50,8 @@ class TaskProgressEvent(BaseTaskEvent):
             task_owner=task_owner,
         )
 
-    class Config(BaseTaskEvent.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
@@ -78,8 +77,9 @@ class TaskProgressEvent(BaseTaskEvent):
                 },
             ]
         }
+    )
 
-    @validator("progress", always=True)
+    @field_validator("progress")
     @classmethod
     def ensure_between_0_1(cls, v):
         if 0 <= v <= 1:
@@ -112,8 +112,8 @@ class TaskLogEvent(BaseTaskEvent):
             task_owner=task_owner,
         )
 
-    class Config(BaseTaskEvent.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
@@ -129,3 +129,4 @@ class TaskLogEvent(BaseTaskEvent):
                 },
             ]
         }
+    )
