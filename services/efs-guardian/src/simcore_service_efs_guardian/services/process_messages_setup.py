@@ -28,7 +28,6 @@ async def _subscribe_to_rabbitmq(app) -> str:
             ),
             exclusive_queue=False,
             message_ttl=_RUT_MESSAGE_TTL_IN_MS,
-            queue_name="efs-dynamic-service-running-queue",
         )
         return subscribed_queue
 
