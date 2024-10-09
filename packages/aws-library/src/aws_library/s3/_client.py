@@ -13,6 +13,7 @@ from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
 from botocore import exceptions as botocore_exc
 from botocore.client import Config
+from common_library.pydantic_type_adapters import AnyUrlLegacyAdapter
 from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, ByteSize, TypeAdapter
@@ -43,8 +44,8 @@ _MAX_ITEMS_PER_PAGE: Final[int] = 500
 _MAX_CONCURRENT_COPY: Final[int] = 4
 _AWS_MAX_ITEMS_PER_PAGE: Final[int] = 1000
 
-_ANY_URL_ADAPTER: Final[TypeAdapter[AnyUrl]] = TypeAdapter(AnyUrl)
-_LIST_ANY_URL_ADAPTER: Final[TypeAdapter[list[AnyUrl]]] = TypeAdapter(list[AnyUrl])
+
+ListAnyUrlTypeAdapter: Final[TypeAdapter[list[AnyUrl]]] = TypeAdapter(list[AnyUrl])
 
 
 class UploadedBytesTransferredCallback(Protocol):
@@ -254,7 +255,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bucket: S3BucketName,
         object_key: S3ObjectKey,
         expiration_secs: int,
-    ) -> AnyUrl:
+    ) -> str:
         # NOTE: ensure the bucket/object exists, this will raise if not
         await self._client.head_bucket(Bucket=bucket)
         await self._client.head_object(Bucket=bucket, Key=object_key)
@@ -263,12 +264,12 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             Params={"Bucket": bucket, "Key": object_key},
             ExpiresIn=expiration_secs,
         )
-        return _ANY_URL_ADAPTER.validate_python(generated_link)
+        return f"{AnyUrlLegacyAdapter.validate_python(generated_link)}"
 
     @s3_exception_handler(_logger)
     async def create_single_presigned_upload_link(
         self, *, bucket: S3BucketName, object_key: S3ObjectKey, expiration_secs: int
-    ) -> AnyUrl:
+    ) -> str:
         # NOTE: ensure the bucket/object exists, this will raise if not
         await self._client.head_bucket(Bucket=bucket)
         generated_link = await self._client.generate_presigned_url(
@@ -276,7 +277,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             Params={"Bucket": bucket, "Key": object_key},
             ExpiresIn=expiration_secs,
         )
-        return _ANY_URL_ADAPTER.validate_python(generated_link)
+        return f"{AnyUrlLegacyAdapter.validate_python(generated_link)}"
 
     @s3_exception_handler(_logger)
     async def create_multipart_upload_links(
@@ -299,7 +300,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         # compute the number of links, based on the announced file size
         num_upload_links, chunk_size = compute_num_file_chunks(file_size)
         # now create the links
-        upload_links = _LIST_ANY_URL_ADAPTER.validate_python(
+        upload_links = ListAnyUrlTypeAdapter.validate_python(
             await asyncio.gather(
                 *(
                     self._client.generate_presigned_url(
@@ -473,6 +474,6 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def compute_s3_url(*, bucket: S3BucketName, object_key: S3ObjectKey) -> AnyUrl:
-        return _ANY_URL_ADAPTER.validate_python(
+        return AnyUrlLegacyAdapter.validate_python(
             f"s3://{bucket}/{urllib.parse.quote(object_key)}"
         )

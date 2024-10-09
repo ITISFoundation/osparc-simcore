@@ -1,7 +1,7 @@
 from math import ceil
 from typing import Any, Protocol, TypedDict, Union, runtime_checkable
 
-from pydantic import AnyHttpUrl, TypeAdapter
+from common_library.pydantic_type_adapters import AnyHttpUrlLegacyAdapter
 
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
@@ -29,7 +29,6 @@ class _StarletteURL(Protocol):
 
 
 _URLType = Union[_YarlURL, _StarletteURL]
-_ANY_HTTP_URL_ADAPTER: TypeAdapter = TypeAdapter(AnyHttpUrl)
 
 
 def _replace_query(url: _URLType, query: dict[str, Any]) -> str:
@@ -39,7 +38,9 @@ def _replace_query(url: _URLType, query: dict[str, Any]) -> str:
         new_url = url.update_query(query)
     else:
         new_url = url.replace_query_params(**query)
-    return f"{new_url}"
+
+    new_url_str = f"{new_url}"
+    return f"{AnyHttpUrlLegacyAdapter.validate_python(new_url_str)}"
 
 
 class PageDict(TypedDict):
@@ -72,33 +73,21 @@ def paginate_data(
             total=total, count=len(chunk), limit=limit, offset=offset
         ),
         _links=PageLinks(
-            self=(
-                _ANY_HTTP_URL_ADAPTER.validate_python(
-                    _replace_query(request_url, {"offset": offset, "limit": limit}),
-                )
-            ),
-            first=_ANY_HTTP_URL_ADAPTER.validate_python(
-                _replace_query(request_url, {"offset": 0, "limit": limit})
-            ),
-            prev=_ANY_HTTP_URL_ADAPTER.validate_python(
-                _replace_query(
-                    request_url, {"offset": max(offset - limit, 0), "limit": limit}
-                ),
+            self=_replace_query(request_url, {"offset": offset, "limit": limit}),
+            first=_replace_query(request_url, {"offset": 0, "limit": limit}),
+            prev=_replace_query(
+                request_url, {"offset": max(offset - limit, 0), "limit": limit}
             )
             if offset > 0
             else None,
-            next=_ANY_HTTP_URL_ADAPTER.validate_python(
-                _replace_query(
-                    request_url,
-                    {"offset": min(offset + limit, last_page * limit), "limit": limit},
-                ),
+            next=_replace_query(
+                request_url,
+                {"offset": min(offset + limit, last_page * limit), "limit": limit},
             )
             if offset < (last_page * limit)
             else None,
-            last=_ANY_HTTP_URL_ADAPTER.validate_python(
-                _replace_query(
-                    request_url, {"offset": last_page * limit, "limit": limit}
-                ),
+            last=_replace_query(
+                request_url, {"offset": last_page * limit, "limit": limit}
             ),
         ),
         data=chunk,

@@ -1,17 +1,16 @@
-from typing import Annotated, Final
+from typing import Annotated
 
-from pydantic import AnyHttpUrl, BeforeValidator, Field, SecretStr, TypeAdapter
+from common_library.pydantic_type_adapters import AnyHttpUrlLegacyAdapter
+from pydantic import BeforeValidator, Field, SecretStr
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
-
-_ANY_HTTP_URL_ADAPTER: Final[TypeAdapter] = TypeAdapter(AnyHttpUrl)
 
 
 class SSMSettings(BaseCustomSettings):
     SSM_ACCESS_KEY_ID: SecretStr
     SSM_ENDPOINT: Annotated[
-        str, BeforeValidator(lambda x: str(_ANY_HTTP_URL_ADAPTER.validate_python(x)))
+        str, BeforeValidator(lambda x: str(AnyHttpUrlLegacyAdapter.validate_python(x)))
     ] | None = Field(default=None, description="do not define if using standard AWS")
     SSM_REGION_NAME: str = "us-east-1"
     SSM_SECRET_ACCESS_KEY: SecretStr

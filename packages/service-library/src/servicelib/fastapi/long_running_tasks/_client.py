@@ -4,10 +4,10 @@ import logging
 import warnings
 from typing import Any, Awaitable, Callable, Final
 
-from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
+from common_library.pydantic_type_adapters import AnyHttpUrlLegacyAdapter
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
-from pydantic import PositiveFloat, TypeAdapter
+from pydantic import PositiveFloat
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -24,7 +24,6 @@ from ...long_running_tasks._models import (
 
 DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
 
-_ANY_HTTP_URL_LEGACY_ADAPTER: TypeAdapter[AnyHttpUrlLegacy] = TypeAdapter(AnyHttpUrlLegacy)
 
 logger = logging.getLogger(__name__)
 
@@ -132,9 +131,8 @@ class Client:
         return output
 
     def _get_url(self, path: str) -> str:
-        return _ANY_HTTP_URL_LEGACY_ADAPTER.validate_python(
-            f"{self._base_url}{self._client_configuration.router_prefix}{path}",
-        )
+        url = f"{self._base_url}{self._client_configuration.router_prefix}{path}"
+        return f"{AnyHttpUrlLegacyAdapter.validate_python(url)}"
 
     @retry_on_http_errors
     async def get_task_status(
