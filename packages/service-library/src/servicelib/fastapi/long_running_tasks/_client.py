@@ -131,9 +131,8 @@ class Client:
         return output
 
     def _get_url(self, path: str) -> str:
-        return AnyHttpUrlLegacyAdapter.validate_python(
-            f"{self._base_url}{self._client_configuration.router_prefix}{path}",
-        )
+        url = f"{self._base_url}{self._client_configuration.router_prefix}{path}"
+        return f"{AnyHttpUrlLegacyAdapter.validate_python(url)}"
 
     @retry_on_http_errors
     async def get_task_status(
