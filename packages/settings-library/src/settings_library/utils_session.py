@@ -2,7 +2,8 @@ import base64
 import binascii
 from typing import Final
 
-DEFAULT_SESSION_COOKIE_NAME: Final[str] = "osparc-sc"
+DEFAULT_SESSION_COOKIE_NAME: Final[str] = "osparc-sc-v2"
+DEFAULT_SESSION_COOKIE_NAME_LEGACY: Final[str] = "osparc-sc"
 _32_BYTES_LENGTH: Final[int] = 32
 
 
