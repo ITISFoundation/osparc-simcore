@@ -36,9 +36,9 @@ def app_environment(
 
 
 async def test_rpc_create_project_specific_data_dir(
+    mocked_redis_server: None,
     rpc_client: RabbitMQRPCClient,
     faker: Faker,
-    mocked_redis_server: None,
     app: FastAPI,
 ):
     aws_efs_settings: AwsEfsSettings = app.state.settings.EFS_GUARDIAN_AWS_EFS_SETTINGS

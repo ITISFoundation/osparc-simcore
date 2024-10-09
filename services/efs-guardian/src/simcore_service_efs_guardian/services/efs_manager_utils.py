@@ -42,7 +42,6 @@ async def remove_write_permissions_bash_async(path) -> None:
 
     if process.returncode == 0:
         return
-    else:
-        msg = f"Command {' '.join(command)} failed with error code {process.returncode}: {stderr.decode()}"
-        _logger.error(msg)
-        raise RuntimeError(msg)
+    msg = f"Command {' '.join(command)} failed with error code {process.returncode}: {stderr.decode()}"
+    _logger.error(msg)
+    raise RuntimeError(msg)
