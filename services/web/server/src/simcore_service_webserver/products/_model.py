@@ -1,9 +1,9 @@
 import logging
 import string
-from typing import (  # noqa: UP035 # pydantic does not validate with re.Pattern
-    Any,
-    Pattern,
+from typing import (
+    Any
 )
+import re
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -44,14 +44,13 @@ class Product(BaseModel):
     display_name: str = Field(..., description="Long display name")
     short_name: str | None = Field(
         None,
-        pattern=TWILIO_ALPHANUMERIC_SENDER_ID_RE,
+        pattern=re.compile(TWILIO_ALPHANUMERIC_SENDER_ID_RE),
         min_length=2,
         max_length=11,
         description="Short display name for SMS",
     )
 
-    host_regex: Pattern = Field(..., description="Host regex")
-    # NOTE: typing.Pattern is supported but not re.Pattern (SEE https://github.com/pydantic/pydantic/pull/4366)
+    host_regex: re.Pattern = Field(..., description="Host regex")
 
     support_email: LowerCaseEmailStr = Field(
         ...,
@@ -110,7 +109,7 @@ class Product(BaseModel):
 
     @field_validator("*", mode="before")
     @classmethod
-    def parse_empty_string_as_null(cls, v):
+    def _parse_empty_string_as_null(cls, v):
         """Safe measure: database entries are sometimes left blank instead of null"""
         if isinstance(v, str) and len(v.strip()) == 0:
             return None
@@ -118,7 +117,7 @@ class Product(BaseModel):
 
     @field_validator("name", mode="before")
     @classmethod
-    def validate_name(cls, v):
+    def _validate_name(cls, v):
         if v not in FRONTEND_APPS_AVAILABLE:
             msg = f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
             raise ValueError(msg)

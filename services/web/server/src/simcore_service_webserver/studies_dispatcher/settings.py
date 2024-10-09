@@ -4,10 +4,10 @@ from aiohttp import web
 from pydantic import TypeAdapter, field_validator, ByteSize
 from pydantic.fields import Field
 from pydantic_settings import SettingsConfigDict
+
+from common_library.pydantic_networks_extension import HttpUrlLegacy
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
-
-from simcore_service_webserver.studies_dispatcher._rest_handlers import HttpUrlLegacy
 
 
 class StudiesDispatcherSettings(BaseCustomSettings):

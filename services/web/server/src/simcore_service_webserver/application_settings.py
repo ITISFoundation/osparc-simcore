@@ -3,6 +3,7 @@ from functools import cached_property
 from typing import Any, Final
 
 from aiohttp import web
+from common_library.pydantic_fields_extension import is_nullable
 from models_library.basic_types import (
     BootModeEnum,
     BuildTargetEnum,
@@ -11,8 +12,8 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.utils.change_case import snake_to_camel
-from pydantic import AliasChoices, TypeAdapter, field_validator, model_validator, AnyHttpUrl
-from pydantic.fields import Field, ModelField
+from pydantic import AliasChoices, TypeAdapter, ValidationInfo, field_validator, model_validator, AnyHttpUrl
+from pydantic.fields import Field
 from pydantic.types import PositiveInt
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
@@ -105,12 +106,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     WEBSERVER_LOGLEVEL: LogLevel = Field(
         default=LogLevel.WARNING.value,
-        env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        validation_alias=AliasChoices("WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
         # NOTE: suffix '_LOGLEVEL' is used overall
     )
     WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=["WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        validation_alias=AliasChoices("WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     # TODO: find a better name!?
@@ -168,51 +169,50 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     WEBSERVER_DYNAMIC_SCHEDULER: DynamicSchedulerSettings | None = Field(
-        auto_default_from_env=True, description="dynamic-scheduler plugin settings"
+        description="dynamic-scheduler plugin settings", json_schema_extra={"auto_default_from_env": True}
     )
 
-    WEBSERVER_REDIS: RedisSettings | None = Field(auto_default_from_env=True)
+    WEBSERVER_REDIS: RedisSettings | None = Field(json_schema_extra={"auto_default_from_env": True})
 
     WEBSERVER_REST: RestSettings | None = Field(
-        auto_default_from_env=True, description="rest api plugin"
+        description="rest api plugin", json_schema_extra={"auto_default_from_env": True}
     )
 
     WEBSERVER_RESOURCE_MANAGER: ResourceManagerSettings = Field(
-        auto_default_from_env=True, description="resource_manager plugin"
+        description="resource_manager plugin", json_schema_extra={"auto_default_from_env": True}
     )
     WEBSERVER_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings | None = Field(
-        auto_default_from_env=True,
-        description="resource usage tracker service client's plugin",
+        description="resource usage tracker service client's plugin", json_schema_extra={"auto_default_from_env": True}
     )
     WEBSERVER_SCICRUNCH: SciCrunchSettings | None = Field(
-        auto_default_from_env=True, description="scicrunch plugin"
+        description="scicrunch plugin", json_schema_extra={"auto_default_from_env": True}
     )
     WEBSERVER_SESSION: SessionSettings = Field(
-        auto_default_from_env=True, description="session plugin"
+        description="session plugin", json_schema_extra={"auto_default_from_env": True}
     )
 
     WEBSERVER_STATICWEB: StaticWebserverModuleSettings | None = Field(
-        auto_default_from_env=True, description="static-webserver service plugin"
+        description="static-webserver service plugin", json_schema_extra={"auto_default_from_env": True}
     )
     WEBSERVER_STORAGE: StorageSettings | None = Field(
-        auto_default_from_env=True, description="storage service client's plugin"
+        description="storage service client's plugin", json_schema_extra={"auto_default_from_env": True}
     )
     WEBSERVER_STUDIES_DISPATCHER: StudiesDispatcherSettings | None = Field(
-        auto_default_from_env=True, description="studies dispatcher plugin"
+        description="studies dispatcher plugin", json_schema_extra={"auto_default_from_env": True}
     )
 
     WEBSERVER_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="tracing plugin"
+        description="tracing plugin", json_schema_extra={"auto_default_from_env": True}
     )
 
     WEBSERVER_PROJECTS: ProjectsSettings | None = Field(
-        auto_default_from_env=True, description="projects plugin"
+        description="projects plugin", json_schema_extra={"auto_default_from_env": True}
     )
     WEBSERVER_RABBITMQ: RabbitSettings | None = Field(
-        auto_default_from_env=True, description="rabbitmq plugin"
+        description="rabbitmq plugin", json_schema_extra={"auto_default_from_env": True}
     )
     WEBSERVER_USERS: UsersSettings | None = Field(
-        auto_default_from_env=True, description="users plugin"
+        description="users plugin", json_schema_extra={"auto_default_from_env": True}
     )
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
@@ -268,17 +268,18 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         mode="before"
     )
     @classmethod
-    def enable_only_if_dev_features_allowed(cls, v, values, field: ModelField):
+    def enable_only_if_dev_features_allowed(cls, v, info: ValidationInfo):
         """Ensures that plugins 'under development' get programatically
         disabled if WEBSERVER_DEV_FEATURES_ENABLED=False
         """
-        if values["WEBSERVER_DEV_FEATURES_ENABLED"]:
+        if info.data["WEBSERVER_DEV_FEATURES_ENABLED"]:
             return v
         if v:
             _logger.warning(
-                "%s still under development and will be disabled.", field.name
+                "%s still under development and will be disabled.", info.field_name
             )
-        return None if field.allow_none else False
+
+        return None if info.field_name and is_nullable(cls.model_fields[info.field_name]) else False
 
     @cached_property
     def log_level(self) -> int:

@@ -6,7 +6,13 @@
 """
 
 import json
-from typing import Literal, TypedDict
+import sys
+from typing import Literal
+
+if sys.version_info >= (3, 12):
+    from typing import TypedDict
+else:
+    from typing_extensions import TypedDict # See: https://docs.pydantic.dev/2.9/errors/usage_errors/#typed-dict-version
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
