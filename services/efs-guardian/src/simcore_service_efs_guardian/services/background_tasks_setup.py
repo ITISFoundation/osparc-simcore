@@ -40,7 +40,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
                     get_redis_lock_client(app),
                     task["task_func"],
                     task_period=timedelta(seconds=60),  # 1 minute
-                    retry_after=timedelta(seconds=60),  # 5 minutes
+                    retry_after=timedelta(seconds=300),  # 5 minutes
                     task_name=task["name"],
                     app=app,
                 )

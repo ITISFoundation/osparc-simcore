@@ -55,6 +55,18 @@ class EfsManager:
         )  # This gives rwx permissions to user and group, and nothing to others
         return _dir_path
 
+    async def check_project_node_data_directory_exits(
+        self, project_id: ProjectID, node_id: NodeID
+    ) -> bool:
+        _dir_path = (
+            self._efs_mounted_path
+            / self._project_specific_data_base_directory
+            / f"{project_id}"
+            / f"{node_id}"
+        )
+
+        return _dir_path.exists()
+
     async def get_project_node_data_size(
         self, project_id: ProjectID, node_id: NodeID
     ) -> ByteSize:

@@ -17,23 +17,46 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
         DynamicServiceRunningMessage, data  # type: ignore[arg-type]
     )
     _logger.debug(
-        "Process dynamic service running msg, project ID: %s node ID: %s",
+        "Process dynamic service running msg, project ID: %s node ID: %s, current user: %s",
         rabbit_message.project_id,
         rabbit_message.node_id,
+        rabbit_message.user_id,
     )
 
     settings = get_application_settings(app)
     efs_manager: EfsManager = app.state.efs_manager
+
+    dir_exists = await efs_manager.check_project_node_data_directory_exits(
+        rabbit_message.project_id, node_id=rabbit_message.node_id
+    )
+    if dir_exists is False:
+        _logger.debug(
+            "Directory doesn't exists in EFS, project ID: %s node ID: %s, current user: %s",
+            rabbit_message.project_id,
+            rabbit_message.node_id,
+            rabbit_message.user_id,
+        )
+        return True
+
     size = await efs_manager.get_project_node_data_size(
         rabbit_message.project_id, node_id=rabbit_message.node_id
+    )
+    _logger.debug(
+        "Current directory size: %s, project ID: %s node ID: %s, current user: %s",
+        size,
+        rabbit_message.project_id,
+        rabbit_message.node_id,
+        rabbit_message.user_id,
     )
 
     if size > settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES:
         _logger.warning(
-            "Removing write permissions inside of EFS starts for project ID: %s, node ID: %s, current user: %s",
+            "Removing write permissions inside of EFS starts for project ID: %s, node ID: %s, current user: %s, size: %s, upper limit: %s",
             rabbit_message.project_id,
             rabbit_message.node_id,
             rabbit_message.user_id,
+            size,
+            settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES,
         )
         redis = get_redis_lock_client(app)
         async with redis.lock_context(

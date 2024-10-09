@@ -104,6 +104,13 @@ async def test_remove_write_access_rights(
 
     efs_manager: EfsManager = app.state.efs_manager
 
+    assert (
+        await efs_manager.check_project_node_data_directory_exits(
+            project_id=_project_id, node_id=_node_id
+        )
+        is False
+    )
+
     with patch(
         "simcore_service_efs_guardian.services.efs_manager.os.chown"
     ) as mocked_chown:
@@ -112,6 +119,13 @@ async def test_remove_write_access_rights(
             node_id=_node_id,
             storage_directory_name=_storage_directory_name,
         )
+
+    assert (
+        await efs_manager.check_project_node_data_directory_exits(
+            project_id=_project_id, node_id=_node_id
+        )
+        is True
+    )
 
     size_before = await efs_manager.get_project_node_data_size(
         project_id=_project_id, node_id=_node_id
