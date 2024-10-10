@@ -95,8 +95,7 @@ class JupyterHubTokenAuthentication(BaseAuthentication):
 class NoAuthentication(BaseAuthentication):
     type: Literal["none"] = "none"
 
-    class Config(BaseAuthentication.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {"examples": [{"type": "none"}]}
+    model_config = ConfigDict(json_schema_extra={"examples": [{"type": "none"}]})
 
 
 class TLSAuthentication(BaseAuthentication):

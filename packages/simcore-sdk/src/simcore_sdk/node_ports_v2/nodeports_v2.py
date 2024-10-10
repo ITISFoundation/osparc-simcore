@@ -238,7 +238,7 @@ class Nodeports(BaseModel):
         # groups all ValidationErrors pre-pending 'port_key' to loc and raises ValidationError
         if error_details := [
             _get_error_details(r, port_key)
-            for port_key, r in zip(port_values.keys(), results)
+            for port_key, r in zip(port_values.keys(), results, strict=True)
             if r is not None
         ]:
             raise ValidationError.from_exception_data(
