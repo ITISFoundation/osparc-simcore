@@ -8,7 +8,7 @@ from typing import Optional
 import httpx
 import respx
 from fastapi_pagination import Page
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_service_datcore_adapter.models.schemas.datasets import (
     DatasetMetaData,
     FileMetaData,
@@ -29,7 +29,7 @@ async def test_list_datasets_entrypoint(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
-    parse_obj_as(Page[DatasetMetaData], data)
+    TypeAdapter(Page[DatasetMetaData]).validate_python(data)
 
 
 async def test_list_dataset_files_legacy_entrypoint(
@@ -47,7 +47,7 @@ async def test_list_dataset_files_legacy_entrypoint(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
-    parse_obj_as(list[FileMetaData], data)
+    TypeAdapter(list[FileMetaData]).validate_python(data)
 
 
 async def test_list_dataset_top_level_files_entrypoint(
@@ -65,7 +65,7 @@ async def test_list_dataset_top_level_files_entrypoint(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
-    parse_obj_as(Page[FileMetaData], data)
+    TypeAdapter(Page[FileMetaData]).validate_python(data)
 
 
 async def test_list_dataset_collection_files_entrypoint(
@@ -85,4 +85,4 @@ async def test_list_dataset_collection_files_entrypoint(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data
-    parse_obj_as(Page[FileMetaData], data)
+    TypeAdapter(Page[FileMetaData]).validate_python(data)

@@ -3,7 +3,7 @@ from functools import cached_property
 
 from aiohttp import web
 from models_library.basic_types import NonNegativeDecimal
-from pydantic import Field, HttpUrl, PositiveInt, SecretStr, parse_obj_as, validator
+from pydantic import TypeAdapter, field_validator, Field, HttpUrl, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 from settings_library.utils_service import (
@@ -18,7 +18,7 @@ from .._constants import APP_SETTINGS_KEY
 class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
     PAYMENTS_HOST: str = "payments"
     PAYMENTS_PORT: PortInt = DEFAULT_FASTAPI_PORT
-    PAYMENTS_VTAG: VersionTag = parse_obj_as(VersionTag, "v1")
+    PAYMENTS_VTAG: VersionTag = TypeAdapter(VersionTag).validate_python("v1")
 
     PAYMENTS_USERNAME: str = Field(
         ...,
@@ -42,7 +42,7 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
     )
 
     PAYMENTS_FAKE_GATEWAY_URL: HttpUrl = Field(
-        default=parse_obj_as(HttpUrl, "https://fake-payment-gateway.com"),
+        default=TypeAdapter(HttpUrl).validate_python("https://fake-payment-gateway.com"),
         description="FAKE Base url to the payment gateway",
     )
 
@@ -82,7 +82,7 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
         )
         return base_url_without_vtag
 
-    @validator("PAYMENTS_FAKE_COMPLETION")
+    @field_validator("PAYMENTS_FAKE_COMPLETION")
     @classmethod
     def _payments_cannot_be_faken_in_production(cls, v):
         if v is True and "production" in os.environ.get("SWARM_STACK_NAME", ""):
@@ -90,7 +90,7 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
             raise ValueError(msg)
         return v
 
-    @validator("PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT")
+    @field_validator("PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT")
     @classmethod
     def _monthly_limit_greater_than_top_up(cls, v, values):
         top_up = values["PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT"]

@@ -90,7 +90,7 @@ class AckPayment(_BaseAckPayment):
     model_config = ConfigDict(
         json_schema_extra={
             "example": _EXAMPLES[1].copy(),  # shown in openapi.json
-            "examples": _EXAMPLES,
+            "examples": _EXAMPLES,  # type: ignore[dict-item]
         }
     )
 

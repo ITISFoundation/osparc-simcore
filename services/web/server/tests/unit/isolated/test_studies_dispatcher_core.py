@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import validator
+from pydantic import field_validator
 from pydantic.main import BaseModel
 from pydantic.networks import HttpUrl
 from pytest_simcore.helpers.webserver_fake_services_data import list_fake_file_consumers
@@ -63,7 +63,7 @@ def test_url_quoting_and_validation():
     class M(BaseModel):
         url: HttpUrl
 
-        @validator("url", pre=True)
+        @field_validator("url", mode="before")
         @classmethod
         def unquote_url(cls, v):
             w = urllib.parse.unquote(v)

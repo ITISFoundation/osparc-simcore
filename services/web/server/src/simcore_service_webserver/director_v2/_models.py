@@ -10,7 +10,7 @@ from models_library.clusters import (
     ExternalClusterAuthentication,
 )
 from models_library.users import GroupID
-from pydantic import AnyHttpUrl, BaseModel, Field, validator
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, field_validator
 from pydantic.networks import AnyUrl, HttpUrl
 from simcore_postgres_database.models.clusters import ClusterType
 
@@ -33,7 +33,7 @@ class ClusterCreate(BaseCluster):
         alias="accessRights", default_factory=dict
     )
 
-    @validator("thumbnail", always=True, pre=True)
+    @field_validator("thumbnail", mode="before")
     @classmethod
     def set_default_thumbnail_if_empty(cls, v, values):
         if v is None and (
@@ -42,8 +42,8 @@ class ClusterCreate(BaseCluster):
             return _DEFAULT_THUMBNAILS[f"{cluster_type}"]
         return v
 
-    class Config(BaseCluster.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "name": "My awesome cluster",
@@ -74,6 +74,7 @@ class ClusterCreate(BaseCluster):
                 },
             ]
         }
+    )
 
 
 class ClusterPatch(BaseCluster):

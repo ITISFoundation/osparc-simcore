@@ -8,7 +8,7 @@ import logging
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import GroupID
-from pydantic import BaseModel, Extra
+from pydantic import ConfigDict, BaseModel
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -53,18 +53,14 @@ routes = web.RouteTableDef()
 class _ProjectsGroupsPathParams(BaseModel):
     project_id: ProjectID
     group_id: GroupID
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class _ProjectsGroupsBodyParams(BaseModel):
     read: bool
     write: bool
     delete: bool
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.post(

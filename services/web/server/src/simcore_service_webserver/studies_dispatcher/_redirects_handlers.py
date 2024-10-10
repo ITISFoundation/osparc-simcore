@@ -11,7 +11,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel, Extra, ValidationError, validator
+from pydantic import field_validator, ConfigDict, BaseModel, ValidationError
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
@@ -146,15 +146,17 @@ def _handle_errors_with_error_page(handler: Handler):
 
 
 class ServiceQueryParams(ServiceParams):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
 
 class FileQueryParams(FileParams):
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @validator("file_type")
+    @field_validator("file_type")
     @classmethod
     def ensure_extension_upper_and_dotless(cls, v):
         # NOTE: see filetype constraint-check
@@ -165,14 +167,15 @@ class FileQueryParams(FileParams):
 
 
 class ServiceAndFileParams(FileQueryParams, ServiceParams):
-    class Config:
+    model_config = ConfigDict(
         # Optional configuration to exclude duplicates from schema
-        schema_extra = {
+        json_schema_extra={
             "allOf": [
                 {"$ref": "#/definitions/FileParams"},
                 {"$ref": "#/definitions/ServiceParams"},
             ]
         }
+    )
 
 
 class ViewerQueryParams(BaseModel):
@@ -189,7 +192,7 @@ class ViewerQueryParams(BaseModel):
             viewer_version=viewer.version,
         )
 
-    @validator("file_type")
+    @field_validator("file_type")
     @classmethod
     def ensure_extension_upper_and_dotless(cls, v):
         # NOTE: see filetype constraint-check

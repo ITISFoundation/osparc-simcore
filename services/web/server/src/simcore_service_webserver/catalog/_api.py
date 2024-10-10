@@ -23,7 +23,7 @@ from models_library.services import (
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pint import UnitRegistry
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 from servicelib.aiohttp.requests_validation import handle_validation_as_http_error
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -42,9 +42,7 @@ class CatalogRequestContext(BaseModel):
     user_id: UserID
     product_name: str
     unit_registry: UnitRegistry
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @classmethod
     def create(cls, request: Request) -> "CatalogRequestContext":

@@ -9,7 +9,6 @@ from aiohttp.web_routedef import RouteDef, RouteTableDef
 from models_library.generics import Envelope
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field
-from pydantic.generics import GenericModel
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -116,7 +115,7 @@ def create_redirect_to_page_response(
 PageParameters = TypeVar("PageParameters", bound=BaseModel)
 
 
-class NextPage(GenericModel, Generic[PageParameters]):
+class NextPage(BaseModel, Generic[PageParameters]):
     """
     This is the body of a 2XX response to pass the front-end
     what kind of page shall be display next and some information about it

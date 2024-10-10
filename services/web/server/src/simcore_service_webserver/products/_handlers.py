@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver.product import GetCreditPrice, GetProduct
 from models_library.basic_types import IDStr
 from models_library.users import UserID
-from pydantic import Extra, Field
+from pydantic import Field
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
     StrictRequestParams,
@@ -70,8 +70,8 @@ async def _get_product(request: web.Request):
     except KeyError as err:
         raise web.HTTPNotFound(reason=f"{product_name=} not found") from err
 
-    assert GetProduct.Config.extra == Extra.ignore  # nosec
-    data = GetProduct(**product.dict(), templates=[])
+    assert GetProduct.model_config["extra"] == "ignore"  # nosec
+    data = GetProduct(**product.model_dump(), templates=[])
     return envelope_json_response(data)
 
 
