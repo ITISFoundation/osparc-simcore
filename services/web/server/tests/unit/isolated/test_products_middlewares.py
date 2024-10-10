@@ -65,7 +65,7 @@ def mock_app(mock_postgres_product_table: dict[str, Any]) -> web.Application:
 
 
 @pytest.mark.parametrize(
-    "request_url,product_from_client,expected_product",
+    "request_url,x_product_name_header,expected_product",
     [
         ("https://tis-master.domain.io/", "tis", "tis"),
         ("https://s4l-staging.domain.com/v0/", "s4l", "s4l"),
@@ -87,7 +87,7 @@ def mock_app(mock_postgres_product_table: dict[str, Any]) -> web.Application:
 )
 async def test_middleware_product_discovery(
     request_url: str,
-    product_from_client: str | None,
+    x_product_name_header: str | None,
     expected_product: str,
     mock_app: web.Application,
 ):
@@ -100,8 +100,8 @@ async def test_middleware_product_discovery(
     headers = {
         "Host": url.host,
     }
-    if product_from_client:
-        headers.update({X_PRODUCT_NAME_HEADER: product_from_client})
+    if x_product_name_header:
+        headers.update({X_PRODUCT_NAME_HEADER: x_product_name_header})
 
     mock_request = make_mocked_request(
         "GET",
