@@ -335,7 +335,7 @@ async def get_job_output_logfile(
             f"{solver_key}/releases/{version}/jobs/{job_id}/outputs/logfile",
             presigned_download_link,
         )
-        return RedirectResponse(presigned_download_link)
+        return RedirectResponse(f"{presigned_download_link}")
 
     # No log found !
     raise HTTPException(
