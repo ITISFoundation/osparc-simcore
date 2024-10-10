@@ -13,7 +13,10 @@ from models_library.users import UserID
 
 from ._authz_access_model import AuthContextDict, OptionalContext, RoleBasedAccessModel
 from ._authz_policy import AuthorizationPolicy
+from ._constants import PERMISSION_PRODUCT_LOGIN_KEY
 from ._identity_api import forget_identity, remember_identity
+
+assert PERMISSION_PRODUCT_LOGIN_KEY  # nosec
 
 
 def get_access_model(app: web.Application) -> RoleBasedAccessModel:
