@@ -147,7 +147,17 @@ def test_exception_context():
         msg_template = "{value} and {missing}"
 
     exc = MyError(value=42, missing="foo", extra="bar")
-    assert exc.error_context() == {"value": 42, "missing": "foo", "extra": "bar"}
+    assert exc.error_context() == {
+        "code": "ValueError.MyError",
+        "message": "42 and foo",
+        "value": 42,
+        "missing": "foo",
+        "extra": "bar",
+    }
 
     exc = MyError(value=42)
-    assert exc.error_context() == {"value": 42}
+    assert exc.error_context() == {
+        "code": "ValueError.MyError",
+        "message": "42 and 'missing=?'",
+        "value": 42,
+    }
