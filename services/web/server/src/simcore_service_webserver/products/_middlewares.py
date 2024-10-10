@@ -37,8 +37,7 @@ def _get_app_default_product_name(request: web.Request) -> str:
 
 
 class Sentinel(enum.StrEnum):
-    UNSET = "UNSET"
-    UNDEFINED = "UNDEFINED"
+    UNDEFINED = enum.auto()
 
 
 _INCLUDE_PATHS: set[str] = {"/static-frontend-data.json", "/socket.io/"}
