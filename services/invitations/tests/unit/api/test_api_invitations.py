@@ -31,7 +31,7 @@ def test_create_invitation(
 ):
     response = client.post(
         f"/{API_VTAG}/invitations",
-        json=invitation_input.dict(exclude_none=True),
+        json=invitation_input.model_dump(exclude_none=True),
         auth=basic_auth,
     )
     assert response.status_code == status.HTTP_200_OK, f"{response.json()=}"
