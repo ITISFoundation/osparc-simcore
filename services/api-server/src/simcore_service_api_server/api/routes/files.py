@@ -14,7 +14,7 @@ from fastapi.responses import HTMLResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_storage import ETag, FileUploadCompletionBody, LinkType
 from models_library.basic_types import SHA256Str
-from pydantic import AnyUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
+from pydantic import AnyUrl, ByteSize, PositiveInt, TypeAdapter, ValidationError
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.file_io_utils import UploadableFileObject
@@ -360,7 +360,7 @@ async def abort_multipart_upload(
     abort_link: URL = await storage_client.create_abort_upload_link(
         file=file, query={"user_id": str(user_id)}
     )
-    await abort_upload(abort_upload_link=parse_obj_as(AnyUrl, str(abort_link)))
+    await abort_upload(abort_upload_link=TypeAdapter(AnyUrl).validate_python(str(abort_link)))
 
 
 @router.post(
@@ -392,7 +392,7 @@ async def complete_multipart_upload(
 
     e_tag: ETag = await complete_file_upload(
         uploaded_parts=uploaded_parts.parts,
-        upload_completion_link=parse_obj_as(AnyUrl, f"{complete_link}"),
+        upload_completion_link=TypeAdapter(AnyUrl).validate_python(f"{complete_link}"),
     )
 
     file.e_tag = e_tag
