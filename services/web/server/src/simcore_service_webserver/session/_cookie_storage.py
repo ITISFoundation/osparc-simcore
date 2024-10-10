@@ -14,15 +14,12 @@ _logger = logging.getLogger(__name__)
 
 
 def _share_cookie_across_all_subdomains(
-    response: web.StreamResponse, params: aiohttp_session._CookieParams
+    request: web.BaseRequest, params: aiohttp_session._CookieParams
 ) -> aiohttp_session._CookieParams:
     """
     Shares cookie across all subdomains, by appending a dot (`.`) in front of the domain name
     overwrite domain from `None` (browser sets `example.com`) to `.example.com`
     """
-    request = response._req  # pylint:disable=protected-access  # noqa: SLF001
-    assert isinstance(request, web.Request)  # nosec
-
     if (host := request.url.host) and host is not None:
         params["domain"] = f".{host.lstrip('.')}"
 
@@ -48,14 +45,18 @@ class SharedCookieEncryptedCookieStorage(EncryptedCookieStorage):
         *,
         max_age: int | None = None,
     ) -> None:
-        params = _share_cookie_across_all_subdomains(
-            response, self._cookie_params.copy()
-        )
 
-        # WARNING: the code below is taken and adapted from the superclass implementation `EncryptedCookieStorage.save_cookie`
+        params = self._cookie_params.copy()
+        if request := response._req:  # pylint:disable=protected-access  # noqa: SLF001
+            params = _share_cookie_across_all_subdomains(request, params)
+
+        # --------------------------------------------------------
+        # WARNING: the code below is taken and adapted from the superclass
+        # implementation `EncryptedCookieStorage.save_cookie`
         # Adjust in case the base library changes.
         assert aiohttp_session.__version__ == "2.11.0"  # nosec
-        # ---
+        # --------------------------------------------------------
+
         if max_age is not None:
             params["max_age"] = max_age
             t = time.gmtime(time.time() + max_age)
