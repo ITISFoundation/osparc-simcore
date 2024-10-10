@@ -15,10 +15,18 @@ _logger = logging.getLogger(__name__)
 
 def _discover_product_by_hostname(request: web.Request) -> str | None:
     products: OrderedDict[str, Product] = request.app[APP_PRODUCTS_KEY]
+    #
+    # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
+    # SEE https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
+    originating_hosts = [
+        request.headers.get("X-Forwarded-Host"),
+        request.host,
+    ]
     for product in products.values():
-        if product.host_regex.search(request.host):
-            product_name: str = product.name
-            return product_name
+        for host in originating_hosts:
+            if host and product.host_regex.search(host):
+                product_name: str = product.name
+                return product_name
     return None
 
 
