@@ -71,7 +71,7 @@ def test_check_invitation(
     # check invitation_url
     response = client.post(
         f"/{API_VTAG}/invitations:extract",
-        json={"invitation_url": invitation_url},
+        json={"invitation_url": f"{invitation_url}"},
         auth=basic_auth,
     )
     assert response.status_code == 200, f"{response.json()=}"
