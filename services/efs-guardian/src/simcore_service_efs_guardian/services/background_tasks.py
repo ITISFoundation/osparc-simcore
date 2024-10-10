@@ -8,7 +8,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def removal_policy_task(app: FastAPI) -> None:
-    _logger.info("Removal policy task started")
+    _logger.info("FAKE Removal policy task started (not yet implemented)")
 
     # After X days of inactivity remove data from EFS
     # Probably use `last_modified_data` in the project DB table

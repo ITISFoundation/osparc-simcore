@@ -30,7 +30,7 @@ def app_environment(
 
 async def test_healthcheck(
     rabbit_service: RabbitSettings,
-    mocked_redis_server,
+    mocked_redis_server: None,
     client: httpx.AsyncClient,
 ):
     response = await client.get("/")

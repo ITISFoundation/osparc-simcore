@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import DynamicServiceRunningMessage
 from pydantic import parse_raw_as
+from servicelib.logging_utils import log_context
 from simcore_service_efs_guardian.services.modules.redis import get_redis_lock_client
 
 from ..core.settings import get_application_settings
@@ -50,22 +51,16 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
     )
 
     if size > settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES:
-        _logger.warning(
-            "Removing write permissions inside of EFS starts for project ID: %s, node ID: %s, current user: %s, size: %s, upper limit: %s",
-            rabbit_message.project_id,
-            rabbit_message.node_id,
-            rabbit_message.user_id,
-            size,
-            settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES,
-        )
-        redis = get_redis_lock_client(app)
-        async with redis.lock_context(
-            f"efs_remove_write_permissions-{rabbit_message.project_id=}-{rabbit_message.node_id=}",
-            blocking=True,
-            blocking_timeout_s=10,
-        ):
-            await efs_manager.remove_project_node_data_write_permissions(
-                project_id=rabbit_message.project_id, node_id=rabbit_message.node_id
-            )
+        msg = f"Removing write permissions inside of EFS starts for project ID: {rabbit_message.project_id}, node ID: {rabbit_message.node_id}, current user: {rabbit_message.user_id}, size: {size}, upper limit: {settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES}"
+        with log_context(_logger, logging.WARNING, msg=msg):
+            redis = get_redis_lock_client(app)
+            async with redis.lock_context(
+                f"efs_remove_write_permissions-{rabbit_message.project_id=}-{rabbit_message.node_id=}",
+                blocking=True,
+                blocking_timeout_s=10,
+            ):
+                await efs_manager.remove_project_node_data_write_permissions(
+                    project_id=rabbit_message.project_id, node_id=rabbit_message.node_id
+                )
 
     return True

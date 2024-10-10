@@ -77,8 +77,7 @@ class EfsManager:
             / f"{node_id}"
         )
 
-        service_size = await efs_manager_utils.get_size_bash_async(_dir_path)
-        return service_size
+        return await efs_manager_utils.get_size_bash_async(_dir_path)
 
     async def remove_project_node_data_write_permissions(
         self, project_id: ProjectID, node_id: NodeID

@@ -15,7 +15,11 @@ from .process_messages import process_dynamic_service_running_message
 _logger = logging.getLogger(__name__)
 
 
-_RUT_MESSAGE_TTL_IN_MS = 2 * 60 * 60 * 1000  # 2 hours
+_SEC = 1000  # in ms
+_MIN = 60 * _SEC  # in ms
+_HOUR = 60 * _MIN  # in ms
+
+_EFS_MESSAGE_TTL_IN_MS = 2 * _HOUR
 
 
 async def _subscribe_to_rabbitmq(app) -> str:
@@ -27,12 +31,12 @@ async def _subscribe_to_rabbitmq(app) -> str:
                 process_dynamic_service_running_message, app
             ),
             exclusive_queue=False,
-            message_ttl=_RUT_MESSAGE_TTL_IN_MS,
+            message_ttl=_EFS_MESSAGE_TTL_IN_MS,
         )
         return subscribed_queue
 
 
-def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
+def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         with log_context(
             _logger, logging.INFO, msg="setup resource tracker"
@@ -48,7 +52,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     return _startup
 
 
-def on_app_shutdown(
+def _on_app_shutdown(
     _app: FastAPI,
 ) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
@@ -58,5 +62,5 @@ def on_app_shutdown(
 
 
 def setup(app: FastAPI) -> None:
-    app.add_event_handler("startup", on_app_startup(app))
-    app.add_event_handler("shutdown", on_app_shutdown(app))
+    app.add_event_handler("startup", _on_app_startup(app))
+    app.add_event_handler("shutdown", _on_app_shutdown(app))

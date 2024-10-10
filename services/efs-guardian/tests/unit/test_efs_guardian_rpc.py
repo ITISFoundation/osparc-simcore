@@ -10,6 +10,8 @@ from unittest.mock import patch
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -40,20 +42,21 @@ async def test_rpc_create_project_specific_data_dir(
     rpc_client: RabbitMQRPCClient,
     faker: Faker,
     app: FastAPI,
+    project_id: ProjectID,
+    node_id: NodeID,
+    cleanup: None,
 ):
     aws_efs_settings: AwsEfsSettings = app.state.settings.EFS_GUARDIAN_AWS_EFS_SETTINGS
 
-    _project_id = faker.uuid4()
-    _node_id = faker.uuid4()
-    _storage_directory_name = faker.name()
+    _storage_directory_name = faker.word()
 
     with patch(
         "simcore_service_efs_guardian.services.efs_manager.os.chown"
     ) as mocked_chown:
         result = await efs_manager.create_project_specific_data_dir(
             rpc_client,
-            project_id=_project_id,
-            node_id=_node_id,
+            project_id=project_id,
+            node_id=node_id,
             storage_directory_name=_storage_directory_name,
         )
         mocked_chown.assert_called_once()
@@ -62,8 +65,8 @@ async def test_rpc_create_project_specific_data_dir(
     _expected_path = (
         aws_efs_settings.EFS_MOUNTED_PATH
         / aws_efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY
-        / _project_id
-        / _node_id
+        / f"{project_id}"
+        / f"{node_id}"
         / _storage_directory_name
     )
     assert _expected_path == result

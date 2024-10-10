@@ -27,7 +27,7 @@ _EFS_GUARDIAN_BACKGROUND_TASKS = [
 ]
 
 
-def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
+def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         with log_context(
             _logger, logging.INFO, msg="Efs Guardian startup.."
@@ -49,7 +49,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     return _startup
 
 
-def on_app_shutdown(
+def _on_app_shutdown(
     _app: FastAPI,
 ) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
@@ -69,5 +69,5 @@ def on_app_shutdown(
 
 
 def setup(app: FastAPI) -> None:
-    app.add_event_handler("startup", on_app_startup(app))
-    app.add_event_handler("shutdown", on_app_shutdown(app))
+    app.add_event_handler("startup", _on_app_startup(app))
+    app.add_event_handler("shutdown", _on_app_shutdown(app))

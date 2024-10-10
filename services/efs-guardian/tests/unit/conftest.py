@@ -2,7 +2,10 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import os
 import re
+import shutil
+import stat
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 from typing import Awaitable
@@ -18,6 +21,7 @@ from httpx import ASGITransport
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from settings_library.efs import AwsEfsSettings
 from settings_library.rabbit import RabbitSettings
 from simcore_service_efs_guardian.core.application import create_app
 from simcore_service_efs_guardian.core.settings import ApplicationSettings
@@ -28,6 +32,7 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_projects_data",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
@@ -148,3 +153,22 @@ async def rpc_client(
 async def mocked_redis_server(mocker: MockerFixture) -> None:
     mock_redis = FakeRedis()
     mocker.patch("redis.asyncio.from_url", return_value=mock_redis)
+
+
+@pytest.fixture
+async def cleanup(app: FastAPI):
+
+    yield
+
+    aws_efs_settings: AwsEfsSettings = app.state.settings.EFS_GUARDIAN_AWS_EFS_SETTINGS
+    _dir_path = Path(aws_efs_settings.EFS_MOUNTED_PATH)
+    if _dir_path.exists():
+        for root, dirs, files in os.walk(_dir_path):
+            for name in dirs + files:
+                file_path = Path(root, name)
+                # Get the current permissions of the file or directory
+                current_permissions = Path.stat(file_path).st_mode
+                # Add write permission for the owner (user)
+                Path.chmod(file_path, current_permissions | stat.S_IWUSR)
+
+        shutil.rmtree(_dir_path)
