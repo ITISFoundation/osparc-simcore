@@ -269,6 +269,7 @@ async def login_2fa(request: web.Request):
 
     # dispose since code was used
     await delete_2fa_code(request.app, login_2fa_.email)
+
     return await login_granted_response(request, user=dict(user))
 
 
