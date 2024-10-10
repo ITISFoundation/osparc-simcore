@@ -22,11 +22,11 @@ from faker import Faker
 from playwright.sync_api import APIRequestContext, BrowserContext, Page, WebSocket
 from playwright.sync_api._generated import Playwright
 from pydantic import AnyUrl, TypeAdapter
-from pytest import Item
+from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.playwright import (
-    SECOND,
     MINUTE,
+    SECOND,
     AutoRegisteredUser,
     RunningState,
     ServiceType,
@@ -34,7 +34,9 @@ from pytest_simcore.helpers.playwright import (
     SocketIOProjectClosedWaiter,
     SocketIOProjectStateUpdatedWaiter,
     decode_socketio_42_message,
+    web_socket_default_log_handler,
 )
+from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
 
 _PROJECT_CLOSING_TIMEOUT: Final[int] = 10 * MINUTE
 _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME: Final[int] = 30 * SECOND
@@ -79,6 +81,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Whether product is billable or not",
     )
     group.addoption(
+        "--product-lite",
+        action="store_true",
+        default=False,
+        help="Whether product is lite version or not",
+    )
+    group.addoption(
         "--autoscaled",
         action="store_true",
         default=False,
@@ -115,7 +123,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 # Dictionary to store start times of tests
-_test_start_times = {}
+_test_start_times: dict[str, datetime.datetime] = {}
 
 
 def pytest_runtest_setup(item):
@@ -136,14 +144,14 @@ def _construct_graylog_url(
         scheme, tail = product_url.split("://", 1)
     else:
         scheme, tail = "https", "<UNDEFINED>"
-    monitoring_url = f"{scheme}://monitoring.{tail}"
+    monitoring_url = f"{scheme}://monitoring.{tail}".rstrip("/")
 
     # build graylog URL
     query = f"from={start_time.strftime(_FORMAT)}&to={end_time.strftime(_FORMAT)}"
     return f"{monitoring_url}/graylog/search?{query}"
 
 
-def pytest_runtest_makereport(item: Item, call):
+def pytest_runtest_makereport(item: pytest.Item, call):
     """
     Hook to add extra information when a test fails.
     """
@@ -153,11 +161,13 @@ def pytest_runtest_makereport(item: Item, call):
         test_name = item.name
         test_location = item.location
         product_url = f"{item.config.getoption('--product-url', default=None)}"
+        is_billable = item.config.getoption("--product-billable", default=None)
 
         diagnostics = {
             "test_name": test_name,
             "test_location": test_location,
             "product_url": product_url,
+            "is_billable": is_billable,
         }
 
         # Get the start and end times of the test
@@ -170,10 +180,11 @@ def pytest_runtest_makereport(item: Item, call):
             )
             diagnostics["duration"] = str(end_time - start_time)
 
-        # Print the diagnostics report
-        print(f"\nDiagnostics repoort for {test_name} ---")
-        print(json.dumps(diagnostics, indent=2))
-        print("---")
+        with log_context(
+            logging.WARNING,
+            f"ℹ️ Diagnostics report for {test_name} ---",  # noqa: RUF001
+        ) as ctx:
+            ctx.logger.warning("\n%s", json.dumps(diagnostics, indent=2))
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -214,23 +225,29 @@ def user_name(request: pytest.FixtureRequest, auto_register: bool, faker: Faker)
 @pytest.fixture
 def user_password(
     request: pytest.FixtureRequest, auto_register: bool, faker: Faker
-) -> str:
+) -> Secret4TestsStr:
     if auto_register:
-        return faker.password(length=12)
+        return Secret4TestsStr(DEFAULT_TEST_PASSWORD)
     if osparc_password := request.config.getoption("--password"):
         assert isinstance(osparc_password, str)
-        return osparc_password
-    return os.environ["USER_PASSWORD"]
+        return Secret4TestsStr(osparc_password)
+    return Secret4TestsStr(os.environ["USER_PASSWORD"])
 
 
 @pytest.fixture(scope="session")
-def product_billable(request: pytest.FixtureRequest) -> bool:
+def is_product_billable(request: pytest.FixtureRequest) -> bool:
     billable = request.config.getoption("--product-billable")
     return TypeAdapter(bool).validate_python(billable)
 
 
 @pytest.fixture(scope="session")
-def autoscaled(request: pytest.FixtureRequest) -> bool:
+def is_product_lite(request: pytest.FixtureRequest) -> bool:
+    enabled = request.config.getoption("--product-lite")
+    return TypeAdapter(bool).validate_python(enabled)
+
+
+@pytest.fixture(scope="session")
+def is_autoscaled(request: pytest.FixtureRequest) -> bool:
     autoscaled = request.config.getoption("--autoscaled")
     return TypeAdapter(bool).validate_python(autoscaled)
 
@@ -277,7 +294,7 @@ def register(
     page: Page,
     product_url: AnyUrl,
     user_name: str,
-    user_password: str,
+    user_password: Secret4TestsStr,
 ) -> Callable[[], AutoRegisteredUser]:
     def _do() -> AutoRegisteredUser:
         with log_context(
@@ -294,11 +311,13 @@ def register(
             for pass_id in ["registrationPass1Fld", "registrationPass2Fld"]:
                 user_password_box = page.get_by_test_id(pass_id)
                 user_password_box.click()
-                user_password_box.fill(user_password)
+                user_password_box.fill(user_password.get_secret_value())
             with page.expect_response(re.compile(r"/auth/register")) as response_info:
                 page.get_by_test_id("registrationSubmitBtn").click()
             assert response_info.value.ok, response_info.value.json()
-            return AutoRegisteredUser(user_email=user_name, password=user_password)
+            return AutoRegisteredUser(
+                user_email=user_name, password=user_password.get_secret_value()
+            )
 
     return _do
 
@@ -308,7 +327,7 @@ def log_in_and_out(
     page: Page,
     product_url: AnyUrl,
     user_name: str,
-    user_password: str,
+    user_password: Secret4TestsStr,
     auto_register: bool,
     register: Callable[[], AutoRegisteredUser],
 ) -> Iterator[WebSocket]:
@@ -349,7 +368,7 @@ def log_in_and_out(
                 _user_email_box.fill(user_name)
                 _user_password_box = page.get_by_test_id("loginPasswordFld")
                 _user_password_box.click()
-                _user_password_box.fill(user_password)
+                _user_password_box.fill(user_password.get_secret_value())
                 with page.expect_response(re.compile(r"/login")) as response_info:
                     page.get_by_test_id("loginSubmitBtn").click()
                 assert response_info.value.ok, f"{response_info.value.json()}"
@@ -369,7 +388,8 @@ def log_in_and_out(
     if quickStartWindowCloseBtnLocator.is_visible():
         quickStartWindowCloseBtnLocator.click()
 
-    yield ws
+    with web_socket_default_log_handler(ws):
+        yield ws
 
     with log_context(
         logging.INFO,
@@ -388,7 +408,7 @@ def log_in_and_out(
 def create_new_project_and_delete(
     page: Page,
     log_in_and_out: WebSocket,
-    product_billable: bool,
+    is_product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
 ) -> Iterator[Callable[[tuple[RunningState], bool], dict[str, Any]]]:
@@ -407,15 +427,20 @@ def create_new_project_and_delete(
         ), "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
         with log_context(
             logging.INFO,
-            f"Open project in {product_url=} as {product_billable=}",
+            f"Open project in {product_url=} as {is_product_billable=}",
         ) as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
-            timeout = _OPENING_TUTORIAL_MAX_WAIT_TIME if template_id is not None else _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME
+            timeout = (
+                _OPENING_TUTORIAL_MAX_WAIT_TIME
+                if template_id is not None
+                else _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME
+            )
             with (
-                log_in_and_out.expect_event("framereceived", waiter, timeout=timeout + 10 * SECOND),
+                log_in_and_out.expect_event(
+                    "framereceived", waiter, timeout=timeout + 10 * SECOND
+                ),
                 page.expect_response(
-                    re.compile(r"/projects/[^:]+:open"),
-                    timeout=timeout + 5 * SECOND
+                    re.compile(r"/projects/[^:]+:open"), timeout=timeout + 5 * SECOND
                 ) as response_info,
             ):
                 # Project detail view pop-ups shows
@@ -436,8 +461,11 @@ def create_new_project_and_delete(
                             # From the long running tasks response's urls, only their path is relevant
                             def url_to_path(url):
                                 return urllib.parse.urlparse(url).path
+
                             def wait_for_done(response):
-                                if url_to_path(response.url) == url_to_path(lrt_data["status_href"]):
+                                if url_to_path(response.url) == url_to_path(
+                                    lrt_data["status_href"]
+                                ):
                                     resp_data = response.json()
                                     resp_data = resp_data["data"]
                                     assert "task_progress" in resp_data
@@ -448,17 +476,20 @@ def create_new_project_and_delete(
                                         task_progress["message"],
                                     )
                                     return False
-                                if url_to_path(response.url) == url_to_path(lrt_data["result_href"]):
+                                if url_to_path(response.url) == url_to_path(
+                                    lrt_data["result_href"]
+                                ):
                                     copying_logger.logger.info("project created")
                                     return response.status == 201
                                 return False
+
                             with page.expect_response(wait_for_done, timeout=timeout):
                                 # if the above calls go to fast, this test could fail
                                 # not expected in the sim4life context though
                                 ...
                     else:
                         open_button.click()
-                if product_billable:
+                if is_product_billable:
                     # Open project with default resources
                     page.get_by_test_id("openWithResources").click()
             project_data = response_info.value.json()
@@ -497,7 +528,7 @@ def create_new_project_and_delete(
     for project_uuid in created_project_uuids:
         with log_context(
             logging.INFO,
-            f"Delete project with {project_uuid=} in {product_url=} as {product_billable=}",
+            f"Delete project with {project_uuid=} in {product_url=} as {is_product_billable=}",
         ):
             response = api_request_context.delete(
                 f"{product_url}v0/projects/{project_uuid}"

@@ -209,6 +209,7 @@ async def ports_inputs_pull_task(
     request: Request,
     tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
     app: Annotated[FastAPI, Depends(get_application)],
+    settings: Annotated[ApplicationSettings, Depends(get_settings)],
     mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
     inputs_state: Annotated[InputsState, Depends(get_inputs_state)],
     port_keys: list[str] | None = None,
@@ -223,6 +224,7 @@ async def ports_inputs_pull_task(
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
             app=app,
+            settings=settings,
             inputs_pulling_enabled=inputs_state.inputs_pulling_enabled,
         )
     except TaskAlreadyRunningError as e:

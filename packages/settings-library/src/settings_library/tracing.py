@@ -1,4 +1,5 @@
 from pydantic import AliasChoices, AnyUrl, Field, TypeAdapter
+from settings_library.basic_types import RegisteredPortInt
 
 from .base import BaseCustomSettings
 
@@ -18,4 +19,10 @@ class TracingSettings(BaseCustomSettings):
         default=UNDEFINED_CLIENT_NAME,
         description="Name of the application connecting the tracing service",
         validation_alias=AliasChoices("HOST", "HOSTNAME", "TRACING_CLIENT_NAME"),
+    )
+    TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: AnyUrl = Field(
+        ..., description="Opentelemetry compatible collector endpoint"
+    )
+    TRACING_OPENTELEMETRY_COLLECTOR_PORT: RegisteredPortInt = Field(
+        ..., description="Opentelemetry compatible collector port"
     )

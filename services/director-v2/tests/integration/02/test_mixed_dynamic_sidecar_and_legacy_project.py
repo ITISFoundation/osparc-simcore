@@ -1,6 +1,7 @@
-# pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
+# pylint:disable=too-many-positional-arguments
+# pylint:disable=unused-argument
 
 import asyncio
 import logging
@@ -39,6 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 pytest_simcore_core_services_selection = [
+    "agent",
     "catalog",
     "director",
     "migration",
@@ -65,11 +67,22 @@ def mock_env(
     minio_s3_settings_envs: EnvVarsDict,
     storage_service: URL,
     network_name: str,
+    services_endpoint: dict[str, URL],
 ) -> EnvVarsDict:
+    director_host = services_endpoint["director"].host
+    assert director_host
+    director_port = services_endpoint["director"].port
+    assert director_port
+
+    catalog_host = services_endpoint["catalog"].host
+    assert catalog_host
+    catalog_port = services_endpoint["catalog"].port
+    assert catalog_port
+
     env_vars: EnvVarsDict = {
         "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
         "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
-        "SWARM_STACK_NAME": "test_swarm_name",
+        "SWARM_STACK_NAME": "pytest-simcore",
         "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
         "SC_BOOT_MODE": "production",
         "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
@@ -80,6 +93,11 @@ def mock_env(
         "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
         "COMPUTATIONAL_BACKEND_ENABLED": "false",
         "R_CLONE_PROVIDER": "MINIO",
+        "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
+        "DIRECTOR_HOST": director_host,
+        "DIRECTOR_PORT": f"{director_port}",
+        "CATALOG_HOST": catalog_host,
+        "CATALOG_PORT": f"{catalog_port}",
     }
     setenvs_from_dict(monkeypatch, env_vars)
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
@@ -158,7 +176,7 @@ async def dy_static_file_server_project(
 @pytest.fixture
 async def ensure_services_stopped(
     dy_static_file_server_project: ProjectAtDB,
-    minimal_app: FastAPI,
+    initialized_app: FastAPI,
 ) -> AsyncIterable[None]:
     yield
     # ensure service cleanup when done testing
@@ -177,7 +195,7 @@ async def ensure_services_stopped(
 
         # pylint: disable=protected-access
         scheduler_interval = (
-            minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL
+            initialized_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL
         )
         # sleep enough to ensure the observation cycle properly stopped the service
         await asyncio.sleep(2 * scheduler_interval.total_seconds())
@@ -190,9 +208,10 @@ def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
         "simcore_service_director_v2.modules.dynamic_sidecar.api_client.SidecarsClient"
     )
     for function_name, return_value in [
-        ("pull_service_output_ports", None),
-        ("restore_service_state", None),
+        ("pull_service_output_ports", 0),
+        ("restore_service_state", 0),
         ("push_service_output_ports", None),
+        ("save_service_state", 0),
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",
@@ -214,7 +233,7 @@ def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
 
 @pytest.mark.flaky(max_runs=3)
 async def test_legacy_and_dynamic_sidecar_run(
-    minimal_app: FastAPI,
+    initialized_app: FastAPI,
     wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
     dy_static_file_server_project: ProjectAtDB,
     user_dict: dict[str, Any],
@@ -263,13 +282,7 @@ async def test_legacy_and_dynamic_sidecar_run(
         if is_legacy(node):
             continue
 
-        # NOTE: it seems the minimal_app fixture does not contain the actual data
-        # so we use the one in the async_client??? very strange
-        await patch_dynamic_service_url(
-            # pylint: disable=protected-access
-            app=async_client._transport.app,  # noqa: SLF001 # type: ignore
-            node_uuid=node_id,
-        )
+        await patch_dynamic_service_url(app=initialized_app, node_uuid=node_id)
 
     assert len(dy_static_file_server_project.workbench) == 3
 

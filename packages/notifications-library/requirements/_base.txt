@@ -2,7 +2,7 @@ aiofiles==24.1.0
     # via -r requirements/_base.in
 aiosmtplib==3.0.2
     # via -r requirements/_base.in
-alembic==1.13.2
+alembic==1.13.3
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 annotated-types==0.7.0
     # via pydantic
@@ -22,9 +22,9 @@ dnspython==2.6.1
     # via email-validator
 email-validator==2.2.0
     # via pydantic
-greenlet==3.0.3
+greenlet==3.1.1
     # via sqlalchemy
-idna==3.7
+idna==3.10
     # via
     #   email-validator
     #   yarl
@@ -54,7 +54,7 @@ markupsafe==2.1.5
     #   mako
 mdurl==0.1.2
     # via markdown-it-py
-multidict==6.0.5
+multidict==6.1.0
     # via yarl
 orjson==3.10.7
     # via
@@ -94,7 +94,7 @@ referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-rich==13.7.1
+rich==13.8.1
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
@@ -106,7 +106,7 @@ shellingham==1.5.4
     # via typer
 six==1.16.0
     # via python-dateutil
-sqlalchemy==1.4.53
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -114,9 +114,9 @@ sqlalchemy==1.4.53
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   alembic
-typer==0.12.4
+typer==0.12.5
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
-types-python-dateutil==2.9.0.20240821
+types-python-dateutil==2.9.0.20240906
     # via arrow
 typing-extensions==4.12.2
     # via
@@ -124,5 +124,5 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
     #   typer
-yarl==1.9.4
+yarl==1.12.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in

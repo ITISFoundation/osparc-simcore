@@ -97,18 +97,19 @@ async def list_services_paginated(
         product_name=product_name, user_id=user_id, limit=limit, offset=offset
     )
 
-    # injects access-rights
-    access_rights: dict[
-        tuple[str, str], list[ServiceAccessRightsAtDB]
-    ] = await repo.list_services_access_rights(
-        ((s.key, s.version) for s in services), product_name=product_name
-    )
-    if not access_rights:
-        raise CatalogForbiddenError(
-            name="any service",
-            user_id=user_id,
-            product_name=product_name,
+    if services:
+        # injects access-rights
+        access_rights: dict[
+            tuple[str, str], list[ServiceAccessRightsAtDB]
+        ] = await repo.list_services_access_rights(
+            ((s.key, s.version) for s in services), product_name=product_name
         )
+        if not access_rights:
+            raise CatalogForbiddenError(
+                name="any service",
+                user_id=user_id,
+                product_name=product_name,
+            )
 
     # get manifest of those with access rights
     got = await manifest.get_batch_services(

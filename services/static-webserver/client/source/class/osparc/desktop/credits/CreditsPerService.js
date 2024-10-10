@@ -61,20 +61,31 @@ qx.Class.define("osparc.desktop.credits.CreditsPerService", {
           this._removeAll();
           if (entries && entries.length) {
             let totalCredits = 0;
-            entries.forEach(entry => totalCredits+= entry["osparc_credits"]);
+            let totalHours = 0;
+            entries.forEach(entry => {
+              totalHours += entry["running_time_in_hours"]
+              totalCredits+= entry["osparc_credits"]
+            });
             let datas = [];
             entries.forEach(entry => {
               datas.push({
                 service: entry["service_key"],
                 credits: -1*entry["osparc_credits"],
-                percentage: 100*entry["osparc_credits"]/totalCredits,
+                hours: entry["running_time_in_hours"],
+                percentageHours: totalHours ? 100*entry["running_time_in_hours"]/totalHours : 0,
+                percentageCredits: totalCredits ? 100*entry["osparc_credits"]/totalCredits : 0,
               });
             });
-            datas.sort((a, b) => b.percentage - a.percentage);
+            datas.sort((a, b) => {
+              if (b.credits !== a.credits) {
+                return b.credits - a.credits;
+              }
+              return b.hours - a.hours;
+            });
             // top 5 services
             datas = datas.slice(0, 5);
             datas.forEach(data => {
-              const uiEntry = new osparc.desktop.credits.CreditsServiceListItem(data.service, data.credits, data.percentage);
+              const uiEntry = new osparc.desktop.credits.CreditsServiceListItem(data.service, data.credits, data.hours, totalCredits === 0 ? data.percentageHours : data.percentageCredits);
               this._add(uiEntry);
             });
           } else {

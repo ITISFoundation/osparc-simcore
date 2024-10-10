@@ -1,8 +1,10 @@
 import logging
+import os
 import socket
 from typing import Any, Final
 
 import aio_pika
+import psutil
 from aiormq.exceptions import ChannelPreconditionFailed
 from pydantic import NonNegativeInt
 from tenacity import retry
@@ -51,7 +53,13 @@ async def wait_till_rabbitmq_responsive(url: str) -> bool:
 
 
 def get_rabbitmq_client_unique_name(base_name: str) -> str:
-    return f"{base_name}_{socket.gethostname()}"
+    # NOTE: The prefix below will change every time the process restarts.
+    # Why is this necessary?
+    # 1. The codebase relies on this behavior; without it, subscribers and consumers will fail.
+    # 2. It allows the web server to be restarted seamlessly during [re]deployments.
+    prefix_create_time = f"{psutil.Process(os.getpid()).create_time()}".strip(".")[-6:]
+
+    return f"{base_name}_{socket.gethostname()}_{prefix_create_time}"
 
 
 async def declare_queue(

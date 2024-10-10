@@ -45,7 +45,7 @@ qx.Class.define("osparc.file.FilesTree", {
     this.set({
       openMode: "none",
       decorator: "no-border",
-      font: "text-14"
+      font: "text-14",
     });
 
     this.resetChecks();

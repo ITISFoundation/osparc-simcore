@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.43.0
+  version: 0.43.1
 servers:
 - url: ''
   description: webserver
@@ -233,6 +233,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Log_'
+  /v0/auth:check:
+    get:
+      tags:
+      - auth
+      summary: Check Auth
+      description: checks if user is authenticated in the platform
+      operationId: check_authentication
+      responses:
+        '204':
+          description: Successful Response
+        '401':
+          description: unauthorized reset due to invalid token code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Error_'
   /v0/auth/reset-password:
     post:
       tags:
@@ -3291,6 +3307,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_TaskGet_'
+  /v0/projects:search:
+    get:
+      tags:
+      - projects
+      summary: List Projects Full Search
+      operationId: list_projects_full_search
+      parameters:
+      - description: Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date)
+          and direction (asc|desc). The default sorting order is ascending.
+        required: false
+        schema:
+          title: Order By
+          description: Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date)
+            and direction (asc|desc). The default sorting order is ascending.
+          default:
+          - '{"field": "last_change_date", "direction": "desc"}'
+        example: '{"field": "last_change_date", "direction": "desc"}'
+        name: order_by
+        in: query
+      - required: false
+        schema:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          default: 20
+          maximum: 50
+        name: limit
+        in: query
+      - required: false
+        schema:
+          title: Offset
+          minimum: 0
+          type: integer
+          default: 0
+        name: offset
+        in: query
+      - required: false
+        schema:
+          title: Text
+          maxLength: 100
+          type: string
+        name: text
+        in: query
+      - required: false
+        schema:
+          title: Tag Ids
+          type: string
+        name: tag_ids
+        in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ProjectListFullSearchParams_'
   /v0/projects/{project_id}/inactivity:
     get:
       tags:
@@ -4579,7 +4652,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_webserver.resource_usage.ServiceRunGet__'
+                $ref: '#/components/schemas/Envelope_list_models_library.api_schemas_resource_usage_tracker.service_runs.OsparcCreditsAggregatedByServiceGet__'
   /v0/services/-/usage-report:
     get:
       tags:
@@ -7641,6 +7714,17 @@ components:
             $ref: '#/components/schemas/TaskGet'
         error:
           title: Error
+    Envelope_list_models_library.api_schemas_resource_usage_tracker.service_runs.OsparcCreditsAggregatedByServiceGet__:
+      title: Envelope[list[models_library.api_schemas_resource_usage_tracker.service_runs.OsparcCreditsAggregatedByServiceGet]]
+      type: object
+      properties:
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/OsparcCreditsAggregatedByServiceGet'
+        error:
+          title: Error
     Envelope_list_models_library.api_schemas_storage.FileMetaDataGet__:
       title: Envelope[list[models_library.api_schemas_storage.FileMetaDataGet]]
       type: object
@@ -9137,18 +9221,6 @@ components:
           title: Userid
           type: string
           description: the user that started the service
-      example:
-        published_port: 30000
-        entrypoint: /the/entry/point/is/here
-        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        service_key: simcore/services/comp/itis/sleeper
-        service_version: 1.2.3
-        service_host: jupyter_E1O2E-LAH
-        service_port: 8081
-        service_basepath: /x/E1O2E-LAH
-        service_state: pending
-        service_message: no suitable node (insufficient resources on 1 node)
-        user_id: 123
     NodeGetIdle:
       title: NodeGetIdle
       required:
@@ -9339,6 +9411,24 @@ components:
       - WALLET_SHARED
       type: string
       description: An enumeration.
+    OsparcCreditsAggregatedByServiceGet:
+      title: OsparcCreditsAggregatedByServiceGet
+      required:
+      - osparc_credits
+      - service_key
+      - running_time_in_hours
+      type: object
+      properties:
+        osparc_credits:
+          title: Osparc Credits
+          type: number
+        service_key:
+          title: Service Key
+          pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
+          type: string
+        running_time_in_hours:
+          title: Running Time In Hours
+          type: number
     Owner:
       title: Owner
       required:
@@ -9497,6 +9587,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProjectIterationResultItem'
+      additionalProperties: false
+      description: Paginated response model of ItemTs
+    Page_ProjectListFullSearchParams_:
+      title: Page[ProjectListFullSearchParams]
+      required:
+      - _meta
+      - _links
+      - data
+      type: object
+      properties:
+        _meta:
+          $ref: '#/components/schemas/PageMetaInfoLimitOffset'
+        _links:
+          $ref: '#/components/schemas/PageLinks'
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectListFullSearchParams'
       additionalProperties: false
       description: Paginated response model of ItemTs
     Page_ProjectListItem_:
@@ -10207,6 +10316,11 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+        folderId:
+          title: Folderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     ProjectGroupGet:
       title: ProjectGroupGet
       required:
@@ -10353,6 +10467,37 @@ components:
           format: uri
         results:
           $ref: '#/components/schemas/ExtractedResults'
+    ProjectListFullSearchParams:
+      title: ProjectListFullSearchParams
+      type: object
+      properties:
+        limit:
+          title: Limit
+          exclusiveMaximum: true
+          minimum: 1
+          type: integer
+          description: maximum number of items to return (pagination)
+          default: 20
+          maximum: 50
+        offset:
+          title: Offset
+          minimum: 0
+          type: integer
+          description: index to the first item to return (pagination)
+          default: 0
+        text:
+          title: Text
+          maxLength: 100
+          type: string
+          description: Multi column full text search, across all folders and workspaces
+          example: My Project
+        tag_ids:
+          title: Tag Ids
+          type: string
+          description: Search by tag ID (multiple tag IDs may be provided separated
+            by column)
+          example: 1,3
+      description: Use as pagination options in query parameters
     ProjectListItem:
       title: ProjectListItem
       required:
@@ -10439,6 +10584,11 @@ components:
           $ref: '#/components/schemas/ProjectPermalink'
         workspaceId:
           title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        folderId:
+          title: Folderid
           exclusiveMinimum: true
           type: integer
           minimum: 0
@@ -11562,13 +11712,14 @@ components:
     ServiceState:
       title: ServiceState
       enum:
+      - failed
       - pending
       - pulling
       - starting
       - running
-      - complete
-      - failed
       - stopping
+      - complete
+      - idle
       description: An enumeration.
     ServiceType:
       title: ServiceType
@@ -11864,6 +12015,9 @@ components:
           title: Color
           pattern: ^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$
           type: string
+        priority:
+          title: Priority
+          type: integer
     TagGet:
       title: TagGet
       required:
@@ -11953,6 +12107,9 @@ components:
           title: Color
           pattern: ^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$
           type: string
+        priority:
+          title: Priority
+          type: integer
     TaskCounts:
       title: TaskCounts
       type: object

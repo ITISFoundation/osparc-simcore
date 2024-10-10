@@ -79,7 +79,8 @@ class ProjectGet(OutputSchema):
     quality: dict[str, Any] = {}
     dev: dict | None = None
     permalink: ProjectPermalink = FieldNotRequired()
-    workspace_id: WorkspaceID | None = None
+    workspace_id: WorkspaceID | None
+    folder_id: FolderID | None
 
     _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator

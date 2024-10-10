@@ -1,11 +1,10 @@
-from asyncio import Task
-import traceback
 import logging
+import traceback
+from abc import ABC, abstractmethod
+from asyncio import CancelledError, Task
 from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
-
-from pydantic_core import InitErrorDetails
 
 from models_library.api_schemas_storage import LinkType
 from models_library.basic_types import IDStr
@@ -14,6 +13,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic_core import InitErrorDetails
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.aws_s3_cli import AwsS3CliSettings
@@ -30,15 +30,38 @@ from .ports_mapping import InputsList, OutputsList
 log = logging.getLogger(__name__)
 
 
-def _format_error(task:Task)-> str:
+def _format_error(task: Task) -> str:
     # pylint:disable=protected-access
-    assert task._exception #nosec
-    error_list= traceback.format_exception(type(task._exception), task._exception, task._exception.__traceback__)
+    assert task._exception  # nosec
+    error_list = traceback.format_exception(
+        type(task._exception), task._exception, task._exception.__traceback__
+    )
     return "\n".join(error_list)
 
-def _get_error_details(task:Task, port_key:str)->InitErrorDetails:
+
+def _get_error_details(task: Task, port_key: str) -> InitErrorDetails:
     # pylint:disable=protected-access
-    return InitErrorDetails(type="value_error", loc=(f"{port_key}",), input=_format_error(task), ctx={"error":task._exception})
+    return InitErrorDetails(
+        type="value_error",
+        loc=(f"{port_key}",),
+        input=_format_error(task),
+        ctx={"error": task._exception},
+    )
+
+
+class OutputsCallbacks(ABC):
+    @abstractmethod
+    async def aborted(self, key: ServicePortKey) -> None:
+        pass
+
+    @abstractmethod
+    async def finished_succesfully(self, key: ServicePortKey) -> None:
+        pass
+
+    @abstractmethod
+    async def finished_with_error(self, key: ServicePortKey) -> None:
+        pass
+
 
 class Nodeports(BaseModel):
     """
@@ -161,6 +184,7 @@ class Nodeports(BaseModel):
         ],
         *,
         progress_bar: ProgressBarData,
+        outputs_callbacks: OutputsCallbacks | None,
     ) -> None:
         """
         Sets the provided values to the respective input or output ports
@@ -169,34 +193,54 @@ class Nodeports(BaseModel):
 
         raises ValidationError
         """
+
+        async def _set_with_notifications(
+            port_key: ServicePortKey,
+            value: ItemConcreteValue | None,
+            set_kwargs: SetKWargs | None,
+            sub_progress: ProgressBarData,
+        ) -> None:
+            try:
+                # pylint: disable=protected-access
+                await self.internal_outputs[port_key]._set(  # noqa: SLF001
+                    value, set_kwargs=set_kwargs, progress_bar=sub_progress
+                )
+                if outputs_callbacks:
+                    await outputs_callbacks.finished_succesfully(port_key)
+            except UnboundPortError:
+                # not available try inputs
+                # if this fails it will raise another exception
+                # pylint: disable=protected-access
+                await self.internal_inputs[port_key]._set(  # noqa: SLF001
+                    value, set_kwargs=set_kwargs, progress_bar=sub_progress
+                )
+            except CancelledError:
+                if outputs_callbacks:
+                    await outputs_callbacks.aborted(port_key)
+                raise
+            except Exception:
+                if outputs_callbacks:
+                    await outputs_callbacks.finished_with_error(port_key)
+                raise
+
         tasks = []
         async with progress_bar.sub_progress(
             steps=len(port_values.items()), description=IDStr("set multiple")
         ) as sub_progress:
             for port_key, (value, set_kwargs) in port_values.items():
-                # pylint: disable=protected-access
-                try:
-                    tasks.append(
-                        self.internal_outputs[port_key]._set(
-                            value, set_kwargs=set_kwargs, progress_bar=sub_progress
-                        )
-                    )
-                except UnboundPortError:
-                    # not available try inputs
-                    # if this fails it will raise another exception
-                    tasks.append(
-                        self.internal_inputs[port_key]._set(
-                            value, set_kwargs=set_kwargs, progress_bar=sub_progress
-                        )
-                    )
+                tasks.append(
+                    _set_with_notifications(port_key, value, set_kwargs, sub_progress)
+                )
 
             results = await logged_gather(*tasks)
             await self.save_to_db_cb(self)
 
         # groups all ValidationErrors pre-pending 'port_key' to loc and raises ValidationError
-        if error_details:= [
+        if error_details := [
             _get_error_details(r, port_key)
             for port_key, r in zip(port_values.keys(), results)
             if r is not None
         ]:
-            raise ValidationError.from_exception_data(title="Multiple port_key errors",line_errors=error_details)
+            raise ValidationError.from_exception_data(
+                title="Multiple port_key errors", line_errors=error_details
+            )

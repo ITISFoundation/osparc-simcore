@@ -152,7 +152,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         item.setEnabled(false);
       }
 
-      osparc.info.StudyUtils.removeCollaborator(this._serializedDataCopy, collaborator["gid"])
+      return osparc.info.StudyUtils.removeCollaborator(this._serializedDataCopy, collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));

@@ -17,10 +17,6 @@ anyio==4.3.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-async-timeout==4.0.3
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
 attrs==23.2.0
     # via
     #   -c requirements/_base.txt
@@ -36,7 +32,9 @@ certifi==2024.2.2
     #   httpx
     #   requests
 charset-normalizer==3.3.2
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 click==8.1.7
     # via
     #   -c requirements/_base.txt
@@ -45,12 +43,7 @@ coverage==7.6.1
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.0
-    # via
-    #   -c requirements/_base.txt
-    #   anyio
-    #   pytest
-faker==27.0.0
+faker==29.0.0
     # via -r requirements/_test.in
 frozenlist==1.4.1
     # via
@@ -105,7 +98,7 @@ multidict==6.0.5
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.11.1
+mypy==1.11.2
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -119,7 +112,7 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -154,7 +147,9 @@ referencing==0.29.3
     #   jsonschema
     #   jsonschema-specifications
 requests==2.32.3
-    # via docker
+    # via
+    #   -c requirements/_base.txt
+    #   docker
 respx==0.21.1
     # via -r requirements/_test.in
 rpds-py==0.18.0
@@ -180,25 +175,20 @@ sqlalchemy==1.4.52
     #   alembic
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-tomli==2.0.1
-    # via
-    #   coverage
-    #   mypy
-    #   pytest
 types-psycopg2==2.9.21.20240819
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20240808
+types-pyyaml==6.0.12.20240917
     # via -r requirements/_test.in
 typing-extensions==4.10.0
     # via
     #   -c requirements/_base.txt
     #   alembic
-    #   anyio
     #   mypy
     #   sqlalchemy2-stubs
 urllib3==2.2.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   docker
     #   requests
 yarl==1.9.4

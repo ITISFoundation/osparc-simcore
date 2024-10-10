@@ -8,6 +8,7 @@
 
 fastapi
 httpx
+opentelemetry-instrumentation-fastapi
 prometheus-client
 prometheus-fastapi-instrumentator
 uvicorn

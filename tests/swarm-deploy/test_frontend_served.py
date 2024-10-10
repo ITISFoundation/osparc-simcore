@@ -22,9 +22,9 @@ async def test_deployed_services_running(
 @pytest.mark.parametrize(
     "test_url,expected_in_content",
     [
-        ("http://127.0.0.1:9081/", "osparc/boot.js"),
-        ("http://127.0.0.1:9081/s4l/index.html", "Sim4Life"),
-        ("http://127.0.0.1:9081/tis/index.html", "TI Plan"),
+        ("http://127.0.0.1.nip.io:9081/", "osparc/boot.js"),
+        ("http://127.0.0.1.nip.io:9081/s4l/index.html", "Sim4Life"),
+        ("http://127.0.0.1.nip.io:9081/tis/index.html", "TI Plan"),
     ],
 )
 def test_product_frontend_app_served(
