@@ -1,4 +1,4 @@
-from common_library.pydantic_base_types import RegisteredPortInt
+from common_library.pydantic_basic_types import RegisteredPortInt
 from pydantic import AliasChoices, AnyUrl, Field, TypeAdapter
 
 from .base import BaseCustomSettings

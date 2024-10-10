@@ -2,7 +2,7 @@ import contextlib
 import re
 from typing import Annotated, Any, Final, TypeAlias
 
-from common_library.pydantic_base_types import ConstrainedStr
+from common_library.pydantic_basic_types import ConstrainedStr
 from pydantic import (
     BaseModel,
     ByteSize,

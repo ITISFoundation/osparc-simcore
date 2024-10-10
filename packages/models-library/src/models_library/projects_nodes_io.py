@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
-from common_library.pydantic_base_types import ConstrainedStr
+from common_library.pydantic_basic_types import ConstrainedStr
 from models_library.basic_types import KeyIDStr
 from pydantic import (
     AnyUrl,

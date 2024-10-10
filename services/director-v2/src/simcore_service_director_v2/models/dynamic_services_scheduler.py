@@ -10,7 +10,7 @@ from typing import Any, TypeAlias
 from uuid import UUID
 
 import arrow
-from common_library.pydantic_base_types import ConstrainedStr
+from common_library.pydantic_basic_types import ConstrainedStr
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     CommonServiceDetails,

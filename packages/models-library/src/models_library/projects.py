@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, Final, TypeAlias
 from uuid import UUID
 
-from common_library.pydantic_base_types import ConstrainedStr
+from common_library.pydantic_basic_types import ConstrainedStr
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator

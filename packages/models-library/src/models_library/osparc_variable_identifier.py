@@ -2,7 +2,7 @@ from copy import deepcopy
 from typing import Any, TypeVar
 
 from common_library.errors_classes import OsparcErrorMixin
-from common_library.pydantic_base_types import ConstrainedStr
+from common_library.pydantic_basic_types import ConstrainedStr
 from pydantic import BaseModel
 
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX

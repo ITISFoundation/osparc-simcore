@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 
-from common_library.pydantic_base_types import ConstrainedStr
+from common_library.pydantic_basic_types import ConstrainedStr
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.users import GroupID, UserID
 from pydantic import Field, PositiveInt
