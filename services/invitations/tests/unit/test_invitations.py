@@ -72,8 +72,8 @@ def test_create_and_decrypt_invitation(
         base_url=faker.url(),
         default_product=default_product,
     )
-    assert invitation_link.fragment
-    query_params = dict(parse.parse_qsl(URL(invitation_link.fragment).query))
+    assert URL(invitation_link).fragment
+    query_params = dict(parse.parse_qsl((URL(URL(invitation_link).fragment).query)))
 
     # will raise TokenError or ValidationError
     invitation = decrypt_invitation(
