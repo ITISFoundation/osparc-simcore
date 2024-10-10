@@ -1,7 +1,7 @@
 from typing import Final
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import AnyHttpUrl, Field, NonNegativeInt, validator
+from pydantic import AliasChoices, AnyHttpUrl, Field, NonNegativeInt, field_validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.utils_logging import MixinLoggingSettings
@@ -11,16 +11,21 @@ _MINUTE: Final[NonNegativeInt] = 60
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     LOGLEVEL: LogLevel = Field(
-        LogLevel.WARNING.value, env=["AGENT_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        LogLevel.WARNING.value,
+        validation_alias=AliasChoices(
+            "AGENT_LOGLEVEL",
+            "LOG_LEVEL",
+            "LOGLEVEL",
+        ),
     )
     SC_BOOT_MODE: BootModeEnum | None
 
     AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=AliasChoices(
             "AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
@@ -47,7 +52,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
-    @validator("LOGLEVEL")
+    @field_validator("LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value) -> LogLevel:
         return LogLevel(cls.validate_log_level(value))
