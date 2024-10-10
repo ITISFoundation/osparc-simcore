@@ -48,7 +48,7 @@ async def create_invitation(
         default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
     )
     invitation = ApiInvitationContentAndLink(
-        **invitation_content.dict(),
+        **invitation_content.model_dump(),
         invitation_url=invitation_link,
     )
 
