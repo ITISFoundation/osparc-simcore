@@ -1,6 +1,5 @@
 import logging
 from functools import partial
-from typing import Any, ClassVar
 from uuid import UUID
 
 from fastapi import FastAPI
@@ -8,7 +7,15 @@ from models_library.clusters import ClusterID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, parse_raw_as
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    TypeAdapter,
+)
 from simcore_service_api_server.exceptions.backend_errors import (
     JobNotFoundError,
     LogFileNotFoundError,
@@ -40,18 +47,19 @@ class ComputationTaskGet(ComputationTask):
     def guess_progress(self) -> PercentageInt:
         # guess progress based on self.state
         if self.state in [RunningState.SUCCESS, RunningState.FAILED]:
-            return PercentageInt(100)
-        return PercentageInt(0)
+            return 100
+        return 0
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
-                    **ComputationTask.Config.schema_extra["examples"][0],
+                    **ComputationTask.model_config["json_schema_extra"]["examples"][0],  # type: ignore
                     "url": "https://link-to-stop-computation",
                 }
             ]
         }
+    )
 
 
 class TaskLogFileGet(BaseModel):
@@ -179,7 +187,9 @@ class DirectorV2Api(BaseServiceClientApi):
         response.raise_for_status()
 
         log_links: list[LogLink] = []
-        for r in parse_raw_as(list[TaskLogFileGet], response.text or "[]"):
+        for r in TypeAdapter(list[TaskLogFileGet]).validate_python(
+            response.text or "[]"
+        ):
             if r.download_link:
                 log_links.append(
                     LogLink(node_name=f"{r.task_id}", download_link=r.download_link)

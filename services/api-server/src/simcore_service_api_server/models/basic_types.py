@@ -1,17 +1,14 @@
-import re
+from typing import Annotated, TypeAlias
 
 from fastapi.responses import StreamingResponse
 from models_library.basic_regex import SIMPLE_VERSION_RE
-from pydantic import ConstrainedStr
+from pydantic import StringConstraints
 
+VersionStr: TypeAlias = Annotated[
+    str, StringConstraints(strip_whitespace=True, pattern=SIMPLE_VERSION_RE)
+]
 
-class VersionStr(ConstrainedStr):
-    strip_whitespace = True
-    regex = re.compile(SIMPLE_VERSION_RE)
-
-
-class FileNameStr(ConstrainedStr):
-    strip_whitespace = True
+FileNameStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True)]
 
 
 class LogStreamingResponse(StreamingResponse):

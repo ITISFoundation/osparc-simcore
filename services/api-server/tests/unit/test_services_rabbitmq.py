@@ -332,8 +332,8 @@ async def log_streamer_with_distributor(
     log_distributor: LogDistributor,
 ) -> AsyncIterable[LogStreamer]:
     def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
-        task = ComputationTaskGet.parse_obj(
-            ComputationTaskGet.Config.schema_extra["examples"][0]
+        task = ComputationTaskGet.model_validate(
+            ComputationTaskGet.model_config["json_schema_extra"]["examples"][0]
         )
         if computation_done():
             task.state = RunningState.SUCCESS
@@ -420,13 +420,13 @@ async def test_log_streamer_not_raise_with_distributor(
         log_level=logging.INFO,
     )
     with pytest.raises(ValidationError):
-        LoggerRabbitMessage.parse_obj(log_rabbit_message.dict())
+        LoggerRabbitMessage.model_validate(log_rabbit_message.model_dump())
 
     await produce_logs("expected", log_message=log_rabbit_message)
 
     ii: int = 0
     async for log in log_streamer_with_distributor.log_generator():
-        _ = JobLog.parse_raw(log)
+        _ = JobLog.model_validate_json(log)
         ii += 1
     assert ii == 0
 
@@ -448,7 +448,9 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
 
     published_logs: list[str] = []
     for _ in range(10):
-        job_log = JobLog.parse_obj(JobLog.Config.schema_extra["example"])
+        job_log = JobLog.model_validate(
+            JobLog.model_config["json_schema_extra"]["example"]
+        )
         msg = faker.text()
         published_logs.append(msg)
         job_log.messages = [msg]

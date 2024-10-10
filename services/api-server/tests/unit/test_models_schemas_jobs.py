@@ -37,8 +37,8 @@ def test_job_io_checksums(repeat: int):
         return deepcopy(src)
 
     shuffled_raw = _deepcopy_and_shuffle(raw)
-    inputs1 = JobInputs.parse_obj(raw)
-    inputs2 = JobInputs.parse_obj(shuffled_raw)
+    inputs1 = JobInputs.model_validate(raw)
+    inputs2 = JobInputs.model_validate(shuffled_raw)
 
     print(inputs1)
     print(inputs2)

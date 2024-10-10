@@ -161,7 +161,7 @@ def app_environment(
     assert "API_SERVER_POSTGRES" not in envs
 
     # Should be sufficient to create settings
-    print(PostgresSettings.create_from_envs().json(indent=1))
+    print(PostgresSettings.create_from_envs().model_dump_json(indent=1))
 
     return envs
 

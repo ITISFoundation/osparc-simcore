@@ -7,7 +7,7 @@ Usage:
 """
 
 from collections.abc import Sequence
-from typing import Any, ClassVar, Generic, TypeAlias, TypeVar
+from typing import Generic, TypeAlias, TypeVar
 
 from fastapi_pagination.limit_offset import LimitOffsetParams
 from fastapi_pagination.links.limit_offset import (
@@ -18,8 +18,7 @@ from models_library.rest_pagination import (
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
 )
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
-from pydantic import Field, NonNegativeInt, validator
-from pydantic.generics import GenericModel
+from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, field_validator
 
 T = TypeVar("T")
 
@@ -35,7 +34,7 @@ Page.__name__ = "Page"
 PaginationParams: TypeAlias = LimitOffsetParams
 
 
-class OnePage(GenericModel, Generic[T]):
+class OnePage(BaseModel, Generic[T]):
     """
     A single page is used to envelope a small sequence that does not require
     pagination
@@ -47,7 +46,7 @@ class OnePage(GenericModel, Generic[T]):
     items: Sequence[T]
     total: NonNegativeInt = FieldNotRequired()
 
-    @validator("total", pre=True)
+    @field_validator("total", mode="before")
     @classmethod
     def check_total(cls, v, values):
         items = values["items"]
@@ -60,9 +59,9 @@ class OnePage(GenericModel, Generic[T]):
 
         return v
 
-    class Config:
-        frozen = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        frozen=True,
+        json_schema_extra={
             "examples": [
                 {
                     "total": 1,
@@ -72,7 +71,8 @@ class OnePage(GenericModel, Generic[T]):
                     "items": ["one"],
                 },
             ],
-        }
+        },
+    )
 
 
 __all__: tuple[str, ...] = (

@@ -251,7 +251,9 @@ async def test_get_upload_links(
     payload: dict[str, str] = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    client_upload_schema: ClientFileUploadData = ClientFileUploadData.parse_obj(payload)
+    client_upload_schema: ClientFileUploadData = ClientFileUploadData.model_validate(
+        payload
+    )
 
     if follow_up_request == "complete":
         body = {
