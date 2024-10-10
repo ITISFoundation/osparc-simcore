@@ -77,7 +77,9 @@ async def test_get_node_resources(
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
             assert (
                 node_resources
-                == ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+                == ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
             )
         else:
             assert not data
@@ -145,7 +147,9 @@ async def test_replace_node_resources_is_forbidden_by_default(
         response = await client.put(
             f"{url}",
             json=ServiceResourcesDictHelpers.create_jsonable(
-                ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+                ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
             ),
         )
         data, error = await assert_status(response, expected)
@@ -156,7 +160,9 @@ async def test_replace_node_resources_is_forbidden_by_default(
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
             assert (
                 node_resources
-                == ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+                == ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
             )
 
 
@@ -183,7 +189,9 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
         response = await client.put(
             f"{url}",
             json=ServiceResourcesDictHelpers.create_jsonable(
-                ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+                ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
             ),
         )
         data, error = await assert_status(response, expected)
@@ -194,7 +202,9 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
             assert (
                 node_resources
-                == ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+                == ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
             )
 
 
@@ -218,7 +228,9 @@ async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
             f"{url}",
             json=ServiceResourcesDictHelpers.create_jsonable(
                 # NOTE: we apply a different resource set
-                ServiceResourcesDictHelpers.Config.schema_extra["examples"][1]
+                ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][1]
             ),
         )
         await assert_status(response, expected)
@@ -383,8 +395,8 @@ async def test_create_and_delete_many_nodes_in_parallel(
             self, *args, **kwargs
         ) -> list[DynamicServiceGet]:  # noqa: ARG002
             return [
-                DynamicServiceGet.parse_obj(
-                    DynamicServiceGet.Config.schema_extra["examples"][1]
+                DynamicServiceGet.model_validate(
+                    DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
                     | {"service_uuid": service_uuid, "project_id": user_project["uuid"]}
                 )
                 for service_uuid in self.running_services_uuids

@@ -52,7 +52,7 @@ async def test_check_registration_invitation_when_not_required(
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
 
-    invitation = InvitationInfo.parse_obj(data)
+    invitation = InvitationInfo.model_validate(data)
     assert invitation.email is None
 
 
@@ -74,7 +74,7 @@ async def test_check_registration_invitations_with_old_code(
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
 
-    invitation = InvitationInfo.parse_obj(data)
+    invitation = InvitationInfo.model_validate(data)
     assert invitation.email is None
 
 
@@ -100,7 +100,7 @@ async def test_check_registration_invitation_and_get_email(
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
 
-    invitation = InvitationInfo.parse_obj(data)
+    invitation = InvitationInfo.model_validate(data)
     assert invitation.email == fake_osparc_invitation.guest
 
 

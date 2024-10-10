@@ -56,7 +56,7 @@ routes = web.RouteTableDef()
 @_handle_tags_exceptions
 async def create_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
-    req_ctx = TagRequestContext.parse_obj(request)
+    req_ctx = TagRequestContext.model_validate(request)
     new_tag = await parse_request_body_as(TagCreate, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
@@ -78,7 +78,7 @@ async def create_tag(request: web.Request):
 @_handle_tags_exceptions
 async def list_tags(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
-    req_ctx = TagRequestContext.parse_obj(request)
+    req_ctx = TagRequestContext.model_validate(request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)
     async with engine.acquire() as conn:
@@ -94,7 +94,7 @@ async def list_tags(request: web.Request):
 @_handle_tags_exceptions
 async def update_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
-    req_ctx = TagRequestContext.parse_obj(request)
+    req_ctx = TagRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
     tag_updates = await parse_request_body_as(TagUpdate, request)
 
@@ -113,7 +113,7 @@ async def update_tag(request: web.Request):
 @_handle_tags_exceptions
 async def delete_tag(request: web.Request):
     engine: Engine = request.app[APP_DB_ENGINE_KEY]
-    req_ctx = TagRequestContext.parse_obj(request)
+    req_ctx = TagRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
 
     repo = TagsRepo(user_id=req_ctx.user_id)

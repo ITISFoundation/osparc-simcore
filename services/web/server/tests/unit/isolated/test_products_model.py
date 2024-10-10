@@ -34,13 +34,17 @@ def test_product_examples(
 
 def test_product_to_static():
 
-    product = Product.parse_obj(Product.Config.schema_extra["examples"][0])
+    product = Product.model_validate(
+        Product.model_config["json_schema_extra"]["examples"][0]
+    )
     assert product.to_statics() == {
         "displayName": "o²S²PARC",
         "supportEmail": "support@osparc.io",
     }
 
-    product = Product.parse_obj(Product.Config.schema_extra["examples"][2])
+    product = Product.model_validate(
+        Product.model_config["json_schema_extra"]["examples"][2]
+    )
 
     assert product.to_statics() == {
         "displayName": "o²S²PARC FOO",

@@ -125,7 +125,7 @@ routes = web.RouteTableDef()
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_project(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     query_params: ProjectCreateParams = parse_request_query_parameters_as(
         ProjectCreateParams, request
     )
@@ -192,7 +192,7 @@ async def list_projects(request: web.Request):
         web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
 
     """
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     query_params: ProjectListWithJsonStrParams = parse_request_query_parameters_as(
         ProjectListWithJsonStrParams, request
     )
@@ -211,7 +211,7 @@ async def list_projects(request: web.Request):
         workspace_id=query_params.workspace_id,
     )
 
-    page = Page[ProjectDict].parse_obj(
+    page = Page[ProjectDict].model_validate(
         paginate_data(
             chunk=projects,
             request_url=request.url,
@@ -242,7 +242,7 @@ async def get_active_project(request: web.Request) -> web.Response:
         web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
         web.HTTPNotFound: If active project is not found
     """
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     query_params: ProjectActiveParams = parse_request_query_parameters_as(
         ProjectActiveParams, request
     )
@@ -267,7 +267,7 @@ async def get_active_project(request: web.Request) -> web.Response:
             # updates project's permalink field
             await update_or_pop_permalink_in_project(request, project)
 
-            data = ProjectGet.parse_obj(project).data(exclude_unset=True)
+            data = ProjectGet.model_validate(project).data(exclude_unset=True)
 
         return web.json_response({"data": data}, dumps=json_dumps)
 
@@ -288,7 +288,7 @@ async def get_project(request: web.Request):
         web.HTTPNotFound: This project was not found
     """
 
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     user_available_services: list[dict] = await get_services_for_user_in_product(
@@ -323,7 +323,7 @@ async def get_project(request: web.Request):
         # Adds permalink
         await update_or_pop_permalink_in_project(request, project)
 
-        data = ProjectGet.parse_obj(project).data(exclude_unset=True)
+        data = ProjectGet.model_validate(project).data(exclude_unset=True)
         return web.json_response({"data": data}, dumps=json_dumps)
 
     except ProjectInvalidRightsError as exc:
@@ -381,7 +381,7 @@ async def replace_project(request: web.Request):
     """
 
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
@@ -407,7 +407,7 @@ async def replace_project(request: web.Request):
     )
 
     try:
-        Project.parse_obj(new_project)  # validate
+        Project.model_validate(new_project)  # validate
 
         current_project = await projects_api.get_project_for_user(
             request.app,
@@ -510,7 +510,7 @@ async def replace_project(request: web.Request):
 @permission_required("services.pipeline.*")
 @_handle_projects_exceptions
 async def patch_project(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
 
@@ -547,7 +547,7 @@ async def delete_project(request: web.Request):
         web.HTTPNoContent: Sucess
     """
 
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
@@ -622,7 +622,7 @@ async def delete_project(request: web.Request):
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def clone_project(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     return await start_long_running_task(

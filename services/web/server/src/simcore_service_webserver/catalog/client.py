@@ -168,7 +168,7 @@ async def get_service_access_rights(
         ) as resp:
             resp.raise_for_status()
             body = await resp.json()
-            return ServiceAccessRightsGet.parse_obj(body)
+            return ServiceAccessRightsGet.model_validate(body)
 
 
 async def update_service(

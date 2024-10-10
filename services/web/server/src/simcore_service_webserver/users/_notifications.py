@@ -1,12 +1,12 @@
 from datetime import datetime
 from enum import auto
-from typing import Any, ClassVar, Final, Literal
+from typing import Final, Literal
 from uuid import uuid4
 
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
-from pydantic import BaseModel, NonNegativeInt, validator
+from pydantic import BaseModel, ConfigDict, NonNegativeInt, field_validator
 
 MAX_NOTIFICATIONS_FOR_USER_TO_SHOW: Final[NonNegativeInt] = 10
 MAX_NOTIFICATIONS_FOR_USER_TO_KEEP: Final[NonNegativeInt] = 100
@@ -33,7 +33,7 @@ class BaseUserNotification(BaseModel):
     date: datetime
     product: Literal["UNDEFINED"] | ProductName = "UNDEFINED"
 
-    @validator("category", pre=True)
+    @field_validator("category", mode="before")
     @classmethod
     def category_to_upper(cls, value: str) -> str:
         return value.upper()
@@ -58,10 +58,12 @@ class UserNotification(BaseUserNotification):
     def create_from_request_data(
         cls, request_data: UserNotificationCreate
     ) -> "UserNotification":
-        return cls.construct(id=f"{uuid4()}", read=False, **request_data.dict())
+        return cls.model_construct(
+            id=f"{uuid4()}", read=False, **request_data.model_dump()
+        )
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "id": "3fb96d89-ff5d-4d27-b5aa-d20d46e20eb8",
@@ -120,3 +122,4 @@ class UserNotification(BaseUserNotification):
                 },
             ]
         }
+    )

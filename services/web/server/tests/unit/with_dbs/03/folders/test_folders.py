@@ -54,7 +54,7 @@ async def test_folders_full_workflow(
     url = client.app.router["create_folder"].url_for()
     resp = await client.post(url.path, json={"name": "My first folder"})
     added_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    assert FolderGet.parse_obj(added_folder)
+    assert FolderGet.model_validate(added_folder)
 
     # list user folders
     url = client.app.router["list_folders"].url_for()
@@ -74,7 +74,7 @@ async def test_folders_full_workflow(
     )
     resp = await client.get(url)
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert FolderGet.parse_obj(data)
+    assert FolderGet.model_validate(data)
     assert data["folderId"] == added_folder["folderId"]
     assert data["name"] == "My first folder"
 
@@ -89,7 +89,7 @@ async def test_folders_full_workflow(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert FolderGet.parse_obj(data)
+    assert FolderGet.model_validate(data)
 
     # list user folders
     url = client.app.router["list_folders"].url_for()
@@ -189,7 +189,7 @@ async def test_sub_folders_full_workflow(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert FolderGet.parse_obj(data)
+    assert FolderGet.model_validate(data)
 
     # list user root folders
     base_url = client.app.router["list_folders"].url_for()

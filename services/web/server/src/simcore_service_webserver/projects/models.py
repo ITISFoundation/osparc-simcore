@@ -12,7 +12,7 @@ from models_library.utils.common_validators import (
     none_to_empty_str_pre_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from simcore_postgres_database.models.projects import ProjectType, projects
 
 ProjectDict: TypeAlias = dict[str, Any]
@@ -50,20 +50,21 @@ class ProjectDB(BaseModel):
     published: bool
     hidden: bool
     workspace_id: WorkspaceID | None
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+        arbitrary_types_allowed=True,
+    )
 
     # validators
-    _empty_thumbnail_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+    _empty_thumbnail_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )
-    _none_description_is_empty = validator("description", allow_reuse=True, pre=True)(
+    _none_description_is_empty = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
     )
 
 
-assert set(ProjectDB.__fields__.keys()).issubset(  # nosec
+assert set(ProjectDB.model_fields.keys()).issubset(  # nosec
     {c.name for c in projects.columns if c.name not in ["access_rights"]}
 )
 
@@ -73,9 +74,9 @@ class UserProjectAccessRights(BaseModel):
     read: bool
     write: bool
     delete: bool
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
 __all__: tuple[str, ...] = (

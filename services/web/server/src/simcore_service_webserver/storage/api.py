@@ -56,7 +56,7 @@ async def get_storage_locations(
     locations_url = (api_endpoint / "locations").with_query(user_id=user_id)
     async with session.get(f"{locations_url}") as response:
         response.raise_for_status()
-        locations_enveloped = Envelope[FileLocationArray].parse_obj(
+        locations_enveloped = Envelope[FileLocationArray].model_validate(
             await response.json()
         )
         assert locations_enveloped.data  # nosec
@@ -89,9 +89,9 @@ async def get_project_total_size_simcore_s3(
             ).with_query(user_id=user_id, project_id=f"{project_uuid}")
             async with session.get(f"{files_metadata_url}") as response:
                 response.raise_for_status()
-                list_of_files_enveloped = Envelope[list[FileMetaDataGet]].parse_obj(
-                    await response.json()
-                )
+                list_of_files_enveloped = Envelope[
+                    list[FileMetaDataGet]
+                ].model_validate(await response.json())
                 assert list_of_files_enveloped.data is not None  # nosec
             project_size_bytes += sum(
                 file_metadata.file_size
@@ -204,7 +204,7 @@ async def get_download_link(
     async with session.get(f"{url}") as response:
         response.raise_for_status()
         download: PresignedLink | None = (
-            Envelope[PresignedLink].parse_obj(await response.json()).data
+            Envelope[PresignedLink].model_validate(await response.json()).data
         )
         assert download is not None  # nosec
         link: HttpUrl = parse_obj_as(HttpUrl, download.link)
@@ -227,7 +227,7 @@ async def get_files_in_node_folder(
 
     async with session.get(f"{files_metadata_url}") as response:
         response.raise_for_status()
-        list_of_files_enveloped = Envelope[list[FileMetaDataGet]].parse_obj(
+        list_of_files_enveloped = Envelope[list[FileMetaDataGet]].model_validate(
             await response.json()
         )
         assert list_of_files_enveloped.data is not None  # nosec

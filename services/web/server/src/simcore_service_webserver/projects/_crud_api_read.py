@@ -58,7 +58,7 @@ async def _append_fields(
         }
 
     # validate
-    return model_schema_cls.parse_obj(project).data(exclude_unset=True)
+    return model_schema_cls.model_validate(project).data(exclude_unset=True)
 
 
 async def list_projects(  # pylint: disable=too-many-arguments

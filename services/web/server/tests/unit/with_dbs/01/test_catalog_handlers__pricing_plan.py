@@ -32,7 +32,7 @@ def mock_rut_api_responses(
 
     service_pricing_plan_get = parse_obj_as(
         PricingPlanGet,
-        PricingPlanGet.Config.schema_extra["examples"][0],
+        PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
     )
     aioresponses_mocker.get(
         re.compile(f"^{settings.api_base_url}/services/+.+$"),

@@ -74,7 +74,7 @@ def file_and_service_params() -> dict[str, Any]:
 
 
 def test_download_link_validators_2(file_and_service_params: dict[str, Any]):
-    params = ServiceAndFileParams.parse_obj(file_and_service_params)
+    params = ServiceAndFileParams.model_validate(file_and_service_params)
 
     assert params.download_link
 

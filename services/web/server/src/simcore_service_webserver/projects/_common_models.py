@@ -6,7 +6,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, ConfigDict, Field
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
@@ -19,7 +19,4 @@ class RequestContext(BaseModel):
 
 class ProjectPathParams(BaseModel):
     project_id: ProjectID
-
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")

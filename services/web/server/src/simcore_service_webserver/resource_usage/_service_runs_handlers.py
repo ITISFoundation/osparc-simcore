@@ -22,15 +22,7 @@ from models_library.rest_pagination import (
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import (
-    BaseModel,
-    Extra,
-    Field,
-    Json,
-    NonNegativeInt,
-    parse_obj_as,
-    validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, Json, NonNegativeInt, field_validator
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -74,7 +66,7 @@ class _ListServicesResourceUsagesQueryParams(BaseModel):
     order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
         default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
         description=ORDER_BY_DESCRIPTION,
-        example='{"field": "started_at", "direction": "desc"}',
+        examples=['{"field": "started_at", "direction": "desc"}'],
     )
     filters: (
         Json[ServiceResourceUsagesFilters]  # pylint: disable=unsubscriptable-object
@@ -82,10 +74,10 @@ class _ListServicesResourceUsagesQueryParams(BaseModel):
     ) = Field(
         default=None,
         description="Filters to process on the resource usages list, encoded as JSON. Currently supports the filtering of 'started_at' field with 'from' and 'until' parameters in <yyyy-mm-dd> ISO 8601 format. The date range specified is inclusive.",
-        example='{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}',
+        examples=['{"started_at": {"from": "yyyy-mm-dd", "until": "yyyy-mm-dd"}}'],
     )
 
-    @validator("order_by", allow_reuse=True)
+    @field_validator("order_by")
     @classmethod
     def validate_order_by_field(cls, v):
         if v.field not in {
@@ -113,8 +105,7 @@ class _ListServicesResourceUsagesQueryParams(BaseModel):
             v.field = "osparc_credits"
         return v
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class _ListServicesResourceUsagesQueryParamsWithPagination(
@@ -129,18 +120,14 @@ class _ListServicesResourceUsagesQueryParamsWithPagination(
     offset: NonNegativeInt = Field(
         default=0, description="index to the first item to return (pagination)"
     )
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class _ListServicesAggregatedUsagesQueryParams(PageQueryParameters):
     aggregated_by: ServicesAggregatedUsagesType
     time_period: ServicesAggregatedUsagesTimePeriod
     wallet_id: WalletID
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 #
@@ -155,7 +142,7 @@ routes = web.RouteTableDef()
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_resource_usage_services(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     query_params: _ListServicesResourceUsagesQueryParamsWithPagination = (
         parse_request_query_parameters_as(
             _ListServicesResourceUsagesQueryParamsWithPagination, request
@@ -173,7 +160,7 @@ async def list_resource_usage_services(request: web.Request):
         filters=parse_obj_as(ServiceResourceUsagesFilters | None, query_params.filters),  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
     )
 
-    page = Page[dict[str, Any]].parse_obj(
+    page = Page[dict[str, Any]].model_validate(
         paginate_data(
             chunk=services.items,
             request_url=request.url,
@@ -196,7 +183,7 @@ async def list_resource_usage_services(request: web.Request):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_osparc_credits_aggregated_usages(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     query_params: _ListServicesAggregatedUsagesQueryParams = (
         parse_request_query_parameters_as(
             _ListServicesAggregatedUsagesQueryParams, request
@@ -216,7 +203,7 @@ async def list_osparc_credits_aggregated_usages(request: web.Request):
         )
     )
 
-    page = Page[dict[str, Any]].parse_obj(
+    page = Page[dict[str, Any]].model_validate(
         paginate_data(
             chunk=aggregated_services.items,
             request_url=request.url,
@@ -236,7 +223,7 @@ async def list_osparc_credits_aggregated_usages(request: web.Request):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def export_resource_usage_services(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     query_params: _ListServicesResourceUsagesQueryParams = (
         parse_request_query_parameters_as(
             _ListServicesResourceUsagesQueryParams, request

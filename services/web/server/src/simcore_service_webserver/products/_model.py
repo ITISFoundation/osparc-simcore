@@ -1,10 +1,7 @@
 import logging
+import re
 import string
-from typing import (  # noqa: UP035 # pydantic does not validate with re.Pattern
-    Any,
-    ClassVar,
-    Pattern,
-)
+from typing import Any
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -14,7 +11,7 @@ from models_library.basic_types import NonNegativeDecimal
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, Extra, Field, PositiveInt, validator
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, field_validator
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
@@ -40,19 +37,18 @@ class Product(BaseModel):
     SEE descriptions in packages/postgres-database/src/simcore_postgres_database/models/products.py
     """
 
-    name: ProductName = Field(regex=PUBLIC_VARIABLE_NAME_RE)
+    name: ProductName = Field(pattern=PUBLIC_VARIABLE_NAME_RE, validate_default=True)
 
     display_name: str = Field(..., description="Long display name")
     short_name: str | None = Field(
         None,
-        regex=TWILIO_ALPHANUMERIC_SENDER_ID_RE,
+        pattern=re.compile(TWILIO_ALPHANUMERIC_SENDER_ID_RE),
         min_length=2,
         max_length=11,
         description="Short display name for SMS",
     )
 
-    host_regex: Pattern = Field(..., description="Host regex")
-    # NOTE: typing.Pattern is supported but not re.Pattern (SEE https://github.com/pydantic/pydantic/pull/4366)
+    host_regex: re.Pattern = Field(..., description="Host regex")
 
     support_email: LowerCaseEmailStr = Field(
         ...,
@@ -109,17 +105,17 @@ class Product(BaseModel):
         description="Price of the credits in this product given in credit/USD. None for free product.",
     )
 
-    @validator("*", pre=True)
+    @field_validator("*", mode="before")
     @classmethod
-    def parse_empty_string_as_null(cls, v):
+    def _parse_empty_string_as_null(cls, v):
         """Safe measure: database entries are sometimes left blank instead of null"""
         if isinstance(v, str) and len(v.strip()) == 0:
             return None
         return v
 
-    @validator("name", pre=True, always=True)
+    @field_validator("name", mode="before")
     @classmethod
-    def validate_name(cls, v):
+    def _validate_name(cls, v):
         if v not in FRONTEND_APPS_AVAILABLE:
             msg = f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
             raise ValueError(msg)
@@ -129,13 +125,13 @@ class Product(BaseModel):
     def twilio_alpha_numeric_sender_id(self) -> str:
         return self.short_name or self.display_name.replace(string.punctuation, "")[:11]
 
-    class Config:
-        alias_generator = snake_to_camel  # to export
-        allow_population_by_field_name = True
-        frozen = True  # read-only
-        orm_mode = True
-        extra = Extra.ignore
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        frozen=True,
+        from_attributes=True,
+        extra="ignore",
+        json_schema_extra={
             "examples": [
                 {
                     # fake mandatory
@@ -225,7 +221,8 @@ class Product(BaseModel):
                     "is_payment_enabled": False,
                 },
             ]
-        }
+        },
+    )
 
     #  helpers ----
 

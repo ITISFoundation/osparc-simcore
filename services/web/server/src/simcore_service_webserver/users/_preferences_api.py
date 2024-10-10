@@ -96,7 +96,7 @@ async def get_frontend_user_preferences_aggregation(
         return True
 
     aggregated_preferences: AggregatedPreferences = {
-        p.preference_identifier: Preference.parse_obj(
+        p.preference_identifier: Preference.model_validate(
             {"value": p.value, "default_value": p.get_default_value()}
         )
         for p in await _get_frontend_user_preferences(app, user_id, product_name)

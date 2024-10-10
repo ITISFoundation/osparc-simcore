@@ -4,16 +4,16 @@
 
 
 from models_library.projects import NodesDict
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.version_control.db import compute_workbench_checksum
 
 
 class WorkbenchModel(BaseModel):
     __root__: NodesDict
-
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
 
 def test_compute_workbench_checksum(fake_project: ProjectDict):
@@ -21,7 +21,7 @@ def test_compute_workbench_checksum(fake_project: ProjectDict):
     # as a dict
     sha1_w_dict = compute_workbench_checksum(fake_project["workbench"])
 
-    workbench = WorkbenchModel.parse_obj(fake_project["workbench"])
+    workbench = WorkbenchModel.model_validate(fake_project["workbench"])
 
     # with pydantic models, i.e. Nodes
     #

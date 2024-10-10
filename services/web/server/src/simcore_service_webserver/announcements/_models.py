@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Any, ClassVar, Literal
+from typing import Literal
 
 import arrow
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 # NOTE: this model is used for BOTH
@@ -18,7 +18,7 @@ class Announcement(BaseModel):
     link: str
     widgets: list[Literal["login", "ribbon", "user-menu"]]
 
-    @validator("end")
+    @field_validator("end")
     @classmethod
     def check_start_before_end(cls, v, values):
         if start := values.get("start"):
@@ -31,8 +31,8 @@ class Announcement(BaseModel):
     def expired(self) -> bool:
         return self.end <= arrow.utcnow().datetime
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "id": "Student_Competition_2023",
@@ -56,3 +56,4 @@ class Announcement(BaseModel):
                 },
             ]
         }
+    )

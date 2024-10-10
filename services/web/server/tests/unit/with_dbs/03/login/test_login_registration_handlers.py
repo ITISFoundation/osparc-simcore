@@ -168,7 +168,7 @@ async def test_request_an_account(
     assert client.app
     # A form similar to the one in https://github.com/ITISFoundation/osparc-simcore/pull/5378
     user_data = {
-        **AccountRequestInfo.Config.schema_extra["example"]["form"],
+        **AccountRequestInfo.model_config["json_schema_extra"]["example"]["form"],
         # fields required in the form
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),

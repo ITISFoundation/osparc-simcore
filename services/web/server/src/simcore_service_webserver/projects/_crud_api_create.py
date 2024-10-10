@@ -15,7 +15,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
 from models_library.workspaces import UserWorkspaceAccessRightsDB
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.utils_projects_nodes import (
@@ -132,14 +132,16 @@ async def _copy_project_nodes_from_source_project(
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     def _mapped_node_id(node: ProjectNode) -> NodeID:
-        return NodeID(nodes_map[NodeIDStr(f"{node.node_id}")])
+        return NodeID(
+            nodes_map[TypeAdapter(NodeIDStr).validate_python(f"{node.node_id}")]
+        )
 
     return {
         _mapped_node_id(node): ProjectNodeCreate(
             node_id=_mapped_node_id(node),
             **{
                 k: v
-                for k, v in node.dict().items()
+                for k, v in node.model_dump().items()
                 if k in ProjectNodeCreate.get_field_names(exclude={"node_id"})
             },
         )
@@ -157,7 +159,9 @@ async def _copy_files_from_source_project(
 ):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
     needs_lock_source_project: bool = (
-        await db.get_project_type(parse_obj_as(ProjectID, source_project["uuid"]))
+        await db.get_project_type(
+            TypeAdapter(ProjectID).validate_python(source_project["uuid"])
+        )
         != ProjectTypeDB.TEMPLATE
     )
 
@@ -178,8 +182,7 @@ async def _copy_files_from_source_project(
         ):
             task_progress.update(
                 message=long_running_task.progress.message,
-                percent=parse_obj_as(
-                    ProgressPercent,
+                percent=TypeAdapter(ProgressPercent).validate_python(
                     (
                         starting_value
                         + long_running_task.progress.percent * (1.0 - starting_value)
@@ -403,11 +406,12 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 )
             )
             new_project["accessRights"] = {
-                gid: access.dict() for gid, access in workspace_db.access_rights.items()
+                gid: access.model_dump()
+                for gid, access in workspace_db.access_rights.items()
             }
 
         # Ensures is like ProjectGet
-        data = ProjectGet.parse_obj(new_project).data(exclude_unset=True)
+        data = ProjectGet.model_validate(new_project).data(exclude_unset=True)
 
         raise web.HTTPCreated(
             text=json_dumps({"data": data}),

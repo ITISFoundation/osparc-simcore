@@ -182,7 +182,7 @@ async def get_computation_task(
         computation_task_out_dict = await request_director_v2(
             app, "GET", backend_url, expected_status=web.HTTPOk
         )
-        task_out = ComputationTask.parse_obj(computation_task_out_dict)
+        task_out = ComputationTask.model_validate(computation_task_out_dict)
         _logger.debug("found computation task: %s", f"{task_out=}")
         return task_out
     except DirectorServiceError as exc:

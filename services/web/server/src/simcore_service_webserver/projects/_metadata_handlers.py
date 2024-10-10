@@ -79,7 +79,7 @@ def _handle_project_exceptions(handler: Handler):
 @permission_required("project.read")
 @_handle_project_exceptions
 async def get_project_metadata(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     custom_metadata = await _metadata_api.get_project_custom_metadata(
@@ -99,7 +99,7 @@ async def get_project_metadata(request: web.Request) -> web.Response:
 @permission_required("project.update")
 @_handle_project_exceptions
 async def update_project_metadata(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     update = await parse_request_body_as(ProjectMetadataUpdate, request)
 

@@ -81,7 +81,7 @@ def test_auto_compute_gravatar(faker: Faker):
 
 @pytest.mark.parametrize("user_role", [u.name for u in UserRole])
 def test_profile_get_role(user_role: str):
-    for example in ProfileGet.Config.schema_extra["examples"]:
+    for example in ProfileGet.model_config["json_schema_extra"]["examples"]:
         data = deepcopy(example)
         data["role"] = user_role
         m1 = ProfileGet(**data)
@@ -134,5 +134,5 @@ def test_parsing_output_of_get_user_profile():
         },
     }
 
-    profile = ProfileGet.parse_obj(result_from_db_query_and_composition)
+    profile = ProfileGet.model_validate(result_from_db_query_and_composition)
     assert "password" not in profile.dict(exclude_unset=True)
