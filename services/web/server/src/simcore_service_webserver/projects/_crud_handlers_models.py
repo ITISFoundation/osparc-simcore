@@ -6,7 +6,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 from typing import Any
 
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Final
 
 import tqdm
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from pydantic import NonNegativeFloat
 from repro_zipfile import ReproducibleZipFile  # type: ignore[import-untyped]
 from tqdm.contrib.logging import logging_redirect_tqdm, tqdm_logging_redirect

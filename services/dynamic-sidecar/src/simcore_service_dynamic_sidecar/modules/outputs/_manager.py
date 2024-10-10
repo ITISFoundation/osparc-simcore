@@ -6,8 +6,8 @@ from contextlib import suppress
 from datetime import timedelta
 from functools import partial
 
+from common_library.pydantic_basic_types import IDStr
 from fastapi import FastAPI
-from models_library.basic_types import IDStr
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
 from pydantic.errors import PydanticErrorMixin

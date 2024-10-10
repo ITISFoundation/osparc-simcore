@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
@@ -9,7 +10,6 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGetPermissions,
     WalletGetWithAvailableCredits,
 )
-from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus

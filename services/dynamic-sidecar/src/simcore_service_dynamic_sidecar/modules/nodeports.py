@@ -15,7 +15,7 @@ from typing import cast
 import aiofiles.os
 import magic
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey

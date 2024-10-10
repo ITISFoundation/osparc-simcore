@@ -4,8 +4,9 @@ from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
 
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_storage import FileUploadSchema, LinkType
-from models_library.basic_types import IDStr, SHA256Str
+from models_library.basic_types import SHA256Str
 from models_library.services_types import FileName, ServicePortKey
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize

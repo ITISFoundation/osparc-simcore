@@ -2,8 +2,8 @@ import logging
 from typing import Literal
 
 from aiohttp import web
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_webserver.product import GetCreditPrice, GetProduct
-from models_library.basic_types import IDStr
 from models_library.users import UserID
 from pydantic import Extra, Field
 from servicelib.aiohttp.requests_validation import (

@@ -6,10 +6,9 @@ import shlex
 from asyncio.streams import StreamReader
 from pathlib import Path
 
-from common_library.errors_classes import OsparcErrorMixin
-
 from aiocache import cached  # type: ignore[import-untyped]
-from models_library.basic_types import IDStr
+from common_library.errors_classes import OsparcErrorMixin
+from common_library.pydantic_basic_types import IDStr
 from pydantic import AnyUrl, ByteSize
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather

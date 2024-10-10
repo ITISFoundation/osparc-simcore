@@ -12,11 +12,11 @@ from typing import Final, cast
 from uuid import uuid4
 
 from aiodocker import Docker
+from common_library.pydantic_basic_types import IDStr
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
 from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
 from dask_task_models_library.container_tasks.protocol import ContainerTaskParameters
-from models_library.basic_types import IDStr
 from models_library.progress_bar import ProgressReport
 from packaging import version
 from pydantic import ValidationError

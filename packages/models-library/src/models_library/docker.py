@@ -2,6 +2,7 @@ import contextlib
 import re
 from typing import Annotated, Any, Final, TypeAlias
 
+from common_library.pydantic_base_types import ConstrainedStr
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -14,7 +15,6 @@ from pydantic import (
 )
 
 from .basic_regex import DOCKER_GENERIC_TAG_KEY_RE, DOCKER_LABEL_KEY_REGEX
-from .basic_types import ConstrainedStr
 from .generated_models.docker_rest_api import Task
 from .products import ProductName
 from .projects import ProjectID

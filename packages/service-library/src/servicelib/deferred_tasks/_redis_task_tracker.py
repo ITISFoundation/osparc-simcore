@@ -2,7 +2,7 @@ import pickle
 from typing import Final
 from uuid import uuid4
 
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from pydantic import NonNegativeInt
 
 from ..redis import RedisClientSDK

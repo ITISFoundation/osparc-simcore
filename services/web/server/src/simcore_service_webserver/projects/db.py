@@ -15,7 +15,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.products import ProductName
 from models_library.projects import ProjectID, ProjectIDStr

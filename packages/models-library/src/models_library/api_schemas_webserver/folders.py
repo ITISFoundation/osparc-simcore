@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import NamedTuple
 
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.projects_access import AccessRights
 from models_library.users import GroupID

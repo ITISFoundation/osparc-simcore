@@ -6,19 +6,12 @@ from urllib.parse import unquote as _unquote
 from uuid import UUID, uuid3
 
 import aiofiles
+from common_library.pydantic_base_types import ConstrainedStr
 from fastapi import UploadFile
 from models_library.api_schemas_storage import ETag
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
-from pydantic import (
-    AnyUrl,
-    BaseModel,
-    ByteSize,
-    ConstrainedStr,
-    Field,
-    parse_obj_as,
-    validator,
-)
+from pydantic import AnyUrl, BaseModel, ByteSize, Field, parse_obj_as, validator
 from servicelib.file_utils import create_sha256_checksum
 
 _NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")

@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from pydantic import EmailStr, ValidationError, parse_obj_as

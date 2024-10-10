@@ -5,13 +5,13 @@ from uuid import uuid4
 
 import arrow
 from aiohttp import web
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentMethodID,
     PaymentTransaction,
     WalletPaymentInitiated,
 )
-from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID

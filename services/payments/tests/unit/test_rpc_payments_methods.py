@@ -7,13 +7,13 @@
 
 
 import pytest
+from common_library.pydantic_basic_types import IDStr
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodInitiated,
     PaymentTransaction,
 )
-from models_library.basic_types import IDStr
 from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.rabbitmq_basic_types import RPCMethodName

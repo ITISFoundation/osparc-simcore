@@ -3,6 +3,7 @@ from contextlib import AsyncExitStack
 from functools import partial
 
 from aiohttp import web
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
@@ -13,7 +14,6 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGetIdle,
     NodeGetUnknown,
 )
-from models_library.basic_types import IDStr
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID

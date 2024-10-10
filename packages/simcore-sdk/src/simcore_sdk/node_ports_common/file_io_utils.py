@@ -18,8 +18,9 @@ from aiohttp import (
     RequestInfo,
 )
 from aiohttp.typedefs import LooseHeaders
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
-from models_library.basic_types import IDStr, SHA256Str
+from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, NonNegativeInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_catch

@@ -3,7 +3,7 @@ import logging
 from typing import Final
 
 import httpx
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.docker import DockerGenericTag
 from pydantic import ByteSize, TypeAdapter, ValidationError
 from settings_library.docker_registry import RegistrySettings

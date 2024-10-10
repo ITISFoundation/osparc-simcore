@@ -6,8 +6,8 @@ from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
 
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_storage import LinkType
-from models_library.basic_types import IDStr
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey

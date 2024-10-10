@@ -1,8 +1,7 @@
-import re
 from collections.abc import Awaitable, Callable
 from typing import Any, Protocol
 
-from models_library.basic_types import ConstrainedStr
+from common_library.pydantic_base_types import ConstrainedStr
 from models_library.rabbitmq_basic_types import (
     REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS,
     RPCMethodName,

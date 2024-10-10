@@ -2,13 +2,13 @@ import functools
 import logging
 
 from aiohttp import web
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_webserver.folders_v2 import (
     CreateFolderBodyParams,
     FolderGet,
     FolderGetPage,
     PutFolderBodyParams,
 )
-from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import Page, PageQueryParameters

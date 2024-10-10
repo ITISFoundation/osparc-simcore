@@ -5,12 +5,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Final
 
+from common_library.pydantic_basic_types import IDStr
 from fastapi import FastAPI
 from models_library.api_schemas_long_running_tasks.base import (
     ProgressPercent,
     TaskProgress,
 )
-from models_library.basic_types import IDStr
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from pydantic import PositiveInt
