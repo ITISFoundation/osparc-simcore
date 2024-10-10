@@ -77,6 +77,12 @@ def mock_app(mock_postgres_product_table: dict[str, Any]) -> web.Application:
         ("https://ti-solutions.io/", "tis", "tis"),
         ("https://osparc.io/", None, "osparc"),  # e.g. an old front-end
         ("https://staging.osparc.io/", "osparc", "osparc"),
+        # new auth of subdomains. SEE https://github.com/ITISFoundation/osparc-simcore/pull/6484
+        (
+            "https://34c878cd-f801-433f-9ddb-7dccba9251af.services.s4l-solutions.com/notebooks/lab",
+            "s4l",
+            "s4l",
+        ),
     ],
 )
 async def test_middleware_product_discovery(

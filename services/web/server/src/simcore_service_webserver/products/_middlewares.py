@@ -1,3 +1,4 @@
+import enum
 import logging
 from collections import OrderedDict
 
@@ -35,6 +36,14 @@ def _get_app_default_product_name(request: web.Request) -> str:
     return product_name
 
 
+class Sentinel(enum.StrEnum):
+    UNSET = "UNSET"
+    UNDEFINED = "UNDEFINED"
+
+
+_INCLUDE_PATHS: set[str] = {"/static-frontend-data.json", "/socket.io/"}
+
+
 @web.middleware
 async def discover_product_middleware(request: web.Request, handler: Handler):
     """
@@ -45,17 +54,13 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
     """
     # - API entrypoints
     # - /static info for front-end
-    if (
-        request.path.startswith(f"/{API_VTAG}")
-        or request.path == "/static-frontend-data.json"
-        or request.path == "/socket.io/"
-    ):
-        product_name = (
+    if request.path.startswith(f"/{API_VTAG}") or request.path in _INCLUDE_PATHS:
+        request[RQ_PRODUCT_KEY] = (
             _discover_product_by_request_header(request)
             or _discover_product_by_hostname(request)
-            or _get_app_default_product_name(request)
+            or Sentinel.UNDEFINED
+            # FIXME: or _get_app_default_product_name(request)
         )
-        request[RQ_PRODUCT_KEY] = product_name
 
     # - Publications entrypoint: redirections from other websites. SEE studies_access.py::access_study
     # - Root entrypoint: to serve front-end apps
@@ -64,11 +69,20 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
         or request.path.startswith("/view")
         or request.path == "/"
     ):
-        product_name = _discover_product_by_hostname(
-            request
-        ) or _get_app_default_product_name(request)
+        request[RQ_PRODUCT_KEY] = (
+            _discover_product_by_hostname(request) or Sentinel.UNDEFINED
+        )
+        # FIXME: or _get_app_default_product_name(request)
 
-        request[RQ_PRODUCT_KEY] = product_name
+    msg = "\n".join(
+        [
+            f"{request.url=}",
+            f"{request.host=}",
+            f"{request.headers=}",
+            f"{request.get(RQ_PRODUCT_KEY)=}",
+        ]
+    )
+    _logger.warning("\n--TESTING->\n%s", msg)
 
     assert request.get(RQ_PRODUCT_KEY) is not None or request.path.startswith(  # nosec
         "/dev/doc"
