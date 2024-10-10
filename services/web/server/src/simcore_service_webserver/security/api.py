@@ -94,6 +94,6 @@ __all__: tuple[str, ...] = (
     "forget_identity",
     "get_access_model",
     "is_anonymous",
-    "PERMISSION_PRODUCT_LOGIN",
+    "PERMISSION_PRODUCT_LOGIN_KEY",
     "remember_identity",
 )

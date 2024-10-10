@@ -7,7 +7,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 
 from ..products.api import get_product_name
 from ..security.api import (
-    PERMISSION_PRODUCT_LOGIN,
+    PERMISSION_PRODUCT_LOGIN_KEY,
     AuthContextDict,
     check_user_authorized,
     check_user_permission,
@@ -58,7 +58,7 @@ def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
 
         await check_user_permission(
             request,
-            PERMISSION_PRODUCT_LOGIN,
+            PERMISSION_PRODUCT_LOGIN_KEY,
             context=AuthContextDict(
                 product_name=get_product_name(request),
                 authorized_uid=user_id,
