@@ -10,7 +10,6 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
-from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME_LEGACY
 from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG
@@ -270,10 +269,7 @@ async def login_2fa(request: web.Request):
 
     # dispose since code was used
     await delete_2fa_code(request.app, login_2fa_.email)
-
-    response = await login_granted_response(request, user=dict(user))
-    response.del_cookie(DEFAULT_SESSION_COOKIE_NAME_LEGACY)
-    return response
+    return await login_granted_response(request, user=dict(user))
 
 
 class LogoutBody(InputSchema):
