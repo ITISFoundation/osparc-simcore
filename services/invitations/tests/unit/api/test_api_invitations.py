@@ -23,7 +23,7 @@ from simcore_service_invitations.services.invitations import (
 
 
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
-@given(invitation_input=st.builds(InvitationInputs))
+@given(invitation_input=st.builds(InvitationInputs, guest=st.emails()))
 def test_create_invitation(
     invitation_input: InvitationInputs,
     client: TestClient,
