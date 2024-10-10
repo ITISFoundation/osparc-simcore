@@ -9,7 +9,7 @@ from models_library.api_schemas_invitations.invitations import (
     ApiInvitationInputs,
 )
 from models_library.emails import LowerCaseEmailStr
-from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 from servicelib.aiohttp import status
 from servicelib.error_codes import create_error_code
 
@@ -94,7 +94,7 @@ async def validate_invitation_url(
 
     with _handle_exceptions_as_invitations_errors():
         try:
-            valid_url = parse_obj_as(AnyHttpUrl, invitation_url)
+            valid_url = TypeAdapter(AnyHttpUrl).validate_python(invitation_url)
         except ValidationError as err:
             raise InvalidInvitationError(reason=MSG_INVALID_INVITATION_URL) from err
 
@@ -145,7 +145,7 @@ async def extract_invitation(
 
     with _handle_exceptions_as_invitations_errors():
         try:
-            valid_url = parse_obj_as(AnyHttpUrl, invitation_url)
+            valid_url = TypeAdapter(AnyHttpUrl).validate_python(invitation_url)
         except ValidationError as err:
             raise InvalidInvitationError(reason=MSG_INVALID_INVITATION_URL) from err
 

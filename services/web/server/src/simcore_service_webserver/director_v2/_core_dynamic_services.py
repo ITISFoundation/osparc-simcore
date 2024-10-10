@@ -10,7 +10,7 @@ from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
 from models_library.services import ServicePortKey
-from pydantic import BaseModel, NonNegativeInt, parse_obj_as
+from pydantic import BaseModel, NonNegativeInt, TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from yarl import URL
@@ -49,7 +49,7 @@ async def list_dynamic_services(
     if services is None:
         services = []
     assert isinstance(services, list)  # nosec
-    return parse_obj_as(list[DynamicServiceGet], services)
+    return TypeAdapter(list[DynamicServiceGet]).validate_python(services)
 
 
 # NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191

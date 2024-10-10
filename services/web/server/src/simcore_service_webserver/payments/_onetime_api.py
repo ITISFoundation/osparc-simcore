@@ -15,7 +15,7 @@ from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -236,7 +236,10 @@ async def _fake_get_payment_invoice_url(
     assert wallet_id  # nosec
 
     return cast(
-        HttpUrl, parse_obj_as(HttpUrl, f"https://fake-invoice.com/?id={payment_id}")
+        HttpUrl,
+        TypeAdapter(HttpUrl).validate_python(
+            f"https://fake-invoice.com/?id={payment_id}"
+        ),
     )
 
 

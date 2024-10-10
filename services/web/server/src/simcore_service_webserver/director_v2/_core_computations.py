@@ -26,7 +26,7 @@ from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_decorator
@@ -234,7 +234,7 @@ async def create_cluster(
         ),
     )
     assert isinstance(cluster, dict)  # nosec
-    assert parse_obj_as(ClusterGet, cluster) is not None  # nosec
+    assert TypeAdapter(ClusterGet).validate_python(cluster) is not None  # nosec
     return cluster
 
 
@@ -248,7 +248,7 @@ async def list_clusters(app: web.Application, user_id: UserID) -> list[DataType]
     )
 
     assert isinstance(clusters, list)  # nosec
-    assert parse_obj_as(list[ClusterGet], clusters) is not None  # nosec
+    assert TypeAdapter(list[ClusterGet]).validate_python(clusters) is not None  # nosec
     return clusters
 
 
@@ -276,7 +276,7 @@ async def get_cluster(
     )
 
     assert isinstance(cluster, dict)  # nosec
-    assert parse_obj_as(ClusterGet, cluster) is not None  # nosec
+    assert TypeAdapter(ClusterGet).validate_python(cluster) is not None  # nosec
     return cluster
 
 
@@ -304,7 +304,7 @@ async def get_cluster_details(
         },
     )
     assert isinstance(cluster, dict)  # nosec
-    assert parse_obj_as(ClusterDetails, cluster) is not None  # nosec
+    assert TypeAdapter(ClusterDetails).validate_python(cluster) is not None  # nosec
     return cluster
 
 
@@ -342,7 +342,7 @@ async def update_cluster(
     )
 
     assert isinstance(cluster, dict)  # nosec
-    assert parse_obj_as(ClusterGet, cluster) is not None  # nosec
+    assert TypeAdapter(ClusterGet).validate_python(cluster) is not None  # nosec
     return cluster
 
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from aiohttp import web
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.pools import non_blocking_process_pool_executor
 
 from ...catalog.client import get_service
@@ -79,8 +79,7 @@ async def _add_rrid_entries(
             continue
 
         rrid_entires.append(
-            parse_obj_as(
-                RRIDEntry,
+            TypeAdapter(RRIDEntry).validate_python(
                 {
                     "rrid_term": scicrunch_resource.name,
                     "rrid_identifier": scicrunch_resource.rrid,
@@ -158,8 +157,7 @@ async def create_sds_directory(
     _logger.debug("Project data: %s", project_data)
 
     # assemble params here
-    dataset_description_params = parse_obj_as(
-        DatasetDescriptionParams,
+    dataset_description_params = TypeAdapter(DatasetDescriptionParams).validate_python(
         {"name": project_data["name"], "description": project_data["description"]},
     )
 

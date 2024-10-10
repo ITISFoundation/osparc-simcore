@@ -21,7 +21,7 @@ from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, HttpUrl, parse_obj_as
+from pydantic import EmailStr, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPC_REQUEST_DEFAULT_TIMEOUT_S
 
@@ -52,7 +52,7 @@ async def init_payment(  # pylint: disable=too-many-arguments
     # NOTE: remote errors are aio_pika.MessageProcessError
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "init_payment"),
+        TypeAdapter(RPCMethodName).validate_python("init_payment"),
         amount_dollars=amount_dollars,
         target_credits=target_credits,
         product_name=product_name,
@@ -83,7 +83,7 @@ async def cancel_payment(
 
     await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "cancel_payment"),
+        TypeAdapter(RPCMethodName).validate_python("cancel_payment"),
         payment_id=payment_id,
         user_id=user_id,
         wallet_id=wallet_id,
@@ -104,7 +104,7 @@ async def get_payments_page(
 
     result: tuple[int, list[PaymentTransaction]] = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_payments_page"),
+        TypeAdapter(RPCMethodName).validate_python("get_payments_page"),
         user_id=user_id,
         product_name=product_name,
         limit=limit,
@@ -112,7 +112,8 @@ async def get_payments_page(
         timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert (  # nosec
-        parse_obj_as(tuple[int, list[PaymentTransaction]], result) is not None
+        TypeAdapter(tuple[int, list[PaymentTransaction]]).validate_python(result)
+        is not None
     )
     return result
 
@@ -129,7 +130,7 @@ async def get_payment_invoice_url(
 
     result: HttpUrl = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_payment_invoice_url"),
+        TypeAdapter(RPCMethodName).validate_python("get_payment_invoice_url"),
         user_id=user_id,
         wallet_id=wallet_id,
         payment_id=payment_id,
@@ -152,7 +153,7 @@ async def init_creation_of_payment_method(
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "init_creation_of_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("init_creation_of_payment_method"),
         wallet_id=wallet_id,
         wallet_name=wallet_name,
         user_id=user_id,
@@ -176,7 +177,7 @@ async def cancel_creation_of_payment_method(
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "cancel_creation_of_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("cancel_creation_of_payment_method"),
         payment_method_id=payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
@@ -196,7 +197,7 @@ async def list_payment_methods(
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "list_payment_methods"),
+        TypeAdapter(RPCMethodName).validate_python("list_payment_methods"),
         user_id=user_id,
         wallet_id=wallet_id,
         timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
@@ -217,7 +218,7 @@ async def get_payment_method(
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("get_payment_method"),
         payment_method_id=payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
@@ -239,7 +240,7 @@ async def delete_payment_method(
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "delete_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("delete_payment_method"),
         payment_method_id=payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
@@ -270,7 +271,7 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "pay_with_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("pay_with_payment_method"),
         payment_method_id=payment_method_id,
         amount_dollars=amount_dollars,
         target_credits=target_credits,

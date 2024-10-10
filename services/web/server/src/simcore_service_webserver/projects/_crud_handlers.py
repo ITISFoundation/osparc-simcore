@@ -25,7 +25,7 @@ from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -206,7 +206,7 @@ async def list_projects(request: web.Request):
         limit=query_params.limit,
         offset=query_params.offset,
         search=query_params.search,
-        order_by=parse_obj_as(OrderBy, query_params.order_by),
+        order_by=TypeAdapter(OrderBy).validate_python(query_params.order_by),
         folder_id=query_params.folder_id,
         workspace_id=query_params.workspace_id,
     )

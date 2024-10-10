@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.clusters import (
     ClusterPing,
 )
 from models_library.users import UserID
-from pydantic import BaseModel, Field, parse_obj_as
+from pydantic import BaseModel, Field, TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -100,7 +100,7 @@ async def list_clusters(request: web.Request) -> web.Response:
         app=request.app,
         user_id=req_ctx.user_id,
     )
-    assert parse_obj_as(list[ClusterGet], clusters) is not None  # nosec
+    assert TypeAdapter(list[ClusterGet]).validate_python(clusters) is not None  # nosec
     return envelope_json_response(clusters)
 
 
@@ -117,7 +117,7 @@ async def get_cluster(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         cluster_id=path_params.cluster_id,
     )
-    assert parse_obj_as(ClusterGet, cluster) is not None  # nosec
+    assert TypeAdapter(ClusterGet).validate_python(cluster) is not None  # nosec
     return envelope_json_response(cluster)
 
 
@@ -137,7 +137,7 @@ async def update_cluster(request: web.Request) -> web.Response:
         cluster_patch=cluster_patch,
     )
 
-    assert parse_obj_as(ClusterGet, updated_cluster) is not None  # nosec
+    assert TypeAdapter(ClusterGet).validate_python(updated_cluster) is not None  # nosec
     return envelope_json_response(updated_cluster)
 
 
@@ -173,7 +173,9 @@ async def get_cluster_details(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         cluster_id=path_params.cluster_id,
     )
-    assert parse_obj_as(ClusterDetails, cluster_details) is not None  # nosec
+    assert (
+        TypeAdapter(ClusterDetails).validate_python(cluster_details) is not None
+    )  # nosec
     return envelope_json_response(cluster_details)
 
 

@@ -15,7 +15,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from yarl import URL
@@ -97,7 +97,7 @@ async def _fake_init_creation_of_wallet_payment_method(
     return PaymentMethodInitiated(
         wallet_id=wallet_id,
         payment_method_id=payment_method_id,
-        payment_method_form_url=parse_obj_as(HttpUrl, f"{form_link}"),
+        payment_method_form_url=TypeAdapter(HttpUrl).validate_python(f"{form_link}"),
     )
 
 
