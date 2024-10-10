@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> bool:
     assert app  # nosec
     rabbit_message: DynamicServiceRunningMessage = parse_raw_as(
-        DynamicServiceRunningMessage, data  # type: ignore[arg-type]
+        DynamicServiceRunningMessage, data
     )
     _logger.debug(
         "Process dynamic service running msg, project ID: %s node ID: %s, current user: %s",

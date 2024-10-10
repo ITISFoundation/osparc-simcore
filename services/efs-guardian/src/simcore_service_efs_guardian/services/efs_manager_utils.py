@@ -22,10 +22,9 @@ async def get_size_bash_async(path) -> ByteSize:
         # Parse the output
         size = ByteSize(stdout.decode().split()[0])
         return size
-    else:
-        msg = f"Command {' '.join(command)} failed with error code {process.returncode}: {stderr.decode()}"
-        _logger.error(msg)
-        raise RuntimeError(msg)
+    msg = f"Command {' '.join(command)} failed with error code {process.returncode}: {stderr.decode()}"
+    _logger.error(msg)
+    raise RuntimeError(msg)
 
 
 async def remove_write_permissions_bash_async(path) -> None:
