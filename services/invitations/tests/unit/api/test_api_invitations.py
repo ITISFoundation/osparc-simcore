@@ -64,7 +64,7 @@ def test_check_invitation(
 
     # up ot here, identifcal to above.
     # Let's use invitation link
-    invitation_url = ApiInvitationContentAndLink.parse_obj(
+    invitation_url = ApiInvitationContentAndLink.model_validate(
         response.json()
     ).invitation_url
 
@@ -77,7 +77,7 @@ def test_check_invitation(
     assert response.status_code == 200, f"{response.json()=}"
 
     # decrypted invitation should be identical to request above
-    invitation = InvitationContent.parse_obj(response.json())
+    invitation = InvitationContent.model_validate(response.json())
     assert invitation.issuer == invitation_data.issuer
     assert invitation.guest == invitation_data.guest
     assert invitation.trial_account_days == invitation_data.trial_account_days
@@ -106,7 +106,7 @@ def test_check_valid_invitation(
     assert response.status_code == 200, f"{response.json()=}"
 
     # decrypted invitation should be identical to request above
-    invitation = InvitationContent.parse_obj(response.json())
+    invitation = InvitationContent.model_validate(response.json())
 
     assert invitation.issuer == invitation_data.issuer
     assert invitation.guest == invitation_data.guest
