@@ -97,5 +97,5 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
     assert result.exit_code == os.EX_OK, result.output
 
     print(result.output)
-    settings = TypeAdapter(ApplicationSettings).validate_json(result.output)
+    settings = ApplicationSettings.model_validate_json(result.output)
     assert settings == ApplicationSettings.create_from_envs()
