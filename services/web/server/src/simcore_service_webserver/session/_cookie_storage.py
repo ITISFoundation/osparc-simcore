@@ -1,3 +1,8 @@
+"""
+Extends aiohttp_session.cookie_storage
+
+"""
+
 import logging
 import time
 
@@ -11,11 +16,16 @@ _logger = logging.getLogger(__name__)
 def _share_cookie_across_all_subdomains(
     response: web.StreamResponse, params: aiohttp_session._CookieParams
 ) -> aiohttp_session._CookieParams:
-    # share cookie across all subdomains, by appending a dot (`.`) in front of the domain name
-    # overwrite domain from `None` (browser sets `example.com`) to `.example.com`
+    """
+    Shares cookie across all subdomains, by appending a dot (`.`) in front of the domain name
+    overwrite domain from `None` (browser sets `example.com`) to `.example.com`
+    """
     request = response._req  # pylint:disable=protected-access  # noqa: SLF001
     assert isinstance(request, web.Request)  # nosec
-    params["domain"] = f".{request.url.host}"
+
+    if (host := request.url.host) and host is not None:
+        params["domain"] = f".{host.lstrip('.')}"
+
     return params
 
 
@@ -38,12 +48,14 @@ class SharedCookieEncryptedCookieStorage(EncryptedCookieStorage):
         *,
         max_age: int | None = None,
     ) -> None:
-        # NOTE: WARNING: the only difference between the superclass and this implementation
-        # is the statement below where the domain name is set. Adjust in case the base library changes.
         params = _share_cookie_across_all_subdomains(
             response, self._cookie_params.copy()
         )
 
+        # WARNING: the code below is taken and adapted from the superclass implementation `EncryptedCookieStorage.save_cookie`
+        # Adjust in case the base library changes.
+        assert aiohttp_session.__version__ == "2.11.0"  # nosec
+        # ---
         if max_age is not None:
             params["max_age"] = max_age
             t = time.gmtime(time.time() + max_age)
@@ -51,7 +63,9 @@ class SharedCookieEncryptedCookieStorage(EncryptedCookieStorage):
 
         if not cookie_data:
             response.del_cookie(
-                self._cookie_name, domain=params["domain"], path=params["path"]
+                self._cookie_name,
+                domain=params.get("domain"),
+                path=params.get("path", "/"),
             )
         else:
             response.set_cookie(self._cookie_name, cookie_data, **params)
