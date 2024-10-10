@@ -6,7 +6,6 @@
 NOTE: DO NOT USE aiohttp_security.api directly but use this interface instead
 """
 
-
 import aiohttp_security.api  # type: ignore[import-untyped]
 import passlib.hash
 from aiohttp import web
@@ -64,7 +63,9 @@ async def check_user_permission(
 
     allowed = await aiohttp_security.api.permits(request, permission, context)
     if not allowed:
-        raise web.HTTPForbidden(reason=f"Not sufficient access rights for {permission}")
+        raise web.HTTPForbidden(
+            reason=f"You do not have sufficient access rights for {permission}"
+        )
 
 
 #
@@ -93,5 +94,6 @@ __all__: tuple[str, ...] = (
     "forget_identity",
     "get_access_model",
     "is_anonymous",
+    "PERMISSION_PRODUCT_LOGIN",
     "remember_identity",
 )
