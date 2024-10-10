@@ -58,9 +58,3 @@ IDStr: TypeAlias = Annotated[
 ]
 # TODO: add test to check that this `IDStr("blahh")` runs a validator or not
 # TODO: try using constraingstring
-
-
-# https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Registered_ports
-RegisteredPortInt: TypeAlias = Annotated[int, Field(gt=1024, lt=65535)]
-# TODO: figure out why this is defined twice
-# TODO: add test to check that this `RegisteredPortInt(0)` fails
