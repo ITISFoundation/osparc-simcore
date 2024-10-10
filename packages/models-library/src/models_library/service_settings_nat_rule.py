@@ -1,14 +1,14 @@
 from collections.abc import Generator
 from typing import Final
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationInfo, field_validator
 
 from .basic_types import PortInt
 from .osparc_variable_identifier import OsparcVariableIdentifier, raise_if_unresolved
 
 # Cloudflare DNS server address
 DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
-DEFAULT_DNS_SERVER_PORT: Final[PortInt] = 53
+DEFAULT_DNS_SERVER_PORT: Final[PortInt] = TypeAdapter(PortInt).validate_python(53)
 
 
 class _PortRange(BaseModel):

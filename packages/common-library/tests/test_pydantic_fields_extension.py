@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Callable, Literal
 
 import pytest
 from common_library.pydantic_fields_extension import get_type, is_literal, is_nullable
@@ -68,5 +68,5 @@ class MyModel(BaseModel):
         (is_nullable, False, "e"),
     ],
 )
-def test_field_fn(fn, expected, name):
+def test_field_fn(fn: Callable[[Any], Any], expected: Any, name: str):
     assert expected == fn(MyModel.model_fields[name])

@@ -255,7 +255,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         bucket: S3BucketName,
         object_key: S3ObjectKey,
         expiration_secs: int,
-    ) -> AnyUrl:
+    ) -> str:
         # NOTE: ensure the bucket/object exists, this will raise if not
         await self._client.head_bucket(Bucket=bucket)
         await self._client.head_object(Bucket=bucket, Key=object_key)
@@ -264,12 +264,12 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             Params={"Bucket": bucket, "Key": object_key},
             ExpiresIn=expiration_secs,
         )
-        return AnyUrlLegacyAdapter.validate_python(generated_link)
+        return f"{AnyUrlLegacyAdapter.validate_python(generated_link)}"
 
     @s3_exception_handler(_logger)
     async def create_single_presigned_upload_link(
         self, *, bucket: S3BucketName, object_key: S3ObjectKey, expiration_secs: int
-    ) -> AnyUrl:
+    ) -> str:
         # NOTE: ensure the bucket/object exists, this will raise if not
         await self._client.head_bucket(Bucket=bucket)
         generated_link = await self._client.generate_presigned_url(
@@ -277,7 +277,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             Params={"Bucket": bucket, "Key": object_key},
             ExpiresIn=expiration_secs,
         )
-        return AnyUrlLegacyAdapter.validate_python(generated_link)
+        return f"{AnyUrlLegacyAdapter.validate_python(generated_link)}"
 
     @s3_exception_handler(_logger)
     async def create_multipart_upload_links(
