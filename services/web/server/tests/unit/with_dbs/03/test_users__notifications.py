@@ -18,7 +18,7 @@ import pytest
 import redis.asyncio as aioredis
 from aiohttp.test_utils import TestClient
 from models_library.products import ProductName
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -154,7 +154,9 @@ async def test_list_user_notifications(
             response = await client.get(url.path)
             json_response = await response.json()
 
-            result = parse_obj_as(list[UserNotification], json_response["data"])
+            result = TypeAdapter(list[UserNotification]).validate_python(
+                json_response["data"]
+            )
             assert len(result) <= MAX_NOTIFICATIONS_FOR_USER_TO_SHOW
             assert result == list(
                 reversed(created_notifications[:MAX_NOTIFICATIONS_FOR_USER_TO_SHOW])
@@ -444,7 +446,7 @@ async def test_list_permissions(
     data, error = await assert_status(resp, expected_response)
     if data:
         assert not error
-        list_of_permissions = parse_obj_as(list[PermissionGet], data)
+        list_of_permissions = TypeAdapter(list[PermissionGet]).validate_python(data)
         assert (
             len(list_of_permissions) == 1
         ), "for now there is only 1 permission, but when we sync frontend/backend permissions there will be more"
@@ -475,7 +477,7 @@ async def test_list_permissions_with_overriden_extra_properties(
     data, error = await assert_status(resp, expected_response)
     assert data
     assert not error
-    list_of_permissions = parse_obj_as(list[PermissionGet], data)
+    list_of_permissions = TypeAdapter(list[PermissionGet]).validate_python(data)
     filtered_permissions = list(
         filter(
             lambda x: x.name == "override_services_specifications", list_of_permissions

@@ -17,7 +17,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingUnitGet,
 )
 from models_library.resource_tracker import PricingPlanClassification
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -35,8 +35,7 @@ def mock_rpc_resource_usage_tracker_service_api(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_plans.list_pricing_plans",
             autospec=True,
             return_value=[
-                parse_obj_as(
-                    PricingPlanGet,
+                TypeAdapter(PricingPlanGet).validate_python(
                     PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
                 )
             ],
@@ -44,24 +43,21 @@ def mock_rpc_resource_usage_tracker_service_api(
         "get_pricing_plan": mocker.patch(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_plans.get_pricing_plan",
             autospec=True,
-            return_value=parse_obj_as(
-                PricingPlanGet,
+            return_value=TypeAdapter(PricingPlanGet).validate_python(
                 PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
         "create_pricing_plan": mocker.patch(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_plans.create_pricing_plan",
             autospec=True,
-            return_value=parse_obj_as(
-                PricingPlanGet,
+            return_value=TypeAdapter(PricingPlanGet).validate_python(
                 PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
         "update_pricing_plan": mocker.patch(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_plans.update_pricing_plan",
             autospec=True,
-            return_value=parse_obj_as(
-                PricingPlanGet,
+            return_value=TypeAdapter(PricingPlanGet).validate_python(
                 PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
@@ -69,24 +65,21 @@ def mock_rpc_resource_usage_tracker_service_api(
         "get_pricing_unit": mocker.patch(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_units.get_pricing_unit",
             autospec=True,
-            return_value=parse_obj_as(
-                PricingUnitGet,
+            return_value=TypeAdapter(PricingUnitGet).validate_python(
                 PricingUnitGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
         "create_pricing_unit": mocker.patch(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_units.create_pricing_unit",
             autospec=True,
-            return_value=parse_obj_as(
-                PricingUnitGet,
+            return_value=TypeAdapter(PricingUnitGet).validate_python(
                 PricingUnitGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
         "update_pricing_unit": mocker.patch(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_units.update_pricing_unit",
             autospec=True,
-            return_value=parse_obj_as(
-                PricingUnitGet,
+            return_value=TypeAdapter(PricingUnitGet).validate_python(
                 PricingUnitGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
@@ -95,8 +88,7 @@ def mock_rpc_resource_usage_tracker_service_api(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan",
             autospec=True,
             return_value=[
-                parse_obj_as(
-                    PricingPlanToServiceGet,
+                TypeAdapter(PricingPlanToServiceGet).validate_python(
                     PricingPlanToServiceGet.model_config["json_schema_extra"][
                         "examples"
                     ][0],
@@ -106,8 +98,7 @@ def mock_rpc_resource_usage_tracker_service_api(
         "connect_service_to_pricing_plan": mocker.patch(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_api.pricing_plans.connect_service_to_pricing_plan",
             autospec=True,
-            return_value=parse_obj_as(
-                PricingPlanToServiceGet,
+            return_value=TypeAdapter(PricingPlanToServiceGet).validate_python(
                 PricingPlanToServiceGet.model_config["json_schema_extra"]["examples"][
                     0
                 ],

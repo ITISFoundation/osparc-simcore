@@ -18,7 +18,7 @@ from models_library.api_schemas_webserver.projects_metadata import (
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -88,7 +88,9 @@ async def test_custom_metadata_handlers(
 
     data, _ = await assert_status(response, expected_status_code=expected.ok)
 
-    assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
+    assert (
+        TypeAdapter(ProjectMetadataGet).validate_python(data).custom == custom_metadata
+    )
 
     # delete project
     url = client.app.router["delete_project"].url_for(project_id=user_project["uuid"])
@@ -138,9 +140,9 @@ async def test_new_project_with_parent_project_node(
     )
     assert parent_project
 
-    parent_project_uuid = parse_obj_as(ProjectID, parent_project["uuid"])
-    parent_node_id = parse_obj_as(
-        NodeID, random.choice(list(parent_project["workbench"]))  # noqa: S311
+    parent_project_uuid = TypeAdapter(ProjectID).validate_python(parent_project["uuid"])
+    parent_node_id = TypeAdapter(NodeID).validate_python(
+        random.choice(list(parent_project["workbench"]))  # noqa: S311
     )
     child_project = await request_create_project(
         client,
@@ -178,7 +180,9 @@ async def test_new_project_with_parent_project_node(
         f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
     )
     data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
-    assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
+    assert (
+        TypeAdapter(ProjectMetadataGet).validate_python(data).custom == custom_metadata
+    )
     # check child project has parent unchanged
     async with aiopg_engine.acquire() as connection:
         project_db_metadata = await get_db_project_metadata(
@@ -216,13 +220,13 @@ async def test_new_project_with_invalid_parent_project_node(
     )
     assert parent_project
 
-    parent_project_uuid = parse_obj_as(ProjectID, parent_project["uuid"])
-    parent_node_id = parse_obj_as(
-        NodeID, random.choice(list(parent_project["workbench"]))  # noqa: S311
+    parent_project_uuid = TypeAdapter(ProjectID).validate_python(parent_project["uuid"])
+    parent_node_id = TypeAdapter(NodeID).validate_python(
+        random.choice(list(parent_project["workbench"]))  # noqa: S311
     )
 
     # creating with random project UUID should fail
-    random_project_uuid = parse_obj_as(ProjectID, faker.uuid4())
+    random_project_uuid = TypeAdapter(ProjectID).validate_python(faker.uuid4())
     child_project = await request_create_project(
         client,
         expected.accepted,
@@ -235,7 +239,7 @@ async def test_new_project_with_invalid_parent_project_node(
     assert not child_project
 
     # creating with a random node ID should fail too
-    random_node_id = parse_obj_as(NodeID, faker.uuid4())
+    random_node_id = TypeAdapter(NodeID).validate_python(faker.uuid4())
     child_project = await request_create_project(
         client,
         expected.accepted,
@@ -259,7 +263,7 @@ async def test_new_project_with_invalid_parent_project_node(
     assert not child_project
 
     # creating with only a parent node ID should fail too
-    random_node_id = parse_obj_as(NodeID, faker.uuid4())
+    random_node_id = TypeAdapter(NodeID).validate_python(faker.uuid4())
     child_project = await request_create_project(
         client,
         expected.unprocessable,
@@ -320,10 +324,12 @@ async def test_set_project_parent_backward_compatibility(
         project_id=child_project["uuid"]
     )
     response = await client.patch(
-        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
+        f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).model_dump()
     )
     data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
-    assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
+    assert (
+        TypeAdapter(ProjectMetadataGet).validate_python(data).custom == custom_metadata
+    )
     # check child project has parent set correctly
     async with aiopg_engine.acquire() as connection:
         project_db_metadata = await get_db_project_metadata(
@@ -430,7 +436,9 @@ async def test_update_project_metadata_s4lacad_backward_compatibility_passing_ni
         f"{url}", json=ProjectMetadataUpdate(custom=custom_metadata).dict()
     )
     data, _ = await assert_status(response, expected_status_code=status.HTTP_200_OK)
-    assert parse_obj_as(ProjectMetadataGet, data).custom == custom_metadata
+    assert (
+        TypeAdapter(ProjectMetadataGet).validate_python(data).custom == custom_metadata
+    )
 
     # check project has no parent
     async with aiopg_engine.acquire() as connection:

@@ -11,7 +11,7 @@ from urllib.parse import parse_qs
 import pytest
 from aiohttp.test_utils import make_mocked_request
 from models_library.utils.pydantic_tools_extension import parse_obj_or_none
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from simcore_service_webserver.studies_dispatcher._models import (
     FileParams,
@@ -23,7 +23,7 @@ from simcore_service_webserver.studies_dispatcher._redirects_handlers import (
 )
 from yarl import URL
 
-_SIZEBYTES = parse_obj_as(ByteSize, "3MiB")
+_SIZEBYTES = TypeAdapter(ByteSize).validate_python("3MiB")
 
 # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3951#issuecomment-1489992645
 # AWS download links have query arg

@@ -13,7 +13,7 @@ from models_library.user_preferences import (
     PreferenceName,
 )
 from models_library.users import UserID
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.utils import logged_gather
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
@@ -130,6 +130,6 @@ async def set_frontend_user_preference(
     await _preferences_db.set_user_preference(
         app,
         user_id=user_id,
-        preference=parse_obj_as(preference_class, {"value": value}),  # type: ignore[arg-type] # GitHK this is suspicious
+        preference=TypeAdapter(preference_class).validate_python({"value": value}),  # type: ignore[arg-type] # GitHK this is suspicious
         product_name=product_name,
     )

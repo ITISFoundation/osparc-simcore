@@ -18,7 +18,7 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
 from models_library.projects_ui import StudyUI
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import AnyUrl, HttpUrl, parse_obj_as
+from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 
 from ..projects.db import ProjectDBAPI
@@ -32,10 +32,12 @@ from ._users import UserInfo
 _logger = logging.getLogger(__name__)
 
 
-_FILE_PICKER_KEY: ServiceKey = parse_obj_as(
-    ServiceKey, "simcore/services/frontend/file-picker"
+_FILE_PICKER_KEY: ServiceKey = TypeAdapter(ServiceKey).validate_python(
+    "simcore/services/frontend/file-picker"
 )
-_FILE_PICKER_VERSION: ServiceVersion = parse_obj_as(ServiceVersion, "1.0.0")
+_FILE_PICKER_VERSION: ServiceVersion = TypeAdapter(ServiceVersion).validate_python(
+    "1.0.0"
+)
 
 
 def _generate_nodeids(project_id: ProjectID) -> tuple[NodeID, NodeID]:
@@ -55,7 +57,7 @@ def _create_file_picker(download_link: str, output_label: str | None):
     # also to name the file in case it is downloaded
 
     data = {}
-    data["downloadLink"] = url = parse_obj_as(AnyUrl, download_link)
+    data["downloadLink"] = url = TypeAdapter(AnyUrl).validate_python(download_link)
     if output_label:
         data["label"] = Path(output_label).name
     elif url.path:

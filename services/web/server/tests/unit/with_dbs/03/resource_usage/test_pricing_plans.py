@@ -15,7 +15,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingUnitGet,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -32,12 +32,11 @@ def mock_rut_api_responses(
     assert client.app
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 
-    pricing_unit_get = parse_obj_as(
-        PricingUnitGet, PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
+    pricing_unit_get = TypeAdapter(PricingUnitGet).validate_python(
+        PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
     )
 
-    service_pricing_plan_get = parse_obj_as(
-        PricingPlanGet,
+    service_pricing_plan_get = TypeAdapter(PricingPlanGet).validate_python(
         PricingPlanGet.model_config["json_schema_extra"]["examples"][0],
     )
 

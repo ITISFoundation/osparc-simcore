@@ -22,7 +22,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from yarl import URL
@@ -98,7 +98,7 @@ async def get_default_service_pricing_plan(
         async with session.get(url) as response:
             response.raise_for_status()
             body: dict = await response.json()
-            return parse_obj_as(PricingPlanGet, body)
+            return TypeAdapter(PricingPlanGet).validate_python(body)
 
 
 async def get_pricing_plan_unit(
@@ -123,7 +123,7 @@ async def get_pricing_plan_unit(
         async with session.get(url) as response:
             response.raise_for_status()
             body: dict = await response.json()
-            return parse_obj_as(PricingUnitGet, body)
+            return TypeAdapter(PricingUnitGet).validate_python(body)
 
 
 async def sum_total_available_credits_in_the_wallet(

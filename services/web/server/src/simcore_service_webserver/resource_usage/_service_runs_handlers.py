@@ -22,7 +22,15 @@ from models_library.rest_pagination import (
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, ConfigDict, Field, Json, NonNegativeInt, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    Json,
+    NonNegativeInt,
+    TypeAdapter,
+    field_validator,
+)
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -156,8 +164,8 @@ async def list_resource_usage_services(request: web.Request):
         wallet_id=query_params.wallet_id,
         offset=query_params.offset,
         limit=query_params.limit,
-        order_by=parse_obj_as(OrderBy, query_params.order_by),
-        filters=parse_obj_as(ServiceResourceUsagesFilters | None, query_params.filters),  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+        order_by=TypeAdapter(OrderBy).validate_python(query_params.order_by),
+        filters=TypeAdapter(ServiceResourceUsagesFilters | None).validate_python(query_params.filters),  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
     )
 
     page = Page[dict[str, Any]].model_validate(
@@ -170,7 +178,7 @@ async def list_resource_usage_services(request: web.Request):
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type=MIMETYPE_APPLICATION_JSON,
     )
 
@@ -234,7 +242,7 @@ async def export_resource_usage_services(request: web.Request):
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         wallet_id=query_params.wallet_id,
-        order_by=parse_obj_as(OrderBy | None, query_params.order_by),  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
-        filters=parse_obj_as(ServiceResourceUsagesFilters | None, query_params.filters),  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+        order_by=TypeAdapter(OrderBy | None).validate_python(query_params.order_by),  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+        filters=TypeAdapter(ServiceResourceUsagesFilters | None).validate_python(query_params.filters),  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
     )
     raise web.HTTPFound(location=f"{download_url}")

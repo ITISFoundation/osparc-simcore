@@ -7,7 +7,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from models_library.services import ServiceVersion
 from models_library.utils.pydantic_tools_extension import parse_obj_or_none
-from pydantic import ByteSize, ValidationError, parse_obj_as
+from pydantic import ByteSize, TypeAdapter, ValidationError
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
@@ -138,7 +138,9 @@ async def validate_requested_viewer(
             row = await result.first()
             if row:
                 view = ViewerInfo.create_from_db(row)
-                view.version = parse_obj_as(ServiceVersion, service_version)
+                view.version = TypeAdapter(ServiceVersion).validate_python(
+                    service_version
+                )
                 return view
 
     raise IncompatibleService(file_type=file_type)

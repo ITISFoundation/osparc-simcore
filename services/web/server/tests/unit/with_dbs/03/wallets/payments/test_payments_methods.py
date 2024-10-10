@@ -22,7 +22,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.rest_pagination import Page
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
@@ -103,7 +103,7 @@ async def test_payment_method_worfklow(
     data, _ = await assert_status(response, status.HTTP_200_OK)
     assert mock_rpc_payments_service_api["list_payment_methods"].called
 
-    wallet_payments_methods = parse_obj_as(list[PaymentMethodGet], data)
+    wallet_payments_methods = TypeAdapter(list[PaymentMethodGet]).validate_python(data)
     assert wallet_payments_methods == [payment_method]
 
     # Delete
@@ -268,7 +268,9 @@ async def test_wallet_autorecharge(
         # payment-methods.auto_recharge
         response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
         data, _ = await assert_status(response, status.HTTP_200_OK)
-        wallet_payment_methods = parse_obj_as(list[PaymentMethodGet], data)
+        wallet_payment_methods = TypeAdapter(list[PaymentMethodGet]).validate_python(
+            data
+        )
 
         for payment_method in wallet_payment_methods:
             assert payment_method.auto_recharge == (
@@ -417,7 +419,7 @@ async def test_one_time_payment_with_payment_method(
         response = await client.get("/v0/wallets/-/payments")
         data, error = await assert_status(response, status.HTTP_200_OK)
 
-        page = parse_obj_as(Page[PaymentTransaction], data)
+        page = TypeAdapter(Page[PaymentTransaction]).validate_python(data)
 
         assert page.data
         assert page.meta.total == 1

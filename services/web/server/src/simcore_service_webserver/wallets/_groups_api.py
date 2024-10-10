@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from models_library.wallets import UserWalletDB, WalletID
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel, TypeAdapter
 
 from ..users import api as users_api
 from . import _db as wallets_db
@@ -77,7 +77,7 @@ async def list_wallet_groups_by_user_and_wallet(
     ] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
 
     wallet_groups_api: list[WalletGroupGet] = [
-        parse_obj_as(WalletGroupGet, group) for group in wallet_groups_db
+        TypeAdapter(WalletGroupGet, group) for group in wallet_groups_db
     ]
 
     return wallet_groups_api
@@ -93,7 +93,7 @@ async def list_wallet_groups_with_read_access_by_wallet(
     ] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
 
     wallet_groups_api: list[WalletGroupGet] = [
-        parse_obj_as(WalletGroupGet, group)
+        TypeAdapter(WalletGroupGet).validate_python(group)
         for group in wallet_groups_db
         if group.read is True
     ]

@@ -14,7 +14,7 @@ from aiohttp.web_exceptions import HTTPNotFound
 from faker import Faker
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
     MockedStorageSubsystem,
@@ -105,9 +105,9 @@ async def test_clone_project(
     # check whether it's a clone
     assert ProjectID(project["uuid"]) != cloned_project.uuid
     assert project["description"] == cloned_project.description
-    assert parse_obj_as(datetime, project["creationDate"]) < parse_obj_as(
-        datetime, cloned_project.creation_date
-    )
+    assert TypeAdapter(datetime).validate_python(project["creationDate"]) < TypeAdapter(
+        datetime
+    ).validate_python(cloned_project.creation_date)
 
     assert len(project["workbench"]) == len(cloned_project.workbench)
     assert set(project["workbench"].keys()) != set(

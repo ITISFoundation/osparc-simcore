@@ -19,7 +19,7 @@ from models_library.rpc_pagination import PageLimitInt, PageRpc
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -55,8 +55,7 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert product_name
         assert user_id
 
-        items = parse_obj_as(
-            list[ServiceGetV2],
+        items = TypeAdapter(list[ServiceGetV2]).validate_python(
             ServiceGetV2.model_config["json_schema_extra"]["examples"],
         )
         total_count = len(items)
@@ -80,8 +79,8 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert product_name
         assert user_id
 
-        got = parse_obj_as(
-            ServiceGetV2, ServiceGetV2.model_config["json_schema_extra"]["examples"][0]
+        got = TypeAdapter(ServiceGetV2).validate_python(
+            ServiceGetV2.model_config["json_schema_extra"]["examples"][0]
         )
         got.version = service_version
         got.key = service_key
@@ -101,8 +100,8 @@ def mocked_rpc_catalog_service_api(mocker: MockerFixture) -> dict[str, MagicMock
         assert product_name
         assert user_id
 
-        got = parse_obj_as(
-            ServiceGetV2, ServiceGetV2.model_config["json_schema_extra"]["examples"][0]
+        got = TypeAdapter(ServiceGetV2).validate_python(
+            ServiceGetV2.model_config["json_schema_extra"]["examples"][0]
         )
         got.version = service_version
         got.key = service_key
@@ -147,7 +146,7 @@ async def test_list_services_latest(
     assert data
     assert error is None
 
-    model = parse_obj_as(Page[CatalogServiceGet], data)
+    model = TypeAdapter(Page[CatalogServiceGet]).validate_python(data)
     assert model
     assert model.data
     assert len(model.data) == model.meta.count
@@ -181,7 +180,7 @@ async def test_get_and_patch_service(
 
     assert data
     assert error is None
-    model = parse_obj_as(CatalogServiceGet, data)
+    model = TypeAdapter(CatalogServiceGet).validate_python(data)
     assert model.key == service_key
     assert model.version == service_version
 
@@ -206,7 +205,7 @@ async def test_get_and_patch_service(
     assert data
     assert error is None
 
-    model = parse_obj_as(CatalogServiceGet, data)
+    model = TypeAdapter(CatalogServiceGet).validate_python(data)
     assert model.key == service_key
     assert model.version == service_version
     assert model.name == update.name

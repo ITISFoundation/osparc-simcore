@@ -18,7 +18,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, ByteSize, parse_obj_as
+from pydantic import BaseModel, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
@@ -253,7 +253,7 @@ async def test_api_list_services(client: TestClient):
 
     data, error = await assert_status(response, status.HTTP_200_OK)
 
-    services = parse_obj_as(list[ServiceGet], data)
+    services = TypeAdapter(list[ServiceGet]).validate_python(data)
     assert services
 
     # latest versions of services with everyone + ospar-product (see stmt_create_services_access_rights)
@@ -350,7 +350,7 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
     if redirect_type == "service_and_file":
         query = {
             "file_name": "users.csv",
-            "file_size": parse_obj_as(ByteSize, "100KB"),
+            "file_size": TypeAdapter(ByteSize).validate_python("100KB"),
             "file_type": "CSV",
             "viewer_key": "simcore/services/dynamic/raw-graphs",
             "viewer_version": "2.11.1",
@@ -366,7 +366,7 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
     elif redirect_type == "file_only":
         query = {
             "file_name": "users.csv",
-            "file_size": parse_obj_as(ByteSize, "1MiB"),
+            "file_size": TypeAdapter(ByteSize).validate_python("1MiB"),
             "file_type": "CSV",
             "download_link": URL(
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"

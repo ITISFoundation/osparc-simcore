@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 import pytest
 from aiohttp.test_utils import TestClient
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -157,7 +157,7 @@ async def test_copying_large_project_and_retrieving_copy_task(
     data, error = await assert_status(resp, expected.ok)
     assert data
     assert not error
-    list_of_tasks = parse_obj_as(list[TaskGet], data)
+    list_of_tasks = TypeAdapter(list[TaskGet]).validate_python(data)
     assert len(list_of_tasks) == 1
     task = list_of_tasks[0]
     assert task.task_name == f"POST {create_url}"
@@ -290,9 +290,9 @@ async def test_copying_too_large_project_returns_422(
     large_project_total_size = (
         app_settings.WEBSERVER_PROJECTS.PROJECTS_MAX_COPY_SIZE_BYTES + 1
     )
-    storage_subsystem_mock.get_project_total_size_simcore_s3.return_value = (
-        parse_obj_as(ByteSize, large_project_total_size)
-    )
+    storage_subsystem_mock.get_project_total_size_simcore_s3.return_value = TypeAdapter(
+        ByteSize
+    ).validate_python(large_project_total_size)
 
     # POST /v0/projects
     await request_create_project(

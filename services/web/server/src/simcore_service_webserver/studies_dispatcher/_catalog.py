@@ -9,7 +9,7 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import HttpUrl, PositiveInt, ValidationError, parse_obj_as
+from pydantic import HttpUrl, PositiveInt, TypeAdapter, ValidationError
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.services import (
     services_access_rights,
@@ -171,7 +171,7 @@ async def validate_requested_service(
         thumbnail_or_none = None
         if row.thumbnail is not None:
             with suppress(ValidationError):
-                thumbnail_or_none = parse_obj_as(HttpUrl, row.thumbnail)
+                thumbnail_or_none = TypeAdapter(HttpUrl).validate_python(row.thumbnail)
 
         return ValidService(
             key=service_key,
