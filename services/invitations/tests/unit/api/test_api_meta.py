@@ -21,5 +21,5 @@ def test_meta(client: TestClient):
     assert response.status_code == status.HTTP_200_OK
     meta = _Meta.model_validate(response.json())
 
-    response = client.get(meta.docs_url)
+    response = client.get(f"{meta.docs_url}")
     assert response.status_code == status.HTTP_200_OK

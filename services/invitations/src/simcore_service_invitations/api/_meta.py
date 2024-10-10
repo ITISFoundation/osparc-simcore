@@ -2,7 +2,8 @@ import logging
 from collections.abc import Callable
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
+from simcore_service_invitations.services.invitations import HttpUrlLegacy
 
 from .._meta import API_VERSION, PROJECT_NAME
 from ._dependencies import get_reverse_url_mapper
@@ -20,7 +21,7 @@ INVALID_INVITATION_URL_MSG = "Invalid invitation link"
 class _Meta(BaseModel):
     name: str
     version: str
-    docs_url: HttpUrl
+    docs_url: HttpUrlLegacy
 
 
 #
