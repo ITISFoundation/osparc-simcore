@@ -432,7 +432,7 @@ async def download_file(
     )
 
     _logger.info("Downloading %s to %s ...", file_meta, presigned_download_link)
-    return RedirectResponse(presigned_download_link)
+    return RedirectResponse(f"{presigned_download_link}")
 
 
 async def files_upload_multiple_view():
