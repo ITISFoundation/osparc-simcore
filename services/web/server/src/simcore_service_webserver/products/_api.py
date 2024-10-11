@@ -38,12 +38,6 @@ def list_products(app: web.Application) -> list[Product]:
     return products
 
 
-def get_default_product_name(app: web.Application) -> str:
-    # TODO: remove from api
-    product_name: str = app[f"{APP_PRODUCTS_KEY}_default"]
-    return product_name
-
-
 async def get_current_product_credit_price_info(
     request: web.Request,
 ) -> ProductPriceInfo | None:
