@@ -53,12 +53,13 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
         rabbit_message.node_id,
         rabbit_message.user_id,
     )
+    percentage = round(size / settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES * 100, 2)
     efs_node_disk_usage = EfsNodeDiskUsage(
         node_id=rabbit_message.node_id,
         used=size,
         free=ByteSize(settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES - size),
         total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES,
-        used_percent=round(size / settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES, 2),
+        used_percent=min(percentage, 100.0),
     )
     notifier: Notifier = Notifier.get_from_app_state(app)
     await notifier.notify_service_efs_disk_usage(
