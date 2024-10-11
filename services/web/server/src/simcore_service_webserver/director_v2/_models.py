@@ -45,7 +45,7 @@ class ClusterCreate(BaseCluster):
             "examples": [
                 {
                     "name": "My awesome cluster",
-                    "type": ClusterType.ON_PREMISE,  # can use also values from equivalent enum
+                    "type": ClusterType.ON_PREMISE, # type: ignore[dict-item] # can use also values from equivalent enum
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
                         "type": "simple",
@@ -56,7 +56,7 @@ class ClusterCreate(BaseCluster):
                 {
                     "name": "My AWS cluster",
                     "description": "a AWS cluster administered by me",
-                    "type": ClusterType.AWS,
+                    "type": ClusterType.AWS,    # type: ignore[dict-item]
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
@@ -65,9 +65,9 @@ class ClusterCreate(BaseCluster):
                         "password": "somepassword",
                     },
                     "access_rights": {
-                        154: CLUSTER_ADMIN_RIGHTS,
-                        12: CLUSTER_MANAGER_RIGHTS,
-                        7899: CLUSTER_USER_RIGHTS,
+                        154: CLUSTER_ADMIN_RIGHTS,  # type: ignore[dict-item]
+                        12: CLUSTER_MANAGER_RIGHTS, # type: ignore[dict-item]
+                        7899: CLUSTER_USER_RIGHTS,  # type: ignore[dict-item]
                     },
                 },
             ]

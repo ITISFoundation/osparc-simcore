@@ -91,13 +91,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SIMCORE_VCS_RELEASE_TAG: str | None = Field(
         default=None,
         description="Name of the tag that marks this release, or None if undefined",
-        example="ResistanceIsFutile10",
+        examples=["ResistanceIsFutile10"],
     )
 
     SIMCORE_VCS_RELEASE_URL: AnyHttpUrl | None = Field(
         default=None,
         description="URL to release notes",
-        example="https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_ResistanceIsFutile10",
+        examples=["https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_ResistanceIsFutile10"],
     )
 
     SWARM_STACK_NAME: str | None = Field(

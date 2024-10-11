@@ -114,7 +114,7 @@ async def iter_latest_product_services(
                 version=row.version,
                 title=row.name,
                 description=row.description,
-                thumbnail=row.thumbnail or settings.STUDIES_DEFAULT_SERVICE_THUMBNAIL,
+                thumbnail=row.thumbnail or f"{settings.STUDIES_DEFAULT_SERVICE_THUMBNAIL}",
                 file_extensions=service_filetypes.get(row.key, []),
             )
 

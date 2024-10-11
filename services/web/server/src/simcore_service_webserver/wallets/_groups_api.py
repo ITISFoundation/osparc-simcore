@@ -77,7 +77,7 @@ async def list_wallet_groups_by_user_and_wallet(
     ] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
 
     wallet_groups_api: list[WalletGroupGet] = [
-        TypeAdapter(WalletGroupGet, group) for group in wallet_groups_db
+        TypeAdapter(WalletGroupGet).validate_python(group) for group in wallet_groups_db
     ]
 
     return wallet_groups_api
