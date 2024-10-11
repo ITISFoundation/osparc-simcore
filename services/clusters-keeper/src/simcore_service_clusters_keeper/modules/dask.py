@@ -34,7 +34,7 @@ async def ping_scheduler(
                 require_encryption=True,
             )
         async with distributed.Client(
-            url, asynchronous=True, timeout=_CONNECTION_TIMEOUT, security=security
+            f"{url}", asynchronous=True, timeout=_CONNECTION_TIMEOUT, security=security
         ):
             ...
         return True

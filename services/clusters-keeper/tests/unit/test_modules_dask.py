@@ -24,7 +24,7 @@ from tenacity.wait import wait_fixed
 
 _authentication_types = [
     NoAuthentication(),
-    TLSAuthentication.construct(
+    TLSAuthentication.model_construct(
         **TLSAuthentication.model_config["json_schema_extra"]["examples"][0]
     ),
 ]
@@ -86,5 +86,5 @@ async def test_is_scheduler_busy(
         busy=True,
     )
 
-    result = await future.result(timeout=2 * _SLEEP_TIME)  # type: ignore
+    result = await future.result(timeout=2 * _SLEEP_TIME)
     assert "seconds" in result
