@@ -7,6 +7,7 @@ from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 
 from .._constants import APP_PRODUCTS_KEY, RQ_PRODUCT_KEY
 from .._meta import API_VTAG
+from ._api import get_default_product_name
 from ._model import Product
 
 _logger = logging.getLogger(__name__)
@@ -41,6 +42,21 @@ def _discover_product_by_request_header(request: web.Request) -> str | None:
 _INCLUDE_PATHS: set[str] = {"/static-frontend-data.json", "/socket.io/"}
 
 
+def _get_diagnose_msg(request: web.Request):
+    return (
+        "\n".join(
+            [
+                f"{request.url=}",
+                f"{request.host=}",
+                f"{request.remote=}",
+                *[f"{k}:{request.headers[k][:20]}" for k in request.headers],
+                f"{request.headers.get('X-Forwarded-Host')=}",
+                f"{request.get(RQ_PRODUCT_KEY)=}",
+            ]
+        ),
+    )
+
+
 @web.middleware
 async def discover_product_middleware(request: web.Request, handler: Handler):
     """
@@ -49,34 +65,44 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
         - request[RQ_PRODUCT_KEY] is set to discovered product in 3 types of entrypoints
         - if no product discovered, then it is set to default
     """
-    request[RQ_PRODUCT_KEY] = None
-    # - API entrypoints
-    # - /static info for front-end
-    if request.path.startswith(f"/{API_VTAG}") or request.path in _INCLUDE_PATHS:
+    request[RQ_PRODUCT_KEY] = get_default_product_name(request.app)
+
+    if (
+        # - API entrypoints
+        # - /static info for front-end
+        request.path.startswith(f"/{API_VTAG}")
+        or request.path in _INCLUDE_PATHS
+    ):
         request[RQ_PRODUCT_KEY] = _discover_product_by_request_header(
             request
         ) or _discover_product_by_hostname(request)
 
-    # - Publications entrypoint: redirections from other websites. SEE studies_access.py::access_study
-    # - Root entrypoint: to serve front-end apps
+        if not request[RQ_PRODUCT_KEY]:
+            bad_request_error = web.HTTPBadRequest(
+                reason="web api request must define a product"
+            )
+            _logger.warning("%s:\n%s", bad_request_error, _get_diagnose_msg(request))
+            raise bad_request_error
+
     elif (
+        # - Publications entrypoint: redirections from other websites. SEE studies_access.py::access_study
+        # - Root entrypoint: to serve front-end apps
         request.path.startswith("/study/")
         or request.path.startswith("/view")
         or request.path == "/"
     ):
-        request[RQ_PRODUCT_KEY] = _discover_product_by_hostname(request)
+        request[RQ_PRODUCT_KEY] = _discover_product_by_hostname(
+            request
+        ) and get_default_product_name(request.app)
 
-    msg = "\n".join(
-        [
-            f"{request.url=}",
-            f"{request.host=}",
-            f"{request.remote=}",
-            *[f"{k}:{request.headers[k][:20]}" for k in request.headers],
-            f"{request.headers.get('X-Forwarded-Host')=}",
-            f"{request.get(RQ_PRODUCT_KEY)=}",
-        ]
+        assert request[RQ_PRODUCT_KEY]  # nosec
+
+    _logger.warning(
+        "\n%s\n%s\n%s\n",
+        "------------------TESTING-------------------",
+        _get_diagnose_msg(request),
+        "-------------------------------------------",
     )
-    _logger.warning("\n--TESTING->\n%s", msg)
 
     assert request.get(RQ_PRODUCT_KEY) is not None or request.path.startswith(  # nosec
         "/dev/doc"

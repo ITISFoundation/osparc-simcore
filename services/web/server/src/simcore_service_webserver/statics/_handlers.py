@@ -14,6 +14,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def get_cached_frontend_index(request: web.Request):
+    # NOTE: always deliver a front-end
     product_name = get_product_name(request)
 
     assert (  # nosec

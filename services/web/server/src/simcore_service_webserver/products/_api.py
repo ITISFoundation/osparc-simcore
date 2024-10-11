@@ -15,9 +15,9 @@ from ._model import Product
 from .errors import BelowMinimumPaymentError, ProductPriceNotDefinedError
 
 
-def get_product_name(request: web.Request) -> str | None:
+def get_product_name(request: web.Request) -> str:
     """Returns product name in request but might be undefined"""
-    product_name: str | None = request[RQ_PRODUCT_KEY]
+    product_name: str = request[RQ_PRODUCT_KEY]
     return product_name
 
 
@@ -39,6 +39,7 @@ def list_products(app: web.Application) -> list[Product]:
 
 
 def get_default_product_name(app: web.Application) -> str:
+    # TODO: remove from api
     product_name: str = app[f"{APP_PRODUCTS_KEY}_default"]
     return product_name
 
