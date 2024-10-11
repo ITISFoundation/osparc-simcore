@@ -14,15 +14,13 @@ _logger = logging.getLogger(__name__)
 
 
 async def get_cached_frontend_index(request: web.Request):
-    # NOTE: always deliver a front-end
     product_name = get_product_name(request)
 
     assert (  # nosec
         product_name in FRONTEND_APPS_AVAILABLE
     ), "Every product is mapped with a front-end app with IDENTICAL name"
 
-    # NOTE: CANNOT redirect , i.e.
-    # raise web.HTTPFound(f"/{target_frontend}/index.html")
+    # NOTE: CANNOT redirect , i.e. `web.HTTPFound(f"/{target_frontend}/index.html")`
     # because it losses fragments and therefore it fails in study links.
     #
     # SEE services/web/server/tests/unit/isolated/test_redirections.py
