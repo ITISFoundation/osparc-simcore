@@ -71,7 +71,7 @@ def _create_file_picker(download_link: str, output_label: str | None):
         label="File Picker",
         inputs={},
         inputNodes=[],
-        outputs={output_id: output},  # type: ignore[dict-item]
+        outputs={output_id: output},
         progress=0,
     )
     return node, output_id
@@ -96,12 +96,12 @@ def _create_project(
         uuid=project_id,
         name=name,
         description=description,
-        thumbnail=thumbnail,  # type: ignore[arg-type]
+        thumbnail=thumbnail,
         prjOwner=owner.email,
         accessRights={owner.primary_gid: access_rights},  # type: ignore[dict-item]
         creationDate=DateTimeStr(now_str()),
         lastChangeDate=DateTimeStr(now_str()),
-        workbench=workbench,  # type: ignore[arg-type]
+        workbench=workbench,
         ui=StudyUI(workbench=workbench_ui),  # type: ignore[arg-type]
     )
 
@@ -155,7 +155,7 @@ def _create_project_with_filepicker_and_service(
         version=viewer_info.version,
         label=viewer_info.label,
         inputs={
-            viewer_info.input_port_key: PortLink(  # type: ignore[dict-item]
+            viewer_info.input_port_key: PortLink(
                 nodeUuid=file_picker_id,
                 output=file_picker_output_id,
             )
