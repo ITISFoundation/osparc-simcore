@@ -3,6 +3,7 @@ from typing import Any
 
 from common_library.pydantic_fields_extension import get_type
 from pydantic import BaseModel, SecretStr
+from pydantic_core import Url
 
 
 def model_dump_with_secrets(
@@ -19,11 +20,15 @@ def model_dump_with_secrets(
         if isinstance(field_data, timedelta):
             data[field_name] = field_data.total_seconds()
 
-        if isinstance(field_data, SecretStr):
+        elif isinstance(field_data, SecretStr):
             if show_secrets:
                 data[field_name] = field_data.get_secret_value()
             else:
                 data[field_name] = str(field_data)
+                
+        elif isinstance(field_data, Url):
+            data[field_name] = str(field_data)
+                
         elif isinstance(field_data, dict):
             field_type = get_type(settings_obj.model_fields[field_name])
             if issubclass(field_type, BaseModel):

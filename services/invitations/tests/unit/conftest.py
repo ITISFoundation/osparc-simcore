@@ -109,4 +109,4 @@ def invitation_data(
     if product:
         kwargs["product"] = product
 
-    return InvitationInputs.parse_obj(kwargs)
+    return InvitationInputs.model_validate(kwargs)
