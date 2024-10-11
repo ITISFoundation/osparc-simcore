@@ -1,4 +1,5 @@
 import logging
+import textwrap
 from collections import OrderedDict
 
 from aiohttp import web
@@ -43,7 +44,7 @@ def _discover_product_by_request_header(request: web.Request) -> str | None:
     return None
 
 
-def _get_diagnose_msg(request: web.Request):
+def _get_debug_msg(request: web.Request):
     return "\n".join(
         [
             f"{request.url=}",
@@ -54,9 +55,6 @@ def _get_diagnose_msg(request: web.Request):
             f"{request.get(RQ_PRODUCT_KEY)=}",
         ]
     )
-
-
-_INCLUDE_PATHS: set[str] = {"/static-frontend-data.json", "/socket.io/"}
 
 
 @web.middleware
@@ -71,8 +69,9 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
     if (
         # - API entrypoints
         # - /static info for front-end
+        # - socket-io
         request.path.startswith(f"/{API_VTAG}")
-        or request.path in _INCLUDE_PATHS
+        or request.path in {"/static-frontend-data.json", "/socket.io/"}
     ):
         request[RQ_PRODUCT_KEY] = (
             _discover_product_by_request_header(request)
@@ -83,22 +82,20 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
     else:
         # - Publications entrypoint: redirections from other websites. SEE studies_access.py::access_study
         # - Root entrypoint: to serve front-end apps
-        # request.path.startswith("/study/")
-        # or request.path.startswith("/view")
-        # or request.path == "/" )
+        assert (  # nosec
+            request.path.startswith("/dev/")
+            or request.path.startswith("/study/")
+            or request.path.startswith("/view")
+            or request.path == "/"
+        )
         request[RQ_PRODUCT_KEY] = _discover_product_by_hostname(
             request
         ) or _get_default_product_name(request.app)
 
-    # FIXME: session[product]
-    # if product_session := get_session(request).get('product_name'):
-    #  assert get_product_name(request) ==   product_session
-
+    # TODO: remove this!!!
     _logger.warning(
-        "\n%s\n%s\n%s\n",
-        "------------------TESTING-------------------",
-        _get_diagnose_msg(request),
-        "-------------------------------------------",
+        "Product middleware result: \n%s\n",
+        textwrap.indent(_get_debug_msg(request), " "),
     )
     assert request[RQ_PRODUCT_KEY]  # nosec
 
