@@ -57,7 +57,7 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
     efs_node_disk_usage = EfsNodeDiskUsage(
         node_id=rabbit_message.node_id,
         used=size,
-        free=ByteSize(settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES - size),
+        free=ByteSize(max(settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES - size, 0)),
         total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES,
         used_percent=min(percentage, 100.0),
     )
