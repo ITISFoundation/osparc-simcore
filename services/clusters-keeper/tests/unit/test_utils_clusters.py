@@ -60,7 +60,7 @@ def app_environment(
         monkeypatch,
         {
             "CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": json_dumps(
-                TLSAuthentication.Config.schema_extra["examples"][0]
+                TLSAuthentication.model_config["json_schema_extra"]["examples"][0]
             )
         },
     )
@@ -240,7 +240,9 @@ def test_startup_script_defines_all_envs_for_docker_compose(
     "authentication",
     [
         NoAuthentication(),
-        TLSAuthentication(**TLSAuthentication.Config.schema_extra["examples"][0]),
+        TLSAuthentication(
+            **TLSAuthentication.model_config["json_schema_extra"]["examples"][0]
+        ),
     ],
 )
 def test_create_cluster_from_ec2_instance(
