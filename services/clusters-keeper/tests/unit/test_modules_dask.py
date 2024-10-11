@@ -12,7 +12,7 @@ from models_library.clusters import (
     NoAuthentication,
     TLSAuthentication,
 )
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 from simcore_service_clusters_keeper.modules.dask import (
     is_scheduler_busy,
     ping_scheduler,
@@ -38,7 +38,7 @@ async def test_ping_scheduler_non_existing_scheduler(
 ):
     assert (
         await ping_scheduler(
-            parse_obj_as(AnyUrl, f"tcp://{faker.ipv4()}:{faker.port_number()}"),
+            TypeAdapter(AnyUrl).validate_python(f"tcp://{faker.ipv4()}:{faker.port_number()}"),
             authentication,
         )
         is False
@@ -48,7 +48,7 @@ async def test_ping_scheduler_non_existing_scheduler(
 async def test_ping_scheduler(dask_spec_local_cluster: SpecCluster):
     assert (
         await ping_scheduler(
-            parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address),
+            TypeAdapter(AnyUrl).validate_python(dask_spec_local_cluster.scheduler_address),
             NoAuthentication(),
         )
         is True
@@ -71,7 +71,7 @@ async def test_is_scheduler_busy(
     dask_spec_cluster_client: distributed.Client,
 ):
     # nothing runs right now
-    scheduler_address = parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address)
+    scheduler_address = TypeAdapter(AnyUrl).validate_python(dask_spec_local_cluster.scheduler_address)
     assert await is_scheduler_busy(scheduler_address, NoAuthentication()) is False
     _SLEEP_TIME = 5
 

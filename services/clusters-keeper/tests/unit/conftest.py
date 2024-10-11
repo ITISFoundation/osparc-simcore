@@ -81,7 +81,7 @@ def mocked_ec2_server_envs(
     # NOTE: overrides the EC2Settings with what clusters-keeper expects
     changed_envs: EnvVarsDict = {
         f"{CLUSTERS_KEEPER_ENV_PREFIX}{k}": v
-        for k, v in mocked_ec2_server_settings.dict().items()
+        for k, v in mocked_ec2_server_settings.model_dump().items()
     }
     return setenvs_from_dict(monkeypatch, changed_envs)
 

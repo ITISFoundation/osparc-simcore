@@ -23,7 +23,7 @@ from models_library.clusters import (
     TLSAuthentication,
 )
 from models_library.utils.json_serialization import json_dumps
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.clusters import (
@@ -178,7 +178,7 @@ def test_create_startup_script_script_size_below_16kb(
     script_size_in_bytes = len(startup_script.encode("utf-8"))
 
     print(
-        f"current script size is {parse_obj_as(ByteSize, script_size_in_bytes).human_readable()}"
+        f"current script size is {TypeAdapter(ByteSize).validate_python(script_size_in_bytes).human_readable()}"
     )
     # NOTE: EC2 user data cannot be above 16KB, we keep some margin here
     assert script_size_in_bytes < 15 * 1024
