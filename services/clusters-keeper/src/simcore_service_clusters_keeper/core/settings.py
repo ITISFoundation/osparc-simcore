@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import Final, Literal, cast
+from typing import Annotated, Final, Literal, cast
 
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2Tags
 from fastapi import FastAPI
@@ -13,6 +13,7 @@ from models_library.basic_types import (
 from models_library.clusters import InternalClusterAuthentication
 from pydantic import (
     AliasChoices,
+    BeforeValidator,
     Field,
     NonNegativeFloat,
     NonNegativeInt,
@@ -283,7 +284,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True}
     )
 
-    CLUSTERS_KEEPER_TASK_INTERVAL: datetime.timedelta = Field(
+    CLUSTERS_KEEPER_TASK_INTERVAL: Annotated[datetime.timedelta, BeforeValidator(int)] = Field(
         default=datetime.timedelta(seconds=30),
         description="interval between each clusters clean check "
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
