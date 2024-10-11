@@ -329,13 +329,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         if (osparc.utils.Utils.isDevelopmentPlatform()) {
           console.log("Connecting: about to fetch", srvUrl);
         }
-
-        const productName = qx.core.Environment.get("product.name");
-
-        fetch(srvUrl, {
-          credentials: "include",
-          headers: productName ? { "X-Simcore-Products-Name": productName } : {}
-        })
+        fetch(srvUrl, {credentials: "include"})
           .then(response => {
             if (osparc.utils.Utils.isDevelopmentPlatform()) {
               console.log("Connecting: fetch's response status", response.status);
