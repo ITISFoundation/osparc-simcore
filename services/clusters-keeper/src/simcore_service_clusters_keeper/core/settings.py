@@ -290,7 +290,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
-    SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
+    SERVICE_TRACKING_HEARTBEAT: Annotated[datetime.timedelta, BeforeValidator(int)] = Field(
         default=datetime.timedelta(seconds=60),
         description="Service heartbeat interval (everytime a heartbeat is sent into RabbitMQ) "
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
