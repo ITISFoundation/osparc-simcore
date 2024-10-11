@@ -20,7 +20,7 @@ class WebSocketMessageBase(BaseModel):
 
     @classmethod
     def get_event_type(cls) -> str:
-        _event_type: str = cls.__fields__["event_type"].default
+        _event_type: str = cls.model_fields["event_type"].default
         return _event_type
 
     @abstractmethod

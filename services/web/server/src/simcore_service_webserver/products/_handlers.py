@@ -41,7 +41,7 @@ async def _get_current_product_price(request: web.Request):
 
     credit_price = GetCreditPrice(
         product_name=req_ctx.product_name,
-        usd_per_credit=price_info.usd_per_credit if price_info else None,  # type: ignore[arg-type]
+        usd_per_credit=price_info.usd_per_credit if price_info else None,
         min_payment_amount_usd=price_info.min_payment_amount_usd  # type: ignore[arg-type]
         if price_info
         else None,

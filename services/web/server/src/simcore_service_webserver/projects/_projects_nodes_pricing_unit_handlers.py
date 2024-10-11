@@ -6,12 +6,12 @@ import functools
 import logging
 
 from aiohttp import web
+from common_library.errors_classes import OsparcErrorMixin
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from pydantic import BaseModel, ConfigDict
-from pydantic.errors import PydanticErrorMixin
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 
@@ -29,7 +29,7 @@ from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 _logger = logging.getLogger(__name__)
 
 
-class PricingUnitError(PydanticErrorMixin, ValueError):
+class PricingUnitError(OsparcErrorMixin, ValueError):
     ...
 
 
@@ -132,7 +132,7 @@ async def connect_pricing_unit_to_project_node(request: web.Request):
         path_params.pricing_unit_id,
     )
     if rut_pricing_unit.pricing_unit_id != path_params.pricing_unit_id:
-        raise PricingUnitNotFoundError
+        raise PricingUnitNotFoundError()
 
     await db.connect_pricing_unit_to_project_node(
         path_params.project_id,

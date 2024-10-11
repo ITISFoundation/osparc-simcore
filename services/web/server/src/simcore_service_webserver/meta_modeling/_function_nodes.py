@@ -37,7 +37,7 @@ def create_param_node_from_iterator_with_outputs(iterator_node: Node) -> Node:
         label=iterator_node.label,
         inputs={},
         inputNodes=[],
-        thumbnail="",  # type: ignore[arg-type] # NOTE: hack due to issue in projects json-schema
+        thumbnail="",  # NOTE: hack due to issue in projects json-schema
         outputs=deepcopy(iterator_node.outputs),
     )
 
