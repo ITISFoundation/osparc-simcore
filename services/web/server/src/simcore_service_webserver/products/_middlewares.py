@@ -1,4 +1,3 @@
-import enum
 import logging
 from collections import OrderedDict
 
@@ -39,15 +38,6 @@ def _discover_product_by_request_header(request: web.Request) -> str | None:
     return None
 
 
-def _get_app_default_product_name(request: web.Request) -> str:
-    product_name: str = request.app[f"{APP_PRODUCTS_KEY}_default"]
-    return product_name
-
-
-class Sentinel(enum.StrEnum):
-    UNDEFINED = enum.auto()
-
-
 _INCLUDE_PATHS: set[str] = {"/static-frontend-data.json", "/socket.io/"}
 
 
@@ -59,15 +49,13 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
         - request[RQ_PRODUCT_KEY] is set to discovered product in 3 types of entrypoints
         - if no product discovered, then it is set to default
     """
+    request[RQ_PRODUCT_KEY] = None
     # - API entrypoints
     # - /static info for front-end
     if request.path.startswith(f"/{API_VTAG}") or request.path in _INCLUDE_PATHS:
-        request[RQ_PRODUCT_KEY] = (
-            _discover_product_by_request_header(request)
-            or _discover_product_by_hostname(request)
-            or Sentinel.UNDEFINED
-            # FIXME: or _get_app_default_product_name(request)
-        )
+        request[RQ_PRODUCT_KEY] = _discover_product_by_request_header(
+            request
+        ) or _discover_product_by_hostname(request)
 
     # - Publications entrypoint: redirections from other websites. SEE studies_access.py::access_study
     # - Root entrypoint: to serve front-end apps
@@ -76,16 +64,15 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
         or request.path.startswith("/view")
         or request.path == "/"
     ):
-        request[RQ_PRODUCT_KEY] = (
-            _discover_product_by_hostname(request) or Sentinel.UNDEFINED
-        )
-        # FIXME: or _get_app_default_product_name(request)
+        request[RQ_PRODUCT_KEY] = _discover_product_by_hostname(request)
 
     msg = "\n".join(
         [
             f"{request.url=}",
             f"{request.host=}",
-            f"{request.headers=}",
+            f"{request.remote=}",
+            *[f"{k}:{request.headers[k][:20]}" for k in request.headers],
+            f"{request.headers.get('X-Forwarded-Host')=}",
             f"{request.get(RQ_PRODUCT_KEY)=}",
         ]
     )

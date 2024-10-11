@@ -15,8 +15,9 @@ from ._model import Product
 from .errors import BelowMinimumPaymentError, ProductPriceNotDefinedError
 
 
-def get_product_name(request: web.Request) -> str:
-    product_name: str = request[RQ_PRODUCT_KEY]
+def get_product_name(request: web.Request) -> str | None:
+    """Returns product name in request but might be undefined"""
+    product_name: str | None = request[RQ_PRODUCT_KEY]
     return product_name
 
 
@@ -35,6 +36,11 @@ def get_current_product(request: web.Request) -> Product:
 def list_products(app: web.Application) -> list[Product]:
     products: list[Product] = list(app[APP_PRODUCTS_KEY].values())
     return products
+
+
+def get_default_product_name(app: web.Application) -> str:
+    product_name: str = app[f"{APP_PRODUCTS_KEY}_default"]
+    return product_name
 
 
 async def get_current_product_credit_price_info(
