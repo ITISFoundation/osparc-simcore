@@ -22,7 +22,7 @@ from pydantic import (
     TypeAdapter,
     field_validator,
 )
-from pytest_simcore.helpers.dict_tools import ConfigDict
+from pydantic_settings import SettingsConfigDict
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings
@@ -37,7 +37,7 @@ CLUSTERS_KEEPER_ENV_PREFIX: Final[str] = "CLUSTERS_KEEPER_"
 
 
 class ClustersKeeperEC2Settings(EC2Settings):
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_prefix=CLUSTERS_KEEPER_ENV_PREFIX,
         json_schema_extra={
             "examples": [
