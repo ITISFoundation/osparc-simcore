@@ -20,6 +20,7 @@ from pydantic import (
     PositiveInt,
     SecretStr,
     TypeAdapter,
+    WrapValidator,
     field_validator,
 )
 from pydantic_settings import SettingsConfigDict
@@ -284,13 +285,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True}
     )
 
-    CLUSTERS_KEEPER_TASK_INTERVAL: Annotated[datetime.timedelta, BeforeValidator(int)] = Field(
+    CLUSTERS_KEEPER_TASK_INTERVAL: datetime.timedelta = Field(
         default=datetime.timedelta(seconds=30),
         description="interval between each clusters clean check "
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
-    SERVICE_TRACKING_HEARTBEAT: Annotated[datetime.timedelta, BeforeValidator(int)] = Field(
+    SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
         default=datetime.timedelta(seconds=60),
         description="Service heartbeat interval (everytime a heartbeat is sent into RabbitMQ) "
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
@@ -334,8 +335,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @field_validator("CLUSTERS_KEEPER_LOGLEVEL")
     @classmethod
-    def valid_log_level(cls, value: str) -> str:
+    def _valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
+    
+    
+    @field_validator("CLUSTERS_KEEPER_TASK_INTERVAL", "SERVICE_TRACKING_HEARTBEAT", mode="before")
+    @classmethod
+    def _validate_interval(cls, value: str | datetime.timedelta) -> int | datetime.timedelta:
+        if isinstance(value, str):
+            return int(value)
+        return value
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:
