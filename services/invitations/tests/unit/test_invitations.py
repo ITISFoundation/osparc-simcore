@@ -5,6 +5,7 @@
 
 import binascii
 from datetime import datetime, timezone
+from typing import Counter
 from urllib import parse
 
 import cryptography.fernet
@@ -192,3 +193,7 @@ def test_invalid_invitation_data(secret_key: str, default_product: ProductName):
             secret_key=secret,
             default_product=default_product,
         )
+
+
+def test_aliases_uniqueness():
+    assert not [item for item, count in Counter([field.alias for field in _ContentWithShortNames.model_fields.values()]).items() if count > 1]  #nosec
