@@ -16,7 +16,7 @@ from models_library.resource_tracker import (
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, NonNegativeInt
+from pydantic import ConfigDict, BaseModel, NonNegativeInt
 
 
 class ServiceRunCreate(BaseModel):
@@ -93,25 +93,19 @@ class ServiceRunDB(BaseModel):
     last_heartbeat_at: datetime
     service_run_status_msg: str | None
     missed_heartbeat_counter: NonNegativeInt
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ServiceRunWithCreditsDB(ServiceRunDB):
-    osparc_credits: Decimal | None
+    osparc_credits: Decimal | None = None
     transaction_status: CreditTransactionStatus | None
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OsparcCreditsAggregatedByServiceKeyDB(BaseModel):
     osparc_credits: Decimal
     service_key: ServiceKey
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ServiceRunForCheckDB(BaseModel):
@@ -119,6 +113,4 @@ class ServiceRunForCheckDB(BaseModel):
     last_heartbeat_at: datetime
     missed_heartbeat_counter: NonNegativeInt
     modified: datetime
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

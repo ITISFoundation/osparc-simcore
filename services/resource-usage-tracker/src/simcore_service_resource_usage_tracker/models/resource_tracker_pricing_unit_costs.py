@@ -6,7 +6,7 @@ from models_library.resource_tracker import (
     PricingUnitCostId,
     PricingUnitId,
 )
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 
 
 class PricingUnitCostsDB(BaseModel):
@@ -21,6 +21,4 @@ class PricingUnitCostsDB(BaseModel):
     created: datetime
     comment: str | None
     modified: datetime
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

@@ -68,7 +68,7 @@ def test_meta(
 ):
     response = client.get(f"/{API_VTAG}/meta")
     assert response.status_code == status.HTTP_200_OK
-    meta = _Meta.parse_obj(response.json())
+    meta = _Meta.model_validate(response.json())
 
     response = client.get(meta.docs_url)
     assert response.status_code == status.HTTP_200_OK

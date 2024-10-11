@@ -2,6 +2,10 @@ alembic==1.13.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+annotated-types==0.7.0
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 antlr4-python3-runtime==4.13.2
     # via moto
 anyio==4.3.0
@@ -10,10 +14,6 @@ anyio==4.3.0
     #   httpx
 asgi-lifespan==2.1.0
     # via -r requirements/_test.in
-async-timeout==4.0.3
-    # via
-    #   -c requirements/_base.txt
-    #   redis
 attrs==23.2.0
     # via
     #   -c requirements/_base.txt
@@ -69,11 +69,6 @@ docker==7.1.0
     # via
     #   -r requirements/_test.in
     #   moto
-exceptiongroup==1.2.0
-    # via
-    #   -c requirements/_base.txt
-    #   anyio
-    #   pytest
 faker==27.0.0
     # via -r requirements/_test.in
 fakeredis==2.23.5
@@ -86,10 +81,6 @@ flask-cors==4.0.1
     # via moto
 graphql-core==3.2.3
     # via moto
-greenlet==3.0.3
-    # via
-    #   -c requirements/_base.txt
-    #   sqlalchemy
 h11==0.14.0
     # via
     #   -c requirements/_base.txt
@@ -191,11 +182,15 @@ py-partiql-parser==0.5.5
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==1.10.14
+pydantic==2.9.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
+pydantic-core==2.23.4
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 pyparsing==3.1.2
     # via
     #   -c requirements/_base.txt
@@ -305,23 +300,17 @@ sympy==1.13.2
     # via cfn-lint
 termcolor==2.4.0
     # via pytest-sugar
-tomli==2.0.1
-    # via
-    #   coverage
-    #   mypy
-    #   pytest
 types-requests==2.32.0.20240712
     # via -r requirements/_test.in
 typing-extensions==4.10.0
     # via
     #   -c requirements/_base.txt
     #   alembic
-    #   anyio
     #   aws-sam-translator
     #   cfn-lint
-    #   fakeredis
     #   mypy
     #   pydantic
+    #   pydantic-core
     #   sqlalchemy2-stubs
 urllib3==2.0.7
     # via
