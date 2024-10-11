@@ -92,8 +92,7 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
             request
         ) or _get_default_product_name(request.app)
 
-    # TODO: remove this!!!
-    _logger.warning(
+    _logger.debug(
         "Product middleware result: \n%s\n",
         textwrap.indent(_get_debug_msg(request), " "),
     )
