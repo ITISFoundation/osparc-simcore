@@ -307,7 +307,7 @@ pyyaml==6.0.1
     #   dask
     #   dask-gateway
     #   distributed
-redis==5.0.4
+redis==5.1.1
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
