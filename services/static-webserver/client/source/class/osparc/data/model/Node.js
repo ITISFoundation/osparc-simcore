@@ -477,9 +477,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateNodeUIData: function(nodeUIData) {
-      // Check with Matus
-      // if ("position" in nodeUIData) {
-      if (nodeUIData["position"]) {
+      if ("position" in nodeUIData) {
         this.setPosition(nodeUIData.position);
       }
       if ("marker" in nodeUIData) {
@@ -501,9 +499,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateStates: function(nodeData) {
-      // Check with Matus
-      // if ("progress" in nodeData) {
-      if ("progress" in nodeData && nodeData["progress"] !== null) {
+      if ("progress" in nodeData) {
         const progress = Number.parseInt(nodeData["progress"]);
         const oldProgress = this.getStatus().getProgress();
         if (this.isFilePicker() && oldProgress > 0 && oldProgress < 100) {
