@@ -14,9 +14,8 @@ from contextlib import contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
+from pprint import pformat
 from typing import Any, TypeAlias, TypedDict, TypeVar
-
-from models_library.utils.json_serialization import json_dumps
 
 from .error_codes import ErrorCodeStr
 from .utils_secrets import mask_sensitive_data
@@ -362,7 +361,7 @@ def create_troubleshotting_log_message(
         error_context -- Additional context surrounding the exception, such as environment variables or function-specific data. This can be derived from exc.error_context() (relevant when using the OsparcErrorMixin)
         tip -- Helpful suggestions or possible solutions explaining why the error may have occurred and how it could potentially be resolved
     """
-    debug_data = json_dumps(
+    debug_data = pformat(
         {
             "exception_details": f"{error}",
             "error_code": error_code,
