@@ -14,7 +14,14 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import DynamicServiceKey, RunID, ServiceVersion
 from models_library.users import UserID
-from pydantic import ByteSize, Field, PositiveInt, TypeAdapter, field_validator
+from pydantic import (
+    AliasChoices,
+    ByteSize,
+    Field,
+    PositiveInt,
+    TypeAdapter,
+    field_validator,
+)
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -136,7 +143,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=["DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        validation_alias=AliasChoices(
+            "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DY_SIDECAR_USER_ID: UserID
@@ -150,22 +159,32 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DY_SIDECAR_PRODUCT_NAME: ProductName | None = None
 
     NODE_PORTS_STORAGE_AUTH: StorageAuthSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
-    DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+    DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
     DY_SIDECAR_AWS_S3_CLI_SETTINGS: AwsS3CliSettings | None = Field(
         None,
         description="AWS S3 settings are used for the AWS S3 CLI. If these settings are filled, the AWS S3 CLI is used instead of RClone.",
     )
-    POSTGRES_SETTINGS: PostgresSettings = Field(auto_default_from_env=True)
-    RABBIT_SETTINGS: RabbitSettings = Field(auto_default_from_env=True)
+    POSTGRES_SETTINGS: PostgresSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+    RABBIT_SETTINGS: RabbitSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     DY_DEPLOYMENT_REGISTRY_SETTINGS: RegistrySettings = Field()
     DY_DOCKER_HUB_REGISTRY_SETTINGS: RegistrySettings | None = Field(default=None)
 
-    RESOURCE_TRACKING: ResourceTrackingSettings = Field(auto_default_from_env=True)
+    RESOURCE_TRACKING: ResourceTrackingSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
-    SYSTEM_MONITOR_SETTINGS: SystemMonitorSettings = Field(auto_default_from_env=True)
+    SYSTEM_MONITOR_SETTINGS: SystemMonitorSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     @property
     def are_prometheus_metrics_enabled(self) -> bool:
