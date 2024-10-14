@@ -6,8 +6,8 @@ from typing import Any
 
 import pytest
 from faker import Faker
+from models_library.error_codes import create_error_code
 from models_library.errors_classes import OsparcErrorMixin
-from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import (
     LogExtra,
     LogLevelInt,

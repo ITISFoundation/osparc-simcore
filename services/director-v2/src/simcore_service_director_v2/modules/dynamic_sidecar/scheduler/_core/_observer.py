@@ -6,7 +6,7 @@ from copy import deepcopy
 from math import floor
 
 from fastapi import FastAPI
-from servicelib.error_codes import create_error_code
+from models_library.error_codes import create_error_code
 
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,

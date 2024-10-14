@@ -12,9 +12,9 @@ from typing import Any, Union
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
+from models_library.error_codes import create_error_code
 from models_library.errors_classes import OsparcErrorMixin
 from models_library.utils.json_serialization import json_dumps
-from servicelib.error_codes import create_error_code
 
 from ..logging_utils import create_troubleshotting_log_message, get_log_record_extra
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON

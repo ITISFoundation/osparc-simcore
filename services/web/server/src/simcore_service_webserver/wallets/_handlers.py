@@ -8,6 +8,7 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGet,
     WalletGetWithAvailableCredits,
 )
+from models_library.error_codes import create_error_code
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import Field
@@ -18,7 +19,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import LogExtra, get_log_record_extra
 from servicelib.request_keys import RQT_USERID_KEY
 

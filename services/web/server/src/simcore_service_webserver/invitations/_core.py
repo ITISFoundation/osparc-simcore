@@ -9,9 +9,9 @@ from models_library.api_schemas_invitations.invitations import (
     ApiInvitationInputs,
 )
 from models_library.emails import LowerCaseEmailStr
+from models_library.error_codes import create_error_code
 from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
 from servicelib.aiohttp import status
-from servicelib.error_codes import create_error_code
 
 from ..groups.api import is_user_by_email_in_group
 from ..products.api import Product

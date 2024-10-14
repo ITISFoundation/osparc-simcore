@@ -8,6 +8,7 @@ import urllib.parse
 from typing import TypeAlias
 
 from aiohttp import web
+from models_library.error_codes import create_error_code
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
@@ -15,7 +16,6 @@ from pydantic import BaseModel, Extra, ValidationError, validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.error_codes import create_error_code
 
 from ..director_v2.api import update_dynamic_service_networks_in_project
 from ..products.api import get_product_name

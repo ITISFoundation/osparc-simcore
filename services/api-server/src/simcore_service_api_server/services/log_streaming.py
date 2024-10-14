@@ -4,10 +4,10 @@ from asyncio import Queue
 from collections.abc import AsyncIterable
 from typing import Final
 
+from models_library.error_codes import create_error_code
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import NonNegativeInt
-from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError

@@ -2,7 +2,7 @@ import logging
 
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
-from servicelib.error_codes import create_error_code
+from models_library.error_codes import create_error_code
 
 from ._utils import ExceptionHandler, create_error_json_response
 

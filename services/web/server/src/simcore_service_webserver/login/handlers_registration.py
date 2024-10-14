@@ -5,10 +5,10 @@ from typing import Any, ClassVar, Literal
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
+from models_library.error_codes import create_error_code
 from pydantic import BaseModel, Field, PositiveInt, SecretStr, validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 

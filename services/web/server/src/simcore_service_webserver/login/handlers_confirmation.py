@@ -5,6 +5,7 @@ from json import JSONDecodeError
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
+from models_library.error_codes import create_error_code
 from models_library.products import ProductName
 from pydantic import (
     BaseModel,
@@ -20,7 +21,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.error_codes import create_error_code
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL

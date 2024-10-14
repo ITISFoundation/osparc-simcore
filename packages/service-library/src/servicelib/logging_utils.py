@@ -17,7 +17,8 @@ from pathlib import Path
 from pprint import pformat
 from typing import Any, TypeAlias, TypedDict, TypeVar
 
-from .error_codes import ErrorCodeStr
+from models_library.error_codes import ErrorCodeStr
+
 from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)

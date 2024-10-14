@@ -7,7 +7,7 @@ from asyncio.subprocess import Process
 from typing import NamedTuple
 
 import psutil
-from servicelib.error_codes import create_error_code
+from models_library.error_codes import create_error_code
 
 from ..modules.mounted_fs import MountedVolumes
 

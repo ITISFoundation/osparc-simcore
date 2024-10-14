@@ -2,6 +2,7 @@ import functools
 import logging
 
 from aiohttp import web
+from models_library.error_codes import create_error_code
 from models_library.users import UserID
 from pydantic import BaseModel, Field
 from servicelib.aiohttp.requests_validation import (
@@ -9,7 +10,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import (
     create_troubleshotting_log_message,
     get_log_record_extra,
