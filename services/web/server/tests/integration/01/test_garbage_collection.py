@@ -8,7 +8,7 @@ import re
 from collections.abc import AsyncIterable, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 from unittest import mock
 from uuid import UUID, uuid4
 
@@ -303,13 +303,19 @@ async def change_user_role(
         )
 
 
+class SioConnectionData(NamedTuple):
+    sio: socketio.AsyncClient
+    resource_key: UserSessionDict
+
+
 async def connect_to_socketio(
     client: TestClient,
     user,
     socketio_client_factory: Callable[..., Awaitable[socketio.AsyncClient]],
-):
+) -> SioConnectionData:
     """Connect a user to a socket.io"""
-    socket_registry = get_registry(client.server.app)
+    assert client.app
+    socket_registry = get_registry(client.app)
     cur_client_session_id = f"{uuid4()}"
     sio = await socketio_client_factory(cur_client_session_id, client)
     resource_key: UserSessionDict = {
@@ -323,11 +329,11 @@ async def connect_to_socketio(
         resource_key, "socket_id"
     )
     assert len(await socket_registry.find_resources(resource_key, "socket_id")) == 1
-    return sio, resource_key
+    return SioConnectionData(sio, resource_key)
 
 
 async def disconnect_user_from_socketio(
-    client: TestClient, sio_connection_data
+    client: TestClient, sio_connection_data: SioConnectionData
 ) -> None:
     """disconnect a previously connected socket.io connection"""
     sio, resource_key = sio_connection_data
