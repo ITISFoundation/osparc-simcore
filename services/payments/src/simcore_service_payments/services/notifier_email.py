@@ -220,37 +220,38 @@ async def _create_user_email(
     html_template = env.get_template("notify_payments.html")
     email_msg.add_alternative(html_template.render(data), subtype="html")
 
-    try:
-        # Invoice attachment (It is important that attachment is added after body)
-        pdf_response = await _get_invoice_pdf(payment.invoice_pdf_url)
+    if payment.invoice_pdf_url:
+        try:
+            # Invoice attachment (It is important that attachment is added after body)
+            pdf_response = await _get_invoice_pdf(payment.invoice_pdf_url)
 
-        # file
-        file_name = _extract_file_name(pdf_response)
-        main_type, sub_type = _guess_file_type(file_name)
+            # file
+            file_name = _extract_file_name(pdf_response)
+            main_type, sub_type = _guess_file_type(file_name)
 
-        pdf_data = pdf_response.content
+            pdf_data = pdf_response.content
 
-        email_msg.add_attachment(
-            pdf_data,
-            filename=file_name,
-            maintype=main_type,
-            subtype=sub_type,
-        )
+            email_msg.add_attachment(
+                pdf_data,
+                filename=file_name,
+                maintype=main_type,
+                subtype=sub_type,
+            )
 
-    except Exception as err:  # pylint: disable=broad-exception-caught
-        error_code = create_error_code(err)
-        error_msg = create_troubleshotting_log_message(
-            "Cannot attach invoice to payment",
-            error=err,
-            error_code=error_code,
-            error_context={
-                "user": user,
-                "payment": payment,
-                "product": product,
-            },
-            tip=f"Check downloading: `wget -v {payment.invoice_pdf_url}`",
-        )
-        _logger.exception("%s", error_msg)
+        except Exception as err:  # pylint: disable=broad-exception-caught
+            error_code = create_error_code(err)
+            error_msg = create_troubleshotting_log_message(
+                "Cannot attach invoice to payment",
+                error=err,
+                error_code=error_code,
+                error_context={
+                    "user": user,
+                    "payment": payment,
+                    "product": product,
+                },
+                tip=f"Check downloading: `wget -v {payment.invoice_pdf_url}`",
+            )
+            _logger.exception("%s", error_msg)
 
     return email_msg
 

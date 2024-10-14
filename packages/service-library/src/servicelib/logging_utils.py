@@ -365,7 +365,7 @@ def create_troubleshotting_log_message(
         {
             "exception_details": f"{error}",
             "error_code": error_code,
-            "context": error_context,
+            "context": pformat(error_context, indent=1),
             "tip": tip,
         },
         indent=1,
