@@ -5,8 +5,6 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from email.headerregistry import Address
 from email.message import EmailMessage
-from email.mime.application import MIMEApplication
-from pathlib import Path
 from typing import Final
 
 import httpx
@@ -166,6 +164,15 @@ async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response | None:
     return _response
 
 
+def _guess_file_type(filename: str) -> tuple[str, str]:
+    mimetype, _encoding = mimetypes.guess_type(filename)
+    if mimetype:
+        maintype, subtype = mimetype.split("/", maxsplit=1)
+    else:
+        maintype, subtype = "application", "octet-stream"
+    return maintype, subtype
+
+
 async def _create_user_email(
     env: Environment,
     user: _UserData,
@@ -206,37 +213,23 @@ async def _create_user_email(
         match = invoice_file_name_pattern.search(
             pdf_response.headers["content-disposition"]
         )
-        if match:
-            _file_name = match.group("filename")
+        if (
+            match
+            and (file_name := match.group("filename"))
+            and (pdf_data := pdf_response.content)
+        ):
+            main_type, sub_type = _guess_file_type(file_name)
+            msg.add_attachment(
+                pdf_data,
+                filename=file_name,
+                maintype=main_type,
+                subtype=sub_type,
+            )
 
-            attachment = MIMEApplication(pdf_response.content, Name=_file_name)
-            attachment["Content-Disposition"] = f"attachment; filename={_file_name}"
-            msg.attach(attachment)
         else:
             _logger.error("No match find for email attachment. This should not happen.")
 
     return msg
-
-
-def _guess_file_type(file_path: Path) -> tuple[str, str]:
-    assert file_path.is_file()
-    mimetype, _encoding = mimetypes.guess_type(file_path)
-    if mimetype:
-        maintype, subtype = mimetype.split("/", maxsplit=1)
-    else:
-        maintype, subtype = "application", "octet-stream"
-    return maintype, subtype
-
-
-def _add_attachments(msg: EmailMessage, file_paths: list[Path]):
-    for attachment_path in file_paths:
-        maintype, subtype = _guess_file_type(attachment_path)
-        msg.add_attachment(
-            attachment_path.read_bytes(),
-            filename=attachment_path.name,
-            maintype=maintype,
-            subtype=subtype,
-        )
 
 
 @asynccontextmanager
