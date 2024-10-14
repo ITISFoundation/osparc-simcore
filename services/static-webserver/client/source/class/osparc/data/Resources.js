@@ -119,10 +119,6 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects?type=user"
           },
           getPage: {
-            method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}"
-          },
-          getPageSortBy: {
             useCache: false,
             method: "GET",
             url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}&order_by={orderBy}"
@@ -130,7 +126,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}"
+            url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&order_by={orderBy}"
             // url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&tags={tags}&order_by={orderBy}"
           },
           getOne: {

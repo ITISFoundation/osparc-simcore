@@ -223,16 +223,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._loadingResourcesBtn.setVisibility("visible");
       this.__getNextStudiesRequest()
         .then(resp => {
-          if (
-            "workspaceId" in resp["params"]["url"] &&
-            (
-              resp["params"]["url"].workspaceId !== this.getCurrentWorkspaceId() ||
-              resp["params"]["url"].folderId !== this.getCurrentFolderId()
-            )
-          ) {
-            // Context might have been changed while waiting for the response.
-            // The new call is on the ways and this can be ignored.
-            return;
+          const urlParams = resp["params"]["url"];
+          // Context might have been changed while waiting for the response.
+          // The new call is on the way, therefore this response can be ignored.
+          if ("workspaceId" in urlParams) {
+            if (
+              urlParams.workspaceId !== this.getCurrentWorkspaceId() ||
+              urlParams.folderId !== this.getCurrentFolderId()
+            ) {
+              return;
+            }
+          } else if ("text" in urlParams) {
+            const currentFilterData = this._searchBarFilter.getFilterData();
+            if (currentFilterData.text && urlParams.text !== encodeURIComponent(currentFilterData.text)) {
+              return;
+            }
           }
 
           const studies = resp["data"];
@@ -645,17 +650,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const filterData = this._searchBarFilter.getFilterData();
       if (filterData.text) {
         params.url.text = encodeURIComponent(filterData.text); // name, description and uuid
-      } else {
-        params.url.workspaceId = this.getCurrentWorkspaceId();
-        params.url.folderId = this.getCurrentFolderId();
+        return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
       }
 
-      if (params.url.text) {
-        delete params.url.orderBy;
-        return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
-      } else if (params.url.orderBy) {
-        return osparc.data.Resources.fetch("studies", "getPageSortBy", params, undefined, options);
-      }
+      params.url.workspaceId = this.getCurrentWorkspaceId();
+      params.url.folderId = this.getCurrentFolderId();
       return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
     },
 
