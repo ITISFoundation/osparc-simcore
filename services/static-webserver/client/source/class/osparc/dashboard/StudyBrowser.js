@@ -917,11 +917,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._resourcesContainer.setResourcesToList([]);
 
         if (workspaceId === -1) {
+          // Workspaces
           this.__reloadWorkspaces();
         } else if (workspaceId === -2) {
+          // Search result: no folders, just studies
           this.__setFoldersToList([]);
           this.__reloadStudies();
         } else {
+          // Actual workspace
           this.__reloadFolders();
           this.__reloadStudies();
         }
