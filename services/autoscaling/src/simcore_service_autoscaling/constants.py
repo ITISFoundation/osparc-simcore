@@ -13,8 +13,8 @@ BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
 PREPULL_COMMAND_NAME: Final[str] = "docker images pulling"
 
 DOCKER_JOIN_COMMAND_NAME: Final[str] = "docker swarm join"
-DOCKER_JOIN_COMMAND_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
-    AWSTagKey, "io.simcore.autoscaling.joined_command_sent"
+DOCKER_JOIN_COMMAND_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python( 
+    "io.simcore.autoscaling.joined_command_sent"
 )
 
 
