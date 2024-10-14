@@ -348,7 +348,7 @@ def get_log_record_extra(
 
 def create_troubleshotting_log_message(
     message_to_user: str,
-    error: BaseException,
+    error: BaseException | None,
     error_code: ErrorCodeStr,
     error_context: dict[str, Any] | None = None,
     tip: str | None = None,

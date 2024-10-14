@@ -15,6 +15,8 @@ from models_library.api_schemas_webserver.wallets import PaymentMethodTransactio
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr
+from servicelib.error_codes import create_error_code
+from servicelib.logging_utils import create_troubleshotting_log_message
 from settings_library.email import EmailProtocol, SMTPSettings
 from tenacity import (
     retry,
@@ -132,9 +134,6 @@ class _PaymentData:
     invoice_pdf_url: str
 
 
-invoice_file_name_pattern = re.compile(r'filename="(?P<filename>[^"]+)"')
-
-
 def retry_if_status_code(response):
     return response.status_code in (
         429,
@@ -155,13 +154,26 @@ result_retry_condition = retry_if_result(retry_if_status_code)
     retry=exception_retry_condition | result_retry_condition,
     wait=wait_exponential(multiplier=1, min=4, max=10),
     stop=stop_after_attempt(5),
-    retry_error_callback=lambda _: None,  # Return None if all retries fail
+    reraise=True,
 )
-async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response | None:
+async def _get_invoice_pdf(invoice_pdf: str) -> httpx.Response:
     async with httpx.AsyncClient(follow_redirects=True) as client:
         _response = await client.get(invoice_pdf)
         _response.raise_for_status()
     return _response
+
+
+_INVOICE_FILE_NAME_PATTERN: Final = re.compile(r'filename="(?P<filename>[^"]+)"')
+
+
+def _extract_file_name(response: httpx.Response) -> str:
+    match = _INVOICE_FILE_NAME_PATTERN.search(response.headers["content-disposition"])
+    if not match:
+        error_msg = f"Cannot file pdf invoice {response.request.url}"
+        raise RuntimeError(error_msg)
+
+    file_name: str = match.group("filename")
+    return file_name
 
 
 def _guess_file_type(filename: str) -> tuple[str, str]:
@@ -186,50 +198,59 @@ async def _create_user_email(
         "payment": payment,
     }
 
-    msg = EmailMessage()
+    email_msg = EmailMessage()
 
-    msg["From"] = Address(
+    email_msg["From"] = Address(
         display_name=f"{product.display_name} support",
         addr_spec=product.support_email,
     )
-    msg["To"] = Address(
+    email_msg["To"] = Address(
         display_name=f"{user.first_name} {user.last_name}",
         addr_spec=user.email,
     )
-    msg["Subject"] = env.get_template("notify_payments-subject.txt").render(data)
+    email_msg["Subject"] = env.get_template("notify_payments-subject.txt").render(data)
 
     if product.bcc_email:
-        msg["Bcc"] = product.bcc_email
+        email_msg["Bcc"] = product.bcc_email
 
     # Body
     text_template = env.get_template("notify_payments.txt")
-    msg.set_content(text_template.render(data))
+    email_msg.set_content(text_template.render(data))
 
     html_template = env.get_template("notify_payments.html")
-    msg.add_alternative(html_template.render(data), subtype="html")
+    email_msg.add_alternative(html_template.render(data), subtype="html")
 
-    # Invoice attachment (It is important that attachment is added after body)
-    if pdf_response := await _get_invoice_pdf(payment.invoice_pdf_url):
-        match = invoice_file_name_pattern.search(
-            pdf_response.headers["content-disposition"]
+    try:
+        # Invoice attachment (It is important that attachment is added after body)
+        pdf_response = await _get_invoice_pdf(payment.invoice_pdf_url)
+
+        file_name = _extract_file_name(pdf_response)
+        main_type, sub_type = _guess_file_type(file_name)
+
+        pdf_data = pdf_response.content
+
+        email_msg.add_attachment(
+            pdf_data,
+            filename=file_name,
+            maintype=main_type,
+            subtype=sub_type,
         )
-        if (
-            match
-            and (file_name := match.group("filename"))
-            and (pdf_data := pdf_response.content)
-        ):
-            main_type, sub_type = _guess_file_type(file_name)
-            msg.add_attachment(
-                pdf_data,
-                filename=file_name,
-                maintype=main_type,
-                subtype=sub_type,
-            )
 
-        else:
-            _logger.error("No match find for email attachment. This should not happen.")
+    except Exception as err:  # pylint: disable=broad-exception-caught
+        error_code = create_error_code(err)
+        error_msg = create_troubleshotting_log_message(
+            "Cannot attach invoice to payment",
+            error=err,
+            error_code=error_code,
+            error_context={
+                "user": user,
+                "payment": payment,
+                "product": product,
+            },
+        )
+        _logger.exception("%s", error_msg)
 
-    return msg
+    return email_msg
 
 
 @asynccontextmanager
