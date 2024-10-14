@@ -8,7 +8,7 @@ from aws_library.ec2 import AWSTagKey, EC2InstanceData
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.logging_utils import log_catch
 
 from ..core.settings import get_application_settings
@@ -35,8 +35,10 @@ def _get_instance_last_heartbeat(instance: EC2InstanceData) -> datetime.datetime
     return None
 
 
-_USER_ID_TAG_KEY: Final[AWSTagKey] = parse_obj_as(AWSTagKey, "user_id")
-_WALLET_ID_TAG_KEY: Final[AWSTagKey] = parse_obj_as(AWSTagKey, "wallet_id")
+_USER_ID_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("user_id")
+_WALLET_ID_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
+    "wallet_id"
+)
 
 
 async def _get_all_associated_worker_instances(
