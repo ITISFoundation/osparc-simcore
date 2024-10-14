@@ -29,7 +29,7 @@ from models_library.generated_models.docker_rest_api import (
     Task,
     TaskState,
 )
-from pydantic import ByteSize, ValidationError, parse_obj_as
+from pydantic import ByteSize, TypeAdapter, ValidationError
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
@@ -59,11 +59,11 @@ _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS: Final[list[str]] = [
 _PENDING_DOCKER_TASK_MESSAGE: Final[str] = "pending task scheduling"
 _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on"
 _NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR: Final[str] = "no suitable node"
-_OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
-    DockerLabelKey, "io.simcore.osparc-services-ready"
+_OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(DockerLabelKey).validate_python(
+    "io.simcore.osparc-services-ready",
 )
-_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
-    DockerLabelKey, f"{_OSPARC_SERVICE_READY_LABEL_KEY}-last-changed"
+_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(DockerLabelKey).validate_python( 
+    f"{_OSPARC_SERVICE_READY_LABEL_KEY}-last-changed",
 )
 _OSPARC_SERVICE_READY_LABEL_KEYS: Final[list[DockerLabelKey]] = [
     _OSPARC_SERVICE_READY_LABEL_KEY,
@@ -71,12 +71,12 @@ _OSPARC_SERVICE_READY_LABEL_KEYS: Final[list[DockerLabelKey]] = [
 ]
 
 
-_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
-    DockerLabelKey, "io.simcore.osparc-node-found-empty"
+_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(DockerLabelKey).validate_python(
+    "io.simcore.osparc-node-found-empty",
 )
 
-_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
-    DockerLabelKey, "io.simcore.osparc-node-termination-started"
+_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(DockerLabelKey).validate_python(
+    "io.simcore.osparc-node-termination-started",
 )
 
 
@@ -86,15 +86,13 @@ async def get_monitored_nodes(
     node_label_filters = [f"{label}=true" for label in node_labels] + [
         f"{label}" for label in _OSPARC_SERVICE_READY_LABEL_KEYS
     ]
-    return parse_obj_as(
-        list[Node],
+    return TypeAdapter(list[Node]).validate_python(
         await docker_client.nodes.list(filters={"node.label": node_label_filters}),
     )
 
 
 async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
-    return parse_obj_as(
-        list[Node],
+    return TypeAdapter(list[Node]).validate_python(
         await docker_client.nodes.list(
             filters={
                 "role": ["worker"],
@@ -161,8 +159,8 @@ async def _associated_service_has_no_node_placement_contraints(
     docker_client: AutoscalingDocker, task: Task
 ) -> bool:
     assert task.ServiceID  # nosec
-    service_inspect = parse_obj_as(
-        Service, await docker_client.services.inspect(task.ServiceID)
+    service_inspect = TypeAdapter(Service).validate_python(
+        await docker_client.services.inspect(task.ServiceID),
     )
     assert service_inspect.Spec  # nosec
     assert service_inspect.Spec.TaskTemplate  # nosec
@@ -209,8 +207,7 @@ async def pending_service_tasks_with_insufficient_resources(
     - have an error message with "insufficient resources"
     - are not scheduled on any node
     """
-    tasks = parse_obj_as(
-        list[Task],
+    tasks = TypeAdapter(list[Task]).validate_python(
         await docker_client.tasks.list(
             filters={
                 "desired-state": "running",
@@ -285,8 +282,7 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
                 ),
             )
             / _NANO_CPU,
-            ram=parse_obj_as(
-                ByteSize,
+            ram=TypeAdapter(ByteSize).validate_python(
                 max(
                     task.Spec.Resources.Reservations
                     and task.Spec.Resources.Reservations.MemoryBytes
@@ -305,8 +301,8 @@ async def get_task_instance_restriction(
 ) -> InstanceTypeType | None:
     with contextlib.suppress(ValidationError):
         assert task.ServiceID  # nosec
-        service_inspect = parse_obj_as(
-            Service, await docker_client.services.inspect(task.ServiceID)
+        service_inspect = TypeAdapter(Service).validate_python(
+            await docker_client.services.inspect(task.ServiceID),
         )
         assert service_inspect.Spec  # nosec
         assert service_inspect.Spec.TaskTemplate  # nosec
@@ -326,8 +322,8 @@ async def get_task_instance_restriction(
         )
         for constraint in service_placement_constraints:
             if constraint.startswith(node_label_to_find):
-                return parse_obj_as(
-                    InstanceTypeType, constraint.removeprefix(node_label_to_find)  # type: ignore[arg-type]
+                return TypeAdapter(InstanceTypeType).validate_python(
+                    constraint.removeprefix(node_label_to_find),
                 )
 
         return None
@@ -351,8 +347,7 @@ async def compute_node_used_resources(
     task_filters: dict[str, str | list[DockerLabelKey]] = {"node": node.ID}
     if service_labels is not None:
         task_filters |= {"label": service_labels}
-    all_tasks_on_node = parse_obj_as(
-        list[Task],
+    all_tasks_on_node = TypeAdapter(list[Task]).validate_python(
         await docker_client.tasks.list(filters=task_filters),
     )
     for task in all_tasks_on_node:
@@ -504,7 +499,7 @@ async def find_node_with_name(
     if not list_of_nodes:
         return None
     # note that there might be several nodes with a common_prefixed name. so now we want exact matching
-    parsed_list_of_nodes = parse_obj_as(list[Node], list_of_nodes)
+    parsed_list_of_nodes = TypeAdapter(list[Node]).validate_python(list_of_nodes)
     for node in parsed_list_of_nodes:
         assert node.Description  # nosec
         if node.Description.Hostname == name:
@@ -525,8 +520,8 @@ async def tag_node(
     ):
         assert node.ID  # nosec
 
-        latest_version_node = parse_obj_as(
-            Node, await docker_client.nodes.inspect(node_id=node.ID)
+        latest_version_node = TypeAdapter(Node).validate_python( 
+            await docker_client.nodes.inspect(node_id=node.ID),
         )
         assert latest_version_node.Version  # nosec
         assert latest_version_node.Version.Index  # nosec
@@ -543,7 +538,7 @@ async def tag_node(
                 "Role": latest_version_node.Spec.Role.value,
             },
         )
-        return parse_obj_as(Node, await docker_client.nodes.inspect(node_id=node.ID))
+        return TypeAdapter(Node).validate_python(await docker_client.nodes.inspect(node_id=node.ID))
 
 
 async def set_node_availability(
