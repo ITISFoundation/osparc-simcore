@@ -7,6 +7,12 @@ from models_library.wallets import WalletID
 from pydantic import TypeAdapter
 
 from .._meta import VERSION
+from ..constants import (
+    MANAGER_ROLE_TAG_VALUE,
+    ROLE_TAG_KEY,
+    USER_ID_TAG_KEY,
+    WALLET_ID_TAG_KEY,
+)
 from ..core.settings import ApplicationSettings
 
 _APPLICATION_TAG_KEY: Final[str] = "io.simcore.clusters-keeper"
@@ -52,9 +58,9 @@ def creation_ec2_tags(
                     app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=True
                 )
             ),
-            AWSTagKey("user_id"): AWSTagValue(f"{user_id}"),
-            AWSTagKey("wallet_id"): AWSTagValue(f"{wallet_id}"),
-            AWSTagKey("role"): AWSTagValue("manager"),
+            USER_ID_TAG_KEY: AWSTagValue(f"{user_id}"),
+            WALLET_ID_TAG_KEY: AWSTagValue(f"{wallet_id}"),
+            ROLE_TAG_KEY: MANAGER_ROLE_TAG_VALUE,
         }
         | app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_CUSTOM_TAGS
     )
@@ -69,8 +75,8 @@ def ec2_instances_for_user_wallet_filter(
 ) -> EC2Tags:
     return (
         _minimal_identification_tag(app_settings)
-        | {AWSTagKey("user_id"): AWSTagValue(f"{user_id}")}
-        | {AWSTagKey("wallet_id"): AWSTagValue(f"{wallet_id}")}
+        | {USER_ID_TAG_KEY: AWSTagValue(f"{user_id}")}
+        | {WALLET_ID_TAG_KEY: AWSTagValue(f"{wallet_id}")}
     )
 
 
@@ -83,3 +89,14 @@ echo "started user data bash script"
 echo "completed user data bash script"
 """
     )
+
+
+def wallet_id_from_instance_tags(tags: EC2Tags) -> WalletID | None:
+    wallet_id_str = tags[WALLET_ID_TAG_KEY]
+    if wallet_id_str == "None":
+        return None
+    return WalletID(wallet_id_str)
+
+
+def user_id_from_instance_tags(tags: EC2Tags) -> UserID:
+    return UserID(tags[USER_ID_TAG_KEY])

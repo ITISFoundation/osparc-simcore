@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "linter": "npx eslint ./services/*/client/source/class/*/"
+    "linter": "npx eslint ./services/*/client/source/class/*/",
+    "linter-fix": "npx eslint ./services/*/client/source/class/*/ --fix"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",

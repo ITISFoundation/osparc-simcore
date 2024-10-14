@@ -9,6 +9,7 @@ from settings_library.director_v2 import DirectorV2Settings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.storage import StorageSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_session import (
     DEFAULT_SESSION_COOKIE_NAME,
@@ -86,6 +87,9 @@ class ApplicationSettings(BasicSettings):
     API_SERVER_ALLOWED_HEALTH_CHECK_FAILURES: PositiveInt = 5
     API_SERVER_PROMETHEUS_INSTRUMENTATION_COLLECT_SECONDS: PositiveInt = 5
     API_SERVER_PROFILING: bool = False
+    API_SERVER_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
+    )
 
     @cached_property
     def debug(self) -> bool:

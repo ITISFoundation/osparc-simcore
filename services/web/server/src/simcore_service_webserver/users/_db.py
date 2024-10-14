@@ -21,6 +21,7 @@ from simcore_service_webserver.users.exceptions import UserNotFoundError
 
 from ..db.models import user_to_groups
 from ..db.plugin import get_database_engine
+from .exceptions import BillingDetailsNotFoundError
 from .schemas import Permission
 
 _ALL = None
@@ -203,9 +204,12 @@ async def new_user_details(
 async def get_user_billing_details(
     engine: Engine, user_id: UserID
 ) -> UserBillingDetails:
+    """
+    Raises:
+        BillingDetailsNotFoundError
+    """
     async with engine.acquire() as conn:
         user_billing_details = await UsersRepo.get_billing_details(conn, user_id)
         if not user_billing_details:
-            msg = f"Missing biling details for user {user_id}"
-            raise ValueError(msg)
+            raise BillingDetailsNotFoundError(user_id=user_id)
         return UserBillingDetails.from_orm(user_billing_details)

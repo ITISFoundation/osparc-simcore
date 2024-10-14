@@ -155,6 +155,21 @@ async def logout(_body: LogoutBody):
     """user logout"""
 
 
+@router.get(
+    "/auth:check",
+    operation_id="check_authentication",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": Envelope[Error],
+            "description": "unauthorized reset due to invalid token code",
+        }
+    },
+)
+async def check_auth():
+    """checks if user is authenticated in the platform"""
+
+
 @router.post(
     "/auth/reset-password",
     response_model=Envelope[Log],

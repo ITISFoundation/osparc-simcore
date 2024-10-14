@@ -10,12 +10,16 @@ from typing import cast
 from aiohttp import web
 from models_library.folders import FolderDB, FolderID
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import GroupID, UserID
 from models_library.workspaces import WorkspaceID
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.folders_v2 import folders_v2
+from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_to_folders import projects_to_folders
 from sqlalchemy import func
+from sqlalchemy.orm import aliased
 from sqlalchemy.sql import asc, desc, select
 
 from ..db.plugin import get_database_engine
@@ -212,16 +216,146 @@ async def update(
         return FolderDB.from_orm(row)
 
 
-async def delete(
+async def delete_recursively(
     app: web.Application,
     *,
     folder_id: FolderID,
     product_name: ProductName,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn:
-        await conn.execute(
-            folders_v2.delete().where(
-                (folders_v2.c.folder_id == folder_id)
-                & (folders_v2.c.product_name == product_name)
+    async with get_database_engine(app).acquire() as conn, conn.begin():
+        # Step 1: Define the base case for the recursive CTE
+        base_query = select(
+            folders_v2.c.folder_id, folders_v2.c.parent_folder_id
+        ).where(
+            (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
+            & (folders_v2.c.product_name == product_name)
+        )
+        folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
+        # Step 2: Define the recursive case
+        folder_alias = aliased(folders_v2)
+        recursive_query = select(
+            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
+        ).select_from(
+            folder_alias.join(
+                folder_hierarchy_cte,
+                folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
             )
         )
+        # Step 3: Combine base and recursive cases into a CTE
+        folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
+        # Step 4: Execute the query to get all descendants
+        final_query = select(folder_hierarchy_cte)
+        result = await conn.execute(final_query)
+        rows = (  # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
+            await result.fetchall() or []
+        )
+
+        # Sort folders so that child folders come first
+        sorted_folders = sorted(
+            rows, key=lambda x: (x[1] is not None, x[1]), reverse=True
+        )
+        folder_ids = [item[0] for item in sorted_folders]
+        await conn.execute(
+            folders_v2.delete().where(folders_v2.c.folder_id.in_(folder_ids))
+        )
+
+
+async def get_projects_recursively_only_if_user_is_owner(
+    app: web.Application,
+    *,
+    folder_id: FolderID,
+    private_workspace_user_id_or_none: UserID | None,
+    user_id: UserID,
+    product_name: ProductName,
+) -> list[ProjectID]:
+    """
+    The purpose of this function is to retrieve all projects within the provided folder ID.
+    These projects are subsequently deleted, so we only return projects where the user is the owner.
+    For future improvement, we can return all projects for which the user has delete permissions.
+    This permission check would require using the `workspace_access_rights` table for workspace projects,
+    or the `users_to_groups` table for private workspace projects.
+    """
+
+    async with get_database_engine(app).acquire() as conn, conn.begin():
+        # Step 1: Define the base case for the recursive CTE
+        base_query = select(
+            folders_v2.c.folder_id, folders_v2.c.parent_folder_id
+        ).where(
+            (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
+            & (folders_v2.c.product_name == product_name)
+        )
+        folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
+        # Step 2: Define the recursive case
+        folder_alias = aliased(folders_v2)
+        recursive_query = select(
+            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
+        ).select_from(
+            folder_alias.join(
+                folder_hierarchy_cte,
+                folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
+            )
+        )
+        # Step 3: Combine base and recursive cases into a CTE
+        folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
+        # Step 4: Execute the query to get all descendants
+        final_query = select(folder_hierarchy_cte)
+        result = await conn.execute(final_query)
+        rows = (  # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
+            await result.fetchall() or []
+        )
+
+        folder_ids = [item[0] for item in rows]
+
+        query = (
+            select(projects_to_folders.c.project_uuid)
+            .join(projects)
+            .where(
+                (projects_to_folders.c.folder_id.in_(folder_ids))
+                & (projects_to_folders.c.user_id == private_workspace_user_id_or_none)
+            )
+        )
+        if private_workspace_user_id_or_none is not None:
+            query = query.where(projects.c.prj_owner == user_id)
+
+        result = await conn.execute(query)
+
+        rows = await result.fetchall() or []
+        results = [ProjectID(row[0]) for row in rows]
+        return results
+
+
+async def get_folders_recursively(
+    app: web.Application,
+    *,
+    folder_id: FolderID,
+    product_name: ProductName,
+) -> list[FolderID]:
+    async with get_database_engine(app).acquire() as conn, conn.begin():
+        # Step 1: Define the base case for the recursive CTE
+        base_query = select(
+            folders_v2.c.folder_id, folders_v2.c.parent_folder_id
+        ).where(
+            (folders_v2.c.folder_id == folder_id)  # <-- specified folder id
+            & (folders_v2.c.product_name == product_name)
+        )
+        folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
+        # Step 2: Define the recursive case
+        folder_alias = aliased(folders_v2)
+        recursive_query = select(
+            folder_alias.c.folder_id, folder_alias.c.parent_folder_id
+        ).select_from(
+            folder_alias.join(
+                folder_hierarchy_cte,
+                folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
+            )
+        )
+        # Step 3: Combine base and recursive cases into a CTE
+        folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
+        # Step 4: Execute the query to get all descendants
+        final_query = select(folder_hierarchy_cte)
+        result = await conn.execute(final_query)
+        rows = (  # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
+            await result.fetchall() or []
+        )
+
+        return [FolderID(row[0]) for row in rows]

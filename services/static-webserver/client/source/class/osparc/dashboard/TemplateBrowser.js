@@ -162,6 +162,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     // LAYOUT //
     _createLayout: function() {
+      this._createSearchBar();
       this._createResourcesLayout();
       const list = this._resourcesContainer.getFlatList();
       if (list) {
@@ -421,8 +422,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         this.reloadResources();
       });
       task.addListener("pollingError", e => {
-        const errMsg = e.getData();
-        const msg = this.tr("Something went wrong Publishing the study<br>") + errMsg;
+        const err = e.getData();
+        const msg = this.tr("Something went wrong Publishing the study<br>") + err.message;
         finished(msg, "ERROR");
       });
     },

@@ -1,7 +1,8 @@
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
 # pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint:disable=too-many-positional-arguments
 
 import asyncio
 import hashlib
@@ -99,6 +100,7 @@ from utils import (
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
+    "agent",
     "catalog",
     "dask-scheduler",
     "dask-sidecar",
@@ -380,7 +382,7 @@ def mock_env(
             "DYNAMIC_SIDECAR_IMAGE": image_name,
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
-            "SWARM_STACK_NAME": "test_swarm_name",
+            "SWARM_STACK_NAME": "pytest-simcore",
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
             "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
@@ -401,6 +403,7 @@ def mock_env(
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": dask_scheduler_auth.json(),
+            "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
         },
     )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)

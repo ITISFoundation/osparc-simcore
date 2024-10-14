@@ -8,8 +8,12 @@ import pytest
 import starlette.routing
 from fastapi.applications import FastAPI
 from fastapi.routing import APIRouter
-from openapi_spec_validator.exceptions import OpenAPISpecValidatorError
-from openapi_spec_validator.shortcuts import get_validator_cls
+from openapi_spec_validator.exceptions import (
+    OpenAPISpecValidatorError,  # pylint: disable=no-name-in-module
+)
+from openapi_spec_validator.shortcuts import (
+    get_validator_cls,  # pylint: disable=no-name-in-module
+)
 from servicelib.fastapi.openapi import (
     override_fastapi_openapi_method,
     set_operation_id_as_handler_function_name,
@@ -44,7 +48,7 @@ def test_exclusive_min_openapi_issue(app: FastAPI):
 
 def test_overriding_openapi_method(app: FastAPI):
     assert not hasattr(app, "_original_openapi")
-    #assert app.openapi.__doc__ is None # PC why was this set to check that it is none? it's coming from the base fastapi applicaiton and now they provide some docs
+    # assert app.openapi.__doc__ is None # PC why was this set to check that it is none? it's coming from the base fastapi applicaiton and now they provide some docs
 
     override_fastapi_openapi_method(app)
 

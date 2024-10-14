@@ -184,27 +184,6 @@ qx.Class.define("osparc.About", {
       const label = lib.name || "unknown-library";
       const version = lib.version || "-";
       const url = lib.url || null;
-      const thumbnail = lib.thumbnail || null;
-
-      if (thumbnail) {
-        const image = new qx.ui.basic.Image(thumbnail).set({
-          height: 30,
-          maxWidth: this.self().MAX_WIDTH - 2*this.self().PADDING,
-          scale: true,
-          toolTipText: label + (version === "-" ? "" : (" " + version))
-        });
-        image.getContentElement().setStyles({
-          "object-fit": "contain",
-          "object-position": "left"
-        });
-        if (url) {
-          image.set({
-            cursor: "pointer"
-          });
-          image.addListener("tap", () => window.open(url));
-        }
-        return [image];
-      }
 
       let entryLabel;
       if (url) {

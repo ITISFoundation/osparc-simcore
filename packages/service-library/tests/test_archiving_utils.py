@@ -11,17 +11,20 @@ import random
 import secrets
 import string
 import tempfile
+from collections.abc import AsyncIterable, Callable, Iterable, Iterator
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Iterable, Iterator
 
+import numpy
 import pytest
 from faker import Faker
+from PIL import Image
 from pydantic import ByteSize, TypeAdapter
 from pytest_benchmark.plugin import BenchmarkFixture
 from servicelib import archiving_utils
 from servicelib.archiving_utils import ArchiveError, archive_dir, unarchive_dir
+from servicelib.file_utils import remove_directory
 
 
 def _print_tree(path: Path, level=0):
@@ -597,3 +600,90 @@ def test_archive_dir_performance(
         )
 
     benchmark(run_async_test)
+
+
+def _touch_all_files_in_path(path_to_archive: Path) -> None:
+    for path in path_to_archive.rglob("*"):
+        print("touching", path)
+        path.touch()
+
+
+@pytest.fixture
+async def mixed_file_types(tmp_path: Path, faker: Faker) -> AsyncIterable[Path]:
+    base_dir = tmp_path / "mixed_types_dir"
+    base_dir.mkdir()
+
+    # mixed small text files and binary files
+    (base_dir / "empty").mkdir()
+    (base_dir / "d1").mkdir()
+    (base_dir / "d1" / "f1.txt").write_text(faker.text())
+    (base_dir / "d1" / "b2.bin").write_bytes(faker.json_bytes())
+    (base_dir / "d1" / "sd1").mkdir()
+    (base_dir / "d1" / "sd1" / "f1.txt").write_text(faker.text())
+    (base_dir / "d1" / "sd1" / "b2.bin").write_bytes(faker.json_bytes())
+    (base_dir / "images").mkdir()
+
+    # images cause issues with zipping, below content produced different
+    # hashes for zip files
+    for i in range(2):
+        image_dir = base_dir / f"images{i}"
+        image_dir.mkdir()
+        for n in range(50):
+            a = numpy.random.rand(900, 900, 3) * 255  # noqa: NPY002
+            im_out = Image.fromarray(a.astype("uint8")).convert("RGB")
+            image_path = image_dir / f"out{n}.jpg"
+            im_out.save(image_path)
+
+    print("mixed_types_dir ---")
+    _print_tree(base_dir)
+
+    yield base_dir
+
+    await remove_directory(base_dir)
+    assert not base_dir.exists()
+
+
+@pytest.mark.parametrize(
+    "store_relative_path, compress",
+    [
+        # test that all possible combinations still work
+        pytest.param(False, False, id="no_relative_path_no_compress"),
+        pytest.param(False, True, id="no_relative_path_with_compression"),
+        pytest.param(True, False, id="nodeports_options"),
+        pytest.param(True, True, id="with_relative_path_with_compression"),
+    ],
+)
+async def test_regression_archive_hash_does_not_change(
+    mixed_file_types: Path,
+    tmp_path: Path,
+    store_relative_path: bool,
+    compress: bool,
+):
+    destination_path = tmp_path / "archives_to_compare"
+    destination_path.mkdir(parents=True, exist_ok=True)
+
+    first_archive = destination_path / "first"
+    second_archive = destination_path / "second"
+    assert not first_archive.exists()
+    assert not second_archive.exists()
+    assert first_archive != second_archive
+
+    await archive_dir(
+        mixed_file_types,
+        first_archive,
+        compress=compress,
+        store_relative_path=store_relative_path,
+    )
+
+    _touch_all_files_in_path(mixed_file_types)
+
+    await archive_dir(
+        mixed_file_types,
+        second_archive,
+        compress=compress,
+        store_relative_path=store_relative_path,
+    )
+
+    _, first_hash = _compute_hash(first_archive)
+    _, second_hash = _compute_hash(second_archive)
+    assert first_hash == second_hash

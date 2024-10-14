@@ -1,8 +1,9 @@
 # pylint: disable=no-value-for-parameter
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 import datetime
 import json
@@ -114,6 +115,7 @@ def with_ec2_instance_allowed_types_env(
 @pytest.fixture
 def minimal_configuration(
     disabled_rabbitmq: None,
+    disable_dynamic_service_background_task: None,
     disable_buffers_pool_background_task: None,
     enabled_dynamic_mode: EnvVarsDict,
     mocked_ec2_server_envs: EnvVarsDict,
@@ -454,6 +456,7 @@ class _BufferMachineParams:
 )
 async def test_monitor_buffer_machines_terminates_supernumerary_instances(
     minimal_configuration: None,
+    fake_pre_pull_images: list[DockerGenericTag],
     ec2_client: EC2Client,
     buffer_count: int,
     ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, Any],
@@ -466,12 +469,15 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
     ],
     expected_buffer_params: _BufferMachineParams,
 ):
+    # dirty hack
+    if expected_buffer_params.pre_pulled_images == []:
+        expected_buffer_params.pre_pulled_images = fake_pre_pull_images
     # have too many machines of accepted type
     buffer_machines = await create_buffer_machines(
         buffer_count + 5,
         next(iter(list(ec2_instances_allowed_types_with_only_1_buffered))),
         expected_buffer_params.instance_state_name,
-        [],
+        fake_pre_pull_images,
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
@@ -688,6 +694,7 @@ def pre_pull_images(
 async def test_monitor_buffer_machines_against_aws(
     skip_if_external_envfile_dict: None,
     disable_buffers_pool_background_task: None,
+    disable_dynamic_service_background_task: None,
     disabled_rabbitmq: None,
     mocked_redis_server: None,
     external_envfile_dict: EnvVarsDict,

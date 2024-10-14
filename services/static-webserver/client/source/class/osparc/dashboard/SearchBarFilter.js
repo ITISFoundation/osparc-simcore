@@ -28,10 +28,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.set({
       backgroundColor: "input_background",
       paddingLeft: 6,
-      height: this.self().HEIGHT
-    });
-    this.getContentElement().setStyles({
-      "border-radius": "5px"
+      height: this.self().HEIGHT,
+      decorator: "rounded",
     });
 
     this.__buildLayout();

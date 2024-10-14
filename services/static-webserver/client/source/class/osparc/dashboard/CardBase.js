@@ -425,7 +425,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
-          owner = resourceData.owner ? resourceData.owner : "";
+          owner = resourceData.owner ? resourceData.owner : resourceData.contact;
           defaultHits = 0;
           break;
       }
@@ -730,7 +730,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       this._getChildren().forEach(item => {
-        if (item) {
+        if (item && "setOpacity" in item) {
           item.setOpacity(enabled ? 1.0 : 0.7);
         }
       });
@@ -780,9 +780,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
         if (studyDataButton) {
           studyDataButton.setEnabled(osparc.study.Utils.canShowStudyData(resourceData));
         }
-        const moveToFolderButton = menuButtons.find(menuBtn => "moveToFolderButton" in menuBtn);
-        if (moveToFolderButton) {
-          moveToFolderButton.setEnabled(osparc.study.Utils.canMoveToFolder(resourceData));
+        const billingSettingsButton = menuButtons.find(menuBtn => "billingSettingsButton" in menuBtn);
+        if (billingSettingsButton) {
+          billingSettingsButton.setEnabled(osparc.study.Utils.canShowBillingOptions(resourceData));
+        }
+        const moveToButton = menuButtons.find(menuBtn => "moveToButton" in menuBtn);
+        if (moveToButton) {
+          moveToButton.setEnabled(osparc.study.Utils.canMoveTo(resourceData));
         }
         const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
         if (deleteButton) {

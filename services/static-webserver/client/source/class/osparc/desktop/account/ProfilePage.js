@@ -93,20 +93,12 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
       // binding to a model
       const raw = {
-        "firstName": null,
-        "lastName": null,
-        "email": null,
-        "role": null,
+        "firstName": "",
+        "lastName": "",
+        "email": "",
         "expirationDate": null
       };
 
-      if (qx.core.Environment.get("qx.debug")) {
-        raw.firstName = "Bizzy";
-        raw.lastName = "Zastrow";
-        raw.email = "bizzy@itis.swiss";
-        raw.role = "User";
-        raw.expirationDate = null;
-      }
       const model = this.__userProfileModel = qx.data.marshal.Json.createModel(raw);
       const controller = new qx.data.controller.Object(model);
 
@@ -286,7 +278,6 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           "firstName": data["first_name"] || "",
           "lastName": data["last_name"] || "",
           "email": data["login"],
-          "role": data["role"] || "",
           "expirationDate": data["expirationDate"] || null
         });
       }

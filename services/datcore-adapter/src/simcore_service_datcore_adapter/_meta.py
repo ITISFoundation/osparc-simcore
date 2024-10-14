@@ -14,6 +14,7 @@ __version__ = version("simcore_service_datcore_adapter")
 API_VERSION: Final[VersionStr] = parse_obj_as(VersionStr, __version__)
 MAJOR, MINOR, PATCH = __version__.split(".")
 API_VTAG: Final[str] = f"v{MAJOR}"
+APP_NAME: Final[str] = current_distribution.metadata["Name"]
 PROJECT_NAME: Final[str] = current_distribution.metadata["Name"]
 
 

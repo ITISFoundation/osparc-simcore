@@ -4,7 +4,7 @@ coverage==7.6.1
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==27.0.0
+faker==29.0.0
     # via -r requirements/_test.in
 flexcache==0.3
     # via pint
@@ -25,7 +25,7 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio

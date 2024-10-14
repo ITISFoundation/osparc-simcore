@@ -52,7 +52,6 @@ from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
@@ -128,7 +127,8 @@ async def list_jobs(
 ):
     """List of jobs in a specific released solver (limited to 20 jobs)
 
-    SEE `get_jobs_page` for paginated version of this function
+    - DEPRECATION: This implementation and returned values are deprecated and the will be replaced by that of get_jobs_page
+    - SEE `get_jobs_page` for paginated version of this function
     """
 
     solver = await catalog_client.get_service(
@@ -158,7 +158,6 @@ async def list_jobs(
     "/{solver_key:path}/releases/{version}/jobs/page",
     response_model=Page[Job],
     responses=JOBS_STATUS_CODES,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     description=(
         "List of jobs on a specific released solver (includes pagination)\n\n"
         + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")
@@ -349,9 +348,8 @@ async def get_job_output_logfile(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadata,
     responses=METADATA_STATUS_CODES,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     description="Gets custom metadata from a job\n\n"
-    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
+    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
 )
 async def get_job_custom_metadata(
     solver_key: SolverKeyId,
@@ -380,7 +378,7 @@ async def get_job_custom_metadata(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/wallet",
     response_model=WalletGetWithAvailableCredits | None,
     responses=WALLET_STATUS_CODES,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    description=("Get job wallet\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")),
 )
 async def get_job_wallet(
     solver_key: SolverKeyId,
@@ -400,7 +398,9 @@ async def get_job_wallet(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/pricing_unit",
     response_model=PricingUnitGet | None,
     responses=_PRICING_UNITS_STATUS_CODES,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    description=(
+        "Get job pricing unit\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")
+    ),
 )
 async def get_job_pricing_unit(
     solver_key: SolverKeyId,

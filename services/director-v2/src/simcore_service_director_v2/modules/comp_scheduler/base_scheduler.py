@@ -27,6 +27,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.users import UserID
+from networkx.classes.reportviews import InDegreeView
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
@@ -734,8 +735,10 @@ class BaseCompScheduler(ABC):
                 if t.state == RunningState.SUCCESS
             }
         )
+        dag_in_degree = dag.in_degree()
+        assert isinstance(dag_in_degree, InDegreeView)  # nosec
         next_task_node_ids = [
-            node_id for node_id, degree in dag.in_degree() if degree == 0
+            node_id for node_id, degree in dag_in_degree if degree == 0
         ]
 
         # get the tasks to start

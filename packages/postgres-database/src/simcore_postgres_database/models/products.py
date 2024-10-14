@@ -41,8 +41,6 @@ class Vendor(TypedDict, total=False):
     invitation_url: str  # How to request a trial invitation? (if applies)
     invitation_form: bool  # If True, it takes precendence over invitation_url and asks the FE to show the form (if defined)
 
-    has_landing_page: bool  # Is Landing page enabled
-
     release_notes_url_template: str  # a template url where `{vtag}` will be replaced, eg: "http://example.com/{vtag}.md"
 
 

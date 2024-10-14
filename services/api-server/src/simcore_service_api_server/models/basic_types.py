@@ -1,8 +1,8 @@
 import re
 
+from common_library.pydantic_basic_types import ConstrainedStr
 from fastapi.responses import StreamingResponse
 from models_library.basic_regex import SIMPLE_VERSION_RE
-from pydantic import ConstrainedStr
 
 
 class VersionStr(ConstrainedStr):

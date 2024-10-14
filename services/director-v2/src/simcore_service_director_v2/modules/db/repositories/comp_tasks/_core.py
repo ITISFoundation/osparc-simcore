@@ -5,7 +5,7 @@ from typing import Any
 import arrow
 import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy, RowProxy
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID

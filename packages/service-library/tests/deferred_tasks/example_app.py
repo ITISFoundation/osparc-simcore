@@ -8,6 +8,7 @@ from typing import Any
 from uuid import uuid4
 
 from pydantic import NonNegativeInt
+from redis.asyncio import Redis
 from servicelib.deferred_tasks import (
     BaseDeferredHandler,
     DeferredContext,
@@ -54,21 +55,22 @@ class ExampleDeferredHandler(BaseDeferredHandler[str]):
 
 class InMemoryLists:
     def __init__(self, redis_settings: RedisSettings, port: int) -> None:
-        self.redis_client_sdk = RedisClientSDK(
-            redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
-        )
+        # NOTE: RedisClientSDK is not required here but it's used to easily construct
+        # a redis connection
+        self.redis: Redis = RedisClientSDK(
+            redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
+            decode_responses=True,
+        ).redis
         self.port = port
 
     def _get_queue_name(self, queue_name: str) -> str:
         return f"in_memory_lists::{queue_name}.{self.port}"
 
     async def append_to(self, queue_name: str, value: Any) -> None:
-        await self.redis_client_sdk.redis.rpush(self._get_queue_name(queue_name), value)  # type: ignore
+        await self.redis.rpush(self._get_queue_name(queue_name), value)  # type: ignore
 
     async def get_all_from(self, queue_name: str) -> list:
-        return await self.redis_client_sdk.redis.lrange(
-            self._get_queue_name(queue_name), 0, -1
-        )  # type: ignore
+        return await self.redis.lrange(self._get_queue_name(queue_name), 0, -1)  # type: ignore
 
 
 class ExampleApp:
@@ -79,18 +81,19 @@ class ExampleApp:
         in_memory_lists: InMemoryLists,
         max_workers: NonNegativeInt,
     ) -> None:
-        self._redis_client_sdk = RedisClientSDK(
-            redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS)
+        self._redis_client = RedisClientSDK(
+            redis_settings.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
+            decode_responses=False,
         )
         self._manager = DeferredManager(
             rabbit_settings,
-            self._redis_client_sdk,
+            self._redis_client,
             globals_context={"in_memory_lists": in_memory_lists},
             max_workers=max_workers,
         )
 
     async def setup(self) -> None:
-        await self._redis_client_sdk.setup()
+        await self._redis_client.setup()
         await self._manager.setup()
 
 

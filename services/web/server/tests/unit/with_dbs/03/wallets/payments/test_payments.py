@@ -33,6 +33,9 @@ from simcore_service_webserver.payments.settings import (
     PaymentsSettings,
     get_plugin_settings,
 )
+from simcore_service_webserver.wallets._constants import (
+    MSG_BILLING_DETAILS_NOT_DEFINED_ERROR,
+)
 
 OpenApiDict: TypeAlias = dict[str, Any]
 
@@ -310,6 +313,29 @@ async def test_complete_payment_errors(
             completion_state=PaymentTransactionState.SUCCESS,
         )
     send_message.assert_called_once()
+
+
+async def test_billing_info_missing_error(
+    latest_osparc_price: Decimal,
+    client: TestClient,
+    logged_user_wallet: WalletGet,
+):
+    # NOTE: setup_user_pre_registration_details_db is not setup to emulate missing pre-registration
+
+    assert client.app
+    wallet = logged_user_wallet
+
+    # Pay
+    response = await client.post(
+        f"/v0/wallets/{wallet.wallet_id}/payments", json={"priceDollars": 25}
+    )
+    data, error = await assert_status(response, status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    assert not data
+    assert MSG_BILLING_DETAILS_NOT_DEFINED_ERROR in error["message"]
+
+    assert response.reason
+    assert MSG_BILLING_DETAILS_NOT_DEFINED_ERROR in response.reason
 
 
 async def test_payment_not_found(

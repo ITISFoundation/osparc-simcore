@@ -19,12 +19,12 @@ import logging
 from typing import cast
 
 import arrow
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
     PaymentMethodID,
     PaymentMethodInitiated,
 )
-from models_library.basic_types import IDStr
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr, HttpUrl

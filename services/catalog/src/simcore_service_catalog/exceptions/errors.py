@@ -16,5 +16,13 @@ class UninitializedGroupError(RepositoryError):
     msg_tempalte = "{group} groups was never initialized"
 
 
-class DirectorUnresponsiveError(CatalogBaseError):
+class BaseDirectorError(CatalogBaseError):
+    ...
+
+
+class DirectorUnresponsiveError(BaseDirectorError):
     msg_template = "Director-v0 is not responsive"
+
+
+class DirectorStatusError(BaseDirectorError):
+    ...

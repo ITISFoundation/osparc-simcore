@@ -29,6 +29,7 @@ from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from simcore_service_clusters_keeper.utils.clusters import (
     _prepare_environment_variables,
     create_cluster_from_ec2_instance,
+    create_deploy_cluster_stack_script,
     create_startup_script,
 )
 from types_aiobotocore_ec2.literals import InstanceStateNameType
@@ -51,16 +52,26 @@ def ec2_boot_specs(app_settings: ApplicationSettings) -> EC2InstanceBootSpecific
     return ec2_boot_specs
 
 
+@pytest.fixture(params=[TLSAuthentication, NoAuthentication])
+def backend_cluster_auth(
+    request: pytest.FixtureRequest,
+) -> InternalClusterAuthentication:
+    return request.param
+
+
 @pytest.fixture
 def app_environment(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    backend_cluster_auth: InternalClusterAuthentication,
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
             "CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": json_dumps(
                 TLSAuthentication.model_config["json_schema_extra"]["examples"][0]
+                if isinstance(backend_cluster_auth, TLSAuthentication)
+                else NoAuthentication.model_config["json_schema_extra"]["examples"][0]
             )
         },
     )
@@ -69,38 +80,52 @@ def app_environment(
 def test_create_startup_script(
     disabled_rabbitmq: None,
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
-    cluster_machines_name_prefix: str,
-    clusters_keeper_docker_compose: dict[str, Any],
     ec2_boot_specs: EC2InstanceBootSpecific,
 ):
-    additional_custom_tags = {
-        AWSTagKey("pytest-tag-key"): AWSTagValue("pytest-tag-value")
-    }
     startup_script = create_startup_script(
         app_settings,
-        cluster_machines_name_prefix=cluster_machines_name_prefix,
         ec2_boot_specific=ec2_boot_specs,
-        additional_custom_tags=additional_custom_tags,
     )
     assert isinstance(startup_script, str)
     assert len(ec2_boot_specs.custom_boot_scripts) > 0
     for boot_script in ec2_boot_specs.custom_boot_scripts:
         assert boot_script in startup_script
+
+
+def test_create_deploy_cluster_stack_script(
+    disabled_rabbitmq: None,
+    mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
+    mocked_redis_server: None,
+    app_settings: ApplicationSettings,
+    cluster_machines_name_prefix: str,
+    clusters_keeper_docker_compose: dict[str, Any],
+):
+    additional_custom_tags = {
+        AWSTagKey("pytest-tag-key"): AWSTagValue("pytest-tag-value")
+    }
+    deploy_script = create_deploy_cluster_stack_script(
+        app_settings,
+        cluster_machines_name_prefix=cluster_machines_name_prefix,
+        additional_custom_tags=additional_custom_tags,
+    )
+    assert isinstance(deploy_script, str)
     # we have commands to pipe into a docker-compose file
-    assert " | base64 -d > /docker-compose.yml" in startup_script
+    assert " | base64 -d > /docker-compose.yml" in deploy_script
     # we have commands to init a docker-swarm
-    assert "docker swarm init" in startup_script
+    assert "docker swarm init --default-addr-pool" in deploy_script
     # we have commands to deploy a stack
     assert (
         "docker stack deploy --with-registry-auth --compose-file=/docker-compose.yml dask_stack"
-        in startup_script
+        in deploy_script
     )
     # before that we have commands that setup ENV variables, let's check we have all of them as defined in the docker-compose
     # let's get what was set in the startup script and compare with the expected one of the docker-compose
     startup_script_envs_definition = (
-        startup_script.splitlines()[-1].split("docker stack deploy")[0].strip()
+        deploy_script.splitlines()[-1].split("docker stack deploy")[0].strip()
     )
     assert startup_script_envs_definition
     # Use regular expression to split the string into key-value pairs (courtesy of chatGPT)
@@ -137,7 +162,7 @@ def test_create_startup_script(
         "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS",
     ]
     assert all(
-        re.search(rf"{i}=\[(\\\".+\\\")*\]", startup_script) for i in list_settings
+        re.search(rf"{i}=\[(\\\".+\\\")*\]", deploy_script) for i in list_settings
     )
 
     # check dicts have \' in front
@@ -146,34 +171,54 @@ def test_create_startup_script(
         "WORKERS_EC2_INSTANCES_CUSTOM_TAGS",
     ]
     assert all(
-        re.search(rf"{i}=\'{{(\".+\":\s\".*\")+}}\'", startup_script)
+        re.search(rf"{i}=\'{{(\".+\":\s\".*\")+}}\'", deploy_script)
         for i in dict_settings
     )
 
     # check the additional tags are in
     assert all(
-        f'"{key}": "{value}"' in startup_script
+        f'"{key}": "{value}"' in deploy_script
         for key, value in additional_custom_tags.items()
+    )
+
+
+def test_create_deploy_cluster_stack_script_below_64kb(
+    disabled_rabbitmq: None,
+    mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
+    mocked_redis_server: None,
+    app_settings: ApplicationSettings,
+    cluster_machines_name_prefix: str,
+    clusters_keeper_docker_compose: dict[str, Any],
+):
+    additional_custom_tags = {
+        AWSTagKey("pytest-tag-key"): AWSTagValue("pytest-tag-value")
+    }
+    deploy_script = create_deploy_cluster_stack_script(
+        app_settings,
+        cluster_machines_name_prefix=cluster_machines_name_prefix,
+        additional_custom_tags=additional_custom_tags,
+    )
+    deploy_script_size_in_bytes = len(deploy_script.encode("utf-8"))
+    assert deploy_script_size_in_bytes < 64000, (
+        f"script size is {deploy_script_size_in_bytes} bytes that exceeds the SSM command of 64KB. "
+        "TIP: split commands or reduce size."
     )
 
 
 def test_create_startup_script_script_size_below_16kb(
     disabled_rabbitmq: None,
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
     cluster_machines_name_prefix: str,
     clusters_keeper_docker_compose: dict[str, Any],
     ec2_boot_specs: EC2InstanceBootSpecific,
 ):
-    additional_custom_tags = {
-        AWSTagKey("pytest-tag-key"): AWSTagValue("pytest-tag-value")
-    }
     startup_script = create_startup_script(
         app_settings,
-        cluster_machines_name_prefix=cluster_machines_name_prefix,
         ec2_boot_specific=ec2_boot_specs,
-        additional_custom_tags=additional_custom_tags,
     )
     script_size_in_bytes = len(startup_script.encode("utf-8"))
 
@@ -184,13 +229,13 @@ def test_create_startup_script_script_size_below_16kb(
     assert script_size_in_bytes < 15 * 1024
 
 
-def test_startup_script_defines_all_envs_for_docker_compose(
+def test__prepare_environment_variables_defines_all_envs_for_docker_compose(
     disabled_rabbitmq: None,
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     mocked_redis_server: None,
     app_settings: ApplicationSettings,
     cluster_machines_name_prefix: str,
-    ec2_boot_specs: EC2InstanceBootSpecific,
     clusters_keeper_docker_compose_file: Path,
 ):
     additional_custom_tags = {
@@ -202,8 +247,8 @@ def test_startup_script_defines_all_envs_for_docker_compose(
         additional_custom_tags=additional_custom_tags,
     )
     assert environment_variables
-    process = subprocess.run(
-        [  # noqa: S603, S607
+    process = subprocess.run(  # noqa: S603
+        [  # noqa: S607
             "docker",
             "compose",
             "--dry-run",
