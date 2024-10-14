@@ -1,0 +1,48 @@
+# pylint:disable=redefined-outer-name
+
+import logging
+
+import pytest
+from models_library.error_codes import create_error_code
+from models_library.errors_classes import OsparcErrorMixin
+from servicelib.logging_errors import create_troubleshotting_log_message
+from servicelib.logging_utils import get_log_record_extra
+
+
+def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
+    class MyError(OsparcErrorMixin, RuntimeError):
+        msg_template = "My error {user_id}"
+
+    with pytest.raises(MyError) as exc_info:
+        raise MyError(user_id=123, product_name="foo")
+
+    exc = exc_info.value
+    error_code = create_error_code(exc)
+    log_msg = create_troubleshotting_log_message(
+        f"Nice message to user [{error_code}]",
+        exc,
+        error_code=error_code,
+        error_context=exc.error_context(),
+        tip="This is a test error",
+    )
+
+    with caplog.at_level(logging.WARNING):
+        root_logger = logging.getLogger()
+        root_logger.exception(
+            log_msg, extra=get_log_record_extra(error_code=error_code)
+        )
+
+        # ERROR    root:test_logging_utils.py:417 Nice message to user [OEC:126055703573984].
+        # {
+        # "exception_details": "My error 123",
+        # "error_code": "OEC:126055703573984",
+        # "context": {
+        #     "user_id": 123,
+        #     "product_name": "foo"
+        # },
+        # "tip": "This is a test error"
+        # }
+
+        assert error_code in caplog.text
+        assert "user_id" in caplog.text
+        assert "product_name" in caplog.text

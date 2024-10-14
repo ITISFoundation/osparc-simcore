@@ -10,10 +10,8 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.logging_utils import (
-    create_troubleshotting_log_message,
-    get_log_record_extra,
-)
+from servicelib.logging_errors import create_troubleshotting_log_message
+from servicelib.logging_utils import get_log_record_extra
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
