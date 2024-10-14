@@ -10,6 +10,8 @@ import aiohttp_session
 from aiohttp import web
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 
+from .errors import SessionValueError
+
 _logger = logging.getLogger(__name__)
 
 
@@ -20,8 +22,13 @@ def _share_cookie_across_all_subdomains(
     Shares cookie across all subdomains, by appending a dot (`.`) in front of the domain name
     overwrite domain from `None` (browser sets `example.com`) to `.example.com`
     """
-    if (host := request.url.host) and host is not None:
-        params["domain"] = f".{host.lstrip('.')}"
+    host = request.url.host
+    if host is None:
+        raise SessionValueError(
+            invalid="host", host=host, request_url=request.url, params=params
+        )
+
+    params["domain"] = f".{host.lstrip('.')}"
 
     return params
 
@@ -47,8 +54,16 @@ class SharedCookieEncryptedCookieStorage(EncryptedCookieStorage):
     ) -> None:
 
         params = self._cookie_params.copy()
-        if request := response._req:  # pylint:disable=protected-access  # noqa: SLF001
-            params = _share_cookie_across_all_subdomains(request, params)
+        request = response._req  # pylint:disable=protected-access  # noqa: SLF001
+        if not request:
+            raise SessionValueError(
+                invalid="request",
+                invalid_request=request,
+                response=response,
+                params=params,
+            )
+
+        params = _share_cookie_across_all_subdomains(request, params)
 
         # --------------------------------------------------------
         # WARNING: the code below is taken and adapted from the superclass
