@@ -868,30 +868,32 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __connectContexts: function() {
-      const workspaceHeader = this.__workspaceHeader;
-      workspaceHeader.addListener("contextChanged", () => {
-        const workspaceId = workspaceHeader.getCurrentWorkspaceId();
-        const folderId = workspaceHeader.getCurrentFolderId();
-        this.__changeContext(workspaceId, folderId);
-      }, this);
+      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        const workspaceHeader = this.__workspaceHeader;
+        workspaceHeader.addListener("contextChanged", () => {
+          const workspaceId = workspaceHeader.getCurrentWorkspaceId();
+          const folderId = workspaceHeader.getCurrentFolderId();
+          this.__changeContext(workspaceId, folderId);
+        }, this);
 
-      const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
-      workspacesAndFoldersTree.addListener("contextChanged", e => {
-        const context = e.getData();
-        const workspaceId = context["workspaceId"];
-        const folderId = context["folderId"];
-        this.__changeContext(workspaceId, folderId);
-      }, this);
+        const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
+        workspacesAndFoldersTree.addListener("contextChanged", e => {
+          const context = e.getData();
+          const workspaceId = context["workspaceId"];
+          const folderId = context["folderId"];
+          this.__changeContext(workspaceId, folderId);
+        }, this);
 
-      this._searchBarFilter.addListener("filterChanged", e => {
-        const filterData = e.getData();
-        if (filterData.text) {
-          this.__changeContext(-2, null);
-        } else {
-          // Back to My Workspace
-          this.__changeContext(null, null);
-        }
-      });
+        this._searchBarFilter.addListener("filterChanged", e => {
+          const filterData = e.getData();
+          if (filterData.text) {
+            this.__changeContext(-2, null);
+          } else {
+            // Back to My Workspace
+            this.__changeContext(null, null);
+          }
+        });
+      }
     },
 
     __changeContext: function(workspaceId, folderId) {
@@ -1718,8 +1720,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._updateStudyData(duplicatedStudyData);
       });
       task.addListener("pollingError", e => {
-        const errMsg = e.getData();
-        const msg = this.tr("Something went wrong Duplicating the study<br>") + errMsg;
+        const err = e.getData();
+        const msg = this.tr("Something went wrong Duplicating the study<br>") + err.message;
         finished(msg, "ERROR");
       });
     }

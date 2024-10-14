@@ -166,7 +166,10 @@ def parse_request_query_parameters_as(
         resource_name=request.rel_url.path,
         use_error_v1=use_enveloped_error_v1,
     ):
+        # NOTE: Currently, this does not take into consideration cases where there are multiple
+        # query parameters with the same key. However, we are not using such cases anywhere at the moment.
         data = dict(request.query)
+
         if hasattr(parameters_schema_cls, "parse_obj"):
             return parameters_schema_cls.parse_obj(data)
         model: ModelClass = parse_obj_as(parameters_schema_cls, data)

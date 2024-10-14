@@ -8,10 +8,11 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from pydantic import Field, PositiveInt, validator
+from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -57,6 +58,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     EFS_GROUP_NAME: str = Field(
         description="Linux group name that the EFS and Simcore linux users are part of"
     )
+    EFS_DEFAULT_USER_SERVICE_SIZE_BYTES: ByteSize = Field(
+        default=parse_obj_as(ByteSize, "500GiB")
+    )
 
     # RUNTIME  -----------------------------------------------------------
     EFS_GUARDIAN_DEBUG: bool = Field(
@@ -76,6 +80,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings = Field(auto_default_from_env=True)
     EFS_GUARDIAN_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
+    EFS_GUARDIAN_REDIS: RedisSettings = Field(auto_default_from_env=True)
     EFS_GUARDIAN_TRACING: TracingSettings | None = Field(
         auto_default_from_env=True, description="settings for opentelemetry tracing"
     )

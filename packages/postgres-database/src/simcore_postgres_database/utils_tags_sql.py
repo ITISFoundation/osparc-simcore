@@ -23,9 +23,6 @@ _ACCESS_RIGHTS_COLUMNS = [
 ]
 
 
-_COLUMNS = _TAG_COLUMNS + _ACCESS_RIGHTS_COLUMNS
-
-
 def _join_user_groups_tag(*, access_condition, tag_id: int, user_id: int):
     return user_to_groups.join(
         tags_access_rights,
@@ -57,24 +54,42 @@ def get_tag_stmt(
     user_id: int,
     tag_id: int,
 ):
-    return sa.select(*_COLUMNS).select_from(
-        _join_user_to_given_tag(
-            access_condition=tags_access_rights.c.read.is_(True),
-            tag_id=tag_id,
-            user_id=user_id,
+    return (
+        sa.select(
+            *_TAG_COLUMNS,
+            # aggregation ensures MOST PERMISSIVE policy of access-rights
+            sa.func.bool_or(tags_access_rights.c.read).label("read"),
+            sa.func.bool_or(tags_access_rights.c.write).label("write"),
+            sa.func.bool_or(tags_access_rights.c.delete).label("delete")
         )
+        .select_from(
+            _join_user_to_given_tag(
+                access_condition=tags_access_rights.c.read.is_(True),
+                tag_id=tag_id,
+                user_id=user_id,
+            )
+        )
+        .group_by(tags.c.id)
     )
 
 
 def list_tags_stmt(*, user_id: int):
     return (
-        sa.select(*_COLUMNS)
+        sa.select(
+            *_TAG_COLUMNS,
+            # aggregation ensures MOST PERMISSIVE policy of access-rights
+            sa.func.bool_or(tags_access_rights.c.read).label("read"),
+            sa.func.bool_or(tags_access_rights.c.write).label("write"),
+            sa.func.bool_or(tags_access_rights.c.delete).label("delete")
+        )
         .select_from(
             _join_user_to_tags(
                 access_condition=tags_access_rights.c.read.is_(True),
                 user_id=user_id,
             )
         )
+        .group_by(tags.c.id)  # makes it tag.id uniqueness
+        .order_by(tags.c.priority.nulls_last())
         .order_by(tags.c.id)
     )
 
@@ -83,7 +98,7 @@ def create_tag_stmt(**values):
     return tags.insert().values(**values).returning(*_TAG_COLUMNS)
 
 
-def count_users_with_access_rights_stmt(
+def count_groups_with_given_access_rights_stmt(
     *,
     user_id: int,
     tag_id: int,
@@ -92,7 +107,7 @@ def count_users_with_access_rights_stmt(
     delete: bool | None
 ):
     """
-    How many users are given these access permissions
+    How many groups (from this user_id) are given EXACTLY these access permissions
     """
     access = []
     if read is not None:
@@ -146,7 +161,7 @@ def update_tag_stmt(*, user_id: int, tag_id: int, **updates):
             & (user_to_groups.c.uid == user_id)
         )
         .values(**updates)
-        .returning(*_COLUMNS)
+        .returning(*_TAG_COLUMNS, *_ACCESS_RIGHTS_COLUMNS)
     )
 
 
@@ -166,6 +181,11 @@ def delete_tag_stmt(*, user_id: int, tag_id: int):
     )
 
 
+#
+# PROJECT TAGS
+#
+
+
 def get_tags_for_project_stmt(*, project_index: int):
     return sa.select(projects_tags.c.tag_id).where(
         projects_tags.c.project_id == project_index
@@ -181,6 +201,11 @@ def add_tag_to_project_stmt(*, project_index: int, tag_id: int):
         )
         .on_conflict_do_nothing()
     )
+
+
+#
+# SERVICE TAGS
+#
 
 
 def get_tags_for_services_stmt(*, key: str, version: str):

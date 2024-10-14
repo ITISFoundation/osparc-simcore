@@ -73,7 +73,7 @@ from ..security.decorators import permission_required
 from ..users.api import get_user_id_from_gid, get_user_role
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
-from ..wallets.errors import WalletNotEnoughCreditsError
+from ..wallets.errors import WalletAccessForbiddenError, WalletNotEnoughCreditsError
 from . import nodes_utils, projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, get_node_screenshots
@@ -120,6 +120,10 @@ def _handle_project_nodes_exceptions(handler: Handler):
             raise web.HTTPConflict(reason=f"{exc}") from exc
         except CatalogForbiddenError as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
+        except WalletAccessForbiddenError as exc:
+            raise web.HTTPForbidden(
+                reason=f"Payment required, but the user lacks access to the project's linked wallet.: {exc}"
+            ) from exc
 
     return wrapper
 

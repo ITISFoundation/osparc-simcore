@@ -5,6 +5,7 @@
 # pylint: disable=too-many-statements
 
 
+import json
 from copy import deepcopy
 from http import HTTPStatus
 
@@ -87,6 +88,8 @@ async def test_workspaces__list_projects_full_search(
     assert data[0]["uuid"] == project_1["uuid"]
     assert data[0]["workspaceId"] == added_workspace["workspaceId"]
     assert data[0]["folderId"] is None
+    assert data[0]["workbench"]
+    assert data[0]["accessRights"]
 
     # Create projects in private workspace
     project_data = deepcopy(fake_project)
@@ -160,3 +163,76 @@ async def test_workspaces__list_projects_full_search(
     assert sorted_data[2]["uuid"] == project_3["uuid"]
     assert sorted_data[2]["workspaceId"] is None
     assert sorted_data[2]["folderId"] == root_folder["folderId"]
+
+
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
+async def test__list_projects_full_search_with_query_parameters(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
+    fake_project: ProjectDict,
+    workspaces_clean_db: None,
+):
+    assert client.app
+
+    # Create projects in private workspace
+    project_data = deepcopy(fake_project)
+    project_data["name"] = _SEARCH_NAME_2
+    project = await create_project(
+        client.app,
+        project_data,
+        user_id=logged_user["id"],
+        product_name="osparc",
+    )
+
+    # Full search with text
+    base_url = client.app.router["list_projects_full_search"].url_for()
+    url = base_url.with_query({"text": "Orion"})
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+    assert data[0]["uuid"] == project["uuid"]
+
+    # Full search with order_by
+    base_url = client.app.router["list_projects_full_search"].url_for()
+    url = base_url.with_query(
+        {
+            "text": "Orion",
+            "order_by": json.dumps({"field": "uuid", "direction": "desc"}),
+        }
+    )
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+    assert data[0]["uuid"] == project["uuid"]
+
+    # Full search with tag_ids
+    base_url = client.app.router["list_projects_full_search"].url_for()
+    url = base_url.with_query({"text": "Orion", "tag_ids": "1,2"})
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 0
+
+    # Create tag
+    url = client.app.router["create_tag"].url_for()
+    resp = await client.post(
+        f"{url}", json={"name": "tag1", "description": "description1", "color": "#f00"}
+    )
+    added_tag, _ = await assert_status(resp, expected)
+
+    # Add tag to study
+    url = client.app.router["add_project_tag"].url_for(
+        project_uuid=project["uuid"], tag_id=str(added_tag.get("id"))
+    )
+    resp = await client.post(f"{url}")
+    data, _ = await assert_status(resp, expected)
+
+    # Full search with tag_ids
+    base_url = client.app.router["list_projects_full_search"].url_for()
+    url = base_url.with_query({"text": "Orion", "tag_ids": f"{added_tag['id']}"})
+    resp = await client.get(url)
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(data) == 1
+    assert data[0]["uuid"] == project["uuid"]

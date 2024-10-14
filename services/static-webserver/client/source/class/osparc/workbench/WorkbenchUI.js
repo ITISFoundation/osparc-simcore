@@ -496,7 +496,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       nodeUI.addListener("requestOpenLogger", () => this.fireDataEvent("requestOpenLogger", nodeUI.getNodeId()), this);
 
       nodeUI.addListener("nodeMovingStart", () => {
-        this.__selectNode(nodeUI);
+        if (!this.getSelectedNodeIDs().includes(nodeUI.getNodeId())) {
+          this.__selectNode(nodeUI);
+        }
         this.__itemStartedMoving();
       }, this);
 

@@ -329,7 +329,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         if (osparc.utils.Utils.isDevelopmentPlatform()) {
           console.log("Connecting: about to fetch", srvUrl);
         }
-        fetch(srvUrl)
+        fetch(srvUrl, {credentials: "include"})
           .then(response => {
             if (osparc.utils.Utils.isDevelopmentPlatform()) {
               console.log("Connecting: fetch's response status", response.status);
