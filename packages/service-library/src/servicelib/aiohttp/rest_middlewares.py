@@ -12,7 +12,7 @@ from typing import Any, Union
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 from models_library.utils.json_serialization import json_dumps
 from servicelib.error_codes import create_error_code
 

@@ -31,13 +31,14 @@ class RedisSettings(BaseCustomSettings):
     REDIS_PASSWORD: SecretStr | None = None
 
     def build_redis_dsn(self, db_index: RedisDatabase) -> str:
-        return RedisDsn.build(
+        url = RedisDsn.build(
             scheme="rediss" if self.REDIS_SECURE else "redis",
-            user=self.REDIS_USER or None,
+            username=self.REDIS_USER or None,
             password=(
                 self.REDIS_PASSWORD.get_secret_value() if self.REDIS_PASSWORD else None
             ),
             host=self.REDIS_HOST,
-            port=f"{self.REDIS_PORT}",
+            port=self.REDIS_PORT,
             path=f"/{db_index}",
         )
+        return f"{url}"
