@@ -224,6 +224,7 @@ async def _create_user_email(
         # Invoice attachment (It is important that attachment is added after body)
         pdf_response = await _get_invoice_pdf(payment.invoice_pdf_url)
 
+        # file
         file_name = _extract_file_name(pdf_response)
         main_type, sub_type = _guess_file_type(file_name)
 

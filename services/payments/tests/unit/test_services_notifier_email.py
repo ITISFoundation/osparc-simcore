@@ -24,9 +24,9 @@ from simcore_service_payments.models.db import PaymentsTransactionsDB
 from simcore_service_payments.services.notifier_email import (
     _PRODUCT_NOTIFICATIONS_TEMPLATES,
     EmailProvider,
-    _add_attachments,
     _create_email_session,
     _create_user_email,
+    _guess_file_type,
     _PaymentData,
     _ProductData,
     _UserData,
@@ -128,9 +128,16 @@ async def test_send_email_workflow(
 
     msg = await _create_user_email(env, user_data, payment_data, product_data)
 
-    attachment = tmp_path / "test-attachment.txt"
+    attachment = tmp_path / "test-attachment.pdf"
     attachment.write_text(faker.text())
-    _add_attachments(msg, [attachment])
+
+    main_type, sub_type = _guess_file_type(attachment.name)
+    msg.add_attachment(
+        attachment.read_bytes(),
+        filename=attachment.name,
+        maintype=main_type,
+        subtype=sub_type,
+    )
 
     async with _create_email_session(settings) as smtp:
         await smtp.send_message(msg)
