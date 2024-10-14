@@ -4,12 +4,15 @@ aio-pika==9.4.3
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_test.in
 aiocache==0.12.2
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiodebug==2.3.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-aiodocker==0.22.2
+aiodocker==0.23.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
@@ -52,18 +55,18 @@ aiohttp==3.10.5
     #   aiodocker
 aiopg==1.4.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-aiormq==6.8.0
+aiormq==6.8.1
     # via aio-pika
 aiosignal==1.3.1
     # via aiohttp
-alembic==1.13.2
+alembic==1.13.3
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/_test.in
 annotated-types==0.7.0
     # via pydantic
-anyio==4.4.0
+anyio==4.6.0
     # via
     #   fast-depends
     #   faststream
@@ -88,7 +91,7 @@ attrs==24.2.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -126,6 +129,12 @@ click==8.1.7
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
     #   typer
+deprecated==1.2.14
+    # via
+    #   opentelemetry-api
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-semantic-conventions
 dnspython==2.6.1
     # via email-validator
 docker==7.1.0
@@ -134,9 +143,9 @@ docker==7.1.0
     #   -r requirements/_test.in
 email-validator==2.2.0
     # via pydantic
-fast-depends==2.4.8
+fast-depends==2.4.11
     # via faststream
-faststream==0.5.18
+faststream==0.5.23
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
@@ -148,17 +157,25 @@ frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
-greenlet==3.0.3
+googleapis-common-protos==1.65.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+greenlet==3.1.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   sqlalchemy
-idna==3.7
+grpcio==1.66.1
+    # via opentelemetry-exporter-otlp-proto-grpc
+idna==3.10
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   anyio
     #   email-validator
     #   requests
     #   yarl
+importlib-metadata==8.4.0
+    # via opentelemetry-api
 iniconfig==2.0.0
     # via pytest
 jsonschema==4.23.0
@@ -207,10 +224,55 @@ markupsafe==2.1.5
     #   mako
 mdurl==0.1.2
     # via markdown-it-py
-multidict==6.0.5
+multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
+opentelemetry-api==1.27.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-requests
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-exporter-otlp==1.27.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+opentelemetry-exporter-otlp-proto-common==1.27.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-grpc==1.27.0
+    # via opentelemetry-exporter-otlp
+opentelemetry-exporter-otlp-proto-http==1.27.0
+    # via opentelemetry-exporter-otlp
+opentelemetry-instrumentation==0.48b0
+    # via opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-requests==0.48b0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+opentelemetry-proto==1.27.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-common
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-sdk==1.27.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-semantic-conventions==0.48b0
+    # via
+    #   opentelemetry-instrumentation-requests
+    #   opentelemetry-sdk
+opentelemetry-util-http==0.48b0
+    # via opentelemetry-instrumentation-requests
 orjson==3.10.7
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -253,6 +315,14 @@ pint==0.24.3
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 pluggy==1.5.0
     # via pytest
+protobuf==4.25.5
+    # via
+    #   googleapis-common-protos
+    #   opentelemetry-proto
+psutil==6.0.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.9
     # via
     #   aiopg
@@ -331,11 +401,11 @@ pydantic-settings==2.5.2
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.18.0
     # via rich
-pyinstrument==4.7.2
+pyinstrument==4.7.3
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -449,11 +519,16 @@ referencing==0.29.3
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
     #   jsonschema
     #   jsonschema-specifications
+repro-zipfile==0.3.1
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 requests==2.32.3
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   docker
-rich==13.7.1
+    #   opentelemetry-exporter-otlp-proto-http
+rich==13.8.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
@@ -464,13 +539,15 @@ rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
+setuptools==75.1.0
+    # via opentelemetry-instrumentation
 shellingham==1.5.4
     # via typer
 six==1.16.0
     # via python-dateutil
 sniffio==1.3.1
     # via anyio
-sqlalchemy==1.4.53
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -519,14 +596,13 @@ tqdm==4.66.5
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-typer==0.12.4
+typer==0.12.5
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
-    #   faststream
-types-python-dateutil==2.9.0.20240821
+types-python-dateutil==2.9.0.20240906
     # via arrow
 typing-extensions==4.12.2
     # via
@@ -536,11 +612,12 @@ typing-extensions==4.12.2
     #   faststream
     #   flexcache
     #   flexparser
+    #   opentelemetry-sdk
     #   pint
     #   pydantic
     #   pydantic-core
     #   typer
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -570,9 +647,15 @@ urllib3==2.2.2
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   docker
     #   requests
-yarl==1.9.4
+wrapt==1.16.0
+    # via
+    #   deprecated
+    #   opentelemetry-instrumentation
+yarl==1.12.1
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq
+zipp==3.20.2
+    # via importlib-metadata

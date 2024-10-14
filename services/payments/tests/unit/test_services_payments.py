@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
@@ -10,9 +11,9 @@ from collections.abc import Awaitable, Callable
 from unittest.mock import MagicMock
 
 import pytest
+from common_library.pydantic_basic_types import IDStr
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
-from models_library.basic_types import IDStr
 from models_library.payments import UserInvoiceAddress
 from models_library.users import UserID
 from models_library.wallets import WalletID

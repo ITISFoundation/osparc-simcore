@@ -6,10 +6,12 @@
 import asyncio
 from pathlib import Path
 from typing import Any, Callable
+from unittest.mock import AsyncMock
 
-from pydantic import ValidationError
 import pytest
+from common_library.pydantic_basic_types import IDStr
 from faker import Faker
+from pydantic import BaseModel, ValidationError
 from pytest_mock import MockFixture
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
@@ -144,6 +146,7 @@ async def test_node_ports_accessors(
                 + list(original_outputs.values())
             },
             progress_bar=progress_bar,
+            outputs_callbacks=AsyncMock(),
         )
     assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
 
@@ -226,16 +229,24 @@ async def test_node_ports_v2_packages(
 
 
 @pytest.fixture
-def mock_port_set(mocker: MockFixture)->None:
+def mock_port_set(mocker: MockFixture) -> None:
     async def _always_raise_error(*args, **kwargs):
         async def _i_raise_errors():
-            raise ValidationError("invalid")
-        return asyncio.create_task(_i_raise_errors())
+            class User(BaseModel):
+                name: str
+                age: int
 
-    mocker.patch("simcore_sdk.node_ports_v2.port.Port._set", side_effect=_always_raise_error)
+            User(**kwargs)
+
+        return await asyncio.create_task(_i_raise_errors())
+
+    mocker.patch(
+        "simcore_sdk.node_ports_v2.port.Port._set", side_effect=_always_raise_error
+    )
+
 
 async def test_node_ports_v2_set_multiple_catch_multiple_failing_set_ports(
-    mock_port_set:None,
+    mock_port_set: None,
     mock_db_manager: Callable,
     default_configuration: dict[str, Any],
     user_id: int,
@@ -248,8 +259,7 @@ async def test_node_ports_v2_set_multiple_catch_multiple_failing_set_ports(
     original_inputs = create_valid_port_mapping(InputsList, suffix="original")
     original_outputs = create_valid_port_mapping(OutputsList, suffix="original")
 
-
-    async def _mock_callback(*args,**kwargs):
+    async def _mock_callback(*args, **kwargs):
         pass
 
     node_ports = Nodeports(
@@ -264,13 +274,18 @@ async def test_node_ports_v2_set_multiple_catch_multiple_failing_set_ports(
         node_port_creator_cb=_mock_callback,
         auto_update=False,
     )
-    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
+
+    callback = AsyncMock()
+    async with ProgressBarData(
+        num_steps=1, description=IDStr(faker.pystr())
+    ) as progress_bar:
         with pytest.raises(ValidationError):
             await node_ports.set_multiple(
-        {
-            port.key: (port.value, None)
-            for port in list(original_inputs.values())
-            + list(original_outputs.values())
-        },
-        progress_bar=progress_bar,
-    )
+                {
+                    port.key: (port.value, None)
+                    for port in list(original_inputs.values())
+                    + list(original_outputs.values())
+                },
+                progress_bar=progress_bar,
+                outputs_callbacks=callback,
+            )

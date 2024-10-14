@@ -45,8 +45,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
   events: {
     "folderSelected": "qx.event.type.Data",
     "folderUpdated": "qx.event.type.Data",
-    "moveFolderToFolderRequested": "qx.event.type.Data",
-    "moveFolderToWorkspaceRequested": "qx.event.type.Data",
+    "moveFolderToRequested": "qx.event.type.Data",
     "deleteFolderRequested": "qx.event.type.Data"
   },
 
@@ -56,6 +55,12 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       nullable: false,
       init: null,
       apply: "__applyFolder"
+    },
+
+    workspaceId: {
+      check: "Number",
+      nullable: true,
+      apply: "__applyWorkspaceId"
     },
 
     folderId: {
@@ -87,8 +92,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/folder/26",
+          control = new osparc.dashboard.FolderWithSharedIcon().set({
             anonymous: true,
             height: 40,
             padding: 5
@@ -100,7 +104,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
           control = new qx.ui.basic.Label().set({
             anonymous: true,
             font: "text-14",
-            rich: true,
           });
           this._add(control, osparc.dashboard.FolderButtonBase.POS.TITLE);
           break;
@@ -136,17 +139,36 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       this.set({
         cardKey: "folder-" + folder.getFolderId()
       });
+      folder.bind("workspaceId", this, "workspaceId");
       folder.bind("folderId", this, "folderId");
-      folder.bind("parentId", this, "parentFolderId");
+      folder.bind("parentFolderId", this, "parentFolderId");
       folder.bind("name", this, "title");
       folder.bind("lastModified", this, "lastModified");
 
       this.__addMenuButton();
     },
 
+    __applyWorkspaceId: function(workspaceId) {
+      const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
+      const accessRights = workspace ? workspace.getAccessRights() : {};
+      if (accessRights && Object.keys(accessRights).length) {
+        const shareIcon = this.getChildControl("icon").getChildControl("shared-icon");
+        // if it's not shared don't show the share icon
+        shareIcon.addListener("changeSource", e => {
+          const newSource = e.getData();
+          shareIcon.set({
+            visibility: newSource.includes(osparc.dashboard.CardBase.SHARE_ICON) ? "hidden" : "visible"
+          });
+        });
+        osparc.dashboard.CardBase.populateShareIcon(shareIcon, accessRights);
+      }
+    },
+
     __applyTitle: function(value) {
       const label = this.getChildControl("title");
       label.setValue(value);
+
+      this.setToolTipText(value);
     },
 
     __applyLastModified: function(value) {
@@ -168,13 +190,9 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       editButton.addListener("execute", () => this.__editFolder(), this);
       menu.add(editButton);
 
-      const moveToFolderButton = new qx.ui.menu.Button(this.tr("Move to Folder..."), "@FontAwesome5Solid/folder/12");
-      moveToFolderButton.addListener("execute", () => this.fireDataEvent("moveFolderToFolderRequested", this.getFolderId()), this);
-      menu.add(moveToFolderButton);
-
-      const moveToWorkspaceButton = new qx.ui.menu.Button(this.tr("Move to Workspace..."), "");
-      moveToWorkspaceButton.addListener("execute", () => this.fireDataEvent("moveFolderToWorkspaceRequested", this.getFolderId()), this);
-      menu.add(moveToWorkspaceButton);
+      const moveToButton = new qx.ui.menu.Button(this.tr("Move to..."), "@FontAwesome5Solid/folder/12");
+      moveToButton.addListener("execute", () => this.fireDataEvent("moveFolderToRequested", this.getFolderId()), this);
+      menu.add(moveToButton);
 
       menu.addSeparator();
 
@@ -199,13 +217,14 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         label: folder.getName(),
       });
       const title = this.tr("Edit Folder");
-      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 150);
+      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 120);
       folderEditor.addListener("updateFolder", () => {
         const newName = folderEditor.getLabel();
         const updateData = {
           "name": newName,
+          "parentFolderId": folder.getParentFolderId(),
         };
-        osparc.data.model.Folder.putFolder(this.getFolderId(), updateData)
+        osparc.store.Folders.getInstance().putFolder(this.getFolderId(), updateData)
           .then(() => {
             folder.set({
               name: newName,

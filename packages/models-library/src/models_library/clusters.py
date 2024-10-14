@@ -95,6 +95,8 @@ class JupyterHubTokenAuthentication(BaseAuthentication):
 class NoAuthentication(BaseAuthentication):
     type: Literal["none"] = "none"
 
+    model_config = ConfigDict(json_schema_extra={"examples": [{"type": "none"}]})
+
 
 class TLSAuthentication(BaseAuthentication):
     type: Literal["tls"] = "tls"
@@ -134,7 +136,7 @@ class BaseCluster(BaseModel):
         default=None,
         description="url to the image describing this cluster",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
-        validate_default=True
+        validate_default=True,
     )
     endpoint: AnyUrl
     authentication: ClusterAuthentication = Field(

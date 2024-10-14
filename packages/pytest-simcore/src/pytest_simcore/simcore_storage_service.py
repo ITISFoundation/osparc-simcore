@@ -45,16 +45,17 @@ async def storage_service(
 ) -> URL:
     await wait_till_storage_responsive(storage_endpoint)
 
-    def correct_ip(url: AnyUrl):
+    def correct_ip(url: str):
+        any_url = AnyUrl(url)
         assert storage_endpoint.host is not None
         assert storage_endpoint.port is not None
 
         return AnyUrl.build(
-            scheme=url.scheme,
+            scheme=any_url.scheme,
             host=storage_endpoint.host,
-            port=f"{storage_endpoint.port}",
-            path=url.path,
-            query=url.query,
+            port=storage_endpoint.port,
+            path=any_url.path,
+            query=any_url.query,
         )
 
     # NOTE: Mock to ensure container IP agrees with host IP when testing

@@ -80,7 +80,11 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       }, this);
       box.add(cbConfirmDeleteStudy);
 
-      if (!(osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("s4llite"))) {
+      if (!(
+        osparc.product.Utils.isProduct("tis") ||
+        osparc.product.Utils.isProduct("tiplite") ||
+        osparc.product.Utils.isProduct("s4llite")
+      )) {
         const cbConfirmDeleteNode = new qx.ui.form.CheckBox(this.tr("Delete a Node"));
         preferencesSettings.bind("confirmDeleteNode", cbConfirmDeleteNode, "value");
         cbConfirmDeleteNode.addListener("changeValue", e => {

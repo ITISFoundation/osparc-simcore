@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 import sqlalchemy as sa
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from notifications_library._templates import get_default_named_templates

@@ -16,10 +16,10 @@ from simcore_postgres_database.models.users import users
 
 
 @pytest.fixture
-async def user(pg_engine: Engine) -> RowProxy:
+async def user(aiopg_engine: Engine) -> RowProxy:
     _USERNAME = f"{__name__}.me"
     # some user
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         result: ResultProxy | None = await conn.execute(
             users.insert().values(**random_user(name=_USERNAME)).returning(users)
         )
@@ -32,10 +32,10 @@ async def user(pg_engine: Engine) -> RowProxy:
 
 
 @pytest.fixture
-async def project(pg_engine: Engine, user: RowProxy) -> RowProxy:
+async def project(aiopg_engine: Engine, user: RowProxy) -> RowProxy:
     _PARENT_PROJECT_NAME = f"{__name__}.parent"
     # a user's project
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         result: ResultProxy | None = await conn.execute(
             projects.insert()
             .values(**random_project(prj_owner=user.id, name=_PARENT_PROJECT_NAME))
@@ -50,6 +50,6 @@ async def project(pg_engine: Engine, user: RowProxy) -> RowProxy:
 
 
 @pytest.fixture
-async def conn(pg_engine: Engine) -> AsyncIterable[SAConnection]:
-    async with pg_engine.acquire() as conn:
+async def conn(aiopg_engine: Engine) -> AsyncIterable[SAConnection]:
+    async with aiopg_engine.acquire() as conn:
         yield conn

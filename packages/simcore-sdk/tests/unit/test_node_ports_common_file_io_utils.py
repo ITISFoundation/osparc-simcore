@@ -12,6 +12,7 @@ import pytest
 from aiobotocore.session import AioBaseClient, get_session
 from aiohttp import ClientResponse, ClientSession, TCPConnector
 from aioresponses import aioresponses
+from common_library.pydantic_basic_types import IDStr
 from faker import Faker
 from models_library.api_schemas_storage import (
     FileUploadLinks,
@@ -272,11 +273,13 @@ async def test_upload_file_to_presigned_links(
     """
     local_file = create_file_of_size(file_size)
     num_links = 2080
-    effective_chunk_size = TypeAdapter(ByteSize).validate_python(local_file.stat().st_size / num_links)
+    effective_chunk_size = TypeAdapter(ByteSize).validate_python(
+        local_file.stat().st_size / num_links
+    )
     assert effective_chunk_size <= used_chunk_size
     upload_links = await create_upload_links(num_links, used_chunk_size)
     assert len(upload_links.urls) == num_links
-    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
+    async with ProgressBarData(num_steps=1, description=IDStr("42")) as progress_bar:
         uploaded_parts: list[UploadedPart] = await upload_file_to_presigned_links(
             session=client_session,
             file_upload_links=upload_links,

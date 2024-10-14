@@ -329,6 +329,22 @@ class ResourceTrackerRepository(
                     sa.func.SUM(
                         resource_tracker_credit_transactions.c.osparc_credits
                     ).label("osparc_credits"),
+                    sa.func.SUM(
+                        sa.func.round(
+                            (
+                                sa.func.extract(
+                                    "epoch",
+                                    resource_tracker_service_runs.c.stopped_at,
+                                )
+                                - sa.func.extract(
+                                    "epoch",
+                                    resource_tracker_service_runs.c.started_at,
+                                )
+                            )
+                            / 3600,
+                            2,
+                        )
+                    ).label("running_time_in_hours"),
                 )
                 .select_from(
                     resource_tracker_service_runs.join(

@@ -11,6 +11,7 @@ from pydantic import (
 )
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -110,3 +111,6 @@ class ApplicationSettings(MinimalApplicationSettings):
         min_length=10,
     )
     INVITATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
+    INVITATIONS_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
+    )

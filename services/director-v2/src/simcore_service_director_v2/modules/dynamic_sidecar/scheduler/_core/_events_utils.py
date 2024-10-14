@@ -27,6 +27,13 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
+    NoServiceVolumesFoundRPCError,
+)
+from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
+    remove_volumes_without_backup_for_service,
+)
 from servicelib.utils import limited_gather, logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import RetryError, TryAgain
@@ -43,6 +50,12 @@ from .....models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DockerStatus,
     SchedulerData,
+)
+from .....modules.instrumentation import (
+    get_instrumentation,
+    get_metrics_labels,
+    get_rate,
+    track_duration,
 )
 from .....utils.db import get_repository
 from ....db.repositories.projects import ProjectsRepository
@@ -61,11 +74,9 @@ from ...docker_api import (
     get_projects_networks_containers,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
-    remove_volumes_from_node,
     try_to_remove_network,
 )
 from ...errors import EntrypointContainerNotFoundError
-from ...volumes import DY_SIDECAR_SHARED_STORE_PATH, DynamicSidecarVolumesPathsResolver
 
 if TYPE_CHECKING:
     # NOTE: TYPE_CHECKING is True when static type checkers are running,
@@ -157,9 +168,15 @@ async def service_save_state(
     progress_callback: ProgressCallback | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
-    await sidecars_client.save_service_state(
-        scheduler_data.endpoint, progress_callback=progress_callback
-    )
+
+    with track_duration() as duration:
+        size = await sidecars_client.save_service_state(
+            scheduler_data.endpoint, progress_callback=progress_callback
+        )
+    get_instrumentation(app).dynamic_sidecar_metrics.push_service_state_rate.labels(
+        **get_metrics_labels(scheduler_data)
+    ).observe(get_rate(size, duration.to_flaot()))
+
     await sidecars_client.update_volume_state(
         scheduler_data.endpoint,
         volume_category=VolumeCategory.STATES,
@@ -218,30 +235,17 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
             task_progress.update(
                 message="removing volumes", percent=ProgressPercent(0.3)
             )
-            unique_volume_names = [
-                DynamicSidecarVolumesPathsResolver.source(
-                    path=volume_path,
-                    node_uuid=scheduler_data.node_uuid,
-                    run_id=scheduler_data.run_id,
-                )
-                for volume_path in [
-                    DY_SIDECAR_SHARED_STORE_PATH,
-                    scheduler_data.paths_mapping.inputs_path,
-                    scheduler_data.paths_mapping.outputs_path,
-                    *scheduler_data.paths_mapping.state_paths,
-                ]
-            ]
-            with log_context(
-                _logger, logging.DEBUG, f"removing volumes via service for {node_uuid}"
-            ):
-                await remove_volumes_from_node(
-                    swarm_stack_name=swarm_stack_name,
-                    volume_names=unique_volume_names,
-                    docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
-                    user_id=scheduler_data.user_id,
-                    project_id=scheduler_data.project_id,
-                    node_uuid=scheduler_data.node_uuid,
-                )
+            with log_context(_logger, logging.DEBUG, f"removing volumes '{node_uuid}'"):
+                rabbit_rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
+                try:
+                    await remove_volumes_without_backup_for_service(
+                        rabbit_rpc_client,
+                        docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                        swarm_stack_name=swarm_stack_name,
+                        node_id=scheduler_data.node_uuid,
+                    )
+                except NoServiceVolumesFoundRPCError as e:
+                    _logger.info("Could not remove volumes, reason: %s", e)
 
     _logger.debug(
         "Removed dynamic-sidecar services and crated container for '%s'",
@@ -375,6 +379,16 @@ async def attempt_pod_removal_and_data_saving(
     rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
     await rabbitmq_client.publish(message.channel_name, message)
 
+    # metrics
+
+    stop_duration = (
+        scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_close_request()
+    )
+    assert stop_duration is not None  # nosec
+    get_instrumentation(app).dynamic_sidecar_metrics.stop_time_duration.labels(
+        **get_metrics_labels(scheduler_data)
+    ).observe(stop_duration)
+
 
 async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -> None:
     _logger.debug("Attaching project networks for %s", scheduler_data.service_name)
@@ -460,14 +474,44 @@ async def prepare_services_environment(
         )
     )
 
+    async def _pull_output_ports_with_metrics() -> None:
+        with track_duration() as duration:
+            size: int = await sidecars_client.pull_service_output_ports(
+                dynamic_sidecar_endpoint
+            )
+
+        get_instrumentation(app).dynamic_sidecar_metrics.output_ports_pull_rate.labels(
+            **get_metrics_labels(scheduler_data)
+        ).observe(get_rate(size, duration.to_flaot()))
+
+    async def _pull_user_services_images_with_metrics() -> None:
+        with track_duration() as duration:
+            await sidecars_client.pull_user_services_images(dynamic_sidecar_endpoint)
+
+        get_instrumentation(
+            app
+        ).dynamic_sidecar_metrics.pull_user_services_images_duration.labels(
+            **get_metrics_labels(scheduler_data)
+        ).observe(
+            duration.to_flaot()
+        )
+
+    async def _restore_service_state_with_metrics() -> None:
+        with track_duration() as duration:
+            size = await sidecars_client.restore_service_state(dynamic_sidecar_endpoint)
+
+        get_instrumentation(app).dynamic_sidecar_metrics.pull_service_state_rate.labels(
+            **get_metrics_labels(scheduler_data)
+        ).observe(get_rate(size, duration.to_flaot()))
+
     tasks = [
-        sidecars_client.pull_user_services_images(dynamic_sidecar_endpoint),
-        sidecars_client.pull_service_output_ports(dynamic_sidecar_endpoint),
+        _pull_user_services_images_with_metrics(),
+        _pull_output_ports_with_metrics(),
     ]
     # When enabled no longer downloads state via nodeports
     # S3 is used to store state paths
     if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-        tasks.append(sidecars_client.restore_service_state(dynamic_sidecar_endpoint))
+        tasks.append(_restore_service_state_with_metrics())
 
     await limited_gather(*tasks, limit=3)
 

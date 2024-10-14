@@ -29,6 +29,7 @@ from ..director_v2.exceptions import DirectorServiceError
 from ..login.decorators import login_required
 from ..notifications import project_logs
 from ..products.api import Product, get_current_product
+from ..resource_usage.errors import DefaultPricingPlanNotFoundError
 from ..security.decorators import permission_required
 from ..users import api
 from ..users.exceptions import UserDefaultWalletNotFoundError
@@ -37,6 +38,7 @@ from ..wallets.errors import WalletNotEnoughCreditsError
 from . import projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from .exceptions import (
+    DefaultPricingUnitNotFoundError,
     ProjectInvalidRightsError,
     ProjectNotFoundError,
     ProjectStartsTooManyDynamicNodesError,
@@ -57,7 +59,12 @@ def _handle_project_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except (ProjectNotFoundError, UserDefaultWalletNotFoundError) as exc:
+        except (
+            ProjectNotFoundError,
+            UserDefaultWalletNotFoundError,
+            DefaultPricingPlanNotFoundError,
+            DefaultPricingUnitNotFoundError,
+        ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
 
         except ProjectInvalidRightsError as exc:

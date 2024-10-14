@@ -20,7 +20,7 @@ docker volume prune
 #### To run a single tutorial in the terminal
 ```
 cd tests/e2e
-node tutorials/sleepers.js http://127.0.0.1:9081
+node tutorials/sleepers.js http://127.0.0.1.nip.io:9081
 ```
 
 #### To run the same with the debugger attached in VScode:

@@ -6,8 +6,9 @@ from copy import deepcopy
 from typing import Any
 
 import pytest
+from common_library.pydantic_basic_types import LongTruncatedStr
 from faker import Faker
-from models_library.api_schemas_webserver.projects import LongTruncatedStr, ProjectPatch
+from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.projects import Project
 
 

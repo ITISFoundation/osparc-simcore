@@ -18,8 +18,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import pytest
+from common_library.pydantic_basic_types import IDStr
 from faker import Faker
-from models_library.basic_types import IDStr
 from models_library.payments import StripeInvoiceID
 from models_library.products import ProductName
 from models_library.users import UserID

@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from inspect import isawaitable
 from typing import Final, Optional, Protocol, runtime_checkable
 
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.progress_bar import (
     ProgressReport,
     ProgressStructuredMessage,

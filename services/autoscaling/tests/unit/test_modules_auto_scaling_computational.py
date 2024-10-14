@@ -1,9 +1,10 @@
 # pylint: disable=no-value-for-parameter
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
+# pylint: disable=too-many-statements
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-statements
 
 
 import asyncio
@@ -70,6 +71,7 @@ def local_dask_scheduler_server_envs(
 @pytest.fixture
 def minimal_configuration(
     with_labelize_drain_nodes: EnvVarsDict,
+    app_with_docker_join_drained: EnvVarsDict,
     docker_swarm: None,
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_ssm_server_envs: EnvVarsDict,

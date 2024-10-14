@@ -33,10 +33,6 @@ from aws_library.ssm import (
 from fastapi import FastAPI
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
-from simcore_service_autoscaling.modules.instrumentation import (
-    get_instrumentation,
-    has_instrumentation,
-)
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..constants import (
@@ -55,6 +51,7 @@ from ..utils.buffer_machines_pool_core import (
 )
 from .auto_scaling_mode_base import BaseAutoscaling
 from .ec2 import get_ec2_client
+from .instrumentation import get_instrumentation, has_instrumentation
 from .ssm import get_ssm_client
 
 _logger = logging.getLogger(__name__)
@@ -197,8 +194,9 @@ async def _terminate_instances_with_invalid_pre_pulled_images(
         ].pre_pulled_instances()
 
         for instance in all_pre_pulled_instances:
+            pre_pulled_images = load_pre_pulled_images_from_tags(instance.tags)
             if (
-                pre_pulled_images := load_pre_pulled_images_from_tags(instance.tags)
+                pre_pulled_images is not None
             ) and pre_pulled_images != ec2_boot_config.pre_pull_images:
                 _logger.info(
                     "%s",

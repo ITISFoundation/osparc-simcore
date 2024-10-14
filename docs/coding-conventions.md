@@ -136,3 +136,7 @@ Have a look at `ESLint`'s configuration files [.eslintrc.json](.eslintrc.json) a
 [mypy]:https://www.mypy-lang.org/
 [pep257]:https://peps.python.org/pep-0257/
 [pylint]:https://pylint.readthedocs.io/en/latest/
+
+# My first osparc-simcore PR: common pitfalls
+
+- Make sure to run `make mypy` and `make pylint`, as the associated github-actions are required to pass. If you include new dependencies in `requirements/*.in`, make sure to run `make touch && make reqs "upgrade=NAME_OF_YOUR_NEW_DEPENDENCY"`. It is best to do this inside a reproducible environment, for this purpose a shell inside a docker container can be used: Go to `osparc-simcore/requirements/tools` and run `make shell`. Inside the new shell the osparc-simcore repo is placed in `~`. Run `make reqs` from inside this shell.

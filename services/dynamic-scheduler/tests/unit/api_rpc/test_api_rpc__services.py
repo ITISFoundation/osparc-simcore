@@ -59,7 +59,7 @@ def service_status_new_style() -> DynamicServiceGet:
 
 @pytest.fixture
 def service_status_legacy() -> NodeGet:
-    return NodeGet.parse_obj(NodeGet.Config.schema_extra["example"])
+    return NodeGet.parse_obj(NodeGet.Config.schema_extra["examples"][1])
 
 
 @pytest.fixture

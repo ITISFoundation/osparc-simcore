@@ -10,15 +10,22 @@
 --requirement ../../../packages/settings-library/requirements/_base.in
 
 aio-pika
+aiocache
 aiodebug
 aiodocker
 aiofiles
 arrow # date/time
 faststream
+opentelemetry-api
+opentelemetry-exporter-otlp
+opentelemetry-instrumentation-requests
+opentelemetry-sdk
+psutil
 pydantic
 pyinstrument
 pyyaml
 redis
+repro-zipfile
 tenacity
 toolz
 tqdm

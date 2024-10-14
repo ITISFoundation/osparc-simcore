@@ -111,7 +111,7 @@ class Product(BaseModel):
 
     @validator("*", pre=True)
     @classmethod
-    def parse_empty_string_as_null(cls, v):
+    def _parse_empty_string_as_null(cls, v):
         """Safe measure: database entries are sometimes left blank instead of null"""
         if isinstance(v, str) and len(v.strip()) == 0:
             return None
@@ -119,10 +119,19 @@ class Product(BaseModel):
 
     @validator("name", pre=True, always=True)
     @classmethod
-    def validate_name(cls, v):
+    def _validate_name(cls, v):
         if v not in FRONTEND_APPS_AVAILABLE:
             msg = f"{v} is not in available front-end apps {FRONTEND_APPS_AVAILABLE}"
             raise ValueError(msg)
+        return v
+
+    @validator("host_regex", pre=True)
+    @classmethod
+    def _strip_whitespaces(cls, v):
+        if v and isinstance(v, str):
+            # Prevents unintended leading & trailing spaces when added
+            # manually in the database
+            return v.strip()
         return v
 
     @property
@@ -132,9 +141,10 @@ class Product(BaseModel):
     class Config:
         alias_generator = snake_to_camel  # to export
         allow_population_by_field_name = True
+        anystr_strip_whitespace = True
+        extra = Extra.ignore
         frozen = True  # read-only
         orm_mode = True
-        extra = Extra.ignore
         schema_extra: ClassVar[dict[str, Any]] = {
             "examples": [
                 {
@@ -183,7 +193,6 @@ class Product(BaseModel):
                         "invitation_form": True,
                         "name": "ACME",
                         "copyright": "© ACME correcaminos",
-                        "has_landing_page": False,
                     },
                     "issues": [
                         {
