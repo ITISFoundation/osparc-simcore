@@ -6,6 +6,9 @@
 from typing import Any
 
 import pytest
+from aiohttp import web
+from aiohttp.test_utils import make_mocked_request
+from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from simcore_postgres_database.models.products import LOGIN_SETTINGS_DEFAULT
 from simcore_postgres_database.webserver_models import products
@@ -26,16 +29,22 @@ def mock_postgres_product_table():
 
     column_defaults["login_settings"] = LOGIN_SETTINGS_DEFAULT
 
+    _SUBDOMAIN_PREFIX = r"[\w-]+\."
+
     return [
-        dict(name="osparc", host_regex=r"([\.-]{0,1}osparc[\.-])", **column_defaults),
+        dict(
+            name="osparc",
+            host_regex=rf"^({_SUBDOMAIN_PREFIX})*osparc[\.-]",
+            **column_defaults,
+        ),
         dict(
             name="s4l",
-            host_regex=r"(^s4l[\.-])|(^sim4life\.)|(^api.s4l[\.-])|(^api.sim4life\.)",
+            host_regex=rf"^({_SUBDOMAIN_PREFIX})*(s4l|sim4life)[\.-]",
             **column_defaults,
         ),
         dict(
             name="tis",
-            host_regex=r"(^tis[\.-])|(^ti-solutions\.)",
+            host_regex=rf"^({_SUBDOMAIN_PREFIX})*(tis|^ti-solutions)[\.-]",
             vendor={
                 "name": "ACME",
                 "address": "sesame street",
@@ -49,28 +58,22 @@ def mock_postgres_product_table():
 
 
 @pytest.fixture
-def mock_app(mock_postgres_product_table: dict[str, Any]):
-    class MockApp(dict):
-        def __init__(self):
-            super().__init__()
-            self.middlewares = []
-
-    mock_app = MockApp()
+def mock_app(mock_postgres_product_table: dict[str, Any]) -> web.Application:
+    app = web.Application()
 
     app_products: dict[str, Product] = {
         entry["name"]: Product(**entry) for entry in mock_postgres_product_table
     }
     default_product_name = next(iter(app_products.keys()))
-    _set_app_state(mock_app, app_products, default_product_name)
+    _set_app_state(app, app_products, default_product_name)
 
-    return mock_app
+    return app
 
 
 @pytest.mark.parametrize(
-    "request_url,product_from_client,expected_product",
+    "request_url,x_product_name_header,expected_product",
     [
         ("https://tis-master.domain.io/", "tis", "tis"),
-        ("https://s4l-staging.domain.com/v0/", "s4l", "s4l"),
         ("https://osparc-master.domain.com/v0/projects", None, "osparc"),
         ("https://s4l.domain.com/", "s4l", "s4l"),
         ("https://some-valid-but-undefined-product.io/", None, FRONTEND_APP_DEFAULT),
@@ -79,47 +82,47 @@ def mock_app(mock_postgres_product_table: dict[str, Any]):
         ("https://ti-solutions.io/", "tis", "tis"),
         ("https://osparc.io/", None, "osparc"),  # e.g. an old front-end
         ("https://staging.osparc.io/", "osparc", "osparc"),
+        ("https://s4l-staging.domain.com/v0/", "s4l", "s4l"),
+        # new auth of subdomains. SEE https://github.com/ITISFoundation/osparc-simcore/pull/6484
+        (
+            "https://34c878cd-f801-433f-9ddb-7dccba9251af.services.s4l-staging.domain.com",
+            None,
+            "s4l",
+        ),
     ],
 )
 async def test_middleware_product_discovery(
-    request_url, product_from_client, expected_product: str, mock_app
+    request_url: str,
+    x_product_name_header: str | None,
+    expected_product: str,
+    mock_app: web.Application,
 ):
     """
     A client's request reaches the middleware with
         - an url (request_url),
         - a product name in the header from client (product_from_client)
     """
-    requested_url = URL(request_url)
+    url = URL(request_url)
+    headers = {
+        "Host": url.host,
+        "X-Forwarded-Host": url.host,
+    }
+    if x_product_name_header:
+        headers.update({X_PRODUCT_NAME_HEADER: x_product_name_header})
 
-    # mocks
-    class MockRequest(dict):
-        @property
-        def headers(self):
-            return (
-                {X_PRODUCT_NAME_HEADER: product_from_client}
-                if product_from_client
-                else {}
-            )
+    mock_request = make_mocked_request(
+        "GET",
+        url.path,
+        headers=headers,
+        app=mock_app,
+    )
 
-        @property
-        def app(self):
-            return mock_app
+    async def _mock_handler(_request: web.Request):
+        return web.Response(text="OK")
 
-        @property
-        def path(self):
-            return requested_url.path
-
-        @property
-        def host(self):
-            return requested_url.host
-
-    mock_request = MockRequest()
-
-    async def mock_handler(request):
-        return "OK"
-
-    # under test ---------
-    response = await discover_product_middleware(mock_request, mock_handler)
+    # run middleware
+    response = await discover_product_middleware(mock_request, _mock_handler)
 
     # checks
     assert get_product_name(mock_request) == expected_product
+    assert response.status == status.HTTP_200_OK
