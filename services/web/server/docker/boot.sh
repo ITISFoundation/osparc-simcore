@@ -38,8 +38,14 @@ echo "$INFO" "Selected config ${APP_CONFIG}"
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
 # NOTE: the number of workers ```(2 x $num_cores) + 1``` is
-# the official recommendation [https://docs.gunicorn.org/en/latest/design.html#how-many-workers]
+# the official recommendation https://docs.gunicorn.org/en/latest/design.html#how-many-workers
 # For now we set it to 1 to check what happens with websockets
+#
+# SEE also https://docs.aiohttp.org/en/stable/deployment.html#start-gunicorn
+#
+# NOTE: GUNICORN_CMD_ARGS is affecting as well gunicorn
+# SEE https://docs.gunicorn.org/en/latest/settings.html#settings
+echo "$INFO" "GUNICORN_CMD_ARGS: $GUNICORN_CMD_ARGS"
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: ptvsd is programmatically enabled inside of the service

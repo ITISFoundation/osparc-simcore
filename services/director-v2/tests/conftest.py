@@ -42,12 +42,12 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
-    "pytest_simcore.socketio",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
@@ -55,6 +55,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_dask_service",
     "pytest_simcore.simcore_services",
     "pytest_simcore.simcore_storage_service",
+    "pytest_simcore.socketio",
 ]
 
 logger = logging.getLogger(__name__)
@@ -187,7 +188,7 @@ def mock_env(
             "REGISTRY_USER": "test",
             "SC_BOOT_MODE": "production",
             "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
-            "SWARM_STACK_NAME": "test_swarm_name",
+            "SWARM_STACK_NAME": "pytest-simcore",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
         },
     )
@@ -208,6 +209,7 @@ async def client(mock_env: EnvVarsDict) -> AsyncIterator[TestClient]:
 async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
+    print("Application settings\n", settings.json(indent=2))
     async with LifespanManager(app):
         yield app
 

@@ -5,6 +5,7 @@ from pathlib import Path
 
 import aiofiles
 from aiohttp import ClientSession
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_storage import (
     ETag,
     FileMetaDataGet,
@@ -12,10 +13,10 @@ from models_library.api_schemas_storage import (
     LinkType,
     UploadedPart,
 )
-from models_library.basic_types import IDStr, SHA256Str
+from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, TypeAdapter, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.file_utils import create_sha256_checksum
 from servicelib.progress_bar import ProgressBarData
 from settings_library.aws_s3_cli import AwsS3CliSettings
@@ -189,7 +190,9 @@ async def download_path_from_s3(
                     aws_s3_cli_settings,
                     progress_bar,
                     local_directory_path=local_path,
-                    download_s3_link=TypeAdapter(AnyUrl).validate_python(f"{download_link}"),
+                    download_s3_link=TypeAdapter(AnyUrl).validate_python(
+                        f"{download_link}"
+                    ),
                 )
             elif r_clone_settings:
                 await r_clone.sync_s3_to_local(

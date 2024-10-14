@@ -4,6 +4,7 @@
 # pylint: disable=unused-variable
 
 import uuid
+import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
 
@@ -37,6 +38,7 @@ from simcore_postgres_database.webserver_models import (
     user_to_groups,
     users,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 pytest_plugins = [
     "pytest_simcore.pytest_global_environs",
@@ -81,6 +83,30 @@ def make_engine(
     return _make
 
 
+@pytest.fixture
+def make_asyncpg_engine(postgres_service: str) -> Callable[[bool], AsyncEngine]:
+    # NOTE: users is responsible of `await engine.dispose()`
+    dsn = postgres_service.replace("postgresql://", "postgresql+asyncpg://")
+    minsize = 1
+    maxsize = 50
+
+    def _(echo: bool):
+        engine: AsyncEngine = create_async_engine(
+            dsn,
+            pool_size=minsize,
+            max_overflow=maxsize - minsize,
+            connect_args={
+                "server_settings": {"application_name": "postgres_database_tests"}
+            },
+            pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
+            future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
+            echo=echo,
+        )
+        return engine
+
+    return _
+
+
 def is_postgres_responsive(dsn) -> bool:
     """Check if something responds to ``url``"""
     try:
@@ -107,6 +133,11 @@ def pg_sa_engine(
 ) -> Iterator[sa.engine.Engine]:
     """
     Runs migration to create tables and return a sqlalchemy engine
+
+    NOTE: use this fixture to ensure pg db:
+        - up,
+        - responsive,
+        - init (w/ tables) and/or migrated
     """
     # NOTE: Using migration to upgrade/downgrade is not
     # such a great idea since these tests are used while developing
@@ -142,27 +173,54 @@ def pg_sa_engine(
 
 
 @pytest.fixture
-async def pg_engine(
+async def aiopg_engine(
     pg_sa_engine: sa.engine.Engine, make_engine: Callable
 ) -> AsyncIterator[Engine]:
     """
     Return an aiopg.sa engine connected to a responsive and migrated pg database
     """
-    async_engine = await make_engine(is_async=True)
 
-    yield async_engine
+    aiopg_sa_engine = await make_engine(is_async=True)
+
+    warnings.warn(
+        "The 'aiopg_engine' is deprecated since we are replacing `aiopg` library by `sqlalchemy.ext.asyncio`."
+        "SEE https://github.com/ITISFoundation/osparc-simcore/issues/4529. "
+        "Please use 'asyncpg_engine' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    yield aiopg_sa_engine
 
     # closes async-engine connections and terminates
-    async_engine.close()
-    await async_engine.wait_closed()
-    async_engine.terminate()
+    aiopg_sa_engine.close()
+    await aiopg_sa_engine.wait_closed()
+    aiopg_sa_engine.terminate()
 
 
 @pytest.fixture
-async def connection(pg_engine: Engine) -> AsyncIterator[SAConnection]:
+async def connection(aiopg_engine: Engine) -> AsyncIterator[SAConnection]:
     """Returns an aiopg.sa connection from an engine to a fully furnished and ready pg database"""
-    async with pg_engine.acquire() as _conn:
+    async with aiopg_engine.acquire() as _conn:
         yield _conn
+
+
+@pytest.fixture
+async def asyncpg_engine(
+    is_pdb_enabled: bool,
+    pg_sa_engine: sa.engine.Engine,
+    make_asyncpg_engine: Callable[[bool], AsyncEngine],
+) -> AsyncIterator[AsyncEngine]:
+
+    assert (
+        pg_sa_engine
+    ), "Ensures pg db up, responsive, init (w/ tables) and/or migrated"
+
+    _apg_engine = make_asyncpg_engine(is_pdb_enabled)
+
+    yield _apg_engine
+
+    await _apg_engine.dispose()
 
 
 #
@@ -240,7 +298,7 @@ def create_fake_user(
 
 @pytest.fixture
 async def create_fake_cluster(
-    pg_engine: Engine, faker: Faker
+    aiopg_engine: Engine, faker: Faker
 ) -> AsyncIterator[Callable[..., Awaitable[int]]]:
     cluster_ids = []
     assert cluster_to_groups is not None
@@ -254,7 +312,7 @@ async def create_fake_cluster(
             "authentication": faker.pydict(value_types=[str]),
         }
         insert_values.update(overrides)
-        async with pg_engine.acquire() as conn:
+        async with aiopg_engine.acquire() as conn:
             cluster_id = await conn.scalar(
                 clusters.insert().values(**insert_values).returning(clusters.c.id)
             )
@@ -265,13 +323,13 @@ async def create_fake_cluster(
     yield _creator
 
     # cleanup
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         await conn.execute(clusters.delete().where(clusters.c.id.in_(cluster_ids)))
 
 
 @pytest.fixture
 async def create_fake_project(
-    pg_engine: Engine,
+    aiopg_engine: Engine,
 ) -> AsyncIterator[Callable[..., Awaitable[RowProxy]]]:
     created_project_uuids = []
 
@@ -288,7 +346,7 @@ async def create_fake_project(
 
     yield _creator
 
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         await conn.execute(
             projects.delete().where(projects.c.uuid.in_(created_project_uuids))
         )

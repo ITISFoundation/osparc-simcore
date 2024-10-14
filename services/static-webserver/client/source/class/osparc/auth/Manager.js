@@ -33,7 +33,7 @@ qx.Class.define("osparc.auth.Manager", {
   */
 
   events: {
-    "logout": "qx.event.type.Event"
+    "loggedOut": "qx.event.type.Event"
   },
 
 
@@ -212,8 +212,8 @@ qx.Class.define("osparc.auth.Manager", {
           "client_session_id": osparc.utils.Utils.getClientSessionID()
         }
       };
-      osparc.data.Resources.fetch("auth", "postLogout", params)
-        .then(data => this.fireEvent("logout"))
+      return osparc.data.Resources.fetch("auth", "postLogout", params)
+        .then(data => this.fireEvent("loggedOut"))
         .catch(error => console.log("already logged out"))
         .finally(this.__logoutUser());
     },

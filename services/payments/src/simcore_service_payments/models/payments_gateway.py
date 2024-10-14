@@ -3,8 +3,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Literal
 
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
-from models_library.basic_types import AmountDecimal, IDStr
+from models_library.basic_types import AmountDecimal
 from models_library.payments import UserInvoiceAddress
 from models_library.products import StripePriceID, StripeTaxRateID
 from pydantic import BaseModel, EmailStr, Extra, Field

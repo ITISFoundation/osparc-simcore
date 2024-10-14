@@ -1,6 +1,6 @@
 from typing import Any, TypeAlias
 
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, field_validator
 
 from ..clusters import ClusterID

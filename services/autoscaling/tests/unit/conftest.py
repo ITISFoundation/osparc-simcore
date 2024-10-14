@@ -147,6 +147,30 @@ def with_labelize_drain_nodes(
     )
 
 
+@pytest.fixture(
+    params=[
+        "with_AUTOSCALING_DOCKER_JOIN_DRAINED",
+        "without_AUTOSCALING_DOCKER_JOIN_DRAINED",
+    ]
+)
+def with_docker_join_drained(request: pytest.FixtureRequest) -> bool:
+    return bool(request.param == "with_AUTOSCALING_DOCKER_JOIN_DRAINED")
+
+
+@pytest.fixture
+def app_with_docker_join_drained(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    with_docker_join_drained: bool,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "AUTOSCALING_DOCKER_JOIN_DRAINED": f"{with_docker_join_drained}",
+        },
+    )
+
+
 @pytest.fixture(scope="session")
 def fake_ssm_settings() -> SSMSettings:
     return SSMSettings(**SSMSettings.model_config["json_schema_extra"]["examples"][0])
@@ -358,11 +382,17 @@ def enabled_rabbitmq(
     return rabbit_service
 
 
+_LIFESPAN_TIMEOUT: Final[int] = 10
+
+
 @pytest.fixture
 async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
     app = create_app(settings)
-    async with LifespanManager(app):
+    # NOTE: the timeout is sometime too small for CI machines, and even larger machines
+    async with LifespanManager(
+        app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT
+    ):
         yield app
 
 
@@ -779,6 +809,7 @@ def cluster() -> Callable[..., Cluster]:
                 buffer_ec2s=[],
                 disconnected_nodes=[],
                 terminating_nodes=[],
+                retired_nodes=[],
                 terminated_instances=[],
             ),
             **cluter_overrides,

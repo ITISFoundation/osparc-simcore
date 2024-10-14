@@ -11,10 +11,11 @@ from collections.abc import Callable
 from typing import Any
 
 from playwright.sync_api import Page, WebSocket
+from pytest_simcore.helpers.playwright import web_socket_default_log_handler
 from pytest_simcore.helpers.playwright_sim4life import (
-    launch_S4L,
-    interact_with_S4L,
     check_video_streaming,
+    interact_with_s4l,
+    wait_for_launched_s4l,
 )
 
 
@@ -23,7 +24,7 @@ def test_template(
     create_project_from_template_dashboard: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
     template_id: str,
-    autoscaled: bool,
+    is_autoscaled: bool,
     check_videostreaming: bool,
 ):
     project_data = create_project_from_template_dashboard(template_id)
@@ -35,10 +36,13 @@ def test_template(
     node_ids: list[str] = list(project_data["workbench"])
     assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 
-    resp = launch_S4L(page, node_ids[0], log_in_and_out, autoscaled)
+    resp = wait_for_launched_s4l(
+        page, node_ids[0], log_in_and_out, autoscaled=is_autoscaled, copy_workspace=True
+    )
     s4l_websocket = resp["websocket"]
-    s4l_iframe = resp["iframe"]
-    interact_with_S4L(page, s4l_iframe)
+    with web_socket_default_log_handler(s4l_websocket):
+        s4l_iframe = resp["iframe"]
+        interact_with_s4l(page, s4l_iframe)
 
-    if check_videostreaming:
-        check_video_streaming(page, s4l_iframe, s4l_websocket)
+        if check_videostreaming:
+            check_video_streaming(page, s4l_iframe, s4l_websocket)

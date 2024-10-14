@@ -1,10 +1,10 @@
 from typing import Annotated
 
+from common_library.pydantic_basic_types import IDStr
 from pydantic import AnyHttpUrl, BeforeValidator, Field, TypeAdapter
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
-from .basic_types import IDStr
 
 ANY_HTTP_URL_ADAPTER: TypeAdapter = TypeAdapter(AnyHttpUrl)
 

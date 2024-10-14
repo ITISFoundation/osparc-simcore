@@ -1,6 +1,7 @@
 import logging
 from decimal import Decimal
 
+from common_library.pydantic_basic_types import IDStr
 from fastapi import FastAPI
 from models_library.api_schemas_payments.errors import (
     PaymentsError,
@@ -12,7 +13,6 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodID,
     PaymentMethodInitiated,
 )
-from models_library.basic_types import IDStr
 from models_library.payments import UserInvoiceAddress
 from models_library.products import StripePriceID, StripeTaxRateID
 from models_library.users import UserID

@@ -117,12 +117,16 @@ CLASSIC_TIP_INPUT_FILE := .e2e-playwright-classictip-env.txt
 $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE):
 	@read -p "Enter your product URL: " PRODUCT_URL; \
 	read -p "Is the product billable [y/n]: " BILLABLE; \
+	read -p "Is the product lite [y/n]: " IS_LITE; \
 	read -p "Is the test running in autoscaled deployment [y/n]: " AUTOSCALED; \
 	read -p "Enter your username: " USER_NAME; \
 	read -s -p "Enter your password: " PASSWORD; echo ""; \
 	echo "--product-url=$$PRODUCT_URL --user-name=$$USER_NAME --password=$$PASSWORD" > $@; \
 	if [ "$$BILLABLE" = "y" ]; then \
 		echo "--product-billable" >> $@; \
+	fi; \
+	if [ "$$IS_LITE" = "y" ]; then \
+		echo "--product-lite" >> $@; \
 	fi; \
 	if [ "$$AUTOSCALED" = "y" ]; then \
 		echo "--autoscaled" >> $@; \
@@ -131,17 +135,18 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 		read -p "Enter the size of the large file (human readable form e.g. 3Gib): " LARGE_FILE_SIZE; \
 		echo "--service-key=jupyter-math --large-file-size=$$LARGE_FILE_SIZE" >> $@; \
 	elif [ "$@" = "$(S4L_INPUT_FILE)" ]; then \
-		echo "--plus_button_test_id=startS4LButton" >> $@; \
 		read -p "Do you want to check the videostreaming ? (requires to run with chrome/msedge) [y/n]: " VIDEOSTREAM; \
 		if [ "$$VIDEOSTREAM" = "y" ]; then \
 			echo "--check-videostreaming" >> $@; \
 		fi; \
 		read -p "Do you want to use the plus button (NOTE: if yes then pass the osparc-test-ID of the plus button in the service key) ? [y/n]: " PLUS_BUTTON; \
 		if [ "$$PLUS_BUTTON" = "y" ]; then \
+			echo "--service-key=startS4LButton" >> $@; \
 			echo "--use-plus-button" >> $@; \
+		else \
+			read -p "Enter the service key: " SERVICE_KEY; \
+			echo "--service-key=$$SERVICE_KEY" >> $@; \
 		fi; \
-		read -p "Enter the service key: " SERVICE_KEY; \
-		echo "--service-key=$$SERVICE_KEY" >> $@; \
 	elif [ "$@" = "$(SLEEPERS_INPUT_FILE)" ]; then \
 		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
 		echo "--num-sleepers=$$NUM_SLEEPERS" >> $@; \
@@ -182,4 +187,4 @@ define run_test_on_chrome
 endef
 
 clean:
-	@rm -rf $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE)
+	-@rm -rf $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE)

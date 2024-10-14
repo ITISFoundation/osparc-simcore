@@ -17,6 +17,10 @@ from simcore_service_dynamic_sidecar.core.docker_compose_utils import (
     docker_compose_down,
 )
 from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
+from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
+from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
+    PortNotifier,
+)
 from tenacity import retry
 from tenacity.after import after_log
 from tenacity.stop import stop_after_delay
@@ -142,3 +146,14 @@ def mock_rabbitmq_envs(
         },
     )
     return mock_environment
+
+
+@pytest.fixture
+def port_notifier(app: FastAPI) -> PortNotifier:
+    settings: ApplicationSettings = app.state.settings
+    return PortNotifier(
+        app,
+        settings.DY_SIDECAR_USER_ID,
+        settings.DY_SIDECAR_PROJECT_ID,
+        settings.DY_SIDECAR_NODE_ID,
+    )

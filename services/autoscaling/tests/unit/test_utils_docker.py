@@ -821,9 +821,13 @@ async def test_compute_cluster_used_resources_with_services_running(
 
 
 async def test_get_docker_swarm_join_script(host_node: Node):
-    join_script = await get_docker_swarm_join_bash_command()
+    join_script = await get_docker_swarm_join_bash_command(join_as_drained=True)
     assert join_script.startswith("docker swarm join")
     assert "--availability=drain" in join_script
+
+    join_script = await get_docker_swarm_join_bash_command(join_as_drained=False)
+    assert join_script.startswith("docker swarm join")
+    assert "--availability=active" in join_script
 
 
 async def test_get_docker_swarm_join_script_bad_return_code_raises(
@@ -840,7 +844,7 @@ async def test_get_docker_swarm_join_script_bad_return_code_raises(
     )
     mocked_asyncio_process.return_value.returncode = 137
     with pytest.raises(RuntimeError, match=r"unexpected error .+"):
-        await get_docker_swarm_join_bash_command()
+        await get_docker_swarm_join_bash_command(join_as_drained=True)
     # NOTE: the sleep here is to provide some time for asyncio to properly close its process communication
     # to silence the warnings
     await asyncio.sleep(2)
@@ -860,7 +864,7 @@ async def test_get_docker_swarm_join_script_returning_unexpected_command_raises(
     )
     mocked_asyncio_process.return_value.returncode = 0
     with pytest.raises(RuntimeError, match=r"expected docker .+"):
-        await get_docker_swarm_join_bash_command()
+        await get_docker_swarm_join_bash_command(join_as_drained=True)
     # NOTE: the sleep here is to provide some time for asyncio to properly close its process communication
     # to silence the warnings
     await asyncio.sleep(2)

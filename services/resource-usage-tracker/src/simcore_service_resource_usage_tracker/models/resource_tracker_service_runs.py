@@ -109,6 +109,7 @@ class ServiceRunWithCreditsDB(ServiceRunDB):
 class OsparcCreditsAggregatedByServiceKeyDB(BaseModel):
     osparc_credits: Decimal
     service_key: ServiceKey
+    running_time_in_hours: Decimal
 
     class Config:
         orm_mode = True

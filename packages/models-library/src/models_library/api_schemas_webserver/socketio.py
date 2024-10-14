@@ -1,4 +1,5 @@
-from ..basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
+
 from ..users import GroupID, UserID
 
 

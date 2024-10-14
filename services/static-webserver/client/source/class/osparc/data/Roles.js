@@ -176,6 +176,7 @@ qx.Class.define("osparc.data.Roles", {
 
       if (showWording) {
         const rolesText = new qx.ui.basic.Label(qx.locale.Manager.tr("Roles")).set({
+          alignY: "middle",
           font: "text-13"
         });
         rolesLayout.add(rolesText);

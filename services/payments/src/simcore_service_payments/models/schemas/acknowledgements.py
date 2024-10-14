@@ -1,8 +1,8 @@
 # mypy: disable-error-code=truthy-function
 from typing import Any, ClassVar
 
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
-from models_library.basic_types import IDStr
 from pydantic import BaseModel, Field, HttpUrl, validator
 
 

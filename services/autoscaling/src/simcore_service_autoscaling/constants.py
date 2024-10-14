@@ -12,9 +12,15 @@ BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
 ).validate_python("ssm-command-id")
 PREPULL_COMMAND_NAME: Final[str] = "docker images pulling"
 
-DOCKER_PULL_COMMAND: Final[
-    str
-] = "docker compose -f /docker-pull.compose.yml -p buffering pull"
+DOCKER_JOIN_COMMAND_NAME: Final[str] = "docker swarm join"
+DOCKER_JOIN_COMMAND_EC2_TAG_KEY: Final[AWSTagKey] = parse_obj_as(
+    AWSTagKey, "io.simcore.autoscaling.joined_command_sent"
+)
+
+
+DOCKER_PULL_COMMAND: Final[str] = (
+    "docker compose -f /docker-pull.compose.yml -p buffering pull"
+)
 
 PRE_PULLED_IMAGES_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
     AWSTagKey

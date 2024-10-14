@@ -1,76 +1,80 @@
-""" Adds aiohttp middleware for tracing using zipkin server instrumentation.
+""" Adds aiohttp middleware for tracing using opentelemetry instrumentation.
 
 """
+
 import logging
-from typing import Iterable
 
-import aiozipkin as az
 from aiohttp import web
-from aiohttp.web import AbstractRoute
-from aiozipkin.aiohttp_helpers import (
-    APP_AIOZIPKIN_KEY,
-    REQUEST_AIOZIPKIN_KEY,
-    middleware_maker,
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+    OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
-from yarl import URL
+from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-name-in-module
+    AioHttpClientInstrumentor,
+)
+from opentelemetry.instrumentation.aiohttp_server import (  # pylint:disable=no-name-in-module
+    AioHttpServerInstrumentor,
+)
+from opentelemetry.instrumentation.aiopg import (  # pylint:disable=no-name-in-module
+    AiopgInstrumentor,
+)
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from settings_library.tracing import TracingSettings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def setup_tracing(
     app: web.Application,
-    *,
+    tracing_settings: TracingSettings,
     service_name: str,
-    host: str,
-    port: int,
-    jaeger_base_url: URL | str,
-    skip_routes: Iterable[AbstractRoute] | None = None,
-) -> bool:
+    instrument_aiopg: bool = False,  # noqa: FBT001, FBT002
+) -> None:
     """
-    Sets up this service for a distributed tracing system
-    using zipkin (https://zipkin.io/) and Jaeger (https://www.jaegertracing.io/)
+    Sets up this service for a distributed tracing system (opentelemetry)
     """
-    zipkin_address = URL(f"{jaeger_base_url}") / "api/v2/spans"
-
-    log.debug(
-        "Setting up tracing for %s at %s:%d -> %s",
-        service_name,
-        host,
-        port,
-        zipkin_address,
+    _ = app
+    opentelemetry_collector_endpoint = (
+        tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
     )
-
-    endpoint = az.create_endpoint(service_name, ipv4=host, port=port)
-
-    # TODO: move away from aiozipkin to OpenTelemetrySDK
-    # https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/asgi/asgi.html
-    # see issue [#2715](https://github.com/ITISFoundation/osparc-simcore/issues/2715)
-    # creates / closes tracer
-    async def _tracer_cleanup_context(app: web.Application):
-
-        app[APP_AIOZIPKIN_KEY] = await az.create(
-            f"{zipkin_address}", endpoint, sample_rate=1.0
+    opentelemetry_collector_port = tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
+    if not opentelemetry_collector_endpoint and not opentelemetry_collector_port:
+        _logger.warning("Skipping opentelemetry tracing setup")
+        return
+    if not opentelemetry_collector_endpoint or not opentelemetry_collector_port:
+        msg = (
+            "Variable opentelemetry_collector_endpoint "
+            f"[{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}] "
+            "or opentelemetry_collector_port "
+            f"[{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT}] "
+            "unset. Provide both or remove both."
         )
-
-        yield
-
-        if APP_AIOZIPKIN_KEY in app:
-            await app[APP_AIOZIPKIN_KEY].close()
-
-    app.cleanup_ctx.append(_tracer_cleanup_context)
-
-    # adds middleware to tag spans (when used, tracer should be ready)
-    m = middleware_maker(
-        skip_routes=skip_routes,
-        tracer_key=APP_AIOZIPKIN_KEY,
-        request_key=REQUEST_AIOZIPKIN_KEY,
+        raise RuntimeError(msg)
+    resource = Resource(attributes={"service.name": service_name})
+    trace.set_tracer_provider(TracerProvider(resource=resource))
+    tracer_provider: trace.TracerProvider = trace.get_tracer_provider()
+    tracing_destination: str = (
+        f"{opentelemetry_collector_endpoint}:{opentelemetry_collector_port}/v1/traces"
     )
-    # NOTE: mypy: tracing library uses helpers aiozipkin.aiohttp_helpers that are not
-    # exactly as defined with latest aiohttp.typedefs. They are compatible but mypy fails.
-    app.middlewares.append(m)  # type: ignore[arg-type]
 
-    # # WARNING: adds a middleware that should be the outermost since
-    # # it expects stream responses while we allow data returns from a handler
-    # az.setup(app, tracer, skip_routes=skip_routes)
+    _logger.info(
+        "Trying to connect service %s to tracing collector at %s.",
+        service_name,
+        tracing_destination,
+    )
 
-    return True
+    otlp_exporter = OTLPSpanExporterHTTP(
+        endpoint=tracing_destination,
+    )
+
+    # Add the span processor to the tracer provider
+    tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))  # type: ignore[attr-defined] # https://github.com/open-telemetry/opentelemetry-python/issues/3713
+    # Instrument aiohttp server and client
+    AioHttpServerInstrumentor().instrument()
+    AioHttpClientInstrumentor().instrument()
+    if instrument_aiopg:
+        AiopgInstrumentor().instrument()
+    RequestsInstrumentor().instrument()

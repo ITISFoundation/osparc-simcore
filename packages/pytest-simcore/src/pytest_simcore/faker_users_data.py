@@ -11,8 +11,8 @@
 from typing import Any
 
 import pytest
+from common_library.pydantic_basic_types import IDStr
 from faker import Faker
-from models_library.basic_types import IDStr
 from models_library.users import UserID
 from pydantic import EmailStr, TypeAdapter
 

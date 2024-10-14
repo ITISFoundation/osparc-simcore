@@ -5,12 +5,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Final
 
+from common_library.pydantic_basic_types import IDStr
 from fastapi import FastAPI
 from models_library.api_schemas_long_running_tasks.base import (
     ProgressPercent,
     TaskProgress,
 )
-from models_library.basic_types import IDStr
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from pydantic import PositiveInt
@@ -52,6 +52,7 @@ from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports, user_services_preferences
 from ..modules.mounted_fs import MountedVolumes
+from ..modules.notifications._notifications_ports import PortNotifier
 from ..modules.outputs import OutputsManager, event_propagation_disabled
 from .long_running_tasksutils import run_before_shutdown_actions
 from .resource_tracking import send_service_started, send_service_stopped
@@ -168,24 +169,27 @@ async def task_create_service_containers(
 
     assert shared_store.compose_spec  # nosec
 
-    async with event_propagation_disabled(app), _reset_on_error(shared_store):
+    async with event_propagation_disabled(app), _reset_on_error(
+        shared_store
+    ), ProgressBarData(
+        num_steps=4,
+        progress_report_cb=functools.partial(
+            post_progress_message,
+            app,
+            ProgressType.SERVICE_CONTAINERS_STARTING,
+        ),
+        description=IDStr("starting software"),
+    ) as progress_bar:
         with log_context(_logger, logging.INFO, "load user services preferences"):
             if user_services_preferences.is_feature_enabled(app):
                 await user_services_preferences.load_user_services_preferences(app)
+        await progress_bar.update()
 
         # removes previous pending containers
         progress.update(message="cleanup previous used resources")
         result = await docker_compose_rm(shared_store.compose_spec, settings)
         _raise_for_errors(result, "rm")
-
-        progress.update(message="pulling images", percent=ProgressPercent(0.01))
-        await post_sidecar_log_message(
-            app, "pulling service images", log_level=logging.INFO
-        )
-        await docker_compose_pull(app, shared_store.compose_spec)
-        await post_sidecar_log_message(
-            app, "service images ready", log_level=logging.INFO
-        )
+        await progress_bar.update()
 
         progress.update(
             message="creating and starting containers", percent=ProgressPercent(0.90)
@@ -194,6 +198,7 @@ async def task_create_service_containers(
             app, "starting service containers", log_level=logging.INFO
         )
         await _retry_docker_compose_create(shared_store.compose_spec, settings)
+        await progress_bar.update()
 
         progress.update(
             message="ensure containers are started", percent=ProgressPercent(0.95)
@@ -317,6 +322,15 @@ async def task_runs_docker_compose_down(
     progress.update(message="done", percent=ProgressPercent(0.99))
 
 
+def _get_satate_folders_size(paths: list[Path]) -> int:
+    total_size: int = 0
+    for path in paths:
+        for file in path.rglob("*"):
+            if file.is_file():
+                total_size += file.stat().st_size
+    return total_size
+
+
 async def _restore_state_folder(
     app: FastAPI,
     *,
@@ -343,7 +357,7 @@ async def task_restore_state(
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
-) -> None:
+) -> int:
     # NOTE: the legacy data format was a zip file
     # this method will maintain retro compatibility.
     # The legacy archive is always downloaded and decompressed
@@ -386,6 +400,8 @@ async def task_restore_state(
     )
     progress.update(message="state restored", percent=ProgressPercent(0.99))
 
+    return _get_satate_folders_size(state_paths)
+
 
 async def _save_state_folder(
     app: FastAPI,
@@ -415,7 +431,7 @@ async def task_save_state(
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
-) -> None:
+) -> int:
     """
     Saves the states of the service.
     If a legacy archive is detected, it will be removed after
@@ -449,12 +465,15 @@ async def task_save_state(
     await post_sidecar_log_message(app, "Finished state saving", log_level=logging.INFO)
     progress.update(message="finished state saving", percent=ProgressPercent(0.99))
 
+    return _get_satate_folders_size(state_paths)
+
 
 async def task_ports_inputs_pull(
     progress: TaskProgress,
     port_keys: list[str] | None,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
+    settings: ApplicationSettings,
     *,
     inputs_pulling_enabled: bool,
 ) -> int:
@@ -488,6 +507,12 @@ async def task_ports_inputs_pull(
                     post_sidecar_log_message, app, log_level=logging.INFO
                 ),
                 progress_bar=root_progress,
+                port_notifier=PortNotifier(
+                    app,
+                    settings.DY_SIDECAR_USER_ID,
+                    settings.DY_SIDECAR_PROJECT_ID,
+                    settings.DY_SIDECAR_NODE_ID,
+                ),
             )
     await post_sidecar_log_message(
         app, "Finished pulling inputs", log_level=logging.INFO
@@ -524,6 +549,7 @@ async def task_ports_outputs_pull(
                 post_sidecar_log_message, app, log_level=logging.INFO
             ),
             progress_bar=root_progress,
+            port_notifier=None,
         )
     await post_sidecar_log_message(
         app, "Finished pulling outputs", log_level=logging.INFO

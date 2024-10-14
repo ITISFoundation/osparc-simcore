@@ -30,6 +30,7 @@ from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.ssm import SSMSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -114,7 +115,7 @@ class EC2InstancesSettings(BaseCustomSettings):
     )
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=1),
-        description="Time after which an EC2 instance may being the termination process (0<=T<=59 minutes, is automatically capped)"
+        description="Time after which an EC2 instance may begin the termination process (0<=T<=59 minutes, is automatically capped)"
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
     EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION: datetime.timedelta = Field(
@@ -283,6 +284,20 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="If true, drained nodes"
         " are maintained as active (in the docker terminology) "
         "but a docker node label named osparc-services-ready is attached",
+    )
+    AUTOSCALING_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
+    )
+
+    AUTOSCALING_DOCKER_JOIN_DRAINED: bool = Field(
+        default=True,
+        description="If true, new nodes join the swarm as drained. If false as active.",
+    )
+
+    AUTOSCALING_WAIT_FOR_CLOUD_INIT_BEFORE_WARM_BUFFER_ACTIVATION: bool = Field(
+        default=False,
+        description="If True, then explicitely wait for cloud-init process to be completed before issuing commands. "
+        "TIP: might be useful when cheap machines are used",
     )
 
     @cached_property

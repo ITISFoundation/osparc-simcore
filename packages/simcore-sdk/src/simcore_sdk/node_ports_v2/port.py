@@ -6,8 +6,8 @@ from pathlib import Path
 from pprint import pformat
 from typing import Any
 
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_storage import LinkType
-from models_library.basic_types import IDStr
 from models_library.services_io import BaseServiceIOModel
 from models_library.services_types import ServicePortKey
 from pydantic import (

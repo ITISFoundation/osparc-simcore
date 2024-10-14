@@ -2,22 +2,24 @@ import datetime
 import logging
 import re
 from dataclasses import dataclass
-from typing import Dict, Final, Union
+from typing import Final, TypedDict
 
 import arrow
 from playwright.sync_api import FrameLocator, Page, WebSocket, expect
+from pydantic import TypeAdapter  # pylint: disable=no-name-in-module
+from pydantic import ByteSize
 
 from .logging_tools import log_context
 from .playwright import (
-    SECOND,
     MINUTE,
+    SECOND,
     SOCKETIO_MESSAGE_PREFIX,
     SocketIOEvent,
     decode_socketio_42_message,
     wait_for_service_running,
 )
 
-_S4L_STREAMING_ESTABLISHMENT_MAX_TIME: Final[int] = 15 * SECOND
+_S4L_STREAMING_ESTABLISHMENT_MAX_TIME: Final[int] = 30 * SECOND
 _S4L_SOCKETIO_REGEX: Final[re.Pattern] = re.compile(
     r"^(?P<protocol>[^:]+)://(?P<node_id>[^\.]+)\.services\.(?P<hostname>[^\/]+)\/socket\.io\/.+$"
 )
@@ -28,6 +30,7 @@ _S4L_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     _EC2_STARTUP_MAX_WAIT_TIME + _S4L_DOCKER_PULLING_MAX_TIME + _S4L_MAX_STARTUP_TIME
 )
 _S4L_STARTUP_SCREEN_MAX_TIME: Final[int] = 45 * SECOND
+_S4L_COPY_WORKSPACE_TIME: Final[int] = 60 * SECOND
 
 
 @dataclass(kw_only=True)
@@ -62,7 +65,7 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                     self._initial_bit_rate_time = arrow.utcnow().datetime
                     self.logger.info(
                         "%s",
-                        f"{self._initial_bit_rate=} at {self._initial_bit_rate_time.isoformat()}",
+                        f"{TypeAdapter(ByteSize).validate_python(self._initial_bit_rate).human_readable()}/s at {self._initial_bit_rate_time.isoformat()}",
                     )
                     return False
 
@@ -77,14 +80,26 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                     bitrate_test = bool(self._initial_bit_rate != current_bitrate)
                     self.logger.info(
                         "%s",
-                        f"{current_bitrate=} after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
+                        f"{TypeAdapter(ByteSize).validate_python(current_bitrate).human_readable()}/s after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
                     )
                     return bitrate_test
 
         return False
 
 
-def launch_S4L(page: Page, node_id, log_in_and_out: WebSocket, autoscaled: bool) -> Dict[str, Union[WebSocket, FrameLocator]]:
+class WaitForS4LDict(TypedDict):
+    websocket: WebSocket
+    iframe: FrameLocator
+
+
+def wait_for_launched_s4l(
+    page: Page,
+    node_id,
+    log_in_and_out: WebSocket,
+    *,
+    autoscaled: bool,
+    copy_workspace: bool,
+) -> WaitForS4LDict:
     with log_context(logging.INFO, "launch S4L") as ctx:
         predicate = S4LWaitForWebsocket(logger=ctx.logger)
         with page.expect_websocket(
@@ -95,6 +110,7 @@ def launch_S4L(page: Page, node_id, log_in_and_out: WebSocket, autoscaled: bool)
                 if autoscaled
                 else _S4L_MAX_STARTUP_TIME
             )
+            + (_S4L_COPY_WORKSPACE_TIME if copy_workspace else 0)
             + 10 * SECOND,
         ) as ws_info:
             s4l_iframe = wait_for_service_running(
@@ -105,18 +121,19 @@ def launch_S4L(page: Page, node_id, log_in_and_out: WebSocket, autoscaled: bool)
                     _S4L_AUTOSCALED_MAX_STARTUP_TIME
                     if autoscaled
                     else _S4L_MAX_STARTUP_TIME
-                ),
+                )
+                + (_S4L_COPY_WORKSPACE_TIME if copy_workspace else 0),
                 press_start_button=False,
             )
         s4l_websocket = ws_info.value
         ctx.logger.info("acquired S4L websocket!")
         return {
             "websocket": s4l_websocket,
-            "iframe" : s4l_iframe,
+            "iframe": s4l_iframe,
         }
 
 
-def interact_with_S4L(page: Page, s4l_iframe: FrameLocator) -> None:
+def interact_with_s4l(page: Page, s4l_iframe: FrameLocator) -> None:
     # Wait until grid is shown
     # NOTE: the startup screen should disappear very fast after the websocket was acquired
     with log_context(logging.INFO, "Interact with S4l"):
@@ -124,7 +141,9 @@ def interact_with_S4L(page: Page, s4l_iframe: FrameLocator) -> None:
     page.wait_for_timeout(3000)
 
 
-def check_video_streaming(page: Page, s4l_iframe: FrameLocator, s4l_websocket: WebSocket) -> None:
+def check_video_streaming(
+    page: Page, s4l_iframe: FrameLocator, s4l_websocket: WebSocket
+) -> None:
     with log_context(logging.INFO, "Check videostreaming works") as ctx:
         waiter = _S4LSocketIOCheckBitRateIncreasesMessagePrinter(
             observation_time=datetime.timedelta(

@@ -1,18 +1,19 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 
 import httpx
 import pytest
+from common_library.pydantic_basic_types import IDStr
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
     PaymentMethodInitiated,
 )
-from models_library.basic_types import IDStr
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID

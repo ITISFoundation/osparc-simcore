@@ -7,7 +7,7 @@ from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableC
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.schemas.errors import ErrorGet
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ._common import API_SERVER_DEV_FEATURES_ENABLED
+from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
 
 _logger = logging.getLogger(__name__)
 
@@ -28,8 +28,8 @@ WALLET_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 
 @router.get(
     "/default",
+    description="Get default wallet\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
     response_model=WalletGetWithAvailableCredits,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     responses=WALLET_STATUS_CODES,
 )
 async def get_default_wallet(
@@ -41,8 +41,8 @@ async def get_default_wallet(
 @router.get(
     "/{wallet_id}",
     response_model=WalletGetWithAvailableCredits,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     responses=WALLET_STATUS_CODES,
+    description="Get wallet\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
 )
 async def get_wallet(
     wallet_id: int,

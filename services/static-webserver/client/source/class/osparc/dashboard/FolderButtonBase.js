@@ -83,7 +83,7 @@ qx.Class.define("osparc.dashboard.FolderButtonBase", {
         row: 0,
         rowSpan: 2
       }
-    }
+    },
   },
 
   members: { // eslint-disable-line qx-rules/no-refs-in-members

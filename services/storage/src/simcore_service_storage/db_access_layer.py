@@ -47,6 +47,9 @@ from models_library.projects_nodes_io import StorageFileID
 from models_library.users import GroupID, UserID
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.workspaces_access_rights import (
+    workspaces_access_rights,
+)
 from simcore_postgres_database.storage_models import file_meta_data, user_to_groups
 
 logger = logging.getLogger(__name__)
@@ -142,6 +145,26 @@ access_rights_subquery = (
 ).subquery("access_rights_subquery")
 
 
+workspace_access_rights_subquery = (
+    sa.select(
+        workspaces_access_rights.c.workspace_id,
+        sa.func.jsonb_object_agg(
+            workspaces_access_rights.c.gid,
+            sa.func.jsonb_build_object(
+                "read",
+                workspaces_access_rights.c.read,
+                "write",
+                workspaces_access_rights.c.write,
+                "delete",
+                workspaces_access_rights.c.delete,
+            ),
+        )
+        .filter(workspaces_access_rights.c.read)
+        .label("access_rights"),
+    ).group_by(workspaces_access_rights.c.workspace_id)
+).subquery("workspace_access_rights_subquery")
+
+
 async def list_projects_access_rights(
     conn: SAConnection, user_id: UserID
 ) -> dict[ProjectID, AccessRights]:
@@ -151,23 +174,50 @@ async def list_projects_access_rights(
 
     user_group_ids: list[GroupID] = await _get_user_groups_ids(conn, user_id)
 
-    query = (
+    private_workspace_query = (
         sa.select(
             projects.c.uuid,
             access_rights_subquery.c.access_rights,
         )
         .select_from(projects.join(access_rights_subquery, isouter=True))
         .where(
-            (projects.c.prj_owner == user_id)
-            | sa.text(
-                f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_group_ids)})"
+            (
+                (projects.c.prj_owner == user_id)
+                | sa.text(
+                    f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_group_ids)})"
+                )
             )
+            & (projects.c.workspace_id.is_(None))
         )
     )
 
+    shared_workspace_query = (
+        sa.select(
+            projects.c.uuid,
+            workspace_access_rights_subquery.c.access_rights,
+        )
+        .select_from(
+            projects.join(
+                workspace_access_rights_subquery,
+                projects.c.workspace_id
+                == workspace_access_rights_subquery.c.workspace_id,
+            )
+        )
+        .where(
+            (
+                sa.text(
+                    f"jsonb_exists_any(workspace_access_rights_subquery.access_rights, {assemble_array_groups(user_group_ids)})"
+                )
+            )
+            & (projects.c.workspace_id.is_not(None))
+        )
+    )
+
+    combined_query = sa.union_all(private_workspace_query, shared_workspace_query)
+
     projects_access_rights = {}
 
-    async for row in conn.execute(query):
+    async for row in conn.execute(combined_query):
         assert isinstance(row.access_rights, dict)  # nosec
         assert isinstance(row.uuid, str)  # nosec
 
@@ -193,7 +243,7 @@ async def get_project_access_rights(
     """
     user_group_ids: list[GroupID] = await _get_user_groups_ids(conn, user_id)
 
-    query = (
+    private_workspace_query = (
         sa.select(
             projects.c.prj_owner,
             access_rights_subquery.c.access_rights,
@@ -207,10 +257,36 @@ async def get_project_access_rights(
                     f"jsonb_exists_any(access_rights_subquery.access_rights, {assemble_array_groups(user_group_ids)})"
                 )
             )
+            & (projects.c.workspace_id.is_(None))
         )
     )
 
-    result: ResultProxy = await conn.execute(query)
+    shared_workspace_query = (
+        sa.select(
+            projects.c.prj_owner,
+            workspace_access_rights_subquery.c.access_rights,
+        )
+        .select_from(
+            projects.join(
+                workspace_access_rights_subquery,
+                projects.c.workspace_id
+                == workspace_access_rights_subquery.c.workspace_id,
+            )
+        )
+        .where(
+            (projects.c.uuid == f"{project_id}")
+            & (
+                sa.text(
+                    f"jsonb_exists_any(workspace_access_rights_subquery.access_rights, {assemble_array_groups(user_group_ids)})"
+                )
+            )
+            & (projects.c.workspace_id.is_not(None))
+        )
+    )
+
+    combined_query = sa.union_all(private_workspace_query, shared_workspace_query)
+
+    result: ResultProxy = await conn.execute(combined_query)
     row: RowProxy | None = await result.first()
 
     if not row:

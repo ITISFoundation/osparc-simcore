@@ -52,7 +52,7 @@ from ...services.study_job_models_converters import (
 from ...services.webserver import AuthSession
 from ..dependencies.application import get_reverse_url_mapper
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
-from ._constants import FMSG_CHANGELOG_CHANGED_IN_VERSION
+from ._constants import FMSG_CHANGELOG_CHANGED_IN_VERSION, FMSG_CHANGELOG_NEW_IN_VERSION
 
 _logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -333,7 +333,10 @@ async def get_study_job_output_logfile(
 @router.get(
     "/{study_id}/jobs/{job_id}/metadata",
     response_model=JobMetadata,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    description=(
+        "Get custom metadata from a study's job\n\n"
+        + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")
+    ),
 )
 async def get_study_job_custom_metadata(
     study_id: StudyID,
@@ -341,7 +344,6 @@ async def get_study_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    """Gets custom metadata from a job"""
     job_name = _compose_job_resource_name(study_id, job_id)
     msg = f"Gets metadata attached to study_id={study_id!r} job_id={job_id!r}.\njob_name={job_name!r}.\nSEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
     _logger.debug(msg)
@@ -361,7 +363,10 @@ async def get_study_job_custom_metadata(
 @router.put(
     "/{study_id}/jobs/{job_id}/metadata",
     response_model=JobMetadata,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
+    description=(
+        "Changes custom metadata of a study's job\n\n"
+        + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")
+    ),
 )
 async def replace_study_job_custom_metadata(
     study_id: StudyID,
@@ -370,7 +375,6 @@ async def replace_study_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    """Changes job's custom metadata"""
     job_name = _compose_job_resource_name(study_id, job_id)
 
     msg = f"Attaches metadata={replace.metadata!r} to study_id={study_id!r} job_id={job_id!r}.\njob_name={job_name!r}.\nSEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"

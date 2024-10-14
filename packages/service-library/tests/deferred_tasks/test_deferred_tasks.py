@@ -9,7 +9,7 @@ import json
 import random
 import sys
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
-from contextlib import AbstractAsyncContextManager, AsyncExitStack
+from contextlib import AbstractAsyncContextManager, AsyncExitStack, suppress
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -61,10 +61,12 @@ class _RemoteProcess:
             assert self.process is not None
             assert self.pid is not None
 
-        parent = psutil.Process(self.pid)
-        children = parent.children(recursive=True)
-        for child_pid in [child.pid for child in children]:
-            psutil.Process(child_pid).kill()
+        with suppress(psutil.NoSuchProcess):
+            parent = psutil.Process(self.pid)
+            children = parent.children(recursive=True)
+            for child_pid in [child.pid for child in children]:
+                with suppress(psutil.NoSuchProcess):
+                    psutil.Process(child_pid).kill()
 
         self.process = None
         self.pid = None

@@ -13,11 +13,14 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from pydantic import EmailStr, ValidationError, parse_obj_as
 from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.utils_groups_extra_properties import (
+    GroupExtraPropertiesNotFoundError,
+)
 
 from ..db.models import GroupType, groups, user_to_groups, users
 from ..db.plugin import get_database_engine
@@ -27,7 +30,7 @@ from ..security.api import clean_auth_policy_cache
 from . import _db
 from ._api import get_user_credentials, get_user_invoice_address, set_user_as_deleted
 from ._preferences_api import get_frontend_user_preferences_aggregation
-from .exceptions import UserNotFoundError
+from .exceptions import MissingGroupExtraPropertiesForProductError, UserNotFoundError
 from .schemas import ProfileGet, ProfileUpdate
 
 _logger = logging.getLogger(__name__)
@@ -45,6 +48,7 @@ async def get_user_profile(
 ) -> ProfileGet:
     """
     :raises UserNotFoundError:
+    :raises MissingGroupExtraPropertiesForProductError: when product is not properly configured
     """
 
     engine = get_database_engine(app)
@@ -107,9 +111,14 @@ async def get_user_profile(
     if not user_profile:
         raise UserNotFoundError(uid=user_id)
 
-    preferences = await get_frontend_user_preferences_aggregation(
-        app, user_id=user_id, product_name=product_name
-    )
+    try:
+        preferences = await get_frontend_user_preferences_aggregation(
+            app, user_id=user_id, product_name=product_name
+        )
+    except GroupExtraPropertiesNotFoundError as err:
+        raise MissingGroupExtraPropertiesForProductError(
+            user_id=user_id, product_name=product_name
+        ) from err
 
     # NOTE: expirationDate null is not handled properly in front-end.
     # https://github.com/ITISFoundation/osparc-simcore/issues/5244

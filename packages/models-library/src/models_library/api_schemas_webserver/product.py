@@ -1,9 +1,10 @@
 from datetime import datetime
 from typing import Annotated, TypeAlias
 
+from common_library.pydantic_basic_types import IDStr
 from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt, PositiveInt
 
-from ..basic_types import IDStr, NonNegativeDecimal
+from ..basic_types import NonNegativeDecimal
 from ..emails import LowerCaseEmailStr
 from ..products import ProductName
 from ._base import InputSchema, OutputSchema

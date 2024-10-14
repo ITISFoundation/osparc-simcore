@@ -6,7 +6,8 @@ from enum import Enum
 from typing import Any, Final, TypeAlias
 from uuid import UUID
 
-from models_library.basic_types import ConstrainedStr
+from common_library.pydantic_basic_types import ConstrainedStr
+from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
@@ -169,6 +170,11 @@ class Project(BaseProjectModel):
         default=None,
         description="To which workspace project belongs. If None, belongs to private user workspace.",
         alias="workspaceId",
+    )
+    folder_id: FolderID | None = Field(
+        default=None,
+        description="To which folder project belongs. If None, belongs to root folder.",
+        alias="folderId",
     )
 
     model_config = ConfigDict(

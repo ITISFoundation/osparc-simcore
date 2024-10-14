@@ -1,8 +1,7 @@
 from typing import Literal, TypeAlias
 
+from common_library.pydantic_basic_types import IDStr
 from pydantic import BaseModel, ConfigDict
-
-from .basic_types import IDStr
 
 # NOTE: keep a list of possible unit, and please use correct official unit names
 ProgressUnit: TypeAlias = Literal["Byte"]

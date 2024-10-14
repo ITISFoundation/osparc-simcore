@@ -70,7 +70,7 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
 
       const newCollaborators = {};
       gids.forEach(gid => newCollaborators[gid] = this.self().getCollaboratorAccessRight());
-      osparc.store.Workspaces.addCollaborators(this.__workspace.getWorkspaceId(), newCollaborators)
+      osparc.store.Workspaces.getInstance().addCollaborators(this.__workspace.getWorkspaceId(), newCollaborators)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
           const text = this.tr("User(s) successfully added.");
@@ -88,7 +88,7 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
         item.setEnabled(false);
       }
 
-      osparc.store.Workspaces.removeCollaborator(this.__workspace.getWorkspaceId(), collaborator["gid"])
+      osparc.store.Workspaces.getInstance().removeCollaborator(this.__workspace.getWorkspaceId(), collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
           osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
@@ -108,7 +108,7 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
 
-      osparc.store.Workspaces.updateCollaborator(this.__workspace.getWorkspaceId(), collaboratorGId, newAccessRights)
+      osparc.store.Workspaces.getInstance().updateCollaborator(this.__workspace.getWorkspaceId(), collaboratorGId, newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
           osparc.FlashMessenger.getInstance().logAs(successMsg);

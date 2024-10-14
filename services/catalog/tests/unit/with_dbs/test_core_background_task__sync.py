@@ -9,7 +9,8 @@
 from typing import Any
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
+from pytest_mock import MockerFixture
 from respx.router import MockRouter
 from simcore_postgres_database.models.services import services_meta_data
 from simcore_service_catalog.core.background_tasks import _run_sync_services
@@ -40,6 +41,7 @@ async def cleanup_service_meta_data_db_content(sqlalchemy_async_engine: AsyncEng
         await conn.execute(services_meta_data.delete())
 
 
+@pytest.mark.parametrize("director_fails", [False, True])
 async def test_registry_sync_task(
     background_tasks_setup_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
@@ -49,9 +51,19 @@ async def test_registry_sync_task(
     app: FastAPI,
     services_repo: ServicesRepository,
     cleanup_service_meta_data_db_content: None,
+    mocker: MockerFixture,
+    director_fails: bool,
 ):
-
     assert app.state
+
+    if director_fails:
+        # Emulates issue https://github.com/ITISFoundation/osparc-simcore/issues/6318
+        mocker.patch(
+            "simcore_service_catalog.services.access_rights._is_old_service",
+            side_effect=HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="fake director error"
+            ),
+        )
 
     service_key = expected_director_list_services[0]["key"]
     service_version = expected_director_list_services[0]["version"]
@@ -75,6 +87,10 @@ async def test_registry_sync_task(
         key=service_key,
         version=service_version,
     )
-    assert got_from_db
-    assert got_from_db.key == service_key
-    assert got_from_db.version == service_version
+
+    if director_fails:
+        assert not got_from_db
+    else:
+        assert got_from_db
+        assert got_from_db.key == service_key
+        assert got_from_db.version == service_version

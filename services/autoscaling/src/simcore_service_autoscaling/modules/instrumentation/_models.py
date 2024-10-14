@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Final
 
 from prometheus_client import CollectorRegistry, Counter, Histogram
+from servicelib.instrumentation import MetricsBase
 
 from ...models import BufferPoolManager, Cluster
 from ._constants import (
@@ -11,11 +12,6 @@ from ._constants import (
     METRICS_NAMESPACE,
 )
 from ._utils import TrackedGauge, create_gauge
-
-
-@dataclass(slots=True, kw_only=True)
-class MetricsBase:
-    subsystem: str
 
 
 @dataclass(slots=True, kw_only=True)
@@ -29,13 +25,19 @@ class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attribut
     buffer_ec2s: TrackedGauge = field(init=False)
     disconnected_nodes: TrackedGauge = field(init=False)
     terminating_nodes: TrackedGauge = field(init=False)
+    retired_nodes: TrackedGauge = field(init=False)
     terminated_instances: TrackedGauge = field(init=False)
 
     def __post_init__(self) -> None:
         cluster_subsystem = f"{self.subsystem}_cluster"
         # Creating and assigning gauges using the field names and the metric definitions
         for field_name, definition in CLUSTER_METRICS_DEFINITIONS.items():
-            gauge = create_gauge(field_name, definition, cluster_subsystem)
+            gauge = create_gauge(
+                field_name=field_name,
+                definition=definition,
+                subsystem=cluster_subsystem,
+                registry=self.registry,
+            )
             setattr(self, field_name, gauge)
 
     def update_from_cluster(self, cluster: Cluster) -> None:
@@ -64,6 +66,7 @@ class EC2ClientMetrics(MetricsBase):
             labelnames=EC2_INSTANCE_LABELS,
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
+            registry=self.registry,
         )
         self.started_instances = Counter(
             "started_instances_total",
@@ -71,6 +74,7 @@ class EC2ClientMetrics(MetricsBase):
             labelnames=EC2_INSTANCE_LABELS,
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
+            registry=self.registry,
         )
         self.stopped_instances = Counter(
             "stopped_instances_total",
@@ -78,6 +82,7 @@ class EC2ClientMetrics(MetricsBase):
             labelnames=EC2_INSTANCE_LABELS,
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
+            registry=self.registry,
         )
         self.terminated_instances = Counter(
             "terminated_instances_total",
@@ -85,6 +90,7 @@ class EC2ClientMetrics(MetricsBase):
             labelnames=EC2_INSTANCE_LABELS,
             namespace=METRICS_NAMESPACE,
             subsystem=self.subsystem,
+            registry=self.registry,
         )
 
     def instance_started(self, instance_type: str) -> None:
@@ -122,7 +128,12 @@ class BufferPoolsMetrics(MetricsBase):
             setattr(
                 self,
                 field_name,
-                create_gauge(field_name, definition, buffer_pools_subsystem),
+                create_gauge(
+                    field_name=field_name,
+                    definition=definition,
+                    subsystem=buffer_pools_subsystem,
+                    registry=self.registry,
+                ),
             )
         self.instances_ready_to_pull_seconds = Histogram(
             "instances_ready_to_pull_duration_seconds",
@@ -131,6 +142,7 @@ class BufferPoolsMetrics(MetricsBase):
             namespace=METRICS_NAMESPACE,
             subsystem=buffer_pools_subsystem,
             buckets=(10, 20, 30, 40, 50, 60, 120),
+            registry=self.registry,
         )
         self.instances_completed_pulling_seconds = Histogram(
             "instances_completed_pulling_duration_seconds",
@@ -149,6 +161,7 @@ class BufferPoolsMetrics(MetricsBase):
                 30 * _MINUTE,
                 40 * _MINUTE,
             ),
+            registry=self.registry,
         )
 
     def update_from_buffer_pool_manager(
@@ -173,8 +186,16 @@ class AutoscalingInstrumentation(MetricsBase):
     buffer_machines_pools_metrics: BufferPoolsMetrics = field(init=False)
 
     def __post_init__(self) -> None:
-        self.cluster_metrics = ClusterMetrics(subsystem=self.subsystem)
-        self.ec2_client_metrics = EC2ClientMetrics(subsystem=self.subsystem)
-        self.buffer_machines_pools_metrics = BufferPoolsMetrics(
-            subsystem=self.subsystem
+        self.cluster_metrics = ClusterMetrics(  # pylint: disable=unexpected-keyword-arg
+            subsystem=self.subsystem, registry=self.registry
+        )
+        self.ec2_client_metrics = (
+            EC2ClientMetrics(  # pylint: disable=unexpected-keyword-arg
+                subsystem=self.subsystem, registry=self.registry
+            )
+        )
+        self.buffer_machines_pools_metrics = (
+            BufferPoolsMetrics(  # pylint: disable=unexpected-keyword-arg
+                subsystem=self.subsystem, registry=self.registry
+            )
         )

@@ -1,7 +1,8 @@
+import pickle
 from typing import Final
 from uuid import uuid4
 
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from pydantic import NonNegativeInt
 
 from ..redis import RedisClientSDK
@@ -33,18 +34,14 @@ class RedisTaskTracker(BaseTaskTracker):
 
     async def _get_raw(self, redis_key: str) -> TaskScheduleModel | None:
         found_data = await self.redis_client_sdk.redis.get(redis_key)
-        return (
-            None
-            if found_data is None
-            else TaskScheduleModel.model_validate_json(found_data)
-        )
+        return None if found_data is None else pickle.loads(found_data)  # noqa: S301
 
     async def get(self, task_uid: TaskUID) -> TaskScheduleModel | None:
         return await self._get_raw(_get_key(task_uid))
 
     async def save(self, task_uid: TaskUID, task_schedule: TaskScheduleModel) -> None:
         await self.redis_client_sdk.redis.set(
-            _get_key(task_uid), task_schedule.model_dump_json()
+            _get_key(task_uid), pickle.dumps(task_schedule)
         )
 
     async def remove(self, task_uid: TaskUID) -> None:
