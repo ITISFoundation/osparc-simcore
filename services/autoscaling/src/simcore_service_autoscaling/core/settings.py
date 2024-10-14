@@ -23,7 +23,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pytest_simcore.helpers.dict_tools import ConfigDict
+from pydantic_settings import SettingsConfigDict
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings
@@ -44,7 +44,7 @@ class AutoscalingSSMSettings(SSMSettings):
 
 
 class AutoscalingEC2Settings(EC2Settings):
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_prefix=AUTOSCALING_ENV_PREFIX,
         json_schema_extra={
             "examples": [
@@ -286,7 +286,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "but a docker node label named osparc-services-ready is attached",
     )
     AUTOSCALING_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemetry tracing"
+        description="settings for opentelemetry tracing",
+        json_schema_extra={"auto_default_from_env":True}, 
     )
 
     AUTOSCALING_DOCKER_JOIN_DRAINED: bool = Field(
