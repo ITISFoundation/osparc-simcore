@@ -247,6 +247,7 @@ async def _create_user_email(
                 "payment": payment,
                 "product": product,
             },
+            tip=f"Check downloading: `wget -v {payment.invoice_pdf_url}`",
         )
         _logger.exception("%s", error_msg)
 
