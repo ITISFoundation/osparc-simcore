@@ -2,7 +2,7 @@ import datetime
 from functools import cached_property
 
 from models_library.basic_types import BootModeEnum
-from pydantic import AliasChoices, field_validator, Field, PositiveInt
+from pydantic import AliasChoices, Field, PositiveInt, field_validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.postgres import PostgresSettings
@@ -52,9 +52,8 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     RESOURCE_USAGE_TRACKER_LOGLEVEL: LogLevel = Field(
         default=LogLevel.INFO,
         validation_alias=AliasChoices(
-            "RESOURCE_USAGE_TRACKER_LOGLEVEL", 
-            "LOG_LEVEL", 
-            "LOGLEVEL"),
+            "RESOURCE_USAGE_TRACKER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+        ),
     )
     RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
@@ -83,18 +82,18 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
     """
 
     RESOURCE_USAGE_TRACKER_PROMETHEUS: PrometheusSettings | None = Field(
-        json_schema_extra={"auto_default_from_env":True}
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     RESOURCE_USAGE_TRACKER_POSTGRES: PostgresSettings | None = Field(
-        json_schema_extra={"auto_default_from_env":True},
+        json_schema_extra={"auto_default_from_env": True},
     )
 
     RESOURCE_USAGE_TRACKER_REDIS: RedisSettings = Field(
-        json_schema_extra={"auto_default_from_env":True},
+        json_schema_extra={"auto_default_from_env": True},
     )
     RESOURCE_USAGE_TRACKER_RABBITMQ: RabbitSettings | None = Field(
-        json_schema_extra={"auto_default_from_env":True},
+        json_schema_extra={"auto_default_from_env": True},
     )
 
 
@@ -118,5 +117,14 @@ class ApplicationSettings(MinimalApplicationSettings):
     )
     RESOURCE_USAGE_TRACKER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     RESOURCE_USAGE_TRACKER_S3: S3Settings | None = Field(
-        json_schema_extra={"auto_default_from_env":True},
+        json_schema_extra={"auto_default_from_env": True},
     )
+
+    @field_validator(
+        "RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC", mode="before"
+    )
+    @classmethod
+    def _validate_interval(cls, v):
+        if isinstance(v, str) and v.isnumeric():
+            return int(v)
+        return v
