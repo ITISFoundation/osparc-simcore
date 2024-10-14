@@ -293,6 +293,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
+    
+    @field_validator("AUTOSCALING_POLL_INTERVAL", mode="before")
+    @classmethod
+    def _validate_poll_interval_in_s(cls, v):
+        if isinstance(v, str) and v.isnumeric():
+            return int(v)
+        return v
 
     @model_validator(mode="after")
     @classmethod
