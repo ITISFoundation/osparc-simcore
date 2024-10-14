@@ -410,7 +410,7 @@ pyyaml==6.0.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   dask
     #   distributed
-redis==5.1.1
+redis==5.0.8
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
