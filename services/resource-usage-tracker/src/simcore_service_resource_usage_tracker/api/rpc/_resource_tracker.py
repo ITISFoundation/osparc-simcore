@@ -79,7 +79,7 @@ async def export_service_runs(
     access_all_wallet_usage: bool = False,
     order_by: OrderBy | None = None,
     filters: ServiceResourceUsagesFilters | None = None,
-) -> AnyUrl:
+) -> str:
     app_settings: ApplicationSettings = app.state.settings
     s3_settings = app_settings.RESOURCE_USAGE_TRACKER_S3
     assert s3_settings  # nosec
