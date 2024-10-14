@@ -610,7 +610,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
     },
 
-    __getNextRequestParams: function() {
+    __getNextPageParams: function() {
       if ("nextRequest" in this._resourcesContainer.getFlatList() &&
         this._resourcesContainer.getFlatList().nextRequest !== null &&
         osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
@@ -633,10 +633,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       };
 
-      const nextRequestParams = this.__getNextRequestParams();
-      if (nextRequestParams) {
-        params.url.offset = nextRequestParams.offset;
-        params.url.limit = nextRequestParams.limit;
+      const nextPageParams = this.__getNextPageParams();
+      if (nextPageParams) {
+        params.url.offset = nextPageParams.offset;
+        params.url.limit = nextPageParams.limit;
       }
       const options = {
         resolveWResponse: true
