@@ -275,7 +275,7 @@ async def get_template_project(
     )
 
 
-async def get_group(client, user):
+async def get_group(client: TestClient, user):
     """Creates a group for a given user"""
     return await create_user_group(
         app=client.app,
@@ -284,7 +284,7 @@ async def get_group(client, user):
     )
 
 
-async def invite_user_to_group(client, owner, invitee, group):
+async def invite_user_to_group(client: TestClient, owner, invitee, group):
     """Invite a user to a group on which the owner has writes over"""
     await add_user_in_group(
         client.app,
@@ -304,7 +304,7 @@ async def change_user_role(
 
 
 async def connect_to_socketio(
-    client,
+    client: TestClient,
     user,
     socketio_client_factory: Callable[..., Awaitable[socketio.AsyncClient]],
 ):
@@ -326,11 +326,15 @@ async def connect_to_socketio(
     return sio, resource_key
 
 
-async def disconnect_user_from_socketio(client, sio_connection_data) -> None:
+async def disconnect_user_from_socketio(
+    client: TestClient, sio_connection_data
+) -> None:
     """disconnect a previously connected socket.io connection"""
     sio, resource_key = sio_connection_data
     sid = sio.get_sid()
-    socket_registry = get_registry(client.server.app)
+
+    assert client.app
+    socket_registry = get_registry(client.app)
     await sio.disconnect()
     assert not sio.sid
     await asyncio.sleep(0)  # just to ensure there is a context switch
