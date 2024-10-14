@@ -916,15 +916,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.invalidateStudies();
         this._resourcesContainer.setResourcesToList([]);
 
-        if (workspaceId === -1) {
-          // Workspaces
-          this.__reloadWorkspaces();
-        } else if (workspaceId === -2) {
+        if (workspaceId === -2) {
           // Search result: no folders, just studies
           this.__setFoldersToList([]);
           this.__reloadStudies();
+        } else if (workspaceId === -1) {
+          // Workspaces
+          this._searchBarFilter.resetFilters();
+          this.__reloadWorkspaces();
         } else {
           // Actual workspace
+          this._searchBarFilter.resetFilters();
           this.__reloadFolders();
           this.__reloadStudies();
         }

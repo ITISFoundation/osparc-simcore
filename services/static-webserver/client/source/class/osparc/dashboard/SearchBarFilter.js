@@ -172,7 +172,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           this.__hideFilterMenu();
         }
       }, this);
-      textField.addListener("changeValue", () => this.__filter(), this);
 
       const resetButton = this.getChildControl("reset-button");
       resetButton.addListener("execute", () => this.__resetFilters(), this);
@@ -285,10 +284,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       });
     },
 
-    resetSharedWithActiveFilter: function() {
-      this.__removeChips("shared-with");
-      this.__filter();
-    },
 
     setSharedWithActiveFilter: function(optionId, optionLabel) {
       this.__removeChips("shared-with");
@@ -353,9 +348,13 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
-    __resetFilters: function() {
+    resetFilters: function() {
       this.__removeChips();
       this.getChildControl("text-field").resetValue();
+    },
+
+    __resetFilters: function() {
+      this.resetFilters();
       this.__filter();
     },
 
