@@ -318,15 +318,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         return v
 
     @model_validator(mode="after")
-    @classmethod
-    def exclude_both_dynamic_computational_mode(cls, values):
+    def exclude_both_dynamic_computational_mode(self, v):
         if (
-            values.get("AUTOSCALING_DASK") is not None
-            and values.get("AUTOSCALING_NODES_MONITORING") is not None
+            v.AUTOSCALING_DASK is not None
+            and v.AUTOSCALING_NODES_MONITORING is not None
         ):
             msg = "Autoscaling cannot be set to monitor both computational and dynamic services (both AUTOSCALING_DASK and AUTOSCALING_NODES_MONITORING are currently set!)"
             raise ValueError(msg)
-        return values
+        return v
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:
