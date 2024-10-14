@@ -8,12 +8,16 @@ import os
 import pytest
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
+from opentelemetry.instrumentation.aiohttp_server import (
+    middleware as aiohttp_opentelemetry_middleware,
+)
 from pydantic import HttpUrl, parse_obj_as
 from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_dict,
     setenvs_from_envfile,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
@@ -251,3 +255,38 @@ def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
     assert not any("token" in key for key in app_settings.public_dict())
     assert not any("secret" in key for key in app_settings.public_dict())
     assert not any("private" in key for key in app_settings.public_dict())
+
+
+@pytest.fixture
+def tracing_settings_in(request):
+    return request.param
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318),
+    ],
+    indirect=True,
+)
+async def test_middleware_restirctions_opentelemetry_is_second_middleware(
+    mock_webserver_service_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    tracing_settings_in,
+):
+    monkeypatch.setenv(
+        "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}"
+    )
+    monkeypatch.setenv(
+        "TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}"
+    )
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.WEBSERVER_TRACING
+    app = create_application()
+    assert app.middlewares
+    assert (
+        app.middlewares[0].__middleware_name__
+        == "servicelib.aiohttp.monitoring.monitor_simcore_service_webserver"
+    )
+    assert app.middlewares[1] == aiohttp_opentelemetry_middleware
+    assert len(app.middlewares) > 1

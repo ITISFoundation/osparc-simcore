@@ -12,9 +12,8 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
 from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-name-in-module
     AioHttpClientInstrumentor,
 )
-from opentelemetry.instrumentation.aiohttp_server import (  # pylint:disable=no-name-in-module
-    AioHttpServerInstrumentor,
-    middleware,
+from opentelemetry.instrumentation.aiohttp_server import (
+    middleware as aiohttp_server_opentelemetry_middleware,  # pylint:disable=no-name-in-module
 )
 from opentelemetry.instrumentation.aiopg import (  # pylint:disable=no-name-in-module
     AiopgInstrumentor,
@@ -74,17 +73,16 @@ def setup_tracing(
     # Add the span processor to the tracer provider
     tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))  # type: ignore[attr-defined] # https://github.com/open-telemetry/opentelemetry-python/issues/3713
     # Instrument aiohttp server
-    AioHttpServerInstrumentor().instrument()
-    # Explanation for extra call DK 10/2024:
+    # Explanation for custom middleware call DK 10/2024:
     # OpenTelemetry Aiohttp autoinstrumentation is meant to be used by only calling `AioHttpServerInstrumentor().instrument()`
-    # But, the call `AioHttpServerInstrumentor().instrument()` monkeypatches the __init__() of aiohttp's web.application() to in
-    # the init inject the tracing middleware.
-    # In simcore, we want to switch tracing on or off and thus depend on the simcore-settings library when we call `AioHttpServerInstrumentor().instrument()`
+    # The call `AioHttpServerInstrumentor().instrument()` monkeypatches the __init__() of aiohttp's web.application() to inject the tracing middleware, in it's `__init__()`.
+    # In simcore, we want to switch tracing on or off using the simcore-settings-library.
     # The simcore-settings library in turn depends on the instance of web.application(), i.e. the aiohttp webserver, to exist. So here we face a hen-and-egg problem.
+    # At the time when the instrumentation should be configured, the instance of web.application already exists and the overwrite to the __init__() is never called
     #
     # Since the code that is provided (monkeypatched) in the __init__ that the opentelemetry-autoinstrumentation-library provides is only 4 lines,
-    # literally just adding a middleware, we are free to simply execute this "missed call" [since we can't call the monkeypatch'ed __init__()] in this following line:
-    app.middlewares.append(middleware)
+    # just adding a middleware, we are free to simply execute this "missed call" [since we can't call the monkeypatch'ed __init__()] in this following line:
+    app.middlewares.insert(0, aiohttp_server_opentelemetry_middleware)
     # Code of the aiohttp server instrumentation: github.com/open-telemetry/opentelemetry-python-contrib/blob/eccb05c808a7d797ef5b6ecefed3590664426fbf/instrumentation/opentelemetry-instrumentation-aiohttp-server/src/opentelemetry/instrumentation/aiohttp_server/__init__.py#L246
     # For reference, the above statement was written for:
     # - osparc-simcore 1.77.x
