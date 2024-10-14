@@ -102,9 +102,6 @@ class BaseCustomSettings(BaseSettings):
                 and issubclass(field_type, BaseCustomSettings)
             ):
                 if auto_default_from_env:
-                    assert field.default is PydanticUndefined
-                    assert field.default_factory is None
-
                     # Transform it into something like `Field(default_factory=create_settings_from_env(field))`
                     field.default_factory = _create_settings_from_env(name, field)
                     field.default = None

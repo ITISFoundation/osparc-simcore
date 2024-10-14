@@ -6,7 +6,13 @@
 """
 
 import json
+import sys
 from typing import Literal, TypedDict
+
+if sys.version_info >= (3, 12):
+    from typing import TypedDict
+else:
+    from typing_extensions import TypedDict
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
