@@ -1,4 +1,6 @@
+# type: ignore
 # pylint: disable-all
+
 #
 # wget https://raw.githubusercontent.com/tiangolo/fastapi/master/fastapi/encoders.py --output-document=_original_fastapi_encoders
 #
