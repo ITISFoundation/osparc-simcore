@@ -34,7 +34,7 @@ async def ping_scheduler(
                 require_encryption=True,
             )
         async with distributed.Client(
-            url, asynchronous=True, timeout=_CONNECTION_TIMEOUT, security=security
+            f"{url}", asynchronous=True, timeout=_CONNECTION_TIMEOUT, security=security
         ):
             ...
         return True
@@ -59,7 +59,7 @@ async def is_scheduler_busy(
             require_encryption=True,
         )
     async with distributed.Client(
-        url, asynchronous=True, timeout=_CONNECTION_TIMEOUT, security=security
+        f"{url}", asynchronous=True, timeout=_CONNECTION_TIMEOUT, security=security
     ) as client:
         datasets_on_scheduler = await _wrap_client_async_routine(client.list_datasets())
         _logger.info("cluster currently has %s datasets", len(datasets_on_scheduler))
