@@ -18,11 +18,14 @@ jsonschema-specifications==2023.12.1
     # via jsonschema
 orjson==3.10.7
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
 pydantic==2.9.2
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
     #   pydantic-extra-types
     #   pydantic-settings
