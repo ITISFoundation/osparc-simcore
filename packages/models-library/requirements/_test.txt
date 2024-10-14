@@ -4,11 +4,11 @@ attrs==24.2.0
     # via
     #   -c requirements/_base.txt
     #   referencing
-coverage==7.6.1
+coverage==7.6.3
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==29.0.0
+faker==30.3.0
     # via -r requirements/_test.in
 flexcache==0.3
     # via pint
@@ -34,6 +34,8 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
+propcache==0.2.0
+    # via yarl
 psutil==6.0.0
     # via -r requirements/_test.in
 pytest==8.3.3
@@ -85,7 +87,7 @@ six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
-termcolor==2.4.0
+termcolor==2.5.0
     # via pytest-sugar
 types-jsonschema==4.23.0.20240813
     # via -r requirements/_test.in
@@ -94,8 +96,9 @@ types-pyyaml==6.0.12.20240917
 typing-extensions==4.12.2
     # via
     #   -c requirements/_base.txt
+    #   faker
     #   flexcache
     #   flexparser
     #   pint
-yarl==1.12.1
+yarl==1.15.2
     # via -r requirements/_test.in
