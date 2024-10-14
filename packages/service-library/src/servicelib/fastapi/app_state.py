@@ -1,8 +1,8 @@
-import logging
+from typing import TypeVar
 
 from fastapi import FastAPI
 
-_logger = logging.getLogger(__name__)
+T = TypeVar("T", bound="SingletonInAppStateMixin")
 
 
 class SingletonInAppStateMixin:
@@ -14,8 +14,8 @@ class SingletonInAppStateMixin:
     frozen: bool = True  # Will raise if set multiple times
 
     @classmethod
-    def get_from_app_state(cls, app: FastAPI):
-        return getattr(app.state, cls.app_state_name)
+    def get_from_app_state(cls: type[T], app: FastAPI) -> T:
+        return getattr(app.state, cls.app_state_name)  # type:ignore[no-any-return]
 
     def set_to_app_state(self, app: FastAPI):
         if (exists := getattr(app.state, self.app_state_name, None)) and self.frozen:
@@ -26,11 +26,11 @@ class SingletonInAppStateMixin:
         return self.get_from_app_state(app)
 
     @classmethod
-    def pop_from_app_state(cls, app: FastAPI):
+    def pop_from_app_state(cls: type[T], app: FastAPI) -> T:
         """
         Raises:
             AttributeError: if instance is not in app.state
         """
-        old = getattr(app.state, cls.app_state_name)
+        old = cls.get_from_app_state(app)
         delattr(app.state, cls.app_state_name)
         return old

@@ -5,9 +5,6 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.prometheus_instrumentation import (
-    setup_prometheus_instrumentation,
-)
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import (
@@ -18,8 +15,11 @@ from .._meta import (
     SUMMARY,
     VERSION,
 )
-from ..modules import task_monitor
-from ._routes import router
+from ..api.rest.routes import setup_rest_api
+from ..api.rpc.routes import setup_rpc_api_routes
+from ..services.instrumentation import setup_instrumentation
+from ..services.rabbitmq import setup_rabbitmq
+from ..services.volumes_manager import setup_volume_manager
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,6 @@ def _setup_logger(settings: ApplicationSettings):
 
 
 def create_app() -> FastAPI:
-    # SETTINGS
     settings = ApplicationSettings.create_from_envs()
     _setup_logger(settings)
     logger.debug(settings.json(indent=2))
@@ -52,20 +51,18 @@ def create_app() -> FastAPI:
     override_fastapi_openapi_method(app)
     app.state.settings = settings
 
-    if app.state.settings.AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        setup_prometheus_instrumentation(app)
+    setup_instrumentation(app)
 
-    # ROUTERS
-    app.include_router(router)
-
-    # EVENTS
-    task_monitor.setup(app)
+    setup_rabbitmq(app)
+    setup_volume_manager(app)
+    setup_rest_api(app)
+    setup_rpc_api_routes(app)
 
     async def _on_startup() -> None:
-        print(APP_STARTED_BANNER_MSG, flush=True)
+        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
-        print(APP_FINISHED_BANNER_MSG, flush=True)
+        print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)

@@ -269,6 +269,11 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 		services/docker-compose.local.yml \
 		> $@
 
+.stack-vendor-services.yml: .env $(docker-compose-configs)
+	# Creating config for vendors stack to $@
+	@scripts/docker/docker-stack-config.bash -e $< \
+		services/docker-compose-dev-vendors.yml \
+		> $@
 
 .stack-ops.yml: .env $(docker-compose-configs)
 	# Creating config for ops stack to $@
@@ -288,7 +293,11 @@ endif
 
 
 
-.PHONY: up-devel up-prod up-prod-ci up-version up-latest .deploy-ops
+.PHONY: up-devel up-prod up-prod-ci up-version up-latest .deploy-ops .deploy-vendors
+
+.deploy-vendors: .stack-vendor-services.yml
+	# Deploy stack 'vendors'
+	docker stack deploy --detach=true --with-registry-auth -c $< vendors
 
 .deploy-ops: .stack-ops.yml
 	# Deploy stack 'ops'
@@ -323,6 +332,7 @@ printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin admi
 printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
 printf "$$rows" "Storage S3 Minio" "http://$(get_my_ip).nip.io:9001" 12345678 12345678;\
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
+printf "$$rows" "Vendor Manual (Fake)" "http://manual.$(get_my_ip).nip.io:9081";\
 
 printf "\n%s\n" "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar";\
 echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081";
@@ -338,6 +348,7 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@$(MAKE) .deploy-vendors
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
@@ -348,6 +359,7 @@ up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every 
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)  [back-end]
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@$(MAKE) .deploy-vendors
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
@@ -358,6 +370,7 @@ ifeq ($(target),)
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@$(MAKE) .deploy-vendors
 	@$(MAKE) .deploy-ops
 else
 	# deploys ONLY $(target) service
@@ -369,6 +382,7 @@ up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@$(MAKE) .deploy-vendors
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 

@@ -50,16 +50,13 @@ async def run_dynamic_service(
 )
 async def stop_dynamic_service(
     app: FastAPI, *, dynamic_service_stop: DynamicServiceStop
-) -> NodeGet | DynamicServiceGet:
+) -> None:
     director_v2_client = DirectorV2Client.get_from_app_state(app)
     settings: ApplicationSettings = app.state.settings
-    response: NodeGet | DynamicServiceGet = (
-        await director_v2_client.stop_dynamic_service(
-            node_id=dynamic_service_stop.node_id,
-            simcore_user_agent=dynamic_service_stop.simcore_user_agent,
-            save_state=dynamic_service_stop.save_state,
-            timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
-        )
+    await director_v2_client.stop_dynamic_service(
+        node_id=dynamic_service_stop.node_id,
+        simcore_user_agent=dynamic_service_stop.simcore_user_agent,
+        save_state=dynamic_service_stop.save_state,
+        timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
     )
     await set_request_as_stopped(app, dynamic_service_stop)
-    return response

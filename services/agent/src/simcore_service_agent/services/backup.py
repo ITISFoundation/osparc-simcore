@@ -1,17 +1,24 @@
 import asyncio
 import logging
+import tempfile
 from asyncio.streams import StreamReader
 from pathlib import Path
 from textwrap import dedent
 from typing import Final
+from uuid import uuid4
 
-from pydantic import AnyHttpUrl
-from settings_library.r_clone import S3Provider
+from fastapi import FastAPI
 from settings_library.utils_r_clone import resolve_provider
 
-logger = logging.getLogger(__name__)
+from ..core.settings import ApplicationSettings
+from ..models.volumes import DynamicServiceVolumeLabels, VolumeDetails
 
-R_CLONE_CONFIG = """
+_logger = logging.getLogger(__name__)
+
+
+_R_CLONE_CONFIG: Final[
+    str
+] = """
 [dst]
 type = s3
 provider = {destination_provider}
@@ -21,46 +28,32 @@ endpoint = {destination_endpoint}
 region = {destination_region}
 acl = private
 """
-VOLUME_NAME_FIXED_PORTION: Final[int] = 78
 
 
-def get_config_file_path(
-    s3_endpoint: AnyHttpUrl | None,
-    s3_access_key: str,
-    s3_secret_key: str,
-    s3_region: str,
-    s3_provider: S3Provider,
-) -> Path:
-    config_content = R_CLONE_CONFIG.format(
-        destination_provider=resolve_provider(s3_provider),
-        destination_access_key=s3_access_key,
-        destination_secret_key=s3_secret_key,
-        destination_endpoint=s3_endpoint,
-        destination_region=s3_region,
+def _get_config_file_path(settings: ApplicationSettings) -> Path:
+    config_content = _R_CLONE_CONFIG.format(
+        destination_provider=resolve_provider(
+            settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER
+        ),
+        destination_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
+        destination_secret_key=settings.AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY,
+        destination_endpoint=settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT,
+        destination_region=settings.AGENT_VOLUMES_CLEANUP_S3_REGION,
     )
-    conf_path = Path("/tmp/rclone_config.ini")  # NOSONAR
-    conf_path.write_text(config_content)  # pylint:disable=unspecified-encoding
+    conf_path = Path(tempfile.gettempdir()) / f"rclone_config_{uuid4()}.ini"
+    conf_path.write_text(config_content)
     return conf_path
 
 
-def _get_dir_name(volume_name: str) -> str:
-    # from: "dyv_a0430d06-40d2-4c92-9490-6aca30e00fc7_898fff63-d402-5566-a99b-091522dd2ae9_stuptuo_krow_nayvoj_emoh_"
-    # gets: "home_jovyan_work_outputs"
-    return volume_name[VOLUME_NAME_FIXED_PORTION:][::-1].strip("_")
-
-
-def _get_s3_path(s3_bucket: str, labels: dict[str, str], volume_name: str) -> Path:
-    joint_key = "/".join(
-        (
-            s3_bucket,
-            labels["swarm_stack_name"],
-            labels["study_id"],
-            labels["node_uuid"],
-            labels["run_id"],
-            _get_dir_name(volume_name),
-        )
+def _get_s3_path(s3_bucket: str, labels: DynamicServiceVolumeLabels) -> Path:
+    return (
+        Path(s3_bucket)
+        / labels.swarm_stack_name
+        / f"{labels.study_id}"
+        / f"{labels.node_uuid}"
+        / labels.run_id
+        / labels.directory_name
     )
-    return Path(f"/{joint_key}")
 
 
 async def _read_stream(stream: StreamReader) -> str:
@@ -68,7 +61,7 @@ async def _read_stream(stream: StreamReader) -> str:
     while line := await stream.readline():
         message = line.decode()
         output += message
-        logger.debug(message.strip("\n"))
+        _logger.debug(message.strip("\n"))
     return output
 
 
@@ -79,12 +72,12 @@ def _get_r_clone_str_command(command: list[str], exclude_files: list[str]) -> st
         command.append(to_exclude)
 
     str_command = " ".join(command)
-    logger.info(str_command)
+    _logger.info(str_command)
     return str_command
 
 
 def _log_expected_operation(
-    dyv_volume_labels: dict[str, str],
+    labels: DynamicServiceVolumeLabels,
     s3_path: Path,
     r_clone_ls_output: str,
     volume_name: str,
@@ -101,50 +94,38 @@ def _log_expected_operation(
         ---
         volume_name         {volume_name}
         destination_path    {s3_path}
-        study_id:           {dyv_volume_labels['study_id']}
-        node_id:            {dyv_volume_labels['node_uuid']}
-        user_id:            {dyv_volume_labels['user_id']}
-        run_id:             {dyv_volume_labels['run_id']}
+        study_id:           {labels.study_id}
+        node_id:            {labels.node_uuid}
+        user_id:            {labels.user_id}
+        run_id:             {labels.run_id}
         ---
         Files to sync by rclone
         ---\n{r_clone_ls_output.rstrip()}
         ---
     """
     )
-    logger.log(log_level, formatted_message)
+    _logger.log(log_level, formatted_message)
 
 
-async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
-    volume_name: str,
-    dyv_volume: dict,
-    s3_endpoint: AnyHttpUrl | None,
-    s3_access_key: str,
-    s3_secret_key: str,
-    s3_bucket: str,
-    s3_region: str,
-    s3_provider: S3Provider,
-    s3_retries: int,
-    s3_parallelism: int,
-    exclude_files: list[str],
+async def _store_in_s3(
+    settings: ApplicationSettings, volume_name: str, volume_details: VolumeDetails
 ) -> None:
-    config_file_path = get_config_file_path(
-        s3_endpoint=s3_endpoint,
-        s3_access_key=s3_access_key,
-        s3_secret_key=s3_secret_key,
-        s3_region=s3_region,
-        s3_provider=s3_provider,
-    )
+    exclude_files = settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES
 
-    source_dir = dyv_volume["Mountpoint"]
+    config_file_path = _get_config_file_path(settings)
+
+    source_dir = volume_details.mountpoint
     if not Path(source_dir).exists():
-        logger.info(
+        _logger.info(
             "Volume mountpoint %s does not exist. Skipping backup, volume %s will be removed.",
             source_dir,
             volume_name,
         )
         return
 
-    s3_path = _get_s3_path(s3_bucket, dyv_volume["Labels"], volume_name)
+    s3_path = _get_s3_path(
+        settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET, volume_details.labels
+    )
 
     # listing files rclone will sync
     r_clone_ls = [
@@ -159,11 +140,12 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
+
     assert process.stdout  # nosec
     r_clone_ls_output = await _read_stream(process.stdout)
     await process.wait()
     _log_expected_operation(
-        dyv_volume["Labels"], s3_path, r_clone_ls_output, volume_name
+        volume_details.labels, s3_path, r_clone_ls_output, volume_name
     )
 
     # sync files via rclone
@@ -174,9 +156,9 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         "--low-level-retries",
         "3",
         "--retries",
-        f"{s3_retries}",
+        f"{settings.AGENT_VOLUMES_CLEANUP_RETRIES}",
         "--transfers",
-        f"{s3_parallelism}",
+        f"{settings.AGENT_VOLUMES_CLEANUP_PARALLELISM}",
         # below two options reduce to a minimum the memory footprint
         # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
         "--use-mmap",  # docs https://rclone.org/docs/#use-mmap
@@ -197,13 +179,24 @@ async def store_to_s3(  # pylint:disable=too-many-locals,too-many-arguments
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
+
     assert process.stdout  # nosec
     r_clone_sync_output = await _read_stream(process.stdout)
     await process.wait()
-    logger.info("Sync result:\n%s", r_clone_sync_output)
+    _logger.info("Sync result:\n%s", r_clone_sync_output)
 
     if process.returncode != 0:
-        raise RuntimeError(
+        msg = (
             f"Shell subprocesses yielded nonzero error code {process.returncode} "
             f"for command {str_r_clone_sync}\n{r_clone_sync_output}"
         )
+        raise RuntimeError(msg)
+
+
+async def backup_volume(
+    app: FastAPI, volume_details: VolumeDetails, volume_name: str
+) -> None:
+    settings: ApplicationSettings = app.state.settings
+    await _store_in_s3(
+        settings=settings, volume_name=volume_name, volume_details=volume_details
+    )

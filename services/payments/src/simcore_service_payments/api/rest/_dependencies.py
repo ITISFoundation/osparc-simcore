@@ -1,7 +1,7 @@
 # mypy: disable-error-code=truthy-function
 import logging
 from collections.abc import AsyncGenerator, Callable
-from typing import Annotated, cast
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.security import OAuth2PasswordBearer
@@ -40,9 +40,7 @@ assert get_app  # nosec
 
 
 def get_rut_api(request: Request) -> ResourceUsageTrackerApi:
-    return cast(
-        ResourceUsageTrackerApi, ResourceUsageTrackerApi.get_from_app_state(request.app)
-    )
+    return ResourceUsageTrackerApi.get_from_app_state(request.app)
 
 
 def get_from_app_state(

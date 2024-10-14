@@ -3,7 +3,6 @@
 # pylint: disable=protected-access
 
 import asyncio
-import contextlib
 import datetime
 import logging
 import sys
@@ -14,9 +13,7 @@ from uuid import UUID, uuid4
 import aiodocker
 import pytest
 from aiodocker.utils import clean_filters
-from aiodocker.volumes import DockerVolume
 from faker import Faker
-from fastapi.encoders import jsonable_encoder
 from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -27,7 +24,6 @@ from simcore_service_director_v2.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
-    DYNAMIC_VOLUME_REMOVER_PREFIX,
 )
 from simcore_service_director_v2.core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
@@ -46,10 +42,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_api._core import
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_api._utils import (
     docker_client,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.volume_remover import (
-    DockerVersion,
-    spec_volume_removal_service,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
@@ -798,194 +790,3 @@ async def test_constrain_service_to_node(
     label, value = node_id_constraint.split("==")
     assert label.strip() == "node.id"
     assert value.strip() == target_node_id
-
-
-@pytest.fixture
-async def named_volumes(
-    async_docker_client: aiodocker.Docker, faker: Faker
-) -> AsyncIterator[list[str]]:
-    named_volumes: list[DockerVolume] = []
-    volume_names: list[str] = []
-    for _ in range(10):
-        named_volume: DockerVolume = await async_docker_client.volumes.create(
-            {"Name": f"named-volume-{faker.uuid4()}"}
-        )
-        volume_names.append(named_volume.name)
-        named_volumes.append(named_volume)
-
-    yield volume_names
-
-    # remove volume if still present
-    for named_volume in named_volumes:
-        with contextlib.suppress(aiodocker.DockerError):
-            await named_volume.delete()
-
-
-async def is_volume_present(
-    async_docker_client: aiodocker.Docker, volume_name: str
-) -> bool:
-    list_of_volumes = await async_docker_client.volumes.list()
-    for volume in list_of_volumes.get("Volumes", []):
-        if volume["Name"] == volume_name:
-            return True
-    return False
-
-
-async def test_remove_volume_from_node_ok(
-    docker_swarm: None,
-    async_docker_client: aiodocker.Docker,
-    named_volumes: list[str],
-    target_node_id: str,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_uuid: NodeID,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
-):
-    for named_volume in named_volumes:
-        assert await is_volume_present(async_docker_client, named_volume) is True
-
-    volume_removal_result = await docker_api.remove_volumes_from_node(
-        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-        volume_names=named_volumes,
-        docker_node_id=target_node_id,
-        user_id=user_id,
-        project_id=project_id,
-        node_uuid=node_uuid,
-    )
-    assert volume_removal_result is True
-
-    for named_volume in named_volumes:
-        assert await is_volume_present(async_docker_client, named_volume) is False
-
-
-async def test_remove_volume_from_node_no_volume_found(
-    docker_swarm: None,
-    async_docker_client: aiodocker.Docker,
-    named_volumes: list[str],
-    target_node_id: str,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_uuid: NodeID,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
-    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
-):
-    missing_volume_name = "nope-i-am-fake-and-do-not-exist"
-    assert await is_volume_present(async_docker_client, missing_volume_name) is False
-
-    # put the missing one in the middle of the sequence
-    volumes_to_remove = named_volumes[:1] + [missing_volume_name] + named_volumes[1:]
-
-    volume_removal_result = await docker_api.remove_volumes_from_node(
-        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-        volume_names=volumes_to_remove,
-        docker_node_id=target_node_id,
-        user_id=user_id,
-        project_id=project_id,
-        node_uuid=node_uuid,
-        volume_removal_attempts=2,
-        sleep_between_attempts_s=1,
-    )
-    assert volume_removal_result is True
-    assert await is_volume_present(async_docker_client, missing_volume_name) is False
-    for named_volume in named_volumes:
-        assert await is_volume_present(async_docker_client, named_volume) is False
-
-
-@pytest.fixture
-def volume_removal_services_names(faker: Faker) -> set[str]:
-    return {f"{DYNAMIC_VOLUME_REMOVER_PREFIX}_{faker.uuid4()}" for _ in range(10)}
-
-
-@pytest.fixture(params=[0, 2])
-def service_timeout_s(request: pytest.FixtureRequest) -> int:
-    return request.param  # type: ignore
-
-
-@pytest.fixture
-async def ensure_fake_volume_removal_services(
-    async_docker_client: aiodocker.Docker,
-    docker_version: DockerVersion,
-    target_node_id: str,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_uuid: NodeID,
-    volume_removal_services_names: list[str],
-    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
-    service_timeout_s: int,
-    docker_swarm: None,
-) -> AsyncIterator[None]:
-    started_services_ids: list[str] = []
-
-    for service_name in volume_removal_services_names:
-        service_spec = spec_volume_removal_service(
-            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-            docker_node_id=target_node_id,
-            user_id=user_id,
-            project_id=project_id,
-            node_uuid=node_uuid,
-            volume_names=[],
-            docker_version=docker_version,
-            volume_removal_attempts=0,
-            sleep_between_attempts_s=0,
-            service_timeout_s=service_timeout_s,
-        )
-
-        # replace values
-        service_spec.Name = service_name
-        # use very long sleep command
-        service_spec.TaskTemplate.ContainerSpec.Command = ["sh", "-c", "sleep 3600"]
-
-        started_service = await async_docker_client.services.create(
-            **jsonable_encoder(service_spec, by_alias=True, exclude_unset=True)
-        )
-        started_services_ids.append(started_service["ID"])
-
-    yield None
-
-    for service_id in started_services_ids:
-        try:
-            await async_docker_client.services.delete(service_id)
-        except aiodocker.exceptions.DockerError as e:
-            assert e.message == f"service {service_id} not found"
-
-
-async def _get_pending_services(async_docker_client: aiodocker.Docker) -> list[str]:
-    service_filters = {"name": [f"{DYNAMIC_VOLUME_REMOVER_PREFIX}"]}
-    return [
-        x["Spec"]["Name"]
-        for x in await async_docker_client.services.list(filters=service_filters)
-    ]
-
-
-async def test_get_volume_removal_services(
-    ensure_fake_volume_removal_services: None,
-    async_docker_client: aiodocker.Docker,
-    volume_removal_services_names: set[str],
-    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
-    service_timeout_s: int,
-):
-    # services will be detected as timed out after 1 second
-    sleep_for = 1.01
-    await asyncio.sleep(sleep_for)
-
-    pending_service_names = await _get_pending_services(async_docker_client)
-    assert len(pending_service_names) == len(volume_removal_services_names)
-
-    # check services are present before removing timed out services
-    for service_name in pending_service_names:
-        assert service_name in volume_removal_services_names
-
-    await docker_api.remove_pending_volume_removal_services(
-        dynamic_services_scheduler_settings.SWARM_STACK_NAME
-    )
-
-    # check that timed out services have been removed
-    pending_service_names = await _get_pending_services(async_docker_client)
-    services_have_timed_out = sleep_for > service_timeout_s
-    if services_have_timed_out:
-        assert len(pending_service_names) == 0
-    else:
-        assert len(pending_service_names) == len(volume_removal_services_names)
-        for service_name in pending_service_names:
-            assert service_name in volume_removal_services_names
