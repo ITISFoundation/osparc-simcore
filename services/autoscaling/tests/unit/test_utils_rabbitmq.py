@@ -82,7 +82,7 @@ async def test_post_task_log_message(
     service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
             filters={"service": service_with_labels.Spec.Name}
-        ),
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -128,7 +128,7 @@ async def test_post_task_log_message_does_not_raise_if_service_has_no_labels(
     service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
             filters={"service": service_without_labels.Spec.Name}
-        ),
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -172,7 +172,7 @@ async def test_post_task_progress_message(
     service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
             filters={"service": service_with_labels.Spec.Name}
-        ),
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -218,7 +218,7 @@ async def test_post_task_progress_does_not_raise_if_service_has_no_labels(
     service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
             filters={"service": service_without_labels.Spec.Name}
-        ),
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
