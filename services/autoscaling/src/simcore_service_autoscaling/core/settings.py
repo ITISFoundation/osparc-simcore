@@ -305,7 +305,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self):  # noqa: N802
         return self.AUTOSCALING_LOGLEVEL
 
-    @field_validator("AUTOSCALING_LOGLEVEL")
+    @field_validator("AUTOSCALING_LOGLEVEL", mode="before")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
