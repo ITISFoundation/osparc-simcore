@@ -1,6 +1,6 @@
 import logging
 from pprint import pformat
-from typing import Any, NotRequired, TypedDict
+from typing import Any, TypedDict
 
 from models_library.error_codes import ErrorCodeStr
 from models_library.errors_classes import OsparcErrorMixin
@@ -43,7 +43,7 @@ def create_troubleshotting_log_message(
 
 class LogKwargs(TypedDict):
     msg: str
-    extra: NotRequired[LogExtra | None]
+    extra: LogExtra
 
 
 def create_troubleshotting_log_kwargs(
