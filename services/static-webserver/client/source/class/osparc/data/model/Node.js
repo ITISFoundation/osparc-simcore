@@ -621,7 +621,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     __applyOutputs: function() {
       if (!this.isPropertyInitialized("outputsForm") || !this.getOutputsForm()) {
-        const nodeOutputs = new osparc.widget.NodeOutputs(this, this.getMetaData().outputs);
+        const nodeOutputs = new osparc.widget.NodeOutputs(this);
         this.setOutputsForm(nodeOutputs);
       }
     },

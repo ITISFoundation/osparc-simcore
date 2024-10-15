@@ -440,17 +440,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const socket = osparc.wrapper.WebSocket.getInstance();
       if (!socket.slotExists("stateInputPorts")) {
         socket.on("stateInputPorts", data => {
-          this.__statePortReceived(data);
+          this.__statePortReceived(data, "stateInputPorts");
         }, this);
       }
       if (!socket.slotExists("stateOutputPorts")) {
         socket.on("stateOutputPorts", data => {
-          this.__statePortReceived(data);
+          this.__statePortReceived(data, "stateOutputPorts");
         }, this);
       }
     },
 
-    __statePortReceived: function(socketData) {
+    __statePortReceived: function(socketData, msgName) {
       const studyId = socketData["project_id"];
       if (this.getStudy().getUuid() !== studyId) {
         return;
@@ -467,7 +467,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       const propsForm = node.getPropsForm();
-      if (propsForm) {
+      if (msgName === "stateInputPorts" && propsForm) {
         const portId = socketData["port_key"];
         const status = socketData["status"];
         switch (status) {
@@ -487,7 +487,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       const outputsForm = node.getOutputsForm();
-      if (outputsForm) {
+      if (msgName === "stateOutputPorts" && outputsForm) {
         const portId = socketData["port_key"];
         const status = socketData["status"];
         switch (status) {

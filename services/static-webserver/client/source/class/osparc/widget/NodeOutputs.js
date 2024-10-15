@@ -29,9 +29,8 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
-    * @param ports {Object} Port owning the widget
     */
-  construct: function(node, ports) {
+  construct: function(node) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(15));
@@ -47,7 +46,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
     this.set({
       node,
-      ports
+      ports: node.getMetaData().outputs
     });
 
     node.addListener("changeOutputs", () => this.__outputsChanged(), this);
