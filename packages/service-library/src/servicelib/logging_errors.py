@@ -14,7 +14,7 @@ def create_troubleshotting_log_message(
     user_error_msg: str,
     *,
     error: BaseException,
-    error_code: ErrorCodeStr,
+    error_code: ErrorCodeStr | None = None,
     error_context: dict[str, Any] | None = None,
     tip: str | None = None,
 ) -> str:
