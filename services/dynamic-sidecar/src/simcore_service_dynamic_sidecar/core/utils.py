@@ -8,6 +8,7 @@ from typing import NamedTuple
 
 import psutil
 from models_library.error_codes import create_error_code
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from ..modules.mounted_fs import MountedVolumes
 
@@ -105,17 +106,21 @@ async def async_command(
         )
 
     except Exception as err:  # pylint: disable=broad-except
+
         error_code = create_error_code(err)
+        error_msg = f"Unexpected error [{error_code}]"
         _logger.exception(
-            "Process with %s failed unexpectedly [%s]",
-            f"{command=!r}",
-            f"{error_code}",
-            extra={"error_code": error_code},
+            **create_troubleshotting_log_kwargs(
+                error_msg,
+                exception=err,
+                error_context={"command": command, "proc.returncode": proc.returncode},
+                tip="Process with command failed unexpectily",
+            )
         )
 
         return CommandResult(
             success=False,
-            message=f"Unexpected error [{error_code}]",
+            message=error_msg,
             command=f"{command}",
             elapsed=time.time() - start,
         )
