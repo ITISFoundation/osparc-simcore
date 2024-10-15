@@ -78,18 +78,17 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         supportedTypes.push(osparc.node.ParameterEditor.getParameterOutputTypeFromMD(paramMD));
       });
       return supportedTypes.includes(field.type);
-    }
-  },
+    },
 
-  // eslint-disable-next-line qx-rules/no-refs-in-members
-  members: {
-    _retrieveStatus: {
+    RETRIEVE_STATUS: {
       failed: -1,
       empty: 0,
       retrieving: 1,
       succeed: 2
-    },
+    }
+  },
 
+  members: {
     __ctrlLinkMap: null,
     __linkUnlinkStackMap: null,
     __fieldOptsBtnMap: null,
@@ -529,7 +528,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     retrievingPortData: function(portId) {
-      const status = this._retrieveStatus.retrieving;
+      const status = this.self().RETRIEVE_STATUS.retrieving;
       if (portId) {
         let data = this._getCtrlFieldChild(portId);
         if (data) {
@@ -553,9 +552,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     retrievedPortData: function(portId, succeed, dataSize = -1) {
-      let status = succeed ? this._retrieveStatus.succeed : this._retrieveStatus.failed;
+      let status = succeed ? this.self().RETRIEVE_STATUS.succeed : this.self().RETRIEVE_STATUS.failed;
       if (parseInt(dataSize) === 0) {
-        status = this._retrieveStatus.empty;
+        status = this.self().RETRIEVE_STATUS.empty;
       }
       if (portId) {
         let data = this._getCtrlFieldChild(portId);
@@ -580,16 +579,16 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     __setRetrievingStatus: function(status, portId, idx, row) {
       let icon;
       switch (status) {
-        case this._retrieveStatus.failed:
+        case this.self().RETRIEVE_STATUS.failed:
           icon = this.self().getRetrievedAtom(false);
           break;
-        case this._retrieveStatus.empty:
+        case this.self().RETRIEVE_STATUS.empty:
           icon = this.self().getRetrievedEmpty();
           break;
-        case this._retrieveStatus.retrieving:
+        case this.self().RETRIEVE_STATUS.retrieving:
           icon = this.self().getRetrievingAtom();
           break;
-        case this._retrieveStatus.succeed:
+        case this.self().RETRIEVE_STATUS.succeed:
           icon = this.self().getRetrievedAtom(true);
           break;
       }
