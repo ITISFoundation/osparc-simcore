@@ -86,8 +86,8 @@ async def create_autoscaling_status_message(
         + len(cluster.buffer_drained_nodes),
         nodes_active=len(cluster.active_nodes),
         nodes_drained=len(cluster.drained_nodes) + len(cluster.buffer_drained_nodes),
-        cluster_total_resources=cluster_total_resources.dict(),
-        cluster_used_resources=cluster_used_resources.dict(),
+        cluster_total_resources=cluster_total_resources.model_dump(),
+        cluster_used_resources=cluster_used_resources.model_dump(),
         instances_pending=len(cluster.pending_ec2s),
         instances_running=len(cluster.active_nodes)
         + len(cluster.drained_nodes)

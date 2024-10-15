@@ -13,7 +13,7 @@ from aws_library.ec2 import EC2InstanceData, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
 from distributed.core import Status
 from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 
 from ..core.errors import (
     DaskNoWorkersError,
@@ -291,7 +291,9 @@ async def get_worker_used_resources(
         _logger.debug("found %s for %s", f"{total_resources_used=}", f"{worker_url=}")
         return Resources(
             cpus=total_resources_used.get("CPU", 0),
-            ram=parse_obj_as(ByteSize, total_resources_used.get("RAM", 0)),
+            ram=TypeAdapter(ByteSize).validate_python(
+                total_resources_used.get("RAM", 0)
+            ),
         )
 
 

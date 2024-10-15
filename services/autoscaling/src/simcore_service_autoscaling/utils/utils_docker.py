@@ -358,7 +358,9 @@ async def compute_node_used_resources(
             and task.spec.resources
             and task.spec.resources.reservations
         ):
-            task_reservations = task.spec.resources.reservations.dict(exclude_none=True)
+            task_reservations = task.spec.resources.reservations.model_dump(
+                exclude_none=True
+            )
             cluster_resources_counter.update(
                 {
                     "ram": task_reservations.get("MemoryBytes", 0),
@@ -377,7 +379,7 @@ async def compute_cluster_used_resources(
     )
     counter = collections.Counter({k: 0 for k in Resources.model_fields})
     for result in list_of_used_resources:
-        counter.update(result.dict())
+        counter.update(result.model_dump())
 
     return Resources.model_validate(dict(counter))
 

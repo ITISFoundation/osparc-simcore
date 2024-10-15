@@ -17,7 +17,7 @@ from models_library.clusters import (
     NoAuthentication,
     TLSAuthentication,
 )
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_simcore.helpers.host import get_localhost_ip
 from simcore_service_autoscaling.core.errors import (
     DaskNoWorkersError,
@@ -56,7 +56,9 @@ async def test__scheduler_client_with_wrong_url(
 ):
     with pytest.raises(DaskSchedulerNotFoundError):
         async with _scheduler_client(
-            parse_obj_as(AnyUrl, f"tcp://{faker.ipv4()}:{faker.port_number()}"),
+            TypeAdapter(AnyUrl).validate_python(
+                f"tcp://{faker.ipv4()}:{faker.port_number()}"
+            ),
             authentication,
         ):
             ...
@@ -64,7 +66,9 @@ async def test__scheduler_client_with_wrong_url(
 
 @pytest.fixture
 def scheduler_url(dask_spec_local_cluster: distributed.SpecCluster) -> AnyUrl:
-    return parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address)
+    return TypeAdapter(AnyUrl).validate_python(
+        dask_spec_local_cluster.scheduler_address
+    )
 
 
 @pytest.fixture
@@ -97,8 +101,8 @@ async def test__scheduler_client(
 async def test_list_unrunnable_tasks_with_no_workers(
     dask_local_cluster_without_workers: distributed.SpecCluster,
 ):
-    scheduler_url = parse_obj_as(
-        AnyUrl, dask_local_cluster_without_workers.scheduler_address
+    scheduler_url = TypeAdapter(AnyUrl).validate_python(
+        dask_local_cluster_without_workers.scheduler_address
     )
     assert await list_unrunnable_tasks(scheduler_url, NoAuthentication()) == []
 
@@ -201,8 +205,8 @@ async def test_get_worker_still_has_results_in_memory_with_no_workers_raises(
     dask_local_cluster_without_workers: distributed.SpecCluster,
     fake_localhost_ec2_instance_data: EC2InstanceData,
 ):
-    scheduler_url = parse_obj_as(
-        AnyUrl, dask_local_cluster_without_workers.scheduler_address
+    scheduler_url = TypeAdapter(AnyUrl).validate_python(
+        dask_local_cluster_without_workers.scheduler_address
     )
     with pytest.raises(DaskNoWorkersError):
         await get_worker_still_has_results_in_memory(
@@ -302,8 +306,8 @@ async def test_worker_used_resources_with_no_workers_raises(
     dask_local_cluster_without_workers: distributed.SpecCluster,
     fake_localhost_ec2_instance_data: EC2InstanceData,
 ):
-    scheduler_url = parse_obj_as(
-        AnyUrl, dask_local_cluster_without_workers.scheduler_address
+    scheduler_url = TypeAdapter(AnyUrl).validate_python(
+        dask_local_cluster_without_workers.scheduler_address
     )
     with pytest.raises(DaskNoWorkersError):
         await get_worker_used_resources(

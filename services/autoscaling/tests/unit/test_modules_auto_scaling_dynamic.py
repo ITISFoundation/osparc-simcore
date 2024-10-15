@@ -35,7 +35,7 @@ from models_library.generated_models.docker_rest_api import (
     Task,
 )
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_dynamic_ec2_instances
@@ -130,7 +130,7 @@ def with_valid_time_before_termination(
 ) -> datetime.timedelta:
     time = "00:11:00"
     monkeypatch.setenv("EC2_INSTANCES_TIME_BEFORE_TERMINATION", time)
-    return parse_obj_as(datetime.timedelta, time)
+    return TypeAdapter(datetime.timedelta).validate_python(time)
 
 
 @pytest.fixture
@@ -154,14 +154,14 @@ async def drained_host_node(
             "Role": host_node.spec.role.value,
         },
     )
-    drained_node = parse_obj_as(
-        Node, await async_docker_client.nodes.inspect(node_id=host_node.id)
+    drained_node = TypeAdapter(Node).validate_python(
+        await async_docker_client.nodes.inspect(node_id=host_node.id)
     )
     yield drained_node
     # revert
     # NOTE: getting the node again as the version might have changed
-    drained_node = parse_obj_as(
-        Node, await async_docker_client.nodes.inspect(node_id=host_node.id)
+    drained_node = TypeAdapter(Node).validate_python(
+        await async_docker_client.nodes.inspect(node_id=host_node.id)
     )
     assert drained_node.id
     assert drained_node.version
@@ -208,12 +208,12 @@ def _assert_rabbit_autoscaling_message_sent(
         nodes_total=0,
         nodes_active=0,
         nodes_drained=0,
-        cluster_total_resources=Resources.create_as_empty().dict(),
-        cluster_used_resources=Resources.create_as_empty().dict(),
+        cluster_total_resources=Resources.create_as_empty().model_dump(),
+        cluster_used_resources=Resources.create_as_empty().model_dump(),
         instances_pending=0,
         instances_running=0,
     )
-    expected_message = default_message.copy(update=message_update_kwargs)
+    expected_message = default_message.model_copy(update=message_update_kwargs)
     assert mock_rabbitmq_post_message.call_args == mock.call(app, expected_message)
 
 
@@ -907,7 +907,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(
-                    cpus=4, ram=parse_obj_as(ByteSize, "128Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("128Gib")
                 ),
                 num_services=1,
                 expected_instance_type="r5n.4xlarge",
@@ -918,7 +918,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         pytest.param(
             _ScaleUpParams(
                 imposed_instance_type="t2.xlarge",
-                service_resources=Resources(cpus=4, ram=parse_obj_as(ByteSize, "4Gib")),
+                service_resources=Resources(
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("4Gib")
+                ),
                 num_services=1,
                 expected_instance_type="t2.xlarge",
                 expected_num_instances=1,
@@ -929,7 +931,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _ScaleUpParams(
                 imposed_instance_type="r5n.8xlarge",
                 service_resources=Resources(
-                    cpus=4, ram=parse_obj_as(ByteSize, "128Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("128Gib")
                 ),
                 num_services=1,
                 expected_instance_type="r5n.8xlarge",
@@ -998,7 +1000,7 @@ async def test_cluster_scaling_up_and_down(
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(
-                    cpus=4, ram=parse_obj_as(ByteSize, "62Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("62Gib")
                 ),
                 num_services=1,
                 expected_instance_type="r6a.2xlarge",
@@ -1084,7 +1086,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(
-                    cpus=5, ram=parse_obj_as(ByteSize, "36Gib")
+                    cpus=5, ram=TypeAdapter(ByteSize).validate_python("36Gib")
                 ),
                 num_services=10,
                 expected_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
@@ -1096,7 +1098,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
             _ScaleUpParams(
                 imposed_instance_type="g4dn.8xlarge",
                 service_resources=Resources(
-                    cpus=5, ram=parse_obj_as(ByteSize, "20480MB")
+                    cpus=5, ram=TypeAdapter(ByteSize).validate_python("20480MB")
                 ),
                 num_services=7,
                 expected_instance_type="g4dn.8xlarge",  # 1 GPU, 32 CPUs, 128GiB
@@ -1190,7 +1192,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     [
         pytest.param(
             None,
-            parse_obj_as(ByteSize, "128Gib"),
+            TypeAdapter(ByteSize).validate_python("128Gib"),
             "r5n.4xlarge",
             id="No explicit instance defined",
         ),
@@ -1452,11 +1454,10 @@ async def test__activate_drained_nodes_with_no_drained_nodes(
         task_template_that_runs, {}, "running"
     )
     assert service_with_no_reservations.spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(
             filters={"service": service_with_no_reservations.spec.name}
-        ),
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -1496,11 +1497,10 @@ async def test__activate_drained_nodes_with_drained_node(
         task_template_that_runs, {}, "pending"
     )
     assert service_with_no_reservations.spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(
             filters={"service": service_with_no_reservations.spec.name}
-        ),
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1

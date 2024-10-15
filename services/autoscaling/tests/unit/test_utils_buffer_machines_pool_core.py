@@ -6,7 +6,7 @@ from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.constants import (
     ACTIVATED_BUFFER_MACHINE_EC2_TAGS,
@@ -65,8 +65,8 @@ def test_get_deactivated_buffer_ec2_tags_dynamic(
         | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
     )
     assert "Name" in expected_tags
-    expected_tags[AWSTagKey("Name")] = parse_obj_as(
-        AWSTagValue, str(expected_tags[AWSTagKey("Name")]) + "-buffer"
+    expected_tags[AWSTagKey("Name")] = TypeAdapter(AWSTagValue).validate_python(
+        str(expected_tags[AWSTagKey("Name")]) + "-buffer"
     )
     assert expected_tags == deactivated_buffer_tags
 
@@ -107,8 +107,8 @@ def test_get_deactivated_buffer_ec2_tags_computational(
         | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
     )
     assert "Name" in expected_tags
-    expected_tags[AWSTagKey("Name")] = parse_obj_as(
-        AWSTagValue, str(expected_tags[AWSTagKey("Name")]) + "-buffer"
+    expected_tags[AWSTagKey("Name")] = TypeAdapter(AWSTagValue).validate_python(
+        str(expected_tags[AWSTagKey("Name")]) + "-buffer"
     )
     assert expected_tags == deactivated_buffer_tags
 

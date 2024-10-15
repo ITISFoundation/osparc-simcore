@@ -30,7 +30,7 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     Task,
 )
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.docker_utils import to_datetime
@@ -158,12 +158,12 @@ async def test_get_monitored_nodes_with_valid_label(
 
     # this is the host node with some keys slightly changed
     EXCLUDED_KEYS = {
-        "Index": True,
-        "UpdatedAt": True,
-        "Version": True,
-        "Spec": {"Labels", "Name"},
+        "index": True,
+        "updated_at": True,
+        "version": True,
+        "spec": {"labels", "name"},
     }
-    assert host_node.dict(exclude=EXCLUDED_KEYS) == monitored_nodes[0].dict(
+    assert host_node.model_dump(exclude=EXCLUDED_KEYS) == monitored_nodes[0].model_dump(
         exclude=EXCLUDED_KEYS
     )
 
@@ -191,8 +191,8 @@ async def test_remove_monitored_down_nodes_of_non_down_node_does_nothing(
 
 @pytest.fixture
 def fake_docker_node(host_node: Node, faker: Faker) -> Node:
-    fake_node = host_node.copy(deep=True)
-    fake_node.id = faker.uuid4()
+    fake_node = host_node.model_copy(deep=True)
+    fake_node.id = faker.uuid4(cast_to=str)
     assert (
         host_node.id != fake_node.id
     ), "this should never happen, or you are really unlucky"
@@ -314,11 +314,10 @@ async def test_pending_service_task_with_insufficient_resources_with_service_lac
     )
     assert service_with_too_many_resources.spec
 
-    service_tasks = parse_obj_as(
-        list[Task],
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(
             filters={"service": service_with_too_many_resources.spec.name}
-        ),
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -387,11 +386,10 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
         autoscaling_docker, service_labels=list(service_labels)
     )
 
-    service_tasks = parse_obj_as(
-        list[Task],
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(
             filters={"service": service_with_labels.spec.name}
-        ),
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -503,11 +501,10 @@ async def test_get_resources_from_docker_task_with_no_reservation_returns_0(
 ):
     service_with_no_resources = await create_service(task_template, {}, "running")
     assert service_with_no_resources.spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(
             filters={"service": service_with_no_resources.spec.name}
-        ),
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -532,9 +529,8 @@ async def test_get_resources_from_docker_task_with_reservations(
     )
     service = await create_service(task_template_with_reservations, {}, "running")
     assert service.spec
-    service_tasks = parse_obj_as(
-        list[Task],
-        await async_docker_client.tasks.list(filters={"service": service.spec.name}),
+    service_tasks = TypeAdapter(list[Task]).validate_python(
+        await async_docker_client.tasks.list(filters={"service": service.spec.name})
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -559,19 +555,18 @@ async def test_get_resources_from_docker_task_with_reservations_and_limits_retur
         NUM_CPUS, 0
     )
     task_template_with_reservations["Resources"] |= create_task_limits(
-        host_cpu_count, parse_obj_as(ByteSize, "100Mib")
+        host_cpu_count, TypeAdapter(ByteSize).validate_python("100Mib")
     )["Resources"]
     service = await create_service(task_template_with_reservations, {}, "running")
     assert service.spec
-    service_tasks = parse_obj_as(
-        list[Task],
-        await async_docker_client.tasks.list(filters={"service": service.spec.name}),
+    service_tasks = TypeAdapter(list[Task]).validate_python(
+        await async_docker_client.tasks.list(filters={"service": service.spec.name})
     )
     assert service_tasks
     assert len(service_tasks) == 1
 
     assert get_max_resources_from_docker_task(service_tasks[0]) == Resources(
-        cpus=host_cpu_count, ram=parse_obj_as(ByteSize, "100Mib")
+        cpus=host_cpu_count, ram=TypeAdapter(ByteSize).validate_python("100Mib")
     )
 
 
@@ -620,9 +615,8 @@ async def test_get_task_instance_restriction(
         placement_constraints,
     )
     assert service.spec
-    service_tasks = parse_obj_as(
-        list[Task],
-        await autoscaling_docker.tasks.list(filters={"service": service.spec.name}),
+    service_tasks = TypeAdapter(list[Task]).validate_python(
+        await autoscaling_docker.tasks.list(filters={"service": service.spec.name})
     )
     instance_type_or_none = await get_task_instance_restriction(
         autoscaling_docker, service_tasks[0]
@@ -643,11 +637,10 @@ async def test_compute_tasks_needed_resources(
 ):
     service_with_no_resources = await create_service(task_template, {}, "running")
     assert service_with_no_resources.spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(
             filters={"service": service_with_no_resources.spec.name}
-        ),
+        )
     )
     assert compute_tasks_needed_resources(service_tasks) == Resources.create_as_empty()
 
@@ -663,9 +656,8 @@ async def test_compute_tasks_needed_resources(
     all_tasks = service_tasks
     for s in services:
         assert s.spec
-        service_tasks = parse_obj_as(
-            list[Task],
-            await autoscaling_docker.tasks.list(filters={"service": s.spec.name}),
+        service_tasks = TypeAdapter(list[Task]).validate_python(
+            await autoscaling_docker.tasks.list(filters={"service": s.spec.name})
         )
         assert compute_tasks_needed_resources(service_tasks) == Resources(
             cpus=1, ram=ByteSize(0)

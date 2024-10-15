@@ -16,7 +16,7 @@ from aws_library.ec2 import EC2InstanceType
 from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node as DockerNode
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_autoscaling.core.errors import Ec2InvalidDnsNameError
@@ -211,14 +211,13 @@ def ec2_instances_boot_ami_scripts(
 def ec2_instances_boot_ami_pre_pull(
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
 ) -> EnvVarsDict:
-    images = parse_obj_as(
-        list[DockerGenericTag],
+    images = TypeAdapter(list[DockerGenericTag]).validate_python(
         [
             "nginx:latest",
             "itisfoundation/my-very-nice-service:latest",
             "simcore/services/dynamic/another-nice-one:2.4.5",
             "asd",
-        ],
+        ]
     )
     envs = setenvs_from_dict(
         monkeypatch,

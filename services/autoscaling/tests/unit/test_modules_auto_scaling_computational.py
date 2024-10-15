@@ -31,7 +31,7 @@ from models_library.generated_models.docker_rest_api import Availability
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import NodeState, NodeStatus
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_computational_ec2_instances
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -109,12 +109,12 @@ def _assert_rabbit_autoscaling_message_sent(
         nodes_total=0,
         nodes_active=0,
         nodes_drained=0,
-        cluster_total_resources=Resources.create_as_empty().dict(),
-        cluster_used_resources=Resources.create_as_empty().dict(),
+        cluster_total_resources=Resources.create_as_empty().model_dump(),
+        cluster_used_resources=Resources.create_as_empty().model_dump(),
         instances_pending=0,
         instances_running=0,
     )
-    expected_message = default_message.copy(update=message_update_kwargs)
+    expected_message = default_message.model_copy(update=message_update_kwargs)
     mock_rabbitmq_post_message.assert_called_once_with(
         app,
         expected_message,
@@ -241,7 +241,9 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
     dask_spec_local_cluster: distributed.SpecCluster,
 ):
     # create a task that needs too much power
-    dask_future = create_dask_task({"RAM": int(parse_obj_as(ByteSize, "12800GiB"))})
+    dask_future = create_dask_task(
+        {"RAM": int(TypeAdapter(ByteSize).validate_python("12800GiB"))}
+    )
     assert dask_future
 
     await auto_scale_cluster(
@@ -317,8 +319,7 @@ async def _create_task_with_resources(
         assert instance_types["InstanceTypes"]
         assert "MemoryInfo" in instance_types["InstanceTypes"][0]
         assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
-        dask_ram = parse_obj_as(
-            ByteSize,
+        dask_ram = TypeAdapter(ByteSize).validate_python(
             f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
         )
     dask_task_resources = create_dask_task_resources(
@@ -335,7 +336,7 @@ async def _create_task_with_resources(
     [
         pytest.param(
             None,
-            parse_obj_as(ByteSize, "128Gib"),
+            TypeAdapter(ByteSize).validate_python("128Gib"),
             "r5n.4xlarge",
             id="No explicit instance defined",
         ),
@@ -347,7 +348,7 @@ async def _create_task_with_resources(
         ),
         pytest.param(
             "r5n.8xlarge",
-            parse_obj_as(ByteSize, "116Gib"),
+            TypeAdapter(ByteSize).validate_python("116Gib"),
             "r5n.8xlarge",
             id="Explicitely ask for r5n.8xlarge and set the resources",
         ),
@@ -751,7 +752,7 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
 
     # create a task that needs more power
     dask_task_resources = create_dask_task_resources(
-        faker.pystr(), parse_obj_as(ByteSize, "128GiB")
+        faker.pystr(), TypeAdapter(ByteSize).validate_python("128GiB")
     )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
@@ -787,7 +788,7 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
 
     # create a task that needs more power
     dask_task_resources = create_dask_task_resources(
-        "t2.xlarge", parse_obj_as(ByteSize, "128GiB")
+        "t2.xlarge", TypeAdapter(ByteSize).validate_python("128GiB")
     )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
@@ -817,7 +818,8 @@ class _ScaleUpParams:
 
 def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResources:
     return {
-        res_key.upper(): res_value for res_key, res_value in resources.dict().items()
+        res_key.upper(): res_value
+        for res_key, res_value in resources.model_dump().items()
     }
 
 
@@ -847,7 +849,9 @@ def patch_ec2_client_launch_instancess_min_number_of_instances(
     [
         pytest.param(
             _ScaleUpParams(
-                task_resources=Resources(cpus=5, ram=parse_obj_as(ByteSize, "36Gib")),
+                task_resources=Resources(
+                    cpus=5, ram=TypeAdapter(ByteSize).validate_python("36Gib")
+                ),
                 num_tasks=10,
                 expected_instance_type="g3.4xlarge",
                 expected_num_instances=4,
@@ -1106,7 +1110,7 @@ async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_star
     [
         pytest.param(
             None,
-            parse_obj_as(ByteSize, "128Gib"),
+            TypeAdapter(ByteSize).validate_python("128Gib"),
             "r5n.4xlarge",
             id="No explicit instance defined",
         ),
