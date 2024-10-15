@@ -67,7 +67,7 @@ def error_middleware_factory(
         )
         log_msg = create_troubleshotting_log_message(
             message_to_user=frontend_msg,
-            error=err,
+            exception=err,
             error_code=error_code,
             error_context=error_context,
         )

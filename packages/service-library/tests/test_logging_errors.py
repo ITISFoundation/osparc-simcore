@@ -5,7 +5,10 @@ import logging
 import pytest
 from models_library.error_codes import create_error_code
 from models_library.errors_classes import OsparcErrorMixin
-from servicelib.logging_errors import create_troubleshotting_log_message
+from servicelib.logging_errors import (
+    create_troubleshotting_log_kwargs,
+    create_troubleshotting_log_message,
+)
 from servicelib.logging_utils import get_log_record_extra
 
 
@@ -18,13 +21,26 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
 
     exc = exc_info.value
     error_code = create_error_code(exc)
+
+    assert exc.error_code() == error_code
+
+    msg = f"Nice message to user [{error_code}]"
+
     log_msg = create_troubleshotting_log_message(
-        f"Nice message to user [{error_code}]",
+        msg,
         exc,
         error_code=error_code,
         error_context=exc.error_context(),
         tip="This is a test error",
     )
+
+    log_kwargs = create_troubleshotting_log_kwargs(
+        msg,
+        exc,
+        tip="This is a test error",
+    )
+
+    assert log_kwargs["msg"] == log_msg
 
     with caplog.at_level(logging.WARNING):
         root_logger = logging.getLogger()

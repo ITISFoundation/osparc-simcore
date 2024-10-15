@@ -1,18 +1,18 @@
 import logging
 from pprint import pformat
-from typing import Any
+from typing import Any, NotRequired, TypedDict
 
 from models_library.error_codes import ErrorCodeStr, create_error_code
 from models_library.errors_classes import OsparcErrorMixin
 
-from .logging_errors import get_log_record_extra
+from .logging_utils import LogExtra, get_log_record_extra
 
 _logger = logging.getLogger(__name__)
 
 
 def create_troubleshotting_log_message(
     message_to_user: str,
-    error: BaseException,
+    exception: BaseException,
     error_code: ErrorCodeStr,
     error_context: dict[str, Any] | None = None,
     tip: str | None = None,
@@ -28,7 +28,7 @@ def create_troubleshotting_log_message(
     """
     debug_data = pformat(
         {
-            "exception_details": f"{error}",
+            "exception_details": f"{exception}",
             "error_code": error_code,
             "context": pformat(error_context, indent=1),
             "tip": tip,
@@ -39,21 +39,46 @@ def create_troubleshotting_log_message(
     return f"{message_to_user}.\n{debug_data}"
 
 
+class LogKwargs(TypedDict):
+    msg: str
+    extra: NotRequired[LogExtra | None]
+
+
 def create_troubleshotting_log_kwargs(
     message_to_user: str,
     exception: BaseException,
     error_context: dict[str, Any] | None = None,
     tip: str | None = None,
-):
+) -> LogKwargs:
+    """
+    Creates a dictionary of logging arguments to be used with _log.exception for troubleshooting purposes.
+
+    Usage:
+
+        try:
+            ...
+        except MyException as exc
+            _logger.exception(
+                **create_troubleshotting_log_kwargs(
+                    message_to_user=frontend_msg,
+                    exception=exc,
+                    tip="Check row in `groups_extra_properties` for this product. It might be missing.",
+                )
+            )
+
+    """
+    # error-code
     error_code = create_error_code(exception)
 
+    # error-context
     context = error_context or {}
     if isinstance(exception, OsparcErrorMixin):
         context.update(exception.error_context())
 
+    # aggregate
     log_msg = create_troubleshotting_log_message(
         message_to_user=message_to_user,
-        error=exception,
+        exception=exception,
         error_code=error_code,
         error_context=context,
         tip=tip,

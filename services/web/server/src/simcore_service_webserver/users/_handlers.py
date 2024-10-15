@@ -2,7 +2,6 @@ import functools
 import logging
 
 from aiohttp import web
-from models_library.error_codes import create_error_code
 from models_library.users import UserID
 from pydantic import BaseModel, Field
 from servicelib.aiohttp.requests_validation import (
@@ -10,8 +9,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.logging_errors import create_troubleshotting_log_message
-from servicelib.logging_utils import get_log_record_extra
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -51,22 +49,15 @@ def _handle_users_exceptions(handler: Handler):
         except UserNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except MissingGroupExtraPropertiesForProductError as exc:
-            error_code = create_error_code(exc)
-            frontend_msg = FMSG_MISSING_CONFIG_WITH_OEC.format(error_code=error_code)
-            log_msg = create_troubleshotting_log_message(
-                message_to_user=frontend_msg,
-                error=exc,
-                error_code=error_code,
-                error_context=exc.error_context(),
-                tip="Row in `groups_extra_properties` for this product is missing.",
+            frontend_msg = FMSG_MISSING_CONFIG_WITH_OEC.format(
+                error_code=exc.error_code()
             )
-
             _logger.exception(
-                log_msg,
-                extra=get_log_record_extra(
-                    error_code=error_code,
-                    user_id=exc.error_context().get("user_id", None),
-                ),
+                **create_troubleshotting_log_kwargs(
+                    message_to_user=frontend_msg,
+                    exception=exc,
+                    tip="Row in `groups_extra_properties` for this product is missing.",
+                )
             )
             raise web.HTTPServiceUnavailable(reason=frontend_msg) from exc
 
