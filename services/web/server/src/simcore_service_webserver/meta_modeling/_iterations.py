@@ -21,6 +21,7 @@ from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 from pydantic.types import PositiveInt
 
+from .._constants import RQ_PRODUCT_KEY
 from ..projects.models import ProjectDict
 from ..utils import compute_sha1_on_small_dataset, now_str
 from ..version_control.errors import UserUndefinedError
@@ -209,6 +210,7 @@ async def get_or_create_runnable_projects(
 
     vc_repo = VersionControlForMetaModeling.create_from_request(request)
     assert vc_repo.user_id  # nosec
+    product_name = request[RQ_PRODUCT_KEY]
 
     try:
         project: ProjectDict = await vc_repo.get_project(str(project_uuid))
@@ -303,6 +305,7 @@ async def get_or_create_runnable_projects(
             branch_name=branch_name,
             tag_name=tag_name,
             tag_message=json_dumps(parameters),
+            product_name=product_name,
         )
 
         workcopy_project_id = await vc_repo.get_workcopy_project_id(repo_id, commit_id)

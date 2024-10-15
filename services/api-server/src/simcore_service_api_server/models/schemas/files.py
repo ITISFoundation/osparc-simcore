@@ -6,6 +6,7 @@ from urllib.parse import unquote as _unquote
 from uuid import UUID, uuid3
 
 import aiofiles
+from common_library.pydantic_basic_types import ConstrainedStr
 from fastapi import UploadFile
 from models_library.api_schemas_storage import ETag
 from models_library.basic_types import SHA256Str

@@ -1,5 +1,6 @@
 from typing import Annotated, TypeAlias
 
+from common_library.pydantic_basic_types import ConstrainedStr
 from fastapi.responses import StreamingResponse
 from models_library.basic_regex import SIMPLE_VERSION_RE
 from pydantic import StringConstraints

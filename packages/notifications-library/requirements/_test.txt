@@ -1,4 +1,4 @@
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -10,21 +10,21 @@ coverage==7.6.1
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==27.0.0
+faker==29.0.0
     # via -r requirements/_test.in
-greenlet==3.0.3
+greenlet==3.1.1
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
 icdiff==2.0.7
     # via pytest-icdiff
-idna==3.7
+idna==3.10
     # via
     #   -c requirements/_base.txt
     #   requests
 iniconfig==2.0.0
     # via pytest
-mypy==1.11.1
+mypy==1.11.2
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -36,7 +36,7 @@ pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -79,7 +79,7 @@ six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
-sqlalchemy==1.4.53
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -97,7 +97,7 @@ typing-extensions==4.12.2
     #   -c requirements/_base.txt
     #   mypy
     #   sqlalchemy2-stubs
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

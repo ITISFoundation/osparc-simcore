@@ -1,7 +1,7 @@
 import functools
 
 from aiohttp import web
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import PositiveInt

@@ -5,13 +5,13 @@ from uuid import uuid4
 
 import arrow
 from aiohttp import web
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentMethodID,
     PaymentTransaction,
     WalletPaymentInitiated,
 )
-from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -279,6 +279,7 @@ async def init_creation_of_wallet_payment(
     Raises:
         UserNotFoundError
         WalletAccessForbiddenError
+        BillingDetailsNotFoundError
     """
 
     # wallet: check permissions
@@ -293,6 +294,7 @@ async def init_creation_of_wallet_payment(
     # user info
     user = await get_user_display_and_id_names(app, user_id=user_id)
     user_invoice_address = await get_user_invoice_address(app, user_id=user_id)
+
     # stripe info
     product_stripe_info = await get_product_stripe_info(app, product_name=product_name)
 

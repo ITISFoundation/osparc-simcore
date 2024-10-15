@@ -7,8 +7,10 @@ from types import SimpleNamespace
 from typing import cast
 
 from aiopg.sa.result import RowProxy
+from models_library.products import ProductName
 from models_library.projects import ProjectIDStr
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from simcore_postgres_database.models.projects_to_products import projects_to_products
 
 from ..projects.models import ProjectDict
 from ..version_control.db import VersionControlRepository
@@ -92,6 +94,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
         branch_name: str,
         tag_name: str,
         tag_message: str,
+        product_name: ProductName,
     ) -> CommitID:
         """Creates a new branch with an explicit working copy 'project' on 'start_commit_id'"""
         IS_INTERNAL_OPERATION = True
@@ -142,6 +145,12 @@ class VersionControlForMetaModeling(VersionControlRepository):
 
                 # creates runnable version in project
                 await self.ProjectsOrm(conn).insert(**project)
+
+                await conn.execute(
+                    projects_to_products.insert().values(
+                        project_uuid=project["uuid"], product_name=product_name
+                    )
+                )
 
                 # create branch and set head to last commit_id
                 branch = await self.BranchesOrm(conn).insert(

@@ -30,7 +30,18 @@ services:
       - "18080:8080"
     networks:
       - simcore_default
-
+  jaeger:
+    image: jaegertracing/all-in-one:1.47
+    networks:
+      - simcore_default
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger HTTP Thrift
+      - "14250:14250"  # Jaeger gRPC
+      - "43017:4317" # opentelemetry GRPC default port
+      - "43018:4318" # opentelemetry HTTP default port
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
   portainer:
     image: portainer/portainer-ce
     init: true
@@ -82,13 +93,28 @@ services:
         user_notifications:${REDIS_HOST}:${REDIS_PORT}:4:${REDIS_PASSWORD},
         announcements:${REDIS_HOST}:${REDIS_PORT}:5:${REDIS_PASSWORD},
         distributed_identifiers:${REDIS_HOST}:${REDIS_PORT}:6:${REDIS_PASSWORD},
-        deferred_tasks:${REDIS_HOST}:${REDIS_PORT}:7:${REDIS_PASSWORD}
+        deferred_tasks:${REDIS_HOST}:${REDIS_PORT}:7:${REDIS_PASSWORD},
+        dynamic_services:${REDIS_HOST}:${REDIS_PORT}:8:${REDIS_PASSWORD}
       # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
     ports:
       - "18081:8081"
     networks:
       - simcore_default
-
+  opentelemetry-collector:
+    image: otel/opentelemetry-collector-contrib:0.105.0
+    volumes:
+      - ./opentelemetry-collector-config.yaml:/etc/otel/config.yaml
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    command:
+      - "--config=/etc/otel/config.yaml"
+    ports:
+      - "4318:4318"  # OTLP HTTP receiver
+    networks:
+      - simcore_default
+    environment:
+      TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE: ${TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE}
+      TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE: ${TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE}
+      TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT}
 volumes:
   minio_data:
     name: ops_minio_data
@@ -97,8 +123,8 @@ volumes:
 
 networks:
   simcore_default:
-    name: ${SWARM_STACK_NAME:-simcore}_default
+    name: ${SWARM_STACK_NAME}_default
     external: true
   interactive_services_subnet:
-    name: ${SWARM_STACK_NAME:-simcore}_interactive_services_subnet
+    name: ${SWARM_STACK_NAME}_interactive_services_subnet
     external: true

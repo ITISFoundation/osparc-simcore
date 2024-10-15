@@ -24,7 +24,7 @@
 qx.Class.define("osparc.dashboard.ListButtonNew", {
   extend: osparc.dashboard.ListButtonBase,
 
-  construct: function(title, description) {
+  construct: function(title) {
     this.base(arguments);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.NEW);
@@ -39,11 +39,6 @@ qx.Class.define("osparc.dashboard.ListButtonNew", {
         value: title,
         rich: true
       });
-    }
-
-    if (description) {
-      const descLabel = this.getChildControl("description");
-      descLabel.setValue(description);
     }
 
     this.setIcon(osparc.dashboard.CardBase.NEW_ICON);

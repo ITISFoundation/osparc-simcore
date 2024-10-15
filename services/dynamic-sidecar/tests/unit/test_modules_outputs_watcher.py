@@ -26,6 +26,9 @@ from pydantic import (
 )
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
+from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
+    PortNotifier,
+)
 from simcore_service_dynamic_sidecar.modules.outputs import (
     _watcher as outputs_watcher_core,
 )
@@ -90,10 +93,11 @@ async def outputs_context(
 
 @pytest.fixture
 async def outputs_manager(
-    outputs_context: OutputsContext,
+    outputs_context: OutputsContext, port_notifier: PortNotifier
 ) -> AsyncIterable[OutputsManager]:
     outputs_manager = OutputsManager(
         outputs_context=outputs_context,
+        port_notifier=port_notifier,
         io_log_redirect_cb=None,
         task_monitor_interval_s=TICK_INTERVAL,
         progress_cb=None,

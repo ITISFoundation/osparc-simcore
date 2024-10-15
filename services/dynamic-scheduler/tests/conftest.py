@@ -4,6 +4,7 @@
 import string
 from collections.abc import AsyncIterator
 from pathlib import Path
+from typing import Final
 
 import pytest
 import simcore_service_dynamic_scheduler
@@ -13,6 +14,9 @@ from fastapi import FastAPI
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.redis import RedisClientsManager, RedisManagerDBConfig
+from servicelib.utils import logged_gather
+from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_dynamic_scheduler.core.application import create_app
 
 pytest_plugins = [
@@ -20,6 +24,7 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_projects_data",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
@@ -73,17 +78,38 @@ def app_environment(
     )
 
 
+_PATH_APPLICATION: Final[str] = "simcore_service_dynamic_scheduler.core.application"
+
+
 @pytest.fixture
 def disable_rabbitmq_setup(mocker: MockerFixture) -> None:
-    base_path = "simcore_service_dynamic_scheduler.core.application"
-    mocker.patch(f"{base_path}.setup_rabbitmq")
-    mocker.patch(f"{base_path}.setup_rpc_api_routes")
+    mocker.patch(f"{_PATH_APPLICATION}.setup_rabbitmq")
+    mocker.patch(f"{_PATH_APPLICATION}.setup_rpc_api_routes")
 
 
 @pytest.fixture
 def disable_redis_setup(mocker: MockerFixture) -> None:
-    base_path = "simcore_service_dynamic_scheduler.core.application"
-    mocker.patch(f"{base_path}.setup_redis")
+    mocker.patch(f"{_PATH_APPLICATION}.setup_redis")
+
+
+@pytest.fixture
+def disable_service_tracker_setup(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.setup_service_tracker")
+
+
+@pytest.fixture
+def disable_deferred_manager_setup(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.setup_deferred_manager")
+
+
+@pytest.fixture
+def disable_notifier_setup(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.setup_notifier")
+
+
+@pytest.fixture
+def disable_status_monitor_setup(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_PATH_APPLICATION}.setup_status_monitor")
 
 
 MAX_TIME_FOR_APP_TO_STARTUP = 10
@@ -101,3 +127,13 @@ async def app(
         shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
     ):
         yield test_app
+
+
+@pytest.fixture
+async def remove_redis_data(redis_service: RedisSettings) -> None:
+    async with RedisClientsManager(
+        {RedisManagerDBConfig(x) for x in RedisDatabase}, redis_service
+    ) as manager:
+        await logged_gather(
+            *[manager.client(d).redis.flushall() for d in RedisDatabase]
+        )

@@ -4,7 +4,6 @@ from typing import Any, Final
 
 import distributed
 import rich
-import typer
 from mypy_boto3_ec2.service_resource import Instance
 from pydantic import AnyUrl
 
@@ -64,25 +63,6 @@ async def dask_client(
                     f"{url}", security=security, timeout="5", asynchronous=True
                 )
             )
-            versions = await _wrap_dask_async_call(client.get_versions())
-            if versions["client"]["python"] != versions["scheduler"]["python"]:
-                rich.print(
-                    f"[red]python versions do not match! TIP: install the correct version {versions['scheduler']['python']}[/red]"
-                )
-                raise typer.Exit(1)
-            if (
-                versions["client"]["distributed"]
-                != versions["scheduler"]["distributed"]
-            ):
-                rich.print(
-                    f"[red]distributed versions do not match! TIP: install the correct version {versions['scheduler']['distributed']}[/red]"
-                )
-                raise typer.Exit(1)
-            if versions["client"]["dask"] != versions["scheduler"]["dask"]:
-                rich.print(
-                    f"[red]dask versions do not match! TIP: install the correct version {versions['scheduler']['dask']}[/red]"
-                )
-                raise typer.Exit(1)
             yield client
 
     finally:
@@ -132,12 +112,13 @@ async def _list_all_tasks(
 
         return dict(task_state_to_tasks)
 
+    list_of_tasks: dict[TaskState, list[TaskId]] = []
     try:
-        list_of_tasks: dict[TaskState, list[TaskId]] = await client.run_on_scheduler(
+        list_of_tasks = await client.run_on_scheduler(
             _list_tasks
         )  # type: ignore
     except TypeError:
-        rich.print(f"ERROR while recoverring unrunnable tasks using {dask_client=}")
+        rich.print(f"ERROR while recoverring unrunnable tasks using {dask_client=}. Defaulting to empty list of tasks!!")
     return list_of_tasks
 
 

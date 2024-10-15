@@ -58,6 +58,7 @@ from ._crud_handlers_models import (
     ProjectActiveParams,
     ProjectCreateHeaders,
     ProjectCreateParams,
+    ProjectListFullSearchWithJsonStrParams,
     ProjectListWithJsonStrParams,
 )
 from ._permalink_api import update_or_pop_permalink_in_project
@@ -68,6 +69,7 @@ from .exceptions import (
     ProjectInvalidUsageError,
     ProjectNotFoundError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
+    WrongTagIdsInQueryError,
 )
 from .lock import get_project_locked_state
 from .models import ProjectDict
@@ -100,7 +102,10 @@ def _handle_projects_exceptions(handler: Handler):
             WorkspaceNotFoundError,
         ) as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
-        except ProjectOwnerNotFoundInTheProjectAccessRightsError as exc:
+        except (
+            ProjectOwnerNotFoundInTheProjectAccessRightsError,
+            WrongTagIdsInQueryError,
+        ) as exc:
             raise web.HTTPBadRequest(reason=f"{exc}") from exc
         except (
             ProjectInvalidRightsError,
@@ -209,6 +214,45 @@ async def list_projects(request: web.Request):
         order_by=parse_obj_as(OrderBy, query_params.order_by),
         folder_id=query_params.folder_id,
         workspace_id=query_params.workspace_id,
+    )
+
+    page = Page[ProjectDict].parse_obj(
+        paginate_data(
+            chunk=projects,
+            request_url=request.url,
+            total=total_number_of_projects,
+            limit=query_params.limit,
+            offset=query_params.offset,
+        )
+    )
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
+
+
+@routes.get(f"/{VTAG}/projects:search", name="list_projects_full_search")
+@login_required
+@permission_required("project.read")
+@_handle_projects_exceptions
+async def list_projects_full_search(request: web.Request):
+    req_ctx = RequestContext.parse_obj(request)
+    query_params: ProjectListFullSearchWithJsonStrParams = (
+        parse_request_query_parameters_as(
+            ProjectListFullSearchWithJsonStrParams, request
+        )
+    )
+    tag_ids_list = query_params.tag_ids_list()
+
+    projects, total_number_of_projects = await _crud_api_read.list_projects_full_search(
+        request,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        limit=query_params.limit,
+        offset=query_params.offset,
+        text=query_params.text,
+        order_by=query_params.order_by,
+        tag_ids_list=tag_ids_list,
     )
 
     page = Page[ProjectDict].parse_obj(
@@ -444,7 +488,7 @@ async def replace_project(request: web.Request):
                 reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
             )
 
-        await check_user_project_permission(
+        user_project_permission = await check_user_project_permission(
             request.app,
             project_id=path_params.project_id,
             user_id=req_ctx.user_id,
@@ -483,6 +527,16 @@ async def replace_project(request: web.Request):
             is_template=False,
             app=request.app,
         )
+        # Appends folder ID
+        user_specific_project_data_db = await db.get_user_specific_project_data_db(
+            project_uuid=path_params.project_id,
+            private_workspace_user_id_or_none=(
+                req_ctx.user_id
+                if user_project_permission.workspace_id is None
+                else None
+            ),
+        )
+        data["folderId"] = user_specific_project_data_db.folder_id
 
         return web.json_response({"data": data}, dumps=json_dumps)
 

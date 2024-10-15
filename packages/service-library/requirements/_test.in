@@ -17,8 +17,9 @@ coverage
 docker
 faker
 flaky
+numpy
 openapi-spec-validator
-psutil
+pillow
 pytest
 pytest-aiohttp
 pytest-asyncio
@@ -35,5 +36,6 @@ python-dotenv
 respx
 sqlalchemy[mypy]
 types_aiofiles
-types-psycopg2
 types_tqdm
+types-psutil
+types-psycopg2

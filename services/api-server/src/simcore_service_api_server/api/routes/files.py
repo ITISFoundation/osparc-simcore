@@ -2,7 +2,6 @@ import asyncio
 import datetime
 import io
 import logging
-from textwrap import dedent
 from typing import IO, Annotated, Any
 from uuid import UUID
 
@@ -10,7 +9,6 @@ from fastapi import APIRouter, Body, Depends
 from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
-from fastapi.responses import HTMLResponse
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_storage import ETag, FileUploadCompletionBody, LinkType
 from models_library.basic_types import SHA256Str
@@ -29,7 +27,6 @@ from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upl
 from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
-from ..._meta import API_VTAG
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -158,7 +155,11 @@ def _get_spooled_file_size(file_io: IO) -> int:
     return file_size
 
 
-@router.put("/content", response_model=File, responses=_FILE_STATUS_CODES)
+@router.put(
+    "/content",
+    response_model=File,
+    responses=_FILE_STATUS_CODES,
+)
 @cancel_on_disconnect
 async def upload_file(
     request: Request,
@@ -433,24 +434,3 @@ async def download_file(
 
     _logger.info("Downloading %s to %s ...", file_meta, presigned_download_link)
     return RedirectResponse(f"{presigned_download_link}")
-
-
-async def files_upload_multiple_view():
-    """Extra **Web form** to upload multiple files at http://localhost:8000/v0/files/upload-form-view
-        and overcomes the limitations of Swagger-UI view
-
-    NOTE: Only enabled if DEBUG=1
-    NOTE: As of 2020-10-07, Swagger UI doesn't support multiple file uploads in the same form field
-    """
-    return HTMLResponse(
-        content=dedent(
-            f"""
-        <body>
-        <form action="/{API_VTAG}/files:upload" enctype="multipart/form-data" method="post">
-        <input name="files" type="file" multiple>
-        <input type="submit">
-        </form>
-        </body>
-        """
-        )
-    )

@@ -39,6 +39,7 @@ json2html
 jsondiff
 msgpack
 openpyxl # excel
+opentelemetry-instrumentation-aiopg
 orjson  # json
 packaging
 passlib

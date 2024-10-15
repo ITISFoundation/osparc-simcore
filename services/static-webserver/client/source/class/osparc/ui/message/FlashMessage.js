@@ -31,7 +31,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
    */
   construct: function(message, level, duration) {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.HBox(15));
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     this.set({
       padding: 18,
@@ -40,10 +40,6 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
       alignX: "center",
       backgroundColor: this.self().LOG_LEVEL_COLOR_MAP[level].backgroundColor,
       decorator: `flash-${this.self().LOG_LEVEL_COLOR_MAP[level].color}`
-    });
-
-    this.getContentElement().setStyles({
-      "border-radius": "8px"
     });
 
     const badge = this.getChildControl("badge");
@@ -112,15 +108,18 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
   },
 
   members: {
-    __closeCb: null,
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "message-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(15));
+          this._add(control);
+          break;
         case "badge":
           control = new qx.ui.basic.Image().set({
             alignY: "middle"
           });
-          this._add(control);
+          this.getChildControl("message-layout").addAt(control, 0);
           break;
         case "message":
           control = new qx.ui.basic.Label().set({
@@ -128,7 +127,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
             selectable: true,
             rich: true
           });
-          this._add(control, {
+          this.getChildControl("message-layout").addAt(control, 1, {
             flex: 1
           });
           break;
@@ -136,7 +135,7 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
           control = new osparc.ui.basic.IconButton("@MaterialIcons/close/16", () => this.fireEvent("closeMessage")).set({
             alignY: "middle"
           });
-          this._add(control);
+          this.getChildControl("message-layout").addAt(control, 2);
           break;
       }
       return control || this.base(arguments, id);
@@ -147,6 +146,10 @@ qx.Class.define("osparc.ui.message.FlashMessage", {
       if (label) {
         label.setValue(value);
       }
-    }
+    },
+
+    addWidget: function(widget) {
+      this._add(widget);
+    },
   }
 });

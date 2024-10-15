@@ -16,12 +16,12 @@ from simcore_postgres_database.utils_aiopg_orm import ALL_COLUMNS, BaseOrm
 
 
 @pytest.fixture
-async def fake_scicrunch_ids(pg_engine: Engine) -> list[str]:
+async def fake_scicrunch_ids(aiopg_engine: Engine) -> list[str]:
     row1 = {"rrid": "RRID:foo", "name": "foo", "description": "fooing"}
     row2 = {"rrid": "RRID:bar", "name": "bar", "description": "barring"}
 
     row_ids = []
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         for row in (row1, row2):
             row_id = await conn.scalar(
                 scicrunch_resources.insert()
@@ -35,7 +35,7 @@ async def fake_scicrunch_ids(pg_engine: Engine) -> list[str]:
 
 
 @pytest.fixture()
-async def scicrunch_orm(pg_engine: Engine) -> Iterator[BaseOrm[str]]:
+async def scicrunch_orm(aiopg_engine: Engine) -> Iterator[BaseOrm[str]]:
     # This is a table without dependencies and therefore easy to use as fixture
     class ScicrunchOrm(BaseOrm[str]):
         def __init__(self, connection: SAConnection):
@@ -46,7 +46,7 @@ async def scicrunch_orm(pg_engine: Engine) -> Iterator[BaseOrm[str]]:
                 writeonce={"rrid"},
             )
 
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         orm_obj = ScicrunchOrm(conn)
         yield orm_obj
 

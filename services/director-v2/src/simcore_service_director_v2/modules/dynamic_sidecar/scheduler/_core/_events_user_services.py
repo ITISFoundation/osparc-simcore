@@ -19,6 +19,7 @@ from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from .....models.dynamic_services_scheduler import SchedulerData
+from .....modules.instrumentation import get_instrumentation, get_metrics_labels
 from .....utils.db import get_repository
 from ....db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from ....db.repositories.projects import ProjectsRepository
@@ -221,5 +222,16 @@ async def create_user_services(  # pylint: disable=too-many-statements
     )
 
     scheduler_data.dynamic_sidecar.were_containers_created = True
+
+    # NOTE: user services are already in running state, meaning it is safe to pull inputs
+    await sidecars_client.pull_service_input_ports(dynamic_sidecar_endpoint)
+
+    start_duration = (
+        scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_start_request()
+    )
+    assert start_duration is not None  # nosec
+    get_instrumentation(app).dynamic_sidecar_metrics.start_time_duration.labels(
+        **get_metrics_labels(scheduler_data)
+    ).observe(start_duration)
 
     _logger.info("Internal state after creating user services %s", scheduler_data)

@@ -1,6 +1,6 @@
 from servicelib.async_utils import cancel_sequential_workers
 
-from ..meta import __version__, info
+from .._meta import __version__, info
 
 #
 # SEE https://patorjk.com/software/taag/#p=display&f=Small&t=Director

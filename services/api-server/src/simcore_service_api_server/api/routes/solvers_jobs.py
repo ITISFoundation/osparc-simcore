@@ -40,7 +40,6 @@ from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
-from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._constants import FMSG_CHANGELOG_ADDED_IN_VERSION, FMSG_CHANGELOG_NEW_IN_VERSION
 
 _logger = logging.getLogger(__name__)
@@ -145,9 +144,8 @@ async def create_job(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses=JOBS_STATUS_CODES,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     description="Deletes an existing solver job\n\n"
-    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
+    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
 )
 async def delete_job(
     solver_key: SolverKeyId,
@@ -271,9 +269,8 @@ async def inspect_job(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadata,
     responses=METADATA_STATUS_CODES,
-    include_in_schema=API_SERVER_DEV_FEATURES_ENABLED,
     description="Updates custom metadata from a job\n\n"
-    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
+    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
 )
 async def replace_job_custom_metadata(
     solver_key: SolverKeyId,

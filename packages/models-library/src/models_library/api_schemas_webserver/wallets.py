@@ -2,9 +2,10 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal, TypeAlias
 
+from common_library.pydantic_basic_types import IDStr
 from pydantic import ConfigDict, Field, HttpUrl, field_validator
 
-from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
+from ..basic_types import AmountDecimal, NonNegativeDecimal
 from ..users import GroupID
 from ..utils.pydantic_tools_extension import FieldNotRequired
 from ..wallets import WalletID, WalletStatus

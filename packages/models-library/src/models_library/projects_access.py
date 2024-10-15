@@ -4,10 +4,10 @@
 
 from enum import Enum
 
+from common_library.pydantic_basic_types import IDStr
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.types import PositiveInt
 
-from .basic_types import IDStr
 from .users import FirstNameStr, LastNameStr
 
 

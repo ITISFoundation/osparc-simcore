@@ -1,5 +1,5 @@
-import urllib.parse
 from functools import cached_property
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from pydantic import (
     AliasChoices,
@@ -86,11 +86,23 @@ class PostgresSettings(BaseCustomSettings):
     def dsn_with_query(self) -> str:
         """Some clients do not support queries in the dsn"""
         dsn = self.dsn
+        return self._update_query(dsn)
+
+    def _update_query(self, uri: str) -> str:
+        # SEE https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+        new_params: dict[str, str] = {}
         if self.POSTGRES_CLIENT_NAME:
-            dsn += "?" + urllib.parse.urlencode(
-                {"application_name": self.POSTGRES_CLIENT_NAME}
-            )
-        return dsn
+            new_params = {
+                "application_name": self.POSTGRES_CLIENT_NAME,
+            }
+
+        if new_params:
+            parsed_uri = urlparse(uri)
+            query = dict(parse_qsl(parsed_uri.query))
+            query.update(new_params)
+            updated_query = urlencode(query)
+            return urlunparse(parsed_uri._replace(query=updated_query))
+        return uri
 
     model_config = SettingsConfigDict(
         json_schema_extra={

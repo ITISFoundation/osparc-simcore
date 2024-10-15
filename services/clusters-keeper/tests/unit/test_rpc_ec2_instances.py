@@ -24,6 +24,7 @@ def _base_configuration(
     enabled_rabbitmq: None,
     mocked_redis_server: None,
     mocked_ec2_server_envs: EnvVarsDict,
+    mocked_ssm_server_envs: EnvVarsDict,
     initialized_app: FastAPI,
 ) -> None:
     ...

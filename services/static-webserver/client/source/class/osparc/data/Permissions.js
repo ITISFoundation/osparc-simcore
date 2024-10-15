@@ -148,7 +148,7 @@ qx.Class.define("osparc.data.Permissions", {
         "admin": []
       };
       let fromUserToTester = [];
-      if (osparc.product.Utils.isProduct("tis")) {
+      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
         // "templates" and "services" tabs only for testers
         // start/stop/edit app mode only for testers
         fromUserToTester = [

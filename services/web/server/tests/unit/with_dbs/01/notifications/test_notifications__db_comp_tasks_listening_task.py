@@ -17,7 +17,7 @@ from faker import Faker
 from models_library.projects import ProjectAtDB, ProjectID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.users import UserRole
@@ -139,7 +139,7 @@ async def test_listen_comp_tasks_task(
     task_class: NodeClass,
     faker: Faker,
 ):
-    db_engine: aiopg.sa.Engine = client.app[APP_DB_ENGINE_KEY]
+    db_engine: aiopg.sa.Engine = client.app[APP_AIOPG_ENGINE_KEY]
     some_project = await project(logged_user)
     pipeline(project_id=f"{some_project.uuid}")
     task = comp_task(

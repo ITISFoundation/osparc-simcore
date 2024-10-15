@@ -2,12 +2,15 @@ import json
 import logging
 import re
 from collections.abc import Mapping
+from datetime import datetime
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
 from typing import Any, TypeAlias
 from uuid import UUID
 
+import arrow
+from common_library.pydantic_basic_types import ConstrainedStr
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.api_schemas_directorv2.dynamic_services_service import (
     CommonServiceDetails,
@@ -25,15 +28,7 @@ from models_library.service_settings_labels import (
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
 from models_library.wallets import WalletInfo
-from pydantic import (
-    AnyHttpUrl,
-    BaseModel,
-    ConstrainedStr,
-    Extra,
-    Field,
-    parse_obj_as,
-    validator,
-)
+from pydantic import AnyHttpUrl, BaseModel, Extra, Field, parse_obj_as, validator
 from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
@@ -170,6 +165,28 @@ class ServiceRemovalState(BaseModel):
         self.was_removed = True
 
 
+class ServicesInstrumentation(BaseModel):
+    start_requested_at: datetime | None = Field(
+        None,
+        description="moment in which the process of starting the service was requested",
+    )
+    close_requested_at: datetime | None = Field(
+        None,
+        description="moment in which the process of stopping the service was requested",
+    )
+
+    def elapsed_since_start_request(self) -> float | None:
+        if self.start_requested_at is None:
+            return None
+
+        return (arrow.utcnow().datetime - self.start_requested_at).total_seconds()
+
+    def elapsed_since_close_request(self) -> float | None:
+        if self.close_requested_at is None:
+            return None
+        return (arrow.utcnow().datetime - self.close_requested_at).total_seconds()
+
+
 class DynamicSidecar(BaseModel):
     status: Status = Field(
         Status.create_as_initially_ok(),
@@ -252,6 +269,11 @@ class DynamicSidecar(BaseModel):
     were_state_and_outputs_saved: bool = Field(
         default=False,
         description="set True if the dy-sidecar saves the state and uploads the outputs",
+    )
+
+    instrumentation: ServicesInstrumentation = Field(
+        default_factory=lambda: ServicesInstrumentation.parse_obj({}),
+        description="keeps track times for various operations",
     )
 
     # below had already been validated and

@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import Any, ClassVar, Final, Literal, cast
+from typing import Annotated, Final, Literal, cast
 
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2Tags
 from fastapi import FastAPI
@@ -12,19 +12,25 @@ from models_library.basic_types import (
 )
 from models_library.clusters import InternalClusterAuthentication
 from pydantic import (
+    AliasChoices,
+    BeforeValidator,
     Field,
     NonNegativeFloat,
     NonNegativeInt,
     PositiveInt,
     SecretStr,
-    parse_obj_as,
-    validator,
+    TypeAdapter,
+    WrapValidator,
+    field_validator,
 )
+from pydantic_settings import SettingsConfigDict
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.ssm import SSMSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -34,10 +40,9 @@ CLUSTERS_KEEPER_ENV_PREFIX: Final[str] = "CLUSTERS_KEEPER_"
 
 
 class ClustersKeeperEC2Settings(EC2Settings):
-    class Config(EC2Settings.Config):
-        env_prefix = CLUSTERS_KEEPER_ENV_PREFIX
-
-        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+    model_config = SettingsConfigDict(
+        env_prefix=CLUSTERS_KEEPER_ENV_PREFIX,
+        json_schema_extra={
             "examples": [
                 {
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_ACCESS_KEY_ID": "my_access_key_id",
@@ -45,6 +50,22 @@ class ClustersKeeperEC2Settings(EC2Settings):
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_REGION_NAME": "us-east-1",
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_SECRET_ACCESS_KEY": "my_secret_access_key",
                 }
+            ],
+        },
+    )
+
+
+class ClustersKeeperSSMSettings(SSMSettings):
+    class Config(SSMSettings.Config):
+        env_prefix = CLUSTERS_KEEPER_ENV_PREFIX
+
+        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+            "examples": [
+                {
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}{key}": var
+                    for key, var in example.items()
+                }
+                for example in SSMSettings.Config.schema_extra["examples"]
             ],
         }
 
@@ -77,7 +98,7 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
     # NAME PREFIX is not exposed since we override it anyway
     WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
         ...,
-        min_items=1,
+        min_length=1,
         description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
         " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html), "
         " this is required to start a new EC2 instance",
@@ -108,14 +129,14 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
     )
 
-    @validator("WORKERS_EC2_INSTANCES_ALLOWED_TYPES")
+    @field_validator("WORKERS_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_instance_names(
         cls, value: dict[str, EC2InstanceBootSpecific]
     ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
-        parse_obj_as(list[InstanceTypeType], list(value))
+        TypeAdapter(list[InstanceTypeType]).validate_python(list(value))
         return value
 
 
@@ -130,7 +151,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
     )
     PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS: list[str] = Field(
         ...,
-        min_items=1,
+        min_length=1,
         description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
         " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html), "
         " this is required to start a new EC2 instance",
@@ -182,17 +203,24 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
     )
 
-    @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
+    PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL: str = Field(
+        default="172.20.0.0/14",
+        description="defines the docker swarm default address pool in CIDR format "
+        "(see https://docs.docker.com/reference/cli/docker/swarm/init/)",
+    )
+
+
+    @field_validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_instance_names(
         cls, value: dict[str, EC2InstanceBootSpecific]
     ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
-        parse_obj_as(list[InstanceTypeType], list(value))
+        TypeAdapter(list[InstanceTypeType]).validate_python(list(value))
         return value
 
-    @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
+    @field_validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_only_one_value(
         cls, value: dict[str, EC2InstanceBootSpecific]
@@ -231,30 +259,39 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
     CLUSTERS_KEEPER_DEBUG: bool = Field(
-        default=False, description="Debug mode", env=["CLUSTERS_KEEPER_DEBUG", "DEBUG"]
+        default=False,
+        description="Debug mode",
+        validation_alias=AliasChoices("CLUSTERS_KEEPER_DEBUG", "DEBUG"),
     )
     CLUSTERS_KEEPER_LOGLEVEL: LogLevel = Field(
-        LogLevel.INFO, env=["CLUSTERS_KEEPER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        LogLevel.INFO,
+        validation_alias=AliasChoices(
+            "CLUSTERS_KEEPER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+        ),
     )
     CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=AliasChoices(
             "CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
     CLUSTERS_KEEPER_EC2_ACCESS: ClustersKeeperEC2Settings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+
+    CLUSTERS_KEEPER_SSM_ACCESS: ClustersKeeperSSMSettings | None = Field(
         auto_default_from_env=True
     )
 
     CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: PrimaryEC2InstancesSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES: WorkersEC2InstancesSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX: str = Field(
@@ -262,14 +299,18 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="set a prefix to all machines created (useful for testing)",
     )
 
-    CLUSTERS_KEEPER_RABBITMQ: RabbitSettings | None = Field(auto_default_from_env=True)
+    CLUSTERS_KEEPER_RABBITMQ: RabbitSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
-    CLUSTERS_KEEPER_REDIS: RedisSettings = Field(auto_default_from_env=True)
+    CLUSTERS_KEEPER_REDIS: RedisSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     CLUSTERS_KEEPER_REGISTRY: RegistrySettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     CLUSTERS_KEEPER_TASK_INTERVAL: datetime.timedelta = Field(
@@ -284,9 +325,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
-    CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: NonNegativeInt = Field(
-        default=5,
-        description="Max number of missed heartbeats before a cluster is terminated",
+    CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: NonNegativeInt = (
+        Field(
+            default=5,
+            description="Max number of missed heartbeats before a cluster is terminated",
+        )
     )
 
     CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: str = Field(
@@ -311,6 +354,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="override the dask scheduler 'worker-saturation' field"
         ", see https://selectfrom.dev/deep-dive-into-dask-distributed-scheduler-9fdb3b36b7c7",
     )
+    CLUSTERS_KEEPER_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
+    )
 
     SWARM_STACK_NAME: str = Field(
         ..., description="Stack name defined upon deploy (see main Makefile)"
@@ -320,10 +366,18 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
         return self.CLUSTERS_KEEPER_LOGLEVEL
 
-    @validator("CLUSTERS_KEEPER_LOGLEVEL")
+    @field_validator("CLUSTERS_KEEPER_LOGLEVEL")
     @classmethod
-    def valid_log_level(cls, value: str) -> str:
+    def _valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
+    
+    
+    @field_validator("CLUSTERS_KEEPER_TASK_INTERVAL", "SERVICE_TRACKING_HEARTBEAT", mode="before")
+    @classmethod
+    def _validate_interval(cls, value: str | datetime.timedelta) -> int | datetime.timedelta:
+        if isinstance(value, str):
+            return int(value)
+        return value
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:

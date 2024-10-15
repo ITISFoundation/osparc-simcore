@@ -31,9 +31,8 @@ _RELATIVE_RESOURCE_NAME_RE = r"^([^\s/]+/?){1,10}$"
 
 
 RelativeResourceName: TypeAlias = Annotated[
-    str, StringConstraints(pattern=_RELATIVE_RESOURCE_NAME_RE)
+    str, StringConstraints(pattern=_RELATIVE_RESOURCE_NAME_RE), Field(frozen=True)
 ]
-
 
 # NOTE: we quote parts in a single resource_name and unquote when split
 

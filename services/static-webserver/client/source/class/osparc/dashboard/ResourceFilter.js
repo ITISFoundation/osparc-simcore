@@ -26,56 +26,71 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
 
     this.__resourceType = resourceType;
     this.__sharedWithButtons = [];
-    this.__workspaceButtons = [];
     this.__tagButtons = [];
     this.__serviceTypeButtons = [];
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(30));
     this.__buildLayout();
   },
 
   events: {
     "changeSharedWith": "qx.event.type.Data",
-    "changeWorkspace": "qx.event.type.Data",
     "changeSelectedTags": "qx.event.type.Data",
     "changeServiceType": "qx.event.type.Data"
   },
 
   members: {
     __resourceType: null,
-    __contextLayout: null,
-    __contextRadioGroup: null,
+    __workspacesAndFoldersTree: null,
     __sharedWithButtons: null,
-    __workspaceButtons: null,
     __tagButtons: null,
     __serviceTypeButtons: null,
 
     __buildLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(40));
-
-      layout.add(this.__createSharedWithFilterLayout());
+      if (this.__resourceType === "study" && osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        this._add(this.__createWorkspacesAndFoldersTree());
+      } else {
+        this._add(this.__createSharedWithFilterLayout());
+      }
 
       if (this.__resourceType !== "service") {
-        layout.add(this.__createTagsFilterLayout());
+        this._add(this.__createTagsFilterLayout());
       }
 
       if (this.__resourceType === "service") {
-        layout.add(this.__createServiceTypeFilterLayout());
+        this._add(this.__createServiceTypeFilterLayout());
       }
-
-      const scrollContainer = new qx.ui.container.Scroll();
-      scrollContainer.add(layout);
-      this._add(scrollContainer, {
-        flex: 1
-      });
     },
+
+
+    /* WORKSPACES AND FOLDERS */
+    __createWorkspacesAndFoldersTree: function() {
+      const workspacesAndFoldersTree = this.__workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();
+      // Height needs to be calculated manually to make it flexible
+      workspacesAndFoldersTree.set({
+        minHeight: 100,
+        maxHeight: 400,
+        height: 100,
+      });
+      workspacesAndFoldersTree.addListener("openChanged", () => {
+        const rowConfig = workspacesAndFoldersTree.getPane().getRowConfig();
+        const totalHeight = rowConfig.itemCount * rowConfig.defaultItemSize;
+        workspacesAndFoldersTree.setHeight(totalHeight + 10);
+      });
+      return workspacesAndFoldersTree;
+    },
+
+    getWorkspacesAndFoldersTree: function() {
+      return this.__workspacesAndFoldersTree;
+    },
+    /* /WORKSPACES AND FOLDERS */
 
     /* SHARED WITH */
     __createSharedWithFilterLayout: function() {
-      const layout = this.__contextLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const sharedWithLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const radioGroup = this.__contextRadioGroup = new qx.ui.form.RadioGroup();
-      radioGroup.setAllowEmptySelection(false);
+      const sharedWithRadioGroup = new qx.ui.form.RadioGroup();
+      sharedWithRadioGroup.setAllowEmptySelection(false);
 
       const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
       options.forEach(option => {
@@ -100,16 +115,11 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
               })
             });
           }
-          if (option.id !== "show-all") {
-            button.set({
-              marginLeft: 15
-            });
-          }
         }
         button.id = option.id;
 
-        layout.add(button);
-        radioGroup.add(button);
+        sharedWithLayout.add(button);
+        sharedWithRadioGroup.add(button);
 
         button.addListener("execute", () => {
           this.fireDataEvent("changeSharedWith", {
@@ -121,66 +131,9 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         this.__sharedWithButtons.push(button);
       });
 
-      if (this.__resourceType === "study") {
-        this.__addWorkspaceButtons();
-      }
-
-      return layout;
+      return sharedWithLayout;
     },
     /* /SHARED WITH */
-
-    /* WORKSPACES */
-    __addWorkspaceButtons: function() {
-      this.__contextLayout.add(new qx.ui.core.Spacer());
-      const workspacesButton = new qx.ui.toolbar.RadioButton(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath(22));
-      workspacesButton.workspaceId = -1;
-      workspacesButton.set({
-        appearance: "filter-toggle-button"
-      });
-      this.__contextLayout.add(workspacesButton);
-      this.__contextRadioGroup.add(workspacesButton);
-      workspacesButton.addListener("execute", () => {
-        this.fireDataEvent("changeWorkspace", workspacesButton.workspaceId);
-      });
-
-      this.reloadWorkspaceButtons();
-    },
-
-    reloadWorkspaceButtons: function() {
-      // remove first the workspaces
-      for (let i=this.__workspaceButtons.length-1; i >= 0; i--) {
-        const workspaceButton = this.__workspaceButtons[i];
-        this.__contextLayout.remove(workspaceButton);
-        this.__contextRadioGroup.remove(workspaceButton);
-      }
-      this.__workspaceButtons = [];
-      osparc.store.Workspaces.fetchWorkspaces()
-        .then(workspaces => {
-          workspaces.forEach(workspace => {
-            const workspaceButton = new qx.ui.toolbar.RadioButton(workspace.getName(), osparc.store.Workspaces.iconPath(22));
-            workspaceButton.workspaceId = workspace.getWorkspaceId();
-            this.__workspaceButtons.push(workspaceButton);
-            workspaceButton.set({
-              appearance: "filter-toggle-button",
-              marginLeft: 15,
-            });
-            this.__contextLayout.add(workspaceButton);
-            this.__contextRadioGroup.add(workspaceButton);
-            workspaceButton.addListener("execute", () => {
-              this.fireDataEvent("changeWorkspace", workspaceButton.workspaceId);
-            }, this);
-          });
-        })
-        .catch(console.error);
-    },
-
-    workspaceSelected: function(workspaceId) {
-      const foundButton = this.__workspaceButtons.find(workspaceButton => workspaceButton.workspaceId === workspaceId);
-      if (foundButton) {
-        foundButton.execute();
-      }
-    },
-    /* /WORKSPACES */
 
     /* TAGS */
     __createTagsFilterLayout: function() {
@@ -204,7 +157,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       this.__tagButtons = [];
       layout.removeAll();
       osparc.store.Store.getInstance().getTags().forEach((tag, idx) => {
-        const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/20");
+        const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/18");
         button.id = tag.id;
         button.set({
           appearance: "filter-toggle-button",
