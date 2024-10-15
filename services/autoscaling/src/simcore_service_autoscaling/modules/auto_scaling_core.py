@@ -176,9 +176,9 @@ async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster
     removeable_nodes = [
         node
         for node in cluster.disconnected_nodes
-        if node.UpdatedAt
+        if node.updated_at
         and (
-            (utc_now - arrow.get(node.UpdatedAt).datetime).total_seconds()
+            (utc_now - arrow.get(node.updated_at).datetime).total_seconds()
             > _DELAY_FOR_REMOVING_DISCONNECTED_NODES_S
         )
     ]
