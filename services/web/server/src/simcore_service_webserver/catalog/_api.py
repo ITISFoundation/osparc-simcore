@@ -284,8 +284,8 @@ async def get_compatible_inputs_given_source_output(
         from_service_key, from_service_version, from_output_key, ctx
     )
 
-    from_output: ServiceOutput = ServiceOutput.construct(
-        **service_output.dict(include=ServiceOutput.__fields__.keys())
+    from_output: ServiceOutput = ServiceOutput.model_construct(
+        **service_output.model_dump(include=ServiceOutput.model_fields.keys())
     )
 
     # N inputs
@@ -293,8 +293,8 @@ async def get_compatible_inputs_given_source_output(
 
     def iter_service_inputs() -> Iterator[tuple[ServiceInputKey, ServiceInput]]:
         for service_input in service_inputs:
-            yield service_input.key_id, ServiceInput.construct(
-                **service_input.dict(include=ServiceInput.__fields__.keys())
+            yield service_input.key_id, ServiceInput.model_construct(
+                **service_input.model_dump(include=ServiceInput.model_fields.keys())
             )
 
     # check
@@ -352,16 +352,16 @@ async def get_compatible_outputs_given_target_input(
 
     def iter_service_outputs() -> Iterator[tuple[ServiceOutputKey, ServiceOutput]]:
         for service_output in service_outputs:
-            yield service_output.key_id, ServiceOutput.construct(
-                **service_output.dict(include=ServiceOutput.__fields__.keys())
+            yield service_output.key_id, ServiceOutput.model_construct(
+                **service_output.model_dump(include=ServiceOutput.model_fields.keys())
             )
 
     # 1 input
     service_input = await get_service_input(
         to_service_key, to_service_version, to_input_key, ctx
     )
-    to_input: ServiceInput = ServiceInput.construct(
-        **service_input.dict(include=ServiceInput.__fields__.keys())
+    to_input: ServiceInput = ServiceInput.model_construct(
+        **service_input.model_dump(include=ServiceInput.model_fields.keys())
     )
 
     # check

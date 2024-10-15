@@ -1,7 +1,7 @@
 import logging
 import re
 import string
-from typing import Any
+from typing import Annotated, Any
 
 from models_library.basic_regex import (
     PUBLIC_VARIABLE_NAME_RE,
@@ -11,7 +11,14 @@ from models_library.basic_types import NonNegativeDecimal
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt, field_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    field_validator,
+)
 from simcore_postgres_database.models.products import (
     EmailFeedback,
     Forum,
@@ -48,7 +55,9 @@ class Product(BaseModel):
         description="Short display name for SMS",
     )
 
-    host_regex: re.Pattern = Field(..., description="Host regex")
+    host_regex: Annotated[re.Pattern, BeforeValidator(str.strip)] = Field(
+        ..., description="Host regex"
+    )
 
     support_email: LowerCaseEmailStr = Field(
         ...,
@@ -121,15 +130,6 @@ class Product(BaseModel):
             raise ValueError(msg)
         return v
 
-    @validator("host_regex", pre=True)
-    @classmethod
-    def _strip_whitespaces(cls, v):
-        if v and isinstance(v, str):
-            # Prevents unintended leading & trailing spaces when added
-            # manually in the database
-            return v.strip()
-        return v
-
     @property
     def twilio_alpha_numeric_sender_id(self) -> str:
         return self.short_name or self.display_name.replace(string.punctuation, "")[:11]
@@ -137,7 +137,7 @@ class Product(BaseModel):
     model_config = ConfigDict(
         alias_generator=snake_to_camel,
         populate_by_name=True,
-        str_strip_whitespace = True,
+        str_strip_whitespace=True,
         frozen=True,
         from_attributes=True,
         extra="ignore",
