@@ -19,11 +19,11 @@ async def test_get_simcore_service_docker_labels_from_task_with_missing_labels_r
     task_template: dict[str, Any],
 ):
     service_missing_osparc_labels = await create_service(task_template, {}, "running")
-    assert service_missing_osparc_labels.Spec
+    assert service_missing_osparc_labels.spec
     service_tasks = parse_obj_as(
         list[Task],
         await async_docker_client.tasks.list(
-            filters={"service": service_missing_osparc_labels.Spec.Name}
+            filters={"service": service_missing_osparc_labels.spec.name}
         ),
     )
     assert service_tasks
@@ -45,11 +45,11 @@ async def test_get_simcore_service_docker_labels(
         osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
         "running",
     )
-    assert service_with_labels.Spec
+    assert service_with_labels.spec
     service_tasks = parse_obj_as(
         list[Task],
         await async_docker_client.tasks.list(
-            filters={"service": service_with_labels.Spec.Name}
+            filters={"service": service_with_labels.spec.name}
         ),
     )
     assert service_tasks

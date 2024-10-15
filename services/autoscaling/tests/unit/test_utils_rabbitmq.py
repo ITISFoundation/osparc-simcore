@@ -78,10 +78,10 @@ async def test_post_task_log_message(
         osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
         "running",
     )
-    assert service_with_labels.Spec
+    assert service_with_labels.spec
     service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
-            filters={"service": service_with_labels.Spec.Name}
+            filters={"service": service_with_labels.spec.name}
         )
     )
     assert service_tasks
@@ -124,10 +124,10 @@ async def test_post_task_log_message_does_not_raise_if_service_has_no_labels(
     faker: Faker,
 ):
     service_without_labels = await create_service(task_template, {}, "running")
-    assert service_without_labels.Spec
+    assert service_without_labels.spec
     service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
-            filters={"service": service_without_labels.Spec.Name}
+            filters={"service": service_without_labels.spec.name}
         )
     )
     assert service_tasks
@@ -168,10 +168,10 @@ async def test_post_task_progress_message(
         osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
         "running",
     )
-    assert service_with_labels.Spec
+    assert service_with_labels.spec
     service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
-            filters={"service": service_with_labels.Spec.Name}
+            filters={"service": service_with_labels.spec.name}
         )
     )
     assert service_tasks
@@ -214,10 +214,10 @@ async def test_post_task_progress_does_not_raise_if_service_has_no_labels(
     faker: Faker,
 ):
     service_without_labels = await create_service(task_template, {}, "running")
-    assert service_without_labels.Spec
+    assert service_without_labels.spec
     service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
-            filters={"service": service_without_labels.Spec.Name}
+            filters={"service": service_without_labels.spec.name}
         )
     )
     assert service_tasks
