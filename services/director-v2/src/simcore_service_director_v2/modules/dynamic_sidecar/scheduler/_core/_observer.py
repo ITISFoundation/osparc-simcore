@@ -7,6 +7,7 @@ from math import floor
 
 from fastapi import FastAPI
 from models_library.error_codes import create_error_code
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
@@ -144,17 +145,27 @@ async def observing_single_service(
 
         # With unhandled errors, let's generate and ID and send it to the end-user
         # so that we can trace the logs and debug the issue.
-
-        error_code = create_error_code(e)
-        logger.exception(
-            "Observation of %s unexpectedly failed [%s]",
-            f"{service_name=} ",
-            f"{error_code}",
-            extra={"error_code": error_code},
+        front_end_msg = (
+            f"This service ({service_name}) unexpectedly failed."
+            " Our team has recorded the issue and is working to resolve it as quickly as possible."
+            " Thank you for your patience."
         )
+
+        logger.exception(
+            **create_troubleshotting_log_kwargs(
+                front_end_msg,
+                exception=e,
+                error_context={
+                    "service_name": service_name,
+                    "user_id": scheduler_data.user_id,
+                },
+                tip=f"Observation of {service_name=} unexpectedly failed",
+            )
+        )
+        error_code = create_error_code(e)
         scheduler_data.dynamic_sidecar.status.update_failing_status(
             # This message must be human-friendly
-            f"Upss! This service ({service_name}) unexpectedly failed",
+            front_end_msg,
             error_code,
         )
     finally:
