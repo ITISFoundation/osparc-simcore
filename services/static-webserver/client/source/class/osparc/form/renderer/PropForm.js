@@ -97,6 +97,31 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       downloading: 2,
       uploading: 3,
       succeed: 4
+    },
+
+    getIconForStatus: function(status) {
+      let icon;
+      switch (status) {
+        case this.RETRIEVE_STATUS.failed:
+          icon = this.getFailedAtom();
+          break;
+        case this.RETRIEVE_STATUS.empty:
+          icon = this.getRetrievedEmpty();
+          break;
+        case this.RETRIEVE_STATUS.retrieving:
+          icon = this.getRetrievingAtom();
+          break;
+        case this.RETRIEVE_STATUS.downloading:
+          icon = this.getDownloadingAtom();
+          break;
+        case this.RETRIEVE_STATUS.uploading:
+          icon = this.getUploadingAtom();
+          break;
+        case this.RETRIEVE_STATUS.succeed:
+          icon = this.getSucceededAtom();
+          break;
+      }
+      return icon;
     }
   },
 
@@ -591,27 +616,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     __setRetrievingStatus: function(status, portId, idx, row) {
-      let icon;
-      switch (status) {
-        case this.self().RETRIEVE_STATUS.failed:
-          icon = this.self().getFailedAtom();
-          break;
-        case this.self().RETRIEVE_STATUS.empty:
-          icon = this.self().getRetrievedEmpty();
-          break;
-        case this.self().RETRIEVE_STATUS.retrieving:
-          icon = this.self().getRetrievingAtom();
-          break;
-        case this.self().RETRIEVE_STATUS.downloading:
-          icon = this.self().getDownloadingAtom();
-          break;
-        case this.self().RETRIEVE_STATUS.uploading:
-          icon = this.self().getUploadingAtom();
-          break;
-        case this.self().RETRIEVE_STATUS.succeed:
-          icon = this.self().getSucceededAtom();
-          break;
-      }
+      const icon = this.self().getIconForStatus(status);
       icon.key = portId;
 
       // remove first if any

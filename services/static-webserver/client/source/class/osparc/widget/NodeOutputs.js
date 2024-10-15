@@ -38,11 +38,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
     const grid = new qx.ui.layout.Grid(5, 5);
     grid.setColumnFlex(this.self().POS.LABEL, 1);
-    grid.setColumnFlex(this.self().POS.INFO, 0);
-    grid.setColumnFlex(this.self().POS.ICON, 0);
     grid.setColumnFlex(this.self().POS.VALUE, 1);
-    grid.setColumnFlex(this.self().POS.UNIT, 0);
-    grid.setColumnFlex(this.self().POS.PROBE, 0);
     grid.setColumnMinWidth(this.self().POS.VALUE, 50);
     Object.keys(this.self().POS).forEach((_, idx) => grid.setColumnAlign(idx, "left", "middle"));
     const gridLayout = this.__gridLayout = new qx.ui.container.Composite(grid);
@@ -88,7 +84,8 @@ qx.Class.define("osparc.widget.NodeOutputs", {
       ICON: 2,
       VALUE: 3,
       UNIT: 4,
-      PROBE: 5
+      PROBE: 5,
+      RETRIEVE_STATUS: 6,
     }
   },
 
@@ -107,7 +104,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
         const label = new qx.ui.basic.Label().set({
           rich: true,
-          value: port.label + " :",
+          value: port.label,
           toolTipText: port.label
         });
         // leave ``rich`` set to true. Ellipsis will be handled here:
@@ -227,6 +224,33 @@ qx.Class.define("osparc.widget.NodeOutputs", {
         infoButton.setVisibility(extendedVersion ? "hidden" : "visible");
         grid.setColumnMinWidth(this.self().POS.VALUE, extendedVersion ? 150 : 50);
       }
+    },
+
+    setRetrievingStatus: function(portId, status) {
+      const ports = this.getPorts();
+      const portKeys = Object.keys(ports);
+      const idx = portKeys.findIndex(portId);
+      if (idx === -1) {
+        return;
+      }
+
+      const icon = osparc.form.renderer.PropForm.getIconForStatus(status);
+      // remove first if any
+      let children = this._getChildren();
+      for (let i=0; i<children.length; i++) {
+        let child = children[i];
+        const layoutProps = child.getLayoutProperties();
+        if (
+          layoutProps.row === idx &&
+          layoutProps.column === this.self().POS.RETRIEVE_STATUS
+        ) {
+          this._remove(child);
+        }
+      }
+      this._addAt(icon, idx, {
+        idx,
+        column: this.self().POS.RETRIEVE_STATUS
+      });
     }
   }
 });
