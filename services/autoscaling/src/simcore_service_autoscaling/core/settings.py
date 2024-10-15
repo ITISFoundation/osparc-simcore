@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import Annotated, Final, Self, cast
+from typing import Final, Self, cast
 
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2Tags
 from fastapi import FastAPI
@@ -184,7 +184,7 @@ class NodesMonitoringSettings(BaseCustomSettings):
 
 
 class DaskMonitoringSettings(BaseCustomSettings):
-    DASK_MONITORING_URL: Annotated[str, AnyUrl] = Field(
+    DASK_MONITORING_URL: AnyUrl = Field(
         ..., description="the url to the osparc-dask-scheduler"
     )
     DASK_SCHEDULER_AUTH: InternalClusterAuthentication = Field(
