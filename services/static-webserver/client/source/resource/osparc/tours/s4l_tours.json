@@ -30,13 +30,6 @@
       "anchorEl": "osparc-test-id=servicesTabBtn",
       "text": "Every Project in Sim4Life is composed of at lease one so-called Service.<br>Services are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Project.",
       "placement": "bottom"
-    }, {
-      "beforeClick": {
-        "selector": "osparc-test-id=dataTabBtn"
-      },
-      "anchorEl": "osparc-test-id=dataTabBtn",
-      "text": "The Data tab allow you to browse the output files of all of your active pipelines in one place. This is most useful for downloading the data created on the online platform.",
-      "placement": "bottom"
     }]
   },
   "navbar": {
