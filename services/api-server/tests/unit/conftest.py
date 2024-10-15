@@ -450,7 +450,7 @@ def patch_lrt_response_urls(mocker: MockerFixture):
     def _() -> MagicMock:
         def _get_lrt_urls(lrt_response: httpx.Response):
             # NOTE: this function is needed to mock
-            data = Envelope[TaskGet].parse_raw(lrt_response.text).data
+            data = Envelope[TaskGet].model_validate_json(lrt_response.text).data
             assert data is not None  # nosec
 
             def _patch(href):

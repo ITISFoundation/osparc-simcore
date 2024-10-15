@@ -102,7 +102,7 @@ _WALLET_STATUS_MAP = {
 
 def _get_lrt_urls(lrt_response: httpx.Response):
     # WARNING: this function is patched in patch_lrt_response_urls fixture
-    data = Envelope[TaskGet].parse_raw(lrt_response.text).data
+    data = Envelope[TaskGet].model_validate_json(lrt_response.text).data
     assert data is not None  # nosec
 
     return data.status_href, data.result_href
@@ -207,7 +207,7 @@ class AuthSession:
             )
             resp.raise_for_status()
 
-            return Page[ProjectGet].parse_raw(resp.text)
+            return Page[ProjectGet].model_validate_json(resp.text)
 
     async def _wait_for_long_running_task_results(self, lrt_response: httpx.Response):
         status_url, result_url = _get_lrt_urls(lrt_response)
@@ -224,7 +224,9 @@ class AuthSession:
                     url=status_url, cookies=self.session_cookies
                 )
                 get_response.raise_for_status()
-                task_status = Envelope[TaskStatus].parse_raw(get_response.text).data
+                task_status = (
+                    Envelope[TaskStatus].model_validate_json(get_response.text).data
+                )
                 assert task_status is not None  # nosec
                 if not task_status.done:
                     msg = "Timed out creating project. TIP: Try again, or contact oSparc support if this is happening repeatedly"

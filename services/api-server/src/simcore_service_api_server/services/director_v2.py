@@ -93,7 +93,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
         return task
 
     @_exception_mapper({})
@@ -129,7 +129,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
         return task
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
@@ -143,7 +143,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
         return task
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})
@@ -157,7 +157,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
         response.raise_for_status()
-        task: ComputationTaskGet = ComputationTaskGet.parse_raw(response.text)
+        task: ComputationTaskGet = ComputationTaskGet.model_validate_json(response.text)
         return task
 
     @_exception_mapper({status.HTTP_404_NOT_FOUND: JobNotFoundError})

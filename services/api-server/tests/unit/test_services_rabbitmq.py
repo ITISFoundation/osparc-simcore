@@ -378,7 +378,7 @@ async def test_log_streamer_with_distributor(
 
     collected_messages: list[str] = []
     async for log in log_streamer_with_distributor.log_generator():
-        job_log: JobLog = JobLog.parse_raw(log)
+        job_log: JobLog = JobLog.model_validate_json(log)
         assert len(job_log.messages) == 1
         assert job_log.job_id == project_id
         collected_messages.append(job_log.messages[0])
@@ -458,7 +458,7 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
 
     collected_logs: list[str] = []
     async for log in log_streamer.log_generator():
-        job_log = JobLog.parse_raw(log)
+        job_log = JobLog.model_validate_json(log)
         assert len(job_log.messages) == 1
         collected_logs.append(job_log.messages[0])
 

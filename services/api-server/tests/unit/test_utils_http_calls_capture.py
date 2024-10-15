@@ -89,7 +89,7 @@ async def test_capture_http_dynamic_call(
         assert found.groupdict() == {"resouce_uid": sample_uid}
 
         # subs_json = re.sub(f"{resource_uid}", pattern, captured.json())
-        # new_capture = HttpApiCallCaptureModel.parse_raw(subs_json)
+        # new_capture = HttpApiCallCaptureModel.model_validate_json(subs_json)
 
         # MOCK
         with respx.mock(
@@ -140,6 +140,6 @@ def test_template_capture(project_tests_dir: Path, faker: Faker):
 
     # loads parametrized capture
     # replace in response and solve
-    capture = HttpApiCallCaptureModel.parse_raw(template.render(context))
+    capture = HttpApiCallCaptureModel.model_validate_json(template.render(context))
     print(capture.json(indent=1))
     assert capture.path == url_path
