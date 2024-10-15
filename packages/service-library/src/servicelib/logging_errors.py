@@ -43,7 +43,7 @@ def create_troubleshotting_log_message(
 
 class LogKwargs(TypedDict):
     msg: str
-    extra: LogExtra
+    extra: LogExtra | None
 
 
 def create_troubleshotting_log_kwargs(
