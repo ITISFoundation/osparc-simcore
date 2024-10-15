@@ -56,7 +56,7 @@ def dump_pre_pulled_images_as_tags(images: Iterable[DockerGenericTag]) -> EC2Tag
         ]
         return {
             TypeAdapter(AWSTagKey)
-            .validate_python(f"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_({i})"): TypeAdapter(
+            .validate_python(f"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_{i}"): TypeAdapter(
                 AWSTagValue
             )
             .validate_python(c)
