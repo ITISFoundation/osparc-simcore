@@ -1,10 +1,9 @@
-import logging
 from enum import auto
 from typing import Any, Final, TypeAlias
 
+from common_library.pydantic_type_adapters import ByteSizeAdapter
 from pydantic import (
     BaseModel,
-    ByteSize,
     ConfigDict,
     Field,
     StrictFloat,
@@ -17,9 +16,6 @@ from .docker import DockerGenericTag
 from .utils.enums import StrAutoEnum
 from .utils.fastapi_encoders import jsonable_encoder
 
-_logger = logging.getLogger(__name__)
-
-
 ResourceName = str
 
 # NOTE: replace hard coded `container` with function which can
@@ -28,9 +24,9 @@ DEFAULT_SINGLE_SERVICE_NAME: Final[DockerGenericTag] = TypeAdapter(
     DockerGenericTag
 ).validate_python("container")
 
-MEMORY_50MB: Final[int] = TypeAdapter(ByteSize).validate_python("50mib")
-MEMORY_250MB: Final[int] = TypeAdapter(ByteSize).validate_python("250mib")
-MEMORY_1GB: Final[int] = TypeAdapter(ByteSize).validate_python("1gib")
+MEMORY_50MB: Final[int] = ByteSizeAdapter.validate_python("50mib")
+MEMORY_250MB: Final[int] = ByteSizeAdapter.validate_python("250mib")
+MEMORY_1GB: Final[int] = ByteSizeAdapter.validate_python("1gib")
 
 GIGA: Final[float] = 1e9
 CPU_10_PERCENT: Final[int] = int(0.1 * GIGA)
@@ -150,10 +146,8 @@ class ServiceResourcesDictHelpers:
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python(
-                                    "2Gib"
-                                ),
+                                "limit": ByteSizeAdapter.validate_python("2Gib"),
+                                "reservation": ByteSizeAdapter.validate_python("2Gib"),
                             },
                         },
                         "boot_modes": [BootMode.CPU],
@@ -183,10 +177,8 @@ class ServiceResourcesDictHelpers:
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python(
-                                    "2Gib"
-                                ),
+                                "limit": ByteSizeAdapter.validate_python("2Gib"),
+                                "reservation": ByteSizeAdapter.validate_python("2Gib"),
                             },
                         },
                         "boot_modes": [BootMode.CPU],
@@ -199,10 +191,8 @@ class ServiceResourcesDictHelpers:
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python(
-                                    "2Gib"
-                                ),
+                                "limit": ByteSizeAdapter.validate_python("2Gib"),
+                                "reservation": ByteSizeAdapter.validate_python("2Gib"),
                             },
                         },
                         "boot_modes": [BootMode.CPU],
@@ -212,10 +202,8 @@ class ServiceResourcesDictHelpers:
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python(
-                                    "2Gib"
-                                ),
+                                "limit": ByteSizeAdapter.validate_python("2Gib"),
+                                "reservation": ByteSizeAdapter.validate_python("2Gib"),
                             },
                         },
                         "boot_modes": [BootMode.CPU],

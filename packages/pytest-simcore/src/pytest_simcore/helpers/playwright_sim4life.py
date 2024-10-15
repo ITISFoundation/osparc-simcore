@@ -5,9 +5,8 @@ from dataclasses import dataclass
 from typing import Final, TypedDict
 
 import arrow
+from common_library.pydantic_type_adapters import ByteSizeAdapter
 from playwright.sync_api import FrameLocator, Page, WebSocket, expect
-from pydantic import TypeAdapter  # pylint: disable=no-name-in-module
-from pydantic import ByteSize
 
 from .logging_tools import log_context
 from .playwright import (
@@ -65,7 +64,7 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                     self._initial_bit_rate_time = arrow.utcnow().datetime
                     self.logger.info(
                         "%s",
-                        f"{TypeAdapter(ByteSize).validate_python(self._initial_bit_rate).human_readable()}/s at {self._initial_bit_rate_time.isoformat()}",
+                        f"{ByteSizeAdapter.validate_python(self._initial_bit_rate).human_readable()}/s at {self._initial_bit_rate_time.isoformat()}",
                     )
                     return False
 
@@ -80,7 +79,7 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                     bitrate_test = bool(self._initial_bit_rate != current_bitrate)
                     self.logger.info(
                         "%s",
-                        f"{TypeAdapter(ByteSize).validate_python(current_bitrate).human_readable()}/s after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
+                        f"{ByteSizeAdapter.validate_python(current_bitrate).human_readable()}/s after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
                     )
                     return bitrate_test
 

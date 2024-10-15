@@ -5,14 +5,13 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Literal, TypeAlias
 
+from common_library.pydantic_type_adapters import ByteSizeAdapter
 from pydantic import (
     BaseModel,
-    ByteSize,
     ConfigDict,
     Field,
     Json,
     PrivateAttr,
-    TypeAdapter,
     ValidationError,
     ValidationInfo,
     field_validator,
@@ -201,7 +200,7 @@ class PathMappingsLabel(BaseModel):
         for path_str, size_str in v.items():
             # checks that format is correct
             try:
-                TypeAdapter(ByteSize).validate_python(size_str)
+                ByteSizeAdapter.validate_python(size_str)
             except ValidationError as e:
                 msg = f"Provided size='{size_str}' contains invalid charactes: {e!s}"
                 raise ValueError(msg) from e

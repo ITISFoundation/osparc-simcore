@@ -8,6 +8,7 @@ from typing import Any, Final, Literal
 
 import aiodocker
 import arrow
+from common_library.pydantic_type_adapters import ByteSizeAdapter
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import ProgressDetail
 from models_library.utils.change_case import snake_to_camel
@@ -60,9 +61,7 @@ class DockerImageManifestsV2(BaseModel):
 
     @cached_property
     def layers_total_size(self) -> ByteSize:
-        return TypeAdapter(ByteSize).validate_python(
-            sum(layer.size for layer in self.layers)
-        )
+        return ByteSizeAdapter.validate_python(sum(layer.size for layer in self.layers))
 
 
 class DockerImageMultiArchManifestsV2(BaseModel):

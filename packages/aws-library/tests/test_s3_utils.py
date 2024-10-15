@@ -4,72 +4,69 @@
 # pylint: disable=unused-variable
 
 
-from typing import Final
-
 import pytest
 from aws_library.s3._utils import (
     _MULTIPART_MAX_NUMBER_OF_PARTS,
     _MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE,
     compute_num_file_chunks,
 )
-from pydantic import ByteSize, TypeAdapter
+from common_library.pydantic_type_adapters import ByteSizeAdapter
+from pydantic import ByteSize
 from pytest_simcore.helpers.parametrizations import byte_size_ids
-
-_BYTE_SIZE_ADAPTER: Final[TypeAdapter[ByteSize]] = TypeAdapter(ByteSize)
 
 
 @pytest.mark.parametrize(
     "file_size, expected_num_chunks, expected_chunk_size",
     [
         (
-            _BYTE_SIZE_ADAPTER.validate_python("5Mib"),
+            ByteSizeAdapter.validate_python("5Mib"),
             1,
-            _BYTE_SIZE_ADAPTER.validate_python("10Mib"),
+            ByteSizeAdapter.validate_python("10Mib"),
         ),
         (
-            _BYTE_SIZE_ADAPTER.validate_python("10Mib"),
+            ByteSizeAdapter.validate_python("10Mib"),
             1,
-            _BYTE_SIZE_ADAPTER.validate_python("10Mib"),
+            ByteSizeAdapter.validate_python("10Mib"),
         ),
         (
-            _BYTE_SIZE_ADAPTER.validate_python("20Mib"),
+            ByteSizeAdapter.validate_python("20Mib"),
             2,
-            _BYTE_SIZE_ADAPTER.validate_python("10Mib"),
+            ByteSizeAdapter.validate_python("10Mib"),
         ),
         (
-            _BYTE_SIZE_ADAPTER.validate_python("50Mib"),
+            ByteSizeAdapter.validate_python("50Mib"),
             5,
-            _BYTE_SIZE_ADAPTER.validate_python("10Mib"),
+            ByteSizeAdapter.validate_python("10Mib"),
         ),
         (
-            _BYTE_SIZE_ADAPTER.validate_python("150Mib"),
+            ByteSizeAdapter.validate_python("150Mib"),
             15,
-            _BYTE_SIZE_ADAPTER.validate_python("10Mib"),
+            ByteSizeAdapter.validate_python("10Mib"),
         ),
         (
-            _BYTE_SIZE_ADAPTER.validate_python("550Mib"),
+            ByteSizeAdapter.validate_python("550Mib"),
             55,
-            _BYTE_SIZE_ADAPTER.validate_python("10Mib"),
+            ByteSizeAdapter.validate_python("10Mib"),
         ),
         (
-            _BYTE_SIZE_ADAPTER.validate_python("560Gib"),
+            ByteSizeAdapter.validate_python("560Gib"),
             5735,
-            _BYTE_SIZE_ADAPTER.validate_python("100Mib"),
+            ByteSizeAdapter.validate_python("100Mib"),
         ),
         (
-            _BYTE_SIZE_ADAPTER.validate_python("5Tib"),
+            ByteSizeAdapter.validate_python("5Tib"),
             8739,
-            _BYTE_SIZE_ADAPTER.validate_python("600Mib"),
+            ByteSizeAdapter.validate_python("600Mib"),
         ),
         (
-            _BYTE_SIZE_ADAPTER.validate_python("15Tib"),
+            ByteSizeAdapter.validate_python("15Tib"),
             7680,
-            _BYTE_SIZE_ADAPTER.validate_python("2Gib"),
+            ByteSizeAdapter.validate_python("2Gib"),
         ),
         (
-            _BYTE_SIZE_ADAPTER.validate_python("9431773844"),
+            ByteSizeAdapter.validate_python("9431773844"),
             900,
-            _BYTE_SIZE_ADAPTER.validate_python("10Mib"),
+            ByteSizeAdapter.validate_python("10Mib"),
         ),
     ],
     ids=byte_size_ids,
@@ -83,7 +80,7 @@ def test_compute_num_file_chunks(
 
 
 def test_enormous_file_size_raises_value_error():
-    enormous_file_size = _BYTE_SIZE_ADAPTER.validate_python(
+    enormous_file_size = ByteSizeAdapter.validate_python(
         (
             max(_MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE)
             * _MULTIPART_MAX_NUMBER_OF_PARTS

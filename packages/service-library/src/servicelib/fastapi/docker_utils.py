@@ -4,6 +4,7 @@ from typing import Final
 
 import httpx
 from common_library.pydantic_basic_types import IDStr
+from common_library.pydantic_type_adapters import ByteSizeAdapter
 from models_library.docker import DockerGenericTag
 from pydantic import ByteSize, TypeAdapter, ValidationError
 from settings_library.docker_registry import RegistrySettings
@@ -21,6 +22,8 @@ from ..docker_utils import (
 )
 from ..logging_utils import log_catch
 from ..progress_bar import AsyncReportCB, ProgressBarData
+
+_DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = ByteSizeAdapter.validate_python("200MiB")
 
 _logger = logging.getLogger(__name__)
 
@@ -102,11 +105,6 @@ async def retrieve_image_layer_information(
                     json_response
                 )
     return None
-
-
-_DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
-    "200MiB"
-)
 
 
 async def pull_images(

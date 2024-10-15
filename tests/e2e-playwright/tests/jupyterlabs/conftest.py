@@ -6,7 +6,8 @@
 # pylint: disable=no-name-in-module
 
 import pytest
-from pydantic import ByteSize, TypeAdapter
+from common_library.pydantic_type_adapters import ByteSizeAdapter
+from pydantic import ByteSize
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -24,7 +25,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 @pytest.fixture(scope="session")
 def large_file_block_size() -> ByteSize:
-    return TypeAdapter(ByteSize).validate_python("64Mib")
+    return ByteSizeAdapter.validate_python("64Mib")
 
 
 @pytest.fixture(scope="session")
@@ -36,7 +37,7 @@ def large_file_size(
         return ByteSize(0)
     assert file_size is not None
     assert isinstance(file_size, str)
-    validated_file_size = TypeAdapter(ByteSize).validate_python(file_size)
+    validated_file_size = ByteSizeAdapter.validate_python(file_size)
     assert (
         validated_file_size >= large_file_block_size
     ), f"{validated_file_size.human_readable()} must be larger than {large_file_block_size.human_readable()}!"

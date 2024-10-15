@@ -7,6 +7,7 @@ from typing import cast
 from common_library.pydantic_settings_validators import (
     validate_timedelta_in_legacy_mode,
 )
+from common_library.pydantic_type_adapters import ByteSizeAdapter
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.products import ProductName
@@ -14,14 +15,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import DynamicServiceKey, RunID, ServiceVersion
 from models_library.users import UserID
-from pydantic import (
-    AliasChoices,
-    ByteSize,
-    Field,
-    PositiveInt,
-    TypeAdapter,
-    field_validator,
-)
+from pydantic import AliasChoices, ByteSize, Field, PositiveInt, field_validator
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -117,7 +111,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DYNAMIC_SIDECAR_RESERVED_SPACE_SIZE: ByteSize = Field(
-        TypeAdapter(ByteSize).validate_python("10Mib"),
+        ByteSizeAdapter.validate_python("10Mib"),
         description=(
             "Disk space reserve when the dy-sidecar is started. Can be freed at "
             "any time via an API call. Main reason to free this disk space is "

@@ -10,9 +10,10 @@ import arrow
 import parse
 import rich
 import typer
+from common_library.pydantic_type_adapters import ByteSizeAdapter
 from mypy_boto3_ec2.service_resource import Instance, ServiceResourceInstancesCollection
 from mypy_boto3_ec2.type_defs import TagTypeDef
-from pydantic import ByteSize, TypeAdapter, ValidationError
+from pydantic import ByteSize, ValidationError
 from rich.progress import track
 from rich.style import Style
 from rich.table import Column, Table
@@ -143,7 +144,7 @@ def _print_dynamic_instances(
                     f"Up: {utils.timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
                     f"ExtIP: {instance.ec2_instance.public_ip_address}",
                     f"IntIP: {instance.ec2_instance.private_ip_address}",
-                    f"/mnt/docker(free): {utils.color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
+                    f"/mnt/docker(free): {utils.color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space,  ByteSizeAdapter.validate_python('15Gib'))}",
                 ]
             ),
             service_table,
@@ -192,7 +193,7 @@ def _print_computational_clusters(
                     f"UserID: {cluster.primary.user_id}",
                     f"WalletID: {cluster.primary.wallet_id}",
                     f"Heartbeat: {utils.timedelta_formatting(time_now - cluster.primary.last_heartbeat) if cluster.primary.last_heartbeat else 'n/a'}",
-                    f"/mnt/docker(free): {utils.color_encode_with_threshold(cluster.primary.disk_space.human_readable(), cluster.primary.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
+                    f"/mnt/docker(free): {utils.color_encode_with_threshold(cluster.primary.disk_space.human_readable(), cluster.primary.disk_space,  ByteSizeAdapter.validate_python('15Gib'))}",
                 ]
             ),
             "\n".join(
@@ -235,7 +236,7 @@ def _print_computational_clusters(
                         f"ExtIP: {worker.ec2_instance.public_ip_address}",
                         f"IntIP: {worker.ec2_instance.private_ip_address}",
                         f"DaskWorkerIP: {worker.dask_ip}",
-                        f"/mnt/docker(free): {utils.color_encode_with_threshold(worker.disk_space.human_readable(), worker.disk_space,  TypeAdapter(ByteSize).validate_python('15Gib'))}",
+                        f"/mnt/docker(free): {utils.color_encode_with_threshold(worker.disk_space.human_readable(), worker.disk_space,  ByteSizeAdapter.validate_python('15Gib'))}",
                         "",
                     ]
                 ),
