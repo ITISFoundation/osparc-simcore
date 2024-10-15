@@ -21,6 +21,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import UniqueViolation
 from yarl import URL
@@ -179,17 +180,24 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
         except Exception as err:  # pylint: disable=broad-except
             error_code = create_error_code(err)
-            _logger.exception(
-                "Failed during email_confirmation [%s]",
-                f"{error_code}",
-                extra={"error_code": error_code},
+            front_end_msg = (
+                f"Sorry, we cannot confirm your {action}."
+                "Please try again in a few moments. "
+                f"If the problem persist please contact support attaching this code ({error_code})"
             )
+
+            _logger.exception(
+                **create_troubleshotting_log_kwargs(
+                    front_end_msg,
+                    exception=err,
+                    tip="Failed during email_confirmation",
+                )
+            )
+
             raise create_redirect_to_page_response(
                 request.app,
                 page="error",
-                message=f"Sorry, we cannot confirm your {action}."
-                "Please try again in a few moments. "
-                "If the problem persist please contact support attaching this code ({error_code})",
+                message=front_end_msg,
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             ) from err
 
