@@ -56,14 +56,24 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       return new qx.ui.basic.Atom("", "osparc/loading.gif");
     },
 
-    getRetrievedAtom: function(success) {
-      const icon = success ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/times/12";
-      return new qx.ui.basic.Atom("", icon);
+    getDownloadingAtom: function() {
+      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/download/12");
+    },
+
+    getUploadingAtom: function() {
+      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/upload/12");
+    },
+
+    getFailedAtom: function() {
+      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/times/12");
+    },
+
+    getSucceededAtom: function() {
+      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/check/12");
     },
 
     getRetrievedEmpty: function() {
-      const icon = "@FontAwesome5Solid/dot-circle/10";
-      return new qx.ui.basic.Atom("", icon);
+      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/dot-circle/10");
     },
 
     GRID_POS: {
@@ -84,7 +94,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       failed: -1,
       empty: 0,
       retrieving: 1,
-      succeed: 2
+      downloading: 2,
+      uploading: 3,
+      succeed: 4
     }
   },
 
@@ -527,8 +539,10 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       }
     },
 
-    retrievingPortData: function(portId) {
-      const status = this.self().RETRIEVE_STATUS.retrieving;
+    retrievingPortData: function(portId, status) {
+      if (!status) {
+        status = this.self().RETRIEVE_STATUS.retrieving;
+      }
       if (portId) {
         let data = this._getCtrlFieldChild(portId);
         if (data) {
@@ -580,7 +594,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       let icon;
       switch (status) {
         case this.self().RETRIEVE_STATUS.failed:
-          icon = this.self().getRetrievedAtom(false);
+          icon = this.self().getFailedAtom();
           break;
         case this.self().RETRIEVE_STATUS.empty:
           icon = this.self().getRetrievedEmpty();
@@ -588,8 +602,14 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         case this.self().RETRIEVE_STATUS.retrieving:
           icon = this.self().getRetrievingAtom();
           break;
+        case this.self().RETRIEVE_STATUS.downloading:
+          icon = this.self().getDownloadingAtom();
+          break;
+        case this.self().RETRIEVE_STATUS.uploading:
+          icon = this.self().getUploadingAtom();
+          break;
         case this.self().RETRIEVE_STATUS.succeed:
-          icon = this.self().getRetrievedAtom(true);
+          icon = this.self().getSucceededAtom();
           break;
       }
       icon.key = portId;
