@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import Annotated, Final, cast
+from typing import Annotated, Final, Self, cast
 
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2Tags
 from fastapi import FastAPI
@@ -311,14 +311,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         return cls.validate_log_level(value)
 
     @model_validator(mode="after")
-    def exclude_both_dynamic_computational_mode(self, v):
+    def exclude_both_dynamic_computational_mode(self) -> Self:
         if (
-            v.AUTOSCALING_DASK is not None
-            and v.AUTOSCALING_NODES_MONITORING is not None
+            self.AUTOSCALING_DASK is not None
+            and self.AUTOSCALING_NODES_MONITORING is not None
         ):
             msg = "Autoscaling cannot be set to monitor both computational and dynamic services (both AUTOSCALING_DASK and AUTOSCALING_NODES_MONITORING are currently set!)"
             raise ValueError(msg)
-        return v
+        return self
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:
