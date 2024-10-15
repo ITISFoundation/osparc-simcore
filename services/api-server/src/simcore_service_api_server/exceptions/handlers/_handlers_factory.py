@@ -35,13 +35,16 @@ def make_handler_for_exception(
         if add_exception_to_message:
             user_error_msg += f" {exception}"
 
+        error_code = create_error_code(exception)
         if add_oec_to_message:
-            error_code = create_error_code(exception)
             user_error_msg += f" [{error_code}]"
 
         _logger.exception(
             **create_troubleshotting_log_kwargs(
-                user_error_msg, error=exception, tip="Unexpected error"
+                user_error_msg,
+                error=exception,
+                error_code=error_code,
+                tip="Unexpected error",
             )
         )
         return create_error_json_response(user_error_msg, status_code=status_code)

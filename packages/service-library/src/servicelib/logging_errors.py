@@ -2,7 +2,7 @@ import logging
 from pprint import pformat
 from typing import Any, NotRequired, TypedDict
 
-from models_library.error_codes import ErrorCodeStr, create_error_code
+from models_library.error_codes import ErrorCodeStr
 from models_library.errors_classes import OsparcErrorMixin
 
 from .logging_utils import LogExtra, get_log_record_extra
@@ -48,7 +48,9 @@ class LogKwargs(TypedDict):
 
 def create_troubleshotting_log_kwargs(
     user_error_msg: str,
+    *,
     error: BaseException,
+    error_code: ErrorCodeStr | None = None,
     error_context: dict[str, Any] | None = None,
     tip: str | None = None,
 ) -> LogKwargs:
@@ -69,9 +71,6 @@ def create_troubleshotting_log_kwargs(
             )
 
     """
-    # error-code
-    error_code = create_error_code(error)
-
     # error-context
     context = error_context or {}
     if isinstance(error, OsparcErrorMixin):
