@@ -193,7 +193,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @property
     def are_prometheus_metrics_enabled(self) -> bool:
-        return self.DY_SIDECAR_CALLBACKS_MAPPING.metrics is not None
+        return (  # pylint: disable=no-member
+            self.DY_SIDECAR_CALLBACKS_MAPPING.metrics is not None
+        )
 
     @field_validator("DY_SIDECAR_RUN_ID", mode="before")
     @classmethod

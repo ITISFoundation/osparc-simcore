@@ -134,12 +134,14 @@ def create_base_app() -> FastAPI:
 
     # minimal
     app = FastAPI(
-        debug=settings.SC_BOOT_MODE.is_devel_mode(),
+        debug=settings.SC_BOOT_MODE.is_devel_mode(),  # pylint: disable=no-member
         title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        **get_common_oas_options(settings.SC_BOOT_MODE.is_devel_mode()),
+        **get_common_oas_options(
+            settings.SC_BOOT_MODE.is_devel_mode()  # pylint: disable=no-member
+        ),
     )
     override_fastapi_openapi_method(app)
     app.state.settings = settings

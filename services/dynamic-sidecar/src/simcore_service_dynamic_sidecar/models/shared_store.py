@@ -85,6 +85,7 @@ class SharedStore(_StoreMixin):
                 (VolumeCategory.OUTPUTS, VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED),
                 (VolumeCategory.STATES, VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED),
             ]:
+                # pylint: disable=unsupported-assignment-operation
                 self.volume_states[category] = VolumeState(status=status)
 
     @classmethod
