@@ -36,6 +36,7 @@ from settings_library.resource_usage_tracker import (
     ResourceUsageTrackerSettings,
 )
 from settings_library.storage import StorageSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from simcore_sdk.node_ports_v2 import FileLinkType
 
@@ -223,6 +224,9 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_PUBLIC_API_BASE_URL: AnyHttpUrl = Field(
         ...,
         description="Base URL used to access the public api e.g. http://127.0.0.1:6000 for development or https://api.osparc.io",
+    )
+    DIRECTOR_V2_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
     )
 
     @validator("LOG_LEVEL", pre=True)

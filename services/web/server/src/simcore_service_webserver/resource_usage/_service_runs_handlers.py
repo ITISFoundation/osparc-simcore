@@ -2,11 +2,11 @@ import functools
 from typing import Any
 
 from aiohttp import web
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedUsagesPage,
     ServiceRunPage,
 )
-from models_library.basic_types import IDStr
 from models_library.resource_tracker import (
     ServiceResourceUsagesFilters,
     ServicesAggregatedUsagesTimePeriod,

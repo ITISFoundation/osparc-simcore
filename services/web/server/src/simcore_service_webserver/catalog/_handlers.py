@@ -367,6 +367,7 @@ async def get_service_resources(request: Request):
 )
 @login_required
 @permission_required("services.catalog.*")
+@_handlers_errors.reraise_catalog_exceptions_as_http_errors
 async def get_service_pricing_plan(request: Request):
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)

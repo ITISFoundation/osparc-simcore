@@ -323,6 +323,12 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 # As user has access to the project, it has implicitly access to the folder
                 folder_id = prj_to_folder_db.folder_id
 
+            if as_template:
+                # For template we do not care about workspace/folder
+                workspace_id = None
+                new_project["workspaceId"] = workspace_id
+                folder_id = None
+
         if predefined_project:
             # 2. overrides with optional body and re-validate
             new_project, project_nodes = await _compose_project_data(
@@ -394,6 +400,13 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         # Adds permalink
         await update_or_pop_permalink_in_project(request, new_project)
+
+        # Adds folderId
+        user_specific_project_data_db = await db.get_user_specific_project_data_db(
+            project_uuid=new_project["uuid"],
+            private_workspace_user_id_or_none=user_id if workspace_id is None else None,
+        )
+        new_project["folderId"] = user_specific_project_data_db.folder_id
 
         # Overwrite project access rights
         if workspace_id:

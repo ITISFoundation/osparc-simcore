@@ -41,12 +41,13 @@ from models_library.services_enums import ServiceState
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.dict_tools import ConfigDict
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
 from redis import Redis
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.aiohttp.long_running_tasks.client import LRTask
 from servicelib.aiohttp.long_running_tasks.server import ProgressPercent, TaskProgress
 from servicelib.common_aiopg_utils import DSN
@@ -125,6 +126,7 @@ def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
 
 @pytest.fixture
 def app_environment(
+    monkeypatch: pytest.MonkeyPatch,
     app_cfg: ConfigDict,
     monkeypatch_setenv_from_app_config: Callable[[ConfigDict], dict[str, str]],
 ) -> EnvVarsDict:
@@ -140,7 +142,14 @@ def app_environment(
     """
     print("+ web_server:")
     cfg = deepcopy(app_cfg)
-    return monkeypatch_setenv_from_app_config(cfg)
+    envs = monkeypatch_setenv_from_app_config(cfg)
+
+    #
+    # NOTE: this emulates hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" in docker-compose that
+    # affects PostgresSettings.POSTGRES_CLIENT_NAME
+    #
+    extra = setenvs_from_dict(monkeypatch, {"HOSTNAME": "wb-test_host.0"})
+    return envs | extra
 
 
 @pytest.fixture
@@ -193,7 +202,7 @@ def web_server(
 
     assert isinstance(postgres_db, sa.engine.Engine)
 
-    pg_settings = dict(e.split("=") for e in app[APP_DB_ENGINE_KEY].dsn.split())
+    pg_settings = dict(e.split("=") for e in app[APP_AIOPG_ENGINE_KEY].dsn.split())
     assert pg_settings["host"] == postgres_db.url.host
     assert int(pg_settings["port"]) == postgres_db.url.port
     assert pg_settings["user"] == postgres_db.url.username

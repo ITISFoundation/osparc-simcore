@@ -30,7 +30,7 @@ from simcore_postgres_database.models.projects_version_control import (
 )
 from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.db.plugin import APP_DB_ENGINE_KEY
+from simcore_service_webserver.db.plugin import APP_AIOPG_ENGINE_KEY
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.models import ProjectDict
 from tenacity.asyncio import AsyncRetrying
@@ -159,7 +159,7 @@ async def user_project(
 
         # cleanup repos
         assert client.app
-        engine = client.app[APP_DB_ENGINE_KEY]
+        engine = client.app[APP_AIOPG_ENGINE_KEY]
         async with engine.acquire() as conn:
             # cascade deletes everything except projects_vc_snapshot
             await conn.execute(projects_vc_repos.delete())

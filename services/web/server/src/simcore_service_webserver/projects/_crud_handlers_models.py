@@ -6,13 +6,16 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 from typing import Any
 
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
-from models_library.utils.common_validators import null_or_none_str_to_none_validator
+from models_library.utils.common_validators import (
+    empty_str_to_none_pre_validator,
+    null_or_none_str_to_none_validator,
+)
 from models_library.workspaces import WorkspaceID
 from pydantic import (
     BaseModel,
@@ -29,6 +32,7 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 
+from .exceptions import WrongTagIdsInQueryError
 from .models import ProjectTypeAPI
 
 
@@ -126,7 +130,7 @@ class ProjectListParams(PageQueryParameters):
     )(null_or_none_str_to_none_validator)
 
 
-class ProjectListWithJsonStrParams(ProjectListParams):
+class ProjectListWithOrderByParams(BaseModel):
     order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
         default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
@@ -154,5 +158,45 @@ class ProjectListWithJsonStrParams(ProjectListParams):
     model_config = ConfigDict(extra="forbid")
 
 
+class ProjectListWithJsonStrParams(ProjectListParams, ProjectListWithOrderByParams):
+    ...
+
+
 class ProjectActiveParams(BaseModel):
     client_session_id: str
+
+
+class ProjectListFullSearchParams(PageQueryParameters):
+    text: str | None = Field(
+        default=None,
+        description="Multi column full text search, across all folders and workspaces",
+        max_length=100,
+        example="My Project",
+    )
+    tag_ids: str | None = Field(
+        default=None,
+        description="Search by tag ID (multiple tag IDs may be provided separated by column)",
+        example="1,3",
+    )
+
+    _empty_is_none = validator("text", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )
+
+
+class ProjectListFullSearchWithJsonStrParams(
+    ProjectListFullSearchParams, ProjectListWithOrderByParams
+):
+    def tag_ids_list(self) -> list[int]:
+        try:
+            # Split the tag_ids by commas and map them to integers
+            if self.tag_ids:
+                tag_ids_list = list(map(int, self.tag_ids.split(",")))
+                # Validate that the tag_ids_list is indeed a list of integers
+                parse_obj_as(list[int], tag_ids_list)
+            else:
+                tag_ids_list = []
+        except ValueError as exc:
+            raise WrongTagIdsInQueryError from exc
+
+        return tag_ids_list

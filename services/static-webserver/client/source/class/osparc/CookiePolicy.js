@@ -66,7 +66,7 @@ qx.Class.define("osparc.CookiePolicy", {
       return link;
     },
 
-    getZMTEULALink: function(linkText = "end users license agreement (EULA)") {
+    getZMTEULALink: function(linkText = "end-users license agreement (EULA)") {
       const color = qx.theme.manager.Color.getInstance().resolve("text");
       const link = `<a href='https://zurichmedtech.github.io/s4l-manual/#/docs/licensing/copyright_Sim4Life?id=zurich-medtech-ag-zmt' style='color: ${color}' target='_blank''>${linkText}</a>`;
       return link;

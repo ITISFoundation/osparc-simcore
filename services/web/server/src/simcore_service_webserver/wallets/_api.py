@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
@@ -9,7 +10,6 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGetPermissions,
     WalletGetWithAvailableCredits,
 )
-from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
@@ -176,7 +176,13 @@ async def update_wallet(
     )
     if wallet.write is False:
         raise WalletAccessForbiddenError(
-            reason=f"Wallet {wallet_id} does not have write permission"
+            reason=f"Wallet {wallet_id} does not have write permission",
+            user_id=user_id,
+            wallet_id=wallet_id,
+            product_name=product_name,
+            user_acces_rights_on_wallet=wallet.dict(
+                include={"read", "write", "delete"}
+            ),
         )
 
     wallet_db: WalletDB = await db.update_wallet(
@@ -204,7 +210,13 @@ async def delete_wallet(
     )
     if wallet.delete is False:
         raise WalletAccessForbiddenError(
-            reason=f"Wallet {wallet_id} does not have delete permission"
+            reason=f"Wallet {wallet_id} does not have delete permission",
+            user_id=user_id,
+            wallet_id=wallet_id,
+            product_name=product_name,
+            user_acces_rights_on_wallet=wallet.dict(
+                include={"read", "write", "delete"}
+            ),
         )
 
     raise NotImplementedError
@@ -221,7 +233,13 @@ async def get_wallet_by_user(
     )
     if wallet.read is False:
         raise WalletAccessForbiddenError(
-            reason=f"User {user_id} does not have read permission on wallet {wallet_id}"
+            reason=f"User {user_id} does not have read permission on wallet {wallet_id}",
+            user_id=user_id,
+            wallet_id=wallet_id,
+            product_name=product_name,
+            user_acces_rights_on_wallet=wallet.dict(
+                include={"read", "write", "delete"}
+            ),
         )
 
     wallet_api: WalletGet = WalletGet(

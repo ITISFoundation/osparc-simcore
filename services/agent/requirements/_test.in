@@ -11,6 +11,7 @@
 --constraint _base.txt
 
 aioboto3
+asgi-lifespan
 coverage
 faker
 httpx
@@ -20,3 +21,4 @@ pytest-asyncio
 pytest-cov
 pytest-mock
 pytest-runner
+python-dotenv

@@ -12,7 +12,7 @@ from settings_library.base import BaseCustomSettings
 
 class DiagnosticsSettings(BaseCustomSettings):
     DIAGNOSTICS_SLOW_DURATION_SECS: PositiveFloat = Field(
-        1.0,
+        default=1.0,
         description=(
             "Any task blocked more than slow_duration_secs is logged as WARNING"
             "Aims to identify possible blocking calls"
@@ -22,20 +22,27 @@ class DiagnosticsSettings(BaseCustomSettings):
         ),
     )
 
+    DIAGNOSTICS_HEALTHCHECK_ENABLED: bool = Field(
+        default=False,
+        description="Enables/disables healthcheck callback hook based on diagnostic sensors",
+    )
+
     DIAGNOSTICS_MAX_TASK_DELAY: PositiveFloat = Field(
-        0.0,
-        description="Sets an upper threshold for blocking functions, i.e. slow_duration_secs < max_task_delay",
+        default=0.0,
+        description="Sets an upper threshold for blocking functions, "
+        "i.e. slow_duration_secs < max_task_delay (healthcheck metric)",
     )
 
     DIAGNOSTICS_MAX_AVG_LATENCY: PositiveFloat = Field(
-        3.0, description="Maximum average response latency in seconds"
+        default=3.0,
+        description="Maximum average response latency in seconds (healthcheck metric)",
     )
 
     DIAGNOSTICS_START_SENSING_DELAY: NonNegativeFloat = 60.0
 
     @field_validator("DIAGNOSTICS_MAX_TASK_DELAY", mode="before")
     @classmethod
-    def validate_max_task_delay(cls, v, values):
+    def _validate_max_task_delay(cls, v, values):
         # Sets an upper threshold for blocking functions, i.e.
         # settings.DIAGNOSTICS_SLOW_DURATION_SECS  < settings.DIAGNOSTICS_MAX_TASK_DELAY
         #

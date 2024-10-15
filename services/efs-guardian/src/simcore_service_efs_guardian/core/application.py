@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI
+from servicelib.fastapi.tracing import setup_tracing
 
 from .._meta import (
     API_VERSION,
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
-    logger.info("app settings: %s", settings.json(indent=1))
+    logger.info("app settings: %s", settings.model_dump_json(indent=1))
 
     app = FastAPI(
         debug=settings.EFS_GUARDIAN_DEBUG,
@@ -34,6 +35,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     # STATE
     app.state.settings = settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
+    if app.state.settings.EFS_GUARDIAN_TRACING:
+        setup_tracing(app, app.state.settings.EFS_GUARDIAN_TRACING, APP_NAME)
 
     # PLUGINS SETUP
     setup_rabbitmq(app)

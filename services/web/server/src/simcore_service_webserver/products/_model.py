@@ -121,6 +121,15 @@ class Product(BaseModel):
             raise ValueError(msg)
         return v
 
+    @validator("host_regex", pre=True)
+    @classmethod
+    def _strip_whitespaces(cls, v):
+        if v and isinstance(v, str):
+            # Prevents unintended leading & trailing spaces when added
+            # manually in the database
+            return v.strip()
+        return v
+
     @property
     def twilio_alpha_numeric_sender_id(self) -> str:
         return self.short_name or self.display_name.replace(string.punctuation, "")[:11]
@@ -128,6 +137,7 @@ class Product(BaseModel):
     model_config = ConfigDict(
         alias_generator=snake_to_camel,
         populate_by_name=True,
+        str_strip_whitespace = True,
         frozen=True,
         from_attributes=True,
         extra="ignore",
@@ -179,7 +189,6 @@ class Product(BaseModel):
                         "invitation_form": True,
                         "name": "ACME",
                         "copyright": "© ACME correcaminos",
-                        "has_landing_page": False,
                     },
                     "issues": [
                         {

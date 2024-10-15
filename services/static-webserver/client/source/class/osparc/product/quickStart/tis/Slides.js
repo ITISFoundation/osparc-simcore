@@ -26,7 +26,7 @@ qx.Class.define("osparc.product.quickStart.tis.Slides", {
     footerLinks: function() {
       const footerLinks = [];
 
-      const videoText = osparc.utils.Utils.createHTMLLink("TIP video", "https://youtu.be/-ZE6yOJ3ipw");
+      const videoText = osparc.utils.Utils.createHTMLLink("TIP videos", "https://www.youtube.com/playlist?list=PLcJQYcVCSqDu5gXnJj-_vS_spGhZOe-jF");
       const videoLabel = new qx.ui.basic.Label(videoText).set({
         textAlign: "center",
         rich : true

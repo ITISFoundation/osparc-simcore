@@ -14,6 +14,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from common_library.pydantic_basic_types import IDStr
 from faker import Faker
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
@@ -23,7 +24,6 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletGet,
 )
-from models_library.basic_types import IDStr
 from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID

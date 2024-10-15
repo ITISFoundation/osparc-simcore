@@ -23,11 +23,13 @@ from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeInt, TypeAdapter
+from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from yarl import URL
 
 from ._utils import handle_client_exceptions
+from .errors import DefaultPricingPlanNotFoundError
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -95,11 +97,15 @@ async def get_default_service_pricing_plan(
         }
     )
     with handle_client_exceptions(app) as session:
-        async with session.get(url) as response:
-            response.raise_for_status()
-            body: dict = await response.json()
-            return TypeAdapter(PricingPlanGet).validate_python(body)
-
+        try:
+            async with session.get(url) as response:
+                response.raise_for_status()
+                body: dict = await response.json()
+                return TypeAdapter(PricingPlanGet).validate_python(body)
+        except ClientResponseError as e:
+            if e.status == status.HTTP_404_NOT_FOUND:
+                raise DefaultPricingPlanNotFoundError from e
+            raise
 
 async def get_pricing_plan_unit(
     app: web.Application,

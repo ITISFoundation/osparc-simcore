@@ -30,6 +30,7 @@ _SERVICE_RUN_GET = OsparcCreditsAggregatedUsagesPage(
             **{
                 "osparc_credits": Decimal(-50),
                 "service_key": "simcore/services/comp/itis/sleeper",
+                "running_time_in_hours": Decimal(0.5),
             }
         )
     ],

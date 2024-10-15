@@ -43,8 +43,8 @@ pytest_simcore_ops_services_selection = []
 def rabbit_log_message(faker: Faker) -> LoggerRabbitMessage:
     return LoggerRabbitMessage(
         user_id=faker.pyint(min_value=1),
-        project_id=faker.uuid4(),
-        node_id=faker.uuid4(),
+        project_id=faker.uuid4(cast_to=None),
+        node_id=faker.uuid4(cast_to=None),
         messages=faker.pylist(allowed_types=(str,)),
     )
 
@@ -62,6 +62,7 @@ def rabbit_message(
 def test_rabbitmq_does_not_initialize_if_deactivated(
     disabled_rabbitmq: None,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):
@@ -78,6 +79,7 @@ def test_rabbitmq_does_not_initialize_if_deactivated(
 def test_rabbitmq_initializes(
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
 ):
@@ -95,6 +97,7 @@ def test_rabbitmq_initializes(
 async def test_post_message(
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
     rabbit_message: RabbitMessageBase,
@@ -116,7 +119,7 @@ async def test_post_message(
                 f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, {attempt.retry_state.retry_object.statistics}"
             )
             mocked_message_handler.assert_called_once_with(
-                rabbit_message.json().encode()
+                rabbit_message.model_dump_json().encode()
             )
             print("... message received")
 
@@ -124,6 +127,7 @@ async def test_post_message(
 async def test_post_message_with_disabled_rabbit_does_not_raise(
     disabled_rabbitmq: None,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
     rabbit_message: RabbitMessageBase,
@@ -135,6 +139,7 @@ async def test_post_message_when_rabbit_disconnected_does_not_raise(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
+    disabled_ssm: None,
     mocked_redis_server: None,
     initialized_app: FastAPI,
     rabbit_log_message: LoggerRabbitMessage,

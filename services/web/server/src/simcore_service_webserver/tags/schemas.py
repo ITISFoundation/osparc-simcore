@@ -2,6 +2,7 @@ import re
 from datetime import datetime
 from typing import Annotated, TypeAlias
 
+from common_library.pydantic_basic_types import ConstrainedStr
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.users import GroupID, UserID
 from pydantic import Field, PositiveInt, StringConstraints
@@ -27,12 +28,14 @@ class TagUpdate(InputSchema):
     name: str | None = None
     description: str | None = None
     color: ColorStr | None = None
+    priority: int | None = None
 
 
 class TagCreate(InputSchema):
     name: str
     description: str | None = None
     color: ColorStr
+    priority: int | None = None
 
 
 class TagAccessRights(OutputSchema):

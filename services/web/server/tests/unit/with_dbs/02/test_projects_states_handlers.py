@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 # pylint: disable=too-many-statements
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -920,6 +921,7 @@ async def test_get_active_project(
         )
         assert not error
         assert ProjectState(**data.pop("state")).locked.value
+        data.pop("folderId")
 
         user_project_last_change_date = user_project.pop("lastChangeDate")
         data_last_change_date = data.pop("lastChangeDate")
@@ -1038,6 +1040,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     )
 
     node_sample = deepcopy(NodeGet.model_config["json_schema_extra"]["example"])
+
     mocked_director_v2_api[
         "dynamic_scheduler.api.get_dynamic_service"
     ].return_value = NodeGet.model_validate(
@@ -1416,6 +1419,7 @@ async def test_open_shared_project_at_same_time(
                 num_assertions += 1
             elif data:
                 project_status = ProjectState(**data.pop("state"))
+                data.pop("folderId")
                 assert data == shared_project
                 assert project_status.locked.value
                 assert project_status.locked.owner

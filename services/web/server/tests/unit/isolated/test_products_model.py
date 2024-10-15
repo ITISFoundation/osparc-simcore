@@ -54,7 +54,6 @@ def test_product_to_static():
             "name": "ACME",
             "url": "https://acme.com",
             "license_url": "https://acme.com/license",
-            "has_landing_page": False,
             "invitation_form": True,
         },
         "issues": [
@@ -80,3 +79,22 @@ def test_product_to_static():
         ],
         "isPaymentEnabled": False,
     }
+
+
+def test_product_host_regex_with_spaces():
+    data = Product.Config.schema_extra["examples"][2]
+
+    # with leading and trailing spaces and uppercase (tests anystr_strip_whitespace )
+    data["support_email"] = "  fOO@BaR.COM    "
+
+    # with leading trailing spaces (tests validator("host_regex", pre=True))
+    expected = r"([\.-]{0,1}osparc[\.-])".strip()
+    data["host_regex"] = expected + "   "
+
+    # parsing should strip all whitespaces and normalize email
+    product = Product.parse_obj(data)
+
+    assert product.host_regex.pattern == expected
+    assert product.host_regex.search("osparc.bar.com")
+
+    assert product.support_email == "foo@bar.com"

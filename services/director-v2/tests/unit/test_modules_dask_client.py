@@ -284,11 +284,6 @@ def project_id() -> ProjectID:
     return uuid4()
 
 
-@pytest.fixture
-def node_id() -> NodeID:
-    return uuid4()
-
-
 @dataclass
 class ImageParams:
     image: Image

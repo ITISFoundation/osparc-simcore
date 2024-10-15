@@ -73,6 +73,8 @@ NEW_PROJECT = HttpApiCallCapture(
                 "locked": {"value": False, "status": "CLOSED"},
                 "state": {"value": "NOT_STARTED"},
             },
+            "workspaceId": None,
+            "folderId": None,
         },
         "error": None,
     },
@@ -106,6 +108,8 @@ GET_PROJECT = HttpApiCallCapture(
                 "locked": {"value": False, "status": "CLOSED"},
                 "state": {"value": "NOT_STARTED"},
             },
+            "workspaceId": None,
+            "folderId": None,
         }
     },
 )
@@ -272,6 +276,8 @@ REPLACE_PROJECT = HttpApiCallCapture(
                 },
                 "state": {"value": "NOT_STARTED"},
             },
+            "workspaceId": None,
+            "folderId": None,
         }
     },
 )
@@ -525,6 +531,8 @@ REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
                 },
                 "state": {"value": "NOT_STARTED"},
             },
+            "workspaceId": None,
+            "folderId": None,
         }
     },
 )
@@ -698,6 +706,8 @@ LIST_PROJECTS = HttpApiCallCapture(
                     "locked": {"value": False, "status": "CLOSED"},
                     "state": {"value": "NOT_STARTED"},
                 },
+                "workspaceId": None,
+                "folderId": None,
             }
         ],
     },
@@ -946,6 +956,8 @@ CREATE_FROM_TEMPLATE__TASK_RESULT = HttpApiCallCapture(
                 "locked": {"value": False, "status": "CLOSED"},
                 "state": {"value": "NOT_STARTED"},
             },
+            "workspaceId": None,
+            "folderId": None,
         }
     },
     status_code=HTTPStatus.CREATED,  # 201

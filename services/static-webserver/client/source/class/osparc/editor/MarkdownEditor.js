@@ -42,7 +42,6 @@ qx.Class.define("osparc.editor.MarkdownEditor", {
         case "preview-markdown": {
           control = new osparc.ui.markdown.Markdown().set({
             padding: 3,
-            noMargin: true
           });
           const textArea = this.getChildControl("text-area");
           textArea.bind("value", control, "value");

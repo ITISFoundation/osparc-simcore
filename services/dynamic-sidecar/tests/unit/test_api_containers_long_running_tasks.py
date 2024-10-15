@@ -577,7 +577,7 @@ async def test_container_restore_state(
         status_poll_interval=FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
-        assert result is None
+        assert isinstance(result, int)
 
 
 async def test_container_save_state(
@@ -590,7 +590,7 @@ async def test_container_save_state(
         status_poll_interval=FAST_STATUS_POLL,
         progress_callback=_debug_progress,
     ) as result:
-        assert result is None
+        assert isinstance(result, int)
 
 
 @pytest.mark.parametrize("inputs_pulling_enabled", [True, False])

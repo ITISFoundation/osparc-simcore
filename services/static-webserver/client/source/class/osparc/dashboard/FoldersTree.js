@@ -20,21 +20,19 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
 
   construct: function(currentWorkspaceId) {
     this.__currentWorkspaceId = currentWorkspaceId;
-    const workspace = osparc.store.Workspaces.getWorkspace(currentWorkspaceId);
-    const rootLabel = workspace ? workspace.getName() : "My Workspace";
-    const rootFolder = this.self().createNewEntry(rootLabel, null);
-    const root = qx.data.marshal.Json.createModel(rootFolder, true);
-    this.__fetchChildren(root);
+
+    const workspace = osparc.store.Workspaces.getInstance().getWorkspace(this.__currentWorkspaceId);
+    const workspaceLabel = workspace ? workspace.getName() : "My Workspace";
+    const rootData = {
+      label: workspaceLabel,
+      folderId: null,
+      children: [],
+      loaded: true,
+    };
+    const root = qx.data.marshal.Json.createModel(rootData, true);
+    this.__populateFolder(root);
 
     this.base(arguments, root, "label", "children");
-
-    this.set({
-      openMode: "dbltap",
-      decorator: "no-border",
-      font: "text-14",
-      showLeafs: true,
-      paddingLeft: -10,
-    });
 
     this.__initTree();
   },
@@ -43,94 +41,48 @@ qx.Class.define("osparc.dashboard.FoldersTree", {
     "selectionChanged": "qx.event.type.Event" // tap
   },
 
-  statics: {
-    createNewEntry: function(label, folderId) {
-      return {
-        label,
-        folderId,
-        children: [
-          this.self().getLoadingData()
-        ],
-        loaded: false,
-      };
-    },
-
-    getLoadingData: function() {
-      return {
-        folderId: -1,
-        label: "Loading...",
-        children: [],
-        icon: "@FontAwesome5Solid/circle-notch/12",
-        loaded: false,
-      };
-    },
-
-    addLoadingChild: function(parentModel) {
-      const loadingModel = qx.data.marshal.Json.createModel(this.self().getLoadingData(), true);
-      parentModel.getChildren().append(loadingModel);
-    },
-
-    removeLoadingChild: function(parent) {
-      for (let i = parent.getChildren().getLength() - 1; i >= 0; i--) {
-        if (parent.getChildren().toArray()[i].getLabel() === "Loading...") {
-          parent.getChildren().splice(i, 1);
-        }
-      }
-    }
-  },
-
   members: {
     __currentWorkspaceId:null,
 
     __initTree: function() {
       const that = this;
       this.setDelegate({
-        createItem: () => new osparc.dashboard.FolderTreeItem(),
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
-          c.bindProperty("folderId", "model", null, item, id);
           c.bindProperty("", "open", {
-            converter(value, _, __, target) {
+            converter(value, model, source, target) {
               const isOpen = target.isOpen();
               if (isOpen && !value.getLoaded()) {
+                value.setLoaded(true);
                 // eslint-disable-next-line no-underscore-dangle
-                that.__fetchChildren(value);
+                that.__populateFolder(value);
               }
               return isOpen;
-            }
+            },
           }, item, id);
         },
         configureItem: item => {
-          item.addListener("tap", () => this.fireDataEvent("selectionChanged", item.getModel()), this);
+          item.addListener("tap", () => this.fireDataEvent("selectionChanged", item.getModel().getFolderId()), this);
         },
-        sorter: (a, b) => {
-          const aLabel = a.getLabel();
-          if (aLabel === -1) {
-            return 1;
-          }
-          const bLabel = b.getLabel();
-          if (bLabel === -1) {
-            return -1;
-          }
-          return aLabel - bLabel;
-        }
       });
     },
 
-    __fetchChildren: function(parentModel) {
-      parentModel.setLoaded(true);
-
-      const folderId = parentModel.getFolderId ? parentModel.getFolderId() : parentModel.getModel();
-      osparc.store.Folders.getInstance().fetchFolders(folderId, this.__currentWorkspaceId)
+    __populateFolder: function(parent) {
+      osparc.store.Folders.getInstance().fetchFolders(parent.getFolderId(), this.__currentWorkspaceId)
         .then(folders => {
-          this.self().removeLoadingChild(parentModel);
+          parent.getChildren().removeAll();
           folders.forEach(folder => {
-            const folderData = this.self().createNewEntry(folder.getName(), folder.getFolderId());
-            const folderModel = qx.data.marshal.Json.createModel(folderData, true);
-            parentModel.getChildren().append(folderModel);
+            const folderData = {
+              label: folder.getName(),
+              folderId: folder.getFolderId(),
+              loaded: false,
+              children: [{
+                label: "Loading...",
+              }]
+            };
+            parent.getChildren().push(qx.data.marshal.Json.createModel(folderData, true));
           });
-        })
-        .catch(console.error);
-    }
+        });
+    },
   }
 });

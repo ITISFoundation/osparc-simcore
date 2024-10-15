@@ -84,9 +84,10 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     },
 
     __handleOutsideEvent: function(event) {
+      const offset = 30;
       if (
-        !osparc.utils.Utils.isMouseOnElement(this.__creditsContainer, event) &&
-        !osparc.utils.Utils.isMouseOnElement(this, event)
+        !osparc.utils.Utils.isMouseOnElement(this.__creditsContainer, event, offset) &&
+        !osparc.utils.Utils.isMouseOnElement(this, event, offset)
       ) {
         this.__hideCreditsContainer();
       }

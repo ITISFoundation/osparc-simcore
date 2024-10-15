@@ -3,12 +3,13 @@ from dataclasses import dataclass
 from typing import Any, Literal, NamedTuple
 
 from aiohttp import web
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_directorv2.comp_tasks import (
     OutputName,
     TasksOutputs,
     TasksSelection,
 )
-from models_library.basic_types import IDStr, KeyIDStr
+from models_library.basic_types import KeyIDStr
 from models_library.function_services_catalog.api import (
     catalog,
     is_parameter_service,

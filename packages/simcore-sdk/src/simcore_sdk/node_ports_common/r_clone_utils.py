@@ -12,8 +12,6 @@ from ._utils import BaseLogParser
 _logger = logging.getLogger(__name__)
 
 
-
-
 class _RCloneSyncMessageBase(BaseModel):
     level: str = Field(..., description="log level")
     msg: str
@@ -44,6 +42,7 @@ _RCloneSyncMessages = Union[  # noqa: UP007
     _RCloneSyncTransferCompletedMessage,
     _RCloneSyncUpdatedMessage,
     _RCloneSyncTransferringMessage,
+    _RCloneSyncMessageBase,
 ]
 
 
@@ -77,7 +76,9 @@ class SyncProgressLogParser(BaseLogParser):
     async def __call__(self, logs: str) -> None:
         _logger.debug("received logs: %s", logs)
         with log_catch(_logger, reraise=False):
-            rclone_message: _RCloneSyncMessages = TypeAdapter(_RCloneSyncMessages).validate_strings(
+            rclone_message: _RCloneSyncMessages = TypeAdapter(
+                _RCloneSyncMessages
+            ).validate_strings(
                 logs,
             )
 

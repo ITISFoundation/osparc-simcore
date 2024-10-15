@@ -1,8 +1,10 @@
 from typing import Final
 
+from servicelib.instrumentation import get_metrics_namespace
+
 from ..._meta import APP_NAME
 
-METRICS_NAMESPACE: Final[str] = APP_NAME.replace("-", "_")
+METRICS_NAMESPACE: Final[str] = get_metrics_namespace(APP_NAME)
 EC2_INSTANCE_LABELS: Final[tuple[str, ...]] = ("instance_type",)
 
 CLUSTER_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
@@ -40,6 +42,10 @@ CLUSTER_METRICS_DEFINITIONS: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
     ),
     "terminating_nodes": (
         "Number of EC2-backed docker nodes that started the termination process",
+        EC2_INSTANCE_LABELS,
+    ),
+    "retired_nodes": (
+        "Number of EC2-backed docker nodes that were actively retired and waiting for draining and termination or re-use",
         EC2_INSTANCE_LABELS,
     ),
     "terminated_instances": (

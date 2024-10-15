@@ -19,8 +19,8 @@ from sqlalchemy.sql.elements import literal_column
 
 
 @pytest.fixture()
-async def db_connection(pg_engine: Engine) -> SAConnection:
-    async with pg_engine.acquire() as conn:
+async def db_connection(aiopg_engine: Engine) -> SAConnection:
+    async with aiopg_engine.acquire() as conn:
         yield conn
 
 

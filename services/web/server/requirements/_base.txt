@@ -5,6 +5,8 @@ aio-pika==9.1.2
     #   -r requirements/_base.in
 aiocache==0.11.1
     # via
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
 aiodebug==2.3.0
@@ -59,7 +61,6 @@ aiohttp==3.8.5
     #   aiohttp-security
     #   aiohttp-session
     #   aiohttp-swagger
-    #   aiozipkin
 aiohttp-jinja2==1.5
     # via -r requirements/_base.in
 aiohttp-security==0.4.0
@@ -79,8 +80,6 @@ aiosignal==1.2.0
     # via aiohttp
 aiosmtplib==1.1.6
     # via -r requirements/_base.in
-aiozipkin==1.1.1
-    # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 alembic==1.8.1
     # via
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
@@ -186,6 +185,12 @@ cryptography==41.0.7
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   aiohttp-session
+deprecated==1.2.14
+    # via
+    #   opentelemetry-api
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-semantic-conventions
 dnspython==2.2.1
     # via email-validator
 email-validator==2.2.0
@@ -205,9 +210,15 @@ frozenlist==1.4.1
     #   -c requirements/./constraints.txt
     #   aiohttp
     #   aiosignal
+googleapis-common-protos==1.65.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
 greenlet==2.0.2
     # via sqlalchemy
-gunicorn==20.1.0
+grpcio==1.66.0
+    # via opentelemetry-exporter-otlp-proto-grpc
+gunicorn==23.0.0
     # via -r requirements/_base.in
 idna==3.3
     # via
@@ -215,6 +226,8 @@ idna==3.3
     #   email-validator
     #   requests
     #   yarl
+importlib-metadata==8.0.0
+    # via opentelemetry-api
 isodate==0.6.1
     # via openapi-core
 jinja-app-loader==1.0.2
@@ -317,6 +330,76 @@ openapi-spec-validator==0.4.0
     # via openapi-core
 openpyxl==3.0.9
     # via -r requirements/_base.in
+opentelemetry-api==1.26.0
+    # via
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aiohttp-client
+    #   opentelemetry-instrumentation-aiohttp-server
+    #   opentelemetry-instrumentation-aiopg
+    #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-requests
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-exporter-otlp==1.26.0
+    # via
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+opentelemetry-exporter-otlp-proto-common==1.26.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-grpc==1.26.0
+    # via opentelemetry-exporter-otlp
+opentelemetry-exporter-otlp-proto-http==1.26.0
+    # via opentelemetry-exporter-otlp
+opentelemetry-instrumentation==0.47b0
+    # via
+    #   opentelemetry-instrumentation-aiohttp-client
+    #   opentelemetry-instrumentation-aiohttp-server
+    #   opentelemetry-instrumentation-aiopg
+    #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-aiohttp-client==0.47b0
+    # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
+opentelemetry-instrumentation-aiohttp-server==0.47b0
+    # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
+opentelemetry-instrumentation-aiopg==0.47b0
+    # via
+    #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
+    #   -r requirements/_base.in
+opentelemetry-instrumentation-dbapi==0.47b0
+    # via opentelemetry-instrumentation-aiopg
+opentelemetry-instrumentation-requests==0.47b0
+    # via
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+opentelemetry-proto==1.26.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-common
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-sdk==1.26.0
+    # via
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-semantic-conventions==0.47b0
+    # via
+    #   opentelemetry-instrumentation-aiohttp-client
+    #   opentelemetry-instrumentation-aiohttp-server
+    #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-requests
+    #   opentelemetry-sdk
+opentelemetry-util-http==0.47b0
+    # via
+    #   opentelemetry-instrumentation-aiohttp-client
+    #   opentelemetry-instrumentation-aiohttp-server
+    #   opentelemetry-instrumentation-requests
 orjson==3.10.0
     # via
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -351,10 +434,11 @@ orjson==3.10.0
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
-packaging==23.1
+packaging==24.1
     # via
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
+    #   gunicorn
 pamqp==3.2.1
     # via aiormq
 passlib==1.7.4
@@ -367,6 +451,14 @@ pint==0.19.2
     #   -r requirements/_base.in
 prometheus-client==0.14.1
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
+protobuf==4.25.4
+    # via
+    #   googleapis-common-protos
+    #   opentelemetry-proto
+psutil==6.0.0
+    # via
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.9.6
     # via
     #   aiopg
@@ -542,8 +634,14 @@ redis==5.0.4
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
+repro-zipfile==0.3.1
+    # via
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 requests==2.32.2
-    # via twilio
+    # via
+    #   opentelemetry-exporter-otlp-proto-http
+    #   twilio
 rich==13.4.2
     # via
     #   -r requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
@@ -551,13 +649,13 @@ rich==13.4.2
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
-setproctitle==1.2.3
+setproctitle==1.3.3
     # via gunicorn
 setuptools==69.1.1
     # via
-    #   gunicorn
     #   jsonschema
     #   openapi-spec-validator
+    #   opentelemetry-instrumentation
 shellingham==1.5.4
     # via typer
 six==1.16.0
@@ -632,6 +730,7 @@ typing-extensions==4.12.0
     #   aiodebug
     #   aiodocker
     #   faststream
+    #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
     #   typer
@@ -697,6 +796,14 @@ urllib3==1.26.11
     #   requests
 werkzeug==2.1.2
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
+wrapt==1.16.0
+    # via
+    #   deprecated
+    #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aiohttp-client
+    #   opentelemetry-instrumentation-aiohttp-server
+    #   opentelemetry-instrumentation-aiopg
+    #   opentelemetry-instrumentation-dbapi
 yarl==1.9.4
     # via
     #   -c requirements/./constraints.txt
@@ -705,3 +812,5 @@ yarl==1.9.4
     #   aio-pika
     #   aiohttp
     #   aiormq
+zipp==3.20.1
+    # via importlib-metadata

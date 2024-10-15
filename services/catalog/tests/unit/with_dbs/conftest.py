@@ -1,6 +1,7 @@
 # pylint: disable=not-context-manager
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
@@ -109,7 +110,7 @@ async def product(
     """
     # NOTE: this fixture ignores products' group-id but it is fine for this test context
     assert product["group_id"] is None
-    async with insert_and_get_row_lifespan(
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         sqlalchemy_async_engine,
         table=products,
         values=product,
@@ -149,7 +150,7 @@ async def user(
     injects a user in db
     """
     assert user_id == user["id"]
-    async with insert_and_get_row_lifespan(
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         sqlalchemy_async_engine,
         table=users,
         values=user,
@@ -442,9 +443,9 @@ async def create_fake_service_data(
 
 
 @pytest.fixture
-def create_director_list_services_from() -> Callable[
-    [list[dict[str, Any]], list], list[dict[str, Any]]
-]:
+def create_director_list_services_from() -> (
+    Callable[[list[dict[str, Any]], list], list[dict[str, Any]]]
+):
     """Convenience function to merge outputs of
     - `create_fake_service_data` callable with those of
     - `expected_director_list_services` fixture

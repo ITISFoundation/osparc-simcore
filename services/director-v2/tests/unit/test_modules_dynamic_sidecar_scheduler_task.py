@@ -212,7 +212,7 @@ def mocked_dynamic_scheduler_events(
 
 @pytest.fixture
 def mock_remove_calls(mocker: MockerFixture) -> None:
-    mocker.patch.object(_events_utils, "remove_volumes_from_node")
+    mocker.patch.object(_events_utils, "remove_volumes_without_backup_for_service")
 
 
 @pytest.fixture(params=[True, False])

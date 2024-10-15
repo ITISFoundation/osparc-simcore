@@ -196,7 +196,9 @@ async def test_get_profile_with_failing_db_connection(
 
     resp = await client.get(url.path)
 
-    await assert_status(resp, expected)
+    data, error = await assert_status(resp, expected)
+    assert not data
+    assert error["message"] == "Authentication service is temporary unavailable"
 
 
 @pytest.mark.parametrize(

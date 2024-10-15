@@ -34,7 +34,10 @@ qx.Class.define("osparc.product.tours.Tours", {
       },
       "tis": {
         fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/tis_tours.json")
-      }
+      },
+      "tiplite": {
+        fetchTours: () => osparc.product.tours.Tours.fetchTours("/resource/osparc/tours/tiplite_tours.json")
+      },
     },
 
     fetchTours: function(link) {

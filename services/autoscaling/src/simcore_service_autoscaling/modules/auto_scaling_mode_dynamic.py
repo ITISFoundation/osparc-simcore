@@ -103,6 +103,13 @@ class DynamicAutoscaling(BaseAutoscaling):
         return utils_docker.is_node_osparc_ready(instance.node)
 
     @staticmethod
+    async def is_instance_retired(app: FastAPI, instance: AssociatedInstance) -> bool:
+        assert app  # nosec
+        assert instance  # nosec
+        # nothing to do here
+        return False
+
+    @staticmethod
     async def try_retire_nodes(app: FastAPI) -> None:
         assert app  # nosec
         # nothing to do here

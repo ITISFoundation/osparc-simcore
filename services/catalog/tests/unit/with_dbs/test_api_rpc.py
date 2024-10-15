@@ -1,7 +1,8 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
 
 
 from collections.abc import AsyncIterator, Callable
@@ -245,7 +246,7 @@ async def other_user(
 ) -> AsyncIterator[dict[str, Any]]:
 
     _user = random_user(fake=faker, id=user_id + 1)
-    async with insert_and_get_row_lifespan(
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         sqlalchemy_async_engine,
         table=users,
         values=_user,

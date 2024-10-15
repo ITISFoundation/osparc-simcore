@@ -13,6 +13,9 @@ from typing import Annotated
 
 from _common import assert_handler_signature_against_model
 from fastapi import APIRouter, Query, status
+from models_library.api_schemas_resource_usage_tracker.service_runs import (
+    OsparcCreditsAggregatedByServiceGet,
+)
 from models_library.api_schemas_webserver.resource_usage import (
     ConnectServiceToPricingPlanBodyParams,
     CreatePricingPlanBodyParams,
@@ -93,7 +96,7 @@ assert_handler_signature_against_model(
 
 @router.get(
     "/services/-/aggregated-usages",
-    response_model=Envelope[list[ServiceRunGet]],
+    response_model=Envelope[list[OsparcCreditsAggregatedByServiceGet]],
     summary="Used credits based on aggregate by type, currently supported `services`. (user and product are taken from context, optionally wallet_id parameter might be provided).",
     tags=["usage"],
 )

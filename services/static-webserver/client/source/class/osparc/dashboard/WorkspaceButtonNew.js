@@ -50,27 +50,19 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
   members: {
     __itemSelected: function(newVal) {
       if (newVal) {
-        const workspaceEditor = new osparc.editor.WorkspaceEditor(true);
+        const workspaceCreator = new osparc.editor.WorkspaceEditor();
         const title = this.tr("New Workspace");
-        const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 300, 200);
-        workspaceEditor.addListener("createWorkspace", () => {
-          const newWorkspaceData = {
-            name: workspaceEditor.getLabel(),
-            description: workspaceEditor.getDescription(),
-            thumbnail: workspaceEditor.getThumbnail(),
-          };
-          osparc.store.Workspaces.postWorkspace(newWorkspaceData)
-            .then(newWorkspace => {
-              this.fireDataEvent("createWorkspace");
-              const permissionsView = new osparc.share.CollaboratorsWorkspace(newWorkspace);
-              const title2 = qx.locale.Manager.tr("Share Workspace");
-              osparc.ui.window.Window.popUpInWindow(permissionsView, title2, 500, 500);
-              permissionsView.addListener("updateAccessRights", () => this.fireDataEvent("updateWorkspace", newWorkspace.getWorkspaceId()), this);
-            })
-            .catch(console.error)
-            .finally(() => win.close());
+        const win = osparc.ui.window.Window.popUpInWindow(workspaceCreator, title, 300, 200);
+        workspaceCreator.addListener("workspaceCreated", e => {
+          win.close();
+          const newWorkspace = e.getData();
+          this.fireDataEvent("createWorkspace", newWorkspace.getWorkspaceId(), this);
+          const permissionsView = new osparc.share.CollaboratorsWorkspace(newWorkspace);
+          const title2 = qx.locale.Manager.tr("Share Workspace");
+          osparc.ui.window.Window.popUpInWindow(permissionsView, title2, 500, 500);
+          permissionsView.addListener("updateAccessRights", () => this.fireDataEvent("updateWorkspace", newWorkspace.getWorkspaceId()), this);
         });
-        workspaceEditor.addListener("cancel", () => win.close());
+        workspaceCreator.addListener("cancel", () => win.close());
       }
       this.setValue(false);
     }

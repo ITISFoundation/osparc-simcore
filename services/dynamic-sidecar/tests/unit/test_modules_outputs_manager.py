@@ -22,6 +22,9 @@ from simcore_sdk.node_ports_common.exceptions import S3TransferError
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
+from simcore_service_dynamic_sidecar.modules.notifications._notifications_ports import (
+    PortNotifier,
+)
 from simcore_service_dynamic_sidecar.modules.outputs._context import (
     OutputsContext,
     setup_outputs_context,
@@ -165,10 +168,11 @@ async def outputs_context(
 
 @pytest.fixture
 async def outputs_manager(
-    outputs_context: OutputsContext,
+    outputs_context: OutputsContext, port_notifier: PortNotifier
 ) -> AsyncIterator[OutputsManager]:
     outputs_manager = OutputsManager(
         outputs_context=outputs_context,
+        port_notifier=port_notifier,
         io_log_redirect_cb=None,
         task_monitor_interval_s=0.01,
         progress_cb=None,

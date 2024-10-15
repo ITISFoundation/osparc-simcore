@@ -619,7 +619,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     // override qx.ui.core.MMovable
     _onMovePointerMove: function(e) {
       // Only react when dragging is active
-      if (!this.hasState("move")) {
+      if (!this.hasState("move") || !this.getIsMovable()) {
         return;
       }
       const coords = this._setPositionFromEvent(e);

@@ -77,11 +77,11 @@ reqs: ## updates test & tooling requirements
 	@$(foreach p,${_target-inputs},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 
 
-reqs-all: guard-UPGRADE_OPTION ## updates a give package repository-wise (e.g. make reqs-all upgrade=foo==1.2.3 )
+reqs-all: guard-UPGRADE_OPTION ## updates a given package repository-wise IN ALL `requirements/` folders (e.g. make reqs-all upgrade=foo==1.2.3 )
 	# Upgrading $(upgrade) ALL requirements
 	@$(foreach p,${_all-in},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 
-reqs-services: guard-UPGRADE_OPTION ## updates a give package on a service (e.g. make reqs-services upgrade=foo==1.2.3 )
+reqs-services: guard-UPGRADE_OPTION ## updates a given package on all services [and not packages] (e.g. make reqs-services upgrade=foo==1.2.3 )
 	# Upgrading $(upgrade) in services
 	@$(foreach p,${_services-in},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 

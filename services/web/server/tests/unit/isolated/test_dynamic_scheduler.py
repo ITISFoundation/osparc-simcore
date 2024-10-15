@@ -55,7 +55,7 @@ def dynamic_service_start() -> DynamicServiceStart:
 @pytest.mark.parametrize(
     "expected_response",
     [
-        NodeGet.model_validate(NodeGet.model_config["json_schema_extra"]["example"]),
+        *[NodeGet.model_validate(NodeGet.model_config["json_schema_extra"]["example"])],
         NodeGetIdle.model_validate(
             NodeGetIdle.model_config["json_schema_extra"]["example"]
         ),
@@ -100,7 +100,7 @@ async def test_get_service_status_raises_rpc_server_error(
 @pytest.mark.parametrize(
     "expected_response",
     [
-        NodeGet.model_validate(NodeGet.model_config["json_schema_extra"]["example"]),
+        *[NodeGet.model_validate(NodeGet.model_config["json_schema_extra"]["example"])],
         DynamicServiceGet.model_validate(
             DynamicServiceGet.model_config["json_schema_extra"]["examples"][0]
         ),
