@@ -23,6 +23,12 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     this.setStudy(study);
     this.setNode(node);
 
+    node.getStatus().addListener("changeInteractive", e => {
+      const newStatus = e.getData();
+      const oldStatus = e.getOldData();
+      this.__statusInteractiveChanged(newStatus, oldStatus);
+    });
+
     this.__initLoadingPage();
     this.__initIFrame();
   },
@@ -51,12 +57,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       check: "osparc.widget.PersistentIframe",
       init: null,
       nullable: true
-    },
-
-    polling: {
-      check: "Boolean",
-      init: null,
-      nullable: true
     }
   },
 
@@ -69,12 +69,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     __stopRequestingStatus: null,
     __retriesLeft: null,
 
-    startPolling: function() {
-      if (this.isPolling()) {
-        return;
-      }
-      this.setPolling(true);
-
+    checkState: function() {
       this.getNode().getStatus().getProgressSequence()
         .resetSequence();
 
@@ -87,7 +82,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         .resetSequence();
 
       this.__unresponsiveRetries = 5;
-      this.__nodeState(false);
+      this.__nodeState();
 
       this.getIFrame().resetSource();
     },
@@ -124,47 +119,27 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       });
       loadingPage.addExtraWidget(sequenceWidget);
 
-      nodeStatus.addListener("changeInteractive", () => {
-        loadingPage.setHeader(this.__getLoadingPageHeader());
-        const status = nodeStatus.getInteractive();
-        if (["idle", "failed"].includes(status)) {
-          const startButton = new qx.ui.form.Button().set({
-            label: this.tr("Start"),
-            icon: "@FontAwesome5Solid/play/18",
-            font: "text-18",
-            allowGrowX: false,
-            height: 32
-          });
-          startButton.addListener("execute", () => node.requestStartNode());
-          loadingPage.addWidgetToMessages(startButton);
-        } else {
-          loadingPage.setMessages([]);
-        }
-      }, this);
       this.setLoadingPage(loadingPage);
     },
 
-    __getLoadingPageHeader: function() {
+    __getLoadingPageHeader: function(status) {
       const node = this.getNode();
-      let statusText = this.tr("Starting");
-      const status = node.getStatus().getInteractive();
-      if (status) {
-        statusText = status.charAt(0).toUpperCase() + status.slice(1);
+      if (status === undefined) {
+        status = node.getStatus().getInteractive();
       }
+      const statusText = status ? (status.charAt(0).toUpperCase() + status.slice(1)) : this.tr("Starting");
       const metadata = node.getMetaData();
       const versionDisplay = osparc.service.Utils.extractVersionDisplay(metadata);
       return statusText + " " + node.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + versionDisplay + "</sub></span>";
     },
 
-    __nodeState: function(starting=true) {
+    __nodeState: function() {
       // Check if study is still there
       if (this.getStudy() === null || this.__stopRequestingStatus === true) {
-        this.setPolling(false);
         return;
       }
       // Check if node is still there
       if (this.getStudy().getWorkbench().getNode(this.getNode().getNodeId()) === null) {
-        this.setPolling(false);
         return;
       }
 
@@ -176,7 +151,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         }
       };
       osparc.data.Resources.fetch("studies", "getNode", params)
-        .then(data => this.__onNodeState(data, starting))
+        .then(data => this.onNodeState(data))
         .catch(err => {
           let errorMsg = `Error retrieving ${node.getLabel()} status: ${err}`;
           if ("status" in err && err.status === 406) {
@@ -191,7 +166,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
           };
           node.fireDataEvent("showInLogger", errorMsgData);
           if ("status" in err && err.status === 406) {
-            this.setPolling(false);
             return;
           }
           if (this.__unresponsiveRetries > 0) {
@@ -203,32 +177,24 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             };
             node.fireDataEvent("showInLogger", retryMsgData);
             this.__unresponsiveRetries--;
-            const interval = Math.floor(Math.random() * 5000) + 3000;
-            setTimeout(() => this.__nodeState(), interval);
           } else {
-            this.setPolling(false);
             node.getStatus().setInteractive("failed");
             osparc.FlashMessenger.getInstance().logAs(this.tr("There was an error starting") + " " + node.getLabel(), "ERROR");
           }
         });
     },
 
-    __onNodeState: function(data, starting=true) {
+    onNodeState: function(data) {
       const serviceState = data["service_state"];
       const nodeId = data["service_uuid"];
       const node = this.getNode();
       const status = node.getStatus();
-      let nextPollIn = null;
-      let pollingInNextStage = null;
       switch (serviceState) {
         case "idle": {
           status.setInteractive(serviceState);
-          if (starting && this.__unresponsiveRetries>0) {
+          if (this.__unresponsiveRetries>0) {
             // a bit of a hack. We will get rid of it when the backend pushes the states
             this.__unresponsiveRetries--;
-            nextPollIn = 2000;
-          } else {
-            this.setPolling(false);
           }
           break;
         }
@@ -248,7 +214,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             node.fireDataEvent("showInLogger", msgData);
           }
           status.setInteractive(serviceState);
-          nextPollIn = 10000;
           break;
         }
         case "stopping":
@@ -256,16 +221,10 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         case "starting":
         case "pulling": {
           status.setInteractive(serviceState);
-          nextPollIn = 5000;
           break;
         }
         case "running": {
           if (nodeId !== node.getNodeId()) {
-            break;
-          }
-          if (!starting) {
-            status.setInteractive("stopping");
-            nextPollIn = 5000;
             break;
           }
           const {
@@ -273,11 +232,14 @@ qx.Class.define("osparc.data.model.IframeHandler", {
             isDynamicV2
           } = osparc.utils.Utils.computeServiceUrl(data);
           node.setDynamicV2(isDynamicV2);
-          if (srvUrl) {
+          if (
+            srvUrl &&
+            srvUrl !== node.getServiceUrl() // if it's already connected, do not restart the connection process
+          ) {
+            this.__statusInteractiveChanged("connecting", node.getStatus().getInteractive());
             this.__retriesLeft = 40;
             this.__waitForServiceReady(srvUrl);
           }
-          pollingInNextStage = true;
           break;
         }
         case "complete":
@@ -297,18 +259,10 @@ qx.Class.define("osparc.data.model.IframeHandler", {
           console.error(serviceState, "service state not supported");
           break;
       }
-      if (nextPollIn) {
-        qx.event.Timer.once(() => this.__nodeState(starting), this, nextPollIn);
-      } else if (pollingInNextStage !== true) {
-        this.setPolling(false);
-      }
     },
 
     __waitForServiceReady: function(srvUrl) {
-      this.getNode().getStatus().setInteractive("connecting");
-
       if (this.__retriesLeft === 0) {
-        this.setPolling(false);
         return;
       }
 
@@ -317,7 +271,6 @@ qx.Class.define("osparc.data.model.IframeHandler", {
 
         // Check if node is still there
         if (this.getStudy().getWorkbench().getNode(this.getNode().getNodeId()) === null) {
-          this.setPolling(false);
           return;
         }
         const interval = 5000;
@@ -329,13 +282,12 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         if (osparc.utils.Utils.isDevelopmentPlatform()) {
           console.log("Connecting: about to fetch", srvUrl);
         }
-        fetch(srvUrl)
+        fetch(srvUrl, {credentials: "include"})
           .then(response => {
             if (osparc.utils.Utils.isDevelopmentPlatform()) {
               console.log("Connecting: fetch's response status", response.status);
             }
             if (response.status < 400) {
-              this.setPolling(false);
               this.__serviceReadyIn(srvUrl);
             } else {
               console.log(`Connecting: ${srvUrl} is not reachable. Status: ${response.status}`);
@@ -356,16 +308,57 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const node = this.getNode();
       node.setServiceUrl(srvUrl);
       node.getStatus().setInteractive("ready");
-      const msg = "Service ready on " + srvUrl;
-      const msgData = {
-        nodeId: node.getNodeId(),
-        msg,
-        level: "INFO"
-      };
-      node.fireDataEvent("showInLogger", msgData);
-      this.__restartIFrame();
-      if (!node.isDynamicV2()) {
-        node.callRetrieveInputs();
+    },
+
+    __statusInteractiveChanged: function(status, oldStatus) {
+      if (status === oldStatus) {
+        return;
+      }
+
+      const node = this.getNode();
+
+      const loadingPage = node.getLoadingPage();
+      loadingPage.setHeader(this.__getLoadingPageHeader(status));
+      loadingPage.clearMessages();
+      if (["idle", "failed"].includes(status)) {
+        const startButton = new qx.ui.form.Button().set({
+          label: this.tr("Start"),
+          icon: "@FontAwesome5Solid/play/18",
+          font: "text-18",
+          allowGrowX: false,
+          height: 32
+        });
+        startButton.addListener("execute", () => node.requestStartNode());
+        loadingPage.addWidgetToMessages(startButton);
+      }
+
+      if (status === "ready") {
+        const msg = `Service ${node.getLabel()} ${status}`;
+        const msgData = {
+          nodeId: node.getNodeId(),
+          msg,
+          level: "INFO"
+        };
+        node.fireDataEvent("showInLogger", msgData);
+
+        // will switch to iframe's content
+        this.__restartIFrame();
+        if (!node.isDynamicV2()) {
+          node.callRetrieveInputs();
+        }
+      } else if (["idle", "failed", "stopping"].includes(status) && oldStatus) {
+        const msg = `Service ${node.getLabel()} ${status}`;
+        const msgData = {
+          nodeId: node.getNodeId(),
+          msg,
+          level: "INFO"
+        };
+        node.fireDataEvent("showInLogger", msgData);
+
+        // will switch to the loading page
+        node.resetServiceUrl();
+        this.getIFrame().resetSource();
+        this.fireEvent("iframeChanged");
       }
     },
 
@@ -394,7 +387,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const node = this.getNode();
       const status = node.getStatus().getInteractive();
       // it might have been stopped
-      if (status === "ready") {
+      if (["running", "ready"].includes(status)) {
         this.getIFrame().resetSource();
         this.getIFrame().setSource(node.getServiceUrl());
 

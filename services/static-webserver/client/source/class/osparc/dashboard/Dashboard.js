@@ -138,7 +138,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
         });
         const tabButton = tabPage.getChildControl("button");
         tabButton.set({
-          minWidth: 50
+          minWidth: 50,
+          maxHeight: 36,
         });
         tabButton.ttt = label;
         tabButton.getChildControl("label").set({

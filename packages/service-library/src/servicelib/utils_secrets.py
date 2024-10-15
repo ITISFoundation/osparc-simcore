@@ -1,6 +1,6 @@
 import secrets
 import string
-from typing import Final
+from typing import Any, Final
 
 from pydantic import StrictInt, validate_arguments
 
@@ -68,7 +68,7 @@ def _is_possibly_sensitive(name: str, sensitive_keywords: set[str]) -> bool:
 
 
 def mask_sensitive_data(
-    data: dict, *, extra_sensitive_keywords: set[str] | None = None
+    data: dict[str, Any], *, extra_sensitive_keywords: set[str] | None = None
 ) -> dict:
     """Replaces the sensitive values in the dict with a placeholder  before logging
 
@@ -79,7 +79,7 @@ def mask_sensitive_data(
     sensitive_keywords = _DEFAULT_SENSITIVE_KEYWORDS | (
         extra_sensitive_keywords or set()
     )
-    masked_data = {}
+    masked_data: dict[str, Any] = {}
     for key, value in data.items():
         if isinstance(value, dict):
             masked_data[key] = mask_sensitive_data(
