@@ -41,10 +41,11 @@ pytest_plugins = [
     "pytest_simcore.faker_users_data",
     "pytest_simcore.minio_service",
     "pytest_simcore.pytest_global_environs",
-    "pytest_simcore.socketio",
     "pytest_simcore.rabbit_service",
+    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_service_library_fixtures",
+    "pytest_simcore.socketio",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
