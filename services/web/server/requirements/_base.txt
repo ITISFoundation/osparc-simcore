@@ -468,7 +468,7 @@ pyyaml==6.0.1
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   aiohttp-swagger
     #   openapi-spec-validator
-redis==5.0.8
+redis==5.0.4
     # via
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
