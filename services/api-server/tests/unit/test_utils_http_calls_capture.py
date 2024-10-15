@@ -32,7 +32,7 @@ async def test_capture_http_call(
             response, name="get_json", enhance_from_openapi_specs=False
         )
 
-        print(captured.json(indent=1))
+        print(captured.model_dump_json(indent=1))
 
         # MOCK
         with respx.mock(
@@ -141,5 +141,5 @@ def test_template_capture(project_tests_dir: Path, faker: Faker):
     # loads parametrized capture
     # replace in response and solve
     capture = HttpApiCallCaptureModel.model_validate_json(template.render(context))
-    print(capture.json(indent=1))
+    print(capture.model_dump_json(indent=1))
     assert capture.path == url_path

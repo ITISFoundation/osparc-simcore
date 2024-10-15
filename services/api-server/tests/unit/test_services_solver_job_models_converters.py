@@ -102,7 +102,7 @@ def test_job_to_node_inputs_conversion():
 
     NodeInputs = create_model("NodeInputs", __root__=(dict[str, InputTypes], ...))
     print(NodeInputs.model_validate(got_node_inputs).model_dump_json(indent=2))
-    print(got_job_inputs.json(indent=2))
+    print(got_job_inputs.model_dump_json(indent=2))
 
     assert got_job_inputs == job_inputs
     assert got_node_inputs == node_inputs
