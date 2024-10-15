@@ -24,6 +24,7 @@ from models_library.error_codes import create_error_code
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..director_v2._core_computations import create_or_update_pipeline
@@ -258,17 +259,21 @@ def _handle_errors_with_error_page(handler: Handler):
 
         except Exception as err:
             error_code = create_error_code(err)
-            _logger.exception(
-                "Unexpected failure while dispatching study [%s]",
-                f"{error_code}",
-                extra={"error_code": error_code},
+            front_end_msg = compose_support_error_msg(
+                msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
             )
+            _logger.exception(
+                **create_troubleshotting_log_kwargs(
+                    front_end_msg,
+                    exception=err,
+                    tip="Unexpected failure while dispatching study",
+                )
+            )
+
             raise create_redirect_to_page_response(
                 request.app,
                 page="error",
-                message=compose_support_error_msg(
-                    msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
-                ),
+                message=front_end_msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ) from err
 
@@ -327,13 +332,18 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             # we cannot accept any more users.
             #
             error_code = create_error_code(exc)
+
+            front_end_msg = MSG_TOO_MANY_GUESTS
             _logger.exception(
-                "Failed to create guest user. Responded with 429 Too Many Requests [%s]",
-                f"{error_code}",
-                extra={"error_code": error_code},
+                **create_troubleshotting_log_kwargs(
+                    front_end_msg,
+                    exception=exc,
+                    tip="Failed to create guest user. Responded with 429 Too Many Requests",
+                )
             )
+
             raise RedirectToFrontEndPageError(
-                MSG_TOO_MANY_GUESTS,
+                front_end_msg,
                 error_code=error_code,
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             ) from exc
@@ -353,15 +363,25 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
     except Exception as exc:  # pylint: disable=broad-except
         error_code = create_error_code(exc)
+
+        front_end_msg = MSG_UNEXPECTED_ERROR.format(hint="while copying your study")
         _logger.exception(
-            "Failed while copying project '%s' to '%s' [%s]",
-            template_project.get("name"),
-            user.get("email"),
-            f"{error_code}",
-            extra={"error_code": error_code},
+            **create_troubleshotting_log_kwargs(
+                front_end_msg,
+                exception=exc,
+                error_context={
+                    "user_id": user.get("id"),
+                    "user": dict(user),
+                    "template_project": {
+                        k: template_project.get(k) for k in ["name", "uuid"]
+                    },
+                },
+                tip=f"Failed while copying project '{template_project.get('name')}' to '{user.get('email')}'",
+            )
         )
+
         raise RedirectToFrontEndPageError(
-            MSG_UNEXPECTED_ERROR.format(hint="while copying your study"),
+            front_end_msg,
             error_code=error_code,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         ) from exc

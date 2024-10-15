@@ -16,6 +16,7 @@ from pydantic import BaseModel, Extra, ValidationError, validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from ..director_v2.api import update_dynamic_service_networks_in_project
 from ..products.api import get_product_name
@@ -124,16 +125,21 @@ def _handle_errors_with_error_page(handler: Handler):
 
         except (ValidationError, web.HTTPServerError, Exception) as err:
             error_code = create_error_code(err)
+
+            front_end_msg = compose_support_error_msg(
+                msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
+            )
             _logger.exception(
-                "Unexpected failure while dispatching study [%s]",
-                f"{error_code}",
-                extra={"error_code": error_code},
+                **create_troubleshotting_log_kwargs(
+                    front_end_msg,
+                    exception=err,
+                    error_context={"request": request},
+                    tip="Unexpected failure while dispatching study",
+                )
             )
             raise _create_redirect_response_to_error_page(
                 request.app,
-                message=compose_support_error_msg(
-                    msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
-                ),
+                message=front_end_msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ) from err
 
