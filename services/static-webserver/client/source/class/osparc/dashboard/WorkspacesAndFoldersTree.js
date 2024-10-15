@@ -292,10 +292,12 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       const workspaceId = this.getCurrentWorkspaceId();
       const folderId = this.getCurrentFolderId();
 
+      const selection = this.getSelection();
+      if (selection) {
+        selection.removeAll();
+      }
       const contextModel = this.__getModel(workspaceId, folderId);
       if (contextModel) {
-        const selection = this.getSelection();
-        selection.removeAll();
         selection.push(contextModel);
       }
     },

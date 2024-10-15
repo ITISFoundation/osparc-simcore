@@ -128,7 +128,8 @@ help: ## help on rule's targets
 
 
 test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
-	python ./scripts/test_python_version.py
+	# Checking python version
+	@.venv/bin/python ./scripts/test_python_version.py
 
 
 ## DOCKER BUILD -------------------------------
@@ -482,7 +483,7 @@ push-version: tag-version
 
 .venv: .check-uv-installed
 	@uv venv $@
-	## upgrading tools to latest version in $(shell python3 --version)
+	@echo "# upgrading tools to latest version in" && $@/bin/python --version
 	@uv pip --quiet install --upgrade \
 		pip~=24.0 \
 		wheel \
