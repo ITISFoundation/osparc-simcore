@@ -128,7 +128,7 @@ help: ## help on rule's targets
 
 
 test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
-	python ./scripts/test_python_version.py
+	@uv run ./scripts/test_python_version.py
 
 
 ## DOCKER BUILD -------------------------------
