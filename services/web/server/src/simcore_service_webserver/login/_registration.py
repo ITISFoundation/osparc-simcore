@@ -12,6 +12,7 @@ from datetime import datetime
 from aiohttp import web
 from models_library.basic_types import IdInt
 from models_library.emails import LowerCaseEmailStr
+from models_library.error_codes import create_error_code
 from models_library.products import ProductName
 from pydantic import (
     BaseModel,
@@ -22,6 +23,7 @@ from pydantic import (
     parse_obj_as,
     validator,
 )
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.confirmations import ConfirmationAction
 from simcore_postgres_database.models.users import UserStatus
@@ -211,17 +213,36 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
         yield url
 
     except (ValidationError, InvalidInvitationError) as err:
-        msg = f"{err}"
-        if isinstance(err, ValidationError):
-            msg = f"{InvalidInvitationError(reason='')}"
+        error_code = create_error_code(err)
+        front_end_msg = (
+            f"Invalid invitation. {MSG_INVITATIONS_CONTACT_SUFFIX} [{error_code}]"
+        )
+
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                front_end_msg,
+                exception=err,
+                tip="Something went wrong with the invitation",
+            )
+        )
         raise web.HTTPForbidden(
-            reason=f"{msg}. {MSG_INVITATIONS_CONTACT_SUFFIX}",
+            reason=front_end_msg,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
     except InvitationsServiceUnavailableError as err:
+        error_code = create_error_code(err)
+        front_end_msg = f"Unable to process your invitation since the invitations service is currently unavailable [{error_code}]"
+
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                front_end_msg,
+                exception=err,
+                tip="Something went wrong communicating the `invitations` service",
+            )
+        )
         raise web.HTTPServiceUnavailable(
-            reason=f"{err}",
+            reason=front_end_msg,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
