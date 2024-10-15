@@ -18,7 +18,8 @@ Build() {
     --load \
     - <<EOF
 FROM python:${PYTHON_VERSION}-slim
-RUN pip install datamodel-code-generator[http]
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+RUN uv pip install --system datamodel-code-generator[http] && uv pip list
 ENTRYPOINT ["datamodel-codegen", \
           "--output-model-type=pydantic_v2.BaseModel", \
           "--input-file-type=jsonschema", \
