@@ -287,8 +287,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__listenToNodeProgress();
       this.__listenToNoMoreCreditsEvents();
       this.__listenToEvent();
-      this.__listenToStateInputPorts();
       this.__listenToServiceStatus();
+      this.__listenToStateInputPorts();
     },
 
     __listenToLogger: function() {
@@ -491,6 +491,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             node.getPropForm().retrievedPortData(portId, false);
             break;
         }
+      }
     },
 
     __reloadSnapshotsAndIterations: function() {
