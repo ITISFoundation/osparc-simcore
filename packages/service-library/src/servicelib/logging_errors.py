@@ -12,6 +12,7 @@ _logger = logging.getLogger(__name__)
 
 def create_troubleshotting_log_message(
     error_user_msg: str,
+    *,
     error: BaseException,
     error_code: ErrorCodeStr,
     error_context: dict[str, Any] | None = None,
@@ -20,7 +21,7 @@ def create_troubleshotting_log_message(
     """Create a formatted message for _logger.exception(...)
 
     Arguments:
-        message_to_user -- A user-friendly message to be displayed on the front-end explaining the issue in simple terms.
+        error_user_msg -- A user-friendly message to be displayed on the front-end explaining the issue in simple terms.
         error -- the instance of the handled exception
         error_code -- A unique error code (e.g., OEC or osparc-specific) to identify the type or source of the error for easier tracking.
         error_context -- Additional context surrounding the exception, such as environment variables or function-specific data. This can be derived from exc.error_context() (relevant when using the OsparcErrorMixin)
@@ -47,6 +48,7 @@ class LogKwargs(TypedDict):
 
 def create_troubleshotting_log_kwargs(
     error_user_msg: str,
+    *,
     error: BaseException,
     error_context: dict[str, Any] | None = None,
     tip: str | None = None,
