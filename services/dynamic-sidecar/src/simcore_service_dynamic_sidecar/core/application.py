@@ -19,6 +19,7 @@ from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
 from ..modules.inputs import setup_inputs
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
+from ..modules.notifications import setup_notifications
 from ..modules.outputs import setup_outputs
 from ..modules.prometheus_metrics import setup_prometheus_metrics
 from ..modules.resource_tracking import setup_resource_tracking
@@ -172,6 +173,7 @@ def create_app():
     setup_rabbitmq(app)
     setup_background_log_fetcher(app)
     setup_resource_tracking(app)
+    setup_notifications(app)
     setup_system_monitor(app)
 
     setup_mounted_fs(app)

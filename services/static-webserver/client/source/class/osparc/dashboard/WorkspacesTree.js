@@ -19,9 +19,14 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
   extend: qx.ui.tree.VirtualTree,
 
   construct: function() {
-    const rootLabel = "Root";
-    const rootWorkspace = this.self().createNewEntry(rootLabel, null);
-    const root = qx.data.marshal.Json.createModel(rootWorkspace, true);
+    const rootData = {
+      label: "Workspaces",
+      icon: "default",
+      workspaceId: -1,
+      children: [],
+      loaded: true,
+    };
+    const root = qx.data.marshal.Json.createModel(rootData, true);
     this.__fetchChildren(root);
 
     this.base(arguments, root, "label", "children");
@@ -32,7 +37,6 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
       font: "text-14",
       showLeafs: true,
       paddingLeft: -10,
-      hideRoot: true
     });
 
     this.__initTree();
@@ -42,48 +46,12 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
     "selectionChanged": "qx.event.type.Event" // tap
   },
 
-  statics: {
-    createNewEntry: function(label, workspaceId) {
-      return {
-        label,
-        workspaceId,
-        children: [
-          this.self().getLoadingData()
-        ],
-        loaded: false,
-      };
-    },
-
-    getLoadingData: function() {
-      return {
-        workspaceId: -1,
-        label: "Loading...",
-        children: [],
-        icon: "@FontAwesome5Solid/circle-notch/12",
-        loaded: false,
-      };
-    },
-
-    addLoadingChild: function(parentModel) {
-      const loadingModel = qx.data.marshal.Json.createModel(this.self().getLoadingData(), true);
-      parentModel.getChildren().append(loadingModel);
-    },
-
-    removeLoadingChild: function(parent) {
-      for (let i = parent.getChildren().getLength() - 1; i >= 0; i--) {
-        if (parent.getChildren().toArray()[i].getLabel() === "Loading...") {
-          parent.getChildren().splice(i, 1);
-        }
-      }
-    }
-  },
-
   members: {
     __currentWorkspaceId:null,
 
     __initTree: function() {
       this.setDelegate({
-        createItem: () => new osparc.dashboard.WorkspaceTreeItem(),
+        createItem: () => new qx.ui.tree.VirtualTreeItem(),
         bindItem: (c, item, id) => {
           c.bindDefaultProperties(item, id);
           c.bindProperty("workspaceId", "model", null, item, id);
@@ -103,22 +71,41 @@ qx.Class.define("osparc.dashboard.WorkspacesTree", {
           return aLabel - bLabel;
         }
       });
+
+      this.setIconPath("icon");
+      this.setIconOptions({
+        converter(value) {
+          if (value === "shared") {
+            return osparc.store.Workspaces.iconPath(16);
+          }
+          return "@FontAwesome5Solid/folder/14";
+        },
+      });
     },
 
-    __fetchChildren: function(parentModel) {
-      parentModel.setLoaded(true);
+    __fetchChildren: function(parent) {
+      parent.setLoaded(true);
 
-      const myWorkspaceData = this.self().createNewEntry("My Workspace", null);
+      const myWorkspaceData = {
+        label: "My Workspace",
+        icon: "default",
+        workspaceId: null,
+        loaded: true,
+      };
       const myWorkspaceModel = qx.data.marshal.Json.createModel(myWorkspaceData, true);
-      parentModel.getChildren().append(myWorkspaceModel);
+      parent.getChildren().append(myWorkspaceModel);
 
-      osparc.store.Workspaces.fetchWorkspaces()
+      osparc.store.Workspaces.getInstance().fetchWorkspaces()
         .then(workspaces => {
-          this.self().removeLoadingChild(parentModel);
           workspaces.forEach(workspace => {
-            const workspaceData = this.self().createNewEntry(workspace.getName(), workspace.getWorkspaceId());
+            const workspaceData = {
+              label: workspace.getName(),
+              icon: "shared",
+              workspaceId: workspace.getWorkspaceId(),
+              loaded: true,
+            };
             const workspaceModel = qx.data.marshal.Json.createModel(workspaceData, true);
-            parentModel.getChildren().append(workspaceModel);
+            parent.getChildren().append(workspaceModel);
           });
         })
         .catch(console.error);

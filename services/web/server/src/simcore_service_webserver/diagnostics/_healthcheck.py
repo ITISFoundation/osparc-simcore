@@ -57,25 +57,25 @@ class DelayWindowProbe:
         return delay
 
 
-logged_once = False
+_logged_once = False
 
 
 def is_sensing_enabled(app: web.Application):
     """Diagnostics will not activate sensing immediatly but after some
     time since the app started
     """
-    global logged_once  # pylint: disable=global-statement
+    global _logged_once  # pylint: disable=global-statement
     settings = get_plugin_settings(app)
 
     time_elapsed_since_setup = time.time() - app[HEALTH_PLUGIN_START_TIME]
     enabled = time_elapsed_since_setup > settings.DIAGNOSTICS_START_SENSING_DELAY
-    if enabled and not logged_once:
+    if enabled and not _logged_once:
         _logger.debug(
             "Diagnostics starts sensing after waiting %3.2f secs [> %3.2f secs] since submodule init",
             time_elapsed_since_setup,
             settings.DIAGNOSTICS_START_SENSING_DELAY,
         )
-        logged_once = True
+        _logged_once = True
     return enabled
 
 
@@ -106,10 +106,7 @@ def assert_healthy_app(app: web.Application) -> None:
         )
 
         if max_delay > max_delay_allowed:
-            msg = "{:3.1f} secs delay [at most {:3.1f} secs allowed]".format(
-                max_delay,
-                max_delay_allowed,
-            )
+            msg = f"{max_delay:3.1f} secs delay [at most {max_delay_allowed:3.1f} secs allowed]"
             raise HealthCheckError(msg)
 
     # CRITERIA 2: Mean latency of the last N request slower than 1 sec
@@ -125,6 +122,5 @@ def assert_healthy_app(app: web.Application) -> None:
         )
 
         if max_latency_allowed < latency:
-            raise HealthCheckError(
-                f"Last requests average latency is {latency} secs and surpasses {max_latency_allowed} secs"
-            )
+            msg = f"Last requests average latency is {latency} secs and surpasses {max_latency_allowed} secs"
+            raise HealthCheckError(msg)

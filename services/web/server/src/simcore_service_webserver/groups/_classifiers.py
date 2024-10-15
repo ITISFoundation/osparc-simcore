@@ -15,15 +15,8 @@ from typing import Any, Final, Literal
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from pydantic import (
-    BaseModel,
-    ConstrainedStr,
-    Field,
-    HttpUrl,
-    ValidationError,
-    parse_obj_as,
-    validator,
-)
+from common_library.pydantic_basic_types import ConstrainedStr
+from pydantic import BaseModel, Field, HttpUrl, ValidationError, parse_obj_as, validator
 from simcore_postgres_database.models.classifiers import group_classifiers
 
 from ..db.plugin import get_database_engine

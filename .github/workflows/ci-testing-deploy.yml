@@ -279,6 +279,18 @@ jobs:
       fail-fast: false
     name: "[build] docker images"
     steps:
+      - name: Remove unused software
+        run: |
+          echo "Available storage before:"
+          sudo df -h
+          echo
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          echo "Available storage after:"
+          sudo df -h
+          echo
       - uses: actions/checkout@v4
       - name: setup docker buildx
         id: buildx
@@ -593,7 +605,7 @@ jobs:
   unit-test-autoscaling:
     needs: changes
     if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 22 # temporary: mypy takes a huge amount of time to run here, maybe we should cache it
     name: "[unit] autoscaling"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1291,7 +1303,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
-      - uses: actions/setup-node@v4.0.3
+      - uses: actions/setup-node@v4.0.4
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -2404,7 +2416,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/setup-node@v4.0.3
+      - uses: actions/setup-node@v4.0.4
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -2529,7 +2541,6 @@ jobs:
         with:
           name: ${{ github.job }}_tracing
           path: tests/e2e-playwright/test-results
-
 
   system-test-environment-setup:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests

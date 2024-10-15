@@ -24,6 +24,10 @@ qx.Class.define("osparc.product.quickStart.Utils", {
         localStorageStr: "tiDontShowQuickStart",
         tutorial: () => new osparc.product.quickStart.tis.Slides()
       },
+      "tiplite": {
+        localStorageStr: "tipliteDontShowQuickStart",
+        tutorial: () => new osparc.product.quickStart.tis.Slides()
+      },
       "s4llite": {
         localStorageStr: "s4lliteDontShowQuickStart",
         tutorial: () => new osparc.product.quickStart.s4llite.Slides()

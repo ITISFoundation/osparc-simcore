@@ -101,6 +101,7 @@ async def all_product_prices(
     product_price = {
         "osparc": Decimal(0),  # free of charge
         "tis": Decimal(5),
+        "tiplite": Decimal(5),
         "s4l": Decimal(9),
         "s4llite": Decimal(0),  # free of charge
         "s4lacad": Decimal(1.1),

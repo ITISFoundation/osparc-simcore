@@ -219,6 +219,7 @@ async def get_osparc_credits_aggregated_usages_page(
             OsparcCreditsAggregatedByServiceGet.construct(
                 osparc_credits=item.osparc_credits,
                 service_key=item.service_key,
+                running_time_in_hours=item.running_time_in_hours,
             )
         )
 

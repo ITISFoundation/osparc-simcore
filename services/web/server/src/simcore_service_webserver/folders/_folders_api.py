@@ -7,15 +7,19 @@ from models_library.access_rights import AccessRights
 from models_library.api_schemas_webserver.folders_v2 import FolderGet, FolderGetPage
 from models_library.folders import FolderID
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
 from pydantic import NonNegativeInt
-from simcore_service_webserver.workspaces._workspaces_api import (
-    check_user_workspace_access,
-)
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
+from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from servicelib.utils import fire_and_forget_task
 
+from ..folders.errors import FolderValueNotPermittedError
+from ..projects.projects_api import submit_delete_project_task
 from ..users.api import get_user
+from ..workspaces._workspaces_api import check_user_workspace_access
 from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceFolderInconsistencyError,
@@ -224,7 +228,7 @@ async def update_folder(
         workspace_is_private = False
         user_folder_access_rights = user_workspace_access_rights.my_access_rights
 
-    # Check user has acces to the folder
+    # Check user has access to the folder
     await folders_db.get_for_user_or_workspace(
         app,
         folder_id=folder_id,
@@ -232,6 +236,24 @@ async def update_folder(
         user_id=user_id if workspace_is_private else None,
         workspace_id=folder_db.workspace_id,
     )
+
+    if folder_db.parent_folder_id != parent_folder_id and parent_folder_id is not None:
+        # Check user has access to the parent folder
+        await folders_db.get_for_user_or_workspace(
+            app,
+            folder_id=parent_folder_id,
+            product_name=product_name,
+            user_id=user_id if workspace_is_private else None,
+            workspace_id=folder_db.workspace_id,
+        )
+        # Do not allow to move to a child folder id
+        _child_folders = await folders_db.get_folders_recursively(
+            app, folder_id=folder_id, product_name=product_name
+        )
+        if parent_folder_id in _child_folders:
+            raise FolderValueNotPermittedError(
+                reason="Parent folder id should not be one of children"
+            )
 
     folder_db = await folders_db.update(
         app,
@@ -273,7 +295,7 @@ async def delete_folder(
         )
         workspace_is_private = False
 
-    # Check user has acces to the folder
+    # Check user has access to the folder
     await folders_db.get_for_user_or_workspace(
         app,
         folder_id=folder_id,
@@ -282,4 +304,32 @@ async def delete_folder(
         workspace_id=folder_db.workspace_id,
     )
 
-    await folders_db.delete(app, folder_id=folder_id, product_name=product_name)
+    # 1. Delete folder content
+    # 1.1 Delete all child projects that I am an owner
+    project_id_list: list[
+        ProjectID
+    ] = await folders_db.get_projects_recursively_only_if_user_is_owner(
+        app,
+        folder_id=folder_id,
+        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+        user_id=user_id,
+        product_name=product_name,
+    )
+
+    # fire and forget task for project deletion
+    for project_id in project_id_list:
+        fire_and_forget_task(
+            submit_delete_project_task(
+                app,
+                project_uuid=project_id,
+                user_id=user_id,
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+            ),
+            task_suffix_name=f"delete_project_task_{project_id}",
+            fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        )
+
+    # 1.2 Delete all child folders
+    await folders_db.delete_recursively(
+        app, folder_id=folder_id, product_name=product_name
+    )

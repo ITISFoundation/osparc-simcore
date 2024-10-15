@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.users import UserID

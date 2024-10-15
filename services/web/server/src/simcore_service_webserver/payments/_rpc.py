@@ -6,6 +6,7 @@ import logging
 from decimal import Decimal
 
 from aiohttp import web
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_payments import PAYMENTS_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
@@ -15,7 +16,6 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletPaymentInitiated,
 )
-from models_library.basic_types import IDStr
 from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.rabbitmq_basic_types import RPCMethodName

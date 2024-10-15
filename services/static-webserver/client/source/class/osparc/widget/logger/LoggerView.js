@@ -286,7 +286,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
       resizeBehavior.setWidth(this.self().POS.TIMESTAMP, 80);
       resizeBehavior.setWidth(this.self().POS.ORIGIN, 100);
 
-      table.setDataRowRenderer(new osparc.ui.table.rowrenderer.ExtendSelection(table));
+      table.setDataRowRenderer(new osparc.ui.table.rowrenderer.ExpandSelection(table));
 
       this.__applyFilters();
 
@@ -413,8 +413,8 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
     __updateTable: function() {
       if (this.__loggerModel) {
         this.__loggerModel.reloadData();
-        // checkIsOnScreen will avoid rendering every single line when the user click on the Logger button the first time
-        if (!this.isLockLogs() && osparc.utils.Utils.checkIsOnScreen(this.__loggerTable)) {
+        // isWidgetOnScreen will avoid rendering every single line when the user click on the Logger button the first time
+        if (!this.isLockLogs() && osparc.utils.Utils.isWidgetOnScreen(this.__loggerTable)) {
           const nFilteredRows = this.__loggerModel.getFilteredRowCount();
           this.__loggerTable.scrollCellVisible(0, nFilteredRows);
         }

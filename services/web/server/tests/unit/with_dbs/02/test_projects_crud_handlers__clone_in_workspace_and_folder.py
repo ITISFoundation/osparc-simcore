@@ -16,7 +16,7 @@ from models_library.workspaces import WorkspaceID
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
-from simcore_postgres_database.models.folders import folders
+from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.folders._folders_api import create_folder
@@ -51,7 +51,7 @@ async def create_workspace_and_folder(
     yield (workspace.workspace_id, folder.folder_id)
 
     with postgres_db.connect() as con:
-        con.execute(folders.delete())
+        con.execute(folders_v2.delete())
         con.execute(workspaces.delete())
 
 

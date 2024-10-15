@@ -1,15 +1,8 @@
 from typing import NamedTuple
 
 import pytest
-from models_library.basic_types import (
-    EnvVarKey,
-    IDStr,
-    MD5Str,
-    SHA1Str,
-    ShortTruncatedStr,
-    UUIDStr,
-    VersionTag,
-)
+from common_library.pydantic_basic_types import IDStr, ShortTruncatedStr
+from models_library.basic_types import EnvVarKey, MD5Str, SHA1Str, UUIDStr, VersionTag
 from pydantic import TypeAdapter, ValidationError
 
 

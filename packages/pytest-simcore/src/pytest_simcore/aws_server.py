@@ -8,12 +8,12 @@ from unittest import mock
 import pytest
 import requests
 from aiohttp.test_utils import unused_port
+from common_library.pydantic_basic_types import IDStr
 from faker import Faker
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
 from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
-from settings_library.basic_types import IDStr
 from settings_library.ec2 import EC2Settings
 from settings_library.s3 import S3Settings
 from settings_library.ssm import SSMSettings

@@ -8,10 +8,11 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from pydantic import Field, PositiveInt, validator
+from pydantic import AliasChoices, Field, PositiveInt, field_validator
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
@@ -59,28 +60,38 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
     EFS_GUARDIAN_DEBUG: bool = Field(
-        default=False, description="Debug mode", env=["EFS_GUARDIAN_DEBUG", "DEBUG"]
+        default=False,
+        description="Debug mode",
+        validation_alias=AliasChoices("EFS_GUARDIAN_DEBUG", "DEBUG"),
     )
     EFS_GUARDIAN_LOGLEVEL: LogLevel = Field(
-        LogLevel.INFO, env=["EFS_GUARDIAN_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        LogLevel.INFO,
+        validation_alias=AliasChoices("EFS_GUARDIAN_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
     )
     EFS_GUARDIAN_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=AliasChoices(
             "EFS_GUARDIAN_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings = Field(auto_default_from_env=True)
-    EFS_GUARDIAN_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
+
+    EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings = Field(json_schema_extra={"auto_default_from_env": True})
+    EFS_GUARDIAN_RABBITMQ: RabbitSettings = Field(json_schema_extra={"auto_default_from_env": True})
+    EFS_GUARDIAN_TRACING: TracingSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}, description="settings for opentelemetry tracing"
+
+    EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     @cached_property
     def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
         return self.EFS_GUARDIAN_LOGLEVEL
 
-    @validator("EFS_GUARDIAN_LOGLEVEL")
+    @field_validator("EFS_GUARDIAN_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)

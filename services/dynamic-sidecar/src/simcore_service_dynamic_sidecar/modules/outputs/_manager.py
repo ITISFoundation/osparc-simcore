@@ -6,8 +6,8 @@ from contextlib import suppress
 from datetime import timedelta
 from functools import partial
 
+from common_library.pydantic_basic_types import IDStr
 from fastapi import FastAPI
-from models_library.basic_types import IDStr
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
 from pydantic.errors import PydanticErrorMixin
@@ -18,6 +18,7 @@ from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 
 from ...core.rabbitmq import post_log_message, post_progress_message
 from ...core.settings import ApplicationSettings
+from ...modules.notifications._notifications_ports import PortNotifier
 from ..nodeports import upload_outputs
 from ._context import OutputsContext
 
@@ -100,6 +101,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         outputs_context: OutputsContext,
+        port_notifier: PortNotifier,
         io_log_redirect_cb: LogRedirectCB | None,
         progress_cb: progress_bar.AsyncReportCB | None,
         *,
@@ -108,6 +110,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         task_monitor_interval_s: PositiveFloat = 1.0,
     ):
         self.outputs_context = outputs_context
+        self.port_notifier = port_notifier
         self.io_log_redirect_cb = io_log_redirect_cb
         self.upload_upon_api_request = upload_upon_api_request
         self.task_cancellation_timeout_s = task_cancellation_timeout_s
@@ -138,6 +141,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                         port_keys=port_keys,
                         io_log_redirect_cb=self.io_log_redirect_cb,
                         progress_bar=root_progress,
+                        port_notifier=self.port_notifier,
                     )
 
         task_name = f"outputs_manager_port_keys-{'_'.join(port_keys)}"
@@ -270,6 +274,12 @@ def setup_outputs_manager(app: FastAPI) -> None:
             io_log_redirect_cb=io_log_redirect_cb,
             progress_cb=partial(
                 post_progress_message, app, ProgressType.SERVICE_OUTPUTS_PUSHING
+            ),
+            port_notifier=PortNotifier(
+                app,
+                settings.DY_SIDECAR_USER_ID,
+                settings.DY_SIDECAR_PROJECT_ID,
+                settings.DY_SIDECAR_NODE_ID,
             ),
         )
         await outputs_manager.start()

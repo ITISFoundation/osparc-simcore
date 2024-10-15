@@ -2,13 +2,13 @@ import functools
 import logging
 
 from aiohttp import web
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_webserver.folders_v2 import (
     CreateFolderBodyParams,
     FolderGet,
     FolderGetPage,
     PutFolderBodyParams,
 )
-from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import Page, PageQueryParameters
@@ -28,7 +28,6 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_postgres_database.utils_folders import FoldersError
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
@@ -41,7 +40,12 @@ from ..workspaces.errors import (
     WorkspaceNotFoundError,
 )
 from . import _folders_api
-from .errors import FolderAccessForbiddenError, FolderNotFoundError
+from .errors import (
+    FolderAccessForbiddenError,
+    FolderNotFoundError,
+    FoldersValueError,
+    FolderValueNotPermittedError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -62,7 +66,7 @@ def handle_folders_exceptions(handler: Handler):
         ) as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
-        except FoldersError as exc:
+        except (FolderValueNotPermittedError, FoldersValueError) as exc:
             raise web.HTTPBadRequest(reason=f"{exc}") from exc
 
     return wrapper

@@ -15,15 +15,12 @@
 
 ************************************************************************ */
 
+/**
+ * @asset(osparc/denylist.json")
+ */
+
 qx.Class.define("osparc.auth.ui.RequestAccount", {
   extend: osparc.auth.core.BaseAuthPage,
-
-
-  /*
-  *****************************************************************************
-     MEMBERS
-  *****************************************************************************
-  */
 
   members: {
     __captchaField: null,
@@ -57,14 +54,26 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         required: true
       });
       switch (osparc.product.Utils.getProductName()) {
-        case "s4l":
-        case "tis":
-        case "osparc":
-          this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
-          break;
         case "s4lacad":
         case "s4ldesktopacad":
-          this._form.add(email, this.tr("University Email"), qx.util.Validate.email(), "email");
+        case "tiplite": {
+          this._form.add(email, this.tr("University Email"), null, "email");
+          let validator = qx.util.Validate.email();
+          osparc.utils.Utils.fetchJSON("/resource/osparc/denylist.json")
+            .then(denylistData => {
+              if ("lite" in denylistData) {
+                const denylist = denylistData["lite"];
+                validator = osparc.auth.core.Utils.denylistEmailValidator(denylist);
+              }
+            })
+            .catch(console.error)
+            .finally(() => {
+              this._form.getValidationManager().add(email, validator);
+            });
+          break;
+        }
+        default:
+          this._form.add(email, this.tr("Email"), qx.util.Validate.email(), "email");
           break;
       }
 
@@ -80,6 +89,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           break;
         case "s4lacad":
         case "s4ldesktopacad":
+        case "tiplite":
           this._form.add(organization, this.tr("University"), null, "university");
           break;
         case "tis":
@@ -119,7 +129,8 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           rich: true
         });
         country.add(cItem);
-      })
+      });
+      // preselect
       fetch("https://ipapi.co/json")
         .then(res => res.json())
         .then(data => {
@@ -127,6 +138,12 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
           if (countryFound) {
             country.setSelection([countryFound])
           }
+        })
+        .catch(err => {
+          console.error(err);
+          const emptyItem = new qx.ui.form.ListItem("", null, "");
+          country.add(emptyItem);
+          country.setSelection([emptyItem]);
         });
       this._form.add(country, this.tr("Country"), null, "country");
 
@@ -294,6 +311,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       switch (osparc.product.Utils.getProductName()) {
         case "osparc":
         case "tis":
+        case "tiplite":
           ppLink = osparc.CookiePolicy.getITISPrivacyPolicyLink("our privacy policy");
           break;
         default:
@@ -310,7 +328,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
       // Eula link
       if (osparc.product.Utils.getProductName() !== "osparc") {
-        const eulaLink = osparc.CookiePolicy.getZMTEULALink("end users license agreement (EULA)");
+        const eulaLink = osparc.CookiePolicy.getZMTEULALink("end-users license agreement (EULA)");
         const eulaText = "I accept the " + eulaLink + " and I will use the product in accordance with it";
         const eula = new qx.ui.form.CheckBox().set({
           required: true,

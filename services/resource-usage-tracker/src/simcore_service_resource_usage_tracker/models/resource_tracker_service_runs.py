@@ -99,12 +99,15 @@ class ServiceRunDB(BaseModel):
 class ServiceRunWithCreditsDB(ServiceRunDB):
     osparc_credits: Decimal | None = None
     transaction_status: CreditTransactionStatus | None
+    
     model_config = ConfigDict(from_attributes=True)
 
 
 class OsparcCreditsAggregatedByServiceKeyDB(BaseModel):
     osparc_credits: Decimal
     service_key: ServiceKey
+    running_time_in_hours: Decimal
+      
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -10,6 +10,7 @@ from settings_library.prometheus import PrometheusSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.s3 import S3Settings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -119,12 +120,16 @@ class ApplicationSettings(MinimalApplicationSettings):
     RESOURCE_USAGE_TRACKER_S3: S3Settings | None = Field(
         json_schema_extra={"auto_default_from_env": True},
     )
+    RESOURCE_USAGE_TRACKER_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
+    )
 
     @field_validator(
         "RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC", mode="before"
-    )
+    ) # FIXME: GCR
     @classmethod
     def _validate_interval(cls, v):
         if isinstance(v, str) and v.isnumeric():
             return int(v)
         return v
+

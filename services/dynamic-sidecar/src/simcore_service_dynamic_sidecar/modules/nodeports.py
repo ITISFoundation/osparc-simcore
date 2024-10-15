@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 import time
+from asyncio import CancelledError
 from collections import deque
 from collections.abc import Coroutine
 from contextlib import AsyncExitStack
@@ -14,7 +15,7 @@ from typing import cast
 import aiofiles.os
 import magic
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
-from models_library.basic_types import IDStr
+from common_library.pydantic_basic_types import IDStr
 from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
@@ -24,16 +25,17 @@ from servicelib.async_utils import run_sequentially_in_context
 from servicelib.file_utils import remove_directory
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
-from servicelib.utils import logged_gather
+from servicelib.utils import limited_gather
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import Port
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
-from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
+from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports, OutputsCallbacks
 from simcore_sdk.node_ports_v2.port import SetKWargs
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.settings import ApplicationSettings, get_settings
+from ..modules.notifications import PortNotifier
 
 
 class PortTypeName(str, Enum):
@@ -70,13 +72,27 @@ _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = (
 )
 
 
-# NOTE: outputs_manager guarantees that no parallel calls
-# to this function occur
-async def upload_outputs(
+class OutputCallbacksWrapper(OutputsCallbacks):
+    def __init__(self, port_notifier: PortNotifier) -> None:
+        self.port_notifier = port_notifier
+
+    async def aborted(self, key: ServicePortKey) -> None:
+        await self.port_notifier.send_output_port_upload_was_aborted(key)
+
+    async def finished_succesfully(self, key: ServicePortKey) -> None:
+        await self.port_notifier.send_output_port_upload_finished_successfully(key)
+
+    async def finished_with_error(self, key: ServicePortKey) -> None:
+        await self.port_notifier.send_output_port_upload_finished_with_error(key)
+
+
+# NOTE: outputs_manager guarantees that no parallel calls to this function occur
+async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915, C901
     outputs_path: Path,
     port_keys: list[str],
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
+    port_notifier: PortNotifier,
 ) -> None:
     # pylint: disable=too-many-branches
     logger.debug("uploading data to simcore...")
@@ -97,11 +113,16 @@ async def upload_outputs(
         ServicePortKey, tuple[ItemConcreteValue | None, SetKWargs | None]
     ] = {}
     archiving_tasks: deque[Coroutine[None, None, None]] = deque()
-    ports_to_set = [
+    ports_to_set: list[Port] = [
         port_value
         for port_value in (await PORTS.outputs).values()
         if (not port_keys) or (port_value.key in port_keys)
     ]
+
+    await limited_gather(
+        *(port_notifier.send_output_port_upload_sarted(p.key) for p in ports_to_set),
+        limit=4,
+    )
 
     async with AsyncExitStack() as stack:
         sub_progress = await stack.enter_async_context(
@@ -147,13 +168,34 @@ async def upload_outputs(
 
                 # when having multiple directories it is important to
                 # run the compression in parallel to guarantee better performance
+                async def _archive_dir_notified(
+                    dir_to_compress: Path, destination: Path, port_key: ServicePortKey
+                ) -> None:
+                    # Errors and cancellation can also be triggered from archving as well
+                    try:
+                        await archive_dir(
+                            dir_to_compress=dir_to_compress,
+                            destination=destination,
+                            compress=False,
+                            store_relative_path=True,
+                            progress_bar=sub_progress,
+                        )
+                    except CancelledError:
+                        await port_notifier.send_output_port_upload_was_aborted(
+                            port_key
+                        )
+                        raise
+                    except Exception:
+                        await port_notifier.send_output_port_upload_finished_with_error(
+                            port_key
+                        )
+                        raise
+
                 archiving_tasks.append(
-                    archive_dir(
+                    _archive_dir_notified(
                         dir_to_compress=src_folder,
                         destination=tmp_file,
-                        compress=False,
-                        store_relative_path=True,
-                        progress_bar=sub_progress,
+                        port_key=port.key,
                     )
                 )
                 ports_values[port.key] = (
@@ -176,9 +218,13 @@ async def upload_outputs(
                     logger.debug("No file %s to fetch port values from", data_file)
 
         if archiving_tasks:
-            await logged_gather(*archiving_tasks)
+            await limited_gather(*archiving_tasks, limit=4)
 
-        await PORTS.set_multiple(ports_values, progress_bar=sub_progress)
+        await PORTS.set_multiple(
+            ports_values,
+            progress_bar=sub_progress,
+            outputs_callbacks=OutputCallbacksWrapper(port_notifier),
+        )
 
         elapsed_time = time.perf_counter() - start_time
         total_bytes = sum(_get_size_of_value(x) for x in ports_values.values())
@@ -264,6 +310,7 @@ async def download_target_ports(
     port_keys: list[str],
     io_log_redirect_cb: LogRedirectCB,
     progress_bar: ProgressBarData,
+    port_notifier: PortNotifier | None,
 ) -> ByteSize:
     logger.debug("retrieving data from simcore...")
     start_time = time.perf_counter()
@@ -279,22 +326,46 @@ async def download_target_ports(
     )
 
     # let's gather all the data
-    ports_to_get = [
+    ports_to_get: list[Port] = [
         port_value
         for port_value in (await getattr(PORTS, port_type_name.value)).values()
         if (not port_keys) or (port_value.key in port_keys)
     ]
+
+    async def _get_date_from_port_notified(
+        port: Port, progress_bar: ProgressBarData
+    ) -> tuple[Port, ItemConcreteValue | None, ByteSize]:
+        assert port_notifier is not None
+        await port_notifier.send_input_port_download_started(port.key)
+        try:
+            result = await _get_data_from_port(
+                port, target_dir=target_dir, progress_bar=progress_bar
+            )
+            await port_notifier.send_input_port_download_finished_succesfully(port.key)
+            return result
+
+        except CancelledError:
+            await port_notifier.send_input_port_download_was_aborted(port.key)
+            raise
+        except Exception:
+            await port_notifier.send_input_port_download_finished_with_error(port.key)
+            raise
+
     async with progress_bar.sub_progress(
         steps=len(ports_to_get), description=IDStr("downloading")
     ) as sub_progress:
-        results = await logged_gather(
+        results = await limited_gather(
             *[
-                _get_data_from_port(
-                    port, target_dir=target_dir, progress_bar=sub_progress
+                (
+                    _get_data_from_port(
+                        port, target_dir=target_dir, progress_bar=sub_progress
+                    )
+                    if port_type_name == PortTypeName.OUTPUTS
+                    else _get_date_from_port_notified(port, progress_bar=sub_progress)
                 )
                 for port in ports_to_get
             ],
-            max_concurrency=2,
+            limit=2,
         )
     # parse results
     data = {

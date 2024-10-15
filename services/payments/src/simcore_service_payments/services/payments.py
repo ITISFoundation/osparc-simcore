@@ -11,6 +11,7 @@ from decimal import Decimal
 from typing import cast
 
 import arrow
+from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_payments.errors import (
     PaymentAlreadyAckedError,
     PaymentAlreadyExistsError,
@@ -22,7 +23,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentTransaction,
     WalletPaymentInitiated,
 )
-from models_library.basic_types import AmountDecimal, IDStr
+from models_library.basic_types import AmountDecimal
 from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.users import UserID

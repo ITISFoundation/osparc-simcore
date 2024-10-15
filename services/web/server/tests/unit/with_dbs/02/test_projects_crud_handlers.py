@@ -168,6 +168,7 @@ async def _assert_get_same_project(
         # Optional fields are not part of reference 'project'
         project_state = data.pop("state")
         project_permalink = data.pop("permalink", None)
+        folder_id = data.pop("folderId", None)
 
         assert data == project
 
@@ -176,6 +177,8 @@ async def _assert_get_same_project(
 
         if project_permalink:
             assert parse_obj_as(ProjectPermalink, project_permalink)
+
+        assert folder_id is None
 
 
 async def _replace_project(
@@ -222,6 +225,7 @@ async def test_list_projects(
         # template project
         project_state = data[0].pop("state")
         project_permalink = data[0].pop("permalink")
+        folder_id = data[0].pop("folderId")
 
         assert data[0] == template_project
         assert not ProjectState(
@@ -232,10 +236,12 @@ async def test_list_projects(
         # standard project
         project_state = data[1].pop("state")
         project_permalink = data[1].pop("permalink", None)
+        folder_id = data[1].pop("folderId")
 
         assert data[1] == user_project
         assert ProjectState(**project_state)
         assert project_permalink is None
+        assert folder_id is None
 
     # GET /v0/projects?type=user
     data, *_ = await _list_and_assert_projects(client, expected, {"type": "user"})
@@ -245,6 +251,7 @@ async def test_list_projects(
         # standad project
         project_state = data[0].pop("state")
         project_permalink = data[0].pop("permalink", None)
+        folder_id = data[0].pop("folderId")
 
         assert data[0] == user_project
         assert not ProjectState(
@@ -261,6 +268,7 @@ async def test_list_projects(
         # template project
         project_state = data[0].pop("state")
         project_permalink = data[0].pop("permalink")
+        folder_id = data[0].pop("folderId")
 
         assert data[0] == template_project
         assert not ProjectState(

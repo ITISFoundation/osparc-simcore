@@ -45,8 +45,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         this.addAt(announcementUIFactory.createLoginAnnouncement(), 0);
       } else {
         announcementUIFactory.addListenerOnce("changeAnnouncement", e => {
-          const announcement = e.getData();
-          if (announcement) {
+          if (announcementUIFactory.hasLoginAnnouncement()) {
             this.addAt(announcementUIFactory.createLoginAnnouncement(), 0);
           }
         });
@@ -121,16 +120,21 @@ qx.Class.define("osparc.auth.ui.LoginView", {
 
       this.add(grp);
 
-      if (osparc.product.Utils.isProduct("tis")) {
-        const text = `
-        1) The TIP tool is designed for research purposes only and is not intended for clinical use.
-        </br>
-        </br>
-        2) Users are responsible for ensuring the anonymization and privacy protection of personal data.
-        </br>
-        </br>
-        3) The development, maintenance and usage of the TIP tool is fully sponsored by the IT’IS Foundation, with the exception of the 61 complex 3D electromagnetic simulations on the AWS cluster required for the personalized plans.
-        `;
+      if (osparc.product.Utils.isProduct("tis") || osparc.product.Utils.isProduct("tiplite")) {
+        let text = "";
+        if (osparc.product.Utils.isProduct("tiplite")) {
+          text = "The TIP tool is designed for research purposes only and is not intended for clinical use."
+        } else {
+          text = `
+            1) The TIP tool is designed for research purposes only and is not intended for clinical use.
+            </br>
+            </br>
+            2) Users are responsible for ensuring the anonymization and privacy protection of personal data.
+            </br>
+            </br>
+            3) The development, maintenance and usage of the TIP tool is fully sponsored by the IT’IS Foundation, with the exception of the 61 complex 3D electromagnetic simulations on the AWS cluster required for the personalized plans.
+          `;
+        }
         const disclaimer = osparc.announcement.AnnouncementUIFactory.createLoginAnnouncement(this.tr("Disclaimer"), text);
         this.add(disclaimer);
 

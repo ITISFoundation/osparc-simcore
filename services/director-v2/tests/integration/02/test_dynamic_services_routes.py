@@ -52,14 +52,15 @@ DIRECTOR_V2_MODULES = "simcore_service_director_v2.modules"
 logger = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = [
+    "agent",
     "catalog",
     "director",
     "migration",
     "postgres",
     "rabbit",
     "redis",
-    "storage",
     "redis",
+    "storage",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
@@ -187,6 +188,7 @@ async def director_v2_client(
             "REDIS_HOST": redis_settings.REDIS_HOST,
             "REDIS_PORT": f"{redis_settings.REDIS_PORT}",
             "REDIS_PASSWORD": f"{redis_settings.REDIS_PASSWORD.get_secret_value()}",
+            "DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED": "1",
         },
     )
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)

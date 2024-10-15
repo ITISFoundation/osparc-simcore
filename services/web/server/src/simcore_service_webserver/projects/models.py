@@ -4,6 +4,7 @@ from typing import Any, TypeAlias
 
 from aiopg.sa.result import RowProxy
 from models_library.basic_types import HttpUrlWithCustomMinLength
+from models_library.folders import FolderID
 from models_library.projects import ClassifierID, ProjectID
 from models_library.projects_ui import StudyUI
 from models_library.users import UserID
@@ -63,13 +64,31 @@ class ProjectDB(BaseModel):
     )
 
 
+class UserSpecificProjectDataDB(ProjectDB):
+    folder_id: FolderID | None
+
+    class Config:
+        orm_mode = True
+
+
 assert set(ProjectDB.__fields__.keys()).issubset(  # nosec
     {c.name for c in projects.columns if c.name not in ["access_rights"]}
 )
 
 
-class UserProjectAccessRights(BaseModel):
+class UserProjectAccessRightsDB(BaseModel):
     uid: UserID
+    read: bool
+    write: bool
+    delete: bool
+
+    class Config:
+        orm_mode = True
+
+
+class UserProjectAccessRightsWithWorkspace(BaseModel):
+    uid: UserID
+    workspace_id: WorkspaceID | None  # None if it's a private workspace
     read: bool
     write: bool
     delete: bool

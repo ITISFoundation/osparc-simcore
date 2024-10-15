@@ -2,8 +2,8 @@ import re
 import urllib.parse
 from typing import Any
 
+from common_library.pydantic_basic_types import ConstrainedStr
 from pydantic import BaseModel, Field
-from pydantic.types import ConstrainedStr
 
 # RESOURCE NAMES https://cloud.google.com/apis/design/resource_names
 #
@@ -32,6 +32,7 @@ _RELATIVE_RESOURCE_NAME_RE = r"^([^\s/]+/?){1,10}$"
 
 class RelativeResourceName(ConstrainedStr):
     regex = re.compile(_RELATIVE_RESOURCE_NAME_RE)
+    # TODO: no frozen here with the new type, WHAT TO GCR?
 
     class Config:
         frozen = True

@@ -22,11 +22,13 @@ from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
+from settings_library.ssm import SSMSettings
 from simcore_service_clusters_keeper.core.application import create_app
 from simcore_service_clusters_keeper.core.settings import (
     CLUSTERS_KEEPER_ENV_PREFIX,
@@ -81,7 +83,22 @@ def mocked_ec2_server_envs(
     # NOTE: overrides the EC2Settings with what clusters-keeper expects
     changed_envs: EnvVarsDict = {
         f"{CLUSTERS_KEEPER_ENV_PREFIX}{k}": v
-        for k, v in mocked_ec2_server_settings.dict().items()
+        for k, v in mocked_ec2_server_settings.model_dump().items()
+    }
+    return setenvs_from_dict(monkeypatch, changed_envs)
+
+
+@pytest.fixture
+def mocked_ssm_server_envs(
+    mocked_ssm_server_settings: SSMSettings,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    # NOTE: overrides the SSMSettings with what clusters-keeper expects
+    changed_envs: EnvVarsDict = {
+        f"{CLUSTERS_KEEPER_ENV_PREFIX}{k}": (
+            v.get_secret_value() if isinstance(v, SecretStr) else v
+        )
+        for k, v in mocked_ssm_server_settings.dict().items()
     }
     return setenvs_from_dict(monkeypatch, changed_envs)
 
@@ -105,6 +122,9 @@ def app_environment(
             "CLUSTERS_KEEPER_EC2_ACCESS": "{}",
             "CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID": faker.pystr(),
             "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY": faker.pystr(),
+            "CLUSTERS_KEEPER_SSM_ACCESS": "{}",
+            "CLUSTERS_KEEPER_SSM_ACCESS_KEY_ID": faker.pystr(),
+            "CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY": faker.pystr(),
             "CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES": "{}",
             "CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX": faker.pystr(),
             "CLUSTERS_KEEPER_DASK_NTHREADS": f"{faker.pyint(min_value=0)}",
@@ -119,7 +139,9 @@ def app_environment(
                 {
                     random.choice(  # noqa: S311
                         ec2_instances
-                    ): EC2InstanceBootSpecific.Config.schema_extra["examples"][
+                    ): EC2InstanceBootSpecific.model_config["json_schema_extra"][
+                        "examples"
+                    ][
                         1
                     ]  # NOTE: we use example with custom script
                 }
@@ -137,7 +159,9 @@ def app_environment(
             "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
+                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
+                            "examples"
+                        ]
                     )
                     for ec2_type_name in ec2_instances
                 }
@@ -204,6 +228,11 @@ def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPa
 @pytest.fixture
 def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("CLUSTERS_KEEPER_EC2_ACCESS", "null")
+
+
+@pytest.fixture
+def disabled_ssm(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("CLUSTERS_KEEPER_SSM_ACCESS", "null")
 
 
 @pytest.fixture

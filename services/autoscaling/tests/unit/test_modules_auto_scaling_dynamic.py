@@ -1,9 +1,10 @@
 # pylint: disable=no-value-for-parameter
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
+# pylint: disable=too-many-statements
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-statements
 
 import asyncio
 import datetime
@@ -181,6 +182,7 @@ async def drained_host_node(
 @pytest.fixture
 def minimal_configuration(
     with_labelize_drain_nodes: EnvVarsDict,
+    app_with_docker_join_drained: EnvVarsDict,
     docker_swarm: None,
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_ssm_server_envs: EnvVarsDict,
@@ -1010,6 +1012,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
     skip_if_external_envfile_dict: None,
     external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
     with_labelize_drain_nodes: EnvVarsDict,
+    app_with_docker_join_drained: EnvVarsDict,
     docker_swarm: None,
     disabled_rabbitmq: None,
     disable_dynamic_service_background_task: None,

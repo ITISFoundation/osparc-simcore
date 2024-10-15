@@ -27,6 +27,7 @@ from simcore_postgres_database.models.resource_tracker_pricing_unit_costs import
 from simcore_postgres_database.models.resource_tracker_pricing_units import (
     resource_tracker_pricing_units,
 )
+from simcore_postgres_database.models.services import services_meta_data
 from starlette import status
 from yarl import URL
 
@@ -192,12 +193,30 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 modified=datetime.now(tz=timezone.utc),
             )
         )
+
+        con.execute(
+            services_meta_data.insert().values(
+                key=_SERVICE_KEY,
+                version=_SERVICE_VERSION,
+                name="name",
+                description="description",
+            )
+        )
         con.execute(
             resource_tracker_pricing_plan_to_service.insert().values(
                 pricing_plan_id=_PRICING_PLAN_ID,
                 service_key=_SERVICE_KEY,
                 service_version=_SERVICE_VERSION,
                 service_default_plan=True,
+            )
+        )
+
+        con.execute(
+            services_meta_data.insert().values(
+                key=_SERVICE_KEY_2,
+                version=_SERVICE_VERSION_2,
+                name="name",
+                description="description",
             )
         )
         con.execute(
@@ -215,6 +234,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
         con.execute(resource_tracker_pricing_units.delete())
         con.execute(resource_tracker_pricing_plans.delete())
         con.execute(resource_tracker_pricing_unit_costs.delete())
+        con.execute(services_meta_data.delete())
 
 
 async def test_get_default_pricing_plan_for_service(

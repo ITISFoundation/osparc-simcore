@@ -28,6 +28,7 @@ from simcore_postgres_database.models.resource_tracker_pricing_unit_costs import
 from simcore_postgres_database.models.resource_tracker_pricing_units import (
     resource_tracker_pricing_units,
 )
+from simcore_postgres_database.models.services import services_meta_data
 
 from .conftest import assert_service_runs_db_row
 
@@ -135,6 +136,14 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             )
         )
         con.execute(
+            services_meta_data.insert().values(
+                key="simcore/services/comp/itis/sleeper",
+                version="1.0.16",
+                name="name",
+                description="description",
+            )
+        )
+        con.execute(
             resource_tracker_pricing_plan_to_service.insert().values(
                 pricing_plan_id=1,
                 service_key="simcore/services/comp/itis/sleeper",
@@ -150,6 +159,7 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
         con.execute(resource_tracker_pricing_plans.delete())
         con.execute(resource_tracker_pricing_unit_costs.delete())
         con.execute(resource_tracker_credit_transactions.delete())
+        con.execute(services_meta_data.delete())
 
 
 @pytest.mark.flaky(max_runs=3)

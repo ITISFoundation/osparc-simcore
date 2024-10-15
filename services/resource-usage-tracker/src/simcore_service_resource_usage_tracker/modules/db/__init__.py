@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from servicelib.db_async_engine import close_db_connection, connect_to_db
+from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to_db
 
 
 def setup(app: FastAPI):

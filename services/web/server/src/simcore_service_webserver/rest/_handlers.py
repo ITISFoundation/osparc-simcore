@@ -57,9 +57,9 @@ async def healthcheck_readiness_probe(request: web.Request):
     """
 
     healthcheck: HealthCheck = request.app[HealthCheck.__name__]
-    health_report = healthcheck.get_app_info(request.app)
+    app_info = healthcheck.get_app_info(request.app)
     # NOTE: do NOT run healthcheck here, just return info fast.
-    return envelope_json_response(health_report)
+    return envelope_json_response(app_info)
 
 
 @routes.get(f"/{API_VTAG}/config", name="get_config")

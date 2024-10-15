@@ -177,7 +177,9 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       box.setLayout(new qx.ui.layout.VBox(10));
 
       const helpText = "[10 Simple Rules with Conformance Rubric](https://www.imagwiki.nibib.nih.gov/content/10-simple-rules-conformance-rubric)";
-      const helpTextMD = new osparc.ui.markdown.Markdown(helpText);
+      const helpTextMD = new osparc.ui.markdown.Markdown(helpText).set({
+        noMargin: true,
+      });
       box.add(helpTextMD);
 
       const grid = new qx.ui.layout.Grid(10, 6);
@@ -374,7 +376,9 @@ qx.Class.define("osparc.metadata.QualityEditor", {
 
         // reference
         if (currentRule.references !== undefined) {
-          const referenceMD = new osparc.ui.markdown.Markdown(currentRule.references);
+          const referenceMD = new osparc.ui.markdown.Markdown(currentRule.references).set({
+            noMargin: true,
+          });
           this.__tsrGrid.add(referenceMD, {
             row,
             column: this.self().GridPos.reference

@@ -5,8 +5,6 @@ from servicelib.logging_utils import log_context
 
 from ...core.settings import SystemMonitorSettings
 from ._disk_usage import setup_disk_usage
-from ._notifier import setup_notifier
-from ._socketio import setup_socketio
 
 _logger = logging.getLogger(__name__)
 
@@ -19,6 +17,4 @@ def setup_system_monitor(app: FastAPI) -> None:
             _logger.warning("system monitor disabled")
             return
 
-        setup_socketio(app)  # required by notifier
-        setup_notifier(app)
         setup_disk_usage(app)
