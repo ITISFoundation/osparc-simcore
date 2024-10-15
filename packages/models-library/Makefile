@@ -61,7 +61,7 @@ DOCKER_API_VERSION ?= 1.41
 docker_rest_api.py: ## auto-generates pydantic models for Docker REST API models
 	# auto-generates $@ from $<
 	@$(SCRIPTS_DIR)/openapi-pydantic-models-generator.bash \
-			--url https://docs.docker.com/engine/api/v$(DOCKER_API_VERSION).yaml \
+			--url https://docs.docker.com/reference/api/engine/version/v$(DOCKER_API_VERSION).yaml \
 			--output $@
 
 	# formats
