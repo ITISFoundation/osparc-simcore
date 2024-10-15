@@ -9,7 +9,6 @@ from servicelib.logging_errors import (
     create_troubleshotting_log_kwargs,
     create_troubleshotting_log_message,
 )
-from servicelib.logging_utils import get_log_record_extra
 
 
 def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
@@ -41,12 +40,13 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
     )
 
     assert log_kwargs["msg"] == log_msg
+    assert (
+        log_kwargs["extra"]["log_uid"] == "123"
+    ), "user_id is injected as extra from context"
 
     with caplog.at_level(logging.WARNING):
         root_logger = logging.getLogger()
-        root_logger.exception(
-            log_msg, extra=get_log_record_extra(error_code=error_code)
-        )
+        root_logger.exception(**log_kwargs)
 
         # ERROR    root:test_logging_utils.py:417 Nice message to user [OEC:126055703573984].
         # {
