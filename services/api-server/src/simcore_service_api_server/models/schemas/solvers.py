@@ -69,7 +69,7 @@ class Solver(BaseModel):
 
     @classmethod
     def create_from_image(cls, image_meta: ServiceMetaDataPublished) -> "Solver":
-        data = image_meta.dict(
+        data = image_meta.model_dump(
             include={"name", "key", "version", "description", "contact"},
         )
 

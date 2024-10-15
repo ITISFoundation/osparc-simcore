@@ -36,7 +36,7 @@ from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
 from models_library.users import UserID
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
-from pydantic import EmailStr, HttpUrl, parse_obj_as
+from pydantic import EmailStr, HttpUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -72,7 +72,7 @@ def app_environment(
     )
 
     # should be sufficient to create settings
-    print(ApplicationSettings.create_from_envs().json(indent=1))
+    print(ApplicationSettings.create_from_envs().model_dump_json(indent=1))
 
     return env_vars
 
@@ -202,7 +202,9 @@ def mocked_s3_server_url() -> Iterator[HttpUrl]:
     )
 
     # pylint: disable=protected-access
-    endpoint_url = parse_obj_as(HttpUrl, f"http://{server._ip_address}:{server._port}")
+    endpoint_url = TypeAdapter(HttpUrl).validate_python(
+        f"http://{server._ip_address}:{server._port}"
+    )
 
     print(f"--> started mock S3 server on {endpoint_url}")
     server.start()
@@ -363,7 +365,7 @@ def mocked_storage_service_api_base(
                     "api_version": "1.0.0",
                     "version": "1.0.0",
                 },
-            ).dict(),
+            ).model_dump(),
         )
 
         assert openapi["paths"]["/v0/status"]["get"]["operationId"] == "get_status"
@@ -376,7 +378,7 @@ def mocked_storage_service_api_base(
                     "url": faker.url(),
                     "diagnostics_url": faker.url(),
                 }
-            ).dict(),
+            ).model_dump(),
         )
 
         # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
@@ -497,7 +499,7 @@ def patch_webserver_long_running_project_tasks(
                         status_href=f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}",
                         result_href=f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}/result",
                         abort_href=f"{settings.API_SERVER_WEBSERVER.api_base_url}/tasks/{task_id}",
-                    ).dict()
+                    ).model_dump()
                 },
             )
 

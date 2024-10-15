@@ -47,7 +47,7 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
 
     # Converters
     def to_solver(self) -> Solver:
-        data = self.dict(
+        data = self.model_dump(
             include={"name", "key", "version", "description", "contact", "owner"},
         )
 

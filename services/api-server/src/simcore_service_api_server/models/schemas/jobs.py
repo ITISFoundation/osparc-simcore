@@ -46,7 +46,7 @@ def _compute_keyword_arguments_checksum(kwargs: KeywordArguments):
     for key in sorted(kwargs.keys()):
         value = kwargs[key]
         if isinstance(value, File):
-            value = _compute_keyword_arguments_checksum(value.dict())
+            value = _compute_keyword_arguments_checksum(value.model_dump())
         else:
             value = str(value)
         _dump_str += f"{key}:{value}"

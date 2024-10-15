@@ -14,7 +14,6 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import status
-from pydantic import parse_obj_as
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
@@ -45,7 +44,7 @@ async def test_studies_jobs_workflow(
     resp = await client.get("/v0/studies/{study_id}", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
-    study = parse_obj_as(Study, resp.json())
+    study = Study.model_validate(resp.json())
     assert study.uid == study_id
 
     # Lists study jobs
@@ -56,7 +55,7 @@ async def test_studies_jobs_workflow(
     resp = await client.post("/v0/studies/{study_id}/jobs", auth=auth)
     assert resp.status_code == status.HTTP_201_CREATED
 
-    job = parse_obj_as(Job, resp.json())
+    job = Job.model_validate(resp.json())
     job_id = job.id
 
     # Get Study Job

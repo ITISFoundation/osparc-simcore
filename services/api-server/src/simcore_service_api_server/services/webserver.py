@@ -234,7 +234,7 @@ class AuthSession:
             f"{result_url}", cookies=self.session_cookies
         )
         result_response.raise_for_status()
-        return Envelope.parse_raw(result_response.text).data
+        return Envelope.model_validate_json(result_response.text).data
 
     # PROFILE --------------------------------------------------
 
@@ -242,7 +242,9 @@ class AuthSession:
     async def get_me(self) -> Profile:
         response = await self.client.get("/me", cookies=self.session_cookies)
         response.raise_for_status()
-        profile: Profile | None = Envelope[Profile].parse_raw(response.text).data
+        profile: Profile | None = (
+            Envelope[Profile].model_validate_json(response.text).data
+        )
         assert profile is not None  # nosec
         return profile
 
@@ -250,7 +252,7 @@ class AuthSession:
     async def update_me(self, *, profile_update: ProfileUpdate) -> Profile:
         response = await self.client.put(
             "/me",
-            json=profile_update.dict(exclude_none=True),
+            json=profile_update.model_dump(exclude_none=True),
             cookies=self.session_cookies,
         )
         response.raise_for_status()
@@ -316,7 +318,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[ProjectGet].parse_raw(response.text).data
+        data = Envelope[ProjectGet].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -360,7 +362,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[list[StudyPort]].parse_raw(response.text).data
+        data = Envelope[list[StudyPort]].model_validate_json(response.text).data
         assert data is not None  # nosec
         assert isinstance(data, list)  # nosec
         return data
@@ -374,7 +376,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
+        data = Envelope[ProjectMetadataGet].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -397,7 +399,7 @@ class AuthSession:
             json=jsonable_encoder(ProjectMetadataUpdate(custom=metadata)),
         )
         response.raise_for_status()
-        data = Envelope[ProjectMetadataGet].parse_raw(response.text).data
+        data = Envelope[ProjectMetadataGet].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -411,7 +413,7 @@ class AuthSession:
         )
 
         response.raise_for_status()
-        data = Envelope[PricingUnitGet].parse_raw(response.text).data
+        data = Envelope[PricingUnitGet].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -466,7 +468,9 @@ class AuthSession:
         )
         response.raise_for_status()
         data: dict[NodeID, ProjectInputGet] | None = (
-            Envelope[dict[NodeID, ProjectInputGet]].parse_raw(response.text).data
+            Envelope[dict[NodeID, ProjectInputGet]]
+            .model_validate_json(response.text)
+            .data
         )
         assert data is not None  # nosec
         return data
@@ -483,7 +487,9 @@ class AuthSession:
         response.raise_for_status()
 
         data: dict[NodeID, ProjectInputGet] | None = (
-            Envelope[dict[NodeID, ProjectInputGet]].parse_raw(response.text).data
+            Envelope[dict[NodeID, ProjectInputGet]]
+            .model_validate_json(response.text)
+            .data
         )
         assert data is not None  # nosec
         return data
@@ -500,7 +506,9 @@ class AuthSession:
         response.raise_for_status()
 
         data: dict[NodeID, dict[str, Any]] | None = (
-            Envelope[dict[NodeID, dict[str, Any]]].parse_raw(response.text).data
+            Envelope[dict[NodeID, dict[str, Any]]]
+            .model_validate_json(response.text)
+            .data
         )
         assert data is not None  # nosec
         return data
@@ -525,7 +533,11 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
+        data = (
+            Envelope[WalletGetWithAvailableCredits]
+            .model_validate_json(response.text)
+            .data
+        )
         assert data is not None  # nosec
         return data
 
@@ -536,7 +548,11 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[WalletGetWithAvailableCredits].parse_raw(response.text).data
+        data = (
+            Envelope[WalletGetWithAvailableCredits]
+            .model_validate_json(response.text)
+            .data
+        )
         assert data is not None  # nosec
         return data
 
@@ -547,7 +563,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[WalletGet].parse_raw(response.text).data
+        data = Envelope[WalletGet].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -560,7 +576,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        data = Envelope[GetCreditPrice].parse_raw(response.text).data
+        data = Envelope[GetCreditPrice].model_validate_json(response.text).data
         assert data is not None  # nosec
         return data
 
@@ -577,10 +593,12 @@ class AuthSession:
             cookies=self.session_cookies,
         )
         response.raise_for_status()
-        pricing_plan_get = Envelope[PricingPlanGet].parse_raw(response.text).data
+        pricing_plan_get = (
+            Envelope[PricingPlanGet].model_validate_json(response.text).data
+        )
         if pricing_plan_get:
-            return ServicePricingPlanGet.construct(
-                **pricing_plan_get.dict(exclude={"is_active"})
+            return ServicePricingPlanGet.model_construct(
+                **pricing_plan_get.model_dump(exclude={"is_active"})
             )
         return None
 

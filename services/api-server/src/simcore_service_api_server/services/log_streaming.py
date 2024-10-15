@@ -52,7 +52,7 @@ class LogDistributor:
 
     async def _distribute_logs(self, data: bytes):
         with log_catch(_logger, reraise=False):
-            got = LoggerRabbitMessage.parse_raw(data)
+            got = LoggerRabbitMessage.model_validate_json(data)
             item = JobLog(
                 job_id=got.project_id,
                 node_id=got.node_id,
@@ -121,12 +121,12 @@ class LogStreamer:
                     log: JobLog = await asyncio.wait_for(
                         self._queue.get(), timeout=self._log_check_timeout
                     )
-                    yield log.json() + _NEW_LINE
+                    yield log.model_dump_json() + _NEW_LINE
                 except asyncio.TimeoutError:
                     done = await self._project_done()
         except BaseBackEndError as exc:
             _logger.info("%s", f"{exc}")
-            yield ErrorGet(errors=[f"{exc}"]).json() + _NEW_LINE
+            yield ErrorGet(errors=[f"{exc}"]).model_dump_json() + _NEW_LINE
         except Exception as exc:  # pylint: disable=W0718
             error_code = create_error_code(exc)
             _logger.exception(
@@ -139,6 +139,6 @@ class LogStreamer:
                 errors=[
                     MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" (OEC: {error_code})"
                 ]
-            ).json() + _NEW_LINE
+            ).model_dump_json() + _NEW_LINE
         finally:
             await self._log_distributor.deregister(self._job_id)
