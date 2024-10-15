@@ -328,6 +328,11 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
             return_value=None,
             autospec=True,
         ),
+        "rpc.register_router": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQRPCClient.register_router",
+            return_value=None,
+            autospec=True,
+        ),
     }
 
 

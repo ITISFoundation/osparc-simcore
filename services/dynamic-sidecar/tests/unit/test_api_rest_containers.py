@@ -772,7 +772,7 @@ def mock_inactive_since_command_response(
     activity_response: ActivityInfo,
 ) -> None:
     mocker.patch(
-        "simcore_service_dynamic_sidecar.api.containers.run_command_in_container",
+        "simcore_service_dynamic_sidecar.api.rest.containers.run_command_in_container",
         return_value=activity_response.json(),
     )
 
@@ -792,7 +792,7 @@ async def test_containers_activity_inactive_since(
 @pytest.fixture
 def mock_inactive_response_wrong_format(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_dynamic_sidecar.api.containers.run_command_in_container",
+        "simcore_service_dynamic_sidecar.api.rest.containers.run_command_in_container",
         return_value="This is an unparsable json response {}",
     )
 
