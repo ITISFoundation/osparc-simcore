@@ -23,13 +23,13 @@ RUN uv pip install --system datamodel-code-generator[http] && uv pip list
 ENTRYPOINT ["datamodel-codegen", \
           "--output-model-type=pydantic_v2.BaseModel", \
           "--input-file-type=jsonschema", \
+          "--snake-case-field", \
           "--use-standard-collections", \
           "--use-union-operator", \
           "--use-schema-description", \
           "--use-subclass-enum", \
           "--use-double-quotes", \
           "--field-constraints", \
-          "--use-generic-container-types", \
 		      "--use-non-positive-negative-number-constrained-types", \
           "--reuse-model", \
           "--set-default-enum-member", \
