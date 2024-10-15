@@ -37,6 +37,8 @@ class DiskUsageMonitor:
     _monitor_task: asyncio.Task | None = None
     _last_usage: dict[Path, DiskUsage] = field(default_factory=dict)
 
+    _incoming_overwrite_usage: dict[str, DiskUsage] = field(default_factory=dict)
+
     async def _publish_disk_usage(self, usage: dict[Path, DiskUsage]):
         await publish_disk_usage(
             self.app, user_id=self.user_id, node_id=self.node_id, usage=usage
@@ -47,6 +49,8 @@ class DiskUsageMonitor:
             *[get_usage(monitored_path) for monitored_path in self.monitored_paths]
         )
 
+        # TODO: take into consideration the usage incoming from the API to overwrite
+        # TODO: also needs to be composed differently only the common parts need to be merged with a common name
         usage: dict[Path, DiskUsage] = dict(
             zip(self.monitored_paths, disk_usages, strict=True)
         )
@@ -65,6 +69,15 @@ class DiskUsageMonitor:
         if self._monitor_task:
             await stop_periodic_task(self._monitor_task)
 
+    async def set_disk_usage_for_path(
+        self, overwrite_usage: dict[str, DiskUsage]
+    ) -> None:
+        """
+        EFS service manages disk quotas since the underlying FS has no support for them.
+        Currently this service is
+        """
+        self._incoming_overwrite_usage = overwrite_usage
+
 
 def _get_monitored_paths(app: FastAPI) -> list[Path]:
     mounted_volumes: MountedVolumes = app.state.mounted_volumes
@@ -72,6 +85,11 @@ def _get_monitored_paths(app: FastAPI) -> list[Path]:
         Path("/"),  # root file system and /tmp usage mainly
         *list(mounted_volumes.all_disk_paths_iter()),
     ]
+
+
+def get_disk_usage_monitor(app: FastAPI) -> DiskUsageMonitor:
+    disk_usage_monitor: DiskUsageMonitor = app.state.disk_usage_monitor
+    return disk_usage_monitor
 
 
 def setup_disk_usage(app: FastAPI) -> None:

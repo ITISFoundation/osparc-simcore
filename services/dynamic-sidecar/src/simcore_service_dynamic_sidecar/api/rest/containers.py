@@ -15,22 +15,22 @@ from models_library.api_schemas_dynamic_sidecar.containers import (
 from pydantic import parse_raw_as
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
-from ..core.docker_utils import docker_client
-from ..core.errors import (
+from ...core.docker_utils import docker_client
+from ...core.errors import (
     ContainerExecCommandFailedError,
     ContainerExecContainerNotFoundError,
     ContainerExecTimeoutError,
 )
-from ..core.settings import ApplicationSettings
-from ..core.validation import (
+from ...core.settings import ApplicationSettings
+from ...core.validation import (
     ComposeSpecValidation,
     parse_compose_spec,
     validate_compose_spec,
 )
-from ..models.schemas.containers import ContainersComposeSpec
-from ..models.shared_store import SharedStore
-from ..modules.container_utils import run_command_in_container
-from ..modules.mounted_fs import MountedVolumes
+from ...models.schemas.containers import ContainersComposeSpec
+from ...models.shared_store import SharedStore
+from ...modules.container_utils import run_command_in_container
+from ...modules.mounted_fs import MountedVolumes
 from ._dependencies import (
     get_container_restart_lock,
     get_mounted_volumes,

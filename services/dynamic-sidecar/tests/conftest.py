@@ -318,6 +318,16 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
             return_value=None,
             autospec=True,
         ),
+        "rpc._rpc_initialize": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQRPCClient._rpc_initialize",
+            return_value=None,
+            autospec=True,
+        ),
+        "rpc.close": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQRPCClient.close",
+            return_value=None,
+            autospec=True,
+        ),
     }
 
 
