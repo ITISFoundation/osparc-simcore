@@ -141,6 +141,7 @@ class LogStreamer:
                 **create_troubleshotting_log_kwargs(
                     user_error_msg,
                     error=exc,
+                    error_code=error_code,
                 )
             )
             yield ErrorGet(errors=[user_error_msg]).json() + _NEW_LINE

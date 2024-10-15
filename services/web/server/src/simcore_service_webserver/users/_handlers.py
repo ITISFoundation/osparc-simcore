@@ -49,13 +49,13 @@ def _handle_users_exceptions(handler: Handler):
         except UserNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
         except MissingGroupExtraPropertiesForProductError as exc:
-            user_error_msg = FMSG_MISSING_CONFIG_WITH_OEC.format(
-                error_code=exc.error_code()
-            )
+            error_code = exc.error_code()
+            user_error_msg = FMSG_MISSING_CONFIG_WITH_OEC.format(error_code=error_code)
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
                     user_error_msg,
                     error=exc,
+                    error_code=error_code,
                     tip="Row in `groups_extra_properties` for this product is missing.",
                 )
             )

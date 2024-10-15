@@ -190,6 +190,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
                 **create_troubleshotting_log_kwargs(
                     user_error_msg,
                     error=err,
+                    error_code=error_code,
                     tip="Failed during email_confirmation",
                 )
             )

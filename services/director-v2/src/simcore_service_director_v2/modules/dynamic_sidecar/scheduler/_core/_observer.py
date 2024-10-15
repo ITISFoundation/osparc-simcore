@@ -140,7 +140,7 @@ async def observing_single_service(
         logger.debug("completed observation cycle of %s", f"{service_name=}")
     except asyncio.CancelledError:  # pylint: disable=try-except-raise
         raise  # pragma: no cover
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as exc:  # pylint: disable=broad-except
         service_name = scheduler_data.service_name
 
         # With unhandled errors, let's generate and ID and send it to the end-user
@@ -150,19 +150,20 @@ async def observing_single_service(
             " Our team has recorded the issue and is working to resolve it as quickly as possible."
             " Thank you for your patience."
         )
+        error_code = create_error_code(exc)
 
         logger.exception(
             **create_troubleshotting_log_kwargs(
                 user_error_msg,
-                error=e,
+                error=exc,
                 error_context={
                     "service_name": service_name,
                     "user_id": scheduler_data.user_id,
                 },
+                error_code=error_code,
                 tip=f"Observation of {service_name=} unexpectedly failed",
             )
         )
-        error_code = create_error_code(e)
         scheduler_data.dynamic_sidecar.status.update_failing_status(
             # This message must be human-friendly
             user_error_msg,
@@ -172,5 +173,5 @@ async def observing_single_service(
         if scheduler_data_copy != scheduler_data:
             try:
                 await update_scheduler_data_label(scheduler_data)
-            except GenericDockerError as e:
-                logger.warning("Skipped labels update, please check:\n %s", f"{e}")
+            except GenericDockerError as exc:
+                logger.warning("Skipped labels update, please check:\n %s", f"{exc}")

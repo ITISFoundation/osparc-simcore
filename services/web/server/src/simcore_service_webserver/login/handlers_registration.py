@@ -273,6 +273,7 @@ async def register(request: web.Request):
                 **create_troubleshotting_log_kwargs(
                     user_error_msg,
                     error=err,
+                    error_code=error_code,
                     error_context={
                         "request": request,
                         "registration": registration,
@@ -414,6 +415,7 @@ async def register_phone(request: web.Request):
             **create_troubleshotting_log_kwargs(
                 user_error_msg,
                 error=err,
+                error_code=error_code,
                 error_context={"request": request, "registration": registration},
                 tip="Phone registration failed",
             )

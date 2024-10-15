@@ -133,6 +133,7 @@ def _handle_errors_with_error_page(handler: Handler):
                 **create_troubleshotting_log_kwargs(
                     user_error_msg,
                     error=err,
+                    error_code=error_code,
                     error_context={"request": request},
                     tip="Unexpected failure while dispatching study",
                 )

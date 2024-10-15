@@ -240,7 +240,7 @@ async def _create_user_email(
         except Exception as exc:  # pylint: disable=broad-exception-caught
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
-                    "Cannot attach invoice to payment",
+                    "Cannot attach invoice to payment. Email sent w/o attached pdf invoice",
                     error=exc,
                     error_context={
                         "user": user,

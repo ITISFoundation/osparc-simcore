@@ -266,6 +266,7 @@ def _handle_errors_with_error_page(handler: Handler):
                 **create_troubleshotting_log_kwargs(
                     user_error_msg,
                     error=err,
+                    error_code=error_code,
                     tip="Unexpected failure while dispatching study",
                 )
             )
@@ -338,6 +339,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
                 **create_troubleshotting_log_kwargs(
                     user_error_msg,
                     error=exc,
+                    error_code=error_code,
                     tip="Failed to create guest user. Responded with 429 Too Many Requests",
                 )
             )
@@ -369,6 +371,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             **create_troubleshotting_log_kwargs(
                 user_error_msg,
                 error=exc,
+                error_code=error_code,
                 error_context={
                     "user_id": user.get("id"),
                     "user": dict(user),

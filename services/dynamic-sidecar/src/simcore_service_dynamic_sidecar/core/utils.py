@@ -114,6 +114,7 @@ async def async_command(
                 user_error_msg,
                 error=err,
                 error_context={"command": command, "proc.returncode": proc.returncode},
+                error_code=error_code,
                 tip="Process with command failed unexpectily",
             )
         )

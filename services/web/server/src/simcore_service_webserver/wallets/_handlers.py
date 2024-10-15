@@ -94,7 +94,11 @@ def handle_wallets_exceptions(handler: Handler):
             user_error_msg = f"{MSG_BILLING_DETAILS_NOT_DEFINED_ERROR} [{error_code}]"
 
             _logger.exception(
-                **create_troubleshotting_log_kwargs(user_error_msg, error=exc)
+                **create_troubleshotting_log_kwargs(
+                    user_error_msg,
+                    error=exc,
+                    error_code=error_code,
+                )
             )
 
             raise web.HTTPServiceUnavailable(reason=user_error_msg) from exc

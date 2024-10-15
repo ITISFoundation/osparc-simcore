@@ -27,7 +27,7 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
 
     log_msg = create_troubleshotting_log_message(
         msg,
-        exc,
+        error=exc,
         error_code=error_code,
         error_context=exc.error_context(),
         tip="This is a test error",
@@ -35,7 +35,8 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
 
     log_kwargs = create_troubleshotting_log_kwargs(
         msg,
-        exc,
+        error=exc,
+        error_code=error_code,
         tip="This is a test error",
     )
 

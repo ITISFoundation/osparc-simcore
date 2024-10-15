@@ -31,11 +31,15 @@ def handle_login_exceptions(handler: Handler):
             return await handler(request)
 
         except (SendingVerificationSmsError, SendingVerificationEmailError) as exc:
-
-            front_end_msg = MSG_2FA_UNAVAILABLE_OEC.format(error_code=exc.error_code())
+            error_code = exc.error_code()
+            front_end_msg = MSG_2FA_UNAVAILABLE_OEC.format(error_code=error_code)
             # in these cases I want to log the cause
             _logger.exception(
-                **create_troubleshotting_log_kwargs(front_end_msg, error=exc)
+                **create_troubleshotting_log_kwargs(
+                    front_end_msg,
+                    error=exc,
+                    error_code=error_code,
+                )
             )
             raise web.HTTPServiceUnavailable(
                 reason=front_end_msg,

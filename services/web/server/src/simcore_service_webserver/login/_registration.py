@@ -222,6 +222,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
             **create_troubleshotting_log_kwargs(
                 user_error_msg,
                 error=err,
+                error_code=error_code,
                 tip="Something went wrong with the invitation",
             )
         )
@@ -238,6 +239,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
             **create_troubleshotting_log_kwargs(
                 user_error_msg,
                 error=err,
+                error_code=error_code,
                 tip="Something went wrong communicating the `invitations` service",
             )
         )
