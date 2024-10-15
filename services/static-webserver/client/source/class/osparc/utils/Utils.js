@@ -92,6 +92,8 @@ qx.Class.define("osparc.utils.Utils", {
     FLOATING_Z_INDEX: 110000,
 
     replaceTokens: function(str, key, value) {
+      // `str` might be a a localized string, get the string first
+      str = str.toString ? str.toString() : str;
       return str.replaceAll("${"+key+"}", value);
     },
 
