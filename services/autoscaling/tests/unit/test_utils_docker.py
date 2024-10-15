@@ -872,7 +872,7 @@ async def test_get_docker_swarm_join_script_returning_unexpected_command_raises(
 
 def test_get_docker_login_on_start_bash_command():
     registry_settings = RegistrySettings(
-        **RegistrySettings.Config.schema_extra["examples"][0]
+        **RegistrySettings.model_config["json_schema_extra"]["examples"][0]
     )
     returned_command = get_docker_login_on_start_bash_command(registry_settings)
     assert (

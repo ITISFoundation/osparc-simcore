@@ -42,7 +42,9 @@ from tenacity import retry, stop_after_delay, wait_fixed
 
 _authentication_types = [
     NoAuthentication(),
-    TLSAuthentication.construct(**TLSAuthentication.Config.schema_extra["examples"][0]),
+    TLSAuthentication.construct(
+        **TLSAuthentication.model_config["json_schema_extra"]["examples"][0]
+    ),
 ]
 
 

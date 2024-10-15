@@ -173,7 +173,7 @@ def app_with_docker_join_drained(
 
 @pytest.fixture(scope="session")
 def fake_ssm_settings() -> SSMSettings:
-    return SSMSettings(**SSMSettings.Config.schema_extra["examples"][0])
+    return SSMSettings(**SSMSettings.model_config["json_schema_extra"]["examples"][0])
 
 
 @pytest.fixture
@@ -236,7 +236,9 @@ def app_environment(
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
+                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
+                            "examples"
+                        ]
                     )
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
@@ -267,7 +269,9 @@ def mocked_ec2_instances_envs(
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.Config.schema_extra["examples"]
+                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
+                            "examples"
+                        ]
                     )
                     | {"ami_id": aws_ami_id}
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
@@ -762,7 +766,7 @@ def host_memory_total() -> ByteSize:
 def osparc_docker_label_keys(
     faker: Faker,
 ) -> StandardSimcoreDockerLabels:
-    return StandardSimcoreDockerLabels.parse_obj(
+    return StandardSimcoreDockerLabels.model_validate(
         {
             "user_id": faker.pyint(),
             "project_id": faker.uuid4(),
