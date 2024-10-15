@@ -54,8 +54,8 @@ def _handle_users_exceptions(handler: Handler):
             )
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
-                    message_to_user=frontend_msg,
-                    exception=exc,
+                    error_user_msg=frontend_msg,
+                    error=exc,
                     tip="Row in `groups_extra_properties` for this product is missing.",
                 )
             )

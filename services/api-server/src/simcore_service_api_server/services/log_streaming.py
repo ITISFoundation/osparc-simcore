@@ -133,15 +133,17 @@ class LogStreamer:
 
         except Exception as exc:  # pylint: disable=W0718
             error_code = create_error_code(exc)
-            error_msg = MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" [{error_code}]"
+            user_error_msg = (
+                MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" [{error_code}]"
+            )
 
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
-                    error_msg,
-                    exception=exc,
+                    user_error_msg,
+                    error=exc,
                 )
             )
-            yield ErrorGet(errors=[error_msg]).json() + _NEW_LINE
+            yield ErrorGet(errors=[user_error_msg]).json() + _NEW_LINE
 
         finally:
             await self._log_distributor.deregister(self._job_id)

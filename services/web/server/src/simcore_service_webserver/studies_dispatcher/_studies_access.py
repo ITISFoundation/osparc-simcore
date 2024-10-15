@@ -259,13 +259,13 @@ def _handle_errors_with_error_page(handler: Handler):
 
         except Exception as err:
             error_code = create_error_code(err)
-            front_end_msg = compose_support_error_msg(
+            user_error_msg = compose_support_error_msg(
                 msg=MSG_UNEXPECTED_ERROR.format(hint=""), error_code=error_code
             )
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
-                    front_end_msg,
-                    exception=err,
+                    user_error_msg,
+                    error=err,
                     tip="Unexpected failure while dispatching study",
                 )
             )
@@ -273,7 +273,7 @@ def _handle_errors_with_error_page(handler: Handler):
             raise create_redirect_to_page_response(
                 request.app,
                 page="error",
-                message=front_end_msg,
+                message=user_error_msg,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ) from err
 
@@ -333,17 +333,17 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             #
             error_code = create_error_code(exc)
 
-            front_end_msg = MSG_TOO_MANY_GUESTS
+            user_error_msg = MSG_TOO_MANY_GUESTS
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
-                    front_end_msg,
-                    exception=exc,
+                    user_error_msg,
+                    error=exc,
                     tip="Failed to create guest user. Responded with 429 Too Many Requests",
                 )
             )
 
             raise RedirectToFrontEndPageError(
-                front_end_msg,
+                user_error_msg,
                 error_code=error_code,
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             ) from exc
@@ -364,11 +364,11 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     except Exception as exc:  # pylint: disable=broad-except
         error_code = create_error_code(exc)
 
-        front_end_msg = MSG_UNEXPECTED_ERROR.format(hint="while copying your study")
+        user_error_msg = MSG_UNEXPECTED_ERROR.format(hint="while copying your study")
         _logger.exception(
             **create_troubleshotting_log_kwargs(
-                front_end_msg,
-                exception=exc,
+                user_error_msg,
+                error=exc,
                 error_context={
                     "user_id": user.get("id"),
                     "user": dict(user),
@@ -381,7 +381,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         )
 
         raise RedirectToFrontEndPageError(
-            front_end_msg,
+            user_error_msg,
             error_code=error_code,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         ) from exc

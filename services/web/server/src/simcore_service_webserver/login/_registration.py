@@ -214,35 +214,35 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
 
     except (ValidationError, InvalidInvitationError) as err:
         error_code = create_error_code(err)
-        front_end_msg = (
+        user_error_msg = (
             f"Invalid invitation. {MSG_INVITATIONS_CONTACT_SUFFIX} [{error_code}]"
         )
 
         _logger.exception(
             **create_troubleshotting_log_kwargs(
-                front_end_msg,
-                exception=err,
+                user_error_msg,
+                error=err,
                 tip="Something went wrong with the invitation",
             )
         )
         raise web.HTTPForbidden(
-            reason=front_end_msg,
+            reason=user_error_msg,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
     except InvitationsServiceUnavailableError as err:
         error_code = create_error_code(err)
-        front_end_msg = f"Unable to process your invitation since the invitations service is currently unavailable [{error_code}]"
+        user_error_msg = f"Unable to process your invitation since the invitations service is currently unavailable [{error_code}]"
 
         _logger.exception(
             **create_troubleshotting_log_kwargs(
-                front_end_msg,
-                exception=err,
+                user_error_msg,
+                error=err,
                 tip="Something went wrong communicating the `invitations` service",
             )
         )
         raise web.HTTPServiceUnavailable(
-            reason=front_end_msg,
+            reason=user_error_msg,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 

@@ -108,11 +108,11 @@ async def async_command(
     except Exception as err:  # pylint: disable=broad-except
 
         error_code = create_error_code(err)
-        error_msg = f"Unexpected error [{error_code}]"
+        user_error_msg = f"Unexpected error [{error_code}]"
         _logger.exception(
             **create_troubleshotting_log_kwargs(
-                error_msg,
-                exception=err,
+                user_error_msg,
+                error=err,
                 error_context={"command": command, "proc.returncode": proc.returncode},
                 tip="Process with command failed unexpectily",
             )
@@ -120,7 +120,7 @@ async def async_command(
 
         return CommandResult(
             success=False,
-            message=error_msg,
+            message=user_error_msg,
             command=f"{command}",
             elapsed=time.time() - start,
         )

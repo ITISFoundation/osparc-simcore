@@ -145,7 +145,7 @@ async def observing_single_service(
 
         # With unhandled errors, let's generate and ID and send it to the end-user
         # so that we can trace the logs and debug the issue.
-        front_end_msg = (
+        user_error_msg = (
             f"This service ({service_name}) unexpectedly failed."
             " Our team has recorded the issue and is working to resolve it as quickly as possible."
             " Thank you for your patience."
@@ -153,8 +153,8 @@ async def observing_single_service(
 
         logger.exception(
             **create_troubleshotting_log_kwargs(
-                front_end_msg,
-                exception=e,
+                user_error_msg,
+                error=e,
                 error_context={
                     "service_name": service_name,
                     "user_id": scheduler_data.user_id,
@@ -165,7 +165,7 @@ async def observing_single_service(
         error_code = create_error_code(e)
         scheduler_data.dynamic_sidecar.status.update_failing_status(
             # This message must be human-friendly
-            front_end_msg,
+            user_error_msg,
             error_code,
         )
     finally:

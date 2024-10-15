@@ -241,7 +241,7 @@ async def _create_user_email(
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
                     "Cannot attach invoice to payment",
-                    exception=exc,
+                    error=exc,
                     error_context={
                         "user": user,
                         "payment": payment,

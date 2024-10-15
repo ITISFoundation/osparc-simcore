@@ -91,13 +91,13 @@ def handle_wallets_exceptions(handler: Handler):
         except BillingDetailsNotFoundError as exc:
 
             error_code = create_error_code(exc)
-            user_msg = f"{MSG_BILLING_DETAILS_NOT_DEFINED_ERROR} [{error_code}]"
+            user_error_msg = f"{MSG_BILLING_DETAILS_NOT_DEFINED_ERROR} [{error_code}]"
 
             _logger.exception(
-                **create_troubleshotting_log_kwargs(user_msg, exception=exc)
+                **create_troubleshotting_log_kwargs(user_error_msg, error=exc)
             )
 
-            raise web.HTTPServiceUnavailable(reason=user_msg) from exc
+            raise web.HTTPServiceUnavailable(reason=user_error_msg) from exc
 
     return wrapper
 

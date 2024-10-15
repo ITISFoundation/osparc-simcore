@@ -70,8 +70,8 @@ def error_middleware_factory(
         )
         _logger.exception(
             **create_troubleshotting_log_kwargs(
-                message_to_user=frontend_msg,
-                exception=err,
+                error_user_msg=frontend_msg,
+                error=err,
                 error_context=error_context,
             )
         )

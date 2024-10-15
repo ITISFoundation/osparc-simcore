@@ -267,19 +267,26 @@ async def register(request: web.Request):
             )
         except Exception as err:  # pylint: disable=broad-except
             error_code = create_error_code(err)
+            user_error_msg = f"{MSG_CANT_SEND_MAIL} [{error_code}]"
+
             _logger.exception(
-                "Failed while sending confirmation email to %s, %s [%s]",
-                f"{user=}",
-                f"{_confirmation=}",
-                f"{error_code}",
-                extra={"error_code": error_code},
+                **create_troubleshotting_log_kwargs(
+                    user_error_msg,
+                    error=err,
+                    error_context={
+                        "request": request,
+                        "registration": registration,
+                        "user_id": user.get("id"),
+                        "user": user,
+                        "confirmation": _confirmation,
+                    },
+                    tip="Failed while sending confirmation email",
+                )
             )
 
             await db.delete_confirmation_and_user(user, _confirmation)
 
-            raise web.HTTPServiceUnavailable(
-                reason=f"{MSG_CANT_SEND_MAIL} [{error_code}]"
-            ) from err
+            raise web.HTTPServiceUnavailable(reason=user_error_msg) from err
 
         return flash_response(
             "You are registered successfully! To activate your account, please, "
@@ -401,18 +408,18 @@ async def register_phone(request: web.Request):
     except Exception as err:  # pylint: disable=broad-except
         # Unhandled errors -> 503
         error_code = create_error_code(err)
-        user_msg = f"Currently we cannot register phone numbers [{error_code}]"
+        user_error_msg = f"Currently we cannot register phone numbers [{error_code}]"
 
         _logger.exception(
             **create_troubleshotting_log_kwargs(
-                user_msg,
-                exception=err,
+                user_error_msg,
+                error=err,
                 error_context={"request": request, "registration": registration},
                 tip="Phone registration failed",
             )
         )
 
         raise web.HTTPServiceUnavailable(
-            reason=user_msg,
+            reason=user_error_msg,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err

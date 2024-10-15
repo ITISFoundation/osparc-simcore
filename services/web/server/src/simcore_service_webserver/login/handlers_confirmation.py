@@ -180,7 +180,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
         except Exception as err:  # pylint: disable=broad-except
             error_code = create_error_code(err)
-            front_end_msg = (
+            user_error_msg = (
                 f"Sorry, we cannot confirm your {action}."
                 "Please try again in a few moments. "
                 f"If the problem persist please contact support attaching this code ({error_code})"
@@ -188,8 +188,8 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
-                    front_end_msg,
-                    exception=err,
+                    user_error_msg,
+                    error=err,
                     tip="Failed during email_confirmation",
                 )
             )
@@ -197,7 +197,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
             raise create_redirect_to_page_response(
                 request.app,
                 page="error",
-                message=front_end_msg,
+                message=user_error_msg,
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             ) from err
 

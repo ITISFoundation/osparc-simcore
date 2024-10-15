@@ -35,7 +35,7 @@ def handle_login_exceptions(handler: Handler):
             front_end_msg = MSG_2FA_UNAVAILABLE_OEC.format(error_code=exc.error_code())
             # in these cases I want to log the cause
             _logger.exception(
-                **create_troubleshotting_log_kwargs(front_end_msg, exception=exc)
+                **create_troubleshotting_log_kwargs(front_end_msg, error=exc)
             )
             raise web.HTTPServiceUnavailable(
                 reason=front_end_msg,
