@@ -57,11 +57,11 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     getDownloadingAtom: function() {
-      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/download/12");
+      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/cloud-download-alt/12");
     },
 
     getUploadingAtom: function() {
-      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/upload/12");
+      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/cloud-upload-alt/12");
     },
 
     getFailedAtom: function() {
