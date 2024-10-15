@@ -466,29 +466,49 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
-      if (node.getPropForm()) {
+      const propsForm = node.getPropsForm();
+      if (propsForm) {
         const portId = socketData["port_key"];
         const status = socketData["status"];
         switch (status) {
           case "DOWNLOAD_STARTED":
-            node.getPropForm().retrievingPortData(
+            propsForm.retrievingPortData(
               portId,
               osparc.form.renderer.PropForm.RETRIEVE_STATUS.downloading);
             break;
-          case "UPLOAD_STARTED":
-            node.getPropForm().retrievingPortData(
-              portId,
-              osparc.form.renderer.PropForm.RETRIEVE_STATUS.uploading);
-            break;
           case "DOWNLOAD_FINISHED_SUCCESSFULLY":
-          case "UPLOAD_FINISHED_SUCCESSFULLY":
-            node.getPropForm().retrievedPortData(portId, true);
+            propsForm.retrievedPortData(portId, true);
             break;
           case "DOWNLOAD_WAS_ABORTED":
-          case "DOWNLOAD_FINISHED_WITH_ERRROR":
+          case "DOWNLOAD_FINISHED_WITH_ERROR":
+            propsForm.retrievedPortData(portId, false);
+            break;
+        }
+      }
+
+      const outputsForm = node.getOutputsForm();
+      if (outputsForm) {
+        const portId = socketData["port_key"];
+        const status = socketData["status"];
+        switch (status) {
+          case "UPLOAD_STARTED":
+            outputsForm.setRetrievingStatus(
+              portId,
+              osparc.form.renderer.PropForm.RETRIEVE_STATUS.uploading
+            );
+            break;
+          case "UPLOAD_FINISHED_SUCCESSFULLY":
+            outputsForm.setRetrievingStatus(
+              portId,
+              osparc.form.renderer.PropForm.RETRIEVE_STATUS.succeed
+            );
+            break;
           case "UPLOAD_WAS_ABORTED":
-          case "UPLOAD_FINISHED_WITH_ERRROR":
-            node.getPropForm().retrievedPortData(portId, false);
+          case "UPLOAD_FINISHED_WITH_ERROR":
+            outputsForm.setRetrievingStatus(
+              portId,
+              osparc.form.renderer.PropForm.RETRIEVE_STATUS.failed
+            );
             break;
         }
       }

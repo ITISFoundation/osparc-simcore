@@ -229,14 +229,13 @@ qx.Class.define("osparc.widget.NodeOutputs", {
     setRetrievingStatus: function(portId, status) {
       const ports = this.getPorts();
       const portKeys = Object.keys(ports);
-      const idx = portKeys.findIndex(portId);
+      const idx = portKeys.indexOf(portId);
       if (idx === -1) {
         return;
       }
 
-      const icon = osparc.form.renderer.PropForm.getIconForStatus(status);
       // remove first if any
-      let children = this._getChildren();
+      let children = this.__gridLayout.getChildren();
       for (let i=0; i<children.length; i++) {
         let child = children[i];
         const layoutProps = child.getLayoutProperties();
@@ -244,11 +243,13 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           layoutProps.row === idx &&
           layoutProps.column === this.self().POS.RETRIEVE_STATUS
         ) {
-          this._remove(child);
+          this.__gridLayout.remove(child);
+          break;
         }
       }
-      this._addAt(icon, idx, {
-        idx,
+      const icon = osparc.form.renderer.PropForm.getIconForStatus(status);
+      this.__gridLayout.add(icon, {
+        row: idx,
         column: this.self().POS.RETRIEVE_STATUS
       });
     }
