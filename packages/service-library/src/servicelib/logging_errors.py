@@ -28,6 +28,7 @@ def create_troubleshotting_log_message(
     """
     debug_data = pformat(
         {
+            "exception_type": f"{type(exception)}",
             "exception_details": f"{exception}",
             "error_code": error_code,
             "context": pformat(error_context, indent=1),
