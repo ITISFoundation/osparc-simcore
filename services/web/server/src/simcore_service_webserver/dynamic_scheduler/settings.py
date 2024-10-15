@@ -1,7 +1,7 @@
 from typing import Final
 
 from aiohttp import web
-from pydantic import Field, NonNegativeInt
+from pydantic import AliasChoices, Field, NonNegativeInt
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings
 
@@ -23,10 +23,10 @@ class DynamicSchedulerSettings(BaseCustomSettings, MixinServiceSettings):
             "- director-v* requests save_state and uses a 01:00:00 timeout"
             "The +10 seconds is used to make sure the director replies"
         ),
-        envs=[
+        validation_alias=AliasChoices(
             "DIRECTOR_V2_STOP_SERVICE_TIMEOUT",
             "DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT",
-        ],
+        ),
     )
 
 

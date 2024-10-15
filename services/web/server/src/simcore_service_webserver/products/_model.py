@@ -78,7 +78,7 @@ class Product(BaseModel):
     )
 
     registration_email_template: str | None = Field(
-        None, x_template_name="registration_email"
+        None, json_schema_extra={"x_template_name": "registration_email"}
     )
 
     max_open_studies_per_user: PositiveInt | None = Field(
@@ -235,7 +235,7 @@ class Product(BaseModel):
 
         # SECURITY WARNING: do not expose sensitive information here
         # keys will be named as e.g. displayName, supportEmail, ...
-        return self.dict(
+        return self.model_dump(
             include={
                 "display_name": True,
                 "support_email": True,
@@ -254,8 +254,8 @@ class Product(BaseModel):
     def get_template_name_for(self, filename: str) -> str | None:
         """Checks for field marked with 'x_template_name' that fits the argument"""
         template_name = filename.removesuffix(".jinja2")
-        for field in self.__fields__.values():
-            if field.field_info.extra.get("x_template_name") == template_name:
-                template_name_attribute: str = getattr(self, field.name)
+        for name, field in self.model_fields.items():
+            if field.json_schema_extra.get("x_template_name") == template_name:
+                template_name_attribute: str = getattr(self, name)
                 return template_name_attribute
         return None
