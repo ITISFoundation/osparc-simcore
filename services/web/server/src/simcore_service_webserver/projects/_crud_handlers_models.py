@@ -19,12 +19,11 @@ from models_library.utils.common_validators import (
 from models_library.workspaces import WorkspaceID
 from pydantic import (
     BaseModel,
-    Extra,
+    ConfigDict,
     Field,
     Json,
-    parse_obj_as,
-    root_validator,
-    validator,
+    field_validator,
+    model_validator,
 )
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -56,7 +55,7 @@ class ProjectCreateHeaders(BaseModel):
         alias=X_SIMCORE_PARENT_NODE_ID,
     )
 
-    @root_validator
+    @model_validator(mode="before")
     @classmethod
     def check_parent_valid(cls, values: dict[str, Any]) -> dict[str, Any]:
         if (
@@ -70,8 +69,7 @@ class ProjectCreateHeaders(BaseModel):
             raise ValueError(msg)
         return values
 
-    class Config:
-        allow_population_by_field_name = False
+    model_config = ConfigDict(populate_by_name=False)
 
 
 class ProjectCreateParams(BaseModel):
@@ -91,9 +89,7 @@ class ProjectCreateParams(BaseModel):
         default=False,
         description="Enables/disables hidden flag. Hidden projects are by default unlisted",
     )
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class ProjectListParams(PageQueryParameters):
@@ -105,30 +101,32 @@ class ProjectListParams(PageQueryParameters):
         default=None,
         description="Multi column full text search",
         max_length=100,
-        example="My Project",
+        examples=["My Project"],
     )
     folder_id: FolderID | None = Field(
         default=None,
         description="Filter projects in specific folder. Default filtering is a root directory.",
+        validate_default=True,
     )
     workspace_id: WorkspaceID | None = Field(
         default=None,
         description="Filter projects in specific workspace. Default filtering is a private workspace.",
+        validate_default=True,
     )
 
-    @validator("search", pre=True)
+    @field_validator("search", mode="before")
     @classmethod
     def search_check_empty_string(cls, v):
         if not v:
             return None
         return v
 
-    _null_or_none_str_to_none_validator = validator(
-        "folder_id", allow_reuse=True, pre=True
-    )(null_or_none_str_to_none_validator)
+    _null_or_none_str_to_none_validator = field_validator("folder_id", mode="before")(
+        null_or_none_str_to_none_validator
+    )
 
-    _null_or_none_str_to_none_validator2 = validator(
-        "workspace_id", allow_reuse=True, pre=True
+    _null_or_none_str_to_none_validator2 = field_validator(
+        "workspace_id", mode="before"
     )(null_or_none_str_to_none_validator)
 
 
@@ -136,11 +134,12 @@ class ProjectListWithOrderByParams(BaseModel):
     order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
         default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
-        example='{"field": "prj_owner", "direction": "desc"}',
+        examples=['{"field": "prj_owner", "direction": "desc"}'],
         alias="order_by",
     )
 
-    @validator("order_by", check_fields=False)
+    @field_validator("order_by", check_fields=False)
+    @classmethod
     @classmethod
     def validate_order_by_field(cls, v):
         if v.field not in {
@@ -156,8 +155,7 @@ class ProjectListWithOrderByParams(BaseModel):
             raise ValueError(msg)
         return v
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class ProjectListWithJsonStrParams(ProjectListParams, ProjectListWithOrderByParams):

@@ -66,7 +66,7 @@ def fake_osparc_invitation(
     Emulates an invitation for osparc product
     """
     oas = deepcopy(invitations_service_openapi_specs)
-    content = ApiInvitationContent.parse_obj(
+    content = ApiInvitationContent.model_validate(
         oas["components"]["schemas"]["ApiInvitationContent"]["example"]
     )
     content.product = "osparc"
@@ -150,7 +150,7 @@ def mock_invitations_service_http_api(
         return CallbackResult(
             status=status.HTTP_200_OK,
             payload=jsonable_encoder(
-                ApiInvitationContentAndLink.parse_obj(
+                ApiInvitationContentAndLink.model_validate(
                     {
                         **example,
                         **body,

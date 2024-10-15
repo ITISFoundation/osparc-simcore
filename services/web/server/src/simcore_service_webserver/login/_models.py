@@ -1,15 +1,12 @@
 from typing import Any, Callable
 
-from pydantic import BaseModel, Extra, SecretStr
+from pydantic import BaseModel, ConfigDict, SecretStr
 
 from ._constants import MSG_PASSWORD_MISMATCH
 
 
 class InputSchema(BaseModel):
-    class Config:
-        allow_population_by_field_name = False
-        extra = Extra.forbid
-        allow_mutations = False
+    model_config = ConfigDict(populate_by_name=False, extra="forbid", frozen=True)
 
 
 def create_password_match_validator(

@@ -2,7 +2,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from models_library.wallets import WalletID, WalletInfo
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from ..application_settings import get_application_settings
 from ..products.api import Product
@@ -35,7 +35,9 @@ async def get_wallet_info(
         )
         if user_default_wallet_preference is None:
             raise UserDefaultWalletNotFoundError(uid=user_id)
-        project_wallet_id = parse_obj_as(WalletID, user_default_wallet_preference.value)
+        project_wallet_id = TypeAdapter(WalletID).validate_python(
+            user_default_wallet_preference.value
+        )
         await projects_api.connect_wallet_to_project(
             app,
             product_name=product_name,

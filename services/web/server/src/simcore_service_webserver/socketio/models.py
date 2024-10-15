@@ -12,23 +12,24 @@ from models_library.rabbitmq_messages import (
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class WebSocketMessageBase(BaseModel):
-    event_type: str = Field(..., const=True)
+    event_type: Literal[...] = ...
 
     @classmethod
     def get_event_type(cls) -> str:
-        _event_type: str = cls.__fields__["event_type"].default
+        _event_type: str = cls.model_fields["event_type"].default
         return _event_type
 
     @abstractmethod
     def to_socket_dict(self) -> SocketMessageDict:
         ...
 
-    class Config:
-        frozen = True
+    model_config = ConfigDict(
+        frozen=True,
+    )
 
 
 class _WebSocketProjectMixin(BaseModel):

@@ -1,6 +1,6 @@
 import logging
 from decimal import Decimal
-from typing import Any, cast
+from typing import Any
 from uuid import uuid4
 
 import arrow
@@ -15,7 +15,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -62,7 +62,7 @@ def _to_api_model(
     if transaction.invoice_url:
         data["invoice_url"] = transaction.invoice_url
 
-    return PaymentTransaction.parse_obj(data)
+    return PaymentTransaction.model_validate(data)
 
 
 @log_decorator(_logger, level=logging.INFO)
@@ -81,7 +81,7 @@ async def _fake_init_payment(
     # get_form_payment_url
     settings: PaymentsSettings = get_plugin_settings(app)
     external_form_link = (
-        URL(settings.PAYMENTS_FAKE_GATEWAY_URL)
+        URL(f"{settings.PAYMENTS_FAKE_GATEWAY_URL}")
         .with_path("/pay")
         .with_query(id=payment_id)
     )
@@ -235,8 +235,8 @@ async def _fake_get_payment_invoice_url(
     assert user_id  # nosec
     assert wallet_id  # nosec
 
-    return cast(
-        HttpUrl, parse_obj_as(HttpUrl, f"https://fake-invoice.com/?id={payment_id}")
+    return TypeAdapter(HttpUrl).validate_python(
+        f"https://fake-invoice.com/?id={payment_id}",
     )
 
 

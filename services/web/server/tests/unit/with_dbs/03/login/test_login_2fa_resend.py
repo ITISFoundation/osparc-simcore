@@ -6,7 +6,7 @@
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -106,7 +106,7 @@ async def test_resend_2fa_workflow(
         },
     )
     data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
-    next_page = parse_obj_as(NextPage[CodePageParams], data)
+    next_page = TypeAdapter(NextPage[CodePageParams]).validate_python(data)
     assert next_page.name == CODE_2FA_SMS_CODE_REQUIRED
     assert next_page.parameters.expiration_2fa > 0
 

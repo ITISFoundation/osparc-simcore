@@ -6,7 +6,7 @@ from aiopg.sa import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.groups import GroupAtDB
 from models_library.users import GroupID, UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_postgres_database.utils_products import get_or_create_product_group
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
@@ -117,7 +117,7 @@ async def get_all_user_groups(conn: SAConnection, user_id: UserID) -> list[Group
         .where(user_to_groups.c.uid == user_id)
     )
     rows = await result.fetchall() or []
-    return [parse_obj_as(GroupAtDB, row) for row in rows]
+    return [TypeAdapter(GroupAtDB).validate_python(row) for row in rows]
 
 
 async def get_user_group(

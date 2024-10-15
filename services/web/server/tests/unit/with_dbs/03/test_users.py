@@ -82,12 +82,12 @@ async def test_get_profile(
     data, error = await assert_status(resp, expected)
 
     # check enveloped
-    e = Envelope[ProfileGet].parse_obj(await resp.json())
+    e = Envelope[ProfileGet].model_validate(await resp.json())
     assert e.error == error
     assert e.data.dict(**RESPONSE_MODEL_POLICY) == data if e.data else e.data == data
 
     if not error:
-        profile = ProfileGet.parse_obj(data)
+        profile = ProfileGet.model_validate(data)
 
         product_group = {
             "accessRights": {"delete": False, "read": False, "write": False},
@@ -250,7 +250,9 @@ def account_request_form(faker: Faker) -> dict[str, Any]:
     }
 
     # keeps in sync fields from example and this fixture
-    assert set(form) == set(AccountRequestInfo.Config.schema_extra["example"]["form"])
+    assert set(form) == set(
+        AccountRequestInfo.model_config["json_schema_extra"]["example"]["form"]
+    )
     return form
 
 

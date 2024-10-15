@@ -52,7 +52,7 @@ async def _get_user_notifications(
     # Filter by product
     included = [product_name, "UNDEFINED"]
     filtered_notifications = [n for n in notifications if n["product"] in included]
-    return [UserNotification.parse_obj(x) for x in filtered_notifications]
+    return [UserNotification.model_validate(x) for x in filtered_notifications]
 
 
 @routes.get(f"/{API_VTAG}/me/notifications", name="list_user_notifications")
@@ -60,7 +60,7 @@ async def _get_user_notifications(
 @permission_required("user.notifications.read")
 async def list_user_notifications(request: web.Request) -> web.Response:
     redis_client = get_redis_user_notifications_client(request.app)
-    req_ctx = UsersRequestContext.parse_obj(request)
+    req_ctx = UsersRequestContext.model_validate(request)
     product_name = get_product_name(request)
     notifications = await _get_user_notifications(
         redis_client, req_ctx.user_id, product_name
@@ -99,7 +99,7 @@ class _NotificationPathParams(BaseModel):
 @permission_required("user.notifications.update")
 async def mark_notification_as_read(request: web.Request) -> web.Response:
     redis_client = get_redis_user_notifications_client(request.app)
-    req_ctx = UsersRequestContext.parse_obj(request)
+    req_ctx = UsersRequestContext.model_validate(request)
     req_path_params = parse_request_path_parameters_as(_NotificationPathParams, request)
     body = await parse_request_body_as(UserNotificationPatch, request)
 
@@ -124,7 +124,7 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
 @login_required
 @permission_required("user.permissions.read")
 async def list_user_permissions(request: web.Request) -> web.Response:
-    req_ctx = UsersRequestContext.parse_obj(request)
+    req_ctx = UsersRequestContext.model_validate(request)
     list_permissions: list[Permission] = await _api.list_user_permissions(
         request.app, req_ctx.user_id, req_ctx.product_name
     )

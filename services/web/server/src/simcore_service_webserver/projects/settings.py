@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from aiohttp import web
-from pydantic import ByteSize, Field, NonNegativeInt, parse_obj_as
+from pydantic import ByteSize, Field, NonNegativeInt, TypeAdapter
 from settings_library.base import BaseCustomSettings
 
 from .._constants import APP_SETTINGS_KEY
@@ -9,7 +9,7 @@ from .._constants import APP_SETTINGS_KEY
 
 class ProjectsSettings(BaseCustomSettings):
     PROJECTS_MAX_COPY_SIZE_BYTES: ByteSize = Field(
-        parse_obj_as(ByteSize, "30Gib"),
+        TypeAdapter(ByteSize).validate_python("30Gib"),
         description="defines the maximum authorized project data size"
         " when copying a project (disable with 0)",
     )

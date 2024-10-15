@@ -64,7 +64,7 @@ async def create_cached_indexes(app: web.Application) -> None:
     session: ClientSession = get_client_session(app)
 
     for frontend_name in FRONTEND_APPS_AVAILABLE:
-        url = URL(settings.STATIC_WEBSERVER_URL) / frontend_name
+        url = URL(f"{settings.STATIC_WEBSERVER_URL}") / frontend_name
         _logger.info("Fetching index from %s", url)
         try:
             body = ""

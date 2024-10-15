@@ -8,12 +8,13 @@ import os
 import sys
 import traceback
 import tracemalloc
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, TypedDict
 
 import orjson
 from models_library.basic_types import SHA1Str
+from pydantic import TypeAdapter
 from servicelib.error_codes import ErrorCodeStr
 
 _CURRENT_DIR = (
@@ -64,7 +65,7 @@ DAY: int = 24 * HOUR  # sec
 
 
 def now() -> datetime:
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 def format_datetime(snapshot: datetime) -> str:
@@ -190,4 +191,6 @@ def compute_sha1_on_small_dataset(d: Any) -> SHA1Str:
     """
     # SEE options in https://github.com/ijl/orjson#option
     data_bytes = orjson.dumps(d, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS)
-    return cast(SHA1Str, hashlib.sha1(data_bytes).hexdigest())  # nosec
+    return TypeAdapter(SHA1Str).validate_python(
+        hashlib.sha1(data_bytes).hexdigest()
+    )  # nosec

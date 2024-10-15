@@ -20,7 +20,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize, HttpUrl, parse_obj_as
+from pydantic import ByteSize, HttpUrl, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.client import (
     LRTask,
@@ -56,7 +56,7 @@ async def get_storage_locations(
     locations_url = (api_endpoint / "locations").with_query(user_id=user_id)
     async with session.get(f"{locations_url}") as response:
         response.raise_for_status()
-        locations_enveloped = Envelope[FileLocationArray].parse_obj(
+        locations_enveloped = Envelope[FileLocationArray].model_validate(
             await response.json()
         )
         assert locations_enveloped.data  # nosec
@@ -89,15 +89,15 @@ async def get_project_total_size_simcore_s3(
             ).with_query(user_id=user_id, project_id=f"{project_uuid}")
             async with session.get(f"{files_metadata_url}") as response:
                 response.raise_for_status()
-                list_of_files_enveloped = Envelope[list[FileMetaDataGet]].parse_obj(
-                    await response.json()
-                )
+                list_of_files_enveloped = Envelope[
+                    list[FileMetaDataGet]
+                ].model_validate(await response.json())
                 assert list_of_files_enveloped.data is not None  # nosec
             project_size_bytes += sum(
                 file_metadata.file_size
                 for file_metadata in list_of_files_enveloped.data
             )
-        return parse_obj_as(ByteSize, project_size_bytes)
+        return TypeAdapter(ByteSize).validate_python(project_size_bytes)
 
 
 async def copy_data_folders_from_project(
@@ -204,10 +204,10 @@ async def get_download_link(
     async with session.get(f"{url}") as response:
         response.raise_for_status()
         download: PresignedLink | None = (
-            Envelope[PresignedLink].parse_obj(await response.json()).data
+            Envelope[PresignedLink].model_validate(await response.json()).data
         )
         assert download is not None  # nosec
-        link: HttpUrl = parse_obj_as(HttpUrl, download.link)
+        link: HttpUrl = TypeAdapter(HttpUrl).validate_python(download.link)
         return link
 
 
@@ -227,7 +227,7 @@ async def get_files_in_node_folder(
 
     async with session.get(f"{files_metadata_url}") as response:
         response.raise_for_status()
-        list_of_files_enveloped = Envelope[list[FileMetaDataGet]].parse_obj(
+        list_of_files_enveloped = Envelope[list[FileMetaDataGet]].model_validate(
             await response.json()
         )
         assert list_of_files_enveloped.data is not None  # nosec

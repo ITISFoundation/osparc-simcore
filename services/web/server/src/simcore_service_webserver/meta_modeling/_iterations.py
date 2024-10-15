@@ -156,7 +156,7 @@ class ProjectIteration(BaseModel):
     ) -> Optional["ProjectIteration"]:
         """Parses iteration info from tag name"""
         try:
-            return cls.parse_obj(parse_iteration_tag_name(tag_name))
+            return cls.model_validate(parse_iteration_tag_name(tag_name))
         except ValidationError as err:
             if return_none_if_fails:
                 _logger.debug("%s", f"{err=}")
@@ -218,7 +218,7 @@ async def get_or_create_runnable_projects(
         raise web.HTTPForbidden(reason="Unauthenticated request") from err
 
     project_nodes: dict[NodeID, Node] = {
-        nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
+        nid: Node.model_validate(n) for nid, n in project["workbench"].items()
     }
 
     # init returns
@@ -326,7 +326,7 @@ async def get_runnable_projects_ids(
     project: ProjectDict = await vc_repo.get_project(str(project_uuid))
     assert project["uuid"] == str(project_uuid)  # nosec
     project_nodes: dict[NodeID, Node] = {
-        nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
+        nid: Node.model_validate(n) for nid, n in project["workbench"].items()
     }
 
     # init returns

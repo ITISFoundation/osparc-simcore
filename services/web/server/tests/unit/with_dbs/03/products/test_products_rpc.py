@@ -10,7 +10,7 @@ import pytest
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.products import CreditResultGet, ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -70,26 +70,26 @@ async def test_get_credit_amount(
 ):
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_credit_amount"),
+        TypeAdapter(RPCMethodName).validate_python("get_credit_amount"),
         dollar_amount=Decimal(900),
         product_name="s4l",
     )
-    credit_result = parse_obj_as(CreditResultGet, result)
+    credit_result = TypeAdapter(CreditResultGet).validate_python(result)
     assert credit_result.credit_amount == 100
 
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_credit_amount"),
+        TypeAdapter(RPCMethodName).validate_python("get_credit_amount"),
         dollar_amount=Decimal(900),
         product_name="tis",
     )
-    credit_result = parse_obj_as(CreditResultGet, result)
+    credit_result = TypeAdapter(CreditResultGet).validate_python(result)
     assert credit_result.credit_amount == 180
 
     with pytest.raises(RPCServerError) as exc_info:
         await rpc_client.request(
             WEBSERVER_RPC_NAMESPACE,
-            parse_obj_as(RPCMethodName, "get_credit_amount"),
+            TypeAdapter(RPCMethodName).validate_python("get_credit_amount"),
             dollar_amount=Decimal(900),
             product_name="osparc",
         )

@@ -79,7 +79,7 @@ def _handle_users_exceptions(handler: Handler):
 @login_required
 @_handle_users_exceptions
 async def get_my_profile(request: web.Request) -> web.Response:
-    req_ctx = UsersRequestContext.parse_obj(request)
+    req_ctx = UsersRequestContext.model_validate(request)
     profile: ProfileGet = await api.get_user_profile(
         request.app, req_ctx.user_id, req_ctx.product_name
     )
@@ -91,7 +91,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
 @permission_required("user.profile.update")
 @_handle_users_exceptions
 async def update_my_profile(request: web.Request) -> web.Response:
-    req_ctx = UsersRequestContext.parse_obj(request)
+    req_ctx = UsersRequestContext.model_validate(request)
     profile_update = await parse_request_body_as(ProfileUpdate, request)
     await api.update_user_profile(
         request.app, req_ctx.user_id, profile_update, as_patch=False
@@ -116,7 +116,7 @@ _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 @permission_required("user.users.*")
 @_handle_users_exceptions
 async def search_users(request: web.Request) -> web.Response:
-    req_ctx = UsersRequestContext.parse_obj(request)
+    req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
     query_params: _SearchQueryParams = parse_request_query_parameters_as(
@@ -137,7 +137,7 @@ async def search_users(request: web.Request) -> web.Response:
 @permission_required("user.users.*")
 @_handle_users_exceptions
 async def pre_register_user(request: web.Request) -> web.Response:
-    req_ctx = UsersRequestContext.parse_obj(request)
+    req_ctx = UsersRequestContext.model_validate(request)
     pre_user_profile = await parse_request_body_as(PreUserProfile, request)
 
     try:

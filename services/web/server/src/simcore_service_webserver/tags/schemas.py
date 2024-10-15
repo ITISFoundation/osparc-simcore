@@ -1,10 +1,11 @@
 import re
 from datetime import datetime
+from typing import Annotated, TypeAlias
 
 from common_library.pydantic_basic_types import ConstrainedStr
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.users import GroupID, UserID
-from pydantic import Field, PositiveInt
+from pydantic import Field, PositiveInt, StringConstraints
 from servicelib.aiohttp.requests_validation import RequestParams, StrictRequestParams
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_tags import TagDict
@@ -18,8 +19,9 @@ class TagPathParams(StrictRequestParams):
     tag_id: PositiveInt
 
 
-class ColorStr(ConstrainedStr):
-    regex = re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$")
+ColorStr: TypeAlias = Annotated[
+    str, StringConstraints(pattern=re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"))
+]
 
 
 class TagUpdate(InputSchema):

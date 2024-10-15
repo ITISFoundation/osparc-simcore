@@ -8,7 +8,7 @@ import logging
 from aiohttp import web
 from models_library.users import GroupID, UserID
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, ConfigDict, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -60,18 +60,18 @@ routes = web.RouteTableDef()
 class _WorkspacesGroupsPathParams(BaseModel):
     workspace_id: WorkspaceID
     group_id: GroupID
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
 
 class _WorkspacesGroupsBodyParams(BaseModel):
     read: bool
     write: bool
     delete: bool
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
 
 @routes.post(
@@ -82,7 +82,7 @@ class _WorkspacesGroupsBodyParams(BaseModel):
 @permission_required("workspaces.*")
 @_handle_workspaces_groups_exceptions
 async def create_workspace_group(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_WorkspacesGroupsPathParams, request)
     body_params = await parse_request_body_as(_WorkspacesGroupsBodyParams, request)
 
@@ -105,7 +105,7 @@ async def create_workspace_group(request: web.Request):
 @permission_required("workspaces.*")
 @_handle_workspaces_groups_exceptions
 async def list_workspace_groups(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
     workspaces: list[
@@ -128,7 +128,7 @@ async def list_workspace_groups(request: web.Request):
 @permission_required("workspaces.*")
 @_handle_workspaces_groups_exceptions
 async def replace_workspace_group(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_WorkspacesGroupsPathParams, request)
     body_params = await parse_request_body_as(_WorkspacesGroupsBodyParams, request)
 
@@ -152,7 +152,7 @@ async def replace_workspace_group(request: web.Request):
 @permission_required("workspaces.*")
 @_handle_workspaces_groups_exceptions
 async def delete_workspace_group(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_WorkspacesGroupsPathParams, request)
 
     await _groups_api.delete_workspace_group(

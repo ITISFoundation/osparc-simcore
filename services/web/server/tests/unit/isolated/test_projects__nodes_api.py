@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 from models_library.api_schemas_storage import FileMetaDataGet
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_service_webserver.projects._nodes_api import (
     _SUPPORTED_PREVIEW_FILE_EXTENSIONS,
     _FileWithThumbnail,
@@ -17,8 +17,7 @@ _UTC_NOW = datetime.datetime.now(tz=datetime.timezone.utc)
 
 def _c(file_name: str) -> FileMetaDataGet:
     """simple converter utility"""
-    return parse_obj_as(
-        FileMetaDataGet,
+    return TypeAdapter(FileMetaDataGet).validate_python(
         {
             "file_uuid": f"{_PROJECT_ID}/{_NODE_ID}/{file_name}",
             "location_id": 0,

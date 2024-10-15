@@ -326,7 +326,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                 data, error = await assert_status(result, status.HTTP_200_OK)
                 assert data
                 assert not error
-                task_status = TaskStatus.parse_obj(data)
+                task_status = TaskStatus.model_validate(data)
                 assert task_status
                 print(f"<-- status: {task_status.json(indent=2)}")
                 assert task_status.done, "task incomplete"

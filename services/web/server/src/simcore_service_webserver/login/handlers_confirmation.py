@@ -11,8 +11,8 @@ from pydantic import (
     Field,
     PositiveInt,
     SecretStr,
+    TypeAdapter,
     ValidationError,
-    parse_obj_as,
     validator,
 )
 from servicelib.aiohttp import status
@@ -109,7 +109,11 @@ async def _handle_confirm_change_email(
     # update and consume confirmation token
     await db.delete_confirmation_and_update_user(
         user_id=user_id,
-        updates={"email": parse_obj_as(LowerCaseEmailStr, confirmation["data"])},
+        updates={
+            "email": TypeAdapter(LowerCaseEmailStr).validate_python(
+                confirmation["data"]
+            )
+        },
         confirmation=confirmation,
     )
 
