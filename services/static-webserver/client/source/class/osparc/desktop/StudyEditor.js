@@ -419,42 +419,57 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const socket = osparc.wrapper.WebSocket.getInstance();
       if (!socket.slotExists("stateInputPorts")) {
         socket.on("stateInputPorts", data => {
-          const studyId = data["project_id"];
-          if (this.getStudy().getUuid() !== studyId) {
-            return;
-          }
-
-          const nodeId = data["node_id"];
-          const workbench = this.getStudy().getWorkbench();
-          const node = workbench.getNode(nodeId);
-          if (!node) {
-            if (osparc.data.Permissions.getInstance().isTester()) {
-              console.log("Ignored ws 'stateInputPorts' msg", data);
-            }
-            return;
-          }
-
-          if (node.getPropForm()) {
-            const portId = data["port_key"];
-            const portStatus = data["status"];
-            switch (portStatus) {
-              case "DOWNLOAD_STARTED":
-              case "UPLOAD_STARTED":
-                node.getPropForm().retrievingPortData(portId);
-                break;
-              case "DOWNLOAD_FINISHED_SUCCESSFULLY":
-              case "UPLOAD_FINISHED_SUCCESSFULLY":
-                node.getPropForm().retrievedPortData(portId, true);
-                break;
-              case "DOWNLOAD_WAS_ABORTED":
-              case "DOWNLOAD_FINISHED_WITH_ERRROR":
-              case "UPLOAD_WAS_ABORTED":
-              case "UPLOAD_FINISHED_WITH_ERRROR":
-                node.getPropForm().retrievedPortData(portId, false);
-                break;
-            }
-          }
+          this.__statePortReceived(data);
         }, this);
+      }
+      if (!socket.slotExists("stateOutputPorts")) {
+        socket.on("stateOutputPorts", data => {
+          this.__statePortReceived(data);
+        }, this);
+      }
+    },
+
+    __statePortReceived: function(socketData) {
+      const studyId = socketData["project_id"];
+      if (this.getStudy().getUuid() !== studyId) {
+        return;
+      }
+
+      const nodeId = socketData["node_id"];
+      const workbench = this.getStudy().getWorkbench();
+      const node = workbench.getNode(nodeId);
+      if (!node) {
+        if (osparc.data.Permissions.getInstance().isTester()) {
+          console.log("Ignored ws 'stateInputPorts' msg", socketData);
+        }
+        return;
+      }
+
+      if (node.getPropForm()) {
+        const portId = socketData["port_key"];
+        const status = socketData["status"];
+        switch (status) {
+          case "DOWNLOAD_STARTED":
+            node.getPropForm().retrievingPortData(
+              portId,
+              osparc.form.renderer.PropForm.RETRIEVE_STATUS.downloading);
+            break;
+          case "UPLOAD_STARTED":
+            node.getPropForm().retrievingPortData(
+              portId,
+              osparc.form.renderer.PropForm.RETRIEVE_STATUS.uploading);
+            break;
+          case "DOWNLOAD_FINISHED_SUCCESSFULLY":
+          case "UPLOAD_FINISHED_SUCCESSFULLY":
+            node.getPropForm().retrievedPortData(portId, true);
+            break;
+          case "DOWNLOAD_WAS_ABORTED":
+          case "DOWNLOAD_FINISHED_WITH_ERRROR":
+          case "UPLOAD_WAS_ABORTED":
+          case "UPLOAD_FINISHED_WITH_ERRROR":
+            node.getPropForm().retrievedPortData(portId, false);
+            break;
+        }
       }
     },
 
