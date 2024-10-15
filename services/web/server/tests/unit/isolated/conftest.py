@@ -94,7 +94,8 @@ def mock_env_deployer_pipeline(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 
 @pytest.fixture
 def mock_env_devel_environment(
-    mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    mock_env_devel_environment: EnvVarsDict,  # pylint: disable=redefined-outer-name
+    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     # Overrides to ensure dev-features are enabled testings
     return mock_env_devel_environment | setenvs_from_dict(
@@ -173,10 +174,10 @@ def mock_env_dockerfile_build(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 @pytest.fixture
 def mock_webserver_service_environment(
     monkeypatch: pytest.MonkeyPatch,
-    mock_env_makefile: EnvVarsDict,
-    mock_env_devel_environment: EnvVarsDict,
-    mock_env_dockerfile_build: EnvVarsDict,
-    mock_env_deployer_pipeline: EnvVarsDict,
+    mock_env_makefile: EnvVarsDict,  # pylint: disable=redefined-outer-name
+    mock_env_devel_environment: EnvVarsDict,  # pylint: disable=redefined-outer-name
+    mock_env_dockerfile_build: EnvVarsDict,  # pylint: disable=redefined-outer-name
+    mock_env_deployer_pipeline: EnvVarsDict,  # pylint: disable=redefined-outer-name
 ) -> EnvVarsDict:
     """
     Mocks environment produce in the docker compose config with a .env (.env-devel)
