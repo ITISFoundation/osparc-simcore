@@ -8,6 +8,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StringConstraints,
+    TypeAdapter,
     ValidationInfo,
     field_validator,
 )
@@ -149,7 +150,6 @@ class ServiceInput(BaseServiceIOModel):
     )
 
     model_config = ConfigDict(
-        **BaseServiceIOModel.model_config,
         json_schema_extra={
             "examples": [
                 # file-wo-widget:
@@ -222,7 +222,6 @@ class ServiceOutput(BaseServiceIOModel):
     )
 
     model_config = ConfigDict(
-        **BaseServiceIOModel.model_config,
         json_schema_extra={
             "examples": [
                 {
@@ -259,3 +258,6 @@ class ServiceOutput(BaseServiceIOModel):
         """Creates output port model from a json-schema"""
         data = cls._from_json_schema_base_implementation(port_schema)
         return cls.model_validate(data)
+
+
+ServiceOutputTypeAdapter = TypeAdapter(ServiceOutput)

@@ -4,6 +4,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import cast
 
+from common_library.pydantic_settings_validators import (
+    validate_timedelta_in_legacy_mode,
+)
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.products import ProductName
@@ -36,6 +39,10 @@ class ResourceTrackingSettings(BaseCustomSettings):
     RESOURCE_TRACKING_HEARTBEAT_INTERVAL: timedelta = Field(
         default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
         description="each time the status of the service is propagated",
+    )
+
+    _legacy_parsing_dynamic_scheduler_stop_service_timeout = (
+        validate_timedelta_in_legacy_mode("RESOURCE_TRACKING_HEARTBEAT_INTERVAL")
     )
 
 
@@ -174,7 +181,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DY_DEPLOYMENT_REGISTRY_SETTINGS: RegistrySettings = Field()
-    DY_DOCKER_HUB_REGISTRY_SETTINGS: RegistrySettings | None = Field()
+    DY_DOCKER_HUB_REGISTRY_SETTINGS: RegistrySettings | None = Field(default=None)
 
     RESOURCE_TRACKING: ResourceTrackingSettings = Field(
         json_schema_extra={"auto_default_from_env": True}
@@ -188,10 +195,23 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def are_prometheus_metrics_enabled(self) -> bool:
         return self.DY_SIDECAR_CALLBACKS_MAPPING.metrics is not None
 
+    @field_validator("DY_SIDECAR_RUN_ID", mode="before")
+    @classmethod
+    def convert_str_to_run_id_object(cls, v):
+        if isinstance(v, str):
+            return RunID(v)
+        return v
+
     @field_validator("LOG_LEVEL")
     @classmethod
     def _check_log_level(cls, value):
         return cls.validate_log_level(value)
+
+    _legacy_parsing_dynamic_telemetry_disk_usage_monitor_interval = (
+        validate_timedelta_in_legacy_mode(
+            "DYNAMIC_SIDECAR_TELEMETRY_DISK_USAGE_MONITOR_INTERVAL"
+        )
+    )
 
 
 @lru_cache

@@ -1,9 +1,14 @@
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-from .services import ServiceKey, ServiceVersion
 from .services_resources import ServiceResourcesDict
+from .services_types import (
+    ServiceKey,
+    ServiceKeyTypeAdapter,
+    ServiceVersion,
+    ServiceVersionTypeAdapter,
+)
 from .wallets import WalletID
 
 
@@ -36,10 +41,18 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
                 "user_email": "test@test.com",
                 "project_name": "_!New Study",
                 "node_name": "the service of a lifetime _ *!",
-                "service_key": ServiceKey("simcore/services/dynamic/test"),
-                "service_version": ServiceVersion("0.0.1"),
+                "service_key": ServiceKeyTypeAdapter.validate_python(
+                    "simcore/services/dynamic/test"
+                ),
+                "service_version": ServiceVersionTypeAdapter.validate_python("0.0.1"),
                 "service_resources": {},
                 "service_additional_metadata": {},
+                "pricing_unit_cost_id": None,
             }
         }
     )
+
+
+CreateServiceMetricsAdditionalParamsTypeAdapter = TypeAdapter(
+    CreateServiceMetricsAdditionalParams
+)

@@ -21,7 +21,7 @@ from botocore.exceptions import ClientError
 from fastapi import FastAPI
 from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
+from models_library.projects_nodes_io import NodeID, SimcoreS3FileIDTypeAdapter
 from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
 from pytest_mock import MockerFixture
@@ -199,7 +199,7 @@ async def restore_legacy_state_archives(
                 user_id=user_id,
                 store_id=SIMCORE_LOCATION,
                 store_name=None,
-                s3_object=parse_obj_as(SimcoreS3FileID, s3_path),
+                s3_object=SimcoreS3FileIDTypeAdapter.validate_python(s3_path),
                 path_to_upload=legacy_archive_zip,
                 io_log_redirect_cb=None,
             )

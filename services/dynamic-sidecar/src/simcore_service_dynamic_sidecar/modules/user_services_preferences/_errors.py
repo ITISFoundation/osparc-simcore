@@ -1,7 +1,7 @@
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
-class BaseServicesPreferencesError(PydanticErrorMixin, Exception):
+class BaseServicesPreferencesError(OsparcErrorMixin, Exception):
     code = "dynamic_sidecar.user_service_preferences"
 
 

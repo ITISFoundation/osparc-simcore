@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from common_library.pydantic_type_adapters import ByteSizeAdapter
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
@@ -59,7 +60,7 @@ def _get_entry(mock: Mock, *, index: int) -> dict[Path, DiskUsage]:
 
 
 def _get_byte_size(byte_size_as_str: str) -> ByteSize:
-    return ByteSize.validate(byte_size_as_str)
+    return ByteSizeAdapter.validate_python(byte_size_as_str)
 
 
 def _get_mocked_disk_usage(byte_size_as_str: str) -> DiskUsage:

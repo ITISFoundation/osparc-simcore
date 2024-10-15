@@ -9,7 +9,10 @@ import pytest
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import Response
-from models_library.services_creation import CreateServiceMetricsAdditionalParams
+from models_library.services_creation import (
+    CreateServiceMetricsAdditionalParams,
+    CreateServiceMetricsAdditionalParamsTypeAdapter,
+)
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -282,9 +285,10 @@ async def test_put_volumes(
             "post_containers_tasks",
             "/containers",
             {
-                "metrics_params": parse_obj_as(
-                    CreateServiceMetricsAdditionalParams,
-                    CreateServiceMetricsAdditionalParams.Config.schema_extra["example"],
+                "metrics_params": CreateServiceMetricsAdditionalParamsTypeAdapter.validate_python(
+                    CreateServiceMetricsAdditionalParams.model_config[
+                        "json_schema_extra"
+                    ]["example"],
                 )
             },
             id="post_containers_tasks",

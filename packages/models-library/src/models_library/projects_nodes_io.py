@@ -44,6 +44,7 @@ LocationName = str
 SimcoreS3FileID: TypeAlias = Annotated[
     str, StringConstraints(pattern=SIMCORE_S3_FILE_ID_RE)
 ]
+SimcoreS3FileIDTypeAdapter = TypeAdapter(SimcoreS3FileID)
 
 
 class SimcoreS3DirectoryID(ConstrainedStr):
