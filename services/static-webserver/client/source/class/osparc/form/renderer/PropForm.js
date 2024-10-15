@@ -565,7 +565,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     retrievingPortData: function(portId, status) {
-      if (!status) {
+      if (status === undefined) {
         status = this.self().RETRIEVE_STATUS.retrieving;
       }
       if (portId) {
@@ -616,9 +616,6 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     __setRetrievingStatus: function(status, portId, idx, row) {
-      const icon = this.self().getIconForStatus(status);
-      icon.key = portId;
-
       // remove first if any
       let children = this._getChildren();
       for (let i=0; i<children.length; i++) {
@@ -632,7 +629,8 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
       const label = this._getLabelFieldChild(portId).child;
       if (label && label.isVisible()) {
-        this._getLabelFieldChild(portId);
+        const icon = this.self().getIconForStatus(status);
+        icon.key = portId;
         this._addAt(icon, idx, {
           row,
           column: this.self().GRID_POS.RETRIEVE_STATUS

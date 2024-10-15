@@ -474,7 +474,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           case "DOWNLOAD_STARTED":
             propsForm.retrievingPortData(
               portId,
-              osparc.form.renderer.PropForm.RETRIEVE_STATUS.downloading);
+              osparc.form.renderer.PropForm.RETRIEVE_STATUS.downloading
+            );
             break;
           case "DOWNLOAD_FINISHED_SUCCESSFULLY":
             propsForm.retrievedPortData(portId, true);
