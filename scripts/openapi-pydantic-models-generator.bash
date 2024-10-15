@@ -20,15 +20,21 @@ Build() {
 FROM python:${PYTHON_VERSION}-slim
 RUN pip install datamodel-code-generator[http]
 ENTRYPOINT ["datamodel-codegen", \
-          "--field-constraints", \
-		      "--use_non_positive_negative_number_constrained_types", \
+          "--output-model-type=pydantic_v2.BaseModel", \
+          "--input-file-type=jsonschema", \
           "--use-standard-collections", \
+          "--use-union-operator", \
           "--use-schema-description", \
+          "--use-subclass-enum", \
+          "--use-double-quotes", \
+          "--field-constraints", \
+          "--use-generic-container-types", \
+		      "--use-non-positive-negative-number-constrained-types", \
           "--reuse-model", \
           "--set-default-enum-member", \
           "--use-title-as-name", \
-          "--use-subclass-enum", \
-          "--target-python-version=${PYTHON_VERSION}", \
+          "--target-python-version=${PYTHON_VERSION%.*}", \
+          "--use-default-kwarg", \
           "--validation"]
 EOF
 }
