@@ -88,8 +88,8 @@ AWSTagValue: TypeAlias = Annotated[
     # quotes []{} were added as it allows to json encode. it seems to be accepted as a value
     str,
     StringConstraints(
-        min_length=0,
-        max_length=256,
+        min_length=AWS_TAG_VALUE_MIN_LENGTH,
+        max_length=AWS_TAG_VALUE_MAX_LENGTH,
         pattern=r"^[a-zA-Z0-9\s\+\-=\.,_:/@\"\'\[\]\{\}]*$",
     ),
 ]
