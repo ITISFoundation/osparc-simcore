@@ -131,7 +131,7 @@ def test_download_presigned_link(
     presigned_download_link: AnyUrl, tmp_path: Path, project_id: str, node_id: str
 ):
     """Cheks that the generation of presigned_download_link works as expected"""
-    r = httpx.get(presigned_download_link)
+    r = httpx.get(f"{presigned_download_link}")
     ## pprint(dict(r.headers))
     # r.headers looks like:
     # {
