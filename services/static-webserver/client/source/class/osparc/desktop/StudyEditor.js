@@ -287,6 +287,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__listenToNodeProgress();
       this.__listenToNoMoreCreditsEvents();
       this.__listenToEvent();
+      this.__listenToStateInputPorts();
     },
 
     __listenToLogger: function() {
@@ -408,6 +409,49 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               const label = node.getLabel();
               const text = `New inputs for service ${label}. Please reload to refresh service.`;
               osparc.FlashMessenger.getInstance().logAs(text, "INFO");
+            }
+          }
+        }, this);
+      }
+    },
+
+    __listenToStateInputPorts: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      if (!socket.slotExists("stateInputPorts")) {
+        socket.on("stateInputPorts", data => {
+          const studyId = data["project_id"];
+          if (this.getStudy().getUuid() !== studyId) {
+            return;
+          }
+
+          const nodeId = data["node_id"];
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          if (!node) {
+            if (osparc.data.Permissions.getInstance().isTester()) {
+              console.log("Ignored ws 'stateInputPorts' msg", data);
+            }
+            return;
+          }
+
+          if (node.getPropForm()) {
+            const portId = data["port_key"];
+            const portStatus = data["status"];
+            switch (portStatus) {
+              case "DOWNLOAD_STARTED":
+              case "UPLOAD_STARTED":
+                node.getPropForm().retrievingPortData(portId);
+                break;
+              case "DOWNLOAD_FINISHED_SUCCESSFULLY":
+              case "UPLOAD_FINISHED_SUCCESSFULLY":
+                node.getPropForm().retrievedPortData(portId, true);
+                break;
+              case "DOWNLOAD_WAS_ABORTED":
+              case "DOWNLOAD_FINISHED_WITH_ERRROR":
+              case "UPLOAD_WAS_ABORTED":
+              case "UPLOAD_FINISHED_WITH_ERRROR":
+                node.getPropForm().retrievedPortData(portId, false);
+                break;
             }
           }
         }, this);
