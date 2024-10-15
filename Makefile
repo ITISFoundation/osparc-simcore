@@ -685,9 +685,9 @@ info-registry: ## info on local registry (if any)
 
 ## INFO -------------------------------
 
-.PHONY: info info-images info-swarm  info-tools
+.PHONY: info info-images info-swarm
 info: ## displays setup information
-	# setup info:
+	@echo setup info  --------------------------------
 	@echo ' Detected OS          : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WSL2)$(IS_WIN)'
 	@echo ' SWARM_STACK_NAME     : ${SWARM_STACK_NAME}'
 	@echo ' DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
@@ -697,19 +697,23 @@ info: ## displays setup information
 	@echo '  - ULR                : ${VCS_URL}'
 	@echo '  - REF                : ${VCS_REF}'
 	@echo '  - (STATUS)REF_CLIENT : (${VCS_STATUS_CLIENT}) ${VCS_REF_CLIENT}'
-	@echo ' DIRECTOR_API_VERSION  : ${DIRECTOR_API_VERSION}'
-	@echo ' STORAGE_API_VERSION   : ${STORAGE_API_VERSION}'
-	@echo ' DATCORE_ADAPTER_API_VERSION   : ${DATCORE_ADAPTER_API_VERSION}'
-	@echo ' WEBSERVER_API_VERSION : ${WEBSERVER_API_VERSION}'
-	# dev tools version
-	@echo ' make          : $(shell make --version 2>&1 | head -n 1)'
-	@echo ' jq            : $(shell jq --version)'
+	@make --silent info-tools
+
+
+.PHONY: show-tools
+info-tools: ## displays tools versions
+	@echo dev-tools versions -------------------------
 	@echo ' awk           : $(shell awk -W version 2>&1 | head -n 1)'
-	@echo ' python        : $(shell python3 --version)'
-	@echo ' node          : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
 	@echo ' docker        : $(shell docker --version)'
 	@echo ' docker buildx : $(shell docker buildx version)'
 	@echo ' docker compose: $(shell docker compose version)'
+	@echo ' jq            : $(shell jq --version)'
+	@echo ' make          : $(shell make --version 2>&1 | head -n 1)'
+	@echo ' node          : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
+	@echo ' python        : $(shell python3 --version)'
+	@echo ' uv            : $(shell uv --version 2> /dev/null || echo ERROR uv missing)'
+	@echo ' ubuntu        : $(shell lsb_release --description --short 2> /dev/null | tail || echo ERROR Not an Ubuntu OS )'
+
 
 
 define show-meta

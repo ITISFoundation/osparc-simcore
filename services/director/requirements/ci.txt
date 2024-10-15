@@ -8,7 +8,6 @@
 
 # installs base + tests requirements
 --requirement _test.txt
---requirement _tools.txt
 
 # installs current package
 .
