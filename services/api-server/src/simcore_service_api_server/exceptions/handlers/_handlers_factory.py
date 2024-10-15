@@ -3,6 +3,7 @@ import logging
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from models_library.error_codes import create_error_code
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from ._utils import ExceptionHandler, create_error_json_response
 
@@ -37,12 +38,13 @@ def make_handler_for_exception(
         if add_oec_to_message:
             error_code = create_error_code(exception)
             msg += f" [{error_code}]"
-            _logger.exception(
-                "Unexpected %s: %s",
-                exception.__class__.__name__,
-                msg,
-                extra={"error_code": error_code},
+
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                f"Unexpected {exception.__class__.__name__}: {msg}",
+                exception=exception,
             )
+        )
         return create_error_json_response(msg, status_code=status_code)
 
     return _http_error_handler
