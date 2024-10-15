@@ -42,15 +42,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     const mainLayoutWithSideSpacers = new qx.ui.container.Composite(new qx.ui.layout.HBox(spacing))
     this._addToMainLayout(mainLayoutWithSideSpacers);
 
-    this.__leftFilters = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+    this.__leftFilters = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
       width: leftColumnWidth
     });
     mainLayoutWithSideSpacers.add(this.__leftFilters);
 
-    this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
     mainLayoutWithSideSpacers.add(this.__centerLayout);
 
-    const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     mainLayoutWithSideSpacers.add(rightColum, {
       flex: 1
     });
@@ -236,6 +236,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
+
       this._addToLayout(searchBarFilter);
     },
 
@@ -355,6 +356,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         viewModeLayout.add(btn);
         radioGroup.add(btn);
       });
+
+      if (this._resourceType === "study") {
+        const viewMode = osparc.utils.Utils.localCache.getLocalStorageItem("studiesViewMode");
+        if (viewMode) {
+          if (viewMode === "list") {
+            radioGroup.setSelection([listBtn]);
+          }
+        }
+      }
 
       this._toolbar.add(viewModeLayout);
     },
