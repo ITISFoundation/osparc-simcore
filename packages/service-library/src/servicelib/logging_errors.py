@@ -11,7 +11,7 @@ _logger = logging.getLogger(__name__)
 
 
 def create_troubleshotting_log_message(
-    error_user_msg: str,
+    user_error_msg: str,
     *,
     error: BaseException,
     error_code: ErrorCodeStr,
@@ -21,7 +21,7 @@ def create_troubleshotting_log_message(
     """Create a formatted message for _logger.exception(...)
 
     Arguments:
-        error_user_msg -- A user-friendly message to be displayed on the front-end explaining the issue in simple terms.
+        user_error_msg -- A user-friendly message to be displayed on the front-end explaining the issue in simple terms.
         error -- the instance of the handled exception
         error_code -- A unique error code (e.g., OEC or osparc-specific) to identify the type or source of the error for easier tracking.
         error_context -- Additional context surrounding the exception, such as environment variables or function-specific data. This can be derived from exc.error_context() (relevant when using the OsparcErrorMixin)
@@ -38,7 +38,7 @@ def create_troubleshotting_log_message(
         indent=1,
     )
 
-    return f"{error_user_msg}.\n{debug_data}"
+    return f"{user_error_msg}.\n{debug_data}"
 
 
 class LogKwargs(TypedDict):
@@ -47,8 +47,7 @@ class LogKwargs(TypedDict):
 
 
 def create_troubleshotting_log_kwargs(
-    error_user_msg: str,
-    *,
+    user_error_msg: str,
     error: BaseException,
     error_context: dict[str, Any] | None = None,
     tip: str | None = None,
@@ -63,7 +62,7 @@ def create_troubleshotting_log_kwargs(
         except MyException as exc
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
-                    error_user_msg=frontend_msg,
+                    user_error_msg=frontend_msg,
                     exception=exc,
                     tip="Check row in `groups_extra_properties` for this product. It might be missing.",
                 )
@@ -78,9 +77,9 @@ def create_troubleshotting_log_kwargs(
     if isinstance(error, OsparcErrorMixin):
         context.update(error.error_context())
 
-    # aggregate
+    # compose as log message
     log_msg = create_troubleshotting_log_message(
-        error_user_msg=error_user_msg,
+        user_error_msg,
         error=error,
         error_code=error_code,
         error_context=context,
