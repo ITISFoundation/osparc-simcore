@@ -119,18 +119,15 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects?type=user"
           },
           getPage: {
+            useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}"
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}&order_by={orderBy}"
           },
           getPageSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}&search={text}"
-          },
-          getPageSortBy: {
-            useCache: false,
-            method: "GET",
-            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}&workspace_id={workspaceId}&folder_id={folderId}&order_by={orderBy}"
+            url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&order_by={orderBy}"
+            // url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&tags={tags}&order_by={orderBy}"
           },
           getOne: {
             useCache: false,
@@ -1305,8 +1302,11 @@ qx.Class.define("osparc.data.Resources", {
           let status = null;
           if (e.getData().error) {
             const errorData = e.getData().error;
+            if (errorData.message) {
+              message = errorData.message;
+            }
             const logs = errorData.logs || null;
-            if (logs && logs.length) {
+            if (message === null && logs && logs.length) {
               message = logs[0].message;
             }
             const errors = errorData.errors || [];

@@ -79,7 +79,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
       const iframeHandler = node.getIframeHandler();
       if (iframeHandler) {
-        iframeHandler.startPolling();
+        iframeHandler.checkState();
         iframeHandler.addListener("iframeChanged", () => this.__iFrameChanged(), this);
         iframeHandler.getIFrame().addListener("load", () => this.__iFrameChanged(), this);
         this.__iFrameChanged();

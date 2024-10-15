@@ -19,23 +19,23 @@ qx.Class.define("osparc.product.quickStart.s4llite.S4LLiteSpecs", {
   extend: osparc.product.quickStart.SlideBase,
 
   construct: function() {
-    const title = this.tr("<i>S4L<sup>lite</sup></i>: Features and Limitations");
+    const title = this.tr("Sim4Life.lite: Features and Limitations");
     this.base(arguments, title);
   },
 
   members: {
     _populateCard: function() {
       const introText = this.tr("\
-        <i>S4L<sup>lite</sup></i> is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to \
-        design complex technical devices in a validated environment. <i>S4L<sup>lite</sup></i> has been created specifically for students to \
+        Sim4Life.lite is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to \
+        design complex technical devices in a validated environment. Sim4Life.lite has been created specifically for students to \
         facilitate their understanding of computational modeling and simulations for various topics, ranging from wireless communication \
-        to medical applications. The access to <i>S4L<sup>lite</sup></i> is available free of charge to students enrolled at registered universities.\
+        to medical applications. The access to Sim4Life.lite is available free of charge to students enrolled at registered universities.\
       ");
       const intro = osparc.product.quickStart.Utils.createLabel(introText);
       this._add(intro);
 
       const featuresText = this.tr("\
-        <b><i>S4L<sup>lite</sup></i> offers</b><br>\
+        <b>Sim4Life.lite offers</b><br>\
         - Framework (GUI, Modeling, Postprocessing)<br>\
         - 3D modeling environment (based on the ACIS toolkit) and CAD translators<br>\
         - Postprocessing and visualization of the simulation results (2D and 3D viewers, 2D planar slice, volume rendering, streamlines, surface fields on arbitrary 3D structures, radiation and far-field data)<br>\

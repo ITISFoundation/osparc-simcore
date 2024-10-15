@@ -4,7 +4,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
 #
 #  USAGE:
-#     cd sercices/datcore-adapter
+#     cd services/datcore-adapter
 #     docker build -f Dockerfile -t datcore-adapter:prod --target production ../../
 #     docker run datcore-adapter:prod
 #
