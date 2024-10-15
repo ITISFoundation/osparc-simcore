@@ -32,7 +32,7 @@ async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -
 
 
 class UploadPortsFailedError(OsparcErrorMixin, RuntimeError):
-    code: str = "dynamic_sidecar.outputs_manager.failed_while_uploading"
+    code: str = "dynamic_sidecar.outputs_manager.failed_while_uploading"  # type: ignore[assignment]
     msg_template: str = "Failed while uploading: failures={failures}"
 
 

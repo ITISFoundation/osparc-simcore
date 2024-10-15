@@ -2,7 +2,7 @@ from common_library.errors_classes import OsparcErrorMixin
 
 
 class BaseServicesPreferencesError(OsparcErrorMixin, Exception):
-    code = "dynamic_sidecar.user_service_preferences"
+    code = "dynamic_sidecar.user_service_preferences"  # type: ignore[assignment]
 
 
 class DestinationIsNotADirectoryError(BaseServicesPreferencesError):

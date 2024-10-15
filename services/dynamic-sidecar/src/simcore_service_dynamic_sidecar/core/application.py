@@ -188,8 +188,10 @@ def create_app():
         setup_prometheus_metrics(app)
 
     # ERROR HANDLERS  ------------
-    app.add_exception_handler(NodeNotFound, node_not_found_error_handler)
-    app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)
+    app.add_exception_handler(
+        NodeNotFound, node_not_found_error_handler  # type: ignore[arg-type]
+    )
+    app.add_exception_handler(BaseDynamicSidecarError, http_error_handler)  # type: ignore[arg-type]
 
     # EVENTS ---------------------
 
