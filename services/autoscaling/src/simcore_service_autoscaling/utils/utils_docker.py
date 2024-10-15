@@ -358,13 +358,11 @@ async def compute_node_used_resources(
             and task.spec.resources
             and task.spec.resources.reservations
         ):
-            task_reservations = task.spec.resources.reservations.model_dump(
-                exclude_none=True
-            )
             cluster_resources_counter.update(
                 {
-                    "ram": task_reservations.get("MemoryBytes", 0),
-                    "cpus": task_reservations.get("NanoCPUs", 0) / _NANO_CPU,
+                    "ram": task.spec.resources.reservations.memory_bytes or 0,
+                    "cpus": (task.spec.resources.reservations.nano_cp_us or 0)
+                    / _NANO_CPU,
                 }
             )
     return Resources.model_validate(dict(cluster_resources_counter))

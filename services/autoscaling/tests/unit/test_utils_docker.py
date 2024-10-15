@@ -436,21 +436,16 @@ async def test_pending_service_task_with_insufficient_resources_properly_sorts_t
 
     assert len(pending_tasks) == len(services)
     # check sorting is done by creation date
-    last_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
-        days=1
-    )
+    last_date = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=1)
     for task in pending_tasks:
         assert task.created_at  # NOTE: in this case they are but they might be None
-        assert (
-            to_datetime(task.created_at).replace(tzinfo=datetime.timezone.utc)
-            > last_date
-        )
-        last_date = to_datetime(task.created_at).replace(tzinfo=datetime.timezone.utc)
+        assert to_datetime(task.created_at).replace(tzinfo=datetime.UTC) > last_date
+        last_date = to_datetime(task.created_at).replace(tzinfo=datetime.UTC)
 
 
 def test_safe_sort_key_callback():
     tasks_with_faulty_timestamp = [
-        Task(ID=n, CreatedAt=value)  # type: ignore
+        Task(ID=f"{n}", CreatedAt=value)
         for n, value in enumerate(
             [
                 # SEE test_to_datetime_conversion_known_errors
@@ -458,7 +453,7 @@ def test_safe_sort_key_callback():
                 "2023-03-15 09:20:58.123456",
                 "2023-03-15T09:20:58.123456",
                 "2023-03-15T09:20:58.123456Z",
-                f"{datetime.datetime.now(datetime.timezone.utc)}",
+                f"{datetime.datetime.now(datetime.UTC)}",
                 "corrupted string",
             ]
         )
