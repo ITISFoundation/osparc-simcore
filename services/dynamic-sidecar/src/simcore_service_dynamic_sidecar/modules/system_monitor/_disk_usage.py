@@ -91,11 +91,6 @@ class DiskUsageMonitor:
             for k, paths in self.monitored_paths.items()
         }
 
-    async def _publish_disk_usage(self, usage: dict[str, DiskUsage]):
-        await publish_disk_usage(
-            self.app, user_id=self.user_id, node_id=self.node_id, usage=usage
-        )
-
     async def _get_measured_disk_usage(self) -> list[DiskUsage]:
         return await logged_gather(
             *[
@@ -135,6 +130,11 @@ class DiskUsageMonitor:
 
             usage_to_folder_names[disk_usage].add(folder_name)
         return usage_to_folder_names
+
+    async def _publish_disk_usage(self, usage: dict[str, DiskUsage]):
+        await publish_disk_usage(
+            self.app, user_id=self.user_id, node_id=self.node_id, usage=usage
+        )
 
     async def _monitor(self) -> None:
         measured_disk_usage = await self._get_measured_disk_usage()

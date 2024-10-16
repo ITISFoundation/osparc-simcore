@@ -209,7 +209,7 @@ async def test_disk_usage_monitor_new_frontend_format(
         publish_disk_usage_spy.assert_called()
         return publish_disk_usage_spy.call_args_list[0][0][0]
 
-    # normally only 1 value is found
+    # normally only 1 entry is found
     frontend_usage = await _wait_for_usage()
     print(json_dumps(frontend_usage, indent=2))
     assert len(frontend_usage) == 1
@@ -218,7 +218,7 @@ async def test_disk_usage_monitor_new_frontend_format(
         "1294390525952"
     )
 
-    # emulate EFS
+    # emulate EFS sending metrics, 2 entries are found
 
     disk_usage_monitor.set_disk_usage_for_path(
         {
