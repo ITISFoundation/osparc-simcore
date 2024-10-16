@@ -45,6 +45,7 @@ from simcore_service_dynamic_sidecar.modules.notifications import (
 )
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
     DiskUsageMonitor,
+    MountPathCategory,
 )
 from socketio import AsyncServer
 from tenacity import AsyncRetrying
@@ -155,11 +156,13 @@ def _get_on_service_disk_usage_spy(
     "usage",
     [
         pytest.param({}, id="empty"),
-        pytest.param({Path("/"): _get_mocked_disk_usage("1kb")}, id="one_entry"),
+        pytest.param(
+            {MountPathCategory.HOST: _get_mocked_disk_usage("1kb")}, id="one_entry"
+        ),
         pytest.param(
             {
-                Path("/"): _get_mocked_disk_usage("1kb"),
-                Path("/tmp"): _get_mocked_disk_usage("2kb"),  # noqa: S108
+                MountPathCategory.HOST: _get_mocked_disk_usage("1kb"),
+                MountPathCategory.STATES_VOLUMES: _get_mocked_disk_usage("2kb"),
             },
             id="two_entries",
         ),
