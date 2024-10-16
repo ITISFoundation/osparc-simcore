@@ -116,12 +116,7 @@ async def test_get_ec2_instance_capabilities(
         )
     )
     assert instance_types
-    assert len(instance_types) == len(ec2_allowed_instances)
-
-    # all the instance names are found and valid
-    assert all(i.name in ec2_allowed_instances for i in instance_types)
-    for instance_type_name in ec2_allowed_instances:
-        assert any(i.name == instance_type_name for i in instance_types)
+    assert [_.name for _ in instance_types] == sorted(ec2_allowed_instances)
 
 
 async def test_get_ec2_instance_capabilities_empty_list_returns_all_options(
