@@ -13,7 +13,7 @@ class WalletTotalCredits(BaseModel):
     wallet_id: WalletID
     available_osparc_credits: Decimal
 
-    @field_validator("available_osparc_credits")
+    @field_validator("available_osparc_credits", mode="before")
     @classmethod
     def ensure_rounded(cls, v):
         return round(v, 2)

@@ -56,7 +56,7 @@ async def test_credit_transactions_workflow(
     )
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
-    data["credit_transaction_id"] == 1
+    assert data["credit_transaction_id"] == 1
 
     response = await async_client.post(
         url=f"{url}",
@@ -73,7 +73,7 @@ async def test_credit_transactions_workflow(
     )
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
-    data["credit_transaction_id"] == 2
+    assert data["credit_transaction_id"] == 2
 
     response = await async_client.post(
         url=f"{url}",

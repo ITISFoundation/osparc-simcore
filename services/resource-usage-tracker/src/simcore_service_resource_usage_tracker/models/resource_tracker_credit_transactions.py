@@ -13,7 +13,7 @@ from models_library.resource_tracker import (
 )
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 
 
 class CreditTransactionCreate(BaseModel):
@@ -64,6 +64,4 @@ class CreditTransactionDB(BaseModel):
     created: datetime
     last_heartbeat_at: datetime
     modified: datetime
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

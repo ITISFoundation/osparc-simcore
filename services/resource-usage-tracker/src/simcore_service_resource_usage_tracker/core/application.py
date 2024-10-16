@@ -32,7 +32,7 @@ _logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
-    _logger.info("app settings: %s", settings.json(indent=1))
+    _logger.info("app settings: %s", settings.model_dump_json(indent=1))
 
     app = FastAPI(
         debug=settings.RESOURCE_USAGE_TRACKER_DEBUG,
@@ -62,7 +62,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         )
 
     # ERROR HANDLERS
-    app.add_exception_handler(CustomResourceUsageTrackerError, http404_error_handler)
+    app.add_exception_handler(CustomResourceUsageTrackerError, http404_error_handler)   # type: ignore[arg-type]
 
     if settings.RESOURCE_USAGE_TRACKER_POSTGRES:
         setup_db(app)

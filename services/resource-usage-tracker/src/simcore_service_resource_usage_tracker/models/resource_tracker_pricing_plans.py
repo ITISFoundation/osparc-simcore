@@ -2,7 +2,7 @@ from datetime import datetime
 
 from models_library.resource_tracker import PricingPlanClassification, PricingPlanId
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 
 ## DB Models
 
@@ -15,16 +15,12 @@ class PricingPlansDB(BaseModel):
     is_active: bool
     created: datetime
     pricing_plan_key: str
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PricingPlansWithServiceDefaultPlanDB(PricingPlansDB):
     service_default_plan: bool
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PricingPlanToServiceDB(BaseModel):
@@ -32,6 +28,4 @@ class PricingPlanToServiceDB(BaseModel):
     service_key: ServiceKey
     service_version: ServiceVersion
     created: datetime
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

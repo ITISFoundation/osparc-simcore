@@ -5,7 +5,7 @@ from typing import Any, Final, get_origin
 from common_library.pydantic_fields_extension import get_type, is_literal, is_nullable
 from pydantic import ValidationInfo, field_validator
 from pydantic.fields import FieldInfo
-from pydantic_core import PydanticUndefined, ValidationError
+from pydantic_core import ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _logger = logging.getLogger(__name__)
@@ -102,9 +102,6 @@ class BaseCustomSettings(BaseSettings):
                 and issubclass(field_type, BaseCustomSettings)
             ):
                 if auto_default_from_env:
-                    assert field.default is PydanticUndefined
-                    assert field.default_factory is None
-
                     # Transform it into something like `Field(default_factory=create_settings_from_env(field))`
                     field.default_factory = _create_settings_from_env(name, field)
                     field.default = None

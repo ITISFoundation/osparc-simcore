@@ -13,6 +13,7 @@ from models_library.resource_tracker import (
     PricingPlanUpdate,
 )
 from models_library.services import ServiceKey, ServiceVersion
+from pydantic import TypeAdapter
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
 )
@@ -96,7 +97,7 @@ async def list_connected_services_to_pricing_plan_by_pricing_plan(
     ] = await resource_tracker_repo.list_connected_services_to_pricing_plan_by_pricing_plan(
         product_name=product_name, pricing_plan_id=pricing_plan_id
     )
-    return [PricingPlanToServiceGet.parse_obj(item) for item in output_list]
+    return [TypeAdapter(PricingPlanToServiceGet).validate_python(item.model_dump()) for item in output_list]
 
 
 async def connect_service_to_pricing_plan(
@@ -116,7 +117,7 @@ async def connect_service_to_pricing_plan(
             service_version=service_version,
         )
     )
-    return PricingPlanToServiceGet.parse_obj(output)
+    return TypeAdapter(PricingPlanToServiceGet).validate_python(output.model_dump())
 
 
 async def list_pricing_plans_by_product(

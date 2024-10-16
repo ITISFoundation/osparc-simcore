@@ -195,7 +195,9 @@ async def test_rpc_pricing_plans_with_units_workflow(
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
             unit_name="SMALL",
-            unit_extra_info=UnitExtraInfo.Config.schema_extra["examples"][0],
+            unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"]["examples"][
+                0
+            ],
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             cost_per_unit=Decimal(10),
@@ -227,7 +229,9 @@ async def test_rpc_pricing_plans_with_units_workflow(
             pricing_plan_id=_pricing_plan_id,
             pricing_unit_id=_first_pricing_unit_id,
             unit_name=_unit_name,
-            unit_extra_info=UnitExtraInfo.Config.schema_extra["examples"][0],
+            unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"]["examples"][
+                0
+            ],
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             pricing_unit_cost_update=None,
@@ -246,7 +250,9 @@ async def test_rpc_pricing_plans_with_units_workflow(
             pricing_plan_id=_pricing_plan_id,
             pricing_unit_id=_first_pricing_unit_id,
             unit_name="MEDIUM",
-            unit_extra_info=UnitExtraInfo.Config.schema_extra["examples"][0],
+            unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"]["examples"][
+                0
+            ],
             default=True,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             pricing_unit_cost_update=PricingUnitCostUpdate(
@@ -277,7 +283,9 @@ async def test_rpc_pricing_plans_with_units_workflow(
         data=PricingUnitWithCostCreate(
             pricing_plan_id=_pricing_plan_id,
             unit_name="LARGE",
-            unit_extra_info=UnitExtraInfo.Config.schema_extra["examples"][0],
+            unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"]["examples"][
+                0
+            ],
             default=False,
             specific_info=SpecificInfo(aws_ec2_instances=[]),
             cost_per_unit=Decimal(20),
