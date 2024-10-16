@@ -2,11 +2,18 @@ import datetime
 from typing import Any
 
 from fastapi import FastAPI, status
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
+from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
+    DynamicServiceGetAdapter,
+)
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
 )
-from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
+from models_library.api_schemas_webserver.projects_nodes import (
+    NodeGet,
+    NodeGetAdapter,
+    NodeGetIdle,
+)
 from models_library.projects_nodes_io import NodeID
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import AttachLifespanMixin, HasClientSetupInterface
@@ -43,9 +50,9 @@ class DirectorV2Client(
             # in case of legacy version
             # we need to transfer the correct format!
             if "data" in dict_response:
-                return NodeGet.parse_obj(dict_response["data"])
+                return NodeGetAdapter.validate_python(dict_response["data"])
 
-            return DynamicServiceGet.parse_obj(dict_response)
+            return DynamicServiceGetAdapter.validate_python(dict_response)
         except UnexpectedStatusError as e:
             if (
                 e.response.status_code  # type: ignore[attr-defined] # pylint:disable=no-member
@@ -62,9 +69,9 @@ class DirectorV2Client(
 
         # legacy services
         if "data" in dict_response:
-            return NodeGet.parse_obj(dict_response["data"])
+            return NodeGetAdapter.validate_python(dict_response["data"])
 
-        return DynamicServiceGet.parse_obj(dict_response)
+        return DynamicServiceGetAdapter.validate_python(dict_response)
 
     async def stop_dynamic_service(
         self,

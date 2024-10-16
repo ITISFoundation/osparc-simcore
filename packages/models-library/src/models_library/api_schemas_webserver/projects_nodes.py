@@ -1,7 +1,7 @@
 # mypy: disable-error-code=truthy-function
-from typing import Any, Literal, TypeAlias
+from typing import Any, Final, Literal, TypeAlias
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, TypeAdapter
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
@@ -106,7 +106,7 @@ class NodeGet(OutputSchema):
                     "service_basepath": "/x/E1O2E-LAH",
                     "service_state": "pending",
                     "service_message": "no suitable node (insufficient resources on 1 node)",
-                    "user_id": 123,
+                    "user_id": "123",
                 },
                 # dynamic
                 {
@@ -120,11 +120,14 @@ class NodeGet(OutputSchema):
                     "service_basepath": "/x/E1O2E-LAH",
                     "service_state": "pending",
                     "service_message": "no suitable node (insufficient resources on 1 node)",
-                    "user_id": 123,
+                    "user_id": "123",
                 },
             ]
         }
     )
+
+
+NodeGetAdapter: Final[TypeAdapter[NodeGet]] = TypeAdapter(NodeGet)
 
 
 class NodeGetIdle(OutputSchema):
@@ -143,6 +146,9 @@ class NodeGetIdle(OutputSchema):
             }
         }
     )
+
+
+NodeGetIdleAdapter: Final[TypeAdapter[NodeGetIdle]] = TypeAdapter(NodeGetIdle)
 
 
 class NodeGetUnknown(OutputSchema):

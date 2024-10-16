@@ -39,8 +39,8 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
     assert result.exit_code == os.EX_OK, result.output
 
     print(result.output)
-    settings = ApplicationSettings.parse_raw(result.output)
-    assert settings == ApplicationSettings.create_from_envs()
+    settings = ApplicationSettings.model_validate_json(result.output)
+    assert settings.model_dump() == ApplicationSettings.create_from_envs().model_dump()
 
 
 def test_main(app_environment: EnvVarsDict):
