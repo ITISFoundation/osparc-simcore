@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from common_library.pydantic_type_adapters import AnyHttpUrlLegacy
+from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AliasChoices, Field, field_validator
 from settings_library.base import BaseCustomSettings
