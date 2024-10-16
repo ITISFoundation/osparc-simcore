@@ -19,6 +19,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingMessageType,
     RabbitResourceTrackingStartedMessage,
 )
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -215,7 +216,9 @@ def random_rabbit_message_heartbeat(
     def _creator(**kwargs: dict[str, Any]) -> RabbitResourceTrackingHeartbeatMessage:
         msg_config = {"service_run_id": faker.uuid4(), **kwargs}
 
-        return RabbitResourceTrackingHeartbeatMessage(**msg_config)
+        return TypeAdapter(RabbitResourceTrackingHeartbeatMessage).validate_python(
+            msg_config
+        )
 
     return _creator
 
@@ -265,7 +268,9 @@ def random_rabbit_message_start(
             **kwargs,
         }
 
-        return RabbitResourceTrackingStartedMessage(**msg_config)
+        return TypeAdapter(RabbitResourceTrackingStartedMessage).validate_python(
+            msg_config
+        )
 
     return _creator
 
