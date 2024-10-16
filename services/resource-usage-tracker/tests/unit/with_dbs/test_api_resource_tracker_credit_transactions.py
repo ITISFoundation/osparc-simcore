@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from decimal import Decimal
 from typing import Callable
 
 import httpx
@@ -98,4 +99,4 @@ async def test_credit_transactions_workflow(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["wallet_id"] == 1
-    assert data["available_osparc_credits"] == "1340.04"
+    assert data["available_osparc_credits"] == Decimal(1340.04)
