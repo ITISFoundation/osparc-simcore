@@ -151,7 +151,7 @@ async def test_set_if_status_changed(
     model = await get_tracked_service(app, node_id)
     assert model
 
-    assert model.service_status == status.json()
+    assert model.service_status == status.model_dump_json()
 
 
 async def test_set_service_status_task_uid(

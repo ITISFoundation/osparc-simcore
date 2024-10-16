@@ -221,10 +221,12 @@ async def mock_director_v2_status(
         if isinstance(service_status, NodeGet):
             return Response(
                 status.HTTP_200_OK,
-                text=json.dumps(jsonable_encoder({"data": service_status.dict()})),
+                text=json.dumps(
+                    jsonable_encoder({"data": service_status.model_dump()})
+                ),
             )
         if isinstance(service_status, DynamicServiceGet):
-            return Response(status.HTTP_200_OK, text=service_status.json())
+            return Response(status.HTTP_200_OK, text=service_status.model_dump_json())
         if isinstance(service_status, NodeGetIdle):
             return Response(status.HTTP_404_NOT_FOUND)
 

@@ -91,7 +91,9 @@ def mock_director_v0_service_state(
     ) as mock:
         mock.get(f"/fake-status/{node_id_legacy}").respond(
             status.HTTP_200_OK,
-            text=json.dumps(jsonable_encoder({"data": service_status_legacy.dict()})),
+            text=json.dumps(
+                jsonable_encoder({"data": service_status_legacy.model_dump()})
+            ),
         )
 
         # service was not found response
@@ -114,7 +116,7 @@ def mock_director_v2_service_state(
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
         mock.get(f"/dynamic_services/{node_id_new_style}").respond(
-            status.HTTP_200_OK, text=service_status_new_style.json()
+            status.HTTP_200_OK, text=service_status_new_style.model_dump_json()
         )
 
         # emulate redirect response to director-v0
@@ -199,7 +201,9 @@ def mock_director_v0_service_run(
     ) as mock:
         mock.post("/fake-service-run").respond(
             status.HTTP_201_CREATED,
-            text=json.dumps(jsonable_encoder({"data": service_status_legacy.dict()})),
+            text=json.dumps(
+                jsonable_encoder({"data": service_status_legacy.model_dump()})
+            ),
         )
 
         yield None
@@ -226,7 +230,7 @@ def mock_director_v2_service_run(
         else:
             request.respond(
                 status.HTTP_201_CREATED,
-                text=service_status_new_style.json(),
+                text=service_status_new_style.model_dump_json(),
             )
         yield None
 
