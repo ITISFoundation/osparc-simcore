@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
 from models_library.projects_nodes_io import NodeID
@@ -9,7 +7,7 @@ from ._notifier import Notifier
 
 
 async def publish_disk_usage(
-    app: FastAPI, *, user_id: UserID, node_id: NodeID, usage: dict[Path, DiskUsage]
+    app: FastAPI, *, user_id: UserID, node_id: NodeID, usage: dict[str, DiskUsage]
 ) -> None:
     notifier: Notifier = Notifier.get_from_app_state(app)
     await notifier.notify_service_disk_usage(

@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from pathlib import Path
 from typing import Protocol
 
 from models_library.projects_nodes_io import NodeID
@@ -52,7 +51,10 @@ class DiskUsage(BaseModel):
             used_percent=used_percent,
         )
 
+    def __hash__(self):
+        return hash((self.used, self.free, self.total, self.used_percent))
+
 
 class ServiceDiskUsage(BaseModel):
     node_id: NodeID
-    usage: dict[Path, DiskUsage]
+    usage: dict[str, DiskUsage]

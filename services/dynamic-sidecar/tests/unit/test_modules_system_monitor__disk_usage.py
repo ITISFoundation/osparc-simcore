@@ -1,3 +1,4 @@
+# pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
@@ -11,14 +12,50 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
 from models_library.projects_nodes_io import NodeID
+from models_library.services_types import RunID
 from models_library.users import UserID
+from models_library.utils.json_serialization import json_dumps
 from psutil._common import sdiskusage
 from pydantic import ByteSize
 from pytest_mock import MockerFixture
+from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
     DiskUsageMonitor,
+    MountPathCategory,
+    _get_monitored_paths,
     get_usage,
 )
+
+
+@pytest.fixture
+def dy_volumes(tmp_path: Path) -> Path:
+    return tmp_path
+
+
+@pytest.fixture
+def get_monitored_paths(
+    dy_volumes: Path, node_id: NodeID
+) -> Callable[[Path, Path, list[Path]], dict[MountPathCategory, set[Path]]]:
+    def _(
+        inputs: Path, outputs: Path, states: list[Path]
+    ) -> dict[MountPathCategory, set[Path]]:
+        mounted_volumes = MountedVolumes(
+            run_id=RunID.create(),
+            node_id=node_id,
+            inputs_path=dy_volumes / inputs,
+            outputs_path=dy_volumes / outputs,
+            user_preferences_path=None,
+            state_paths=[dy_volumes / x for x in states],
+            state_exclude=set(),
+            compose_namespace="",
+            dy_volumes=dy_volumes,
+        )
+        app = Mock()
+        app.state = Mock()
+        app.state.mounted_volumes = mounted_volumes
+        return _get_monitored_paths(app)
+
+    return _
 
 
 @pytest.fixture
@@ -84,15 +121,22 @@ async def _assert_monitor_triggers(
 
 async def test_disk_usage_monitor(
     mock_disk_usage: Callable[[dict[str, ByteSize]], None],
+    get_monitored_paths: Callable[
+        [Path, Path, list[Path]], dict[MountPathCategory, set[Path]]
+    ],
+    dy_volumes: Path,
     publish_disk_usage_spy: Mock,
-    faker: Faker,
+    node_id: NodeID,
 ) -> None:
     disk_usage_monitor = DiskUsageMonitor(
         app=AsyncMock(),
         user_id=1,
-        node_id=faker.uuid4(),
+        node_id=node_id,
         interval=timedelta(seconds=5),
-        monitored_paths=[Path("/"), Path("/tmp")],  # noqa: S108
+        monitored_paths=get_monitored_paths(
+            Path("/inputs"), Path("/outputs"), [Path("/workspace")]
+        ),
+        dy_volumes_mount_dir=dy_volumes,
     )
 
     assert len(publish_disk_usage_spy.call_args_list) == 0
@@ -100,9 +144,9 @@ async def test_disk_usage_monitor(
     for i in range(1, 3):
         mock_disk_usage(
             {
-                "/": _get_byte_size(f"{i}kb"),
-                "/tmp": _get_byte_size(f"{i*2}kb"),  # noqa: S108
-            }
+                f"{p}": _get_byte_size(f"{i*2}kb")
+                for p in disk_usage_monitor._flat_monitored_paths  # noqa: SLF001
+            },
         )
 
         await _assert_monitor_triggers(
@@ -110,8 +154,7 @@ async def test_disk_usage_monitor(
         )
 
         assert _get_entry(publish_disk_usage_spy, index=0) == {
-            Path("/"): _get_mocked_disk_usage(f"{i}kb"),
-            Path("/tmp"): _get_mocked_disk_usage(f"{i*2}kb"),  # noqa: S108
+            MountPathCategory.HOST: _get_mocked_disk_usage(f"{i*2}kb"),
         }
 
         # reset mock to test again
@@ -119,7 +162,7 @@ async def test_disk_usage_monitor(
 
 
 def _random_tmp_file(tmp_path: Path, faker: Faker) -> None:
-    some_path: Path = tmp_path / faker.uuid4()
+    some_path: Path = tmp_path / f"{faker.uuid4()}"
     some_path.write_text("some text here")
 
 
@@ -129,3 +172,69 @@ async def test_get_usage(tmp_path: Path, faker: Faker):
     usage_after = await get_usage(Path("/"))
 
     assert usage_after.free < usage_before.free
+
+
+async def test_disk_usage_monitor_new_frontend_format(
+    mock_disk_usage: Callable[[dict[str, ByteSize]], None],
+    get_monitored_paths: Callable[
+        [Path, Path, list[Path]], dict[MountPathCategory, set[Path]]
+    ],
+    publish_disk_usage_spy: Mock,
+    node_id: NodeID,
+    dy_volumes: Path,
+) -> None:
+    disk_usage_monitor = DiskUsageMonitor(
+        app=AsyncMock(),
+        user_id=1,
+        node_id=node_id,
+        interval=timedelta(seconds=5),
+        monitored_paths=get_monitored_paths(
+            Path("/home/user/inputs"),
+            Path("/home/user/outputs"),
+            [Path("/home/user/workspace"), Path("/.data/assets")],
+        ),
+        dy_volumes_mount_dir=dy_volumes,
+    )
+
+    mock_disk_usage(
+        {
+            f"{p}": ByteSize(1294390525952)
+            for p in disk_usage_monitor._flat_monitored_paths  # noqa: SLF001
+        },
+    )
+
+    async def _wait_for_usage() -> dict[str, DiskUsage]:
+        publish_disk_usage_spy.reset_mock()
+        await disk_usage_monitor._monitor()  # noqa: SLF001
+        publish_disk_usage_spy.assert_called()
+        return publish_disk_usage_spy.call_args_list[0][0][0]
+
+    # normally only 1 value is found
+    frontend_usage = await _wait_for_usage()
+    print(json_dumps(frontend_usage, indent=2))
+    assert len(frontend_usage) == 1
+    assert MountPathCategory.HOST in frontend_usage
+    assert frontend_usage[MountPathCategory.HOST] == _get_mocked_disk_usage(
+        "1294390525952"
+    )
+
+    # emulate EFS
+
+    disk_usage_monitor.set_disk_usage_for_path(
+        {
+            ".data_assets": _get_mocked_disk_usage("1GB"),
+            "home_user_workspace": _get_mocked_disk_usage("1GB"),
+        }
+    )
+
+    frontend_usage = await _wait_for_usage()
+    print(json_dumps(frontend_usage, indent=2))
+    assert len(frontend_usage) == 2
+    assert MountPathCategory.HOST in frontend_usage
+    assert MountPathCategory.STATES_VOLUMES in frontend_usage
+    assert frontend_usage[MountPathCategory.HOST] == _get_mocked_disk_usage(
+        "1294390525952"
+    )
+    assert frontend_usage[MountPathCategory.STATES_VOLUMES] == _get_mocked_disk_usage(
+        "1GB"
+    )

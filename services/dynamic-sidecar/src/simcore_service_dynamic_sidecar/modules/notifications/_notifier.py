@@ -1,5 +1,4 @@
 import contextlib
-from pathlib import Path
 
 import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
@@ -34,7 +33,7 @@ class Notifier(SingletonInAppStateMixin):
         self._sio_manager = sio_manager
 
     async def notify_service_disk_usage(
-        self, user_id: UserID, node_id: NodeID, usage: dict[Path, DiskUsage]
+        self, user_id: UserID, node_id: NodeID, usage: dict[str, DiskUsage]
     ) -> None:
         await self._sio_manager.emit(
             SOCKET_IO_SERVICE_DISK_USAGE_EVENT,
