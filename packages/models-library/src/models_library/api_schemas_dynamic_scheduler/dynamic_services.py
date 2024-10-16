@@ -1,3 +1,5 @@
+from typing import Final
+
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -5,7 +7,7 @@ from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.services_resources import ServiceResourcesDictHelpers
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 
 class DynamicServiceStart(DynamicServiceCreate):
@@ -35,6 +37,11 @@ class DynamicServiceStart(DynamicServiceCreate):
     )
 
 
+DynamicServiceStartAdapter: Final[TypeAdapter[DynamicServiceStart]] = TypeAdapter(
+    DynamicServiceStart
+)
+
+
 class DynamicServiceStop(BaseModel):
     user_id: UserID
     project_id: ProjectID
@@ -53,3 +60,8 @@ class DynamicServiceStop(BaseModel):
             }
         }
     )
+
+
+DynamicServiceStopAdapter: Final[TypeAdapter[DynamicServiceStop]] = TypeAdapter(
+    DynamicServiceStop
+)

@@ -1,6 +1,6 @@
-from typing import TypeAlias
+from typing import Final, TypeAlias
 
-from pydantic import BaseModel, ByteSize, ConfigDict, Field
+from pydantic import BaseModel, ByteSize, ConfigDict, Field, TypeAdapter
 
 from ..resource_tracker import HardwareInfo, PricingInfo
 from ..services import ServicePortKey
@@ -75,6 +75,9 @@ class DynamicServiceCreate(ServiceDetails):
 
 
 DynamicServiceGet: TypeAlias = RunningDynamicServiceDetails
+DynamicServiceGetAdapter: Final[TypeAdapter[DynamicServiceGet]] = TypeAdapter(
+    DynamicServiceGet
+)
 
 
 class GetProjectInactivityResponse(BaseModel):
