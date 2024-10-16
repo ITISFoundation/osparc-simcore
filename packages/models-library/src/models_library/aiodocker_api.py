@@ -11,7 +11,7 @@ from .utils.change_case import camel_to_snake
 
 
 class AioDockerContainerSpec(ContainerSpec):
-    Env: dict[str, str | None] | None = Field(  # type: ignore
+    Env: dict[str, str | None] | None = Field(
         default=None,
         description="aiodocker expects here a dictionary and re-convert it back internally`.\n",
     )
