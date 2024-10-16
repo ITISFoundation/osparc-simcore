@@ -3,9 +3,9 @@ import datetime
 from pydantic import field_validator
 
 
-def _get_float_string_as_seconds(
+def _try_convert_str_to_float_or_return(
     v: datetime.timedelta | str | float,
-) -> datetime.timedelta | float | str:
+) -> datetime.timedelta | str | float:
     if isinstance(v, str):
         try:
             return float(v)
@@ -17,4 +17,4 @@ def _get_float_string_as_seconds(
 
 def validate_timedelta_in_legacy_mode(field: str):
     """Transforms a float/int number into a valid datetime as it used to work in the past"""
-    return field_validator(field, mode="before")(_get_float_string_as_seconds)
+    return field_validator(field, mode="before")(_try_convert_str_to_float_or_return)
