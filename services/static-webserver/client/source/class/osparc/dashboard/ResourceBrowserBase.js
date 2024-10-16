@@ -77,6 +77,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   events: {
+    "changeTab": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data"
   },
 
@@ -456,6 +457,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
+      if (isStudyCreation) {
+        this.fireDataEvent("changeTab", "studiesTab");
+      }
       this.self().startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 
