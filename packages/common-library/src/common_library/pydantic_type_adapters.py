@@ -9,4 +9,4 @@ AnyHttpUrlLegacyAdapter: Final[TypeAdapter[AnyHttpUrlLegacy]] = TypeAdapter(
     AnyHttpUrlLegacy
 )
 
-ByteSizeAdapter = TypeAdapter(ByteSize)
+ByteSizeAdapter: Final[TypeAdapter[ByteSize]] = TypeAdapter(ByteSize)
