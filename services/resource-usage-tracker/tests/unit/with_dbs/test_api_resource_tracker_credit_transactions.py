@@ -1,5 +1,4 @@
 from collections.abc import Iterator
-from decimal import Decimal
 from typing import Callable
 
 import httpx
