@@ -5,10 +5,11 @@ from typing import Any, ClassVar, Literal
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
+from models_library.error_codes import create_error_code
 from pydantic import BaseModel, Field, PositiveInt, SecretStr, validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.error_codes import create_error_code
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 
@@ -58,7 +59,7 @@ from .utils import (
 )
 from .utils_email import get_template_path, send_email_from_template
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
@@ -266,19 +267,27 @@ async def register(request: web.Request):
             )
         except Exception as err:  # pylint: disable=broad-except
             error_code = create_error_code(err)
-            log.exception(
-                "Failed while sending confirmation email to %s, %s [%s]",
-                f"{user=}",
-                f"{_confirmation=}",
-                f"{error_code}",
-                extra={"error_code": error_code},
+            user_error_msg = f"{MSG_CANT_SEND_MAIL} [{error_code}]"
+
+            _logger.exception(
+                **create_troubleshotting_log_kwargs(
+                    user_error_msg,
+                    error=err,
+                    error_code=error_code,
+                    error_context={
+                        "request": request,
+                        "registration": registration,
+                        "user_id": user.get("id"),
+                        "user": user,
+                        "confirmation": _confirmation,
+                    },
+                    tip="Failed while sending confirmation email",
+                )
             )
 
             await db.delete_confirmation_and_user(user, _confirmation)
 
-            raise web.HTTPServiceUnavailable(
-                reason=f"{MSG_CANT_SEND_MAIL} [{error_code}]"
-            ) from err
+            raise web.HTTPServiceUnavailable(reason=user_error_msg) from err
 
         return flash_response(
             "You are registered successfully! To activate your account, please, "
@@ -400,13 +409,19 @@ async def register_phone(request: web.Request):
     except Exception as err:  # pylint: disable=broad-except
         # Unhandled errors -> 503
         error_code = create_error_code(err)
-        log.exception(
-            "Phone registration failed [%s]",
-            f"{error_code}",
-            extra={"error_code": error_code},
+        user_error_msg = f"Currently we cannot register phone numbers [{error_code}]"
+
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                user_error_msg,
+                error=err,
+                error_code=error_code,
+                error_context={"request": request, "registration": registration},
+                tip="Phone registration failed",
+            )
         )
 
         raise web.HTTPServiceUnavailable(
-            reason=f"Currently we cannot register phone numbers ({error_code})",
+            reason=user_error_msg,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
