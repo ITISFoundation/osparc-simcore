@@ -9,10 +9,9 @@ Usage:
 from collections.abc import Sequence
 from typing import Any, ClassVar, Generic, TypeAlias, TypeVar
 
-from fastapi_pagination.limit_offset import LimitOffsetParams
-from fastapi_pagination.links.limit_offset import (
-    LimitOffsetPage as _FastApiLimitOffsetPage,
-)
+from fastapi_pagination.customization import CustomizedPage, UseParamsFields
+from fastapi_pagination.limit_offset import LimitOffsetPage as _LimitOffsetPage
+from fastapi_pagination.limit_offset import LimitOffsetParams as _LimitOffsetParams
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
@@ -23,16 +22,21 @@ from pydantic.generics import GenericModel
 
 T = TypeVar("T")
 
-# NOTE: same pagination limits and defaults as web-server
-Page = _FastApiLimitOffsetPage.with_custom_options(
-    limit=Field(
-        DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, ge=1, le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    )
-)
+
+# NOTE: same pagination limits and defaults as web-server,
+# otherwise it is more difficult to sync
+Page = CustomizedPage[
+    _LimitOffsetPage[T],
+    UseParamsFields(
+        limit=Field(
+            DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, ge=1, le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+        )
+    ),
+]
 # NOTE: Renamed to make shorter clients name models
 Page.__name__ = "Page"
 
-PaginationParams: TypeAlias = LimitOffsetParams
+PaginationParams: TypeAlias = _LimitOffsetParams
 
 
 class OnePage(GenericModel, Generic[T]):
