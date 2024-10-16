@@ -629,6 +629,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return null;
     },
 
+    __getPageParams: function() {
+      const filterData = this._searchBarFilter.getFilterData();
+      if (filterData.text || filterData.tags.length) {
+        const searchParams = {};
+        searchParams.text = "";
+        searchParams.tags = "";
+        if (filterData.text) {
+          searchParams.text = encodeURIComponent(filterData.text); // name, description and uuid
+        }
+        if (searchParams.tags) {
+          searchParams.tags = filterData.tags.join(",");
+        }
+        return searchParams;
+      }
+
+      const contextParams = {};
+      contextParams.workspaceId = this.getCurrentWorkspaceId();
+      contextParams.folderId = this.getCurrentFolderId();
+      return contextParams;
+    },
+
     __getNextStudiesRequest: function() {
       const params = {
         url: {
@@ -647,14 +668,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      const filterData = this._searchBarFilter.getFilterData();
-      if (filterData.text) {
-        params.url.text = encodeURIComponent(filterData.text); // name, description and uuid
+      const pageParams = this.__getPageParams();
+      Object.entries(pageParams).forEach(([key, value]) => {
+        params.url[key] = value;
+      });
+      if ("text" in pageParams) {
         return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
       }
-
-      params.url.workspaceId = this.getCurrentWorkspaceId();
-      params.url.folderId = this.getCurrentFolderId();
       return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
     },
 
