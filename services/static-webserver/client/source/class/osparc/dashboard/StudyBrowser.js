@@ -119,7 +119,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const isStudyCreation = false;
             this._startStudyById(loadStudyId, null, cancelCB, isStudyCreation);
           } else {
-            this.__reloadFolders();
             this.reloadResources();
           }
           // "Starting..." page
@@ -151,10 +150,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.data.Permissions.getInstance().canDo("studies.user.read") &&
         osparc.auth.Manager.getInstance().isLoggedIn()
       ) {
+        this.__reloadFolders();
         this.__reloadStudies();
       } else {
         this.__resetStudiesList();
       }
+    },
+
+    reloadMoreResources: function() {
+      this.__reloadStudies();
     },
 
     __reloadWorkspaces: function() {

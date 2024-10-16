@@ -223,7 +223,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    reloadResources: function() {
+    reloadMoreResources: function() {
       throw new Error("Abstract method called!");
     },
 
@@ -432,7 +432,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _moreResourcesRequired: function() {
       if (this._resourcesContainer && this._resourcesContainer.areMoreResourcesRequired(this._loadingResourcesBtn)) {
-        this.reloadResources();
+        this.reloadMoreResources();
       }
     },
 
