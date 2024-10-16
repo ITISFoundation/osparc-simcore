@@ -223,21 +223,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._loadingResourcesBtn.setVisibility("visible");
       this.__getNextStudiesRequest()
         .then(resp => {
-          const urlParams = resp["params"]["url"];
           // Context might have been changed while waiting for the response.
           // The new call is on the way, therefore this response can be ignored.
-          if ("workspaceId" in urlParams) {
-            if (
-              urlParams.workspaceId !== this.getCurrentWorkspaceId() ||
-              urlParams.folderId !== this.getCurrentFolderId()
-            ) {
-              return;
+          const reqParams = osparc.utils.Utils.deepCloneObject(resp["params"]["url"]);
+          delete reqParams["limit"];
+          delete reqParams["offset"];
+          const currentParams = this.__getRequestParams();
+          if (JSON.stringify(reqParams) !== JSON.stringify(currentParams)) {
+            // it did change
+            console.log("context changed");
+            if (this._resourcesContainer.getFlatList()) {
+              this._resourcesContainer.getFlatList().nextRequest = null;
             }
-          } else if ("text" in urlParams) {
-            const currentFilterData = this._searchBarFilter.getFilterData();
-            if (currentFilterData.text && urlParams.text !== encodeURIComponent(currentFilterData.text)) {
-              return;
-            }
+            return;
           }
 
           const studies = resp["data"];
@@ -629,25 +627,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return null;
     },
 
-    __getPageParams: function() {
+    __getRequestParams: function() {
+      const requestParams = {};
+      requestParams.orderBy = JSON.stringify(this.getOrderBy());
+
       const filterData = this._searchBarFilter.getFilterData();
       if (filterData.text || filterData.tags.length) {
-        const searchParams = {};
-        searchParams.text = "";
-        searchParams.tags = "";
+        console.log("Search:");
+        console.log(filterData.text);
+        console.log(filterData.tags);
+        requestParams.text = "";
+        requestParams.tags = "";
         if (filterData.text) {
-          searchParams.text = encodeURIComponent(filterData.text); // name, description and uuid
+          requestParams.text = encodeURIComponent(filterData.text); // name, description and uuid
         }
-        if (searchParams.tags) {
-          searchParams.tags = filterData.tags.join(",");
+        if (filterData.tags.length) {
+          requestParams.tags = filterData.tags.join(",");
         }
-        return searchParams;
+        return requestParams;
       }
 
-      const contextParams = {};
-      contextParams.workspaceId = this.getCurrentWorkspaceId();
-      contextParams.folderId = this.getCurrentFolderId();
-      return contextParams;
+      requestParams.workspaceId = this.getCurrentWorkspaceId();
+      requestParams.folderId = this.getCurrentFolderId();
+      return requestParams;
     },
 
     __getNextStudiesRequest: function() {
@@ -655,7 +657,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         url: {
           offset: 0,
           limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
-          orderBy: JSON.stringify(this.getOrderBy()),
         }
       };
 
@@ -668,11 +669,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      const pageParams = this.__getPageParams();
-      Object.entries(pageParams).forEach(([key, value]) => {
+      const requestParams = this.__getRequestParams();
+      Object.entries(requestParams).forEach(([key, value]) => {
         params.url[key] = value;
       });
-      if ("text" in pageParams) {
+      if ("text" in requestParams) {
         return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
       }
       return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
