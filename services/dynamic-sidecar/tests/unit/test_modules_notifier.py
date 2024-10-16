@@ -33,7 +33,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
-from pydantic import ByteSize, NonNegativeInt, TypeAdapter, parse_obj_as
+from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.utils import logged_gather
@@ -229,7 +229,7 @@ def _get_on_input_port_spy(
     # emulates front-end receiving message
 
     async def on_service_status(data):
-        assert parse_obj_as(ServiceDiskUsage, data) is not None
+        assert TypeAdapter(ServiceDiskUsage).validate_python(data) is not None
 
     on_event_spy = AsyncMock(wraps=on_service_status)
     socketio_client.on(SOCKET_IO_STATE_INPUT_PORTS_EVENT, on_event_spy)
@@ -318,7 +318,7 @@ def _get_on_output_port_spy(
     # emulates front-end receiving message
 
     async def on_service_status(data):
-        assert parse_obj_as(ServiceDiskUsage, data) is not None
+        assert TypeAdapter(ServiceDiskUsage).validate_python(data) is not None
 
     on_event_spy = AsyncMock(wraps=on_service_status)
     socketio_client.on(SOCKET_IO_STATE_OUTPUT_PORTS_EVENT, on_event_spy)

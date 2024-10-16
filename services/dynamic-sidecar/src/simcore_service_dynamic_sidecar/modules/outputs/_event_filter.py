@@ -8,14 +8,8 @@ from contextlib import suppress
 from dataclasses import dataclass
 from typing import Final, TypeAlias
 
-from pydantic import (
-    ByteSize,
-    NonNegativeFloat,
-    NonNegativeInt,
-    PositiveFloat,
-    PositiveInt,
-    parse_obj_as,
-)
+from common_library.pydantic_type_adapters import ByteSizeAdapter
+from pydantic import NonNegativeFloat, NonNegativeInt, PositiveFloat, PositiveInt
 from servicelib.logging_utils import log_context
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 
@@ -27,8 +21,8 @@ PortEvent: TypeAlias = str | None
 logger = logging.getLogger(__name__)
 
 
-_1_MB: Final[PositiveInt] = parse_obj_as(ByteSize, "1mib")
-_500_MB: Final[PositiveInt] = parse_obj_as(ByteSize, "500mib")
+_1_MB: Final[PositiveInt] = ByteSizeAdapter.validate_python("1mib")
+_500_MB: Final[PositiveInt] = ByteSizeAdapter.validate_python("500mib")
 
 
 class BaseDelayPolicy(ABC):

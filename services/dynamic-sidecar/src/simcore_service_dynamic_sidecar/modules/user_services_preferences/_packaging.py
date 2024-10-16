@@ -2,13 +2,14 @@ from pathlib import Path
 from typing import Final
 
 import aiofiles
-from pydantic import ByteSize, parse_obj_as
+from common_library.pydantic_type_adapters import ByteSizeAdapter
+from pydantic import ByteSize
 from servicelib.archiving_utils import archive_dir, unarchive_dir
 from servicelib.file_utils import remove_directory
 
 from ._errors import DestinationIsNotADirectoryError, PreferencesAreTooBigError
 
-_MAX_PREFERENCES_TOTAL_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "128kib")
+_MAX_PREFERENCES_TOTAL_SIZE: Final[ByteSize] = ByteSizeAdapter.validate_python("128kib")
 
 
 async def dir_to_bytes(source: Path) -> bytes:

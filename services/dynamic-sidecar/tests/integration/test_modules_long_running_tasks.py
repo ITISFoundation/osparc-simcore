@@ -23,7 +23,7 @@ from models_library.api_schemas_storage import S3BucketName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileIDTypeAdapter
 from models_library.users import UserID
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_project
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -303,8 +303,7 @@ def s3_settings(app_state: AppState) -> S3Settings:
 
 @pytest.fixture
 def bucket_name(app_state: AppState) -> S3BucketName:
-    return parse_obj_as(
-        S3BucketName,
+    return TypeAdapter(S3BucketName).validate_python(
         app_state.settings.DY_SIDECAR_R_CLONE_SETTINGS.R_CLONE_S3.S3_BUCKET_NAME,
     )
 
