@@ -156,7 +156,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
         return;
       }
 
-      const usage = diskUsage["usage"]["/"]
+      const usage = diskUsage["usage"]["HOST"]
       const color1 = this.__getIndicatorColor(usage.free);
       const progress = `${usage["used_percent"]}%`;
       const labelDiskSize = osparc.utils.Utils.bytesToSize(usage.free);
