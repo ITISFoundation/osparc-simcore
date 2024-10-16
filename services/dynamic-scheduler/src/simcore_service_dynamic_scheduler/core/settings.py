@@ -2,7 +2,8 @@ import datetime
 from functools import cached_property
 
 from common_library.pydantic_validators import timedelta_try_convert_str_to_float
-from pydantic import AliasChoices, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
+from pydantic_settings import SettingsConfigDict
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag, VersionTagAdapter
 from settings_library.director_v2 import DirectorV2Settings
@@ -60,7 +61,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
 
-    model_config = ConfigDict(extra="allow")
+    model_config = SettingsConfigDict(extra="allow")
 
 
 class ApplicationSettings(_BaseApplicationSettings):
