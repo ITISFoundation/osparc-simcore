@@ -136,7 +136,8 @@ qx.Class.define("osparc.data.model.Node", {
     outputs: {
       check: "Object",
       nullable: false,
-      event: "changeOutputs"
+      event: "changeOutputs",
+      apply: "__applyOutputs",
     },
 
     status: {
@@ -164,6 +165,12 @@ qx.Class.define("osparc.data.model.Node", {
       init: null,
       nullable: true,
       apply: "__applyPropsForm"
+    },
+
+    outputsForm: {
+      check: "osparc.widget.NodeOutputs",
+      init: null,
+      nullable: true
     },
 
     marker: {
@@ -610,6 +617,13 @@ qx.Class.define("osparc.data.model.Node", {
           file: data.file
         });
       }, this);
+    },
+
+    __applyOutputs: function() {
+      if (!this.isPropertyInitialized("outputsForm") || !this.getOutputsForm()) {
+        const nodeOutputs = new osparc.widget.NodeOutputs(this);
+        this.setOutputsForm(nodeOutputs);
+      }
     },
 
     removeNodePortConnections: function(inputNodeId) {
