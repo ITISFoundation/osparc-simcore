@@ -7,7 +7,7 @@ from typing import NamedTuple
 
 import httpx
 import pytest
-from pydantic import parse_file_as, parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
@@ -28,9 +28,8 @@ def mocked_backend(
     project_tests_dir: Path,
 ) -> MockBackendRouters:
     mock_name = "on_list_jobs.json"
-    captures = parse_file_as(
-        list[HttpApiCallCaptureModel],
-        project_tests_dir / "mocks" / mock_name,
+    captures = TypeAdapter(list[HttpApiCallCaptureModel]).validate_json(
+        Path(project_tests_dir / "mocks" / mock_name).read_text()
     )
 
     capture = captures[0]
@@ -78,7 +77,7 @@ async def test_list_solver_jobs(
         f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs", auth=auth
     )
     assert resp.status_code == status.HTTP_200_OK
-    jobs = parse_obj_as(list[Job], resp.json())
+    jobs = TypeAdapter(list[Job]).validate_python(resp.json())
 
     # list jobs (w/ pagination)
     resp = await client.get(
@@ -88,7 +87,7 @@ async def test_list_solver_jobs(
     )
     assert resp.status_code == status.HTTP_200_OK
 
-    jobs_page = parse_obj_as(Page[Job], resp.json())
+    jobs_page = TypeAdapter(Page[Job]).validate_python(resp.json())
 
     assert jobs_page.items == jobs
 

@@ -51,6 +51,8 @@ alembic==1.13.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+annotated-types==0.7.0
+    # via pydantic
 anyio==4.3.0
     # via
     #   fast-depends
@@ -136,7 +138,7 @@ email-validator==2.1.1
     #   pydantic
 fast-depends==2.4.2
     # via faststream
-fastapi==0.99.1
+fastapi==0.114.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -154,12 +156,11 @@ fastapi==0.99.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
-    #   fastapi-pagination
     #   prometheus-fastapi-instrumentator
-fastapi-pagination==0.12.17
-    # via
-    #   -c requirements/./constraints.txt
-    #   -r requirements/_base.in
+fastapi-cli==0.0.5
+    # via fastapi
+fastapi-pagination==0.12.31
+    # via -r requirements/_base.in
 faststream==0.5.10
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -378,7 +379,7 @@ psycopg2-binary==2.9.9
     #   sqlalchemy
 pycparser==2.22
     # via cffi
-pydantic==1.10.14
+pydantic==2.9.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -412,6 +413,28 @@ pydantic==1.10.14
     #   fast-depends
     #   fastapi
     #   fastapi-pagination
+    #   pydantic-extra-types
+    #   pydantic-settings
+pydantic-core==2.23.4
+    # via pydantic
+pydantic-extra-types==2.9.0
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   fastapi
+pydantic-settings==2.5.2
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
+    #   fastapi
 pygments==2.17.2
     # via rich
 pyinstrument==4.6.2
@@ -424,7 +447,7 @@ python-dateutil==2.9.0.post0
     # via arrow
 python-dotenv==1.0.1
     # via
-    #   pydantic
+    #   pydantic-settings
     #   uvicorn
 python-multipart==0.0.9
     # via fastapi
@@ -514,7 +537,7 @@ sqlalchemy==1.4.52
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.27.0
+starlette==0.38.5
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -553,6 +576,7 @@ typer==0.12.3
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
+    #   fastapi-cli
     #   faststream
 types-python-dateutil==2.9.0.20240316
     # via arrow
@@ -567,6 +591,7 @@ typing-extensions==4.10.0
     #   opentelemetry-sdk
     #   pint
     #   pydantic
+    #   pydantic-core
     #   typer
 ujson==5.9.0
     # via
@@ -606,6 +631,7 @@ uvicorn==0.29.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi
+    #   fastapi-cli
 uvloop==0.19.0
     # via uvicorn
 watchfiles==0.21.0

@@ -1,17 +1,16 @@
 from enum import auto
-from typing import Any, ClassVar
 
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import FirstNameStr, LastNameStr, UserID
 from models_library.utils.enums import StrAutoEnum
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ..domain.groups import Groups
 
 
 class ProfileCommon(BaseModel):
-    first_name: FirstNameStr | None = Field(None, example="James")
-    last_name: LastNameStr | None = Field(None, example="Maxwell")
+    first_name: FirstNameStr | None = Field(None, examples=["James"])
+    last_name: LastNameStr | None = Field(None, examples=["Maxwell"])
 
 
 class ProfileUpdate(ProfileCommon):
@@ -39,15 +38,15 @@ class Profile(ProfileCommon):
         max_length=40,
     )
 
-    @validator("role", pre=True)
+    @field_validator("role", mode="before")
     @classmethod
     def enforce_role_upper(cls, v):
         if v:
             return v.upper()
         return v
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "20",
                 "first_name": "James",
@@ -70,3 +69,4 @@ class Profile(ProfileCommon):
                 "gravatar_id": "9a8930a5b20d7048e37740bac5c1ca4f",
             }
         }
+    )
