@@ -633,9 +633,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const filterData = this._searchBarFilter.getFilterData();
       if (filterData.text || filterData.tags.length) {
-        console.log("Search:");
-        console.log(filterData.text);
-        console.log(filterData.tags);
         requestParams.text = "";
         requestParams.tags = "";
         if (filterData.text) {
