@@ -15,6 +15,6 @@ def _try_convert_str_to_float_or_return(
     return v
 
 
-def validate_timedelta_in_legacy_mode(field: str):
+def timedelta_try_convert_str_to_float(field: str):
     """Transforms a float/int number into a valid datetime as it used to work in the past"""
     return field_validator(field, mode="before")(_try_convert_str_to_float_or_return)

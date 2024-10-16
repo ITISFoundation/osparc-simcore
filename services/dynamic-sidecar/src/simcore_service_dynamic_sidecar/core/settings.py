@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import cast
 
 from common_library.pydantic_type_adapters import ByteSizeAdapter
-from common_library.pydantic_validators import validate_timedelta_in_legacy_mode
+from common_library.pydantic_validators import timedelta_try_convert_str_to_float
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.products import ProductName
@@ -33,8 +33,8 @@ class ResourceTrackingSettings(BaseCustomSettings):
         description="each time the status of the service is propagated",
     )
 
-    _legacy_parsing_dynamic_scheduler_stop_service_timeout = (
-        validate_timedelta_in_legacy_mode("RESOURCE_TRACKING_HEARTBEAT_INTERVAL")
+    _try_convert_resource_tracking_heartbeat_interval = (
+        timedelta_try_convert_str_to_float("RESOURCE_TRACKING_HEARTBEAT_INTERVAL")
     )
 
 
@@ -201,8 +201,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def _check_log_level(cls, value):
         return cls.validate_log_level(value)
 
-    _legacy_parsing_dynamic_telemetry_disk_usage_monitor_interval = (
-        validate_timedelta_in_legacy_mode(
+    _try_convert_dynamic_sidecar_telemetry_disk_usage_monitor_interval = (
+        timedelta_try_convert_str_to_float(
             "DYNAMIC_SIDECAR_TELEMETRY_DISK_USAGE_MONITOR_INTERVAL"
         )
     )
