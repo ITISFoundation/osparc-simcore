@@ -1,9 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from common_library.pydantic_settings_validators import (
-    validate_timedelta_in_legacy_mode,
-)
+from common_library.pydantic_validators import validate_timedelta_in_legacy_mode
 from faker import Faker
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
