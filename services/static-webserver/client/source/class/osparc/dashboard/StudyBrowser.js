@@ -225,13 +225,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(resp => {
           // Context might have been changed while waiting for the response.
           // The new call is on the way, therefore this response can be ignored.
-          const reqParams = osparc.utils.Utils.deepCloneObject(resp["params"]["url"]);
-          delete reqParams["limit"];
-          delete reqParams["offset"];
-          const currentParams = this.__getRequestParams();
-          if (JSON.stringify(reqParams) !== JSON.stringify(currentParams)) {
-            // it did change
-            console.log("context changed");
+          const contextChanged = this.__didContextChange(resp["params"]["url"]);
+          if (contextChanged) {
             if (this._resourcesContainer.getFlatList()) {
               this._resourcesContainer.getFlatList().nextRequest = null;
             }
@@ -613,16 +608,43 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
     },
 
+    __didContextChange: function(reqParams) {
+      // not needed for the comparison
+      delete reqParams["type"];
+      delete reqParams["limit"];
+      delete reqParams["offset"];
+
+      // check the entries in currentParams are the same as the reqParams
+      const currentParams = this.__getRequestParams();
+      let sameContext = true;
+      Object.entries(currentParams).forEach(([key, value]) => {
+        sameContext &= key in reqParams && reqParams[key] === value;
+      });
+      return !sameContext;
+    },
+
     __getNextPageParams: function() {
-      if ("nextRequest" in this._resourcesContainer.getFlatList() &&
-        this._resourcesContainer.getFlatList().nextRequest !== null &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
-      ) {
-        return {
-          offset: osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset"),
-          limit: osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
-        };
+      if (this._resourcesContainer.getFlatList() && this._resourcesContainer.getFlatList().nextRequest) {
+        // Context might have been changed while waiting for the response.
+        // The new call is on the way, therefore this response can be ignored.
+        const url = new URL(this._resourcesContainer.getFlatList().nextRequest);
+        const urlSearchParams = new URLSearchParams(url.search);
+        const urlParams = {};
+        for (const [snakeKey, value] of urlSearchParams.entries()) {
+          const key = osparc.utils.Utils.snakeToCamel(snakeKey);
+          urlParams[key] = value === "null" ? null : value;
+        }
+        const contextChanged = this.__didContextChange(urlParams);
+        if (
+          !contextChanged &&
+          osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
+          osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
+        ) {
+          return {
+            offset: osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset"),
+            limit: osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
+          };
+        }
       }
       return null;
     },
