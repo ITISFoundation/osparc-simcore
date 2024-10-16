@@ -13,6 +13,7 @@ from typing import Any
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from models_library.error_codes import parse_error_code
 from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_middlewares import (
@@ -21,7 +22,6 @@ from servicelib.aiohttp.rest_middlewares import (
     error_middleware_factory,
 )
 from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
-from servicelib.error_codes import parse_error_code
 
 
 @dataclass
