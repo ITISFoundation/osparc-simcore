@@ -1217,10 +1217,13 @@ async def auto_scale_cluster(
     If there are such tasks, this method will allocate new machines in AWS to cope with
     the additional load.
     """
+    # current state
     allowed_instance_types = await _sorted_allowed_instance_types(app)
     cluster = await _analyze_current_cluster(
         app, auto_scaling_mode, allowed_instance_types
     )
+
+    # cleanup
     cluster = await _cleanup_disconnected_nodes(app, cluster)
     cluster = await _terminate_broken_ec2s(app, cluster)
     cluster = await _make_pending_buffer_ec2s_join_cluster(app, cluster)
@@ -1229,8 +1232,11 @@ async def auto_scale_cluster(
     )
     cluster = await _drain_retired_nodes(app, cluster)
 
+    # desired state
     cluster = await _autoscale_cluster(
         app, cluster, auto_scaling_mode, allowed_instance_types
     )
+
+    # notify
     await _notify_machine_creation_progress(app, cluster, auto_scaling_mode)
     await _notify_autoscaling_status(app, cluster, auto_scaling_mode)
