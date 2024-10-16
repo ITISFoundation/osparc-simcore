@@ -6,7 +6,7 @@ import pytest
 from faker import Faker
 from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
-from pydantic import TypeAdapter, create_model
+from pydantic import RootModel, TypeAdapter, create_model
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -100,7 +100,7 @@ def test_job_to_node_inputs_conversion():
     got_node_inputs = create_node_inputs_from_job_inputs(inputs=job_inputs)
     got_job_inputs = create_job_inputs_from_node_inputs(inputs=node_inputs)
 
-    NodeInputs = create_model("NodeInputs", __root__=(dict[str, InputTypes], ...))
+    NodeInputs = create_model("NodeInputs", __base__=RootModel[dict[str, InputTypes]])
     print(NodeInputs.model_validate(got_node_inputs).model_dump_json(indent=2))
     print(got_job_inputs.model_dump_json(indent=2))
 

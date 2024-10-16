@@ -18,6 +18,7 @@ from pydantic import (
     StrictInt,
     TypeAdapter,
     ValidationError,
+    ValidationInfo,
     field_validator,
 )
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
@@ -194,8 +195,8 @@ class Job(BaseModel):
 
     @field_validator("name", mode="before")
     @classmethod
-    def check_name(cls, v, values):
-        _id = str(values["id"])
+    def check_name(cls, v, info: ValidationInfo):
+        _id = str(info.data["id"])
         if not v.endswith(f"/{_id}"):
             msg = f"Resource name [{v}] and id [{_id}] do not match"
             raise ValueError(msg)
