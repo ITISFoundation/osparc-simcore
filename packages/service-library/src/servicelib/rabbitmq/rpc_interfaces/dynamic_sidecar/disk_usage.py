@@ -1,11 +1,11 @@
 import logging
 
 from models_library.api_schemas_dynamic_sidecar import DYNAMIC_SIDECAR_RPC_NAMESPACE
+from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import parse_obj_as
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
-from simcore_service_dynamic_sidecar.api.rpc._disk_usage import DiskUsage
 
 _logger = logging.getLogger(__name__)
 
