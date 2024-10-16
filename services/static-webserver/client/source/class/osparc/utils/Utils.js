@@ -1009,7 +1009,7 @@ qx.Class.define("osparc.utils.Utils", {
     isUrl: url => /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/gm.test(url),
 
     snakeToCamel: str => {
-      str.toLowerCase().replace(/([-_][a-z])/g, group =>
+      return str.toLowerCase().replace(/([-_][a-z])/g, group =>
         group
           .toUpperCase()
           .replace("-", "")
