@@ -190,7 +190,7 @@ async def _wait_for_containers_to_be_running(app: FastAPI) -> None:
             running_container_statuses = [
                 x
                 for x in containers_statuses.values()
-                if x is not None and x.Status == ContainerStatus.running
+                if x is not None and x.status == ContainerStatus.running
             ]
 
             if len(running_container_statuses) != len(shared_store.container_names):
@@ -362,8 +362,8 @@ def mock_one_container_oom_killed(mocker: MockerFixture) -> Callable[[], None]:
             results = await get_container_states(container_names)
             for result in results.values():
                 if result:
-                    result.OOMKilled = True
-                    result.Status = ContainerStatus.exited
+                    result.oom_killed = True
+                    result.status = ContainerStatus.exited
                 break
             return results
 
