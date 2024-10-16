@@ -9,7 +9,8 @@ Usage:
 from collections.abc import Sequence
 from typing import Any, ClassVar, Generic, TypeAlias, TypeVar
 
-from fastapi_pagination.customization import CustomizedPage, UseParamsFields
+from fastapi import Query
+from fastapi_pagination.customization import CustomizedPage, UseName, UseParamsFields
 from fastapi_pagination.limit_offset import LimitOffsetParams as _LimitOffsetParams
 from fastapi_pagination.links import LimitOffsetPage as _LimitOffsetPage
 from models_library.rest_pagination import (
@@ -17,24 +18,25 @@ from models_library.rest_pagination import (
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
 )
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
-from pydantic import Field, NonNegativeInt, validator
+from pydantic import NonNegativeInt, validator
 from pydantic.generics import GenericModel
 
 T = TypeVar("T")
 
-
-# NOTE: same pagination limits and defaults as web-server,
-# otherwise it is more difficult to sync
 Page = CustomizedPage[
     _LimitOffsetPage[T],
+    # Customizes the default and maximum to fit those of the web-server. It simplifies interconnection
     UseParamsFields(
-        limit=Field(
-            DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, ge=1, le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+        limit=Query(
+            DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+            ge=1,
+            le=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
+            description="Page size limit",
         )
     ),
+    # Renames class for the openapi.json to make the python-client's name models shorter
+    UseName(name="Page"),
 ]
-# NOTE: Renamed to make shorter clients name models
-Page.__name__ = "Page"  # type: ignore
 
 PaginationParams: TypeAlias = _LimitOffsetParams
 
