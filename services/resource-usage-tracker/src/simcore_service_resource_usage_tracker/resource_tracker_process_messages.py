@@ -47,7 +47,7 @@ _logger = logging.getLogger(__name__)
 async def process_message(app: FastAPI, data: bytes) -> bool:
     rabbit_message: RabbitResourceTrackingMessages = TypeAdapter(
         RabbitResourceTrackingMessages
-    ).validate_python(data)
+    ).validate_json(data)
     _logger.info(
         "Process %s msg service_run_id: %s",
         rabbit_message.message_type,
