@@ -10,8 +10,8 @@ from collections.abc import Sequence
 from typing import Any, ClassVar, Generic, TypeAlias, TypeVar
 
 from fastapi_pagination.customization import CustomizedPage, UseParamsFields
-from fastapi_pagination.limit_offset import LimitOffsetPage as _LimitOffsetPage
 from fastapi_pagination.limit_offset import LimitOffsetParams as _LimitOffsetParams
+from fastapi_pagination.links import LimitOffsetPage as _LimitOffsetPage
 from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
@@ -34,7 +34,7 @@ Page = CustomizedPage[
     ),
 ]
 # NOTE: Renamed to make shorter clients name models
-Page.__name__ = "Page"
+Page.__name__ = "Page"  # type: ignore
 
 PaginationParams: TypeAlias = _LimitOffsetParams
 
