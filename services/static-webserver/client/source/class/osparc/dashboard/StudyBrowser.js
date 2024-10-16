@@ -227,9 +227,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // The new call is on the way, therefore this response can be ignored.
           const contextChanged = this.__didContextChange(resp["params"]["url"]);
           if (contextChanged) {
-            if (this._resourcesContainer.getFlatList()) {
-              this._resourcesContainer.getFlatList().nextRequest = null;
-            }
             return;
           }
 
