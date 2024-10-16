@@ -7,7 +7,7 @@
 """
 
 from pathlib import Path
-from typing import Annotated, TypeAlias
+from typing import Annotated, Final, TypeAlias
 from uuid import UUID
 
 from common_library.pydantic_basic_types import ConstrainedStr
@@ -44,7 +44,9 @@ LocationName = str
 SimcoreS3FileID: TypeAlias = Annotated[
     str, StringConstraints(pattern=SIMCORE_S3_FILE_ID_RE)
 ]
-SimcoreS3FileIDTypeAdapter = TypeAdapter(SimcoreS3FileID)
+SimcoreS3FileIDTypeAdapter: Final[TypeAdapter[SimcoreS3FileID]] = TypeAdapter(
+    SimcoreS3FileID
+)
 
 
 class SimcoreS3DirectoryID(ConstrainedStr):

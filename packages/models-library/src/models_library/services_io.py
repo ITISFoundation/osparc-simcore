@@ -1,4 +1,4 @@
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any, Final, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -260,4 +260,4 @@ class ServiceOutput(BaseServiceIOModel):
         return cls.model_validate(data)
 
 
-ServiceOutputTypeAdapter = TypeAdapter(ServiceOutput)
+ServiceOutputAdapter: Final[TypeAdapter[ServiceOutput]] = TypeAdapter(ServiceOutput)

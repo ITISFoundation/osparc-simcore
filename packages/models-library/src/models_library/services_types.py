@@ -1,4 +1,4 @@
-from typing import Annotated, TypeAlias
+from typing import Annotated, Final, TypeAlias
 from uuid import uuid4
 
 import arrow
@@ -18,7 +18,7 @@ ServicePortKey: TypeAlias = Annotated[str, StringConstraints(pattern=PROPERTY_KE
 FileName: TypeAlias = Annotated[str, StringConstraints(pattern=FILENAME_RE)]
 
 ServiceKey: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_KEY_RE)]
-ServiceKeyTypeAdapter = TypeAdapter(ServiceKey)
+ServiceKeyAdapter: Final[TypeAdapter[ServiceKey]] = TypeAdapter(ServiceKey)
 
 ServiceKeyEncoded: TypeAlias = Annotated[
     str, StringConstraints(pattern=SERVICE_ENCODED_KEY_RE)
@@ -33,7 +33,7 @@ ComputationalServiceKey: TypeAlias = Annotated[
 ]
 
 ServiceVersion: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
-ServiceVersionTypeAdapter = TypeAdapter(ServiceVersion)
+ServiceVersionAdapter: Final[TypeAdapter[ServiceVersion]] = TypeAdapter(ServiceVersion)
 
 
 class RunID(str):

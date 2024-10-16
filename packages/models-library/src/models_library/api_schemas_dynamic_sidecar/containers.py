@@ -1,6 +1,6 @@
-from typing import TypeAlias
+from typing import Final, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, NonNegativeFloat
+from pydantic import BaseModel, ConfigDict, NonNegativeFloat, TypeAdapter
 
 
 class ActivityInfo(BaseModel):
@@ -13,6 +13,9 @@ class ActivityInfo(BaseModel):
             ]
         }
     )
+
+
+ActivityInfoAdapter: Final[TypeAdapter[ActivityInfo]] = TypeAdapter(ActivityInfo)
 
 
 ActivityInfoOrNone: TypeAlias = ActivityInfo | None

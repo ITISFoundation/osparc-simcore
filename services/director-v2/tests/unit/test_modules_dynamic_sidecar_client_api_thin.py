@@ -11,7 +11,7 @@ from fastapi import FastAPI, status
 from httpx import Response
 from models_library.services_creation import (
     CreateServiceMetricsAdditionalParams,
-    CreateServiceMetricsAdditionalParamsTypeAdapter,
+    CreateServiceMetricsAdditionalParamsAdapter,
 )
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import AnyHttpUrl, parse_obj_as
@@ -285,7 +285,7 @@ async def test_put_volumes(
             "post_containers_tasks",
             "/containers",
             {
-                "metrics_params": CreateServiceMetricsAdditionalParamsTypeAdapter.validate_python(
+                "metrics_params": CreateServiceMetricsAdditionalParamsAdapter.validate_python(
                     CreateServiceMetricsAdditionalParams.model_config[
                         "json_schema_extra"
                     ]["example"],

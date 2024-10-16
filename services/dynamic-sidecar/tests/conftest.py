@@ -20,7 +20,7 @@ from models_library.projects_nodes import NodeID
 from models_library.services import RunID
 from models_library.services_creation import (
     CreateServiceMetricsAdditionalParams,
-    CreateServiceMetricsAdditionalParamsTypeAdapter,
+    CreateServiceMetricsAdditionalParamsAdapter,
 )
 from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
@@ -333,7 +333,7 @@ def mock_stop_heart_beat_task(mocker: MockerFixture) -> AsyncMock:
 
 @pytest.fixture
 def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
-    return CreateServiceMetricsAdditionalParamsTypeAdapter.validate_python(
+    return CreateServiceMetricsAdditionalParamsAdapter.validate_python(
         CreateServiceMetricsAdditionalParams.model_config["json_schema_extra"][
             "example"
         ],

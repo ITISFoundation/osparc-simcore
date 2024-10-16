@@ -1,13 +1,13 @@
-from typing import Any
+from typing import Any, Final
 
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from .services_resources import ServiceResourcesDict
 from .services_types import (
     ServiceKey,
-    ServiceKeyTypeAdapter,
+    ServiceKeyAdapter,
     ServiceVersion,
-    ServiceVersionTypeAdapter,
+    ServiceVersionAdapter,
 )
 from .wallets import WalletID
 
@@ -41,10 +41,10 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
                 "user_email": "test@test.com",
                 "project_name": "_!New Study",
                 "node_name": "the service of a lifetime _ *!",
-                "service_key": ServiceKeyTypeAdapter.validate_python(
+                "service_key": ServiceKeyAdapter.validate_python(
                     "simcore/services/dynamic/test"
                 ),
-                "service_version": ServiceVersionTypeAdapter.validate_python("0.0.1"),
+                "service_version": ServiceVersionAdapter.validate_python("0.0.1"),
                 "service_resources": {},
                 "service_additional_metadata": {},
                 "pricing_unit_cost_id": None,
@@ -53,6 +53,6 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
     )
 
 
-CreateServiceMetricsAdditionalParamsTypeAdapter = TypeAdapter(
-    CreateServiceMetricsAdditionalParams
-)
+CreateServiceMetricsAdditionalParamsAdapter: Final[
+    TypeAdapter[CreateServiceMetricsAdditionalParams]
+] = TypeAdapter(CreateServiceMetricsAdditionalParams)
