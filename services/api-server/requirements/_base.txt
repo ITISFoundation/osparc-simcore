@@ -156,14 +156,11 @@ fastapi==0.114.2
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
-    #   fastapi-pagination
     #   prometheus-fastapi-instrumentator
 fastapi-cli==0.0.5
     # via fastapi
-fastapi-pagination==0.12.17
-    # via
-    #   -c requirements/./constraints.txt
-    #   -r requirements/_base.in
+fastapi-pagination==0.12.31
+    # via -r requirements/_base.in
 faststream==0.5.10
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
