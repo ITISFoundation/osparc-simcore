@@ -327,7 +327,7 @@ async def _try_attach_pending_ec2s(
     )
 
 
-async def sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
+async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ec2_client = get_ec2_client(app)
@@ -1217,8 +1217,7 @@ async def auto_scale_cluster(
     If there are such tasks, this method will allocate new machines in AWS to cope with
     the additional load.
     """
-
-    allowed_instance_types = await sorted_allowed_instance_types(app)
+    allowed_instance_types = await _sorted_allowed_instance_types(app)
     cluster = await _analyze_current_cluster(
         app, auto_scaling_mode, allowed_instance_types
     )
