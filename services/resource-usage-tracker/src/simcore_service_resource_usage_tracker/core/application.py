@@ -62,7 +62,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         )
 
     # ERROR HANDLERS
-    app.add_exception_handler(CustomResourceUsageTrackerError, http404_error_handler)
+    app.add_exception_handler(CustomResourceUsageTrackerError, http404_error_handler)   # type: ignore[arg-type]
 
     if settings.RESOURCE_USAGE_TRACKER_POSTGRES:
         setup_db(app)
