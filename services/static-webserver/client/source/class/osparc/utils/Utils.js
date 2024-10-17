@@ -92,7 +92,10 @@ qx.Class.define("osparc.utils.Utils", {
     FLOATING_Z_INDEX: 110000,
 
     replaceTokens: function(str, key, value) {
-      return str.replaceAll("${"+key+"}", value);
+      // `str` might be a a localized string, get the string first
+      str = str.toString ? str.toString() : str;
+      const regex = new RegExp("${"+key+"}", "g");
+      return str.replace(regex, value);
     },
 
     /**
@@ -994,16 +997,26 @@ qx.Class.define("osparc.utils.Utils", {
 
     getParamFromURL: (urlStr, param) => {
       const url = new URL(urlStr);
-      const args = new URLSearchParams(url.search);
-      return args.get(param);
+      const urlParams = new URLSearchParams(url.search);
+      return urlParams.get(param);
     },
 
-    hasParamFromURL: (url, param) => {
-      const urlParams = new URLSearchParams(url);
+    hasParamFromURL: (urlStr, param) => {
+      const url = new URL(urlStr);
+      const urlParams = new URLSearchParams(url.search);
       return urlParams.has(param);
     },
 
     isUrl: url => /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/gm.test(url),
+
+    snakeToCamel: str => {
+      return str.toLowerCase().replace(/([-_][a-z])/g, group =>
+        group
+          .toUpperCase()
+          .replace("-", "")
+          .replace("_", "")
+      );
+    },
 
     setIdToWidget: (qWidget, id) => {
       if (qWidget.getContentElement) {

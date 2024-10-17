@@ -15,8 +15,7 @@ from models_library.api_schemas_webserver.wallets import PaymentMethodTransactio
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr
-from servicelib.error_codes import create_error_code
-from servicelib.logging_utils import create_troubleshotting_log_message
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from settings_library.email import EmailProtocol, SMTPSettings
 from tenacity import (
     retry,
@@ -238,20 +237,19 @@ async def _create_user_email(
                 subtype=sub_type,
             )
 
-        except Exception as err:  # pylint: disable=broad-exception-caught
-            error_code = create_error_code(err)
-            error_msg = create_troubleshotting_log_message(
-                "Cannot attach invoice to payment",
-                error=err,
-                error_code=error_code,
-                error_context={
-                    "user": user,
-                    "payment": payment,
-                    "product": product,
-                },
-                tip=f"Check downloading: `wget -v {payment.invoice_pdf_url}`",
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            _logger.exception(
+                **create_troubleshotting_log_kwargs(
+                    "Cannot attach invoice to payment. Email sent w/o attached pdf invoice",
+                    error=exc,
+                    error_context={
+                        "user": user,
+                        "payment": payment,
+                        "product": product,
+                    },
+                    tip=f"Check downloading: `wget -v {payment.invoice_pdf_url}`",
+                )
             )
-            _logger.exception("%s", error_msg)
 
     return email_msg
 
