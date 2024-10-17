@@ -2,7 +2,7 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Annotated, TypeAlias
 
-from pydantic import ConstrainedInt, Field, HttpUrl, PositiveInt, StringConstraints
+from pydantic import Field, HttpUrl, PositiveInt, StringConstraints
 
 from .basic_regex import (
     PROPERTY_KEY_RE,
@@ -26,9 +26,7 @@ PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
 
 
 # https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Registered_ports
-class RegisteredPortInt(ConstrainedInt):
-    gt = 1024
-    lt = 65535
+RegisteredPortInt: TypeAlias = Annotated[int, Field(gt=1024, lt=65535)]
 
 
 # e.g. 'v5'
