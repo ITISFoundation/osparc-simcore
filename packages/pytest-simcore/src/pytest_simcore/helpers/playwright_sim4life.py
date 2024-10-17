@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from typing import Final, TypedDict
 
 import arrow
-from common_library.pydantic_type_adapters import ByteSizeAdapter
 from playwright.sync_api import FrameLocator, Page, WebSocket, expect
+from pydantic import ByteSize, TypeAdapter
 
 from .logging_tools import log_context
 from .playwright import (
@@ -30,6 +30,9 @@ _S4L_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
 )
 _S4L_STARTUP_SCREEN_MAX_TIME: Final[int] = 45 * SECOND
 _S4L_COPY_WORKSPACE_TIME: Final[int] = 60 * SECOND
+
+
+ByteSizeAdapter: Final[TypeAdapter[ByteSize]] = TypeAdapter(ByteSize)
 
 
 @dataclass(kw_only=True)
