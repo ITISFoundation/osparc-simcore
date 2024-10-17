@@ -13,7 +13,7 @@ from aiobotocore.session import ClientCreatorContext
 from boto3.s3.transfer import TransferConfig
 from botocore import exceptions as botocore_exc
 from botocore.client import Config
-from common_library.pydantic_type_adapters import AnyUrlLegacyAdapter
+from common_library.pydantic_networks_extension import AnyUrlLegacy
 from models_library.api_schemas_storage import ETag, S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
 from pydantic import AnyUrl, ByteSize, TypeAdapter
@@ -264,7 +264,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             Params={"Bucket": bucket, "Key": object_key},
             ExpiresIn=expiration_secs,
         )
-        return f"{AnyUrlLegacyAdapter.validate_python(generated_link)}"
+        return f"{TypeAdapter(AnyUrlLegacy).validate_python(generated_link)}"
 
     @s3_exception_handler(_logger)
     async def create_single_presigned_upload_link(
@@ -277,7 +277,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             Params={"Bucket": bucket, "Key": object_key},
             ExpiresIn=expiration_secs,
         )
-        return f"{AnyUrlLegacyAdapter.validate_python(generated_link)}"
+        return f"{TypeAdapter(AnyUrlLegacy).validate_python(generated_link)}"
 
     @s3_exception_handler(_logger)
     async def create_multipart_upload_links(
@@ -474,6 +474,6 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def compute_s3_url(*, bucket: S3BucketName, object_key: S3ObjectKey) -> AnyUrl:
-        return AnyUrlLegacyAdapter.validate_python(
+        return TypeAdapter(AnyUrlLegacy).validate_python(
             f"s3://{bucket}/{urllib.parse.quote(object_key)}"
         )

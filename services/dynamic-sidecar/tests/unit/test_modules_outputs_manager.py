@@ -31,7 +31,7 @@ from simcore_service_dynamic_sidecar.modules.outputs._context import (
 )
 from simcore_service_dynamic_sidecar.modules.outputs._manager import (
     OutputsManager,
-    UploadPortsFailed,
+    UploadPortsFailedError,
     _PortKeyTracker,
     setup_outputs_manager,
 )
@@ -234,7 +234,7 @@ async def test_recovers_after_raising_error(
         assert await outputs_manager._port_key_tracker.no_tracked_ports() is False
         await asyncio.sleep(outputs_manager.task_monitor_interval_s * 10)
 
-    with pytest.raises(UploadPortsFailed) as exec_info:
+    with pytest.raises(UploadPortsFailedError) as exec_info:
         await outputs_manager.wait_for_all_uploads_to_finish()
 
     assert set(exec_info.value.failures.keys()) == set(port_keys) | set(

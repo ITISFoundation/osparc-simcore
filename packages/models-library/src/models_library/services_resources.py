@@ -1,4 +1,3 @@
-import logging
 from enum import auto
 from typing import Any, Final, TypeAlias
 
@@ -16,9 +15,6 @@ from pydantic import (
 from .docker import DockerGenericTag
 from .utils.enums import StrAutoEnum
 from .utils.fastapi_encoders import jsonable_encoder
-
-_logger = logging.getLogger(__name__)
-
 
 ResourceName = str
 

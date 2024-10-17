@@ -22,6 +22,10 @@ from ..docker_utils import (
 from ..logging_utils import log_catch
 from ..progress_bar import AsyncReportCB, ProgressBarData
 
+_DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
+    "200MiB"
+)
+
 _logger = logging.getLogger(__name__)
 
 
@@ -102,11 +106,6 @@ async def retrieve_image_layer_information(
                     json_response
                 )
     return None
-
-
-_DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
-    "200MiB"
-)
 
 
 async def pull_images(

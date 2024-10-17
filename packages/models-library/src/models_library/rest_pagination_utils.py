@@ -1,7 +1,8 @@
 from math import ceil
 from typing import Any, Protocol, TypedDict, Union, runtime_checkable
 
-from common_library.pydantic_type_adapters import AnyHttpUrlLegacyAdapter
+from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
+from pydantic import TypeAdapter
 
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
@@ -40,7 +41,7 @@ def _replace_query(url: _URLType, query: dict[str, Any]) -> str:
         new_url = url.replace_query_params(**query)
 
     new_url_str = f"{new_url}"
-    return f"{AnyHttpUrlLegacyAdapter.validate_python(new_url_str)}"
+    return f"{TypeAdapter(AnyHttpUrlLegacy).validate_python(new_url_str)}"
 
 
 class PageDict(TypedDict):

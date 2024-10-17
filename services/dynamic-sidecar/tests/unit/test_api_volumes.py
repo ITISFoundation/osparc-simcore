@@ -56,6 +56,4 @@ async def test_volumes_state_saved_error(
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     json_response = response.json()
-    assert (
-        invalid_volume_category not in json_response["detail"][0]["ctx"]["enum_values"]
-    )
+    assert invalid_volume_category not in json_response["detail"][0]["ctx"]["expected"]

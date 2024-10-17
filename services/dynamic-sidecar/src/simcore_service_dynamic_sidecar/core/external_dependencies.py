@@ -1,5 +1,5 @@
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
-from pydantic.errors import PydanticErrorMixin
 from servicelib.utils import logged_gather
 
 from .postgres import wait_for_postgres_liveness
@@ -8,7 +8,7 @@ from .registry import wait_for_registries_liveness
 from .storage import wait_for_storage_liveness
 
 
-class CouldNotReachExternalDependenciesError(PydanticErrorMixin, Exception):
+class CouldNotReachExternalDependenciesError(OsparcErrorMixin, Exception):
     msg_template: str = (
         "Could not start because the following external dependencies failed: {failed}"
     )

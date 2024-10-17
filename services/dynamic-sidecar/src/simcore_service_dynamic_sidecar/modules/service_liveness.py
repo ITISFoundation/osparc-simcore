@@ -4,7 +4,7 @@ from collections.abc import Awaitable, Callable
 from datetime import timedelta
 from typing import Final
 
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 from tenacity import AsyncRetrying, RetryCallState, TryAgain
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -16,7 +16,7 @@ _DEFAULT_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=1)
 _DEFAULT_TIMEOUT_INTERVAL: Final[timedelta] = timedelta(seconds=30)
 
 
-class CouldNotReachServiceError(PydanticErrorMixin, Exception):
+class CouldNotReachServiceError(OsparcErrorMixin, Exception):
     msg_template: str = "Could not contact service '{service_name}' at '{endpoint}'. Look above for details."
 
 

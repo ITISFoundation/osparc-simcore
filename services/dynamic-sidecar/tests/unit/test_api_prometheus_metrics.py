@@ -10,11 +10,12 @@ from unittest.mock import AsyncMock
 import pytest
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
+from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
     Client,
@@ -44,7 +45,7 @@ async def enable_prometheus_metrics(
         monkeypatch,
         {
             "DY_SIDECAR_CALLBACKS_MAPPING": json.dumps(
-                CallbacksMapping.Config.schema_extra["examples"][2]
+                CallbacksMapping.model_config["json_schema_extra"]["examples"][2]
             )
         },
     )
@@ -59,7 +60,9 @@ async def app(mock_rabbitmq_envs: EnvVarsDict, app: FastAPI) -> AsyncIterable[Fa
 
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://backgroud.testserver.io")
+    return TypeAdapter(AnyHttpUrlLegacy).validate_python(
+        "http://backgroud.testserver.io"
+    )
 
 
 @pytest.fixture
@@ -71,7 +74,7 @@ async def httpx_async_client(
 ) -> AsyncIterable[AsyncClient]:
     async with AsyncClient(
         app=app,
-        base_url=backend_url,
+        base_url=f"{backend_url}",
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
@@ -81,7 +84,7 @@ async def httpx_async_client(
 def client(
     app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
 ) -> Client:
-    return Client(app=app, async_client=httpx_async_client, base_url=backend_url)
+    return Client(app=app, async_client=httpx_async_client, base_url=f"{backend_url}")
 
 
 @pytest.fixture
