@@ -506,17 +506,17 @@ async def _assign_tasks_to_current_cluster(
     cluster: Cluster,
     auto_scaling_mode: BaseAutoscaling,
 ) -> tuple[list, Cluster]:
-    """Estimates how tasks will be assigned to cluster's instances
-        based on the resources required by each task
+    """
+        Evaluates whether a task can be executed on any instance within the cluster. If the task's resource requirements are met, the task is *denoted* as assigned to the cluster.
+        Note: This is an estimation only since actual scheduling is handled by Dask.
 
     Returns:
-        A tuple with
-        - list of unassigned tasks (i.e. those not fitting available machines in cluster)
-        - same cluster instance as in the input
-
+        A tuple containing:
+            - A list of unassigned tasks (tasks whose resource requirements cannot be fulfilled by the available machines in the cluster).
+            - The same cluster instance passed as input.
     """
     unassigned_tasks = []
-    assignment_functions = [
+    assignment_predicates = [
         functools.partial(_try_assign_task_to_ec2_instance, instances=instances)
         for instances in (
             cluster.active_nodes,
@@ -539,7 +539,7 @@ async def _assign_tasks_to_current_cluster(
                 task_required_ec2_instance=task_required_ec2_instance,
                 task_required_resources=task_required_resources,
             )
-            for is_assigned in assignment_functions
+            for is_assigned in assignment_predicates
         ):
             _logger.debug(
                 "task %s is assigned to one instance available in cluster", task
