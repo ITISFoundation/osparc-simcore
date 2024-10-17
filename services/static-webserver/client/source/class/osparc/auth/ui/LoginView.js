@@ -93,15 +93,17 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         createAccountBtn.setLabel(this.tr("Request Account"));
       }
       createAccountBtn.addListener("execute", () => {
-        createAccountBtn.setEnabled(false);
-        if (createAccountAction === "REGISTER") {
+        // "172.29.100.6.nip.io"
+        // "tip.itis.swiss"
+        if (window.location.hostname === "172.29.100.6.nip.io") {
+          this.__openTIPITISSWISSPhaseOutDialog();
+        } else if (createAccountAction === "REGISTER") {
           this.fireEvent("toRegister");
         } else if (createAccountAction === "REQUEST_ACCOUNT_FORM") {
           this.fireEvent("toRequestAccount");
         } else if (createAccountAction === "REQUEST_ACCOUNT_INSTRUCTIONS") {
           osparc.store.Support.openInvitationRequiredDialog();
         }
-        createAccountBtn.setEnabled(true);
       }, this);
       osparc.utils.Utils.setIdToWidget(createAccountBtn, "loginCreateAccountBtn");
 
@@ -160,6 +162,24 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         poweredByLayout.add(s4lLogo);
         this.add(poweredByLayout);
       }
+    },
+
+    __openTIPITISSWISSPhaseOutDialog: function() {
+      const createAccountWindow = new osparc.ui.window.Dialog("Create Account").set({
+        maxWidth: 380
+      });
+      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      let message = "This version of the planning tool will be phased out soon and no longer accepts new users.";
+      message += "<br>";
+      const tipLiteLabel = new osparc.ui.basic.LinkLabel("TIP.lite", "https://tip-lite.science/");
+      const tipLabel = new osparc.ui.basic.LinkLabel("TIP", "https://tip.science/");
+      const hereLabel = new osparc.ui.basic.LinkLabel("here", "https://itis.swiss/tools-and-systems/ti-planning/overview/");
+      message += `Please visit ${tipLiteLabel} or ${tipLabel} instead. See ${hereLabel} for more information.`;
+      createAccountWindow.setMessage(message);
+      const linkLabel = new osparc.ui.basic.LinkLabel(vendor["invitation_url"], vendor["invitation_url"]);
+      createAccountWindow.addWidget(linkLabel);
+      createAccountWindow.center();
+      createAccountWindow.open();
     },
 
     getEmail: function() {
