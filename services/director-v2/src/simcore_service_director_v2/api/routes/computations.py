@@ -160,7 +160,7 @@ async def _get_project_metadata(
             project_id
         )
         if project_ancestors.parent_project_uuid is None:
-            # no parents here
+            _logger.debug("no parent found for project %s", project_id)
             return {}
 
         assert project_ancestors.parent_node_id is not None  # nosec
