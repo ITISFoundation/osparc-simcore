@@ -68,10 +68,10 @@ class SimcoreEC2API:
         self,
         instance_type_names: set[InstanceTypeType],
     ) -> list[EC2InstanceType]:
-        """returns the ec2 instance types from a list of instance type names
-            NOTE: the order might differ!
+        """Returns the ec2 instance types from a list of instance type names (sorted by name)
+
         Arguments:
-            instance_type_names -- the types to filter with
+            instance_type_names -- the types to filter with. If an empty set, it returns all.
 
         Raises:
             Ec2InstanceTypeInvalidError: some invalid types were used as filter
@@ -95,7 +95,7 @@ class SimcoreEC2API:
                         ),
                     )
                 )
-        return list_instances
+        return sorted(list_instances, key=lambda i: i.name)
 
     @ec2_exception_handler(_logger)
     async def launch_instances(

@@ -2,8 +2,10 @@ import asyncio
 import collections
 import dataclasses
 import datetime
+import functools
 import itertools
 import logging
+import typing
 from typing import Final, cast
 
 import arrow
@@ -327,30 +329,37 @@ async def _try_attach_pending_ec2s(
     )
 
 
-async def sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
+async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ec2_client = get_ec2_client(app)
 
     # some instances might be able to run several tasks
+    selected_names = list(
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
+    )
+    assert set(selected_names).issubset(typing.get_args(InstanceTypeType))  # nosec
+
     allowed_instance_types: list[
         EC2InstanceType
     ] = await ec2_client.get_ec2_instance_capabilities(
-        cast(
-            set[InstanceTypeType],
-            set(
-                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
-            ),
-        )
+        cast(set[InstanceTypeType], set(selected_names))
     )
 
-    def _sort_according_to_allowed_types(instance_type: EC2InstanceType) -> int:
-        assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-        return list(
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
-        ).index(f"{instance_type.name}")
+    if selected_names:
 
-    allowed_instance_types.sort(key=_sort_according_to_allowed_types)
+        def _as_selection(instance_type: EC2InstanceType) -> int:
+            assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+            return selected_names.index(f"{instance_type.name}")
+
+        allowed_instance_types.sort(key=_as_selection)
+    else:
+        # NOTE An empty set to get_ec2_instance_capabilities it will return  ALL of the instances
+        _logger.warning(
+            "All %s instances are allowed since EC2_INSTANCES_ALLOWED_TYPES is set to empty (=%s)",
+            len(allowed_instance_types),
+            selected_names,
+        )
     return allowed_instance_types
 
 
@@ -497,51 +506,44 @@ async def _assign_tasks_to_current_cluster(
     cluster: Cluster,
     auto_scaling_mode: BaseAutoscaling,
 ) -> tuple[list, Cluster]:
+    """
+        Evaluates whether a task can be executed on any instance within the cluster. If the task's resource requirements are met, the task is *denoted* as assigned to the cluster.
+        Note: This is an estimation only since actual scheduling is handled by Dask.
+
+    Returns:
+        A tuple containing:
+            - A list of unassigned tasks (tasks whose resource requirements cannot be fulfilled by the available machines in the cluster).
+            - The same cluster instance passed as input.
+    """
     unassigned_tasks = []
+    assignment_predicates = [
+        functools.partial(_try_assign_task_to_ec2_instance, instances=instances)
+        for instances in (
+            cluster.active_nodes,
+            cluster.drained_nodes + cluster.buffer_drained_nodes,
+            cluster.pending_nodes,
+            cluster.pending_ec2s,
+            cluster.buffer_ec2s,
+        )
+    ]
+
     for task in tasks:
         task_required_resources = auto_scaling_mode.get_task_required_resources(task)
         task_required_ec2_instance = await auto_scaling_mode.get_task_defined_instance(
             app, task
         )
 
-        assignment_functions = [
-            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
-                task,
-                instances=cluster.active_nodes,
-                task_required_ec2_instance=required_ec2,
-                task_required_resources=required_resources,
-            ),
-            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
-                task,
-                instances=cluster.drained_nodes + cluster.buffer_drained_nodes,
-                task_required_ec2_instance=required_ec2,
-                task_required_resources=required_resources,
-            ),
-            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
-                task,
-                instances=cluster.pending_nodes,
-                task_required_ec2_instance=required_ec2,
-                task_required_resources=required_resources,
-            ),
-            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
-                task,
-                instances=cluster.pending_ec2s,
-                task_required_ec2_instance=required_ec2,
-                task_required_resources=required_resources,
-            ),
-            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
-                task,
-                instances=cluster.buffer_ec2s,
-                task_required_ec2_instance=required_ec2,
-                task_required_resources=required_resources,
-            ),
-        ]
-
         if any(
-            assignment(task, task_required_ec2_instance, task_required_resources)
-            for assignment in assignment_functions
+            is_assigned(
+                task,
+                task_required_ec2_instance=task_required_ec2_instance,
+                task_required_resources=task_required_resources,
+            )
+            for is_assigned in assignment_predicates
         ):
-            _logger.debug("assigned task to cluster")
+            _logger.debug(
+                "task %s is assigned to one instance available in cluster", task
+            )
         else:
             unassigned_tasks.append(task)
 
@@ -1131,7 +1133,7 @@ async def _autoscale_cluster(
     # 1. check if we have pending tasks and resolve them by activating some drained nodes
     unrunnable_tasks = await auto_scaling_mode.list_unrunnable_tasks(app)
     _logger.info("found %s unrunnable tasks", len(unrunnable_tasks))
-
+    # NOTE: this function predicts how dask will assign a task to a machine
     queued_or_missing_instance_tasks, cluster = await _assign_tasks_to_current_cluster(
         app, unrunnable_tasks, cluster, auto_scaling_mode
     )
@@ -1217,11 +1219,13 @@ async def auto_scale_cluster(
     If there are such tasks, this method will allocate new machines in AWS to cope with
     the additional load.
     """
-
-    allowed_instance_types = await sorted_allowed_instance_types(app)
+    # current state
+    allowed_instance_types = await _sorted_allowed_instance_types(app)
     cluster = await _analyze_current_cluster(
         app, auto_scaling_mode, allowed_instance_types
     )
+
+    # cleanup
     cluster = await _cleanup_disconnected_nodes(app, cluster)
     cluster = await _terminate_broken_ec2s(app, cluster)
     cluster = await _make_pending_buffer_ec2s_join_cluster(app, cluster)
@@ -1230,8 +1234,11 @@ async def auto_scale_cluster(
     )
     cluster = await _drain_retired_nodes(app, cluster)
 
+    # desired state
     cluster = await _autoscale_cluster(
         app, cluster, auto_scaling_mode, allowed_instance_types
     )
+
+    # notify
     await _notify_machine_creation_progress(app, cluster, auto_scaling_mode)
     await _notify_autoscaling_status(app, cluster, auto_scaling_mode)
