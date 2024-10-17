@@ -50,10 +50,10 @@ class PaymentsTransactionsDB(BaseModel):
         from_attributes=True,
         json_schema_extra={
             "examples": [
-                _EXAMPLE_AFTER_INIT,
+                _EXAMPLE_AFTER_INIT,  # type:ignore[list-item]
                 # successful completion
                 {
-                    **_EXAMPLE_AFTER_INIT,
+                    **_EXAMPLE_AFTER_INIT,  # type:ignore[dict-item]
                     "invoice_url": "https://my-fake-pdf-link.com",
                     "stripe_invoice_id": "12345",
                     "invoice_pdf_url": "https://my-fake-pdf-link.com",
@@ -89,10 +89,10 @@ class PaymentsMethodsDB(BaseModel):
         from_attributes=True,
         json_schema_extra={
             "examples": [
-                _EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
+                _EXAMPLE_AFTER_INIT_PAYMENT_METHOD,  # type:ignore[list-item]
                 # successful completion
                 {
-                    **_EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
+                    **_EXAMPLE_AFTER_INIT_PAYMENT_METHOD,  # type:ignore[dict-item]
                     "completed_at": "2023-09-27T10:00:15",
                     "state": "SUCCESS",
                     "state_message": "Payment method completed successfully",

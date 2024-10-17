@@ -55,7 +55,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow")  # type:ignore[assignment]
 
 
 class ApplicationSettings(_BaseApplicationSettings):

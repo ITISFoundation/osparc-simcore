@@ -18,4 +18,6 @@ def setup_rest_api(app: FastAPI):
     app.include_router(api_router)
 
     app.add_exception_handler(Exception, handle_errors_as_500)
-    app.add_exception_handler(HTTPException, http_exception_as_json_response)
+    app.add_exception_handler(
+        HTTPException, http_exception_as_json_response  # type:ignore[arg-type]
+    )

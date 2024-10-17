@@ -12,11 +12,11 @@ from models_library.api_schemas_payments.errors import (
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
 )
-from simcore_service_payments.services.payments_gateway import TypeAdapter
 
 from ..models.db import PaymentsMethodsDB
 from .base import BaseRepository

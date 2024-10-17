@@ -3,9 +3,8 @@ from typing import Any
 
 from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 from pydantic_core.core_schema import ValidationInfo
-from simcore_service_payments.core.settings import field_validator
 
 
 class _BaseAck(BaseModel):
@@ -92,7 +91,7 @@ class AckPayment(_BaseAckPayment):
     model_config = ConfigDict(
         json_schema_extra={
             "example": _EXAMPLES[1].copy(),  # shown in openapi.json
-            "examples": _EXAMPLES,
+            "examples": _EXAMPLES,  # type:ignore[dict-item]
         }
     )
 
