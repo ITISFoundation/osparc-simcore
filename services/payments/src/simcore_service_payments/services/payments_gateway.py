@@ -12,12 +12,12 @@ from collections.abc import Callable
 from contextlib import suppress
 
 import httpx
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from httpx import URL, HTTPStatusError
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
-from pydantic import ValidationError, parse_raw_as
-from pydantic.errors import PydanticErrorMixin
+from pydantic import TypeAdapter, ValidationError
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import (
     AttachLifespanMixin,
@@ -48,11 +48,11 @@ _logger = logging.getLogger(__name__)
 def _parse_raw_as_or_none(cls: type, text: str | None):
     if text:
         with suppress(ValidationError):
-            return parse_raw_as(cls, text)
+            return TypeAdapter(cls).validate_python(text)
     return None
 
 
-class PaymentsGatewayError(PydanticErrorMixin, ValueError):
+class PaymentsGatewayError(OsparcErrorMixin, ValueError):
     msg_template = "{operation_id} error {status_code}: {reason}"
 
     @classmethod

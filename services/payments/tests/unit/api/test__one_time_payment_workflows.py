@@ -5,6 +5,8 @@
 # pylint: disable=unused-variable
 
 
+import json
+
 import httpx
 import pytest
 from common_library.pydantic_basic_types import IDStr
@@ -13,10 +15,10 @@ from fastapi import FastAPI, status
 from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
 from models_library.payments import UserInvoiceAddress
 from models_library.products import StripePriceID, StripeTaxRateID
-from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.rabbitmq_basic_types import RPCMethodNameAdapter
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -90,7 +92,7 @@ async def test_successful_one_time_payment_workflow(
     # ACK via api/rest
     inited = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "init_payment"),
+        RPCMethodNameAdapter.validate_python("init_payment"),
         amount_dollars=1000,
         target_credits=10000,
         product_name="osparc",
@@ -111,7 +113,9 @@ async def test_successful_one_time_payment_workflow(
     # ACK
     response = await client.post(
         f"/v1/payments/{inited.payment_id}:ack",
-        json=AckPayment(success=True, invoice_url=faker.url()).dict(),
+        json=json.loads(
+            AckPayment(success=True, invoice_url=faker.url()).model_dump_json()
+        ),
         headers=auth_headers,
     )
 
@@ -121,7 +125,7 @@ async def test_successful_one_time_payment_workflow(
     # LIST payments via api/rest
     got = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_payments_page"),
+        RPCMethodNameAdapter.validate_python("get_payments_page"),
         user_id=user_id,
         product_name="osparc",
         timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,

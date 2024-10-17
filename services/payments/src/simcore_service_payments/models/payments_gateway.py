@@ -8,7 +8,7 @@ from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMetho
 from models_library.basic_types import AmountDecimal
 from models_library.payments import UserInvoiceAddress
 from models_library.products import StripePriceID, StripeTaxRateID
-from pydantic import BaseModel, EmailStr, Extra, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 COUNTRIES_WITH_VAT = ["CH", "LI"]
 
@@ -40,9 +40,7 @@ class InitPayment(BaseModel):
     stripe_price_id: StripePriceID
     stripe_tax_rate_id: StripeTaxRateID
     stripe_tax_exempt_value: StripeTaxExempt
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class PaymentInitiated(BaseModel):
@@ -59,9 +57,7 @@ class InitPaymentMethod(BaseModel):
     user_name: IDStr
     user_email: EmailStr
     wallet_name: IDStr
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class PaymentMethodInitiated(BaseModel):

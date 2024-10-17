@@ -1,6 +1,5 @@
 import datetime
 from decimal import Decimal
-from typing import Any, ClassVar
 
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from models_library.emails import LowerCaseEmailStr
@@ -8,7 +7,7 @@ from models_library.payments import StripeInvoiceID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, ConfigDict, HttpUrl
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -47,10 +46,9 @@ class PaymentsTransactionsDB(BaseModel):
     completed_at: datetime.datetime | None
     state: PaymentTransactionState
     state_message: str | None
-
-    class Config:
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "examples": [
                 _EXAMPLE_AFTER_INIT,
                 # successful completion
@@ -64,7 +62,8 @@ class PaymentsTransactionsDB(BaseModel):
                     "state_message": "Payment completed successfully",
                 },
             ]
-        }
+        },
+    )
 
 
 _EXAMPLE_AFTER_INIT_PAYMENT_METHOD = {
@@ -86,10 +85,9 @@ class PaymentsMethodsDB(BaseModel):
     completed_at: datetime.datetime | None
     state: InitPromptAckFlowState
     state_message: str | None
-
-    class Config:
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "examples": [
                 _EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
                 # successful completion
@@ -100,4 +98,5 @@ class PaymentsMethodsDB(BaseModel):
                     "state_message": "Payment method completed successfully",
                 },
             ]
-        }
+        },
+    )

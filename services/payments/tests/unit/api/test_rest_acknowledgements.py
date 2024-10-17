@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 
+import json
 from collections.abc import AsyncIterator
 
 import httpx
@@ -93,7 +94,9 @@ async def test_payments_api_authentication(
     auth_headers: dict[str, str],
 ):
     payments_id = faker.uuid4()
-    payment_ack = AckPayment(success=True, invoice_url=faker.url()).dict()
+    payment_ack = json.loads(
+        AckPayment(success=True, invoice_url=faker.url()).model_dump_json()
+    )
 
     # w/o header
     response = await client.post(

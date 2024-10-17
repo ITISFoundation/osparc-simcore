@@ -3,10 +3,11 @@ import logging
 from abc import abstractmethod
 from decimal import Decimal
 from enum import Enum, IntEnum, auto
-from typing import Any, Literal, TypeAlias
+from typing import Any, Final, Literal, TypeAlias
 
 import arrow
 from pydantic import BaseModel, Field
+from simcore_service_payments.services.payments_gateway import TypeAdapter
 
 from .products import ProductName
 from .progress_bar import ProgressReport
@@ -257,6 +258,9 @@ RabbitResourceTrackingMessages: TypeAlias = (
     | RabbitResourceTrackingStoppedMessage
     | RabbitResourceTrackingHeartbeatMessage
 )
+RabbitResourceTrackingMessagesAdapter: Final[
+    TypeAdapter[RabbitResourceTrackingMessages]
+] = TypeAdapter(RabbitResourceTrackingMessages)
 
 
 class WalletCreditsMessage(RabbitMessageBase):
@@ -271,6 +275,11 @@ class WalletCreditsMessage(RabbitMessageBase):
 
     def routing_key(self) -> str | None:
         return f"{self.wallet_id}"
+
+
+WalletCreditsMessageAdapter: Final[TypeAdapter[WalletCreditsMessage]] = TypeAdapter(
+    WalletCreditsMessage
+)
 
 
 class CreditsLimit(IntEnum):

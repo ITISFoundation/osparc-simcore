@@ -62,5 +62,5 @@ async def test_meta(
     assert response.status_code == status.HTTP_200_OK
     meta = Meta.parse_obj(response.json())
 
-    response = await client.get(meta.docs_url)
+    response = await client.get(f"{meta.docs_url}")
     assert response.status_code == status.HTTP_200_OK

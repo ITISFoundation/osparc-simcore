@@ -114,9 +114,9 @@ class PaymentsTransactionsRepo(BaseRepository):
                 .values(
                     completed_at=sa.func.now(),
                     state=completion_state,
-                    invoice_url=invoice_url,
+                    invoice_url=f"{invoice_url}" if invoice_url else None,
                     stripe_invoice_id=stripe_invoice_id,
-                    invoice_pdf_url=invoice_pdf_url,
+                    invoice_pdf_url=f"{invoice_pdf_url}" if invoice_pdf_url else None,
                     **optional,
                 )
                 .where(payments_transactions.c.payment_id == f"{payment_id}")

@@ -4,9 +4,9 @@
 #       an extra dependency to a larger models_library (intra-repo library)
 
 from enum import Enum
-from typing import Annotated, TypeAlias
+from typing import Annotated, Final, TypeAlias
 
-from pydantic import Field, StringConstraints
+from pydantic import Field, StringConstraints, TypeAdapter
 
 # port number range
 PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
@@ -14,6 +14,7 @@ PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
 
 # e.g. 'v5'
 VersionTag: TypeAlias = Annotated[str, StringConstraints(pattern=r"^v\d$")]
+VersionTagAdapter: Final[TypeAdapter[VersionTag]] = TypeAdapter(VersionTag)
 
 
 class LogLevel(str, Enum):

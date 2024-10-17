@@ -162,7 +162,7 @@ async def mocked_pay_with_payment_method(mocker: MockerFixture) -> mock.AsyncMoc
     return mocker.patch(
         "simcore_service_payments.services.payments.PaymentsGatewayApi.pay_with_payment_method",
         return_value=AckPaymentWithPaymentMethod.construct(
-            **AckPaymentWithPaymentMethod.Config.schema_extra["example"]
+            **AckPaymentWithPaymentMethod.model_config["json_schema_extra"]["example"]
         ),
     )
 
@@ -201,7 +201,7 @@ async def mock_rpc_server(
         product_name: ProductName,
     ) -> InvoiceDataGet:
         return InvoiceDataGet.parse_obj(
-            InvoiceDataGet.Config.schema_extra["examples"][0]
+            InvoiceDataGet.model_config["json_schema_extra"]["examples"][0]
         )
 
     await rpc_server.register_router(router, namespace=WEBSERVER_RPC_NAMESPACE)

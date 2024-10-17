@@ -8,6 +8,7 @@ from typing import Any
 import rich
 import typer
 from common_library.serialization import model_dump_with_secrets
+from models_library.utils.json_serialization import json_dumps
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings
 
@@ -70,7 +71,7 @@ def print_as_json(
     settings_obj, *, compact=False, show_secrets, **pydantic_export_options
 ):
     typer.echo(
-        json.dumps(
+        json_dumps(
             model_dump_with_secrets(
                 settings_obj, show_secrets=show_secrets, **pydantic_export_options
             ),

@@ -12,9 +12,12 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.basic_types import NonNegativeDecimal
 from models_library.payments import InvoiceDataGet
 from models_library.rabbitmq_basic_types import RPCMethodName
-from models_library.rabbitmq_messages import WalletCreditsMessage
+from models_library.rabbitmq_messages import (
+    WalletCreditsMessage,
+    WalletCreditsMessageAdapter,
+)
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as, parse_raw_as
+from pydantic import parse_obj_as
 from simcore_service_payments.db.auto_recharge_repo import AutoRechargeRepo
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from simcore_service_payments.db.payments_transactions_repo import (
@@ -36,7 +39,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def process_message(app: FastAPI, data: bytes) -> bool:
-    rabbit_message = parse_raw_as(WalletCreditsMessage, data)
+    rabbit_message = WalletCreditsMessageAdapter.validate_json(data)
     _logger.debug("Process msg: %s", rabbit_message)
 
     settings: ApplicationSettings = app.state.settings

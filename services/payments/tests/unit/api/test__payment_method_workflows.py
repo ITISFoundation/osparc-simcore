@@ -5,6 +5,8 @@
 # pylint: disable=unused-variable
 
 
+import json
+
 import httpx
 import pytest
 from common_library.pydantic_basic_types import IDStr
@@ -104,7 +106,9 @@ async def test_successful_create_payment_method_workflow(
     # ACK via api/rest
     response = await client.post(
         f"/v1/payments-methods/{inited.payment_method_id}:ack",
-        json=AckPayment(success=True, invoice_url=faker.url()).dict(),
+        json=json.loads(
+            AckPayment(success=True, invoice_url=faker.url()).model_dump_json()
+        ),
         headers=auth_headers,
     )
 
