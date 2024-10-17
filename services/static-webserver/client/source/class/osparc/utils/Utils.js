@@ -1009,6 +1009,15 @@ qx.Class.define("osparc.utils.Utils", {
 
     isUrl: url => /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/gm.test(url),
 
+    snakeToCamel: str => {
+      return str.toLowerCase().replace(/([-_][a-z])/g, group =>
+        group
+          .toUpperCase()
+          .replace("-", "")
+          .replace("_", "")
+      );
+    },
+
     setIdToWidget: (qWidget, id) => {
       if (qWidget.getContentElement) {
         qWidget.getContentElement().setAttribute("osparc-test-id", id);
