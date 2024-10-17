@@ -13,7 +13,7 @@ would still have these invariants.
 """
 
 from common_library.pydantic_fields_extension import is_nullable
-from pydantic import BaseSettings, ValidationInfo, field_validator
+from pydantic import ValidationInfo, field_validator
 from pydantic.fields import PydanticUndefined
 from pydantic_settings import BaseSettings
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict

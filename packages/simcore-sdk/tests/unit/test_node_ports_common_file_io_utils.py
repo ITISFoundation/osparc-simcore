@@ -19,7 +19,6 @@ from models_library.api_schemas_storage import (
     FileUploadSchema,
     UploadedPart,
 )
-from models_library.basic_types import IDStr
 from moto.server import ThreadedMotoServer
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
