@@ -2,7 +2,7 @@ from typing import Annotated, Final, TypeAlias
 from uuid import uuid4
 
 import arrow
-from pydantic import StringConstraints, TypeAdapter
+from pydantic import StringConstraints, TypeAdapter, ValidationInfo
 
 from .basic_regex import PROPERTY_KEY_RE, SIMPLE_VERSION_RE
 from .services_regex import (
@@ -59,3 +59,16 @@ class RunID(str):
         utc_int_timestamp: int = arrow.utcnow().int_timestamp
         run_id_format = f"{utc_int_timestamp}_{uuid4()}"
         return cls(run_id_format)
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v: "RunID | str", _: ValidationInfo) -> "RunID":
+        if isinstance(v, cls):
+            return v
+        if isinstance(v, str):
+            return cls(v)
+        msg = f"Invalid value for RunID: {v}"
+        raise TypeError(msg)

@@ -5,10 +5,7 @@ from pathlib import Path
 from typing import cast
 
 from common_library.pydantic_type_adapters import ByteSizeAdapter
-from common_library.pydantic_validators import (
-    convert_str_to_run_id_object,
-    timedelta_try_convert_str_to_float,
-)
+from common_library.pydantic_validators import timedelta_try_convert_str_to_float
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.products import ProductName
@@ -196,8 +193,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def _check_log_level(cls, value):
         return cls.validate_log_level(value)
-
-    _convert_str_to_run_id_object = convert_str_to_run_id_object("DY_SIDECAR_RUN_ID")
 
     _try_convert_dynamic_sidecar_telemetry_disk_usage_monitor_interval = (
         timedelta_try_convert_str_to_float(
