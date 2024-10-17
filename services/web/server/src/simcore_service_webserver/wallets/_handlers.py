@@ -2,13 +2,13 @@ import functools
 import logging
 
 from aiohttp import web
+from common_library.error_codes import create_error_code
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     PutWalletBodyParams,
     WalletGet,
     WalletGetWithAvailableCredits,
 )
-from models_library.error_codes import create_error_code
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import Field

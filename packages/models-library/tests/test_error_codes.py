@@ -6,7 +6,7 @@
 import logging
 
 import pytest
-from models_library.error_codes import create_error_code, parse_error_code
+from common_library.error_codes import create_error_code, parse_error_code
 
 logger = logging.getLogger(__name__)
 
