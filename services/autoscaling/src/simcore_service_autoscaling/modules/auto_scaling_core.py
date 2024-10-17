@@ -4,6 +4,7 @@ import dataclasses
 import datetime
 import itertools
 import logging
+import typing
 from typing import Final, cast
 
 import arrow
@@ -333,24 +334,31 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     ec2_client = get_ec2_client(app)
 
     # some instances might be able to run several tasks
+    selected_names = list(
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
+    )
+    assert set(selected_names).issubset(typing.get_args(InstanceTypeType))  # nosec
+
     allowed_instance_types: list[
         EC2InstanceType
     ] = await ec2_client.get_ec2_instance_capabilities(
-        cast(
-            set[InstanceTypeType],
-            set(
-                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES,
-            ),
-        )
+        cast(set[InstanceTypeType], set(selected_names))
     )
 
-    def _sort_according_to_allowed_types(instance_type: EC2InstanceType) -> int:
-        assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-        return list(
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
-        ).index(f"{instance_type.name}")
+    if selected_names:
 
-    allowed_instance_types.sort(key=_sort_according_to_allowed_types)
+        def _as_selection(instance_type: EC2InstanceType) -> int:
+            assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+            return selected_names.index(f"{instance_type.name}")
+
+        allowed_instance_types.sort(key=_as_selection)
+    else:
+        # NOTE An empty set to get_ec2_instance_capabilities it will return  ALL of the instances
+        _logger.warning(
+            "All %s instances are allowed since EC2_INSTANCES_ALLOWED_TYPES is set to empty (=%s)",
+            len(allowed_instance_types),
+            selected_names,
+        )
     return allowed_instance_types
 
 
@@ -1131,7 +1139,7 @@ async def _autoscale_cluster(
     # 1. check if we have pending tasks and resolve them by activating some drained nodes
     unrunnable_tasks = await auto_scaling_mode.list_unrunnable_tasks(app)
     _logger.info("found %s unrunnable tasks", len(unrunnable_tasks))
-
+    # NOTE: this function predicts how dask will assign a task to a machine
     queued_or_missing_instance_tasks, cluster = await _assign_tasks_to_current_cluster(
         app, unrunnable_tasks, cluster, auto_scaling_mode
     )
