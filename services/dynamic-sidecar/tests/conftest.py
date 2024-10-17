@@ -18,12 +18,10 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import RunID
-from models_library.services_creation import (
-    CreateServiceMetricsAdditionalParams,
-    CreateServiceMetricsAdditionalParamsAdapter,
-)
+from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import (
     EnvVarsDict,
@@ -333,7 +331,7 @@ def mock_stop_heart_beat_task(mocker: MockerFixture) -> AsyncMock:
 
 @pytest.fixture
 def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
-    return CreateServiceMetricsAdditionalParamsAdapter.validate_python(
+    return TypeAdapter(CreateServiceMetricsAdditionalParams).validate_python(
         CreateServiceMetricsAdditionalParams.model_config["json_schema_extra"][
             "example"
         ],

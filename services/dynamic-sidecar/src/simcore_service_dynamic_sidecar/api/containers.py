@@ -10,10 +10,9 @@ from fastapi import Path as PathParam
 from fastapi import Query, Request, status
 from models_library.api_schemas_dynamic_sidecar.containers import (
     ActivityInfo,
-    ActivityInfoAdapter,
     ActivityInfoOrNone,
 )
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
 from ..core.docker_utils import docker_client
@@ -175,7 +174,7 @@ async def get_containers_activity(
         return ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME)
 
     try:
-        return ActivityInfoAdapter.validate_json(inactivity_response)
+        return TypeAdapter(ActivityInfo).validate_json(inactivity_response)
     except ValidationError:
         _logger.warning(
             "Could not parse command result '%s' as '%s'",

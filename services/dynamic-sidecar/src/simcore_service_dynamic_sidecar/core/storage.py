@@ -15,8 +15,6 @@ _logger = logging.getLogger(__name__)
 
 _LIVENESS_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
 
-AnyUrlTypeAdapter = TypeAdapter(AnyUrl)
-
 
 class _AuthTuple(NamedTuple):
     username: str
@@ -35,7 +33,7 @@ def _get_auth_or_none(storage_auth_settings: StorageAuthSettings) -> _AuthTuple 
 
 
 def _get_url(storage_auth_settings: StorageAuthSettings) -> str:
-    url: AnyUrl = AnyUrlTypeAdapter.validate_python(
+    url: AnyUrl = TypeAdapter(AnyUrl).validate_python(
         f"{storage_auth_settings.api_base_url}/"
     )
     return f"{url}"

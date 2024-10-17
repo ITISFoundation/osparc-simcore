@@ -24,7 +24,8 @@ from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfo
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from models_library.services_io import ServiceOutput, ServiceOutputAdapter
+from models_library.services_io import ServiceOutput
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
@@ -266,10 +267,10 @@ def not_started_containers() -> list[str]:
 @pytest.fixture
 def mock_outputs_labels() -> dict[str, ServiceOutput]:
     return {
-        "output_port_1": ServiceOutputAdapter.validate_python(
+        "output_port_1": TypeAdapter(ServiceOutput).validate_python(
             ServiceOutput.model_config["json_schema_extra"]["examples"][3]
         ),
-        "output_port_2": ServiceOutputAdapter.validate_python(
+        "output_port_2": TypeAdapter(ServiceOutput).validate_python(
             ServiceOutput.model_config["json_schema_extra"]["examples"][3]
         ),
     }

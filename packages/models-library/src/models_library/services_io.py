@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Final, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -8,7 +8,6 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StringConstraints,
-    TypeAdapter,
     ValidationInfo,
     field_validator,
 )
@@ -258,6 +257,3 @@ class ServiceOutput(BaseServiceIOModel):
         """Creates output port model from a json-schema"""
         data = cls._from_json_schema_base_implementation(port_schema)
         return cls.model_validate(data)
-
-
-ServiceOutputAdapter: Final[TypeAdapter[ServiceOutput]] = TypeAdapter(ServiceOutput)

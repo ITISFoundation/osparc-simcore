@@ -20,8 +20,6 @@ from simcore_service_dynamic_sidecar.models.shared_store import (
     SharedStore,
 )
 
-VolumeStateTypeAdapter = TypeAdapter(VolumeState)
-
 
 @pytest.fixture
 def trigger_setup_shutdown_events(
@@ -56,16 +54,16 @@ def mock_docker_compose(mocker: MockerFixture) -> None:
         {"volume_states": {}},
         {
             "volume_states": {
-                VolumeCategory.OUTPUTS: VolumeStateTypeAdapter.validate_python(
+                VolumeCategory.OUTPUTS: TypeAdapter(VolumeState).validate_python(
                     {"status": VolumeStatus.CONTENT_NO_SAVE_REQUIRED}
                 ),
-                VolumeCategory.INPUTS: VolumeStateTypeAdapter.validate_python(
+                VolumeCategory.INPUTS: TypeAdapter(VolumeState).validate_python(
                     {"status": VolumeStatus.CONTENT_NEEDS_TO_BE_SAVED}
                 ),
-                VolumeCategory.STATES: VolumeStateTypeAdapter.validate_python(
+                VolumeCategory.STATES: TypeAdapter(VolumeState).validate_python(
                     {"status": VolumeStatus.CONTENT_WAS_SAVED}
                 ),
-                VolumeCategory.SHARED_STORE: VolumeStateTypeAdapter.validate_python(
+                VolumeCategory.SHARED_STORE: TypeAdapter(VolumeState).validate_python(
                     {"status": VolumeStatus.CONTENT_NO_SAVE_REQUIRED}
                 ),
             }

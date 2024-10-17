@@ -1,8 +1,8 @@
-from typing import Annotated, Final, TypeAlias
+from typing import Annotated, TypeAlias
 from uuid import uuid4
 
 import arrow
-from pydantic import StringConstraints, TypeAdapter, ValidationInfo
+from pydantic import StringConstraints, ValidationInfo
 
 from .basic_regex import PROPERTY_KEY_RE, SIMPLE_VERSION_RE
 from .services_regex import (
@@ -18,7 +18,6 @@ ServicePortKey: TypeAlias = Annotated[str, StringConstraints(pattern=PROPERTY_KE
 FileName: TypeAlias = Annotated[str, StringConstraints(pattern=FILENAME_RE)]
 
 ServiceKey: TypeAlias = Annotated[str, StringConstraints(pattern=SERVICE_KEY_RE)]
-ServiceKeyAdapter: Final[TypeAdapter[ServiceKey]] = TypeAdapter(ServiceKey)
 
 ServiceKeyEncoded: TypeAlias = Annotated[
     str, StringConstraints(pattern=SERVICE_ENCODED_KEY_RE)
@@ -33,7 +32,6 @@ ComputationalServiceKey: TypeAlias = Annotated[
 ]
 
 ServiceVersion: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
-ServiceVersionAdapter: Final[TypeAdapter[ServiceVersion]] = TypeAdapter(ServiceVersion)
 
 
 class RunID(str):
