@@ -25,10 +25,6 @@ AmountDecimal: TypeAlias = Annotated[Decimal, Field(gt=0, lt=1e6)]
 PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
 
 
-# https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Registered_ports
-RegisteredPortInt: TypeAlias = Annotated[int, Field(gt=1024, lt=65535)]
-
-
 # e.g. 'v5'
 VersionTag: TypeAlias = Annotated[str, StringConstraints(pattern=r"^v\d$")]
 
