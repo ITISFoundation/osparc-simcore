@@ -50,10 +50,12 @@ qx.Class.define("osparc.WindowSizeTracker", {
   statics: {
     WIDTH_BREAKPOINT: 1180, // - iPad Pro 11" 1194x834 inclusion
     HEIGHT_BREAKPOINT: 720, // - iPad Pro 11" 1194x834 inclusion
-    WIDTH_COMPACT_BREAKPOINT: 1100
+    WIDTH_COMPACT_BREAKPOINT: 1100,
+    MIN_WIDTH_LOGOUT: 700,
   },
 
   members: {
+    __tooSmallDialog: null,
     __lastRibbonMessage: null,
 
     startTracker: function() {
@@ -73,6 +75,17 @@ qx.Class.define("osparc.WindowSizeTracker", {
         this.setTooSmall(width < this.self().WIDTH_COMPACT_BREAKPOINT ? "shortText" : "longText");
       } else {
         this.setTooSmall(null);
+      }
+
+      if (width < this.self().MIN_WIDTH_LOGOUT) {
+        if (this.__tooSmallDialog) {
+          this.__tooSmallDialog.center();
+          this.__tooSmallDialog.open();
+        } else {
+          this.__tooSmallDialog = osparc.TooSmallDialog.openWindow();
+        }
+      } else if (this.__tooSmallDialog) {
+        this.__tooSmallDialog.close();
       }
 
       this.set({
