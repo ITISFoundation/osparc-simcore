@@ -12,7 +12,7 @@ from models_library.payments import StripeInvoiceID
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import HttpUrl, PositiveInt, parse_obj_as
+from pydantic import HttpUrl, PositiveInt, TypeAdapter
 from simcore_postgres_database import errors as pg_errors
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -21,6 +21,10 @@ from simcore_postgres_database.models.payments_transactions import (
 
 from ..models.db import PaymentsTransactionsDB
 from .base import BaseRepository
+
+ListPaymentsTransactionsDBAdapter: TypeAdapter[
+    list[PaymentsTransactionsDB]
+] = TypeAdapter(list[PaymentsTransactionsDB])
 
 
 class PaymentsTransactionsRepo(BaseRepository):
@@ -125,7 +129,7 @@ class PaymentsTransactionsRepo(BaseRepository):
             row = result.first()
             assert row, "execute above should have caught this"  # nosec
 
-            return PaymentsTransactionsDB.from_orm(row)
+            return PaymentsTransactionsDB.model_validate(row)
 
     async def list_user_payment_transactions(
         self,
@@ -171,8 +175,9 @@ class PaymentsTransactionsRepo(BaseRepository):
 
             result = await connection.execute(stmt)
             rows = result.fetchall()
-            return total_number_of_items, parse_obj_as(
-                list[PaymentsTransactionsDB], rows
+            return (
+                total_number_of_items,
+                ListPaymentsTransactionsDBAdapter.validate_python(rows),
             )
 
     async def get_payment_transaction(
@@ -189,7 +194,7 @@ class PaymentsTransactionsRepo(BaseRepository):
                 )
             )
             row = result.fetchone()
-            return PaymentsTransactionsDB.from_orm(row) if row else None
+            return PaymentsTransactionsDB.model_validate(row) if row else None
 
     async def sum_current_month_dollars(self, *, wallet_id: WalletID) -> Decimal:
         _current_timestamp = datetime.now(tz=timezone.utc)
@@ -229,4 +234,4 @@ class PaymentsTransactionsRepo(BaseRepository):
                 .limit(1)
             )
             row = result.fetchone()
-            return PaymentsTransactionsDB.from_orm(row) if row else None
+            return PaymentsTransactionsDB.model_validate(row) if row else None

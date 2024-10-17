@@ -111,7 +111,7 @@ async def test_payments_api_authentication(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.json()
-    error = DefaultApiError.parse_obj(response.json())
+    error = DefaultApiError.model_validate(response.json())
     assert PaymentNotFoundError.msg_template.format(payment_id=payments_id) == str(
         error.detail
     )
@@ -124,7 +124,9 @@ async def test_payments_methods_api_authentication(
     auth_headers: dict[str, str],
 ):
     payment_method_id = faker.uuid4()
-    payment_method_ack = AckPaymentMethod(success=True, message=faker.word()).dict()
+    payment_method_ack = AckPaymentMethod(
+        success=True, message=faker.word()
+    ).model_dump()
 
     # w/o header
     response = await client.post(
@@ -141,7 +143,7 @@ async def test_payments_methods_api_authentication(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND, response.json()
-    error = DefaultApiError.parse_obj(response.json())
+    error = DefaultApiError.model_validate(response.json())
     assert PaymentMethodNotFoundError.msg_template.format(
         payment_method_id=payment_method_id
     ) == str(error.detail)

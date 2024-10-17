@@ -17,9 +17,8 @@ from models_library.api_schemas_payments.socketio import (
     SOCKET_IO_PAYMENT_COMPLETED_EVENT,
 )
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
-from models_library.api_schemas_webserver.wallets import PaymentTransaction
+from models_library.api_schemas_webserver.wallets import PaymentTransactionAdapter
 from models_library.users import GroupID, UserID
-from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_payment_transaction
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -101,7 +100,7 @@ async def socketio_client_events(
     # emulates front-end receiving message
 
     async def on_payment(data):
-        assert parse_obj_as(PaymentTransaction, data) is not None
+        assert PaymentTransactionAdapter.validate_python(data) is not None
 
     on_event_spy = AsyncMock(wraps=on_payment)
     socketio_client.on(SOCKET_IO_PAYMENT_COMPLETED_EVENT, on_event_spy)

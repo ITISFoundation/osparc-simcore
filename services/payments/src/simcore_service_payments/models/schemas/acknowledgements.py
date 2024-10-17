@@ -4,7 +4,7 @@ from typing import Any
 from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
-from pydantic_core.core_schema import FieldValidationInfo
+from pydantic_core.core_schema import ValidationInfo
 from simcore_service_payments.core.settings import field_validator
 
 
@@ -98,7 +98,7 @@ class AckPayment(_BaseAckPayment):
 
     @field_validator("invoice_url")
     @classmethod
-    def success_requires_invoice(cls, v, info: FieldValidationInfo):
+    def success_requires_invoice(cls, v, info: ValidationInfo):
         success = info.data.get("success")
         if success and not v:
             msg = "Invoice required on successful payments"
