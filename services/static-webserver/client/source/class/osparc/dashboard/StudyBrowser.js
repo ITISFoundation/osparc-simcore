@@ -655,8 +655,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       requestParams.orderBy = JSON.stringify(this.getOrderBy());
 
       const filterData = this._searchBarFilter.getFilterData();
-      if (filterData.text) {
-        requestParams.text = encodeURIComponent(filterData.text); // name, description and uuid
+      if (filterData.text || filterData.tags.length) {
+        requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
+        requestParams["tag_ids"] = filterData.tags.length ? filterData.tags.join(",") : "";
         return requestParams;
       }
 
