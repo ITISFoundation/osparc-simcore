@@ -38,7 +38,6 @@ from pydantic import (
     parse_obj_as,
     validator,
 )
-from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
 from ..constants import (

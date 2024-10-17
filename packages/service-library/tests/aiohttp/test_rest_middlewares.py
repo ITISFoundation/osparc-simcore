@@ -22,7 +22,6 @@ from servicelib.aiohttp.rest_middlewares import (
     error_middleware_factory,
 )
 from servicelib.aiohttp.rest_responses import is_enveloped, unwrap_envelope
-from servicelib.error_codes import parse_error_code
 
 
 @dataclass

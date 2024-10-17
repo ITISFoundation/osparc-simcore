@@ -16,9 +16,9 @@ from inspect import getframeinfo, stack
 from pathlib import Path
 from typing import Any, NotRequired, TypeAlias, TypedDict, TypeVar
 
+from common_library.error_codes import ErrorCodeStr
 from models_library.utils.json_serialization import json_dumps
 
-from .error_codes import ErrorCodeStr
 from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)

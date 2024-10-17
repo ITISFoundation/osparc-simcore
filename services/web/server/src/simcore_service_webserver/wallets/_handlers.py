@@ -19,7 +19,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.error_codes import create_error_code
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.request_keys import RQT_USERID_KEY
 
