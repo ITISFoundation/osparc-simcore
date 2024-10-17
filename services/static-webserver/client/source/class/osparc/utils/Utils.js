@@ -94,7 +94,7 @@ qx.Class.define("osparc.utils.Utils", {
     replaceTokens: function(str, key, value) {
       // `str` might be a a localized string, get the string first
       str = str.toString ? str.toString() : str;
-      const regex = new RegExp("${"+key+"}", "g");
+      const regex = new RegExp("\\${"+key+"\\}", "g");
       return str.replace(regex, value);
     },
 
