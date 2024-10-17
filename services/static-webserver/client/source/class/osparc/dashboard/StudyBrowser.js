@@ -119,7 +119,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const isStudyCreation = false;
             this._startStudyById(loadStudyId, null, cancelCB, isStudyCreation);
           } else {
-            this.__reloadFolders();
             this.reloadResources();
           }
           // "Starting..." page
@@ -151,10 +150,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.data.Permissions.getInstance().canDo("studies.user.read") &&
         osparc.auth.Manager.getInstance().isLoggedIn()
       ) {
+        this.__reloadFolders();
         this.__reloadStudies();
       } else {
         this.__resetStudiesList();
       }
+    },
+
+    reloadMoreResources: function() {
+      this.__reloadStudies();
     },
 
     __reloadWorkspaces: function() {
@@ -223,21 +227,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._loadingResourcesBtn.setVisibility("visible");
       this.__getNextStudiesRequest()
         .then(resp => {
-          const urlParams = resp["params"]["url"];
           // Context might have been changed while waiting for the response.
           // The new call is on the way, therefore this response can be ignored.
-          if ("workspaceId" in urlParams) {
-            if (
-              urlParams.workspaceId !== this.getCurrentWorkspaceId() ||
-              urlParams.folderId !== this.getCurrentFolderId()
-            ) {
-              return;
-            }
-          } else if ("text" in urlParams) {
-            const currentFilterData = this._searchBarFilter.getFilterData();
-            if (currentFilterData.text && urlParams.text !== encodeURIComponent(currentFilterData.text)) {
-              return;
-            }
+          const contextChanged = this.__didContextChange(resp["params"]["url"]);
+          if (contextChanged) {
+            return;
           }
 
           const studies = resp["data"];
@@ -615,18 +609,60 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
     },
 
+    __didContextChange: function(reqParams) {
+      // not needed for the comparison
+      delete reqParams["type"];
+      delete reqParams["limit"];
+      delete reqParams["offset"];
+
+      // check the entries in currentParams are the same as the reqParams
+      const currentParams = this.__getRequestParams();
+      let sameContext = true;
+      Object.entries(currentParams).forEach(([key, value]) => {
+        sameContext &= key in reqParams && reqParams[key] === value;
+      });
+      return !sameContext;
+    },
+
     __getNextPageParams: function() {
-      if ("nextRequest" in this._resourcesContainer.getFlatList() &&
-        this._resourcesContainer.getFlatList().nextRequest !== null &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
-        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
-      ) {
-        return {
-          offset: osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset"),
-          limit: osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
-        };
+      if (this._resourcesContainer.getFlatList() && this._resourcesContainer.getFlatList().nextRequest) {
+        // Context might have been changed while waiting for the response.
+        // The new call is on the way, therefore this response can be ignored.
+        const url = new URL(this._resourcesContainer.getFlatList().nextRequest);
+        const urlSearchParams = new URLSearchParams(url.search);
+        const urlParams = {};
+        for (const [snakeKey, value] of urlSearchParams.entries()) {
+          const key = osparc.utils.Utils.snakeToCamel(snakeKey);
+          urlParams[key] = value === "null" ? null : value;
+        }
+        const contextChanged = this.__didContextChange(urlParams);
+        if (
+          !contextChanged &&
+          osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset") &&
+          osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
+        ) {
+          return {
+            offset: osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "offset"),
+            limit: osparc.utils.Utils.getParamFromURL(this._resourcesContainer.getFlatList().nextRequest, "limit")
+          };
+        }
       }
       return null;
+    },
+
+    __getRequestParams: function() {
+      const requestParams = {};
+      requestParams.orderBy = JSON.stringify(this.getOrderBy());
+
+      const filterData = this._searchBarFilter.getFilterData();
+      if (filterData.text) {
+        requestParams.text = encodeURIComponent(filterData.text); // name, description and uuid
+        return requestParams;
+      }
+
+      requestParams.workspaceId = this.getCurrentWorkspaceId();
+      requestParams.folderId = this.getCurrentFolderId();
+      return requestParams;
     },
 
     __getNextStudiesRequest: function() {
@@ -634,7 +670,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         url: {
           offset: 0,
           limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
-          orderBy: JSON.stringify(this.getOrderBy()),
         }
       };
 
@@ -647,14 +682,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      const filterData = this._searchBarFilter.getFilterData();
-      if (filterData.text) {
-        params.url.text = encodeURIComponent(filterData.text); // name, description and uuid
+      const requestParams = this.__getRequestParams();
+      Object.entries(requestParams).forEach(([key, value]) => {
+        params.url[key] = value;
+      });
+      if ("text" in requestParams) {
         return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
       }
-
-      params.url.workspaceId = this.getCurrentWorkspaceId();
-      params.url.folderId = this.getCurrentFolderId();
       return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
     },
 

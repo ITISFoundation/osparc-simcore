@@ -56,14 +56,24 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       return new qx.ui.basic.Atom("", "osparc/loading.gif");
     },
 
-    getRetrievedAtom: function(success) {
-      const icon = success ? "@FontAwesome5Solid/check/12" : "@FontAwesome5Solid/times/12";
-      return new qx.ui.basic.Atom("", icon);
+    getDownloadingAtom: function() {
+      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/cloud-download-alt/12");
+    },
+
+    getUploadingAtom: function() {
+      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/cloud-upload-alt/12");
+    },
+
+    getFailedAtom: function() {
+      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/times/12");
+    },
+
+    getSucceededAtom: function() {
+      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/check/12");
     },
 
     getRetrievedEmpty: function() {
-      const icon = "@FontAwesome5Solid/dot-circle/10";
-      return new qx.ui.basic.Atom("", icon);
+      return new qx.ui.basic.Atom("", "@FontAwesome5Solid/dot-circle/10");
     },
 
     GRID_POS: {
@@ -78,18 +88,44 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         supportedTypes.push(osparc.node.ParameterEditor.getParameterOutputTypeFromMD(paramMD));
       });
       return supportedTypes.includes(field.type);
-    }
-  },
+    },
 
-  // eslint-disable-next-line qx-rules/no-refs-in-members
-  members: {
-    _retrieveStatus: {
+    RETRIEVE_STATUS: {
       failed: -1,
       empty: 0,
       retrieving: 1,
-      succeed: 2
+      downloading: 2,
+      uploading: 3,
+      succeed: 4
     },
 
+    getIconForStatus: function(status) {
+      let icon;
+      switch (status) {
+        case this.RETRIEVE_STATUS.failed:
+          icon = this.getFailedAtom();
+          break;
+        case this.RETRIEVE_STATUS.empty:
+          icon = this.getRetrievedEmpty();
+          break;
+        case this.RETRIEVE_STATUS.retrieving:
+          icon = this.getRetrievingAtom();
+          break;
+        case this.RETRIEVE_STATUS.downloading:
+          icon = this.getDownloadingAtom();
+          break;
+        case this.RETRIEVE_STATUS.uploading:
+          icon = this.getUploadingAtom();
+          break;
+        case this.RETRIEVE_STATUS.succeed:
+          icon = this.getSucceededAtom();
+          break;
+      }
+      return icon;
+    }
+  },
+
+  members: {
     __ctrlLinkMap: null,
     __linkUnlinkStackMap: null,
     __fieldOptsBtnMap: null,
@@ -528,8 +564,10 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       }
     },
 
-    retrievingPortData: function(portId) {
-      const status = this._retrieveStatus.retrieving;
+    retrievingPortData: function(portId, status) {
+      if (status === undefined) {
+        status = this.self().RETRIEVE_STATUS.retrieving;
+      }
       if (portId) {
         let data = this._getCtrlFieldChild(portId);
         if (data) {
@@ -553,9 +591,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     retrievedPortData: function(portId, succeed, dataSize = -1) {
-      let status = succeed ? this._retrieveStatus.succeed : this._retrieveStatus.failed;
+      let status = succeed ? this.self().RETRIEVE_STATUS.succeed : this.self().RETRIEVE_STATUS.failed;
       if (parseInt(dataSize) === 0) {
-        status = this._retrieveStatus.empty;
+        status = this.self().RETRIEVE_STATUS.empty;
       }
       if (portId) {
         let data = this._getCtrlFieldChild(portId);
@@ -578,23 +616,6 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     },
 
     __setRetrievingStatus: function(status, portId, idx, row) {
-      let icon;
-      switch (status) {
-        case this._retrieveStatus.failed:
-          icon = this.self().getRetrievedAtom(false);
-          break;
-        case this._retrieveStatus.empty:
-          icon = this.self().getRetrievedEmpty();
-          break;
-        case this._retrieveStatus.retrieving:
-          icon = this.self().getRetrievingAtom();
-          break;
-        case this._retrieveStatus.succeed:
-          icon = this.self().getRetrievedAtom(true);
-          break;
-      }
-      icon.key = portId;
-
       // remove first if any
       let children = this._getChildren();
       for (let i=0; i<children.length; i++) {
@@ -608,7 +629,8 @@ qx.Class.define("osparc.form.renderer.PropForm", {
 
       const label = this._getLabelFieldChild(portId).child;
       if (label && label.isVisible()) {
-        this._getLabelFieldChild(portId);
+        const icon = this.self().getIconForStatus(status);
+        icon.key = portId;
         this._addAt(icon, idx, {
           row,
           column: this.self().GRID_POS.RETRIEVE_STATUS
