@@ -6,7 +6,6 @@
 NOTE: DO NOT USE aiohttp_security.api directly but use this interface instead
 """
 
-
 import aiohttp_security.api  # type: ignore[import-untyped]
 import passlib.hash
 from aiohttp import web
@@ -14,7 +13,10 @@ from models_library.users import UserID
 
 from ._authz_access_model import AuthContextDict, OptionalContext, RoleBasedAccessModel
 from ._authz_policy import AuthorizationPolicy
+from ._constants import PERMISSION_PRODUCT_LOGIN_KEY
 from ._identity_api import forget_identity, remember_identity
+
+assert PERMISSION_PRODUCT_LOGIN_KEY  # nosec
 
 
 def get_access_model(app: web.Application) -> RoleBasedAccessModel:
@@ -64,7 +66,9 @@ async def check_user_permission(
 
     allowed = await aiohttp_security.api.permits(request, permission, context)
     if not allowed:
-        raise web.HTTPForbidden(reason=f"Not sufficient access rights for {permission}")
+        raise web.HTTPForbidden(
+            reason=f"You do not have sufficient access rights for {permission}"
+        )
 
 
 #
@@ -93,5 +97,6 @@ __all__: tuple[str, ...] = (
     "forget_identity",
     "get_access_model",
     "is_anonymous",
+    "PERMISSION_PRODUCT_LOGIN_KEY",
     "remember_identity",
 )

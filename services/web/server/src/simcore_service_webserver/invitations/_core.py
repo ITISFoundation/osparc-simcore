@@ -2,7 +2,7 @@ import logging
 from contextlib import contextmanager
 from typing import Final
 
-from aiohttp import ClientError, ClientResponseError, web
+from aiohttp import ClientResponseError, web
 from models_library.api_schemas_invitations.invitations import (
     ApiInvitationContent,
     ApiInvitationContentAndLink,
@@ -11,7 +11,6 @@ from models_library.api_schemas_invitations.invitations import (
 from models_library.emails import LowerCaseEmailStr
 from pydantic import AnyHttpUrl, ValidationError, parse_obj_as
 from servicelib.aiohttp import status
-from servicelib.error_codes import create_error_code
 
 from ..groups.api import is_user_by_email_in_group
 from ..products.api import Product
@@ -35,31 +34,30 @@ def _handle_exceptions_as_invitations_errors():
     except ClientResponseError as err:
         # check possible errors
         if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
-            error_code = create_error_code(err)
-            _logger.exception(
-                "Invitation request unexpectedly failed [%s]",
-                f"{error_code}",
-                extra={"error_code": error_code},
-            )
             raise InvalidInvitationError(
-                reason=f"Unexpected error [{error_code}]"
+                invitations_api_response={
+                    "err": err,
+                    "status": err.status,
+                    "message": err.message,
+                    "url": err.request_info.real_url,
+                },
             ) from err
 
         assert err.status >= status.HTTP_400_BAD_REQUEST  # nosec
-        # any other error status code
-        raise InvitationsServiceUnavailableError from err
 
-    except (ValidationError, ClientError) as err:
-        _logger.debug("Invitations error %s", f"{err}")
-        raise InvitationsServiceUnavailableError from err
+        # any other error status code
+        raise InvitationsServiceUnavailableError(
+            client_response_error=err,
+        ) from err
 
     except InvitationsError:
         # bypass: prevents that the Exceptions handler catches this exception
         raise
 
     except Exception as err:
-        _logger.exception("Unexpected error in invitations plugin")
-        raise InvitationsServiceUnavailableError from err
+        raise InvitationsServiceUnavailableError(
+            unexpected_error=err,
+        ) from err
 
 
 #

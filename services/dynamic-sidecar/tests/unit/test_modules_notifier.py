@@ -289,7 +289,7 @@ async def test_notifier_send_input_port_status(
                 await port_notifier.send_input_port_download_finished_succesfully(
                     port_key
                 )
-            case InputStatus.DOWNLOAD_FINISHED_WITH_ERRROR:
+            case InputStatus.DOWNLOAD_FINISHED_WITH_ERROR:
                 await port_notifier.send_input_port_download_finished_with_error(
                     port_key
                 )
@@ -378,7 +378,7 @@ async def test_notifier_send_output_port_status(
                 await port_notifier.send_output_port_upload_finished_successfully(
                     port_key
                 )
-            case OutputStatus.UPLOAD_FINISHED_WITH_ERRROR:
+            case OutputStatus.UPLOAD_FINISHED_WITH_ERROR:
                 await port_notifier.send_output_port_upload_finished_with_error(
                     port_key
                 )

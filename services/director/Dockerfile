@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.6.10"
-FROM python:${PYTHON_VERSION}-slim-buster as base
+FROM python:${PYTHON_VERSION}-slim-buster AS base
 #
 #  USAGE:
 #     cd sercices/director
@@ -67,7 +67,7 @@ EXPOSE 8080
 # + /build             WORKDIR
 #
 
-FROM base as build
+FROM base AS build
 
 ENV SC_BUILD_TARGET=build
 
@@ -108,7 +108,7 @@ COPY --chown=scu:scu api/specs/director/schemas/node-meta-v0.0.1.json \
 #  + /build
 #    + services/director [scu:scu] WORKDIR
 #
-FROM build as prod-only-deps
+FROM build AS prod-only-deps
 
 WORKDIR /build/services/director
 ENV SC_BUILD_TARGET=prod-only-deps
@@ -124,7 +124,7 @@ RUN \
 #  + /home/scu     $HOME = WORKDIR
 #    + services/director [scu:scu]
 #
-FROM base as production
+FROM base AS production
 
 ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
@@ -157,7 +157,7 @@ CMD ["services/director/docker/boot.sh"]
 #  + /devel         WORKDIR
 #    + services  (mounted volume)
 #
-FROM build as development
+FROM build AS development
 
 ENV SC_BUILD_TARGET=development
 ENV NODE_SCHEMA_LOCATION=../../../api/specs/director/schemas/node-meta-v0.0.1.json

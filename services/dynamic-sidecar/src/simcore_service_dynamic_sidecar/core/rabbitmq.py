@@ -5,6 +5,7 @@ from typing import cast
 from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_messages import (
+    DynamicServiceRunningMessage,
     EventRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
@@ -30,6 +31,12 @@ async def _post_rabbit_message(app: FastAPI, message: RabbitMessageBase) -> None
 
 async def post_resource_tracking_message(
     app: FastAPI, message: RabbitResourceTrackingMessages
+):
+    await _post_rabbit_message(app, message)
+
+
+async def post_dynamic_service_running_message(
+    app: FastAPI, message: DynamicServiceRunningMessage
 ):
     await _post_rabbit_message(app, message)
 

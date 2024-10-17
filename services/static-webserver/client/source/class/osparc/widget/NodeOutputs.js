@@ -29,31 +29,27 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
-    * @param ports {Object} Port owning the widget
     */
-  construct: function(node, ports) {
+  construct: function(node) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
     const grid = new qx.ui.layout.Grid(5, 5);
     grid.setColumnFlex(this.self().POS.LABEL, 1);
-    grid.setColumnFlex(this.self().POS.INFO, 0);
-    grid.setColumnFlex(this.self().POS.ICON, 0);
     grid.setColumnFlex(this.self().POS.VALUE, 1);
-    grid.setColumnFlex(this.self().POS.UNIT, 0);
-    grid.setColumnFlex(this.self().POS.PROBE, 0);
     grid.setColumnMinWidth(this.self().POS.VALUE, 50);
+    grid.setColumnMaxWidth(this.self().POS.RETRIEVE_STATUS, 25);
     Object.keys(this.self().POS).forEach((_, idx) => grid.setColumnAlign(idx, "left", "middle"));
     const gridLayout = this.__gridLayout = new qx.ui.container.Composite(grid);
     this._add(gridLayout);
 
     this.set({
       node,
-      ports
+      ports: node.getMetaData().outputs
     });
 
-    node.addListener("changeOutputs", () => this.__populateGrid(), this);
+    node.addListener("changeOutputs", () => this.__outputsChanged(), this);
 
     this.addListener("appear", () => this.__makeLabelsResponsive(), this);
     this.addListener("resize", () => this.__makeLabelsResponsive(), this);
@@ -88,7 +84,8 @@ qx.Class.define("osparc.widget.NodeOutputs", {
       ICON: 2,
       VALUE: 3,
       UNIT: 4,
-      PROBE: 5
+      PROBE: 5,
+      RETRIEVE_STATUS: 6,
     }
   },
 
@@ -98,7 +95,6 @@ qx.Class.define("osparc.widget.NodeOutputs", {
     __populateGrid: function() {
       this.__gridLayout.removeAll();
 
-      const outputs = this.getNode().getOutputs();
       const ports = this.getPorts();
       const portKeys = Object.keys(ports);
       for (let i=0; i<portKeys.length; i++) {
@@ -107,7 +103,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
         const label = new qx.ui.basic.Label().set({
           rich: true,
-          value: port.label + " :",
+          value: port.label,
           toolTipText: port.label
         });
         // leave ``rich`` set to true. Ellipsis will be handled here:
@@ -132,8 +128,6 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           column: this.self().POS.ICON
         });
 
-        const value = (portKey in outputs && "value" in outputs[portKey]) ? outputs[portKey]["value"] : null;
-        this.__valueToGrid(value, i);
 
         const unit = new qx.ui.basic.Label(port.unitShort || "");
         this.__gridLayout.add(unit, {
@@ -163,44 +157,56 @@ qx.Class.define("osparc.widget.NodeOutputs", {
       }
     },
 
-    __valueToGrid: function(value, i) {
+    __outputsChanged: function() {
+      const outputs = this.getNode().getOutputs();
+      const ports = this.getPorts();
+      const portKeys = Object.keys(ports);
+      for (let i=0; i<portKeys.length; i++) {
+        const portKey = portKeys[i];
+        const value = (portKey in outputs && "value" in outputs[portKey]) ? outputs[portKey]["value"] : null;
+        this.__valueToGrid(value, i);
+      }
+    },
+
+    __valueToGrid: function(value, row) {
+      let valueWidget = null;
       if (value && typeof value === "object") {
-        const valueLink = new osparc.ui.basic.LinkLabel();
-        this.__gridLayout.add(valueLink, {
-          row: i,
-          column: this.self().POS.VALUE
-        });
+        valueWidget = new osparc.ui.basic.LinkLabel();
         if ("store" in value) {
           // it's a file
           const download = true;
           const locationId = value.store;
           const fileId = value.path;
           const filename = value.filename || osparc.file.FilePicker.getFilenameFromPath(value);
-          valueLink.setValue(filename);
+          valueWidget.setValue(filename);
           osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
             .then(presignedLinkData => {
               if ("resp" in presignedLinkData && presignedLinkData.resp) {
-                valueLink.setUrl(presignedLinkData.resp.link);
+                valueWidget.setUrl(presignedLinkData.resp.link);
               }
             });
         } else if ("downloadLink" in value) {
           // it's a link
           const filename = (value.filename && value.filename.length > 0) ? value.filename : osparc.file.FileDownloadLink.extractLabelFromLink(value["downloadLink"]);
-          valueLink.set({
+          valueWidget.set({
             value: filename,
             url: value.downloadLink
           });
         }
       } else {
-        const valueEntry = new qx.ui.basic.Label("-");
+        valueWidget = new qx.ui.basic.Label("-");
         if (value) {
-          valueEntry.setValue(String(value));
+          valueWidget.setValue(String(value));
         }
-        this.__gridLayout.add(valueEntry, {
-          row: i,
-          column: this.self().POS.VALUE
-        });
       }
+
+      // remove first if any
+      this.__removeEntry(row, this.self().POS.VALUE);
+
+      this.__gridLayout.add(valueWidget, {
+        row: row,
+        column: this.self().POS.VALUE
+      });
     },
 
     __makeLabelsResponsive: function() {
@@ -227,6 +233,39 @@ qx.Class.define("osparc.widget.NodeOutputs", {
         infoButton.setVisibility(extendedVersion ? "hidden" : "visible");
         grid.setColumnMinWidth(this.self().POS.VALUE, extendedVersion ? 150 : 50);
       }
+    },
+
+    __removeEntry: function(row, column) {
+      let children = this.__gridLayout.getChildren();
+      for (let i=0; i<children.length; i++) {
+        let child = children[i];
+        const layoutProps = child.getLayoutProperties();
+        if (
+          layoutProps.row === row &&
+          layoutProps.column === column
+        ) {
+          this.__gridLayout.remove(child);
+          break;
+        }
+      }
+    },
+
+    setRetrievingStatus: function(portId, status) {
+      const ports = this.getPorts();
+      const portKeys = Object.keys(ports);
+      const idx = portKeys.indexOf(portId);
+      if (idx === -1) {
+        return;
+      }
+
+      // remove first if any
+      this.__removeEntry(idx, this.self().POS.RETRIEVE_STATUS);
+
+      const icon = osparc.form.renderer.PropForm.getIconForStatus(status);
+      this.__gridLayout.add(icon, {
+        row: idx,
+        column: this.self().POS.RETRIEVE_STATUS
+      });
     }
   }
 });

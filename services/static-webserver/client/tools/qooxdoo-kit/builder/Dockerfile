@@ -5,14 +5,14 @@
 # Note: context at osparc-simcore/services/static-webserver/client expected
 #
 ARG tag
-FROM itisfoundation/qooxdoo-kit:${tag} as touch
+FROM itisfoundation/qooxdoo-kit:${tag} AS touch
 
 WORKDIR /project
 ENV PATH=/home/node/node_modules/.bin:${PATH}
 
 RUN mkdir /project/build-output
 
-FROM touch as build-client
+FROM touch AS build-client
 
 # Installs contributions
 # Install packages (warning: cache might keep these library out-of-date!)
@@ -59,7 +59,7 @@ RUN \
   python3 ./scripts/post-compile.py
 
 
-FROM joseluisq/static-web-server:2.32.1-alpine as server-base
+FROM joseluisq/static-web-server:2.32.1-alpine AS server-base
 
 LABEL org.opencontainers.image.authors="GitHK, odeimaiz"
 
@@ -79,12 +79,12 @@ RUN chown -R "${SC_USER_NAME}:${SC_USER_NAME}" /entrypoint.sh && \
 
 USER ${SC_USER_NAME}
 
-FROM server-base as production
+FROM server-base AS production
 # front-end client last we copy the client application directly inside
 COPY --from=build-client \
   --chown=${SC_USER_NAME}:${SC_USER_NAME} \
   /project/build-output "/static-content"
 ENV SC_BUILD_TARGET production
 
-FROM server-base as development
+FROM server-base AS development
 ENV SC_BUILD_TARGET development

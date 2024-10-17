@@ -54,7 +54,7 @@ class Settings(BaseSettings):
 
     @field_validator("*", mode="before")
     @classmethod
-    def parse_none(cls, v, info: ValidationInfo):
+    def _parse_none(cls, v, info: ValidationInfo):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
         if info.field_name and is_nullable(cls.model_fields[info.field_name]):
             if isinstance(v, str) and v.lower() in ("null", "none"):

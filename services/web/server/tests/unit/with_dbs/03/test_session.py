@@ -11,12 +11,14 @@ from collections.abc import Callable
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography.fernet import Fernet
 from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser
 from simcore_service_webserver.application import create_application
+from simcore_service_webserver.session._cookie_storage import (
+    SharedCookieEncryptedCookieStorage,
+)
 from simcore_service_webserver.session.api import get_session
 from simcore_service_webserver.session.settings import SessionSettings
 
@@ -128,7 +130,7 @@ def test_session_settings(
             == WEBSERVER_SESSION_SECRET_KEY
         )
 
-    _should_not_raise = EncryptedCookieStorage(
+    _should_not_raise = SharedCookieEncryptedCookieStorage(
         # NOTE: we pass here a string!
         secret_key=settings.SESSION_SECRET_KEY.get_secret_value()
     )

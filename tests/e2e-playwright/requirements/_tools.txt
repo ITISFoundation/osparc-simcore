@@ -26,7 +26,7 @@ isort==5.13.2
     #   pylint
 mccabe==0.7.0
     # via pylint
-mypy==1.11.2
+mypy==1.12.0
     # via -r requirements/../../../requirements/devenv.txt
 mypy-extensions==1.0.0
     # via

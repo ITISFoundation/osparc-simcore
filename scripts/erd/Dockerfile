@@ -8,7 +8,7 @@
 #
 
 ARG PYTHON_VERSION="3.11.9"
-FROM python:${PYTHON_VERSION}-slim-bookworm as base
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
 RUN apt-get update \
   && apt-get -y install --no-install-recommends\

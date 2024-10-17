@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.11.9"
-FROM python:${PYTHON_VERSION}-slim-bookworm as base
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
 LABEL maintainer=pcrespov
 
@@ -46,7 +46,7 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 # -------------------------- Build stage -------------------
 
-FROM base as build
+FROM base AS build
 
 RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   --mount=type=cache,target=/var/lib/apt,mode=0755,sharing=private \
@@ -82,9 +82,9 @@ RUN \
 
 # -------------------------- Build stage -------------------
 
-FROM base as development
+FROM base AS development
 # NOTE: this is necessary to allow to build development images but is the same as production here
-FROM base as production
+FROM base AS production
 
 ENV PYTHONOPTIMIZE=TRUE
 

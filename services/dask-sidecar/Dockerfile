@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.11.9"
-FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-bookworm as base
+FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-bookworm AS base
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
@@ -69,7 +69,7 @@ RUN mkdir --parents /home/scu/.config/dask \
 #
 # + /build             WORKDIR
 #
-FROM base as build
+FROM base AS build
 
 ENV SC_BUILD_TARGET=build
 
@@ -108,7 +108,7 @@ RUN \
 #  + /build
 #    + services/dask-sidecar [scu:scu] WORKDIR
 #
-FROM build as prod-only-deps
+FROM build AS prod-only-deps
 
 ENV SC_BUILD_TARGET=prod-only-deps
 
@@ -129,7 +129,7 @@ RUN \
 #  + /home/scu     $HOME = WORKDIR
 #    + services/dask-sidecar [scu:scu]
 #
-FROM base as production
+FROM base AS production
 
 ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
@@ -169,7 +169,7 @@ CMD ["/bin/sh", "services/dask-sidecar/docker/boot.sh"]
 #  + /devel         WORKDIR
 #    + services  (mounted volume)
 #
-FROM build as development
+FROM build AS development
 
 ENV SC_BUILD_TARGET=development
 

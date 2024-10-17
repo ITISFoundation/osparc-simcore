@@ -1,11 +1,15 @@
 import functools
+import logging
 
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ..errors import WebServerBaseError
 from ._constants import MSG_2FA_UNAVAILABLE_OEC
+
+_logger = logging.getLogger(__name__)
 
 
 class LoginError(WebServerBaseError, ValueError):
@@ -27,8 +31,18 @@ def handle_login_exceptions(handler: Handler):
             return await handler(request)
 
         except (SendingVerificationSmsError, SendingVerificationEmailError) as exc:
+            error_code = exc.error_code()
+            front_end_msg = MSG_2FA_UNAVAILABLE_OEC.format(error_code=error_code)
+            # in these cases I want to log the cause
+            _logger.exception(
+                **create_troubleshotting_log_kwargs(
+                    front_end_msg,
+                    error=exc,
+                    error_code=error_code,
+                )
+            )
             raise web.HTTPServiceUnavailable(
-                reason=MSG_2FA_UNAVAILABLE_OEC.format(error_code=exc.code),
+                reason=front_end_msg,
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from exc
 

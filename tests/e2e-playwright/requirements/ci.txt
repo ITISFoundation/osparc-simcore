@@ -1,3 +1,4 @@
 
 --requirement _test.txt
+--requirement _tools.txt
 pytest-simcore @ ../../packages/pytest-simcore

@@ -24,9 +24,7 @@ from simcore_postgres_database.models.products import (
 )
 from simcore_service_webserver.db.plugin import APP_AIOPG_ENGINE_KEY
 from simcore_service_webserver.products._db import ProductRepository
-from simcore_service_webserver.products._middlewares import (
-    _get_app_default_product_name,
-)
+from simcore_service_webserver.products._middlewares import _get_default_product_name
 from simcore_service_webserver.products._model import Product
 
 
@@ -150,8 +148,6 @@ async def test_product_repository_get_product(
     assert await product_repository.get_product(product.name) == product
 
     # tests definitions of default from utle_products and web-server.products are in sync
-    mock_request = mocker.MagicMock()
-    mock_request.app = app
     async with product_repository.engine.acquire() as conn:
         default_product = await utils_products.get_default_product_name(conn)
-        assert default_product == _get_app_default_product_name(mock_request)
+        assert default_product == _get_default_product_name(app)

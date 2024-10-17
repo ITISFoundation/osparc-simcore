@@ -80,4 +80,4 @@ install-ci:
 .PHONY: config
 config:
 	@$(call check_defined, input, please define inputs when calling $@ - e.g. ```make $@ input="--help"```)
-	@python locust_settings.py $(input) | tee .env
+	@uv run locust_settings.py $(input) | tee .env

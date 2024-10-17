@@ -10,6 +10,7 @@ from typing import Any, TypeAlias
 from uuid import UUID
 
 import arrow
+from common_library.error_codes import ErrorCodeStr
 from common_library.pydantic_basic_types import ConstrainedStr
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.api_schemas_directorv2.dynamic_services_service import (
@@ -28,8 +29,15 @@ from models_library.service_settings_labels import (
 from models_library.services import RunID
 from models_library.services_resources import ServiceResourcesDict
 from models_library.wallets import WalletInfo
-from pydantic import AnyHttpUrl, BaseModel, Extra, Field, parse_obj_as, validator
-from servicelib.error_codes import ErrorCodeStr
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    ConstrainedStr,
+    Extra,
+    Field,
+    parse_obj_as,
+    validator,
+)
 from servicelib.exception_utils import DelayedExceptionHandler
 
 from ..constants import (

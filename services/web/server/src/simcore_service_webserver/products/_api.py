@@ -16,6 +16,7 @@ from .errors import BelowMinimumPaymentError, ProductPriceNotDefinedError
 
 
 def get_product_name(request: web.Request) -> str:
+    """Returns product name in request but might be undefined"""
     product_name: str = request[RQ_PRODUCT_KEY]
     return product_name
 

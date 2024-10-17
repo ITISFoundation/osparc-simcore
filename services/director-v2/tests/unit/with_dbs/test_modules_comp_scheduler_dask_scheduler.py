@@ -381,22 +381,17 @@ async def test_misconfigured_pipeline_is_not_scheduled(
         )
         run_entry = CompRunsAtDB.parse_obj(await result.first())
     assert run_entry.result == RunningState.ABORTED
+    assert run_entry.metadata == run_metadata
 
 
 async def _assert_start_pipeline(
-    aiopg_engine, published_project: PublishedProject, scheduler: BaseCompScheduler
+    aiopg_engine,
+    published_project: PublishedProject,
+    scheduler: BaseCompScheduler,
+    run_metadata: RunMetadataDict,
 ) -> list[CompTaskAtDB]:
     exp_published_tasks = deepcopy(published_project.tasks)
     assert published_project.project.prj_owner
-    run_metadata = RunMetadataDict(
-        node_id_names_map={},
-        project_name="",
-        product_name="",
-        simcore_user_agent="",
-        user_email="",
-        wallet_id=231,
-        wallet_name="",
-    )
     await scheduler.run_new_pipeline(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
@@ -618,11 +613,12 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_clean_task_output_and_log_files_if_invalid: None,
     instrumentation_rabbit_client_parser: mock.AsyncMock,
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
+    run_metadata: RunMetadataDict,
 ):
     _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
 
     expected_published_tasks = await _assert_start_pipeline(
-        aiopg_engine, published_project, scheduler
+        aiopg_engine, published_project, scheduler, run_metadata
     )
 
     # -------------------------------------------------------------------------------
@@ -990,10 +986,11 @@ async def test_task_progress_triggers(
     published_project: PublishedProject,
     mocked_parse_output_data_fct: None,
     mocked_clean_task_output_and_log_files_if_invalid: None,
+    run_metadata: RunMetadataDict,
 ):
     _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
     expected_published_tasks = await _assert_start_pipeline(
-        aiopg_engine, published_project, scheduler
+        aiopg_engine, published_project, scheduler, run_metadata
     )
     # -------------------------------------------------------------------------------
     # 1. first run will move comp_tasks to PENDING so the worker can take them
@@ -1286,10 +1283,11 @@ async def test_running_pipeline_triggers_heartbeat(
     aiopg_engine: aiopg.sa.engine.Engine,
     published_project: PublishedProject,
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
+    run_metadata: RunMetadataDict,
 ):
     _mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
     expected_published_tasks = await _assert_start_pipeline(
-        aiopg_engine, published_project, scheduler
+        aiopg_engine, published_project, scheduler, run_metadata
     )
     # -------------------------------------------------------------------------------
     # 1. first run will move comp_tasks to PENDING so the worker can take them

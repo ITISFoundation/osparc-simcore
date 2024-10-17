@@ -21,7 +21,7 @@
         "selector": "osparc-test-id=templatesTabBtn"
       },
       "anchorEl": "osparc-test-id=templatesTabBtn",
-      "text": "Clicking on a Tutorial will create a copy of that Study, which will appear in your own Project ts tab with thee same name as the Tutorial. Any changes you make to this copy will not affect the original Tutorial.",
+      "text": "Clicking on a Tutorial will create a copy of that Project, which will appear in your own Projects tab with the same name as the Tutorial. Any changes you make to this copy will not affect the original Tutorial.",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -29,13 +29,6 @@
       },
       "anchorEl": "osparc-test-id=servicesTabBtn",
       "text": "Every Project in Sim4Life is composed of at lease one so-called Service.<br>Services are building blocks for Studies and can provide data/files, visualize results (2D, 3D), implement code in Jupyter notebooks or perform computations to execute simulations within a Project.",
-      "placement": "bottom"
-    }, {
-      "beforeClick": {
-        "selector": "osparc-test-id=dataTabBtn"
-      },
-      "anchorEl": "osparc-test-id=dataTabBtn",
-      "text": "The Data tab allow you to browse the output files of all of your active pipelines in one place. This is most useful for downloading the data created on the online platform.",
       "placement": "bottom"
     }]
   },
@@ -50,7 +43,7 @@
         "event": "tap"
       },
       "anchorEl": "osparc-test-id=notificationsContainer",
-      "text": "By clicking on the Bell, you will you see notifications about what Studies, Credits and Organizations.",
+      "text": "By clicking on the Bell, you will you see notifications about which Projects, Credits and Organizations have been shared with you.",
       "placement": "bottom"
     }, {
       "beforeClick": {

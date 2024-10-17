@@ -14,11 +14,8 @@ class InvitationsError(WebServerBaseError, ValueError):
 
 
 class InvalidInvitationError(InvitationsError):
-    msg_template = "Invalid invitation. {reason}"
+    msg_template = "Invalid invitation"
 
 
 class InvitationsServiceUnavailableError(InvitationsError):
-    msg_template = (
-        "Unable to process your invitation since the invitations service is currently unavailable. "
-        "Please try again later."
-    )
+    msg_template = "Cannot process invitations"

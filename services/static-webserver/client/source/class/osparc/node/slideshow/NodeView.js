@@ -92,9 +92,12 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
     _addOutputs: function() {
       this._outputsLayout.removeAll();
 
-      const nodeOutputs = new osparc.widget.NodeOutputs(this.getNode(), this.getNode().getMetaData().outputs);
-      this._mainView.bind("backgroundColor", nodeOutputs, "backgroundColor");
-      this._outputsLayout.add(nodeOutputs);
+      const node = this.getNode();
+      const outputsForm = node.getOutputsForm();
+      if (node.hasOutputs() && outputsForm) {
+        this._mainView.bind("backgroundColor", outputsForm, "backgroundColor");
+        this._outputsLayout.add(outputsForm);
+      }
 
       this._outputsBtn.set({
         value: false,

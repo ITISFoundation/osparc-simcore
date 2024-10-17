@@ -197,7 +197,7 @@ async def limited_as_completed(
     *,
     limit: int = _DEFAULT_LIMITED_CONCURRENCY,
     tasks_group_prefix: str | None = None,
-) -> AsyncGenerator[asyncio.Future[T], None]:
+) -> AsyncGenerator[asyncio.Task[T], None]:
     """Runs awaitables using limited concurrent tasks and returns
     result futures unordered.
 
@@ -214,7 +214,7 @@ async def limited_as_completed(
         nothing
 
     Yields:
-        Future[T]: the future of the awaitables as they appear.
+        task[T]: the future of the awaitables as they appear.
 
 
     """
@@ -227,7 +227,7 @@ async def limited_as_completed(
         is_async = False
 
     completed_all_awaitables = False
-    pending_futures: set[asyncio.Future] = set()
+    pending_futures: set[asyncio.Task] = set()
 
     try:
         while pending_futures or not completed_all_awaitables:
@@ -240,10 +240,11 @@ async def limited_as_completed(
                         if is_async
                         else next(awaitable_iterator)  # type: ignore[call-overload]
                     )
-                    future = asyncio.ensure_future(aw)
+                    future: asyncio.Task = asyncio.ensure_future(aw)
                     if tasks_group_prefix:
                         future.set_name(f"{tasks_group_prefix}-{future.get_name()}")
                     pending_futures.add(future)
+
                 except (StopIteration, StopAsyncIteration):  # noqa: PERF203
                     completed_all_awaitables = True
             if not pending_futures:
@@ -254,6 +255,7 @@ async def limited_as_completed(
 
             for future in done:
                 yield future
+
     except asyncio.CancelledError:
         for future in pending_futures:
             future.cancel()

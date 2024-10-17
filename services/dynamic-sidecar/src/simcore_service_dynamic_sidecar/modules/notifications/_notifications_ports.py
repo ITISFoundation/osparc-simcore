@@ -52,7 +52,7 @@ class PortNotifier:
         self, port_key: ServicePortKey
     ) -> None:
         await self._send_output_port_status(
-            port_key, OutputStatus.UPLOAD_FINISHED_WITH_ERRROR
+            port_key, OutputStatus.UPLOAD_FINISHED_WITH_ERROR
         )
 
     async def send_input_port_download_started(self, port_key: ServicePortKey) -> None:
@@ -74,5 +74,5 @@ class PortNotifier:
         self, port_key: ServicePortKey
     ) -> None:
         await self._send_input_port_status(
-            port_key, InputStatus.DOWNLOAD_FINISHED_WITH_ERRROR
+            port_key, InputStatus.DOWNLOAD_FINISHED_WITH_ERROR
         )

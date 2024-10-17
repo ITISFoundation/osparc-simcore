@@ -242,12 +242,10 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     },
 
     _shouldApplyFilter: function(data) {
-      console.log("_shouldApplyFilter", data);
       return false;
     },
 
     _shouldReactToFilter: function(data) {
-      console.log("_shouldReactToFilter", data);
       return false;
     }
   },

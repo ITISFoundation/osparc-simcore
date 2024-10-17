@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.11.9"
-FROM python:${PYTHON_VERSION}-slim-bookworm as base
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 #
 #  USAGE:
 #     cd sercices/dynamic-sidecar
@@ -99,7 +99,7 @@ RUN mkdir -p "${DYNAMIC_SIDECAR_SHARED_STORE_DIR}" && \
 #
 # + /build             WORKDIR
 #
-FROM base as build
+FROM base AS build
 
 ENV SC_BUILD_TARGET=build
 
@@ -146,7 +146,7 @@ COPY --chown=root:root services/dynamic-sidecar/scripts/Makefile /root
 #  + /build
 #    + services/dynamic-sidecar [scu:scu] WORKDIR
 #
-FROM build as prod-only-deps
+FROM build AS prod-only-deps
 
 ENV SC_BUILD_TARGET prod-only-deps
 
@@ -167,7 +167,7 @@ RUN \
 #  + /home/scu     $HOME = WORKDIR
 #    + services/dynamic-sidecar [scu:scu]
 #
-FROM base as production
+FROM base AS production
 
 ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
@@ -208,7 +208,7 @@ CMD ["/bin/sh", "services/dynamic-sidecar/docker/boot.sh"]
 #  + /devel         WORKDIR
 #    + services  (mounted volume)
 #
-FROM build as development
+FROM build AS development
 
 ENV SC_BUILD_TARGET=development \
   SC_BOOT_MODE=development

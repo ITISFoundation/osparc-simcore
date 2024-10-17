@@ -11,14 +11,14 @@ class OutputStatus(StrAutoEnum):
     UPLOAD_STARTED = auto()
     UPLOAD_WAS_ABORTED = auto()
     UPLOAD_FINISHED_SUCCESSFULLY = auto()
-    UPLOAD_FINISHED_WITH_ERRROR = auto()
+    UPLOAD_FINISHED_WITH_ERROR = auto()
 
 
 class InputStatus(StrAutoEnum):
     DOWNLOAD_STARTED = auto()
     DOWNLOAD_WAS_ABORTED = auto()
     DOWNLOAD_FINISHED_SUCCESSFULLY = auto()
-    DOWNLOAD_FINISHED_WITH_ERRROR = auto()
+    DOWNLOAD_FINISHED_WITH_ERROR = auto()
 
 
 class _PortStatusCommon(BaseModel):

@@ -37,6 +37,12 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
     });
 
     if (title) {
+      title = osparc.utils.Utils.replaceTokens(
+        title,
+        "replace_me_product_name",
+        osparc.store.StaticInfo.getInstance().getDisplayName()
+      );
+
       const titleLabel = this.getChildControl("title");
       titleLabel.set({
         value: title,
@@ -45,6 +51,12 @@ qx.Class.define("osparc.dashboard.GridButtonNew", {
     }
 
     if (description) {
+      description = osparc.utils.Utils.replaceTokens(
+        description,
+        "replace_me_product_name",
+        osparc.store.StaticInfo.getInstance().getDisplayName()
+      );
+
       const descLabel = this.getChildControl("subtitle-text");
       descLabel.setValue(description.toString());
     }

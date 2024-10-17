@@ -1,4 +1,5 @@
-""" AUTHoriZation (auth) policy:
+""" AUTHoriZation (auth) policy
+
 """
 
 import contextlib
@@ -23,7 +24,7 @@ from ._authz_access_model import (
     has_access_by_role,
 )
 from ._authz_db import AuthInfoDict, get_active_user_or_none, is_user_in_product_name
-from ._constants import MSG_AUTH_NOT_AVAILABLE
+from ._constants import MSG_AUTH_NOT_AVAILABLE, PERMISSION_PRODUCT_LOGIN_KEY
 from ._identity_api import IdentityStr
 
 _logger = logging.getLogger(__name__)
@@ -132,7 +133,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         context = context or AuthContextDict()
 
         # product access
-        if permission == "product":
+        if permission == PERMISSION_PRODUCT_LOGIN_KEY:
             product_name = context.get("product_name")
             ok: bool = product_name is not None and await self._has_access_to_product(
                 user_id=auth_info["id"], product_name=product_name

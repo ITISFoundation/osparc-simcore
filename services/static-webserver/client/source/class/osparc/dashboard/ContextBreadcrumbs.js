@@ -52,6 +52,10 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
     __rebuild: function() {
       this._removeAll();
 
+      if (this.getCurrentWorkspaceId() === -2) {
+        return;
+      }
+
       if (this.getCurrentFolderId()) {
         const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
         this.__createUpstreamButtons(currentFolder);

@@ -1,9 +1,11 @@
+import asyncio
 import logging
 from typing import Final
 
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import (
+    DynamicServiceRunningMessage,
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingStartedMessage,
     RabbitResourceTrackingStoppedMessage,
@@ -19,7 +21,10 @@ from ...core.docker_utils import (
     are_all_containers_in_expected_states,
     get_container_states,
 )
-from ...core.rabbitmq import post_resource_tracking_message
+from ...core.rabbitmq import (
+    post_dynamic_service_running_message,
+    post_resource_tracking_message,
+)
 from ...core.settings import ApplicationSettings, ResourceTrackingSettings
 from ...models.shared_store import SharedStore
 from ._models import ResourceTrackingState
@@ -70,10 +75,21 @@ async def _heart_beat_task(app: FastAPI):
     )
 
     if are_all_containers_in_expected_states(container_states.values()):
-        message = RabbitResourceTrackingHeartbeatMessage(
+        rut_message = RabbitResourceTrackingHeartbeatMessage(
             service_run_id=settings.DY_SIDECAR_RUN_ID
         )
-        await post_resource_tracking_message(app, message)
+        dyn_message = DynamicServiceRunningMessage(
+            project_id=settings.DY_SIDECAR_PROJECT_ID,
+            node_id=settings.DY_SIDECAR_NODE_ID,
+            user_id=settings.DY_SIDECAR_USER_ID,
+            product_name=settings.DY_SIDECAR_PRODUCT_NAME,
+        )
+        await asyncio.gather(
+            *[
+                post_resource_tracking_message(app, rut_message),
+                post_dynamic_service_running_message(app, dyn_message),
+            ]
+        )
     else:
         _logger.info(
             "heart beat message skipped: container_states=%s", container_states

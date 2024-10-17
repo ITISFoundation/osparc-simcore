@@ -136,7 +136,8 @@ qx.Class.define("osparc.data.model.Node", {
     outputs: {
       check: "Object",
       nullable: false,
-      event: "changeOutputs"
+      event: "changeOutputs",
+      apply: "__applyOutputs",
     },
 
     status: {
@@ -164,6 +165,12 @@ qx.Class.define("osparc.data.model.Node", {
       init: null,
       nullable: true,
       apply: "__applyPropsForm"
+    },
+
+    outputsForm: {
+      check: "osparc.widget.NodeOutputs",
+      init: null,
+      nullable: true
     },
 
     marker: {
@@ -612,6 +619,13 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
     },
 
+    __applyOutputs: function() {
+      if (!this.isPropertyInitialized("outputsForm") || !this.getOutputsForm()) {
+        const nodeOutputs = new osparc.widget.NodeOutputs(this);
+        this.setOutputsForm(nodeOutputs);
+      }
+    },
+
     removeNodePortConnections: function(inputNodeId) {
       let inputs = this.__getInputData();
       for (const portId in inputs) {
@@ -905,7 +919,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
       };
       osparc.data.Resources.fetch("studies", "startNode", params)
-        .then(() => this.startPollingState())
+        .then(() => this.checkState())
         .catch(err => {
           if ("status" in err && (err.status === 409 || err.status === 402)) {
             osparc.FlashMessenger.getInstance().logAs(err.message, "WARNING");
@@ -1055,7 +1069,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    startPollingState: function() {
+    checkState: function() {
       if (this.isDynamic()) {
         const metadata = this.getMetaData();
         const msg = "Starting " + metadata.key + ":" + metadata.version + "...";
@@ -1067,7 +1081,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.fireDataEvent("showInLogger", msgData);
 
         if (this.getIframeHandler()) {
-          this.getIframeHandler().startPolling();
+          this.getIframeHandler().checkState();
         } else {
           console.error(this.getLabel() + " iframe handler not ready");
         }

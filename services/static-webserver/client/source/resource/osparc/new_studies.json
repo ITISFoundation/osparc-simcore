@@ -140,7 +140,7 @@
     "linkedResource": "services",
     "resources": [{
       "expectedKey": "simcore/services/dynamic/sim4life-lite",
-      "title": "Start <i>S4L<sup>lite</sup></i>",
+      "title": "Start ${replace_me_product_name}",
       "description": "New project",
       "newStudyLabel": "New project",
       "idToWidget": "startS4LButton"

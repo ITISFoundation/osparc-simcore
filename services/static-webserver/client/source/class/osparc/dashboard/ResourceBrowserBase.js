@@ -42,15 +42,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     const mainLayoutWithSideSpacers = new qx.ui.container.Composite(new qx.ui.layout.HBox(spacing))
     this._addToMainLayout(mainLayoutWithSideSpacers);
 
-    this.__leftFilters = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+    this.__leftFilters = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
       width: leftColumnWidth
     });
     mainLayoutWithSideSpacers.add(this.__leftFilters);
 
-    this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
     mainLayoutWithSideSpacers.add(this.__centerLayout);
 
-    const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     mainLayoutWithSideSpacers.add(rightColum, {
       flex: 1
     });
@@ -77,6 +77,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   events: {
+    "changeTab": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data"
   },
 
@@ -222,7 +223,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    reloadResources: function() {
+    reloadMoreResources: function() {
       throw new Error("Abstract method called!");
     },
 
@@ -236,6 +237,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
+
       this._addToLayout(searchBarFilter);
     },
 
@@ -356,6 +358,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         radioGroup.add(btn);
       });
 
+      if (this._resourceType === "study") {
+        const viewMode = osparc.utils.Utils.localCache.getLocalStorageItem("studiesViewMode");
+        if (viewMode) {
+          if (viewMode === "list") {
+            radioGroup.setSelection([listBtn]);
+          }
+        }
+      }
+
       this._toolbar.add(viewModeLayout);
     },
 
@@ -421,7 +432,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _moreResourcesRequired: function() {
       if (this._resourcesContainer && this._resourcesContainer.areMoreResourcesRequired(this._loadingResourcesBtn)) {
-        this.reloadResources();
+        this.reloadMoreResources();
       }
     },
 
@@ -446,6 +457,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
+      if (isStudyCreation) {
+        this.fireDataEvent("changeTab", "studiesTab");
+      }
       this.self().startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 

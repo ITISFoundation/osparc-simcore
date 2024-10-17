@@ -7,10 +7,10 @@ import time
 
 import aiohttp_session
 from aiohttp import web
-from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 
+from ._cookie_storage import SharedCookieEncryptedCookieStorage
 from .settings import SessionSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)

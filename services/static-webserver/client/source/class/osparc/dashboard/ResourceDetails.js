@@ -159,7 +159,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             this.__openResource();
           }
         })
-        .catch(() => this.__openButton.setFetching(false));
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.logAs(err.message, "ERROR");
+          this.__openButton.setFetching(false);
+        });
     },
 
     __confirmUpdate: function() {

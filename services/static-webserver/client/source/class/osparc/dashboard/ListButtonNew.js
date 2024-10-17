@@ -34,6 +34,12 @@ qx.Class.define("osparc.dashboard.ListButtonNew", {
     });
 
     if (title) {
+      title = osparc.utils.Utils.replaceTokens(
+        title,
+        "replace_me_product_name",
+        osparc.store.StaticInfo.getInstance().getDisplayName()
+      );
+
       const titleLabel = this.getChildControl("title");
       titleLabel.set({
         value: title,
