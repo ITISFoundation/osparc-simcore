@@ -37,6 +37,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
+from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
 from starlette import status
@@ -150,6 +151,7 @@ async def _check_pipeline_startable(
 _UNKNOWN_NODE: Final[str] = "unknown node"
 
 
+@log_decorator(_logger)
 async def _get_project_metadata(
     project_id: ProjectID,
     project_repo: ProjectsRepository,
