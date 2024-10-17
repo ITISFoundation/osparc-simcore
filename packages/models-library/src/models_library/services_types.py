@@ -1,8 +1,9 @@
-from typing import Annotated, TypeAlias
+from typing import Annotated, Any, TypeAlias
 from uuid import uuid4
 
 import arrow
-from pydantic import StringConstraints, ValidationInfo
+from pydantic import GetCoreSchemaHandler, StringConstraints, ValidationInfo
+from pydantic_core import CoreSchema, core_schema
 
 from .basic_regex import PROPERTY_KEY_RE, SIMPLE_VERSION_RE
 from .services_regex import (
@@ -59,8 +60,10 @@ class RunID(str):
         return cls(run_id_format)
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(cls, handler(str))
 
     @classmethod
     def validate(cls, v: "RunID | str", _: ValidationInfo) -> "RunID":

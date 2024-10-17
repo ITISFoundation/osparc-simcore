@@ -30,7 +30,7 @@ class _StoreMixin(BaseModel):
         async with aiofiles.open(
             self._shared_store_dir / STORE_FILE_NAME, "w"
         ) as data_file:
-            await data_file.write(self.json())
+            await data_file.write(self.model_dump_json())
 
     def post_init(self, shared_store_dir: Path):
         self._shared_store_dir = shared_store_dir
