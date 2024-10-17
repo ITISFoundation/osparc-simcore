@@ -366,12 +366,12 @@ def test_ensure_api_vtag_is_v1():
 async def test_start_same_space_twice(compose_spec: str, test_client: TestClient):
     settings = test_client.application.state.settings
 
-    settings_1 = settings.copy(
+    settings_1 = settings.model_copy(
         update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_1"}, deep=True
     )
     await _assert_compose_spec_pulled(compose_spec, settings_1)
 
-    settings_2 = settings.copy(
+    settings_2 = settings.model_copy(
         update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_2"}, deep=True
     )
     await _assert_compose_spec_pulled(compose_spec, settings_2)
