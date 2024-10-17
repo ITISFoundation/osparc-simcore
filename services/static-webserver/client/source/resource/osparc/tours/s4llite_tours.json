@@ -33,7 +33,7 @@
         "event": "tap"
       },
       "anchorEl": "osparc-test-id=notificationsContainer",
-      "text": "By clicking on the Bell, you will you see notifications about what Studies, Credits and Organizations.",
+      "text": "By clicking on the Bell, you will you see notifications about what Projects and Organizations were shared with you.",
       "placement": "bottom"
     }, {
       "beforeClick": {
@@ -49,7 +49,7 @@
         "action": "open"
       },
       "anchorEl": "osparc-test-id=userMenuMenu",
-      "text": "The User Menu gives you access to Your Account, Billing Center, Preferences, Organizations and more.",
+      "text": "The User Menu gives you access to Your Account, Preferences, Organizations and more.",
       "placement": "left"
     }]
   },
@@ -63,13 +63,13 @@
         "selector": "osparc-test-id=studiesTabBtn"
       },
       "anchorEl": "osparc-test-id=startS4LButton",
-      "title": "Start Sim4Life",
-      "text": "Clicking on this (+) Start Sim4Life button, allows you to create and open a new Sim4Life project",
+      "title": "Start Sim4Life.lite",
+      "text": "Clicking on this (+) Start Sim4Life.lite button, allows you to create and open a new Sim4Life.lite project",
       "placement": "right"
     }, {
       "anchorEl": "osparc-test-id=searchBarFilter-textField-study",
       "title": "Filter and Search",
-      "text": "This tool allows you to filter Projects, Tutorials and Services.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
+      "text": "This tool allows you to filter Projects and Tutorials.<br>You can search and filter by:<br>- Title, description, owner, id...<br>- Tags<br>- Shared with",
       "placement": "bottom"
     }, {
       "beforeClick": {
