@@ -7,16 +7,15 @@ import aiofiles
 import orjson
 from aiohttp import ClientSession
 from aws_library.s3 import MultiPartUploadLinks
-from common_library.pydantic_type_adapters import ByteSizeAdapter
 from models_library.api_schemas_storage import ETag, FileUploadSchema, UploadedPart
-from pydantic import AnyUrl
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.utils import limited_as_completed, logged_gather
 from types_aiobotocore_s3 import S3Client
 
 from .logging_tools import log_context
 
-_SENDER_CHUNK_SIZE: Final[int] = ByteSizeAdapter.validate_python("16Mib")
+_SENDER_CHUNK_SIZE: Final[int] = TypeAdapter(ByteSize).validate_python("16Mib")
 
 
 async def _file_sender(

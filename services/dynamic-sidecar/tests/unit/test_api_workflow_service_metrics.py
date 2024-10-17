@@ -16,7 +16,7 @@ from aiodocker.containers import DockerContainer
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
-from common_library.pydantic_type_adapters import AnyHttpUrlLegacyAdapter
+from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from fastapi import FastAPI
 from httpx import AsyncClient
 from models_library.generated_models.docker_rest_api import ContainerState
@@ -29,7 +29,7 @@ from models_library.rabbitmq_messages import (
     SimcorePlatformStatus,
 )
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import (
@@ -80,7 +80,9 @@ def compose_spec(raw_compose_spec: dict[str, Any]) -> str:
 
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
-    return AnyHttpUrlLegacyAdapter.validate_python("http://backgroud.testserver.io")
+    return TypeAdapter(AnyHttpUrlLegacy).validate_python(
+        "http://backgroud.testserver.io"
+    )
 
 
 @pytest.fixture

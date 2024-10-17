@@ -28,7 +28,6 @@ from aws_library.s3._errors import (
     S3UploadNotFoundError,
 )
 from aws_library.s3._models import MultiPartUploadLinks
-from common_library.pydantic_type_adapters import ByteSizeAdapter
 from faker import Faker
 from models_library.api_schemas_storage import S3BucketName, UploadedPart
 from models_library.basic_types import SHA256Str
@@ -112,7 +111,7 @@ async def upload_to_presigned_link(
             file,
             MultiPartUploadLinks(
                 upload_id="fake",
-                chunk_size=ByteSizeAdapter.validate_python(file.stat().st_size),
+                chunk_size=TypeAdapter(ByteSize).validate_python(file.stat().st_size),
                 urls=[presigned_url],
             ),
         )
@@ -136,7 +135,7 @@ async def with_uploaded_file_on_s3(
     s3_client: S3Client,
     with_s3_bucket: S3BucketName,
 ) -> AsyncIterator[UploadedFile]:
-    test_file = create_file_of_size(ByteSizeAdapter.validate_python("10Kib"))
+    test_file = create_file_of_size(TypeAdapter(ByteSize).validate_python("10Kib"))
     await s3_client.upload_file(
         Filename=f"{test_file}",
         Bucket=with_s3_bucket,
@@ -591,7 +590,7 @@ async def test_undelete_file(
     assert file_metadata.size == with_uploaded_file_on_s3.local_path.stat().st_size
 
     # upload another file on top of the existing one
-    new_file = create_file_of_size(ByteSizeAdapter.validate_python("5Kib"))
+    new_file = create_file_of_size(TypeAdapter(ByteSize).validate_python("5Kib"))
     await s3_client.upload_file(
         Filename=f"{new_file}",
         Bucket=with_s3_bucket,
@@ -746,7 +745,7 @@ async def test_create_single_presigned_upload_link(
         [Path, str, S3BucketName, S3ObjectKey], Awaitable[None]
     ],
 ):
-    file = create_file_of_size(ByteSizeAdapter.validate_python("1Mib"))
+    file = create_file_of_size(TypeAdapter(ByteSize).validate_python("1Mib"))
     s3_object_key = file.name
     presigned_url = await simcore_s3_api.create_single_presigned_upload_link(
         bucket=with_s3_bucket,
@@ -774,7 +773,7 @@ async def test_create_single_presigned_upload_link_with_non_existing_bucket_rais
     create_file_of_size: Callable[[ByteSize], Path],
     default_expiration_time_seconds: int,
 ):
-    file = create_file_of_size(ByteSizeAdapter.validate_python("1Mib"))
+    file = create_file_of_size(TypeAdapter(ByteSize).validate_python("1Mib"))
     s3_object_key = file.name
     with pytest.raises(S3BucketInvalidError):
         await simcore_s3_api.create_single_presigned_upload_link(
@@ -1081,7 +1080,7 @@ async def test_copy_file_invalid_raises(
     create_file_of_size: Callable[[ByteSize], Path],
     faker: Faker,
 ):
-    file = create_file_of_size(ByteSizeAdapter.validate_python("1MiB"))
+    file = create_file_of_size(TypeAdapter(ByteSize).validate_python("1MiB"))
     uploaded_file = await upload_file(file)
     dst_object_key = faker.file_name()
     # NOTE: since aioboto3 13.1.0 this raises S3KeyNotFoundError instead of S3BucketInvalidError
@@ -1106,9 +1105,9 @@ async def test_copy_file_invalid_raises(
     "directory_size, min_file_size, max_file_size",
     [
         (
-            ByteSizeAdapter.validate_python("1Mib"),
-            ByteSizeAdapter.validate_python("1B"),
-            ByteSizeAdapter.validate_python("10Kib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
         )
     ],
     ids=byte_size_ids,
@@ -1132,9 +1131,9 @@ async def test_get_directory_metadata(
     "directory_size, min_file_size, max_file_size",
     [
         (
-            ByteSizeAdapter.validate_python("1Mib"),
-            ByteSizeAdapter.validate_python("1B"),
-            ByteSizeAdapter.validate_python("10Kib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
         )
     ],
     ids=byte_size_ids,
@@ -1164,9 +1163,9 @@ async def test_get_directory_metadata_raises(
     "directory_size, min_file_size, max_file_size",
     [
         (
-            ByteSizeAdapter.validate_python("1Mib"),
-            ByteSizeAdapter.validate_python("1B"),
-            ByteSizeAdapter.validate_python("10Kib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
         )
     ],
     ids=byte_size_ids,
@@ -1200,9 +1199,9 @@ async def test_delete_file_recursively(
     "directory_size, min_file_size, max_file_size",
     [
         (
-            ByteSizeAdapter.validate_python("1Mib"),
-            ByteSizeAdapter.validate_python("1B"),
-            ByteSizeAdapter.validate_python("10Kib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
         )
     ],
     ids=byte_size_ids,
@@ -1238,9 +1237,9 @@ async def test_delete_file_recursively_raises(
     "directory_size, min_file_size, max_file_size",
     [
         (
-            ByteSizeAdapter.validate_python("1Mib"),
-            ByteSizeAdapter.validate_python("1B"),
-            ByteSizeAdapter.validate_python("10Kib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
         )
     ],
     ids=byte_size_ids,
@@ -1338,14 +1337,14 @@ def test_upload_file_performance(
     "directory_size, min_file_size, max_file_size",
     [
         (
-            ByteSizeAdapter.validate_python("1Mib"),
-            ByteSizeAdapter.validate_python("1B"),
-            ByteSizeAdapter.validate_python("10Kib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
         ),
         (
-            ByteSizeAdapter.validate_python("500Mib"),
-            ByteSizeAdapter.validate_python("10Mib"),
-            ByteSizeAdapter.validate_python("50Mib"),
+            TypeAdapter(ByteSize).validate_python("500Mib"),
+            TypeAdapter(ByteSize).validate_python("10Mib"),
+            TypeAdapter(ByteSize).validate_python("50Mib"),
         ),
     ],
     ids=byte_size_ids,

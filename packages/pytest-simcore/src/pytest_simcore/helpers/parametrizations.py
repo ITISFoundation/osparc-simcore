@@ -1,7 +1,6 @@
 import pytest
 from _pytest.mark.structures import ParameterSet
-from common_library.pydantic_type_adapters import ByteSizeAdapter
-from pydantic import ByteSize
+from pydantic import ByteSize, TypeAdapter
 
 
 def byte_size_ids(val) -> str | None:
@@ -11,4 +10,4 @@ def byte_size_ids(val) -> str | None:
 
 
 def parametrized_file_size(size_str: str) -> ParameterSet:
-    return pytest.param(ByteSizeAdapter.validate_python(size_str), id=size_str)
+    return pytest.param(TypeAdapter(ByteSize).validate_python(size_str), id=size_str)

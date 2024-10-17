@@ -1,8 +1,7 @@
 import os
 from pathlib import Path
 
-from common_library.pydantic_type_adapters import ByteSizeAdapter
-from pydantic import ByteSize
+from pydantic import ByteSize, TypeAdapter
 
 
 def get_directory_total_size(path: Path) -> ByteSize:
@@ -11,7 +10,7 @@ def get_directory_total_size(path: Path) -> ByteSize:
     # until we do not hit 1 million it can be ignored
     # NOTE: file size has no impact on performance
     if not path.exists():
-        return ByteSizeAdapter.validate_python(0)
+        return TypeAdapter(ByteSize).validate_python(0)
 
     total = 0
     for entry in os.scandir(path):
@@ -19,4 +18,4 @@ def get_directory_total_size(path: Path) -> ByteSize:
             total += entry.stat().st_size
         elif entry.is_dir():
             total += get_directory_total_size(Path(entry.path))
-    return ByteSizeAdapter.validate_python(total)
+    return TypeAdapter(ByteSize).validate_python(total)

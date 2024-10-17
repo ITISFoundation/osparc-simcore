@@ -32,9 +32,6 @@ _S4L_STARTUP_SCREEN_MAX_TIME: Final[int] = 45 * SECOND
 _S4L_COPY_WORKSPACE_TIME: Final[int] = 60 * SECOND
 
 
-ByteSizeAdapter: Final[TypeAdapter[ByteSize]] = TypeAdapter(ByteSize)
-
-
 @dataclass(kw_only=True)
 class S4LWaitForWebsocket:
     logger: logging.Logger
@@ -67,7 +64,7 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                     self._initial_bit_rate_time = arrow.utcnow().datetime
                     self.logger.info(
                         "%s",
-                        f"{ByteSizeAdapter.validate_python(self._initial_bit_rate).human_readable()}/s at {self._initial_bit_rate_time.isoformat()}",
+                        f"{TypeAdapter(ByteSize).validate_python(self._initial_bit_rate).human_readable()}/s at {self._initial_bit_rate_time.isoformat()}",
                     )
                     return False
 
@@ -82,7 +79,7 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                     bitrate_test = bool(self._initial_bit_rate != current_bitrate)
                     self.logger.info(
                         "%s",
-                        f"{ByteSizeAdapter.validate_python(current_bitrate).human_readable()}/s after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
+                        f"{TypeAdapter(ByteSize).validate_python(current_bitrate).human_readable()}/s after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
                     )
                     return bitrate_test
 

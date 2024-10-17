@@ -13,7 +13,6 @@ from aiobotocore.session import AioBaseClient, get_session
 from aiohttp import ClientResponse, ClientSession, TCPConnector
 from aioresponses import aioresponses
 from common_library.pydantic_basic_types import IDStr
-from common_library.pydantic_type_adapters import ByteSizeAdapter
 from faker import Faker
 from models_library.api_schemas_storage import (
     FileUploadLinks,
@@ -248,8 +247,8 @@ async def create_upload_links(
     "file_size,used_chunk_size",
     [
         (
-            ByteSizeAdapter.validate_python(21800510238),
-            ByteSizeAdapter.validate_python(10485760),
+            TypeAdapter(ByteSize).validate_python(21800510238),
+            TypeAdapter(ByteSize).validate_python(10485760),
         )
     ],
 )
@@ -274,7 +273,7 @@ async def test_upload_file_to_presigned_links(
     """
     local_file = create_file_of_size(file_size)
     num_links = 2080
-    effective_chunk_size = ByteSizeAdapter.validate_python(
+    effective_chunk_size = TypeAdapter(ByteSize).validate_python(
         local_file.stat().st_size / num_links
     )
     assert effective_chunk_size <= used_chunk_size

@@ -10,8 +10,7 @@ from aws_library.s3._utils import (
     _MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE,
     compute_num_file_chunks,
 )
-from common_library.pydantic_type_adapters import ByteSizeAdapter
-from pydantic import ByteSize
+from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 
 
@@ -19,54 +18,54 @@ from pytest_simcore.helpers.parametrizations import byte_size_ids
     "file_size, expected_num_chunks, expected_chunk_size",
     [
         (
-            ByteSizeAdapter.validate_python("5Mib"),
+            TypeAdapter(ByteSize).validate_python("5Mib"),
             1,
-            ByteSizeAdapter.validate_python("10Mib"),
+            TypeAdapter(ByteSize).validate_python("10Mib"),
         ),
         (
-            ByteSizeAdapter.validate_python("10Mib"),
+            TypeAdapter(ByteSize).validate_python("10Mib"),
             1,
-            ByteSizeAdapter.validate_python("10Mib"),
+            TypeAdapter(ByteSize).validate_python("10Mib"),
         ),
         (
-            ByteSizeAdapter.validate_python("20Mib"),
+            TypeAdapter(ByteSize).validate_python("20Mib"),
             2,
-            ByteSizeAdapter.validate_python("10Mib"),
+            TypeAdapter(ByteSize).validate_python("10Mib"),
         ),
         (
-            ByteSizeAdapter.validate_python("50Mib"),
+            TypeAdapter(ByteSize).validate_python("50Mib"),
             5,
-            ByteSizeAdapter.validate_python("10Mib"),
+            TypeAdapter(ByteSize).validate_python("10Mib"),
         ),
         (
-            ByteSizeAdapter.validate_python("150Mib"),
+            TypeAdapter(ByteSize).validate_python("150Mib"),
             15,
-            ByteSizeAdapter.validate_python("10Mib"),
+            TypeAdapter(ByteSize).validate_python("10Mib"),
         ),
         (
-            ByteSizeAdapter.validate_python("550Mib"),
+            TypeAdapter(ByteSize).validate_python("550Mib"),
             55,
-            ByteSizeAdapter.validate_python("10Mib"),
+            TypeAdapter(ByteSize).validate_python("10Mib"),
         ),
         (
-            ByteSizeAdapter.validate_python("560Gib"),
+            TypeAdapter(ByteSize).validate_python("560Gib"),
             5735,
-            ByteSizeAdapter.validate_python("100Mib"),
+            TypeAdapter(ByteSize).validate_python("100Mib"),
         ),
         (
-            ByteSizeAdapter.validate_python("5Tib"),
+            TypeAdapter(ByteSize).validate_python("5Tib"),
             8739,
-            ByteSizeAdapter.validate_python("600Mib"),
+            TypeAdapter(ByteSize).validate_python("600Mib"),
         ),
         (
-            ByteSizeAdapter.validate_python("15Tib"),
+            TypeAdapter(ByteSize).validate_python("15Tib"),
             7680,
-            ByteSizeAdapter.validate_python("2Gib"),
+            TypeAdapter(ByteSize).validate_python("2Gib"),
         ),
         (
-            ByteSizeAdapter.validate_python("9431773844"),
+            TypeAdapter(ByteSize).validate_python("9431773844"),
             900,
-            ByteSizeAdapter.validate_python("10Mib"),
+            TypeAdapter(ByteSize).validate_python("10Mib"),
         ),
     ],
     ids=byte_size_ids,
@@ -80,7 +79,7 @@ def test_compute_num_file_chunks(
 
 
 def test_enormous_file_size_raises_value_error():
-    enormous_file_size = ByteSizeAdapter.validate_python(
+    enormous_file_size = TypeAdapter(ByteSize).validate_python(
         (
             max(_MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE)
             * _MULTIPART_MAX_NUMBER_OF_PARTS

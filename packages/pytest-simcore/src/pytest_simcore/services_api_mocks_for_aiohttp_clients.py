@@ -12,7 +12,6 @@ from urllib.parse import urlparse, urlunparse
 import pytest
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
-from common_library.pydantic_type_adapters import ByteSizeAdapter
 from faker import Faker
 from models_library.api_schemas_storage import (
     FileMetaDataGet,
@@ -29,7 +28,7 @@ from models_library.generics import Envelope
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, TypeAdapter
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
 from yarl import URL
 
@@ -373,7 +372,7 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
     if file_size := kwargs["params"].get("file_size") is not None:
         assert file_size
         upload_schema = FileUploadSchema(
-            chunk_size=ByteSizeAdapter.validate_python("5GiB"),
+            chunk_size=TypeAdapter(ByteSize).validate_python("5GiB"),
             urls=[
                 TypeAdapter(AnyUrl).validate_python(f"{scheme[link_type]}://{file_id}")
             ],

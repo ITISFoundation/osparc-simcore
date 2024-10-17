@@ -9,11 +9,10 @@ from typing import Any
 from unittest import mock
 
 import pytest
-from common_library.pydantic_type_adapters import ByteSizeAdapter
 from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.progress_bar import ProgressReport
-from pydantic import TypeAdapter
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib import progress_bar
 from servicelib.docker_utils import pull_image
@@ -202,7 +201,7 @@ async def test_pull_image_without_layer_information(
     assert layer_information
     print(f"{image=} has {layer_information.layers_total_size=}")
 
-    fake_number_of_steps = ByteSizeAdapter.validate_python("200MiB")
+    fake_number_of_steps = TypeAdapter(ByteSize).validate_python("200MiB")
     assert fake_number_of_steps > layer_information.layers_total_size
     async with progress_bar.ProgressBarData(
         num_steps=fake_number_of_steps,

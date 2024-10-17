@@ -10,7 +10,6 @@ from unittest.mock import AsyncMock
 import pytest
 import socketio
 from asgi_lifespan import LifespanManager
-from common_library.pydantic_type_adapters import ByteSizeAdapter
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_dynamic_sidecar.ports import (
@@ -133,7 +132,7 @@ def _get_mocked_disk_usage(byte_size_str: str) -> DiskUsage:
     return DiskUsage(
         total=ByteSize(0),
         used=ByteSize(0),
-        free=ByteSizeAdapter.validate_python(byte_size_str),
+        free=TypeAdapter(ByteSize).validate_python(byte_size_str),
         used_percent=0,
     )
 

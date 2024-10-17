@@ -1,5 +1,4 @@
-from common_library.pydantic_type_adapters import ByteSizeAdapter
-from pydantic import ByteSize, NonNegativeInt, field_validator
+from pydantic import ByteSize, NonNegativeInt, TypeAdapter, field_validator
 from settings_library.base import BaseCustomSettings
 
 from ._constants import GB
@@ -10,7 +9,7 @@ _DEFAULT_MAX_MEMORY_VALUE = 2 * GB
 
 class ComputationalServices(BaseCustomSettings):
     DEFAULT_MAX_NANO_CPUS: NonNegativeInt = _DEFAULT_MAX_NANO_CPUS_VALUE
-    DEFAULT_MAX_MEMORY: ByteSize = ByteSizeAdapter.validate_python(
+    DEFAULT_MAX_MEMORY: ByteSize = TypeAdapter(ByteSize).validate_python(
         f"{_DEFAULT_MAX_MEMORY_VALUE}"
     )
     DEFAULT_RUNTIME_TIMEOUT: NonNegativeInt = 0

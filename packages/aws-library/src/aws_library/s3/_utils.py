@@ -1,14 +1,13 @@
 from typing import Final
 
-from common_library.pydantic_type_adapters import ByteSizeAdapter
-from pydantic import ByteSize
+from pydantic import ByteSize, TypeAdapter
 
 _MULTIPART_MAX_NUMBER_OF_PARTS: Final[int] = 10000
 
 # this is artifically defined, if possible we keep a maximum number of requests for parallel
 # uploading. If that is not possible then we create as many upload part as the max part size allows
 _MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE: Final[list[ByteSize]] = [
-    ByteSizeAdapter.validate_python(x)
+    TypeAdapter(ByteSize).validate_python(x)
     for x in [
         "10Mib",
         "50Mib",
