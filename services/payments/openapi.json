@@ -99,28 +99,33 @@
         "summary": "Acknowledge Payment",
         "description": "completes (ie. ack) request initated by `/init` on the payments-gateway API",
         "operationId": "acknowledge_payment_v1_payments__payment_id__ack_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
+            "name": "payment_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "maxLength": 100,
               "minLength": 1,
+              "maxLength": 100,
               "title": "Payment Id"
-            },
-            "name": "payment_id",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AckPayment"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -141,12 +146,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/v1/payments-methods/{payment_method_id}:ack": {
@@ -157,28 +157,33 @@
         "summary": "Acknowledge Payment Method",
         "description": "completes (ie. ack) request initated by `/payments-methods:init` on the payments-gateway API",
         "operationId": "acknowledge_payment_method_v1_payments_methods__payment_method_id__ack_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
+            "name": "payment_method_id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "maxLength": 100,
               "minLength": 1,
+              "maxLength": 100,
               "title": "Payment Method Id"
-            },
-            "name": "payment_method_id",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AckPaymentMethod"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -199,12 +204,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     }
   },
@@ -217,53 +217,97 @@
             "title": "Success"
           },
           "message": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Message"
           },
           "provider_payment_id": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Provider Payment Id",
             "description": "Payment ID from the provider (e.g. stripe payment ID)"
           },
           "invoice_url": {
-            "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Invoice Url",
             "description": "Link to invoice is required when success=true"
           },
           "invoice_pdf": {
-            "type": "string",
-            "maxLength": 2083,
-            "minLength": 1,
-            "format": "uri",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2083,
+                "minLength": 1,
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Invoice Pdf",
             "description": "Link to invoice PDF"
           },
           "stripe_invoice_id": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Stripe Invoice Id",
             "description": "Stripe invoice ID"
           },
           "stripe_customer_id": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Stripe Customer Id",
             "description": "Stripe customer ID"
           },
           "saved": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/SavedPaymentMethod"
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Saved",
             "description": "Gets the payment-method if user opted to save it during payment.If used did not opt to save of payment-method was already saved, then it defaults to None"
           }
         },
@@ -273,13 +317,13 @@
         ],
         "title": "AckPayment",
         "example": {
-          "success": true,
-          "provider_payment_id": "pi_123ABC",
           "invoice_url": "https://invoices.com/id=12345",
+          "provider_payment_id": "pi_123ABC",
           "saved": {
-            "success": true,
-            "payment_method_id": "3FA85F64-5717-4562-B3FC-2C963F66AFA6"
-          }
+            "payment_method_id": "3FA85F64-5717-4562-B3FC-2C963F66AFA6",
+            "success": true
+          },
+          "success": true
         }
       },
       "AckPaymentMethod": {
@@ -289,7 +333,14 @@
             "title": "Success"
           },
           "message": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Message"
           }
         },
@@ -302,8 +353,15 @@
       "Body_login_to_create_access_token": {
         "properties": {
           "grant_type": {
-            "type": "string",
-            "pattern": "password",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "password"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Grant Type"
           },
           "username": {
@@ -320,11 +378,25 @@
             "default": ""
           },
           "client_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Client Id"
           },
           "client_secret": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Client Secret"
           }
         },
@@ -360,11 +432,18 @@
             "title": "Version"
           },
           "released": {
-            "additionalProperties": {
-              "type": "string",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
-            },
-            "type": "object",
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Released",
             "description": "Maps every route's path tag with a released version"
           },
@@ -384,9 +463,9 @@
         ],
         "title": "Meta",
         "example": {
+          "docs_url": "https://foo.io/doc",
           "name": "simcore_service_payments",
-          "version": "2.4.45",
-          "docs_url": "https://foo.io/doc"
+          "version": "2.4.45"
         }
       },
       "SavedPaymentMethod": {
@@ -396,7 +475,14 @@
             "title": "Success"
           },
           "message": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Message"
           },
           "payment_method_id": {
@@ -424,6 +510,7 @@
             "enum": [
               "bearer"
             ],
+            "const": "bearer",
             "title": "Token Type"
           }
         },

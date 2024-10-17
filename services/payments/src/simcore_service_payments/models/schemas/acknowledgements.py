@@ -1,18 +1,19 @@
 # mypy: disable-error-code=truthy-function
-from typing import Any, ClassVar
+from typing import Any
 
 from common_library.pydantic_basic_types import IDStr
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+from pydantic_core.core_schema import ValidationInfo
 
 
 class _BaseAck(BaseModel):
     success: bool
-    message: str = Field(default=None)
+    message: str | None = Field(default=None)
 
 
 class _BaseAckPayment(_BaseAck):
-    provider_payment_id: IDStr = Field(
+    provider_payment_id: IDStr | None = Field(
         default=None,
         description="Payment ID from the provider (e.g. stripe payment ID)",
     )
@@ -87,17 +88,17 @@ class AckPayment(_BaseAckPayment):
         description="Gets the payment-method if user opted to save it during payment."
         "If used did not opt to save of payment-method was already saved, then it defaults to None",
     )
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": _EXAMPLES[1].copy(),  # shown in openapi.json
-            "examples": _EXAMPLES,
+            "examples": _EXAMPLES,  # type:ignore[dict-item]
         }
+    )
 
-    @validator("invoice_url")
+    @field_validator("invoice_url")
     @classmethod
-    def success_requires_invoice(cls, v, values):
-        success = values.get("success")
+    def success_requires_invoice(cls, v, info: ValidationInfo):
+        success = info.data.get("success")
         if success and not v:
             msg = "Invoice required on successful payments"
             raise ValueError(msg)
@@ -112,14 +113,14 @@ class AckPaymentWithPaymentMethod(_BaseAckPayment):
     payment_id: PaymentID = Field(
         default=None, description="Payment ID from the gateway"
     )
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 **_ONE_TIME_SUCCESS,
                 "payment_id": "D19EE68B-B007-4B61-A8BC-32B7115FB244",
             },  # shown in openapi.json
         }
+    )
 
 
 assert PaymentID  # nosec

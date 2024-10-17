@@ -12,12 +12,12 @@ from collections.abc import Callable
 from contextlib import suppress
 
 import httpx
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from httpx import URL, HTTPStatusError
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
-from pydantic import ValidationError, parse_raw_as
-from pydantic.errors import PydanticErrorMixin
+from pydantic import TypeAdapter, ValidationError
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import (
     AttachLifespanMixin,
@@ -48,11 +48,11 @@ _logger = logging.getLogger(__name__)
 def _parse_raw_as_or_none(cls: type, text: str | None):
     if text:
         with suppress(ValidationError):
-            return parse_raw_as(cls, text)
+            return TypeAdapter(cls).validate_python(text)
     return None
 
 
-class PaymentsGatewayError(PydanticErrorMixin, ValueError):
+class PaymentsGatewayError(OsparcErrorMixin, ValueError):
     msg_template = "{operation_id} error {status_code}: {reason}"
 
     @classmethod
@@ -124,10 +124,10 @@ class PaymentsGatewayApi(
     async def init_payment(self, payment: InitPayment) -> PaymentInitiated:
         response = await self.client.post(
             "/init",
-            json=jsonable_encoder(payment.dict(exclude_none=True, by_alias=True)),
+            json=jsonable_encoder(payment.model_dump(exclude_none=True, by_alias=True)),
         )
         response.raise_for_status()
-        return PaymentInitiated.parse_obj(response.json())
+        return PaymentInitiated.model_validate(response.json())
 
     def get_form_payment_url(self, id_: PaymentID) -> URL:
         return self.client.base_url.copy_with(path="/pay", params={"id": f"{id_}"})
@@ -141,7 +141,7 @@ class PaymentsGatewayApi(
             json=jsonable_encoder(payment_initiated),
         )
         response.raise_for_status()
-        return PaymentCancelled.parse_obj(response.json())
+        return PaymentCancelled.model_validate(response.json())
 
     #
     # api: payment method workflows
@@ -157,7 +157,7 @@ class PaymentsGatewayApi(
             json=jsonable_encoder(payment_method),
         )
         response.raise_for_status()
-        return PaymentMethodInitiated.parse_obj(response.json())
+        return PaymentMethodInitiated.model_validate(response.json())
 
     def get_form_payment_method_url(self, id_: PaymentMethodID) -> URL:
         return self.client.base_url.copy_with(
@@ -177,13 +177,13 @@ class PaymentsGatewayApi(
             json=jsonable_encoder(BatchGetPaymentMethods(payment_methods_ids=ids_)),
         )
         response.raise_for_status()
-        return PaymentMethodsBatch.parse_obj(response.json()).items
+        return PaymentMethodsBatch.model_validate(response.json()).items
 
     @_handle_status_errors
     async def get_payment_method(self, id_: PaymentMethodID) -> GetPaymentMethod:
         response = await self.client.get(f"/payment-methods/{id_}")
         response.raise_for_status()
-        return GetPaymentMethod.parse_obj(response.json())
+        return GetPaymentMethod.model_validate(response.json())
 
     @_handle_status_errors
     async def delete_payment_method(self, id_: PaymentMethodID) -> None:
@@ -198,10 +198,10 @@ class PaymentsGatewayApi(
     ) -> AckPaymentWithPaymentMethod:
         response = await self.client.post(
             f"/payment-methods/{id_}:pay",
-            json=jsonable_encoder(payment.dict(exclude_none=True, by_alias=True)),
+            json=jsonable_encoder(payment.model_dump(exclude_none=True, by_alias=True)),
         )
         response.raise_for_status()
-        return AckPaymentWithPaymentMethod.parse_obj(response.json())
+        return AckPaymentWithPaymentMethod.model_validate(response.json())
 
 
 def setup_payments_gateway(app: FastAPI):

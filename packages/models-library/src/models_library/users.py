@@ -1,9 +1,17 @@
-from typing import Annotated, TypeAlias
+from typing import Annotated, Final, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt, StringConstraints
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    StringConstraints,
+    TypeAdapter,
+)
 
 UserID: TypeAlias = PositiveInt
 GroupID: TypeAlias = PositiveInt
+GroupIDAdapter: Final[TypeAdapter[GroupID]] = TypeAdapter(GroupID)
 
 
 FirstNameStr: TypeAlias = Annotated[

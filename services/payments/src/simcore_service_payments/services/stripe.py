@@ -81,7 +81,7 @@ class StripeApi(
         response = await self.client.get(f"/v1/invoices/{stripe_invoice_id}")
         response.raise_for_status()
 
-        return InvoiceData.parse_raw(response.text)
+        return InvoiceData.model_validate_json(response.text)
 
 
 def setup_stripe(app: FastAPI):

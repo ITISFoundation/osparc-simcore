@@ -1,4 +1,5 @@
 import datetime
+from typing import Final
 
 import simcore_postgres_database.errors as db_errors
 import sqlalchemy as sa
@@ -11,7 +12,7 @@ from models_library.api_schemas_payments.errors import (
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
@@ -19,6 +20,10 @@ from simcore_postgres_database.models.payments_methods import (
 
 from ..models.db import PaymentsMethodsDB
 from .base import BaseRepository
+
+ListPaymentsMethodsDBAdapter: Final[TypeAdapter[list[PaymentsMethodsDB]]] = TypeAdapter(
+    list[PaymentsMethodsDB]
+)
 
 
 class PaymentsMethodsRepo(BaseRepository):
@@ -91,7 +96,7 @@ class PaymentsMethodsRepo(BaseRepository):
             row = result.first()
             assert row, "execute above should have caught this"  # nosec
 
-            return PaymentsMethodsDB.from_orm(row)
+            return PaymentsMethodsDB.model_validate(row)
 
     async def insert_payment_method(
         self,
@@ -132,7 +137,7 @@ class PaymentsMethodsRepo(BaseRepository):
                 .order_by(payments_methods.c.created.desc())
             )  # newest first
         rows = result.fetchall() or []
-        return parse_obj_as(list[PaymentsMethodsDB], rows)
+        return ListPaymentsMethodsDBAdapter.validate_python(rows)
 
     async def get_payment_method_by_id(
         self,
@@ -149,7 +154,7 @@ class PaymentsMethodsRepo(BaseRepository):
             if row is None:
                 raise PaymentMethodNotFoundError(payment_method_id=payment_method_id)
 
-            return PaymentsMethodsDB.from_orm(row)
+            return PaymentsMethodsDB.model_validate(row)
 
     async def get_payment_method(
         self,
@@ -171,7 +176,7 @@ class PaymentsMethodsRepo(BaseRepository):
             if row is None:
                 raise PaymentMethodNotFoundError(payment_method_id=payment_method_id)
 
-            return PaymentsMethodsDB.from_orm(row)
+            return PaymentsMethodsDB.model_validate(row)
 
     async def delete_payment_method(
         self,
@@ -191,4 +196,4 @@ class PaymentsMethodsRepo(BaseRepository):
                 .returning(sa.literal_column("*"))
             )
             row = result.first()
-            return row if row is None else PaymentsMethodsDB.from_orm(row)
+            return row if row is None else PaymentsMethodsDB.model_validate(row)

@@ -17,7 +17,9 @@ async def test_bearer_token(httpbin_base_url: HttpUrl, faker: Faker):
     bearer_token = faker.word()
     headers = {"Authorization": f"Bearer {bearer_token}"}
 
-    async with httpx.AsyncClient(base_url=httpbin_base_url, headers=headers) as client:
+    async with httpx.AsyncClient(
+        base_url=f"{httpbin_base_url}", headers=headers
+    ) as client:
         response = await client.get("/bearer")
         assert response.json() == {"authenticated": True, "token": bearer_token}
 

@@ -75,7 +75,7 @@ def transaction(
 ) -> PaymentsTransactionsDB:
     kwargs = {
         k: successful_transaction[k]
-        for k in PaymentsTransactionsDB.__fields__
+        for k in PaymentsTransactionsDB.model_fields
         if k in successful_transaction
     }
     return PaymentsTransactionsDB(**kwargs)

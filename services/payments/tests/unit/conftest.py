@@ -19,11 +19,13 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_webserver.wallets import PaymentMethodID
+from models_library.api_schemas_webserver.wallets import (
+    PaymentMethodID,
+    PaymentMethodIDAdapter,
+)
 from models_library.payments import StripeInvoiceID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_payment_method_view
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -209,7 +211,7 @@ def mock_payments_gateway_service_api_base(app: FastAPI) -> Iterator[MockRouter]
 def mock_payments_routes(faker: Faker) -> Callable:
     def _mock(mock_router: MockRouter):
         def _init_200(request: httpx.Request):
-            assert InitPayment.parse_raw(request.content) is not None
+            assert InitPayment.model_validate_json(request.content) is not None
             assert "*" not in request.headers["X-Init-Api-Secret"]
 
             return httpx.Response(
@@ -218,7 +220,7 @@ def mock_payments_routes(faker: Faker) -> Callable:
             )
 
         def _cancel_200(request: httpx.Request):
-            assert PaymentInitiated.parse_raw(request.content) is not None
+            assert PaymentInitiated.model_validate_json(request.content) is not None
             assert "*" not in request.headers["X-Init-Api-Secret"]
 
             # responds with an empty authough it can also contain a message
@@ -244,7 +246,7 @@ def no_funds_payment_method_id(faker: Faker) -> PaymentMethodID:
     USE create_fake_payment_method_in_db to inject this payment-method in DB
     Emulates https://stripe.com/docs/testing#declined-payments
     """
-    return parse_obj_as(PaymentMethodID, "no_funds_payment_method_id")
+    return PaymentMethodIDAdapter.validate_python("no_funds_payment_method_id")
 
 
 @pytest.fixture
@@ -263,7 +265,7 @@ def mock_payments_methods_routes(
 
             pm_id = faker.uuid4()
             _payment_methods[pm_id] = PaymentMethodInfoTuple(
-                init=InitPaymentMethod.parse_raw(request.content),
+                init=InitPaymentMethod.model_validate_json(request.content),
                 get=GetPaymentMethod(**random_payment_method_view(id=pm_id)),
             )
 
@@ -294,7 +296,7 @@ def mock_payments_methods_routes(
 
         def _batch_get(request: httpx.Request):
             assert "*" not in request.headers["X-Init-Api-Secret"]
-            batch = BatchGetPaymentMethods.parse_raw(request.content)
+            batch = BatchGetPaymentMethods.model_validate_json(request.content)
 
             try:
                 items = [_payment_methods[pm].get for pm in batch.payment_methods_ids]
@@ -308,7 +310,7 @@ def mock_payments_methods_routes(
 
         def _pay(request: httpx.Request, pm_id: PaymentMethodID):
             assert "*" not in request.headers["X-Init-Api-Secret"]
-            assert InitPayment.parse_raw(request.content) is not None
+            assert InitPayment.model_validate_json(request.content) is not None
 
             # checks
             _get(request, pm_id)
