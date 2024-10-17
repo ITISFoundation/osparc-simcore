@@ -5,13 +5,13 @@
 # pylint: disable=unused-variable
 
 
-import json
 from collections.abc import AsyncIterator
 
 import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
+from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_payments.errors import (
     PaymentMethodNotFoundError,
     PaymentNotFoundError,
@@ -94,8 +94,8 @@ async def test_payments_api_authentication(
     auth_headers: dict[str, str],
 ):
     payments_id = faker.uuid4()
-    payment_ack = json.loads(
-        AckPayment(success=True, invoice_url=faker.url()).model_dump_json()
+    payment_ack = jsonable_encoder(
+        AckPayment(success=True, invoice_url=faker.url()).model_dump()
     )
 
     # w/o header

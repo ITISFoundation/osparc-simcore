@@ -5,13 +5,12 @@
 # pylint: disable=unused-variable
 
 
-import json
-
 import httpx
 import pytest
 from common_library.pydantic_basic_types import IDStr
 from faker import Faker
 from fastapi import FastAPI, status
+from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
 from models_library.payments import UserInvoiceAddress
 from models_library.products import StripePriceID, StripeTaxRateID
@@ -113,8 +112,8 @@ async def test_successful_one_time_payment_workflow(
     # ACK
     response = await client.post(
         f"/v1/payments/{inited.payment_id}:ack",
-        json=json.loads(
-            AckPayment(success=True, invoice_url=faker.url()).model_dump_json()
+        json=jsonable_encoder(
+            AckPayment(success=True, invoice_url=faker.url()).model_dump()
         ),
         headers=auth_headers,
     )
