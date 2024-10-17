@@ -14,7 +14,7 @@ from typing import Any, TypedDict, cast
 
 import orjson
 from models_library.basic_types import SHA1Str
-from servicelib.error_codes import ErrorCodeStr
+from models_library.error_codes import ErrorCodeStr
 
 _CURRENT_DIR = (
     Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent

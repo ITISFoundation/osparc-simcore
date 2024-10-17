@@ -12,11 +12,11 @@ from typing import Any, Union
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
-from common_library.errors_classes import OsparcErrorMixin
+from models_library.error_codes import create_error_code
 from models_library.utils.json_serialization import json_dumps
 from servicelib.error_codes import create_error_code
 
-from ..logging_utils import create_troubleshotting_log_message, get_log_record_extra
+from ..logging_errors import create_troubleshotting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..utils import is_production_environ
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
@@ -59,31 +59,23 @@ def error_middleware_factory(
             "request.method": f"{request.method}",
             "request.path": f"{request.path}",
         }
-        if isinstance(err, OsparcErrorMixin):
-            error_context.update(err.error_context())
 
-        frontend_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC.format(
+        user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC.format(
             error_code=error_code
         )
-        log_msg = create_troubleshotting_log_message(
-            message_to_user=frontend_msg,
-            error=err,
-            error_code=error_code,
-            error_context=error_context,
-        )
-
         http_error = create_http_error(
             err,
-            frontend_msg,
+            user_error_msg,
             web.HTTPInternalServerError,
             skip_internal_error_details=_is_prod,
         )
         _logger.exception(
-            log_msg,
-            extra=get_log_record_extra(
+            **create_troubleshotting_log_kwargs(
+                user_error_msg,
+                error=err,
+                error_context=error_context,
                 error_code=error_code,
-                user_id=error_context.get("user_id"),
-            ),
+            )
         )
         raise http_error
 

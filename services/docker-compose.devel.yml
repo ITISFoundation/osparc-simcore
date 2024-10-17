@@ -108,6 +108,8 @@ services:
     volumes:
       - ./efs-guardian:/devel/services/efs-guardian
       - ../packages:/devel/packages
+    deploy:
+      replicas: 0
 
   static-webserver:
     volumes:

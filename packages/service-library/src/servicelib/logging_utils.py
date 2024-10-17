@@ -14,7 +14,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, TypeAlias, TypedDict, TypeVar
+from typing import Any, NotRequired, TypeAlias, TypedDict, TypeVar
 
 from models_library.utils.json_serialization import json_dumps
 
@@ -321,9 +321,9 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
             raise exc from exc
 
 
-class LogExtra(TypedDict, total=False):
-    log_uid: str
-    log_oec: str
+class LogExtra(TypedDict):
+    log_uid: NotRequired[str]
+    log_oec: NotRequired[str]
 
 
 LogLevelInt: TypeAlias = int

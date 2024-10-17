@@ -30,13 +30,13 @@ qx.Class.define("osparc.product.quickStart.s4llite.Welcome", {
       this._add(welcome);
 
       const introText = this.tr("\
-        This quick user’s guide gives a short introduction to <i>S4L<sup>lite</sup></i>. We will show:<br>\
+        This quick user’s guide gives a short introduction to Sim4Life.lite. We will show:<br>\
           - how to get started with a new project,<br>\
           - how to get started from an existing tutorial project<br>\
-          - how to open Sim4Life lite desktop simulation projects in <i>S4L<sup>lite</sup></i>,<br>\
-          - <i>S4L<sup>lite</sup></i> features, limitations and user interface<br>\
+          - how to open Sim4Life desktop simulation projects in Sim4Life.lite,<br>\
+          - Sim4Life.lite features, limitations and user interface<br>\
           <br>\
-          For more specific technical information, please refer to the Dashboard Manual and the <i>S4L<sup>lite</sup></i> Manual.\
+          For more specific technical information, please refer to the Dashboard Manual and the Sim4Life.lite Manual.\
       ");
       const intro = osparc.product.quickStart.Utils.createLabel(introText);
       this._add(intro);

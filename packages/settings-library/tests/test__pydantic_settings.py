@@ -13,7 +13,7 @@ would still have these invariants.
 """
 
 from common_library.pydantic_fields_extension import is_nullable
-from pydantic import ValidationInfo, field_validator
+from pydantic import BaseSettings, ValidationInfo, field_validator
 from pydantic.fields import PydanticUndefined
 from pydantic_settings import BaseSettings
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -54,7 +54,7 @@ class Settings(BaseSettings):
 
     @field_validator("*", mode="before")
     @classmethod
-    def parse_none(cls, v, info: ValidationInfo):
+    def _parse_none(cls, v, info: ValidationInfo):
         # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
         if info.field_name and is_nullable(cls.model_fields[info.field_name]):
             if isinstance(v, str) and v.lower() in ("null", "none"):

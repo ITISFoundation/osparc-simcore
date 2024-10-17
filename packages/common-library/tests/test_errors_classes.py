@@ -161,3 +161,14 @@ def test_exception_context():
         "message": "42 and 'missing=?'",
         "value": 42,
     }
+
+
+def test_exception_context():
+    class MyError(OsparcErrorMixin, ValueError):
+        msg_template = "{value} and {missing}"
+
+    exc = MyError(value=42, missing="foo", extra="bar")
+    assert exc.error_context() == {"value": 42, "missing": "foo", "extra": "bar"}
+
+    exc = MyError(value=42)
+    assert exc.error_context() == {"value": 42}
