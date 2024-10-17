@@ -60,7 +60,8 @@ class AutoscalingEC2Settings(EC2Settings):
 class EC2InstancesSettings(BaseCustomSettings):
     EC2_INSTANCES_ALLOWED_TYPES: dict[str, EC2InstanceBootSpecific] = Field(
         ...,
-        description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
+        description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters"
+        "WARNING: if empty, all available ec2 instances are allowed",
     )
 
     EC2_INSTANCES_KEY_NAME: str = Field(
