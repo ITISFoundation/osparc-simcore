@@ -2,6 +2,7 @@ import asyncio
 import collections
 import dataclasses
 import datetime
+import functools
 import itertools
 import logging
 import typing
@@ -505,51 +506,44 @@ async def _assign_tasks_to_current_cluster(
     cluster: Cluster,
     auto_scaling_mode: BaseAutoscaling,
 ) -> tuple[list, Cluster]:
+    """Estimates how tasks will be assigned to cluster's instances
+        based on the resources required by each task
+
+    Returns:
+        A tuple with
+        - list of unassigned tasks (i.e. those not fitting available machines in cluster)
+        - same cluster instance as in the input
+
+    """
     unassigned_tasks = []
+    assignment_functions = [
+        functools.partial(_try_assign_task_to_ec2_instance, instances=instances)
+        for instances in (
+            cluster.active_nodes,
+            cluster.drained_nodes + cluster.buffer_drained_nodes,
+            cluster.pending_nodes,
+            cluster.pending_ec2s,
+            cluster.buffer_ec2s,
+        )
+    ]
+
     for task in tasks:
         task_required_resources = auto_scaling_mode.get_task_required_resources(task)
         task_required_ec2_instance = await auto_scaling_mode.get_task_defined_instance(
             app, task
         )
 
-        assignment_functions = [
-            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
-                task,
-                instances=cluster.active_nodes,
-                task_required_ec2_instance=required_ec2,
-                task_required_resources=required_resources,
-            ),
-            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
-                task,
-                instances=cluster.drained_nodes + cluster.buffer_drained_nodes,
-                task_required_ec2_instance=required_ec2,
-                task_required_resources=required_resources,
-            ),
-            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
-                task,
-                instances=cluster.pending_nodes,
-                task_required_ec2_instance=required_ec2,
-                task_required_resources=required_resources,
-            ),
-            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
-                task,
-                instances=cluster.pending_ec2s,
-                task_required_ec2_instance=required_ec2,
-                task_required_resources=required_resources,
-            ),
-            lambda task, required_ec2, required_resources: _try_assign_task_to_ec2_instance(
-                task,
-                instances=cluster.buffer_ec2s,
-                task_required_ec2_instance=required_ec2,
-                task_required_resources=required_resources,
-            ),
-        ]
-
         if any(
-            assignment(task, task_required_ec2_instance, task_required_resources)
-            for assignment in assignment_functions
+            is_assigned(
+                task,
+                task_required_ec2_instance=task_required_ec2_instance,
+                task_required_resources=task_required_resources,
+            )
+            for is_assigned in assignment_functions
         ):
-            _logger.debug("assigned task to cluster")
+            _logger.debug(
+                "task %s is assigned to one instance available in cluster", task
+            )
         else:
             unassigned_tasks.append(task)
 
