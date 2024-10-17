@@ -87,7 +87,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
         return;
       }
 
-      const diskUsage = data.usage["/"]
+      const diskUsage = data.usage["HOST"]
       function isMatchingNodeId({nodeId}) {
         return nodeId === id;
       }

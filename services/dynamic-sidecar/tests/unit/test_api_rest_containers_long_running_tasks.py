@@ -36,7 +36,7 @@ from servicelib.fastapi.long_running_tasks.client import (
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
-from simcore_service_dynamic_sidecar.api import containers_long_running_tasks
+from simcore_service_dynamic_sidecar.api.rest import containers_long_running_tasks
 from simcore_service_dynamic_sidecar.core.validation import InvalidComposeSpecError
 from simcore_service_dynamic_sidecar.models.schemas.containers import (
     ContainersComposeSpec,

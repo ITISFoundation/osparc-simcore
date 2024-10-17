@@ -41,10 +41,11 @@ pytest_plugins = [
     "pytest_simcore.faker_users_data",
     "pytest_simcore.minio_service",
     "pytest_simcore.pytest_global_environs",
-    "pytest_simcore.socketio",
     "pytest_simcore.rabbit_service",
+    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_service_library_fixtures",
+    "pytest_simcore.socketio",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -315,6 +316,21 @@ def mock_core_rabbitmq(mocker: MockerFixture) -> dict[str, AsyncMock]:
         ),
         "close": mocker.patch(
             "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQClient.close",
+            return_value=None,
+            autospec=True,
+        ),
+        "rpc._rpc_initialize": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQRPCClient._rpc_initialize",
+            return_value=None,
+            autospec=True,
+        ),
+        "rpc.close": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQRPCClient.close",
+            return_value=None,
+            autospec=True,
+        ),
+        "rpc.register_router": mocker.patch(
+            "simcore_service_dynamic_sidecar.core.rabbitmq.RabbitMQRPCClient.register_router",
             return_value=None,
             autospec=True,
         ),

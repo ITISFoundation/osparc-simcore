@@ -5,8 +5,8 @@ Setup and register all routes here form different modules
 
 from fastapi import APIRouter, FastAPI
 
-from .._meta import API_VTAG
-from ..core.settings import ApplicationSettings
+from ..._meta import API_VTAG
+from ...core.settings import ApplicationSettings
 from . import (
     containers,
     containers_extension,

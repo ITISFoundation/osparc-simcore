@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import PlainTextResponse
 
-from ..modules.prometheus_metrics import UserServicesMetrics
+from ...modules.prometheus_metrics import UserServicesMetrics
 from ._dependencies import get_user_services_metrics
 
 router = APIRouter()
