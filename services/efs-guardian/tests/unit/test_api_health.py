@@ -24,7 +24,6 @@ def app_environment(
         monkeypatch,
         {
             **app_environment,
-            # **rabbit_env_vars_dict,
         },
     )
 
