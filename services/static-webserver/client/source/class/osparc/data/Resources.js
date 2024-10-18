@@ -1510,8 +1510,8 @@ qx.Class.define("osparc.data.Resources", {
     getOne: function(resource, params, id, useCache) {
       return this.getInstance().getOne(resource, params, id, useCache);
     },
-    get: function(resource, params, useCache) {
-      return this.getInstance().get(resource, params, useCache);
+    get: function(resource, params, useCache, options) {
+      return this.getInstance().get(resource, params, useCache, options);
     },
 
     getServiceUrl: function(key, version) {
