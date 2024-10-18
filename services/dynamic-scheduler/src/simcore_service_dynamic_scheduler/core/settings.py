@@ -1,5 +1,6 @@
 import datetime
 
+from common_library.pydantic_validators import timedelta_try_convert_str_to_float
 from pydantic import Field, parse_obj_as, validator
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
@@ -47,6 +48,10 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     @classmethod
     def _validate_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
+
+    _try_convert_dynamic_scheduler_stop_service_timeout = (
+        timedelta_try_convert_str_to_float("DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT")
+    )
 
 
 class ApplicationSettings(_BaseApplicationSettings):

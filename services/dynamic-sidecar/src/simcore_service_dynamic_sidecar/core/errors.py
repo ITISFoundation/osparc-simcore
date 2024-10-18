@@ -1,8 +1,8 @@
 from typing import Any
 
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import status
 from models_library.services import RunID
-from pydantic.errors import PydanticErrorMixin
 
 
 class BaseDynamicSidecarError(Exception):
@@ -35,8 +35,8 @@ class UnexpectedDockerError(BaseDynamicSidecarError):
         )
 
 
-class BaseError(PydanticErrorMixin, BaseDynamicSidecarError):
-    code = "dy_sidecar.error"
+class BaseError(OsparcErrorMixin, BaseDynamicSidecarError):
+    code = "dy_sidecar.error"  # type: ignore[assignment]
 
 
 class ContainerExecContainerNotFoundError(BaseError):
