@@ -16,3 +16,4 @@
 
 fastapi
 packaging
+python-socketio
