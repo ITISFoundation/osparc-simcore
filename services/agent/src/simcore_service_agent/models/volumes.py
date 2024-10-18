@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Final
 
-from common_library.pydantic_validators import convert_str_to_run_id_object
 from models_library.api_schemas_directorv2.services import (
     CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME,
 )
@@ -23,8 +22,6 @@ class DynamicServiceVolumeLabels(BaseModel):
     @property
     def directory_name(self) -> str:
         return self.source[CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME:][::-1].strip("_")
-
-    _convert_str_to_run_id_object = convert_str_to_run_id_object("run_id")
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
