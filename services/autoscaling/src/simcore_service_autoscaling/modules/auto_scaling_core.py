@@ -333,14 +333,13 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ec2_client = get_ec2_client(app)
 
-    # some instances might be able to run several tasks
     allowed_instance_type_names = list(
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
     )
 
-    assert (
+    assert (  # nosec
         allowed_instance_type_names
-    ), "EC2_INSTANCES_ALLOWED_TYPES cannot be empty!"  # nosec
+    ), "EC2_INSTANCES_ALLOWED_TYPES cannot be empty!"
 
     allowed_instance_types: list[
         EC2InstanceType
@@ -352,6 +351,7 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         # NOTE: will raise ValueError if allowed_instance_types not in allowed_instance_type_names
         return allowed_instance_type_names.index(f"{instance_type.name}")
 
+    # some instances might be able to run several tasks
     allowed_instance_types.sort(key=_as_selection)
     return allowed_instance_types
 
