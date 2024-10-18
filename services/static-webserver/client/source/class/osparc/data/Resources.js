@@ -1256,15 +1256,9 @@ qx.Class.define("osparc.data.Resources", {
         }
 
         const resourceDefinition = this.self().resources[resource];
-        const res = new osparc.io.rest.Resource(resourceDefinition.endpoints);
+        const res = new osparc.io.rest.Resource(resourceDefinition.endpoints, options.timeout);
         if (!res.includesRoute(endpoint)) {
           reject(Error(`Error while fetching ${resource}: the endpoint is not defined`));
-        }
-
-        if (options.timeout) {
-          res.configureRequest(request => {
-            request.setTimeout(options.timeout);
-          });
         }
 
         const sendRequest = () => {

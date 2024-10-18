@@ -21,7 +21,7 @@
 qx.Class.define("osparc.io.rest.Resource", {
   extend: qx.io.rest.Resource,
 
-  construct: function(description) {
+  construct: function(description, timeout = 0) {
     this.base(arguments, description);
 
     this.configureRequest(request => {
@@ -41,6 +41,10 @@ qx.Class.define("osparc.io.rest.Resource", {
       }
 
       headers.forEach(item => request.setRequestHeader(item.key, item.value));
+
+      if (timeout) {
+        request.setTimeout(timeout);
+      }
     });
   },
 
