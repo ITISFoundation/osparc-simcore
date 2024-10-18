@@ -64,8 +64,6 @@ alembic==1.13.3
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/_test.in
-annotated-types==0.7.0
-    # via pydantic
 anyio==4.6.0
     # via
     #   fast-depends
@@ -484,7 +482,7 @@ pyyaml==6.0.2
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_test.in
-redis==5.0.8
+redis==5.0.4
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

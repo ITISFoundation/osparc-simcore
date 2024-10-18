@@ -8,7 +8,7 @@ import re
 from collections.abc import AsyncIterable, Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 from unittest import mock
 from uuid import UUID, uuid4
 
@@ -275,7 +275,7 @@ async def get_template_project(
     )
 
 
-async def get_group(client, user):
+async def get_group(client: TestClient, user):
     """Creates a group for a given user"""
     return await create_user_group(
         app=client.app,
@@ -284,7 +284,7 @@ async def get_group(client, user):
     )
 
 
-async def invite_user_to_group(client, owner, invitee, group):
+async def invite_user_to_group(client: TestClient, owner, invitee, group):
     """Invite a user to a group on which the owner has writes over"""
     await add_user_in_group(
         client.app,
@@ -303,13 +303,19 @@ async def change_user_role(
         )
 
 
+class SioConnectionData(NamedTuple):
+    sio: socketio.AsyncClient
+    resource_key: UserSessionDict
+
+
 async def connect_to_socketio(
-    client,
+    client: TestClient,
     user,
     socketio_client_factory: Callable[..., Awaitable[socketio.AsyncClient]],
-):
+) -> SioConnectionData:
     """Connect a user to a socket.io"""
-    socket_registry = get_registry(client.server.app)
+    assert client.app
+    socket_registry = get_registry(client.app)
     cur_client_session_id = f"{uuid4()}"
     sio = await socketio_client_factory(cur_client_session_id, client)
     resource_key: UserSessionDict = {
@@ -323,14 +329,18 @@ async def connect_to_socketio(
         resource_key, "socket_id"
     )
     assert len(await socket_registry.find_resources(resource_key, "socket_id")) == 1
-    return sio, resource_key
+    return SioConnectionData(sio, resource_key)
 
 
-async def disconnect_user_from_socketio(client, sio_connection_data) -> None:
+async def disconnect_user_from_socketio(
+    client: TestClient, sio_connection_data: SioConnectionData
+) -> None:
     """disconnect a previously connected socket.io connection"""
     sio, resource_key = sio_connection_data
     sid = sio.get_sid()
-    socket_registry = get_registry(client.server.app)
+
+    assert client.app
+    socket_registry = get_registry(client.app)
     await sio.disconnect()
     assert not sio.sid
     await asyncio.sleep(0)  # just to ensure there is a context switch

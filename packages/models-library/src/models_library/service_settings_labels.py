@@ -471,7 +471,7 @@ class DynamicSidecarServiceLabels(BaseModel):
             return self
 
         common_containers = set(self.containers_allowed_outgoing_internet) & set(
-            self.containers_allowed_outgoing_permit_list.keys()
+            self.containers_allowed_outgoing_permit_list.keys()  # pylint:disable=no-member
         )
         if len(common_containers) > 0:
             err_msg = (

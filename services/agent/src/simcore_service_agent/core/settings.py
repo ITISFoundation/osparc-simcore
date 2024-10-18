@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AliasChoices, Field, field_validator
 from settings_library.base import BaseCustomSettings
@@ -52,14 +53,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AGENT_VOLUMES_CLEANUP_INTERVAL: timedelta = Field(
         timedelta(minutes=1), description="interval for running volumes removal"
     )
-    AGENT_VOLUMES_CLENUP_BOOK_KEEPING_INTERVAL: timedelta = Field(
+    AGENT_VOLUMES_CLEANUP_BOOK_KEEPING_INTERVAL: timedelta = Field(
         timedelta(minutes=1),
         description=(
             "interval at which to scan for unsued volumes and keep track since "
             "they were detected as being unused"
         ),
     )
-    AGENT_VOLUMES_CLENUP_REMOVE_VOLUMES_INACTIVE_FOR: timedelta = Field(
+    AGENT_VOLUMES_CLEANUP_REMOVE_VOLUMES_INACTIVE_FOR: timedelta = Field(
         timedelta(minutes=65),
         description=(
             "if a volume is unused for more than this interval it can be removed. "
@@ -75,6 +76,21 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AGENT_RABBITMQ: RabbitSettings = Field(
         json_schema_extra={"auto_default_from_env": True},
         description="settings for service/rabbitmq",
+    )
+
+    _validate_agent_volumes_cleanup_interval = validate_numeric_string_as_timedelta(
+        "AGENT_VOLUMES_CLEANUP_INTERVAL"
+    )
+
+    _validate_agent_volumes_cleanup_book_keeping_interval = (
+        validate_numeric_string_as_timedelta(
+            "AGENT_VOLUMES_CLEANUP_BOOK_KEEPING_INTERVAL"
+        )
+    )
+    _validate_agent_volumes_cleanup_remove_volumes_inactive_for = (
+        validate_numeric_string_as_timedelta(
+            "AGENT_VOLUMES_CLEANUP_REMOVE_VOLUMES_INACTIVE_FOR"
+        )
     )
 
     @field_validator("LOGLEVEL")

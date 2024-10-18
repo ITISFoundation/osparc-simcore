@@ -1,6 +1,7 @@
 import datetime
 from functools import cached_property
 
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.basic_types import BootModeEnum
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
@@ -113,4 +114,10 @@ class ApplicationSettings(MinimalApplicationSettings):
     RESOURCE_USAGE_TRACKER_S3: S3Settings | None = Field(auto_default_from_env=True)
     RESOURCE_USAGE_TRACKER_TRACING: TracingSettings | None = Field(
         auto_default_from_env=True, description="settings for opentelemetry tracing"
+    )
+
+    _validate_resource_usage_tracker_missed_heartbeat_interval_sec = (
+        validate_numeric_string_as_timedelta(
+            "RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC"
+        )
     )
