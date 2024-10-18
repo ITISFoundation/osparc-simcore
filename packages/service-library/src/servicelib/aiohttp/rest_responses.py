@@ -13,7 +13,7 @@ from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.status import HTTP_200_OK
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from ..status_utils import get_code_description
+from ..status_codes_utils import get_code_description
 from .rest_models import ErrorItemType, ErrorType
 
 _ENVELOPE_KEYS = ("data", "error")
