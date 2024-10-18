@@ -86,7 +86,7 @@ def mocked_get_invoice_pdf_response(
             text=f"{request.fixturename} is set to '{request.param}'",
         )
 
-    respx_mock.get(transaction.invoice_pdf_url).mock(return_value=response)
+    respx_mock.get(f"{transaction.invoice_pdf_url}").mock(return_value=response)
 
     return respx_mock
 
