@@ -1,6 +1,6 @@
 from typing import Annotated, TypeAlias
 
-from pydantic import AfterValidator, AnyHttpUrl, AnyUrl, FileUrl, HttpUrl
+from pydantic import AfterValidator, AnyHttpUrl, AnyUrl, HttpUrl
 from pydantic_core import Url
 
 
@@ -21,10 +21,5 @@ AnyHttpUrlLegacy: TypeAlias = Annotated[
 
 HttpUrlLegacy: TypeAlias = Annotated[
     HttpUrl,
-    AfterValidator(_strip_last_slash),
-]
-
-FileUrlLegacy: TypeAlias = Annotated[
-    FileUrl,
     AfterValidator(_strip_last_slash),
 ]
