@@ -432,7 +432,7 @@ qx.Class.define("osparc.Application", {
           .then(data => {
             if (data.role.toLowerCase() === "guest") {
               // Logout a guest trying to access the Dashboard
-              osparc.auth.Manager.getInstance().logout();
+              this.logout();
             } else {
               this.__loadMainPage();
             }
