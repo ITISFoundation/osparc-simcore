@@ -128,7 +128,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
             this._hideLoadingPage();
             const params = {
               url: {
-                "studyId": studyId
+                studyId
               }
             };
             osparc.data.Resources.fetch("studies", "delete", params, studyId);
