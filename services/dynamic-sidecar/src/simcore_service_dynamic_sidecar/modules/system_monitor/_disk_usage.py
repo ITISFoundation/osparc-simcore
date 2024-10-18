@@ -200,8 +200,9 @@ class DiskUsageMonitor:
 
     def set_disk_usage_for_path(self, overwrite_usage: dict[str, DiskUsage]) -> None:
         """
-        EFS service manages disk quotas since the underlying FS has no support for them.
-        Currently this service is
+        efs-guardian manages disk quotas since the underlying FS has no support for them.
+        the dynamic-sidecar will use this information to provide correct quotas for the
+        volumes managed by the efs-guardian
         """
         self._usage_overwrite = overwrite_usage
 
