@@ -1,7 +1,7 @@
 # mypy: disable-error-code=truthy-function
-from typing import Any, Final, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
-from pydantic import ConfigDict, Field, TypeAdapter
+from pydantic import ConfigDict, Field
 
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
@@ -127,9 +127,6 @@ class NodeGet(OutputSchema):
     )
 
 
-NodeGetAdapter: Final[TypeAdapter[NodeGet]] = TypeAdapter(NodeGet)
-
-
 class NodeGetIdle(OutputSchema):
     service_state: Literal["idle"]
     service_uuid: NodeID
@@ -146,9 +143,6 @@ class NodeGetIdle(OutputSchema):
             }
         }
     )
-
-
-NodeGetIdleAdapter: Final[TypeAdapter[NodeGetIdle]] = TypeAdapter(NodeGetIdle)
 
 
 class NodeGetUnknown(OutputSchema):

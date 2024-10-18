@@ -20,12 +20,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
 )
-from models_library.api_schemas_webserver.projects_nodes import (
-    NodeGet,
-    NodeGetAdapter,
-    NodeGetIdle,
-    NodeGetIdleAdapter,
-)
+from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeInt, TypeAdapter
 from pytest_mock import MockerFixture
@@ -82,7 +77,7 @@ def _get_node_get_with(state: str, node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGe
             ("service_uuid", f"{node_id}"),
         ],
     )
-    return NodeGetAdapter.validate_python(dict_data)
+    return TypeAdapter(NodeGet).validate_python(dict_data)
 
 
 def _get_dynamic_service_get_legacy_with(
@@ -127,7 +122,7 @@ def _get_node_get_idle(node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGetIdle:
             ("service_uuid", f"{node_id}"),
         ],
     )
-    return NodeGetIdleAdapter.validate_python(dict_data)
+    return TypeAdapter(NodeGetIdle).validate_python(dict_data)
 
 
 class _ResponseTimeline:

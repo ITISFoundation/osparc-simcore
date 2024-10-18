@@ -6,11 +6,7 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
 )
-from models_library.api_schemas_webserver.projects_nodes import (
-    NodeGet,
-    NodeGetAdapter,
-    NodeGetIdle,
-)
+from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from pydantic import TypeAdapter
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
@@ -48,7 +44,7 @@ class DirectorV2Client(
             # in case of legacy version
             # we need to transfer the correct format!
             if "data" in dict_response:
-                return NodeGetAdapter.validate_python(dict_response["data"])
+                return TypeAdapter(NodeGet).validate_python(dict_response["data"])
 
             return TypeAdapter(DynamicServiceGet).validate_python(dict_response)
         except UnexpectedStatusError as e:
@@ -67,7 +63,7 @@ class DirectorV2Client(
 
         # legacy services
         if "data" in dict_response:
-            return NodeGetAdapter.validate_python(dict_response["data"])
+            return TypeAdapter(NodeGet).validate_python(dict_response["data"])
 
         return TypeAdapter(DynamicServiceGet).validate_python(dict_response)
 

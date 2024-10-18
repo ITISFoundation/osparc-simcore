@@ -14,12 +14,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
 )
-from models_library.api_schemas_webserver.projects_nodes import (
-    NodeGet,
-    NodeGetAdapter,
-    NodeGetIdle,
-    NodeGetIdleAdapter,
-)
+from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
 from pydantic import NonNegativeInt, TypeAdapter
@@ -172,7 +167,7 @@ async def test_set_service_status_task_uid(
     "status, expected_poll_interval",
     [
         (
-            NodeGetAdapter.validate_python(
+            TypeAdapter(NodeGet).validate_python(
                 NodeGet.model_config["json_schema_extra"]["examples"][1]
             ),
             _LOW_RATE_POLL_INTERVAL,
@@ -185,7 +180,7 @@ async def test_set_service_status_task_uid(
             for o in DynamicServiceGet.model_config["json_schema_extra"]["examples"]
         ],
         (
-            NodeGetIdleAdapter.validate_python(
+            TypeAdapter(NodeGetIdle).validate_python(
                 NodeGetIdle.model_config["json_schema_extra"]["example"]
             ),
             _LOW_RATE_POLL_INTERVAL,
@@ -202,7 +197,7 @@ def _get_node_get_from(service_state: ServiceState) -> NodeGet:
     dict_data = NodeGet.model_config["json_schema_extra"]["examples"][1]
     assert "service_state" in dict_data
     dict_data["service_state"] = service_state
-    return NodeGetAdapter.validate_python(dict_data)
+    return TypeAdapter(NodeGet).validate_python(dict_data)
 
 
 def _get_dynamic_service_get_from(
@@ -215,7 +210,7 @@ def _get_dynamic_service_get_from(
 
 
 def _get_node_get_idle() -> NodeGetIdle:
-    return NodeGetIdleAdapter.validate_python(
+    return TypeAdapter(NodeGetIdle).validate_python(
         NodeGetIdle.model_config["json_schema_extra"]["example"]
     )
 

@@ -14,11 +14,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
 )
-from models_library.api_schemas_webserver.projects_nodes import (
-    NodeGet,
-    NodeGetAdapter,
-    NodeGetIdle,
-)
+from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -64,7 +60,7 @@ def service_status_new_style() -> DynamicServiceGet:
 
 @pytest.fixture
 def service_status_legacy() -> NodeGet:
-    return NodeGetAdapter.validate_python(
+    return TypeAdapter(NodeGet).validate_python(
         NodeGet.model_config["json_schema_extra"]["examples"][1]
     )
 
