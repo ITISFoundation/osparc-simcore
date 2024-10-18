@@ -233,7 +233,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         data: data["studyData"]
       };
       const options = {
-        "pollTask": true
+        pollTask: true
       };
       const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params, options);
       const pollTasks = osparc.data.PollTasks.getInstance();

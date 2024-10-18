@@ -166,7 +166,7 @@ qx.Class.define("osparc.study.Utils", {
     createStudyAndPoll: function(params) {
       return new Promise((resolve, reject) => {
         const options = {
-          "pollTask": true
+          pollTask: true
         };
         const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudy", params, options);
         const pollTasks = osparc.data.PollTasks.getInstance();
@@ -208,7 +208,7 @@ qx.Class.define("osparc.study.Utils", {
           data: minStudyData
         };
         const options = {
-          "pollTask": true
+          pollTask: true
         };
         const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, options);
         const pollTasks = osparc.data.PollTasks.getInstance();

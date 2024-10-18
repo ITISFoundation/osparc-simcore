@@ -1365,7 +1365,7 @@ qx.Class.define("osparc.data.Resources", {
         const options = {
           resolveWResponse: true
         };
-        this.fetch(resource, endpoint, params, null, options)
+        this.fetch(resource, endpoint, params, options)
           .then(resp => {
             // sometimes there is a kind of a double "data"
             const meta = ("_meta" in resp["data"]) ? resp["data"]["_meta"] : resp["_meta"];

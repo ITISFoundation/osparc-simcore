@@ -672,20 +672,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
         }
       };
-
       const nextPageParams = this.__getNextPageParams();
       if (nextPageParams) {
         params.url.offset = nextPageParams.offset;
         params.url.limit = nextPageParams.limit;
       }
-      const options = {
-        resolveWResponse: true
-      };
-
       const requestParams = this.__getRequestParams();
       Object.entries(requestParams).forEach(([key, value]) => {
         params.url[key] = value;
       });
+
+      const options = {
+        resolveWResponse: true
+      };
+
       if ("text" in requestParams) {
         return osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
       }
@@ -1546,7 +1546,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       };
       const options = {
-        "pollTask": true
+        pollTask: true
       };
       const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
       const interval = 1000;

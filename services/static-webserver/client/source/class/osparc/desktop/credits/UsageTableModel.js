@@ -77,7 +77,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
     // overridden
     _loadRowCount() {
       const endpoint = this.getWalletId() == null ? "get" : "getWithWallet"
-      osparc.data.Resources.fetch("resourceUsage", endpoint, {
+      const params = {
         url: {
           walletId: this.getWalletId(),
           limit: 1,
@@ -89,9 +89,11 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
             null,
           orderBy: JSON.stringify(this.getOrderBy())
         }
-      }, {
+      };
+      const options = {
         resolveWResponse: true
-      })
+      };
+      osparc.data.Resources.fetch("resourceUsage", endpoint, params, options)
         .then(resp => {
           this._onRowCountLoaded(resp["_meta"].total)
         })
