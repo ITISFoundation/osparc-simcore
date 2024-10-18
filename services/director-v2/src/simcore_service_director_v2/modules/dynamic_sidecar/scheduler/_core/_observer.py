@@ -5,8 +5,9 @@ import logging
 from copy import deepcopy
 from math import floor
 
+from common_library.error_codes import create_error_code
 from fastapi import FastAPI
-from servicelib.error_codes import create_error_code
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
@@ -139,27 +140,38 @@ async def observing_single_service(
         logger.debug("completed observation cycle of %s", f"{service_name=}")
     except asyncio.CancelledError:  # pylint: disable=try-except-raise
         raise  # pragma: no cover
-    except Exception as e:  # pylint: disable=broad-except
+    except Exception as exc:  # pylint: disable=broad-except
         service_name = scheduler_data.service_name
 
         # With unhandled errors, let's generate and ID and send it to the end-user
         # so that we can trace the logs and debug the issue.
+        user_error_msg = (
+            f"This service ({service_name}) unexpectedly failed."
+            " Our team has recorded the issue and is working to resolve it as quickly as possible."
+            " Thank you for your patience."
+        )
+        error_code = create_error_code(exc)
 
-        error_code = create_error_code(e)
         logger.exception(
-            "Observation of %s unexpectedly failed [%s]",
-            f"{service_name=} ",
-            f"{error_code}",
-            extra={"error_code": error_code},
+            **create_troubleshotting_log_kwargs(
+                user_error_msg,
+                error=exc,
+                error_context={
+                    "service_name": service_name,
+                    "user_id": scheduler_data.user_id,
+                },
+                error_code=error_code,
+                tip=f"Observation of {service_name=} unexpectedly failed",
+            )
         )
         scheduler_data.dynamic_sidecar.status.update_failing_status(
             # This message must be human-friendly
-            f"Upss! This service ({service_name}) unexpectedly failed",
+            user_error_msg,
             error_code,
         )
     finally:
         if scheduler_data_copy != scheduler_data:
             try:
                 await update_scheduler_data_label(scheduler_data)
-            except GenericDockerError as e:
-                logger.warning("Skipped labels update, please check:\n %s", f"{e}")
+            except GenericDockerError as exc:
+                logger.warning("Skipped labels update, please check:\n %s", f"{exc}")

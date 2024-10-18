@@ -5,9 +5,9 @@ from contextlib import suppress
 from typing import Any
 
 import pytest
+from common_library.error_codes import create_error_code
 from common_library.errors_classes import OsparcErrorMixin
 from faker import Faker
-from servicelib.error_codes import create_error_code
 from servicelib.logging_utils import (
     LogExtra,
     LogLevelInt,

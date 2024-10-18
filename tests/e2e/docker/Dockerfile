@@ -1,5 +1,5 @@
 ARG NODE_VERSION="14"
-FROM node:${NODE_VERSION}-slim as base
+FROM node:${NODE_VERSION}-slim AS base
 
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \

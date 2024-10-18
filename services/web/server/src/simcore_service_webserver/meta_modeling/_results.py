@@ -5,20 +5,17 @@
 
 """
 
-
 import logging
-from typing import Any
+from ast import TypeAlias
+from typing import Annotated, Any
 
 from models_library.projects_nodes import OutputsDict
 from models_library.projects_nodes_io import NodeIDStr
-from pydantic import BaseModel, ConstrainedInt, Field
+from pydantic import BaseModel, Field
 
 _logger = logging.getLogger(__name__)
 
-
-class ProgressInt(ConstrainedInt):
-    ge = 0
-    le = 100
+ProgressInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]
 
 
 class ExtractedResults(BaseModel):
