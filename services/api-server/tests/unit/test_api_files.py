@@ -24,7 +24,7 @@ from models_library.api_schemas_storage import (
     UploadedPart,
 )
 from models_library.basic_types import SHA256Str
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
@@ -67,8 +67,7 @@ class DummyFileData:
 
     @classmethod
     def client_file(cls) -> ClientFile:
-        return parse_obj_as(
-            ClientFile,
+        return TypeAdapter(ClientFile).validate_python(
             {
                 "filename": cls._file_name,
                 "filesize": cls._file_size,
@@ -103,7 +102,7 @@ async def test_list_files_legacy(
 
     assert response.status_code == status.HTTP_200_OK
 
-    parse_obj_as(File, response.json())
+    TypeAdapter(File).validate_python(response.json())
 
     assert response.json() == [
         {
@@ -251,7 +250,9 @@ async def test_get_upload_links(
     payload: dict[str, str] = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    client_upload_schema: ClientFileUploadData = ClientFileUploadData.parse_obj(payload)
+    client_upload_schema: ClientFileUploadData = ClientFileUploadData.model_validate(
+        payload
+    )
 
     if follow_up_request == "complete":
         body = {
@@ -267,7 +268,7 @@ async def test_get_upload_links(
         payload: dict[str, str] = response.json()
 
         assert response.status_code == status.HTTP_200_OK
-        file: File = parse_obj_as(File, payload)
+        file: File = File.model_validate(payload)
         assert file.sha256_checksum == DummyFileData.checksum()
     elif follow_up_request == "abort":
         body = {
@@ -331,7 +332,7 @@ async def test_search_file(
 
     response = await client.get(f"{API_VTAG}/files:search", auth=auth, params=query)
     assert response.status_code == status.HTTP_200_OK
-    page: Page[File] = parse_obj_as(Page[File], response.json())
+    page: Page[File] = TypeAdapter(Page[File]).validate_python(response.json())
     assert len(page.items) == page.total
     file = page.items[0]
     if "sha256_checksum" in query:

@@ -32,7 +32,7 @@ def mocked_webserver_service_api(app: FastAPI):
     ) as respx_mock:
         # NOTE: webserver-api uses the same schema as api-server!
         # in-memory fake data
-        me = deepcopy(Profile.Config.schema_extra["example"])
+        me = deepcopy(Profile.model_config["json_schema_extra"]["example"])
 
         def _get_me(request):
             return httpx.Response(status.HTTP_200_OK, json={"data": me})
@@ -86,6 +86,6 @@ async def test_update_profile(
     )
     assert resp.status_code == status.HTTP_200_OK, resp.text
 
-    profile = Profile.parse_obj(resp.json())
+    profile = Profile.model_validate(resp.json())
     assert profile.first_name == "Oliver"
     assert profile.last_name == "Heaviside"

@@ -76,7 +76,7 @@ def fake_project_for_streaming(
 
     assert isinstance(response_body := GET_PROJECT.response_body, dict)
     assert (data := response_body.get("data")) is not None
-    fake_project = ProjectGet.parse_obj(data)
+    fake_project = ProjectGet.model_validate(data)
     fake_project.workbench = {faker.uuid4(): faker.uuid4()}
     mocker.patch(
         "simcore_service_api_server.api.dependencies.webserver.AuthSession.get_project",
@@ -113,8 +113,8 @@ async def test_log_streaming(
         response.raise_for_status()
         if not disconnect:
             async for line in response.aiter_lines():
-                job_log = JobLog.parse_raw(line)
-                pprint(job_log.json())
+                job_log = JobLog.model_validate_json(line)
+                pprint(job_log.model_dump())
                 collected_messages += job_log.messages
 
     assert fake_log_distributor.deregister_is_called
@@ -160,12 +160,12 @@ async def test_logstreaming_job_not_found_exception(
         response.raise_for_status()
         async for line in response.aiter_lines():
             try:
-                job_log = JobLog.parse_raw(line)
-                pprint(job_log.json())
+                job_log = JobLog.model_validate_json(line)
+                pprint(job_log.model_dump())
             except ValidationError:
-                error = ErrorGet.parse_raw(line)
+                error = ErrorGet.model_validate_json(line)
                 _received_error = True
-                print(error.json())
+                print(error.model_dump())
 
     assert fake_log_distributor.deregister_is_called
     assert _received_error

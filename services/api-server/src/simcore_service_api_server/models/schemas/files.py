@@ -1,6 +1,6 @@
 from mimetypes import guess_type
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Annotated
 from urllib.parse import quote as _quote
 from urllib.parse import unquote as _unquote
 from uuid import UUID, uuid3
@@ -11,14 +11,23 @@ from fastapi import UploadFile
 from models_library.api_schemas_storage import ETag
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
-from pydantic import AnyUrl, BaseModel, ByteSize, Field, parse_obj_as, validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ByteSize,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    TypeAdapter,
+    ValidationInfo,
+    field_validator,
+)
 from servicelib.file_utils import create_sha256_checksum
 
 _NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
 
 
-class FileName(ConstrainedStr):
-    strip_whitespace = True
+FileName = Annotated[str, StringConstraints(strip_whitespace=True)]
 
 
 class ClientFile(BaseModel):
@@ -39,7 +48,9 @@ class File(BaseModel):
 
     filename: str = Field(..., description="Name of the file with extension")
     content_type: str | None = Field(
-        default=None, description="Guess of type content [EXPERIMENTAL]"
+        default=None,
+        description="Guess of type content [EXPERIMENTAL]",
+        validate_default=True,
     )
     sha256_checksum: SHA256Str | None = Field(
         default=None,
@@ -48,9 +59,9 @@ class File(BaseModel):
     )
     e_tag: ETag | None = Field(default=None, description="S3 entity tag")
 
-    class Config:
-        allow_population_by_field_name = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
             "examples": [
                 # complete
                 {
@@ -65,13 +76,14 @@ class File(BaseModel):
                     "filename": "whitepaper.pdf",
                 },
             ]
-        }
+        },
+    )
 
-    @validator("content_type", always=True, pre=True)
+    @field_validator("content_type", mode="before")
     @classmethod
-    def guess_content_type(cls, v, values):
+    def guess_content_type(cls, v, info: ValidationInfo):
         if v is None:
-            filename = values.get("filename")
+            filename = info.data.get("filename")
             if filename:
                 mime_content_type, _ = guess_type(filename, strict=False)
                 return mime_content_type
@@ -126,8 +138,8 @@ class File(BaseModel):
 
     @classmethod
     async def create_from_quoted_storage_id(cls, quoted_storage_id: str) -> "File":
-        storage_file_id: StorageFileID = parse_obj_as(
-            StorageFileID, _unquote(quoted_storage_id)  # type: ignore[arg-type]
+        storage_file_id: StorageFileID = TypeAdapter(StorageFileID).validate_python(
+            _unquote(quoted_storage_id)
         )
         _, fid, fname = Path(storage_file_id).parts
         return cls(id=UUID(fid), filename=fname, checksum=None)
@@ -139,8 +151,8 @@ class File(BaseModel):
     @property
     def storage_file_id(self) -> StorageFileID:
         """Get the StorageFileId associated with this file"""
-        return parse_obj_as(
-            StorageFileID, f"api/{self.id}/{self.filename}"  # type: ignore[arg-type]
+        return TypeAdapter(StorageFileID).validate_python(
+            f"api/{self.id}/{self.filename}"
         )
 
     @property

@@ -10,7 +10,6 @@ from pathlib import Path
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 from models_library.app_diagnostics import AppStatusCheck
-from pydantic import parse_obj_as
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 
@@ -54,4 +53,4 @@ async def test_get_service_state(
         "url": "http://api.testserver.io/state",
     }
 
-    assert parse_obj_as(AppStatusCheck, response.json())
+    assert AppStatusCheck.model_validate(response.json())
