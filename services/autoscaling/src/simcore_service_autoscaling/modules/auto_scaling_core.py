@@ -335,22 +335,24 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     ec2_client = get_ec2_client(app)
 
     # some instances might be able to run several tasks
-    selected_names = list(
+    allowed_instance_type_names = list(
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
     )
-    assert set(selected_names).issubset(typing.get_args(InstanceTypeType))  # nosec
+    assert set(allowed_instance_type_names).issubset(
+        typing.get_args(InstanceTypeType)
+    )  # nosec
 
     allowed_instance_types: list[
         EC2InstanceType
     ] = await ec2_client.get_ec2_instance_capabilities(
-        cast(set[InstanceTypeType], set(selected_names))
+        cast(set[InstanceTypeType], set(allowed_instance_type_names))
     )
 
-    if selected_names:
+    if allowed_instance_type_names:
 
         def _as_selection(instance_type: EC2InstanceType) -> int:
             assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-            return selected_names.index(f"{instance_type.name}")
+            return allowed_instance_type_names.index(f"{instance_type.name}")
 
         allowed_instance_types.sort(key=_as_selection)
     else:
@@ -358,7 +360,7 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         _logger.warning(
             "All %s instances are allowed since EC2_INSTANCES_ALLOWED_TYPES is set to empty (=%s)",
             len(allowed_instance_types),
-            selected_names,
+            allowed_instance_type_names,
         )
     return allowed_instance_types
 
