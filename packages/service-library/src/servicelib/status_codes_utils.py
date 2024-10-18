@@ -2,7 +2,7 @@
 
     - on aiohttp services
         from servicelib.aiohttp import status
-        from servicelib.status_utils import is_success
+        from servicelib.status_codes_utils import is_success
 
         assert is_success(status.HTTP_200_OK)
 
@@ -10,7 +10,7 @@
     - on fastapi services
 
         from fastapi import status
-        from servicelib.status_utils import is_success
+        from servicelib.status_codes_utils import is_success
 
         assert is_success(status.HTTP_200_OK)
 
@@ -37,6 +37,7 @@ def get_code_display_name(status_code: int) -> str:
         return f"HTTP_{status_code}_{code.name}"
     except ValueError:
         if status_code == 306:  # noqa: PLR2004
+            # NOTE: HttpStatus does not include 306
             return "HTTP_306_RESERVED"
         return _INVALID_STATUS_CODE_MSG
 
@@ -65,35 +66,35 @@ def get_code_description(status_code: int) -> str:
     )
 
 
-def is_informational(status_code: int) -> bool:
+def is_1xx_informational(status_code: int) -> bool:
     """
     Returns `True` for 1xx status codes, `False` otherwise.
     """
     return 100 <= status_code <= 199  # noqa: PLR2004
 
 
-def is_success(status_code: int) -> bool:
+def is_2xx_success(status_code: int) -> bool:
     """
     Returns `True` for 2xx status codes, `False` otherwise.
     """
     return 200 <= status_code <= 299  # noqa: PLR2004
 
 
-def is_redirect(status_code: int) -> bool:
+def is_3xx_redirect(status_code: int) -> bool:
     """
     Returns `True` for 3xx status codes, `False` otherwise.
     """
     return 300 <= status_code <= 399  # noqa: PLR2004
 
 
-def is_client_error(status_code: int) -> bool:
+def is_4xx_client_error(status_code: int) -> bool:
     """
     Returns `True` for 4xx status codes, `False` otherwise.
     """
     return 400 <= status_code <= 499  # noqa: PLR2004
 
 
-def is_server_error(status_code: int) -> bool:
+def is_5xx_server_error(status_code: int) -> bool:
     """
     Returns `True` for 5xx status codes, `False` otherwise.
     """

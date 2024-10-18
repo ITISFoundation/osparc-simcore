@@ -85,7 +85,7 @@ async def request_product_account(request: web.Request):
         task_suffix_name=f"{__name__}.request_product_account.send_account_request_email_to_support",
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
-    raise web.HTTPNoContent
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 class _AuthenticatedContext(BaseModel):
