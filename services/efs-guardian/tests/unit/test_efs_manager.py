@@ -20,7 +20,7 @@ from simcore_service_efs_guardian.services.efs_manager import (
     ProjectID,
 )
 
-pytest_simcore_core_services_selection = ["rabbit"]
+pytest_simcore_core_services_selection = ["rabbit", "postgres"]
 pytest_simcore_ops_services_selection = []
 
 
@@ -29,6 +29,8 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,
+    with_disabled_redis_and_background_tasks: None,
+    with_disabled_postgres: None,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
@@ -64,9 +66,8 @@ def assert_permissions(
 
 async def test_remove_write_access_rights(
     faker: Faker,
-    mocked_redis_server: None,
     app: FastAPI,
-    cleanup: None,
+    efs_cleanup: None,
     project_id: ProjectID,
     node_id: NodeID,
 ):

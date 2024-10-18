@@ -163,6 +163,7 @@ class RandomTextResourcesManager(
         self.api.delete(identifier)
 
 
+# MD: here redis
 @pytest.fixture
 async def redis_client_sdk(
     redis_service: RedisSettings,

@@ -206,7 +206,7 @@ async def connection(aiopg_engine: Engine) -> AsyncIterator[SAConnection]:
 
 
 @pytest.fixture
-async def asyncpg_engine(
+async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE
     is_pdb_enabled: bool,
     pg_sa_engine: sa.engine.Engine,
     make_asyncpg_engine: Callable[[bool], AsyncEngine],

@@ -39,7 +39,7 @@ def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
                 exclusive_task = start_exclusive_periodic_task(
                     get_redis_lock_client(app),
                     task["task_func"],
-                    task_period=timedelta(seconds=60),  # 1 minute
+                    task_period=timedelta(seconds=3600),  # 1 hour
                     retry_after=timedelta(seconds=300),  # 5 minutes
                     task_name=task["name"],
                     app=app,
