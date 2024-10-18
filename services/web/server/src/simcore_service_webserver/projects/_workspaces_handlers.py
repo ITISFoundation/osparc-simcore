@@ -81,4 +81,4 @@ async def replace_project_workspace(request: web.Request):
         workspace_id=path_params.workspace_id,
         product_name=req_ctx.product_name,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

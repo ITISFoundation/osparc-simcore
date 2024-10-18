@@ -576,7 +576,7 @@ async def patch_project(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 #
@@ -661,7 +661,7 @@ async def delete_project(request: web.Request):
     except ProjectDeleteError as err:
         raise web.HTTPConflict(reason=f"{err}") from err
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 #

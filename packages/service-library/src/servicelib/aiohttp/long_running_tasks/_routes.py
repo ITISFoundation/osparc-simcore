@@ -89,7 +89,7 @@ async def cancel_and_delete_task(request: web.Request) -> web.Response:
     tasks_manager = get_tasks_manager(request.app)
     task_context = get_task_context(request)
     await tasks_manager.remove_task(path_params.task_id, with_task_context=task_context)
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 __all__: tuple[str, ...] = (

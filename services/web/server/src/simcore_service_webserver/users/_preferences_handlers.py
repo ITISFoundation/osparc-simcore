@@ -66,4 +66,4 @@ async def set_frontend_preference(request: web.Request) -> web.Response:
         frontend_preference_identifier=req_path_params.preference_id,
         value=req_body.value,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

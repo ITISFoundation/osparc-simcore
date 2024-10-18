@@ -85,7 +85,7 @@ async def update_my_profile(request: web.Request) -> web.Response:
     await api.update_user_profile(
         request.app, req_ctx.user_id, profile_update, as_patch=False
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 class _SearchQueryParams(BaseModel):

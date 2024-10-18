@@ -223,7 +223,7 @@ async def delete_project_comment(request: web.Request):
         request=request,
         comment_id=path_params.comment_id,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.get(

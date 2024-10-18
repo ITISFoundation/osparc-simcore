@@ -93,4 +93,4 @@ async def service_submission(request: web.Request):
         _logger.exception("Error while sending the 'new service submission' mail.")
         raise web.HTTPServiceUnavailable from exc
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

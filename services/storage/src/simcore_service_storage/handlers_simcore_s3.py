@@ -126,7 +126,7 @@ async def delete_folders_of_project(request: web.Request) -> NoReturn:
         query_params.node_id,
     )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.post(f"/{API_VTAG}/simcore-s3/files/metadata:search", name="search_files")
