@@ -120,16 +120,16 @@
         "operationId": "containers_docker_inspect_v1_containers_get",
         "parameters": [
           {
-            "description": "if True only show the status of the container",
+            "name": "only_status",
+            "in": "query",
             "required": false,
             "schema": {
               "type": "boolean",
-              "title": "Only Status",
               "description": "if True only show the status of the container",
-              "default": false
+              "default": false,
+              "title": "Only Status"
             },
-            "name": "only_status",
-            "in": "query"
+            "description": "if True only show the status of the container"
           }
         ],
         "responses": {
@@ -166,14 +166,14 @@
         "summary": "Starts the containers as defined in ContainerCreate by:\n- cleaning up resources from previous runs if any\n- starting the containers\n\nProgress may be obtained through URL\nProcess may be cancelled through URL",
         "operationId": "create_service_containers_task_v1_containers_post",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ContainersCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "202": {
@@ -213,7 +213,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActivityInfo"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ActivityInfo"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Containers Activity V1 Containers Activity Get"
                 }
               }
             }
@@ -231,16 +239,17 @@
         "operationId": "get_container_logs_v1_containers__id__logs_get",
         "parameters": [
           {
+            "name": "id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "title": "Id"
-            },
-            "name": "id",
-            "in": "path"
+            }
           },
           {
-            "description": "Only return logs since this time, as a UNIX timestamp",
+            "name": "since",
+            "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
@@ -248,11 +257,11 @@
               "description": "Only return logs since this time, as a UNIX timestamp",
               "default": 0
             },
-            "name": "since",
-            "in": "query"
+            "description": "Only return logs since this time, as a UNIX timestamp"
           },
           {
-            "description": "Only return logs before this time, as a UNIX timestamp",
+            "name": "until",
+            "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
@@ -260,11 +269,11 @@
               "description": "Only return logs before this time, as a UNIX timestamp",
               "default": 0
             },
-            "name": "until",
-            "in": "query"
+            "description": "Only return logs before this time, as a UNIX timestamp"
           },
           {
-            "description": "Enabling this parameter will include timestamps in logs",
+            "name": "timestamps",
+            "in": "query",
             "required": false,
             "schema": {
               "type": "boolean",
@@ -272,8 +281,7 @@
               "description": "Enabling this parameter will include timestamps in logs",
               "default": false
             },
-            "name": "timestamps",
-            "in": "query"
+            "description": "Enabling this parameter will include timestamps in logs"
           }
         ],
         "responses": {
@@ -282,10 +290,10 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "type": "string"
                   },
-                  "type": "array",
                   "title": "Response Get Container Logs V1 Containers  Id  Logs Get"
                 }
               }
@@ -320,15 +328,15 @@
         "operationId": "get_containers_name_v1_containers_name_get",
         "parameters": [
           {
-            "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters",
+            "name": "filters",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "string",
-              "title": "Filters",
-              "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters"
+              "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters",
+              "title": "Filters"
             },
-            "name": "filters",
-            "in": "query"
+            "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters"
           }
         ],
         "responses": {
@@ -369,13 +377,13 @@
         "operationId": "inspect_container_v1_containers__id__get",
         "parameters": [
           {
+            "name": "id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "title": "Id"
-            },
-            "name": "id",
-            "in": "path"
+            }
           }
         ],
         "responses": {
@@ -486,24 +494,24 @@
         "operationId": "attach_container_to_network_v1_containers__id__networks_attach_post",
         "parameters": [
           {
+            "name": "id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "title": "Id"
-            },
-            "name": "id",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AttachContainerToNetworkItem"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "204": {
@@ -531,24 +539,24 @@
         "operationId": "detach_container_from_network_v1_containers__id__networks_detach_post",
         "parameters": [
           {
+            "name": "id",
+            "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "title": "Id"
-            },
-            "name": "id",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DetachContainerFromNetworkItem"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "204": {
@@ -666,10 +674,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array",
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "title": "Port Keys"
               }
             }
@@ -711,10 +726,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array",
+                "anyOf": [
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
                 "title": "Port Keys"
               }
             }
@@ -798,23 +820,23 @@
         "operationId": "put_volume_state_v1_volumes__id__put",
         "parameters": [
           {
+            "name": "id",
+            "in": "path",
             "required": true,
             "schema": {
               "$ref": "#/components/schemas/VolumeCategory"
-            },
-            "name": "id",
-            "in": "path"
+            }
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PutVolumeItem"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "204": {
@@ -873,7 +895,14 @@
             "default": true
           },
           "error_message": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Error Message",
             "description": "in case of error this gets set"
           }
@@ -909,8 +938,7 @@
           "GPU",
           "MPI"
         ],
-        "title": "BootMode",
-        "description": "An enumeration."
+        "title": "BootMode"
       },
       "ContainersComposeSpec": {
         "properties": {
@@ -956,25 +984,60 @@
       "CreateServiceMetricsAdditionalParams": {
         "properties": {
           "wallet_id": {
-            "type": "integer",
-            "exclusiveMinimum": true,
-            "title": "Wallet Id",
-            "minimum": 0
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": true,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wallet Id"
           },
           "wallet_name": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Wallet Name"
           },
           "pricing_plan_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Pricing Plan Id"
           },
           "pricing_unit_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Pricing Unit Id"
           },
           "pricing_unit_cost_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Pricing Unit Cost Id"
           },
           "product_name": {
@@ -1008,9 +1071,6 @@
             "title": "Service Version"
           },
           "service_resources": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/ImageResources"
-            },
             "type": "object",
             "title": "Service Resources"
           },
@@ -1021,6 +1081,11 @@
         },
         "type": "object",
         "required": [
+          "wallet_id",
+          "wallet_name",
+          "pricing_plan_id",
+          "pricing_unit_id",
+          "pricing_unit_cost_id",
           "product_name",
           "simcore_user_agent",
           "user_email",
@@ -1033,20 +1098,20 @@
         ],
         "title": "CreateServiceMetricsAdditionalParams",
         "example": {
-          "wallet_id": 1,
-          "wallet_name": "a private wallet for me",
+          "node_name": "the service of a lifetime _ *!",
           "pricing_plan_id": 1,
-          "pricing_unit_id": 1,
           "pricing_unit_detail_id": 1,
+          "pricing_unit_id": 1,
           "product_name": "osparc",
+          "project_name": "_!New Study",
+          "service_additional_metadata": {},
+          "service_key": "simcore/services/dynamic/test",
+          "service_resources": {},
+          "service_version": "0.0.1",
           "simcore_user_agent": "undefined",
           "user_email": "test@test.com",
-          "project_name": "_!New Study",
-          "node_name": "the service of a lifetime _ *!",
-          "service_key": "simcore/services/dynamic/test",
-          "service_version": "0.0.1",
-          "service_resources": {},
-          "service_additional_metadata": {}
+          "wallet_id": 1,
+          "wallet_name": "a private wallet for me"
         }
       },
       "DetachContainerFromNetworkItem": {
@@ -1095,6 +1160,7 @@
               "$ref": "#/components/schemas/BootMode"
             },
             "type": "array",
+            "title": "Boot Modes",
             "description": "describe how a service shall be booted, using CPU, MPI, openMP or GPU",
             "default": [
               "CPU"
@@ -1110,6 +1176,14 @@
         "example": {
           "image": "simcore/service/dynamic/pretty-intense:1.0.0",
           "resources": {
+            "AIRAM": {
+              "limit": 1,
+              "reservation": 1
+            },
+            "ANY_resource": {
+              "limit": "some_value",
+              "reservation": "some_value"
+            },
             "CPU": {
               "limit": 4,
               "reservation": 0.1
@@ -1121,14 +1195,6 @@
             "VRAM": {
               "limit": 1,
               "reservation": 1
-            },
-            "AIRAM": {
-              "limit": 1,
-              "reservation": 1
-            },
-            "ANY_resource": {
-              "limit": "some_value",
-              "reservation": "some_value"
             }
           }
         }
@@ -1222,7 +1288,14 @@
       "ServiceOutput": {
         "properties": {
           "displayOrder": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Displayorder",
             "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
             "deprecated": true
@@ -1230,14 +1303,12 @@
           "label": {
             "type": "string",
             "title": "Label",
-            "description": "short name for the property",
-            "example": "Age"
+            "description": "short name for the property"
           },
           "description": {
             "type": "string",
             "title": "Description",
-            "description": "description of the property",
-            "example": "Age in seconds since 1970"
+            "description": "description of the property"
           },
           "type": {
             "type": "string",
@@ -1246,32 +1317,51 @@
             "description": "data type expected on this input glob matching for data type is allowed"
           },
           "contentSchema": {
-            "type": "object",
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Contentschema",
             "description": "jsonschema of this input/output. Required when type='ref_contentSchema'"
           },
           "fileToKeyMap": {
-            "additionalProperties": {
-              "type": "string",
-              "pattern": "^[-_a-zA-Z0-9]+$"
-            },
-            "type": "object",
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Filetokeymap",
             "description": "Place the data associated with the named keys in files"
           },
           "unit": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Unit",
             "description": "Units, when it refers to a physical quantity",
             "deprecated": true
           },
           "widget": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/Widget"
+              },
+              {
+                "type": "null"
               }
             ],
-            "title": "Widget",
             "description": "custom widget to use instead of the default one determined from the data-type",
             "deprecated": true
           }
@@ -1283,8 +1373,7 @@
           "description",
           "type"
         ],
-        "title": "ServiceOutput",
-        "description": "Base class for service input/outputs"
+        "title": "ServiceOutput"
       },
       "Structure": {
         "properties": {
@@ -1389,11 +1478,7 @@
       "Widget": {
         "properties": {
           "type": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/WidgetType"
-              }
-            ],
+            "$ref": "#/components/schemas/WidgetType",
             "description": "type of the property"
           },
           "details": {
@@ -1422,8 +1507,7 @@
           "TextArea",
           "SelectBox"
         ],
-        "title": "WidgetType",
-        "description": "An enumeration."
+        "title": "WidgetType"
       }
     }
   }
