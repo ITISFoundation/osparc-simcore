@@ -67,10 +67,15 @@ def print_as_envfile(
 
 
 def print_as_json(
-    settings_obj, *, compact=False, show_secrets, **pydantic_export_options
+    settings_obj,
+    *,
+    compact=False,
+    json_serializer,
+    show_secrets,
+    **pydantic_export_options,
 ):
     typer.echo(
-        json.dumps(
+        json_serializer(
             model_dump_with_secrets(
                 settings_obj, show_secrets=show_secrets, **pydantic_export_options
             ),
@@ -80,7 +85,9 @@ def print_as_json(
 
 
 def create_settings_command(
-    settings_cls: type[BaseCustomSettings], logger: logging.Logger | None = None
+    settings_cls: type[BaseCustomSettings],
+    logger: logging.Logger | None = None,
+    json_serializer=json.dumps,
 ) -> Callable:
     """Creates typer command function for settings"""
 
@@ -145,6 +152,7 @@ def create_settings_command(
                 settings_obj,
                 compact=compact,
                 show_secrets=show_secrets,
+                json_serializer=json_serializer,
                 **pydantic_export_options,
             )
         else:
