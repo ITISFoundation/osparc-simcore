@@ -1,7 +1,7 @@
 import datetime
 from functools import cached_property
 
-from common_library.pydantic_validators import timedelta_try_convert_str_to_float
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from pydantic import AliasChoices, Field, TypeAdapter, field_validator
 from pydantic_settings import SettingsConfigDict
 from settings_library.application import BaseApplicationSettings
@@ -52,8 +52,8 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def LOG_LEVEL(self):  # noqa: N802
         return self.DYNAMIC_SCHEDULER__LOGLEVEL
 
-    _try_convert_dynamic_scheduler_stop_service_timeout = (
-        timedelta_try_convert_str_to_float("DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT")
+    _validate_dynamic_scheduler_stop_service_timeout = (
+        validate_numeric_string_as_timedelta("DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT")
     )
 
     @field_validator("DYNAMIC_SCHEDULER__LOGLEVEL")

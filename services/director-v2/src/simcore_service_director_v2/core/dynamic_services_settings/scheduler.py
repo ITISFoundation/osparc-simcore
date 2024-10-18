@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Final
 
-from common_library.pydantic_validators import timedelta_try_convert_str_to_float
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.projects_networks import DockerNetworkName
 from pydantic import Field, NonNegativeInt, PositiveFloat
 from settings_library.base import BaseCustomSettings
@@ -168,11 +168,11 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         timedelta(0), description="time to sleep before removing a container"
     )
 
-    _try_convert_director_v2_dynamic_scheduler_interval = (
-        timedelta_try_convert_str_to_float("DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL")
+    _validate_director_v2_dynamic_scheduler_interval = (
+        validate_numeric_string_as_timedelta("DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL")
     )
-    _try_convert_director_v2_dynamic_sidecar_sleep_after_container_removal = (
-        timedelta_try_convert_str_to_float(
+    _validate_director_v2_dynamic_sidecar_sleep_after_container_removal = (
+        validate_numeric_string_as_timedelta(
             "DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL"
         )
     )

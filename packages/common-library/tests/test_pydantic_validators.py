@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from common_library.pydantic_validators import timedelta_try_convert_str_to_float
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from faker import Faker
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -15,7 +15,7 @@ def test_validate_timedelta_in_legacy_mode(
         APP_NAME: str
         REQUEST_TIMEOUT: timedelta = Field(default=timedelta(seconds=40))
 
-        _try_convert_request_timeout = timedelta_try_convert_str_to_float(
+        _validate_request_timeout = validate_numeric_string_as_timedelta(
             "REQUEST_TIMEOUT"
         )
 
