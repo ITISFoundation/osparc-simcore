@@ -49,8 +49,16 @@ def init_transaction(connection: SAConnection):
         # get payment_id from payment-gateway
         values = random_payment_transaction(payment_id=payment_id)
         # remove states
-        values.pop("state")
-        values.pop("completed_at")
+        for to_remove in (
+            "completed_at",
+            "invoice_url",
+            "invoice_pdf_url",
+            "state",
+            "state_message",
+            "stripe_invoice_id",
+        ):
+            values.pop(to_remove)
+
         # init successful: set timestamp
         values["initiated_at"] = utcnow()
 
