@@ -9,10 +9,11 @@ from pydantic import (
     Field,
     PositiveFloat,
     SecretStr,
+    TypeAdapter,
     field_validator,
 )
 from settings_library.application import BaseApplicationSettings
-from settings_library.basic_types import LogLevel, VersionTag, VersionTagAdapter
+from settings_library.basic_types import LogLevel, VersionTag
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
@@ -29,7 +30,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = PROJECT_NAME
-    API_VTAG: VersionTag = VersionTagAdapter.validate_python(API_VTAG)
+    API_VTAG: VersionTag = TypeAdapter(VersionTag).validate_python(API_VTAG)
 
     # RUNTIME  -----------------------------------------------------------
 

@@ -15,7 +15,7 @@ from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
     PaymentMethodInitiated,
 )
-from models_library.rabbitmq_basic_types import RPCMethodNameAdapter
+from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr
@@ -90,7 +90,7 @@ async def test_successful_create_payment_method_workflow(
     # INIT via api/rpc
     inited = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        RPCMethodNameAdapter.validate_python("init_creation_of_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("init_creation_of_payment_method"),
         wallet_id=wallet_id,
         wallet_name=wallet_name,
         user_id=user_id,
@@ -117,7 +117,7 @@ async def test_successful_create_payment_method_workflow(
     # GET via api/rpc
     got = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        RPCMethodNameAdapter.validate_python("get_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("get_payment_method"),
         payment_method_id=inited.payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,

@@ -1,9 +1,9 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Final, Literal, TypeAlias
+from typing import Literal, TypeAlias
 
 from common_library.pydantic_basic_types import IDStr
-from pydantic import ConfigDict, Field, HttpUrl, TypeAdapter, field_validator
+from pydantic import ConfigDict, Field, HttpUrl, field_validator
 
 from ..basic_types import AmountDecimal, NonNegativeDecimal
 from ..users import GroupID
@@ -53,9 +53,6 @@ class PutWalletBodyParams(OutputSchema):
 # NOTE: that these can be UUIDs (or not)
 PaymentID: TypeAlias = IDStr
 PaymentMethodID: TypeAlias = IDStr
-PaymentMethodIDAdapter: Final[TypeAdapter[PaymentMethodID]] = TypeAdapter(
-    PaymentMethodID
-)
 
 
 class CreateWalletPayment(InputSchema):
@@ -86,11 +83,6 @@ class PaymentTransaction(OutputSchema):
     )
     state_message: str = FieldNotRequired()
     invoice_url: HttpUrl = FieldNotRequired()
-
-
-PaymentTransactionAdapter: Final[TypeAdapter[PaymentTransaction]] = TypeAdapter(
-    PaymentTransaction
-)
 
 
 class PaymentMethodInitiated(OutputSchema):

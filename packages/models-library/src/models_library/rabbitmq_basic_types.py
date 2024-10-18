@@ -25,6 +25,3 @@ class RPCMethodName(ConstrainedStr):
     pattern = REGEX_RABBIT_QUEUE_ALLOWED_SYMBOLS
     min_length: int = 1
     max_length: int = 252
-
-
-RPCMethodNameAdapter: Final[TypeAdapter[RPCMethodName]] = TypeAdapter(RPCMethodName)

@@ -1,5 +1,4 @@
 import datetime
-from typing import Final
 
 import simcore_postgres_database.errors as db_errors
 import sqlalchemy as sa
@@ -20,10 +19,6 @@ from simcore_postgres_database.models.payments_methods import (
 
 from ..models.db import PaymentsMethodsDB
 from .base import BaseRepository
-
-ListPaymentsMethodsDBAdapter: Final[TypeAdapter[list[PaymentsMethodsDB]]] = TypeAdapter(
-    list[PaymentsMethodsDB]
-)
 
 
 class PaymentsMethodsRepo(BaseRepository):
@@ -137,7 +132,7 @@ class PaymentsMethodsRepo(BaseRepository):
                 .order_by(payments_methods.c.created.desc())
             )  # newest first
         rows = result.fetchall() or []
-        return ListPaymentsMethodsDBAdapter.validate_python(rows)
+        return TypeAdapter(list[PaymentsMethodsDB]).validate_python(rows)
 
     async def get_payment_method_by_id(
         self,

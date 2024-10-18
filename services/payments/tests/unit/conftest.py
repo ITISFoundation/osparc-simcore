@@ -19,13 +19,11 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_webserver.wallets import (
-    PaymentMethodID,
-    PaymentMethodIDAdapter,
-)
+from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.payments import StripeInvoiceID
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_payment_method_view
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -246,7 +244,7 @@ def no_funds_payment_method_id(faker: Faker) -> PaymentMethodID:
     USE create_fake_payment_method_in_db to inject this payment-method in DB
     Emulates https://stripe.com/docs/testing#declined-payments
     """
-    return PaymentMethodIDAdapter.validate_python("no_funds_payment_method_id")
+    return TypeAdapter(PaymentMethodID).validate_python("no_funds_payment_method_id")
 
 
 @pytest.fixture

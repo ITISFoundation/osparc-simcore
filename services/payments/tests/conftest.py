@@ -9,7 +9,8 @@ from pathlib import Path
 import pytest
 import simcore_service_payments
 from faker import Faker
-from models_library.users import GroupID, GroupIDAdapter
+from models_library.users import GroupID
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.utils_secrets import generate_token_secret_key
@@ -88,4 +89,4 @@ def app_environment(
 
 @pytest.fixture
 def user_primary_group_id(faker: Faker) -> GroupID:
-    return GroupIDAdapter.validate_python(faker.pyint())
+    return TypeAdapter(GroupID).validate_python(faker.pyint())

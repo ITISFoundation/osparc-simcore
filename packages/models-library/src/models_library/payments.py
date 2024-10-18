@@ -1,7 +1,7 @@
 from decimal import Decimal
-from typing import Final, TypeAlias
+from typing import TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .emails import LowerCaseEmailStr
 from .products import StripePriceID, StripeTaxRateID
@@ -63,6 +63,3 @@ class InvoiceDataGet(BaseModel):
             ]
         }
     )
-
-
-InvoiceDataGetAdapter: Final[TypeAdapter[InvoiceDataGet]] = TypeAdapter(InvoiceDataGet)

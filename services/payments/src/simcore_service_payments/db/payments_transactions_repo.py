@@ -22,10 +22,6 @@ from simcore_postgres_database.models.payments_transactions import (
 from ..models.db import PaymentsTransactionsDB
 from .base import BaseRepository
 
-ListPaymentsTransactionsDBAdapter: TypeAdapter[
-    list[PaymentsTransactionsDB]
-] = TypeAdapter(list[PaymentsTransactionsDB])
-
 
 class PaymentsTransactionsRepo(BaseRepository):
     async def insert_init_payment_transaction(
@@ -177,7 +173,7 @@ class PaymentsTransactionsRepo(BaseRepository):
             rows = result.fetchall()
             return (
                 total_number_of_items,
-                ListPaymentsTransactionsDBAdapter.validate_python(rows),
+                TypeAdapter(list[PaymentsTransactionsDB]).validate_python(rows),
             )
 
     async def get_payment_transaction(
