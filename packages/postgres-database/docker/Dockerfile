@@ -22,9 +22,8 @@ RUN apt-get update \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-# NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install uv~=0.2
+# install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=ghcr.io/astral-sh/uv:0.4.24 /uv /uvx /bin/
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"

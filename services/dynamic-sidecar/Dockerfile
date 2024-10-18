@@ -53,14 +53,14 @@ RUN \
   ./install_rclone.bash
 
 RUN AWS_CLI_VERSION="2.11.11" \
-    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
-    && apt-get update && apt-get install -y unzip \
-    && unzip awscliv2.zip \
-    && ./aws/install \
-    && apt-get remove --purge -y unzip \
-    && rm awscliv2.zip \
-    && rm -rf awscliv2 \
-    && aws --version
+  && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
+  && apt-get update && apt-get install -y unzip \
+  && unzip awscliv2.zip \
+  && ./aws/install \
+  && apt-get remove --purge -y unzip \
+  && rm awscliv2.zip \
+  && rm -rf awscliv2 \
+  && aws --version
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -110,9 +110,8 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   && apt-get install -y --no-install-recommends \
   build-essential
 
-# NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install uv~=0.2
+# install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=ghcr.io/astral-sh/uv:0.4.24 /uv /uvx /bin/
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv

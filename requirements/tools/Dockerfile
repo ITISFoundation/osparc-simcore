@@ -24,9 +24,8 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   && apt-get clean -y
 
 
-# NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install uv~=0.2
+# install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=ghcr.io/astral-sh/uv:0.4.24 /uv /uvx /bin/
 
 RUN uv venv "${VIRTUAL_ENV}"
 
