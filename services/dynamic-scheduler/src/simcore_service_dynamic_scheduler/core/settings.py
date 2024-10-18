@@ -2,10 +2,10 @@ import datetime
 from functools import cached_property
 
 from common_library.pydantic_validators import timedelta_try_convert_str_to_float
-from pydantic import AliasChoices, Field, field_validator
+from pydantic import AliasChoices, Field, TypeAdapter, field_validator
 from pydantic_settings import SettingsConfigDict
 from settings_library.application import BaseApplicationSettings
-from settings_library.basic_types import LogLevel, VersionTag, VersionTagAdapter
+from settings_library.basic_types import LogLevel, VersionTag
 from settings_library.director_v2 import DirectorV2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -21,7 +21,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = PROJECT_NAME
-    API_VTAG: VersionTag = VersionTagAdapter.validate_python(API_VTAG)
+    API_VTAG: VersionTag = TypeAdapter(VersionTag).validate_python(API_VTAG)
 
     # RUNTIME  -----------------------------------------------------------
 
