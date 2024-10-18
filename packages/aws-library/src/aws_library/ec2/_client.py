@@ -83,15 +83,15 @@ class SimcoreEC2API:
         """
         if instance_type_names is None:
             assert ALL is None  # nosec
-            selected_instance_types = []
+            selection_or_all_if_empty = []
         else:
-            selected_instance_types = list(instance_type_names)
-            if len(selected_instance_types) == 0:
+            selection_or_all_if_empty = list(instance_type_names)
+            if len(selection_or_all_if_empty) == 0:
                 msg = "`instance_type_names` cannot be an empty set. Set as None if all"
                 raise ValueError(msg)
 
         instance_types = await self.client.describe_instance_types(
-            InstanceTypes=selected_instance_types
+            InstanceTypes=selection_or_all_if_empty
         )
         list_instances: list[EC2InstanceType] = []
         for instance in instance_types.get("InstanceTypes", []):
