@@ -434,7 +434,9 @@ def test_print_as(capsys: pytest.CaptureFixture):
     assert "secret" not in captured.out
     assert "Some info" not in captured.out
 
-    print_as_json(settings_obj, compact=True, show_secrets=False)
+    print_as_json(
+        settings_obj, compact=True, show_secrets=False, json_serializer=json.dumps
+    )
     captured = capsys.readouterr()
     assert "secret" not in captured.out
     assert "**" in captured.out

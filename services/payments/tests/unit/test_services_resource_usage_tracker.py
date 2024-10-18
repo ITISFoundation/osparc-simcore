@@ -72,7 +72,7 @@ async def test_add_credits_to_wallet(
             user_id=faker.pyint(),
             user_email=faker.email(),
             osparc_credits=100,
-            payment_transaction_id=faker.pyint(),
+            payment_transaction_id=faker.pystr(),
             created_at=datetime.now(tz=timezone.utc),
         )
         > 0
