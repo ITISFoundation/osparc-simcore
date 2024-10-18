@@ -7,15 +7,16 @@ from typing import Annotated, cast
 from fastapi import Depends, FastAPI, Request
 from fastapi.datastructures import State
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
-from ..core import rabbitmq
-from ..core.settings import ApplicationSettings
-from ..models.schemas.application_health import ApplicationHealth
-from ..models.shared_store import SharedStore
-from ..modules.inputs import InputsState
-from ..modules.mounted_fs import MountedVolumes
-from ..modules.outputs import OutputsContext, OutputsManager
-from ..modules.prometheus_metrics import UserServicesMetrics
+from ...core import rabbitmq
+from ...core.settings import ApplicationSettings
+from ...models.schemas.application_health import ApplicationHealth
+from ...models.shared_store import SharedStore
+from ...modules.inputs import InputsState
+from ...modules.mounted_fs import MountedVolumes
+from ...modules.outputs import OutputsContext, OutputsManager
+from ...modules.prometheus_metrics import UserServicesMetrics
 
 
 def get_application(request: Request) -> FastAPI:
@@ -84,3 +85,9 @@ def get_rabbitmq_client(
     app: Annotated[FastAPI, Depends(get_application)]
 ) -> RabbitMQClient:
     return rabbitmq.get_rabbitmq_client(app)
+
+
+def get_rabbitmq_rpc_server(
+    app: Annotated[FastAPI, Depends(get_application)]
+) -> RabbitMQRPCClient:
+    return rabbitmq.get_rabbitmq_rpc_server(app)
