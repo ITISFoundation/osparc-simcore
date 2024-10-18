@@ -1,3 +1,7 @@
+""" Extends `aiohttp.web_exceptions` classes to match `status` codes
+    and adds helper functions.
+"""
+
 import inspect
 from typing import Any
 
