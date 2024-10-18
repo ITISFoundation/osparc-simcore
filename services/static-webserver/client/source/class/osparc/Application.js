@@ -432,7 +432,7 @@ qx.Class.define("osparc.Application", {
           .then(data => {
             if (data.role.toLowerCase() === "guest") {
               // Logout a guest trying to access the Dashboard
-              osparc.auth.Manager.getInstance().logout();
+              this.logout();
             } else {
               this.__loadMainPage();
             }
@@ -564,18 +564,22 @@ qx.Class.define("osparc.Application", {
      * Resets session and restarts
     */
     logout: function(forcedReason) {
+      const isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
+      if (isLoggedIn) {
+        osparc.auth.Manager.getInstance().logout()
+          .finally(() => this.__loggedOut(forcedReason));
+      } else {
+        this.__loggedOut(forcedReason);
+      }
+    },
+
+    __loggedOut: function(forcedReason) {
       if (forcedReason) {
         osparc.FlashMessenger.getInstance().logAs(forcedReason, "WARNING", 0);
       } else {
         osparc.FlashMessenger.getInstance().logAs(this.tr("You are logged out"), "INFO");
       }
-      const isLoggedIn = osparc.auth.Manager.getInstance().isLoggedIn();
-      if (isLoggedIn) {
-        osparc.auth.Manager.getInstance().logout()
-          .finally(() => this.__closeAllAndToLoginPage());
-      } else {
-        this.__closeAllAndToLoginPage();
-      }
+      this.__closeAllAndToLoginPage();
     },
 
     __closeAllAndToLoginPage: function() {

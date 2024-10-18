@@ -296,7 +296,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
               service
             }
           };
-          osparc.data.Resources.fetch("tokens", "delete", params, service)
+          osparc.data.Resources.fetch("tokens", "delete", params)
             .then(() => this.__rebuildTokensList())
             .catch(err => console.error(err));
         }

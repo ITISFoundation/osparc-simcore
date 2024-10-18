@@ -145,10 +145,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
             this._hideLoadingPage();
             const params = {
               url: {
-                "studyId": studyId
+                studyId
               }
             };
-            osparc.data.Resources.fetch("studies", "delete", params, studyId);
+            osparc.data.Resources.fetch("studies", "delete", params);
           };
           const isStudyCreation = true;
           this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);

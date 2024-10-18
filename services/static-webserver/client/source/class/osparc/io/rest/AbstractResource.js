@@ -55,7 +55,6 @@ qx.Class.define("osparc.io.rest.AbstractResource", {
   },
 
   members:{
-
     /**
      * Default implementation
      * Can be overriden in subclass to change prefix
@@ -64,7 +63,4 @@ qx.Class.define("osparc.io.rest.AbstractResource", {
       return osparc.io.rest.AbstractResource.API + tail;
     }
   }
-
-
-
 });

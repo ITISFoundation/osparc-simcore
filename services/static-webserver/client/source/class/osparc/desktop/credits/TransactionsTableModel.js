@@ -53,14 +53,16 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
   members: {
     // overridden
     _loadRowCount() {
-      osparc.data.Resources.fetch("payments", "get", {
+      const params = {
         url: {
           limit: 1,
           offset: 0
         }
-      }, undefined, {
+      };
+      const options = {
         resolveWResponse: true
-      })
+      };
+      osparc.data.Resources.fetch("payments", "get", params, options)
         .then(({ data: resp }) => {
           this._onRowCountLoaded(resp["_meta"].total)
         })

@@ -105,7 +105,7 @@ qx.Class.define("osparc.info.CommentsList", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("studyComments", "getPage", params, undefined, options);
+      return osparc.data.Resources.fetch("studyComments", "getPage", params, options);
     },
 
     __addComments: function(comments) {
