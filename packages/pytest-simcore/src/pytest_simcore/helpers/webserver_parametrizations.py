@@ -2,7 +2,7 @@ from typing import NamedTuple
 from unittest import mock
 
 from servicelib.aiohttp import status
-from servicelib.status_utils import get_code_display_name
+from servicelib.status_codes_utils import get_code_display_name
 from simcore_postgres_database.models.users import UserRole
 
 

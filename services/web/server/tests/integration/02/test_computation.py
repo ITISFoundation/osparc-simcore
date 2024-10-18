@@ -20,7 +20,7 @@ from models_library.utils.json_serialization import json_dumps
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
-from servicelib.status_utils import get_code_display_name
+from servicelib.status_codes_utils import get_code_display_name
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects import projects
