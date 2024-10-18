@@ -7,6 +7,7 @@ from pydantic import (
     ByteSize,
     Field,
     NonNegativeFloat,
+    NonNegativeInt,
     root_validator,
     validator,
 )
@@ -80,7 +81,7 @@ class DiskUsage(BaseModel):
 
     @classmethod
     def from_efs_guardian(
-        cls, used: NonNegativeFloat, total: NonNegativeFloat
+        cls, used: NonNegativeInt, total: NonNegativeInt
     ) -> "DiskUsage":
         free = total - used
         return cls(
