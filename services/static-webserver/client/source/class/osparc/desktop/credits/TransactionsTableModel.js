@@ -58,7 +58,7 @@ qx.Class.define("osparc.desktop.credits.TransactionsTableModel", {
           limit: 1,
           offset: 0
         }
-      }, undefined, {
+      }, {
         resolveWResponse: true
       })
         .then(({ data: resp }) => {

@@ -213,7 +213,7 @@ qx.Class.define("osparc.auth.Manager", {
         }
       };
       return osparc.data.Resources.fetch("auth", "postLogout", params)
-        .then(data => this.fireEvent("loggedOut"))
+        .then(() => this.fireEvent("loggedOut"))
         .catch(error => console.log("already logged out"))
         .finally(this.__logoutUser());
     },

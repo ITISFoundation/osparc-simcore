@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.credits.UsageTableModel", {
             null,
           orderBy: JSON.stringify(this.getOrderBy())
         }
-      }, undefined, {
+      }, {
         resolveWResponse: true
       })
         .then(resp => {

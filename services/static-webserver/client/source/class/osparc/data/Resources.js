@@ -113,6 +113,7 @@ qx.Class.define("osparc.data.Resources", {
       "studies": {
         useCache: true,
         idField: "uuid",
+        deleteId: "studyId",
         endpoints: {
           get: {
             method: "GET",
@@ -711,6 +712,7 @@ qx.Class.define("osparc.data.Resources", {
       "tokens": {
         useCache: true,
         idField: "service",
+        deleteId: "service",
         endpoints: {
           get: {
             method: "GET",
@@ -1200,8 +1202,9 @@ qx.Class.define("osparc.data.Resources", {
        * TAGS
        */
       "tags": {
-        idField: "id",
         useCache: true,
+        idField: "id",
+        deleteId: "tagId",
         endpoints: {
           get: {
             method: "GET",
@@ -1244,10 +1247,9 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {String} endpoint Name of the endpoint. Several endpoints can be defined for each resource.
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
-     * @param {String} deleteId When deleting, id of the element that needs to be deleted from the cache.
-     * @param {Object} options Collections of options
+     * @param {Object} options Collections of options (pollTask, resolveWResponse)
      */
-    fetch: function(resource, endpoint, params = {}, deleteId, options = {}) {
+    fetch: function(resource, endpoint, params = {}, options = {}) {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
@@ -1276,7 +1278,8 @@ qx.Class.define("osparc.data.Resources", {
             }
           }
           if (useCache) {
-            if (endpoint.includes("delete")) {
+            if (endpoint.includes("delete") && resourceDefinition["deleteId"] && resourceDefinition["deleteId"] in params.url) {
+              const deleteId = params.url[resourceDefinition["deleteId"]];
               this.__removeCached(resource, deleteId);
             } else if (endpointDef.method === "POST" && options.pollTask !== true) {
               this.__addCached(resource, data);
@@ -1489,8 +1492,8 @@ qx.Class.define("osparc.data.Resources", {
 
   statics: {
     API: "/v0",
-    fetch: function(resource, endpoint, params, deleteId, options = {}) {
-      return this.getInstance().fetch(resource, endpoint, params, deleteId, options);
+    fetch: function(resource, endpoint, params, options = {}) {
+      return this.getInstance().fetch(resource, endpoint, params, options);
     },
     getOne: function(resource, params, id, useCache) {
       return this.getInstance().getOne(resource, params, id, useCache);

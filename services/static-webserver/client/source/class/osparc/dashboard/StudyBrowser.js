@@ -687,9 +687,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         params.url[key] = value;
       });
       if ("text" in requestParams) {
-        return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
+        return osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
       }
-      return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
+      return osparc.data.Resources.fetch("studies", "getPage", params, options);
     },
 
     invalidateStudies: function() {
@@ -1545,7 +1545,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           "studyId": studyData["uuid"]
         }
       };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, null, {"pollTask": true});
+      const options = {
+        "pollTask": true
+      };
+      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
       const interval = 1000;
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)
