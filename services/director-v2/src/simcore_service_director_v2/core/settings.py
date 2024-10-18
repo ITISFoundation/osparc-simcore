@@ -5,6 +5,7 @@
 import datetime
 from functools import cached_property
 
+from common_library.pydantic_validators import timedelta_try_convert_str_to_float
 from models_library.basic_types import (
     BootModeEnum,
     BuildTargetEnum,
@@ -234,3 +235,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     def _validate_loglevel(cls, value: str) -> str:
         log_level: str = cls.validate_log_level(value)
         return log_level
+
+    _try_convert_service_tracking_heartbeat = timedelta_try_convert_str_to_float(
+        "SERVICE_TRACKING_HEARTBEAT"
+    )

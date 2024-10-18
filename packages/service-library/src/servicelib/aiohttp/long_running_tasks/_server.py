@@ -5,9 +5,9 @@ from functools import wraps
 from typing import Any
 
 from aiohttp import web
-from common_library.pydantic_type_adapters import AnyHttpUrlLegacyAdapter
+from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from models_library.utils.json_serialization import json_dumps
-from pydantic import PositiveFloat
+from pydantic import PositiveFloat, TypeAdapter
 
 from ...aiohttp import status
 from ...long_running_tasks._models import TaskGet
@@ -68,13 +68,13 @@ async def start_long_running_task(
         ip_addr, port = request_.transport.get_extra_info(
             "sockname"
         )  # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
-        status_url = AnyHttpUrlLegacyAdapter.validate_python(
+        status_url = TypeAdapter(AnyHttpUrlLegacy).validate_python(
             f"http://{ip_addr}:{port}{request_.app.router['get_task_status'].url_for(task_id=task_id)}"  # NOSONAR
         )
-        result_url = AnyHttpUrlLegacyAdapter.validate_python(
+        result_url = TypeAdapter(AnyHttpUrlLegacy).validate_python(
             f"http://{ip_addr}:{port}{request_.app.router['get_task_result'].url_for(task_id=task_id)}"  # NOSONAR
         )
-        abort_url = AnyHttpUrlLegacyAdapter.validate_python(
+        abort_url = TypeAdapter(AnyHttpUrlLegacy).validate_python(
             f"http://{ip_addr}:{port}{request_.app.router['cancel_and_delete_task'].url_for(task_id=task_id)}"  # NOSONAR
         )
         task_get = TaskGet(

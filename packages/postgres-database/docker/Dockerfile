@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM python:3.6-slim as base
+FROM python:3.6-slim AS base
 
 LABEL maintainer=sanderegg
 
@@ -13,7 +13,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 
-FROM base as build
+FROM base AS build
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -41,7 +41,7 @@ ARG GIT_REPOSITORY
 RUN git clone --single-branch --branch ${GIT_BRANCH} ${GIT_REPOSITORY} osparc-simcore\
   && uv pip install osparc-simcore/packages/postgres-database[migration]
 
-FROM base as production
+FROM base AS production
 
 ENV PYTHONOPTIMIZE=TRUE
 
