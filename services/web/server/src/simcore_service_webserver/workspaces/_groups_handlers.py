@@ -162,4 +162,4 @@ async def delete_workspace_group(request: web.Request):
         group_id=path_params.group_id,
         product_name=req_ctx.product_name,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
