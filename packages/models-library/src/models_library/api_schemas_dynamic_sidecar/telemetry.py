@@ -79,18 +79,6 @@ class DiskUsage(BaseModel):
         return values
 
     @classmethod
-    def from_ps_util_disk_usage(
-        cls, ps_util_disk_usage: SDiskUsageProtocol
-    ) -> "DiskUsage":
-        total = ps_util_disk_usage.free + ps_util_disk_usage.used
-        return cls(
-            used=ByteSize(ps_util_disk_usage.used),
-            free=ByteSize(ps_util_disk_usage.free),
-            total=ByteSize(total),
-            used_percent=_get_percent(ps_util_disk_usage.used, total),
-        )
-
-    @classmethod
     def from_efs_guardian(
         cls, used: NonNegativeFloat, total: NonNegativeFloat
     ) -> "DiskUsage":
@@ -101,6 +89,13 @@ class DiskUsage(BaseModel):
             total=ByteSize(total),
             used_percent=_get_percent(used, total),
         )
+
+    @classmethod
+    def from_ps_util_disk_usage(
+        cls, ps_util_disk_usage: SDiskUsageProtocol
+    ) -> "DiskUsage":
+        total = ps_util_disk_usage.free + ps_util_disk_usage.used
+        return cls.from_efs_guardian(ps_util_disk_usage.used, total)
 
     def __hash__(self):
         return hash((self.used, self.free, self.total, self.used_percent))
