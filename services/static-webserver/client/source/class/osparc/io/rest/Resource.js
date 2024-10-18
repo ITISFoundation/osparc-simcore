@@ -28,6 +28,12 @@ qx.Class.define("osparc.io.rest.Resource", {
       const headers = [{
         key: "Accept",
         value: "application/json"
+      }, {
+        key: "Content-Type",
+        value: "application/json"
+      }, {
+        key: "X-Simcore-Products-Name",
+        value: qx.core.Environment.get("product.name")
       }];
 
       if (this.AUTHENTICATION !== undefined && this.AUTHENTICATION !== null) {
@@ -35,11 +41,6 @@ qx.Class.define("osparc.io.rest.Resource", {
       }
 
       headers.forEach(item => request.setRequestHeader(item.key, item.value));
-
-      request.setRequestHeader("Content-Type", "application/json");
-
-      const productName = qx.core.Environment.get("product.name");
-      request.setRequestHeader("X-Simcore-Products-Name", productName);
     });
   },
 
