@@ -25,6 +25,7 @@ from models_library.api_schemas_dynamic_sidecar.socketio import (
 )
 from models_library.api_schemas_dynamic_sidecar.telemetry import (
     DiskUsage,
+    MountPathCategory,
     ServiceDiskUsage,
 )
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
@@ -45,7 +46,6 @@ from simcore_service_dynamic_sidecar.modules.notifications import (
 )
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
     DiskUsageMonitor,
-    MountPathCategory,
 )
 from socketio import AsyncServer
 from tenacity import AsyncRetrying

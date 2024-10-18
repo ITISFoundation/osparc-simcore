@@ -2,17 +2,18 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import timedelta
-from enum import auto
 from functools import cached_property
 from pathlib import Path
 from typing import Final
 
 import psutil
 from fastapi import FastAPI
-from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
+from models_library.api_schemas_dynamic_sidecar.telemetry import (
+    DiskUsage,
+    MountPathCategory,
+)
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from models_library.utils.enums import StrAutoEnum
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
@@ -25,13 +26,6 @@ _NODE_FILE_SYSTEM_PATH: Final[Path] = Path("/")
 
 
 _logger = logging.getLogger(__name__)
-
-
-class MountPathCategory(StrAutoEnum):
-    HOST = auto()
-    STATES_VOLUMES = auto()
-    INPUTS_VOLUMES = auto()
-    OUTPUTS_VOLUMES = auto()
 
 
 _SUPPORTED_ITEMS: Final[set[str]] = {
@@ -74,7 +68,7 @@ class DiskUsageMonitor:
     _monitor_task: asyncio.Task | None = None
 
     # tracked disk usage
-    _last_usage: dict[str, DiskUsage] = field(default_factory=dict)
+    _last_usage: dict[MountPathCategory, DiskUsage] = field(default_factory=dict)
     _usage_overwrite: dict[str, DiskUsage] = field(
         default_factory=dict,
         metadata={
@@ -141,7 +135,7 @@ class DiskUsageMonitor:
             usage_to_folder_names[disk_usage].add(folder_name)
         return usage_to_folder_names
 
-    async def _publish_disk_usage(self, usage: dict[str, DiskUsage]):
+    async def _publish_disk_usage(self, usage: dict[MountPathCategory, DiskUsage]):
         await publish_disk_usage(
             self.app, user_id=self.user_id, node_id=self.node_id, usage=usage
         )
@@ -158,7 +152,7 @@ class DiskUsageMonitor:
         )
 
         # compute new version of DiskUsage for FE, only 1 label for each unique disk usage entry
-        usage: dict[str, DiskUsage] = {}
+        usage: dict[MountPathCategory, DiskUsage] = {}
 
         normalized_paths = self._normalized_monitored_paths
 

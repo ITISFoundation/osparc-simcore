@@ -16,6 +16,7 @@ from models_library.api_schemas_dynamic_sidecar.socketio import (
 )
 from models_library.api_schemas_dynamic_sidecar.telemetry import (
     DiskUsage,
+    MountPathCategory,
     ServiceDiskUsage,
 )
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
@@ -33,7 +34,10 @@ class Notifier(SingletonInAppStateMixin):
         self._sio_manager = sio_manager
 
     async def notify_service_disk_usage(
-        self, user_id: UserID, node_id: NodeID, usage: dict[str, DiskUsage]
+        self,
+        user_id: UserID,
+        node_id: NodeID,
+        usage: dict[MountPathCategory, DiskUsage],
     ) -> None:
         await self._sio_manager.emit(
             SOCKET_IO_SERVICE_DISK_USAGE_EVENT,

@@ -1,7 +1,7 @@
 from abc import abstractmethod
+from enum import auto
 from typing import Any, Final, Protocol
 
-from models_library.projects_nodes_io import NodeID
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -12,7 +12,17 @@ from pydantic import (
     validator,
 )
 
+from ..projects_nodes_io import NodeID
+from ..utils.enums import StrAutoEnum
+
 _EPSILON: Final[NonNegativeFloat] = 1e-16
+
+
+class MountPathCategory(StrAutoEnum):
+    HOST = auto()
+    STATES_VOLUMES = auto()
+    INPUTS_VOLUMES = auto()
+    OUTPUTS_VOLUMES = auto()
 
 
 class SDiskUsageProtocol(Protocol):
@@ -104,4 +114,4 @@ class DiskUsage(BaseModel):
 
 class ServiceDiskUsage(BaseModel):
     node_id: NodeID
-    usage: dict[str, DiskUsage]
+    usage: dict[MountPathCategory, DiskUsage]

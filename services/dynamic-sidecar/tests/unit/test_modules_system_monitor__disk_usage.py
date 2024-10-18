@@ -10,7 +10,10 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
+from models_library.api_schemas_dynamic_sidecar.telemetry import (
+    DiskUsage,
+    MountPathCategory,
+)
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import RunID
 from models_library.users import UserID
@@ -21,7 +24,6 @@ from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
     DiskUsageMonitor,
-    MountPathCategory,
     _get_monitored_paths,
     get_usage,
 )
