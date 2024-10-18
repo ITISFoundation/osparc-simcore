@@ -21,7 +21,7 @@ def test_api_server_model_examples(
     model_cls: type[BaseModel], example_name: int, example_data: Any
 ):
     try:
-        assert model_cls.parse_obj(example_data) is not None
+        assert model_cls.model_validate(example_data) is not None
     except ValidationError as err:
         pytest.fail(
             f"\n{example_name}: {json.dumps(example_data, indent=1)}\nError: {err}"
