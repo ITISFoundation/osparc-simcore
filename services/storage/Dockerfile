@@ -79,7 +79,8 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   git
 
 # install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
-COPY --from=ghcr.io/astral-sh/uv:0.4.24 /uv /uvx /bin/
+ARG UV_VERSION="0.4.24"
+COPY --from=ghcr.io/astral-sh/uv:${UV_VERSION} /uv /uvx /bin/
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
