@@ -1441,14 +1441,14 @@ qx.Class.define("osparc.data.Resources", {
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
      * @param {Boolean} useCache Whether the cache has to be used. If false, an API call will be issued.
      */
-    get: function(resource, params, useCache = true) {
+    get: function(resource, params = {}, useCache = true, options = {}) {
       if (useCache) {
         const stored = this.__getCached(resource);
         if (stored) {
           return Promise.resolve(stored);
         }
       }
-      return this.fetch(resource, "get", params || {});
+      return this.fetch(resource, "get", params, options);
     },
 
     /**
