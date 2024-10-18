@@ -12,8 +12,7 @@ from typing import Any, Final, TypedDict, cast
 import aiofiles
 import aiofiles.tempfile
 import fsspec  # type: ignore[import-untyped]
-from common_library.pydantic_networks_extension import FileUrlLegacy
-from pydantic import ByteSize, TypeAdapter
+from pydantic import ByteSize, FileUrl, TypeAdapter
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
@@ -146,7 +145,7 @@ async def pull_file_from_remote(
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     await _copy_file(
         src_url,
-        TypeAdapter(FileUrlLegacy).validate_python(dst_path.as_uri()),
+        TypeAdapter(FileUrl).validate_python(dst_path.as_uri()),
         src_storage_cfg=cast(dict[str, Any], storage_kwargs),
         log_publishing_cb=log_publishing_cb,
         text_prefix=f"Downloading '{src_url.path.strip('/')}':",
@@ -216,7 +215,7 @@ async def _push_file_to_remote(
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
 
     await _copy_file(
-        TypeAdapter(FileUrlLegacy).validate_python(file_to_upload.as_uri()),
+        TypeAdapter(FileUrl).validate_python(file_to_upload.as_uri()),
         dst_url,
         dst_storage_cfg=cast(dict[str, Any], storage_kwargs),
         log_publishing_cb=log_publishing_cb,
