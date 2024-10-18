@@ -351,7 +351,6 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     if allowed_instance_type_names:
 
         def _as_selection(instance_type: EC2InstanceType) -> int:
-            assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
             return allowed_instance_type_names.index(f"{instance_type.name}")
 
         allowed_instance_types.sort(key=_as_selection)
