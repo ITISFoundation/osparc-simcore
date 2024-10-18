@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from aiohttp import web
-from common_library.pydantic_validators import timedelta_try_convert_str_to_float
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from pydantic import ByteSize, Field, NonNegativeInt, parse_obj_as
 from settings_library.base import BaseCustomSettings
 
@@ -24,7 +24,7 @@ class ProjectsSettings(BaseCustomSettings):
         description="interval after which services need to be idle in order to be considered inactive",
     )
 
-    _try_convert_projects_inactivity_interval = timedelta_try_convert_str_to_float(
+    _validate_projects_inactivity_interval = validate_numeric_string_as_timedelta(
         "PROJECTS_INACTIVITY_INTERVAL"
     )
 
