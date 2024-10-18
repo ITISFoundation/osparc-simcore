@@ -1033,11 +1033,13 @@ qx.Class.define("osparc.utils.Utils", {
     // Function that creates a unique tabId even for duplicated tabs
     getClientSessionID: function() {
       const getUniqueSessionId = () => {
-        const uuid = osparc.utils.Utils.uuidV4();
+        // before creating a new one, check if the websocket has it set
+        const webSocket = osparc.wrapper.WebSocket.getInstance().getSocket();
+        const clientSessionId = webSocket ? webSocket.io.engine.opts.query["client_session_id"] : osparc.utils.Utils.uuidV4();
         // Set window.name. This property is persistent on window reloads, but it doesn't get copied in a duplicated tab
-        window.name = uuid;
-        sessionStorage.setItem("clientsessionid", uuid);
-        return uuid;
+        window.name = clientSessionId;
+        sessionStorage.setItem("clientsessionid", clientSessionId);
+        return clientSessionId;
       };
 
       let uniqueSessionId = sessionStorage.getItem("clientsessionid");

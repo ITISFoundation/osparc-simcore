@@ -107,6 +107,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     __attachSocketEventHandlers: function() {
       this.__listenToNodeUpdated();
       this.__listenToNodeProgress();
+      this.__listenToServiceStatus();
     },
 
     __listenToNodeUpdated: function() {
@@ -125,6 +126,26 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       if (!socket.slotExists("nodeProgress")) {
         socket.on("nodeProgress", data => {
           this.getStudy().nodeNodeProgressSequence(data);
+        }, this);
+      }
+    },
+
+    __listenToServiceStatus: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      // callback for events
+      if (!socket.slotExists("serviceStatus")) {
+        socket.on("serviceStatus", data => {
+          const nodeId = data["service_uuid"];
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          if (node) {
+            if (node.getIframeHandler()) {
+              node.getIframeHandler().onNodeState(data);
+            }
+          } else if (osparc.data.Permissions.getInstance().isTester()) {
+            console.log("Ignored ws 'progress' msg", data);
+          }
         }, this);
       }
     }
