@@ -23,8 +23,6 @@ from servicelib.aiohttp.web_exceptions_extension import (
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
-#
-
 # SEE https://httpstatuses.com/
 # - below 1xx  -> invalid
 BELOW_1XX = (-5, 0, 5, 99)
