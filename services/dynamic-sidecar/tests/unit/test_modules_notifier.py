@@ -32,7 +32,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
-from pydantic import ByteSize, NonNegativeInt, parse_obj_as
+from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.utils import logged_gather
@@ -132,7 +132,7 @@ def _get_mocked_disk_usage(byte_size_str: str) -> DiskUsage:
     return DiskUsage(
         total=ByteSize(0),
         used=ByteSize(0),
-        free=ByteSize.validate(byte_size_str),
+        free=TypeAdapter(ByteSize).validate_python(byte_size_str),
         used_percent=0,
     )
 
@@ -143,7 +143,7 @@ def _get_on_service_disk_usage_spy(
     # emulates front-end receiving message
 
     async def on_service_status(data):
-        assert parse_obj_as(ServiceDiskUsage, data) is not None
+        assert TypeAdapter(ServiceDiskUsage).validate_python(data) is not None
 
     on_event_spy = AsyncMock(wraps=on_service_status)
     socketio_client.on(SOCKET_IO_SERVICE_DISK_USAGE_EVENT, on_event_spy)
@@ -228,7 +228,7 @@ def _get_on_input_port_spy(
     # emulates front-end receiving message
 
     async def on_service_status(data):
-        assert parse_obj_as(ServiceDiskUsage, data) is not None
+        assert TypeAdapter(ServiceDiskUsage).validate_python(data) is not None
 
     on_event_spy = AsyncMock(wraps=on_service_status)
     socketio_client.on(SOCKET_IO_STATE_INPUT_PORTS_EVENT, on_event_spy)
@@ -317,7 +317,7 @@ def _get_on_output_port_spy(
     # emulates front-end receiving message
 
     async def on_service_status(data):
-        assert parse_obj_as(ServiceDiskUsage, data) is not None
+        assert TypeAdapter(ServiceDiskUsage).validate_python(data) is not None
 
     on_event_spy = AsyncMock(wraps=on_service_status)
     socketio_client.on(SOCKET_IO_STATE_OUTPUT_PORTS_EVENT, on_event_spy)

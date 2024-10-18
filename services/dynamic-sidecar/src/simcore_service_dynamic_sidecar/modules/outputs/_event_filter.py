@@ -14,7 +14,7 @@ from pydantic import (
     NonNegativeInt,
     PositiveFloat,
     PositiveInt,
-    parse_obj_as,
+    TypeAdapter,
 )
 from servicelib.logging_utils import log_context
 from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
@@ -27,8 +27,8 @@ PortEvent: TypeAlias = str | None
 logger = logging.getLogger(__name__)
 
 
-_1_MB: Final[PositiveInt] = parse_obj_as(ByteSize, "1mib")
-_500_MB: Final[PositiveInt] = parse_obj_as(ByteSize, "500mib")
+_1_MB: Final[PositiveInt] = TypeAdapter(ByteSize).validate_python("1mib")
+_500_MB: Final[PositiveInt] = TypeAdapter(ByteSize).validate_python("500mib")
 
 
 class BaseDelayPolicy(ABC):
