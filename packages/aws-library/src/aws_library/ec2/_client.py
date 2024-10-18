@@ -86,10 +86,9 @@ class SimcoreEC2API:
             selected_instance_types = []
         else:
             selected_instance_types = list(instance_type_names)
-
-        if len(selected_instance_types) == 0:
-            msg = "`instance_type_names` cannot be an empty set. Set as None if all"
-            raise ValueError(msg)
+            if len(selected_instance_types) == 0:
+                msg = "`instance_type_names` cannot be an empty set. Set as None if all"
+                raise ValueError(msg)
 
         instance_types = await self.client.describe_instance_types(
             InstanceTypes=selected_instance_types
