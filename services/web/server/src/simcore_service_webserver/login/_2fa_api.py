@@ -13,8 +13,7 @@ import logging
 from aiohttp import web
 from models_library.users import UserID
 from pydantic import BaseModel, Field
-from servicelib.error_codes import create_error_code
-from servicelib.logging_utils import LogExtra, get_log_record_extra, log_decorator
+from servicelib.logging_utils import log_decorator
 from servicelib.utils_secrets import generate_passcode
 from settings_library.twilio import TwilioSettings
 from twilio.base.exceptions import TwilioException  # type: ignore[import-untyped]
@@ -132,15 +131,11 @@ async def send_sms_code(
         await asyncio.get_event_loop().run_in_executor(executor=None, func=_sender)
 
     except TwilioException as exc:
-        error_code = create_error_code(exc)
-        log_extra: LogExtra = get_log_record_extra(user_id=user_id) or {}
-        log.exception(
-            "Failed while setting up 2FA code and sending SMS to %s [%s]",
-            mask_phone_number(phone_number),
-            f"{error_code}",
-            extra={"error_code": error_code, **log_extra},
-        )
-        raise SendingVerificationSmsError(reason=exc) from exc
+        raise SendingVerificationSmsError(
+            reason=f"Could not send SMS to {mask_phone_number(phone_number)}",
+            user_id=user_id,
+            twilio_error=exc,
+        ) from exc
 
 
 #
@@ -177,16 +172,13 @@ async def send_email_code(
                 "product": product,
             },
         )
-    except TwilioException as exc:
-        error_code = create_error_code(exc)
-        log_extra: LogExtra = get_log_record_extra(user_id=user_id) or {}
-        log.exception(
-            "Failed while setting up 2FA code and sending Email to %s [%s]",
-            user_email,
-            f"{error_code}",
-            extra={"error_code": error_code, **log_extra},
-        )
-        raise SendingVerificationEmailError(reason=exc) from exc
+    except Exception as exc:
+        raise SendingVerificationEmailError(
+            reason=f"Could not send email to {user_email}",
+            user_id=user_id,
+            user_email=user_email,
+            email_error=exc,
+        ) from exc
 
 
 #
