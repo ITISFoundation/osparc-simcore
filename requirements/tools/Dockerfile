@@ -30,7 +30,7 @@ COPY --from=ghcr.io/astral-sh/uv:${UV_VERSION} /uv /uvx /bin/
 
 RUN uv venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv \
   uv pip install --upgrade  \
   pip~=24.0  \
   wheel \
@@ -39,7 +39,7 @@ RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
 
 
 # devenv
-RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv \
   uv pip install \
   pip-tools \
   pipreqs \
