@@ -1310,6 +1310,7 @@ qx.Class.define("osparc.data.Resources", {
             if (options.timeout && options.timeoutRetries) {
               options.timeoutRetries--;
               this.fetch(resource, endpoint, params, options);
+              return;
             }
           }
 
