@@ -7,5 +7,5 @@
 alembic
 pydantic
 sqlalchemy[postgresql_psycopg2binary,postgresql_asyncpg] # SEE extras in https://github.com/sqlalchemy/sqlalchemy/blob/main/setup.cfg#L43
-opentelemetry-instrumentation-aiopg
+opentelemetry-instrumentation-asyncpg
 yarl

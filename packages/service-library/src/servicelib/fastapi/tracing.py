@@ -18,18 +18,25 @@ from settings_library.tracing import TracingSettings
 log = logging.getLogger(__name__)
 #########
 try:
-    from opentelemetry.instrumentation.aiopg import AsyncPGInstrumentor
+    from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 
     HAS_ASYNCPG = True
 except ImportError:
     HAS_ASYNCPG = False
 #########
 try:
-    from opentelemetry.instrumentation.asyncpg import AiopgInstrumentor
+    from opentelemetry.instrumentation.aio_pika import AioPikaInstrumentor
 
-    HAS_AIPPG = True
+    HAS_AIOPIKA = True
 except ImportError:
-    HAS_AIPPG = False
+    HAS_AIOPIKA = False
+#########
+try:
+    from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
+
+    HAS_AIOPG = True
+except ImportError:
+    HAS_AIOPG = False
 #########
 try:
     from opentelemetry.instrumentation.redis import RedisInstrumentor
@@ -73,12 +80,15 @@ def setup_tracing(
     # Instrument FastAPI
     FastAPIInstrumentor().instrument_app(app)
 
-    if HAS_AIPPG:
+    if HAS_AIOPG:
         log.info("Attempting to add aiopg opentelemetry autoinstrumentation...")
         AiopgInstrumentor().instrument()
     if HAS_ASYNCPG:
         log.info("Attempting to add asyncpg opentelemetry autoinstrumentation...")
         AsyncPGInstrumentor().instrument()
+    if HAS_AIOPIKA:
+        log.info("Attempting to add aio-pika opentelemetry autoinstrumentation...")
+        AioPikaInstrumentor().instrument()
     if HAS_REDIS:
         log.info("Attempting to add redis opentelemetry autoinstrumentation...")
         RedisInstrumentor().instrument()
