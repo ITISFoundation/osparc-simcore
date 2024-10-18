@@ -97,7 +97,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       const permissions = osparc.data.Permissions.getInstance();
       const tabIconSize = 20;
       const tabs = [{
-        id: "studiesTabBtn",
+        id: "studiesTab",
+        buttonId: "studiesTabBtn",
         label: osparc.product.Utils.getStudyAlias({
           plural: true,
           allUpperCase: true
@@ -107,7 +108,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       }];
       if (permissions.canDo("dashboard.templates.read")) {
         tabs.push({
-          id: "templatesTabBtn",
+          id: "templatesTab",
+          buttonId: "templatesTabBtn",
           label: osparc.product.Utils.getTemplateAlias({
             plural: true,
             allUpperCase: true
@@ -118,7 +120,8 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       }
       if (permissions.canDo("dashboard.services.read")) {
         tabs.push({
-          id: "servicesTabBtn",
+          id: "servicesTab",
+          buttonId: "servicesTabBtn",
           label: this.tr("SERVICES"),
           icon: "@FontAwesome5Solid/cogs/"+tabIconSize,
           buildLayout: this.__createServiceBrowser
@@ -126,16 +129,18 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       }
       if (permissions.canDo("dashboard.data.read") && osparc.product.Utils.isProduct("osparc")) {
         tabs.push({
-          id: "dataTabBtn",
+          id: "dataTab",
+          buttonId: "dataTabBtn",
           label: this.tr("DATA"),
           icon: "@FontAwesome5Solid/folder/"+tabIconSize,
           buildLayout: this.__createDataBrowser
         });
       }
-      tabs.forEach(({id, label, icon, buildLayout}) => {
+      tabs.forEach(({id, buttonId, label, icon, buildLayout}) => {
         const tabPage = new qx.ui.tabview.Page(label, icon).set({
           appearance: "dashboard-page"
         });
+        tabPage.id = id;
         const tabButton = tabPage.getChildControl("button");
         tabButton.set({
           minWidth: 50,
@@ -149,13 +154,20 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           visibility: "excluded"
         });
         osparc.utils.Utils.centerTabIcon(tabPage);
-        osparc.utils.Utils.setIdToWidget(tabButton, id);
+        osparc.utils.Utils.setIdToWidget(tabButton, buttonId);
         tabPage.setLayout(new qx.ui.layout.Grow());
 
         const viewLayout = buildLayout.call(this);
         tabButton.addListener("execute", () => {
           if (viewLayout.resetSelection) {
             viewLayout.resetSelection();
+          }
+        }, this);
+        viewLayout.addListener("changeTab", e => {
+          const activeTab = e.getData();
+          const tabFound = this.getSelectables().find(s => s.id === activeTab);
+          if (tabFound) {
+            this.setSelection([tabFound]);
           }
         }, this);
         const scrollerMainView = new qx.ui.container.Scroll();
