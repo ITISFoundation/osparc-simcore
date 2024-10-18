@@ -1,6 +1,7 @@
 import logging
 
 import typer
+from models_library.utils.json_serialization import json_dumps
 from settings_library.utils_cli import create_settings_command, create_version_callback
 
 from ._meta import PROJECT_NAME, __version__
@@ -15,4 +16,8 @@ main = typer.Typer(name=PROJECT_NAME)
 # COMMANDS
 #
 main.callback()(create_version_callback(__version__))
-main.command()(create_settings_command(settings_cls=Settings, logger=_logger))
+main.command()(
+    create_settings_command(
+        settings_cls=Settings, logger=_logger, json_serializer=json_dumps
+    )
+)

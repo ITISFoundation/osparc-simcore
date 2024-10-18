@@ -71,7 +71,7 @@ class ComputationalSidecar:
             if isinstance(input_params, FileUrl):
                 file_name = (
                     input_params.file_mapping
-                    or Path(URL(input_params.url).path.strip("/")).name
+                    or Path(URL(f"{input_params.url}").path.strip("/")).name
                 )
 
                 destination_path = task_volumes.inputs_folder / file_name

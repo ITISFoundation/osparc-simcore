@@ -14,7 +14,7 @@ from unittest import mock
 import fsspec
 import pytest
 from faker import Faker
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter, parse_obj_as
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from settings_library.s3 import S3Settings
@@ -45,8 +45,8 @@ def s3_presigned_link_storage_kwargs(s3_settings: S3Settings) -> dict[str, Any]:
 
 @pytest.fixture
 def ftp_remote_file_url(ftpserver: ProcessFTPServer, faker: Faker) -> AnyUrl:
-    return parse_obj_as(
-        AnyUrl, f"{ftpserver.get_login_data(style='url')}/{faker.file_name()}"
+    return TypeAdapter(AnyUrl).validate_python(
+        f"{ftpserver.get_login_data(style='url')}/{faker.file_name()}"
     )
 
 
@@ -56,8 +56,7 @@ async def s3_presigned_link_remote_file_url(
     aiobotocore_s3_client,
     faker: Faker,
 ) -> AnyUrl:
-    return parse_obj_as(
-        AnyUrl,
+    return TypeAdapter(AnyUrl).validate_python(
         await aiobotocore_s3_client.generate_presigned_url(
             "put_object",
             Params={"Bucket": s3_settings.S3_BUCKET_NAME, "Key": faker.file_name()},
@@ -68,7 +67,9 @@ async def s3_presigned_link_remote_file_url(
 
 @pytest.fixture
 def s3_remote_file_url(s3_settings: S3Settings, faker: Faker) -> AnyUrl:
-    return parse_obj_as(AnyUrl, f"s3://{s3_settings.S3_BUCKET_NAME}{faker.file_path()}")
+    return TypeAdapter(AnyUrl).validate_python(
+        f"s3://{s3_settings.S3_BUCKET_NAME}{faker.file_path()}"
+    )
 
 
 @dataclass(frozen=True)
