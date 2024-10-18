@@ -5,7 +5,6 @@ import datetime
 import functools
 import itertools
 import logging
-import typing
 from typing import Final, cast
 
 import arrow
@@ -338,9 +337,10 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
     allowed_instance_type_names = list(
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES
     )
-    assert set(allowed_instance_type_names).issubset(
-        typing.get_args(InstanceTypeType)
-    )  # nosec
+
+    assert (
+        allowed_instance_type_names
+    ), "EC2_INSTANCES_ALLOWED_TYPES cannot be empty!"  # nosec
 
     allowed_instance_types: list[
         EC2InstanceType
@@ -348,19 +348,11 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         cast(set[InstanceTypeType], set(allowed_instance_type_names))
     )
 
-    if allowed_instance_type_names:
+    def _as_selection(instance_type: EC2InstanceType) -> int:
+        # NOTE: will raise ValueError if allowed_instance_types not in allowed_instance_type_names
+        return allowed_instance_type_names.index(f"{instance_type.name}")
 
-        def _as_selection(instance_type: EC2InstanceType) -> int:
-            return allowed_instance_type_names.index(f"{instance_type.name}")
-
-        allowed_instance_types.sort(key=_as_selection)
-    else:
-        # NOTE An empty set to get_ec2_instance_capabilities it will return  ALL of the instances
-        _logger.warning(
-            "All %s instances are allowed since EC2_INSTANCES_ALLOWED_TYPES is set to empty (=%s)",
-            len(allowed_instance_types),
-            allowed_instance_type_names,
-        )
+    allowed_instance_types.sort(key=_as_selection)
     return allowed_instance_types
 
 
