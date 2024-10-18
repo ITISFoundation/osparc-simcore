@@ -12,7 +12,8 @@ from typing import Any, Final, TypedDict, cast
 import aiofiles
 import aiofiles.tempfile
 import fsspec  # type: ignore[import-untyped]
-from pydantic import ByteSize, FileUrl, parse_obj_as
+from common_library.pydantic_networks_extension import FileUrlLegacy
+from pydantic import ByteSize, TypeAdapter
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from settings_library.s3 import S3Settings
@@ -145,7 +146,7 @@ async def pull_file_from_remote(
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
     await _copy_file(
         src_url,
-        parse_obj_as(FileUrl, dst_path.as_uri()),
+        TypeAdapter(FileUrlLegacy).validate_python(dst_path.as_uri()),
         src_storage_cfg=cast(dict[str, Any], storage_kwargs),
         log_publishing_cb=log_publishing_cb,
         text_prefix=f"Downloading '{src_url.path.strip('/')}':",
@@ -215,7 +216,7 @@ async def _push_file_to_remote(
         storage_kwargs = _s3fs_settings_from_s3_settings(s3_settings)
 
     await _copy_file(
-        parse_obj_as(FileUrl, file_to_upload.as_uri()),
+        TypeAdapter(FileUrlLegacy).validate_python(file_to_upload.as_uri()),
         dst_url,
         dst_storage_cfg=cast(dict[str, Any], storage_kwargs),
         log_publishing_cb=log_publishing_cb,
@@ -243,7 +244,7 @@ async def push_file_to_remote(
         src_mime_type, _ = mimetypes.guess_type(src_path)
 
         if dst_mime_type == _ZIP_MIME_TYPE and src_mime_type != _ZIP_MIME_TYPE:
-            archive_file_path = Path(tmp_dir) / Path(URL(dst_url).path).name
+            archive_file_path = Path(tmp_dir) / Path(URL(f"{dst_url}").path).name
             await log_publishing_cb(
                 f"Compressing '{src_path.name}' to '{archive_file_path.name}'...",
                 logging.INFO,

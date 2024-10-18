@@ -3,7 +3,14 @@ import re
 from models_library.basic_regex import SIMPLE_VERSION_RE
 from models_library.services import ServiceMetaDataPublished
 from packaging import version
-from pydantic import BaseModel, ByteSize, Extra, Field, validator
+from pydantic import (
+    BaseModel,
+    ByteSize,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+)
 
 LEGACY_INTEGRATION_VERSION = version.Version("0")
 PROGRESS_REGEXP: re.Pattern[str] = re.compile(
@@ -41,18 +48,20 @@ class ContainerHostConfig(BaseModel):
         ..., alias="NanoCPUs", description="CPU quota in units of 10-9 CPUs"
     )
 
-    @validator("memory_swap", pre=True, always=True)
+    @field_validator("memory_swap", mode="before")
     @classmethod
-    def ensure_no_memory_swap_means_no_swap(cls, v, values):
+    def ensure_no_memory_swap_means_no_swap(cls, v, info: ValidationInfo):
         if v is None:
             # if not set it will be the same value as memory to ensure swap is disabled
-            return values["memory"]
+            return info.data["memory"]
         return v
 
-    @validator("memory_swap")
+    @field_validator("memory_swap")
     @classmethod
-    def ensure_memory_swap_cannot_be_unlimited_nor_smaller_than_memory(cls, v, values):
-        if v < values["memory"]:
+    def ensure_memory_swap_cannot_be_unlimited_nor_smaller_than_memory(
+        cls, v, info: ValidationInfo
+    ):
+        if v < info.data["memory"]:
             msg = "Memory swap cannot be set to a smaller value than memory"
             raise ValueError(msg)
         return v
@@ -71,7 +80,7 @@ class ImageLabels(BaseModel):
         default=str(LEGACY_INTEGRATION_VERSION),
         alias="integration-version",
         description="integration version number",
-        regex=SIMPLE_VERSION_RE,
+        pattern=SIMPLE_VERSION_RE,
         examples=["1.0.0"],
     )
     progress_regexp: str = Field(
@@ -79,18 +88,16 @@ class ImageLabels(BaseModel):
         alias="progress_regexp",
         description="regexp pattern for detecting computational service's progress",
     )
+    model_config = ConfigDict(extra="ignore")
 
-    class Config:
-        extra = Extra.ignore
-
-    @validator("integration_version", pre=True)
+    @field_validator("integration_version", mode="before")
     @classmethod
     def default_integration_version(cls, v):
         if v is None:
             return ImageLabels().integration_version
         return v
 
-    @validator("progress_regexp", pre=True)
+    @field_validator("progress_regexp", mode="before")
     @classmethod
     def default_progress_regexp(cls, v):
         if v is None:
@@ -104,6 +111,6 @@ class ImageLabels(BaseModel):
         return re.compile(self.progress_regexp)
 
 
-assert set(ImageLabels.__fields__).issubset(
-    ServiceMetaDataPublished.__fields__
+assert set(ImageLabels.model_fields).issubset(
+    ServiceMetaDataPublished.model_fields
 ), "ImageLabels must be compatible with ServiceDockerData"
