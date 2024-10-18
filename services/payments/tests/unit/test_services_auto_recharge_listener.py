@@ -161,8 +161,8 @@ def wallet_id(faker: Faker):
 async def mocked_pay_with_payment_method(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.patch(
         "simcore_service_payments.services.payments.PaymentsGatewayApi.pay_with_payment_method",
-        return_value=AckPaymentWithPaymentMethod.construct(
-            **AckPaymentWithPaymentMethod.Config.schema_extra["example"]
+        return_value=AckPaymentWithPaymentMethod.model_construct(
+            **AckPaymentWithPaymentMethod.model_config["json_schema_extra"]["example"]
         ),
     )
 
@@ -200,8 +200,8 @@ async def mock_rpc_server(
         dollar_amount: Decimal,
         product_name: ProductName,
     ) -> InvoiceDataGet:
-        return InvoiceDataGet.parse_obj(
-            InvoiceDataGet.Config.schema_extra["examples"][0]
+        return InvoiceDataGet.model_validate(
+            InvoiceDataGet.model_config["json_schema_extra"]["examples"][0]
         )
 
     await rpc_server.register_router(router, namespace=WEBSERVER_RPC_NAMESPACE)
@@ -220,7 +220,7 @@ async def _assert_payments_transactions_db_row(postgres_db) -> PaymentsTransacti
             result = con.execute(sa.select(payments_transactions))
             row = result.first()
             assert row
-            return PaymentsTransactionsDB.from_orm(row)
+            return PaymentsTransactionsDB.model_validate(row)
 
 
 async def test_process_message__whole_autorecharge_flow_success(

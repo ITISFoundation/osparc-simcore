@@ -69,9 +69,9 @@ def print_as_envfile(
 def print_as_json(
     settings_obj,
     *,
-    compact=False,
+    compact: bool = False,
+    show_secrets: bool,
     json_serializer,
-    show_secrets,
     **pydantic_export_options,
 ):
     typer.echo(

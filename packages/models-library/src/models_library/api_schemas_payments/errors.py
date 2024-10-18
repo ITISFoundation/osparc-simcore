@@ -1,7 +1,7 @@
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
-class _BaseRpcApiError(PydanticErrorMixin, ValueError):
+class _BaseRpcApiError(OsparcErrorMixin, ValueError):
     @classmethod
     def get_full_class_name(cls) -> str:
         # Can be used as unique code identifier
