@@ -15,9 +15,6 @@ from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-
 from opentelemetry.instrumentation.aiohttp_server import (
     middleware as aiohttp_server_opentelemetry_middleware,  # pylint:disable=no-name-in-module
 )
-from opentelemetry.instrumentation.aiopg import (  # pylint:disable=no-name-in-module
-    AiopgInstrumentor,
-)
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -25,13 +22,24 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from settings_library.tracing import TracingSettings
 
 _logger = logging.getLogger(__name__)
+try:
+    from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
+
+    HAS_BOTOCORE = True
+except ImportError:
+    HAS_BOTOCORE = False
+try:
+    from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
+
+    HAS_AIOPG = True
+except ImportError:
+    HAS_AIOPG = False
 
 
 def setup_tracing(
     app: web.Application,
     tracing_settings: TracingSettings,
     service_name: str,
-    instrument_aiopg: bool = False,  # noqa: FBT001, FBT002
 ) -> None:
     """
     Sets up this service for a distributed tracing system (opentelemetry)
@@ -91,6 +99,10 @@ def setup_tracing(
 
     # Instrument aiohttp client
     AioHttpClientInstrumentor().instrument()
-    if instrument_aiopg:
+    if HAS_AIOPG:
         AiopgInstrumentor().instrument()
+        _logger.info("Attempting to add aiopg opentelemetry autoinstrumentation...")
+    if HAS_BOTOCORE:
+        BotocoreInstrumentor().instrument()
+        _logger.info("Attempting to add botocore opentelemetry autoinstrumentation...")
     RequestsInstrumentor().instrument()

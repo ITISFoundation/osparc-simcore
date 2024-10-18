@@ -16,6 +16,40 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from settings_library.tracing import TracingSettings
 
 log = logging.getLogger(__name__)
+#########
+try:
+    from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
+
+    HAS_ASYNCPG = True
+except ImportError:
+    HAS_ASYNCPG = False
+#########
+try:
+    from opentelemetry.instrumentation.aio_pika import AioPikaInstrumentor
+
+    HAS_AIOPIKA = True
+except ImportError:
+    HAS_AIOPIKA = False
+#########
+try:
+    from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
+
+    HAS_AIOPG = True
+except ImportError:
+    HAS_AIOPG = False
+#########
+try:
+    from opentelemetry.instrumentation.redis import RedisInstrumentor
+
+    HAS_REDIS = True
+except ImportError:
+    HAS_REDIS = False
+try:
+    from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
+
+    HAS_BOTOCORE = True
+except ImportError:
+    HAS_BOTOCORE = False
 
 
 def setup_tracing(
@@ -35,7 +69,7 @@ def setup_tracing(
     assert isinstance(global_tracer_provider, TracerProvider)  # nosec
     tracing_destination: str = f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}:{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT}/v1/traces"
     log.info(
-        "Trying to connect service %s to tracing collector at %s.",
+        "Trying to connect service %s to opentelemetry tracing collector at %s.",
         service_name,
         tracing_destination,
     )
@@ -45,3 +79,19 @@ def setup_tracing(
     global_tracer_provider.add_span_processor(span_processor)
     # Instrument FastAPI
     FastAPIInstrumentor().instrument_app(app)
+
+    if HAS_AIOPG:
+        log.info("Attempting to add aiopg opentelemetry autoinstrumentation...")
+        AiopgInstrumentor().instrument()
+    if HAS_ASYNCPG:
+        log.info("Attempting to add asyncpg opentelemetry autoinstrumentation...")
+        AsyncPGInstrumentor().instrument()
+    if HAS_AIOPIKA:
+        log.info("Attempting to add aio-pika opentelemetry autoinstrumentation...")
+        AioPikaInstrumentor().instrument()
+    if HAS_REDIS:
+        log.info("Attempting to add redis opentelemetry autoinstrumentation...")
+        RedisInstrumentor().instrument()
+    if HAS_BOTOCORE:
+        log.info("Attempting to add botocore opentelemetry autoinstrumentation...")
+        BotocoreInstrumentor().instrument()

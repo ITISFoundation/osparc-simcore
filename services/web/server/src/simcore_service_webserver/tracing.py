@@ -26,6 +26,5 @@ def setup_app_tracing(app: web.Application):
     setup_tracing(
         app,
         tracing_settings=tracing_settings,
-        instrument_aiopg=True,
         service_name=APP_NAME,
     )

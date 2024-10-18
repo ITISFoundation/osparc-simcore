@@ -56,7 +56,6 @@ def create(settings: Settings) -> web.Application:
             app,
             tracing_settings=tracing_settings,
             service_name=APP_NAME,
-            instrument_aiopg=True,
         )
 
     setup_db(app)

@@ -162,8 +162,10 @@ opentelemetry-api==1.26.0
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
@@ -179,13 +181,19 @@ opentelemetry-exporter-otlp-proto-http==1.26.0
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.47b0
     # via
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-aio-pika==0.47b0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-asgi==0.47b0
     # via opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-fastapi==0.47b0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+opentelemetry-instrumentation-redis==0.47b0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-requests==0.47b0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-proto==1.26.0
@@ -202,6 +210,7 @@ opentelemetry-semantic-conventions==0.47b0
     # via
     #   opentelemetry-instrumentation-asgi
     #   opentelemetry-instrumentation-fastapi
+    #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
 opentelemetry-util-http==0.47b0
@@ -368,6 +377,8 @@ wrapt==1.16.0
     # via
     #   deprecated
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
+    #   opentelemetry-instrumentation-redis
 yarl==1.9.4
     # via
     #   aio-pika

@@ -127,7 +127,11 @@ opentelemetry-api==1.27.0
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
+    #   opentelemetry-instrumentation-botocore
+    #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+    #   opentelemetry-propagator-aws-xray
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
 opentelemetry-exporter-otlp==1.27.0
@@ -141,9 +145,21 @@ opentelemetry-exporter-otlp-proto-grpc==1.27.0
 opentelemetry-exporter-otlp-proto-http==1.27.0
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.48b0
-    # via opentelemetry-instrumentation-requests
+    # via
+    #   opentelemetry-instrumentation-aio-pika
+    #   opentelemetry-instrumentation-botocore
+    #   opentelemetry-instrumentation-redis
+    #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-aio-pika==0.48b0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
+opentelemetry-instrumentation-botocore==0.48b0
+    # via -r requirements/_base.in
+opentelemetry-instrumentation-redis==0.48b0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-requests==0.48b0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+opentelemetry-propagator-aws-xray==1.0.2
+    # via opentelemetry-instrumentation-botocore
 opentelemetry-proto==1.27.0
     # via
     #   opentelemetry-exporter-otlp-proto-common
@@ -156,6 +172,8 @@ opentelemetry-sdk==1.27.0
     #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-semantic-conventions==0.48b0
     # via
+    #   opentelemetry-instrumentation-botocore
+    #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
 opentelemetry-util-http==0.48b0
@@ -297,6 +315,8 @@ wrapt==1.16.0
     #   aiobotocore
     #   deprecated
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
+    #   opentelemetry-instrumentation-redis
 yarl==1.12.1
     # via
     #   aio-pika
