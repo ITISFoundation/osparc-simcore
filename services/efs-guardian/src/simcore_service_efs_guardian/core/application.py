@@ -15,6 +15,7 @@ from ..api.rest.routes import setup_api_routes
 from ..api.rpc.routes import setup_rpc_routes
 from ..services.background_tasks_setup import setup as setup_background_tasks
 from ..services.efs_manager_setup import setup as setup_efs_manager
+from ..services.modules.db import setup as setup_db
 from ..services.modules.rabbitmq import setup as setup_rabbitmq
 from ..services.modules.redis import setup as setup_redis
 from ..services.process_messages_setup import setup as setup_process_messages
@@ -23,11 +24,13 @@ from .settings import ApplicationSettings
 logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings) -> FastAPI:
-    logger.info("app settings: %s", settings.json(indent=1))
+def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
+    app_settings = settings or ApplicationSettings.create_from_envs()
+
+    logger.info("app settings: %s", app_settings.json(indent=1))
 
     app = FastAPI(
-        debug=settings.EFS_GUARDIAN_DEBUG,
+        debug=app_settings.EFS_GUARDIAN_DEBUG,
         title=APP_NAME,
         description="Service to monitor and manage elastic file system",
         version=API_VERSION,
@@ -36,7 +39,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         redoc_url=None,  # default disabled
     )
     # STATE
-    app.state.settings = settings
+    app.state.settings = app_settings
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
     if app.state.settings.EFS_GUARDIAN_TRACING:
         setup_tracing(app, app.state.settings.EFS_GUARDIAN_TRACING, APP_NAME)
@@ -44,13 +47,14 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     # PLUGINS SETUP
     setup_rabbitmq(app)
     setup_redis(app)
+    setup_db(app)
 
     setup_api_routes(app)
-    setup_rpc_routes(app)
+    setup_rpc_routes(app)  # requires Rabbit
 
     setup_efs_manager(app)
-    setup_background_tasks(app)
-    setup_process_messages(app)
+    setup_background_tasks(app)  # requires Redis, DB
+    setup_process_messages(app)  # requires Rabbit
 
     # EVENTS
     async def _on_startup() -> None:
@@ -58,7 +62,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         if any(
             s is None
             for s in [
-                settings.EFS_GUARDIAN_AWS_EFS_SETTINGS,
+                app_settings.EFS_GUARDIAN_AWS_EFS_SETTINGS,
             ]
         ):
             print(APP_STARTED_DISABLED_BANNER_MSG, flush=True)  # noqa: T201

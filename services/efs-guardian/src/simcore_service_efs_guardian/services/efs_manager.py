@@ -1,14 +1,18 @@
+import logging
 import os
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import ByteSize
+from pydantic import ByteSize, parse_obj_as
 
 from ..core.settings import ApplicationSettings, get_application_settings
 from . import efs_manager_utils
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -90,3 +94,44 @@ class EfsManager:
         )
 
         await efs_manager_utils.remove_write_permissions_bash_async(_dir_path)
+
+    async def list_projects_across_whole_efs(self) -> list[ProjectID]:
+        _dir_path = self._efs_mounted_path / self._project_specific_data_base_directory
+
+        # List all items in the directory
+        items = os.listdir(_dir_path)
+
+        # Filter and list only directories (which should be Project UUIDs)
+        directories = []
+        for item in items:
+            _item_path = _dir_path / item
+            if Path.is_dir(_item_path):
+                try:
+                    _project_id = parse_obj_as(ProjectID, item)
+                    directories.append(_project_id)
+                except ValueError:
+                    _logger.warning(
+                        "This is not a project ID. This should not happen! %s",
+                        _item_path,
+                    )
+            else:
+                _logger.warning(
+                    "This is not a directory. This should not happen! %s",
+                    _item_path,
+                )
+
+        return directories
+
+    async def remove_project_efs_data(self, project_id: ProjectID) -> None:
+        _dir_path = (
+            self._efs_mounted_path
+            / self._project_specific_data_base_directory
+            / f"{project_id}"
+        )
+
+        if Path.exists(_dir_path):
+            # Remove the directory and all its contents
+            shutil.rmtree(_dir_path)
+            _logger.info("%s has been deleted.", _dir_path)
+        else:
+            _logger.warning("%s does not exist.", _dir_path)

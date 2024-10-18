@@ -27,6 +27,8 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
+    with_disabled_redis_and_background_tasks: None,
+    with_disabled_postgres: None,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
@@ -38,13 +40,12 @@ def app_environment(
 
 
 async def test_rpc_create_project_specific_data_dir(
-    mocked_redis_server: None,
     rpc_client: RabbitMQRPCClient,
     faker: Faker,
     app: FastAPI,
     project_id: ProjectID,
     node_id: NodeID,
-    cleanup: None,
+    efs_cleanup: None,
 ):
     aws_efs_settings: AwsEfsSettings = app.state.settings.EFS_GUARDIAN_AWS_EFS_SETTINGS
 
