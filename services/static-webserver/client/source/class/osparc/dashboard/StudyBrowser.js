@@ -1220,7 +1220,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             studyId
           }
         };
-        osparc.data.Resources.fetch("studies", "delete", params, studyId);
+        osparc.data.Resources.fetch("studies", "delete", params);
       };
       const isStudyCreation = true;
       this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
