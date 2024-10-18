@@ -162,35 +162,18 @@ class DiskUsageMonitor:
 
         normalized_paths = self._normalized_monitored_paths
 
-        def _assign_on_match_and_stop(
-            disk_usage: DiskUsage,
-            folder_names: set[str],
-            mount_path_category: MountPathCategory,
-        ) -> bool:
-            # if no match is found returns False so that the next condition can trigger
-            if _have_common_entries(
-                folder_names, normalized_paths[mount_path_category]
-            ):
-                usage[mount_path_category] = disk_usage
-                return True
-            return False
-
         for disk_usage, folder_names in usage_to_folder_names.items():
-            if not (
-                _assign_on_match_and_stop(
-                    disk_usage, folder_names, MountPathCategory.HOST
-                )
-                or _assign_on_match_and_stop(
-                    disk_usage, folder_names, MountPathCategory.STATES_VOLUMES
-                )
-                or _assign_on_match_and_stop(
-                    disk_usage, folder_names, MountPathCategory.INPUTS_VOLUMES
-                )
-                or _assign_on_match_and_stop(
-                    disk_usage, folder_names, MountPathCategory.OUTPUTS_VOLUMES
-                )
-            ):
-                msg = f"Could not assign {disk_usage=} for {folder_names}"
+            for category in [
+                MountPathCategory.HOST,
+                MountPathCategory.STATES_VOLUMES,
+                MountPathCategory.INPUTS_VOLUMES,
+                MountPathCategory.OUTPUTS_VOLUMES,
+            ]:
+                if folder_names.intersection(normalized_paths[category]):
+                    usage[category] = disk_usage
+                    break
+            else:
+                msg = f"Could not assign {disk_usage=} for {folder_names=}"
                 raise RuntimeError(msg)
 
         detected_items = set(usage.keys())

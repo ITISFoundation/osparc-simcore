@@ -238,3 +238,12 @@ async def test_disk_usage_monitor_new_frontend_format(
     assert frontend_usage[MountPathCategory.STATES_VOLUMES] == _get_mocked_disk_usage(
         "1GB"
     )
+
+    # emulate data could not be mapped
+    disk_usage_monitor.set_disk_usage_for_path(
+        {
+            "missing_path": _get_mocked_disk_usage("2GB"),
+        }
+    )
+    with pytest.raises(RuntimeError):
+        frontend_usage = await _wait_for_usage()
