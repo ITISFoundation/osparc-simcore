@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any
 
 from models_library.basic_types import LogLevel
-from pydantic import Field, validator
+from pydantic import AliasChoices, Field, field_validator
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -14,7 +14,9 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     SC_BOOT_MODE: str | None = None
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
-        env=["DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        validation_alias=AliasChoices(
+            "DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+        ),
     )
 
     # sidecar config ---
@@ -37,7 +39,9 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=["DASK_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        validation_alias=AliasChoices(
+            "DASK_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
@@ -50,7 +54,7 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
             assert self.DASK_SCHEDULER_HOST is not None  # nosec
         return as_worker
 
-    @validator("LOG_LEVEL", pre=True)
+    @field_validator("LOG_LEVEL", mode="before")
     @classmethod
     def _validate_loglevel(cls, value: Any) -> str:
         return cls.validate_log_level(f"{value}")
