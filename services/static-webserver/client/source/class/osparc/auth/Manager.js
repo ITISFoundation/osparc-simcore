@@ -212,9 +212,13 @@ qx.Class.define("osparc.auth.Manager", {
           "client_session_id": osparc.utils.Utils.getClientSessionID()
         }
       };
-      return osparc.data.Resources.fetch("auth", "postLogout", params)
+      const options = {
+        timeout: 5000,
+        timeoutRetries: 5
+      };
+      return osparc.data.Resources.fetch("auth", "postLogout", params, options)
         .then(() => this.fireEvent("loggedOut"))
-        .catch(error => console.log("already logged out"))
+        .catch(() => console.log("already logged out"))
         .finally(this.__logoutUser());
     },
 
