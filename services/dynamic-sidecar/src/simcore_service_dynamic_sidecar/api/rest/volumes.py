@@ -4,7 +4,7 @@ from fastapi import status
 from models_library.sidecar_volumes import VolumeCategory, VolumeState, VolumeStatus
 from pydantic import BaseModel
 
-from ..models.shared_store import SharedStore
+from ...models.shared_store import SharedStore
 from ._dependencies import get_shared_store
 
 router = APIRouter()
