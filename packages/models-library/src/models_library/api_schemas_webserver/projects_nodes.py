@@ -105,7 +105,7 @@ class NodeGet(OutputSchema):
                     "service_basepath": "/x/E1O2E-LAH",
                     "service_state": "pending",
                     "service_message": "no suitable node (insufficient resources on 1 node)",
-                    "user_id": 123,
+                    "user_id": "123",
                 },
                 # dynamic
                 {
@@ -119,7 +119,7 @@ class NodeGet(OutputSchema):
                     "service_basepath": "/x/E1O2E-LAH",
                     "service_state": "pending",
                     "service_message": "no suitable node (insufficient resources on 1 node)",
-                    "user_id": 123,
+                    "user_id": "123",
                 },
             ]
         }

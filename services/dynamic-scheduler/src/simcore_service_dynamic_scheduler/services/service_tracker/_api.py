@@ -150,7 +150,7 @@ async def set_if_status_changed_for_service(
     model.scheduled_to_run = False
 
     # check if model changed
-    json_status = status.json()
+    json_status = status.model_dump_json()
     if model.service_status != json_status:
         model.service_status = json_status
         model.current_state = _get_current_scheduler_service_state(

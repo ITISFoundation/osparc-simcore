@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from common_library.pydantic_validators import timedelta_try_convert_str_to_float
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AliasChoices, AnyHttpUrl, Field, field_validator
 from settings_library.base import BaseCustomSettings
@@ -78,17 +78,17 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True},
     )
 
-    _try_convert_agent_volumes_cleanup_interval = timedelta_try_convert_str_to_float(
+    _validate_agent_volumes_cleanup_interval = validate_numeric_string_as_timedelta(
         "AGENT_VOLUMES_CLEANUP_INTERVAL"
     )
 
-    _try_convert_agent_volumes_cleanup_book_keeping_interval = (
-        timedelta_try_convert_str_to_float(
+    _validate_agent_volumes_cleanup_book_keeping_interval = (
+        validate_numeric_string_as_timedelta(
             "AGENT_VOLUMES_CLEANUP_BOOK_KEEPING_INTERVAL"
         )
     )
-    _try_convert_agent_volumes_cleanup_remove_volumes_inactive_for = (
-        timedelta_try_convert_str_to_float(
+    _validate_agent_volumes_cleanup_remove_volumes_inactive_for = (
+        validate_numeric_string_as_timedelta(
             "AGENT_VOLUMES_CLEANUP_REMOVE_VOLUMES_INACTIVE_FOR"
         )
     )

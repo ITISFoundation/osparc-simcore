@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Any, ClassVar
 
 from aiohttp import web
-from common_library.pydantic_validators import timedelta_try_convert_str_to_float
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from pydantic import ByteSize, HttpUrl, parse_obj_as, validator
 from pydantic.fields import Field
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
@@ -51,7 +51,7 @@ class StudiesDispatcherSettings(BaseCustomSettings):
         """
         return not self.STUDIES_ACCESS_ANONYMOUS_ALLOWED
 
-    _try_convert_studies_guest_account_lifetime = timedelta_try_convert_str_to_float(
+    _validate_studies_guest_account_lifetime = validate_numeric_string_as_timedelta(
         "STUDIES_GUEST_ACCOUNT_LIFETIME"
     )
 

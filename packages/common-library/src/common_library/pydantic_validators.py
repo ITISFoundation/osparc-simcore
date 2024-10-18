@@ -5,10 +5,10 @@ from datetime import timedelta
 from pydantic import TypeAdapter, field_validator
 
 
-def timedelta_try_convert_str_to_float(field: str):
+def validate_numeric_string_as_timedelta(field: str):
     """Transforms a float/int number into a valid datetime as it used to work in the past"""
 
-    def _try_convert_str_to_float_or_return(
+    def _numeric_string_as_timedelta(
         v: datetime.timedelta | str | float,
     ) -> datetime.timedelta | str | float:
         if isinstance(v, str):
@@ -32,4 +32,4 @@ def timedelta_try_convert_str_to_float(field: str):
                 return v
         return v
 
-    return field_validator(field, mode="before")(_try_convert_str_to_float_or_return)
+    return field_validator(field, mode="before")(_numeric_string_as_timedelta)
