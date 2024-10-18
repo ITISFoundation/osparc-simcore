@@ -87,6 +87,7 @@ async def test_tracker_listing(tracker: Tracker, item_count: NonNegativeInt) -> 
     response = await tracker.all()
     for key in response:
         assert isinstance(key, NodeID)
+    assert len(response) == len(data_to_insert) == item_count
     assert response == data_to_insert
 
 
