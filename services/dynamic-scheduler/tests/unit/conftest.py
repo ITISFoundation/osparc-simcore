@@ -4,11 +4,10 @@ from copy import deepcopy
 import pytest
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
-    DynamicServiceStartAdapter,
     DynamicServiceStop,
-    DynamicServiceStopAdapter,
 )
 from models_library.projects_nodes_io import NodeID
+from pydantic import TypeAdapter
 
 
 @pytest.fixture
@@ -18,7 +17,7 @@ def get_dynamic_service_start() -> Callable[[NodeID], DynamicServiceStart]:
             DynamicServiceStart.model_config["json_schema_extra"]["example"]
         )
         dict_data["service_uuid"] = f"{node_id}"
-        return DynamicServiceStartAdapter.validate_python(dict_data)
+        return TypeAdapter(DynamicServiceStart).validate_python(dict_data)
 
     return _
 
@@ -30,6 +29,6 @@ def get_dynamic_service_stop() -> Callable[[NodeID], DynamicServiceStop]:
             DynamicServiceStop.model_config["json_schema_extra"]["example"]
         )
         dict_data["node_id"] = f"{node_id}"
-        return DynamicServiceStopAdapter.validate_python(dict_data)
+        return TypeAdapter(DynamicServiceStop).validate_python(dict_data)
 
     return _

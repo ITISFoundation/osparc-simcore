@@ -12,7 +12,6 @@ from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
-    DynamicServiceStartAdapter,
     DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import (
@@ -183,7 +182,7 @@ async def test_get_state(
 @pytest.fixture
 def dynamic_service_start() -> DynamicServiceStart:
     # one for legacy and one for new style?
-    return DynamicServiceStartAdapter.validate_python(
+    return TypeAdapter(DynamicServiceStart).validate_python(
         DynamicServiceStart.model_config["json_schema_extra"]["example"]
     )
 
