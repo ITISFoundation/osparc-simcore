@@ -1267,6 +1267,10 @@ qx.Class.define("osparc.data.Resources", {
           });
         }
 
+        const sendRequest = () => {
+          res[endpoint](params.url || null, params.data || null);
+        }
+
         res.addListenerOnce(endpoint + "Success", e => {
           const response = e.getRequest().getResponse();
           const endpointDef = resourceDefinition.endpoints[endpoint];
@@ -1305,11 +1309,11 @@ qx.Class.define("osparc.data.Resources", {
           }
         }, this);
 
-        res.addListenerOnce(endpoint + "Error", e => {
+        res.addListener(endpoint + "Error", e => {
           if (e.getPhase() === "timeout") {
             if (options.timeout && options.timeoutRetries) {
               options.timeoutRetries--;
-              this.fetch(resource, endpoint, params, options);
+              sendRequest();
               return;
             }
           }
@@ -1361,7 +1365,7 @@ qx.Class.define("osparc.data.Resources", {
           reject(err);
         });
 
-        res[endpoint](params.url || null, params.data || null);
+        sendRequest();
       });
     },
 

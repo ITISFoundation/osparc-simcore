@@ -217,9 +217,10 @@ qx.Class.define("osparc.auth.Manager", {
         timeoutRetries: 5
       };
       return osparc.data.Resources.fetch("auth", "postLogout", params, options)
-        .then(() => this.fireEvent("loggedOut"))
-        .catch(() => console.log("already logged out"))
-        .finally(this.__logoutUser());
+        .finally(() => {
+          this.__logoutUser();
+          this.fireEvent("loggedOut");
+        });
     },
 
     resetPasswordRequest: function(email, successCbk, failCbk, context) {
