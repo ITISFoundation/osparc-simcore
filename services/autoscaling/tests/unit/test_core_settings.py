@@ -132,12 +132,16 @@ def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(  # noqa: N802
     )
 
 
-def test_EC2_INSTANCES_ALLOWED_TYPES(  # noqa: N802
+def test_EC2_INSTANCES_ALLOWED_TYPES_valid(  # noqa: N802
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
 ):
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
 
+
+def test_EC2_INSTANCES_ALLOWED_TYPES_passing_invalid_image_tags(  # noqa: N802
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+):
     # passing an invalid image tag name will fail
     setenvs_from_dict(
         monkeypatch,
@@ -155,6 +159,10 @@ def test_EC2_INSTANCES_ALLOWED_TYPES(  # noqa: N802
     with pytest.raises(ValidationError):
         ApplicationSettings.create_from_envs()
 
+
+def test_EC2_INSTANCES_ALLOWED_TYPES_passing_valid_image_tags(  # noqa: N802
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+):
     # passing a valid will pass
     setenvs_from_dict(
         monkeypatch,
@@ -176,14 +184,23 @@ def test_EC2_INSTANCES_ALLOWED_TYPES(  # noqa: N802
     )
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
-    assert [
+    assert next(
+        iter(settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())
+    ).pre_pull_images == [
         "nginx:latest",
         "itisfoundation/my-very-nice-service:latest",
         "simcore/services/dynamic/another-nice-one:2.4.5",
         "asd",
-    ] == next(
-        iter(settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())
-    ).pre_pull_images
+    ]
+
+
+def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed(  # noqa: N802
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("EC2_INSTANCES_ALLOWED_TYPES", "{}")
+
+    with pytest.raises(ValidationError):
+        ApplicationSettings.create_from_envs()
 
 
 def test_invalid_instance_names(

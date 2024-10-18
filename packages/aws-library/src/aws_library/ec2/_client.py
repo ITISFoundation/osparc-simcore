@@ -2,7 +2,7 @@ import contextlib
 import logging
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import cast
+from typing import Literal, cast
 
 import aioboto3
 import botocore.exceptions
@@ -66,20 +66,28 @@ class SimcoreEC2API:
     @ec2_exception_handler(_logger)
     async def get_ec2_instance_capabilities(
         self,
-        instance_type_names: set[InstanceTypeType],
+        instance_type_names: set[InstanceTypeType] | Literal["ALL"],
     ) -> list[EC2InstanceType]:
-        """returns the ec2 instance types from a list of instance type names
-            NOTE: the order might differ!
+        """Returns the ec2 instance types from a list of instance type names (sorted by name)
+
         Arguments:
-            instance_type_names -- the types to filter with
+            instance_type_names -- the types to filter with or "ALL", to return all EC2 possible instances
 
         Raises:
             Ec2InstanceTypeInvalidError: some invalid types were used as filter
             ClustersKeeperRuntimeError: unexpected error communicating with EC2
 
         """
+        if instance_type_names == "ALL":
+            selection_or_all_if_empty = []
+        else:
+            selection_or_all_if_empty = list(instance_type_names)
+            if len(selection_or_all_if_empty) == 0:
+                msg = "`instance_type_names` cannot be an empty set. Use either a selection or 'ALL'"
+                raise ValueError(msg)
+
         instance_types = await self.client.describe_instance_types(
-            InstanceTypes=list(instance_type_names)
+            InstanceTypes=selection_or_all_if_empty
         )
         list_instances: list[EC2InstanceType] = []
         for instance in instance_types.get("InstanceTypes", []):
@@ -95,7 +103,7 @@ class SimcoreEC2API:
                         ),
                     )
                 )
-        return list_instances
+        return sorted(list_instances, key=lambda i: i.name)
 
     @ec2_exception_handler(_logger)
     async def launch_instances(

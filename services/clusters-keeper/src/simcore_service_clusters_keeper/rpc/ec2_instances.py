@@ -1,3 +1,5 @@
+from typing import Literal
+
 from aws_library.ec2 import EC2InstanceType
 from fastapi import FastAPI
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
@@ -10,7 +12,7 @@ router = RPCRouter()
 
 @router.expose()
 async def get_instance_type_details(
-    app: FastAPI, *, instance_type_names: set[str]
+    app: FastAPI, *, instance_type_names: set[str] | Literal["ALL"]
 ) -> list[EC2InstanceTypeGet]:
     instance_capabilities: list[EC2InstanceType] = await get_ec2_client(
         app
