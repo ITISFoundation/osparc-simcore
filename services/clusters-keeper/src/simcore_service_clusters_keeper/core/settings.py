@@ -54,18 +54,22 @@ class ClustersKeeperEC2Settings(EC2Settings):
 
 
 class ClustersKeeperSSMSettings(SSMSettings):
-    class Config(SSMSettings.Config):
-        env_prefix = CLUSTERS_KEEPER_ENV_PREFIX
-
-        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+    model_config = SettingsConfigDict(
+        env_prefix=CLUSTERS_KEEPER_ENV_PREFIX,
+        json_schema_extra={
             "examples": [
                 {
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}{key}": var
-                    for key, var in example.items()
+                    for key, var in example.items()  # type:ignore[union-attr]
                 }
-                for example in SSMSettings.Config.schema_extra["examples"]
+                for example in SSMSettings.model_config[  # type:ignore[union-attr,index]
+                    "json_schema_extra"
+                ][
+                    "examples"
+                ]
             ],
-        }
+        },
+    )
 
 
 class WorkersEC2InstancesSettings(BaseCustomSettings):
@@ -280,7 +284,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     CLUSTERS_KEEPER_SSM_ACCESS: ClustersKeeperSSMSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: PrimaryEC2InstancesSettings | None = Field(
@@ -350,7 +354,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ", see https://selectfrom.dev/deep-dive-into-dask-distributed-scheduler-9fdb3b36b7c7",
     )
     CLUSTERS_KEEPER_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemetry tracing"
+        json_schema_extra={"auto_default_from_env": True},
+        description="settings for opentelemetry tracing",
     )
 
     SWARM_STACK_NAME: str = Field(

@@ -1,8 +1,9 @@
 from datetime import timedelta
 
+from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import AliasChoices, AnyHttpUrl, Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.rabbit import RabbitSettings
@@ -34,7 +35,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
         ..., description="Exactly the same as director-v2's `SWARM_STACK_NAME` env var"
     )
-    AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: AnyHttpUrl
+    AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: AnyHttpUrlLegacy
     AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY: str
     AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY: str
     AGENT_VOLUMES_CLEANUP_S3_BUCKET: str

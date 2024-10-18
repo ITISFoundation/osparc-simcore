@@ -1,7 +1,7 @@
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
-class BaseAgentRPCError(PydanticErrorMixin, Exception):
+class BaseAgentRPCError(OsparcErrorMixin, Exception):
     ...
 
 
