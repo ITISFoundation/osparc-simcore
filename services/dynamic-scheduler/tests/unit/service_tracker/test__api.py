@@ -9,10 +9,7 @@ from uuid import uuid4
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_directorv2.dynamic_services import (
-    DynamicServiceGet,
-    DynamicServiceGetAdapter,
-)
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
@@ -25,7 +22,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
 )
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.deferred_tasks import TaskUID
 from servicelib.utils import limited_gather
@@ -181,7 +178,10 @@ async def test_set_service_status_task_uid(
             _LOW_RATE_POLL_INTERVAL,
         ),
         *[
-            (DynamicServiceGetAdapter.validate_python(o), NORMAL_RATE_POLL_INTERVAL)
+            (
+                TypeAdapter(DynamicServiceGet).validate_python(o),
+                NORMAL_RATE_POLL_INTERVAL,
+            )
             for o in DynamicServiceGet.model_config["json_schema_extra"]["examples"]
         ],
         (
@@ -211,7 +211,7 @@ def _get_dynamic_service_get_from(
     dict_data = DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
     assert "state" in dict_data
     dict_data["state"] = service_state
-    return DynamicServiceGetAdapter.validate_python(dict_data)
+    return TypeAdapter(DynamicServiceGet).validate_python(dict_data)
 
 
 def _get_node_get_idle() -> NodeGetIdle:

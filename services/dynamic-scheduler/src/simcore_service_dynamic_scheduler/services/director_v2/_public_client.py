@@ -2,10 +2,7 @@ import datetime
 from typing import Any
 
 from fastapi import FastAPI, status
-from models_library.api_schemas_directorv2.dynamic_services import (
-    DynamicServiceGet,
-    DynamicServiceGetAdapter,
-)
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
 )
@@ -15,6 +12,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGetIdle,
 )
 from models_library.projects_nodes_io import NodeID
+from pydantic import TypeAdapter
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.http_client import AttachLifespanMixin, HasClientSetupInterface
 from servicelib.fastapi.http_client_thin import UnexpectedStatusError
@@ -52,7 +50,7 @@ class DirectorV2Client(
             if "data" in dict_response:
                 return NodeGetAdapter.validate_python(dict_response["data"])
 
-            return DynamicServiceGetAdapter.validate_python(dict_response)
+            return TypeAdapter(DynamicServiceGet).validate_python(dict_response)
         except UnexpectedStatusError as e:
             if (
                 e.response.status_code  # type: ignore[attr-defined] # pylint:disable=no-member
@@ -71,7 +69,7 @@ class DirectorV2Client(
         if "data" in dict_response:
             return NodeGetAdapter.validate_python(dict_response["data"])
 
-        return DynamicServiceGetAdapter.validate_python(dict_response)
+        return TypeAdapter(DynamicServiceGet).validate_python(dict_response)
 
     async def stop_dynamic_service(
         self,

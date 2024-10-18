@@ -9,10 +9,7 @@ import respx
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_directorv2.dynamic_services import (
-    DynamicServiceGet,
-    DynamicServiceGetAdapter,
-)
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStartAdapter,
@@ -26,6 +23,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
@@ -60,7 +58,7 @@ def node_not_found(faker: Faker) -> NodeID:
 
 @pytest.fixture
 def service_status_new_style() -> DynamicServiceGet:
-    return DynamicServiceGetAdapter.validate_python(
+    return TypeAdapter(DynamicServiceGet).validate_python(
         DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
     )
 

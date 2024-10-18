@@ -15,10 +15,7 @@ import respx
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
 from httpx import Request, Response
-from models_library.api_schemas_directorv2.dynamic_services import (
-    DynamicServiceGet,
-    DynamicServiceGetAdapter,
-)
+from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
@@ -30,7 +27,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGetIdleAdapter,
 )
 from models_library.projects_nodes_io import NodeID
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
@@ -102,7 +99,7 @@ def _get_dynamic_service_get_legacy_with(
             ("node_uuid", f"{node_id}"),
         ],
     )
-    return DynamicServiceGetAdapter.validate_python(dict_data)
+    return TypeAdapter(DynamicServiceGet).validate_python(dict_data)
 
 
 def _get_dynamic_service_get_new_style_with(
@@ -119,7 +116,7 @@ def _get_dynamic_service_get_new_style_with(
             ("node_uuid", f"{node_id}"),
         ],
     )
-    return DynamicServiceGetAdapter.validate_python(dict_data)
+    return TypeAdapter(DynamicServiceGet).validate_python(dict_data)
 
 
 def _get_node_get_idle(node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGetIdle:
