@@ -1247,7 +1247,7 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {String} endpoint Name of the endpoint. Several endpoints can be defined for each resource.
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
-     * @param {Object} options Collections of options (pollTask, resolveWResponse)
+     * @param {Object} options Collections of options (pollTask, resolveWResponse, timeout, timeoutRetries)
      */
     fetch: function(resource, endpoint, params = {}, options = {}) {
       return new Promise((resolve, reject) => {
@@ -1257,9 +1257,14 @@ qx.Class.define("osparc.data.Resources", {
 
         const resourceDefinition = this.self().resources[resource];
         const res = new osparc.io.rest.Resource(resourceDefinition.endpoints);
-
         if (!res.includesRoute(endpoint)) {
           reject(Error(`Error while fetching ${resource}: the endpoint is not defined`));
+        }
+
+        if (options.timeout) {
+          res.configureRequest(request => {
+            request.setTimeout(options.timeout);
+          });
         }
 
         res.addListenerOnce(endpoint + "Success", e => {
@@ -1301,6 +1306,13 @@ qx.Class.define("osparc.data.Resources", {
         }, this);
 
         res.addListenerOnce(endpoint + "Error", e => {
+          if (e.getPhase() === "timeout") {
+            if (options.timeout && options.timeoutRetries) {
+              options.timeoutRetries--;
+              this.fetch(resource, endpoint, params, options);
+            }
+          }
+
           let message = null;
           let status = null;
           if (e.getData().error) {
