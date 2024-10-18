@@ -107,7 +107,7 @@ async def delete_tag(request: web.Request):
         request.app, user_id=req_ctx.user_id, tag_id=path_params.tag_id
     )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 #

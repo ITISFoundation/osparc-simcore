@@ -222,7 +222,7 @@ async def close_project(request: web.Request) -> web.Response:
         ),
     )
     await project_logs.unsubscribe(request.app, path_params.project_id)
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 #

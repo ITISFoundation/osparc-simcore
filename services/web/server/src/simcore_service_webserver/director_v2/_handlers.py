@@ -204,13 +204,7 @@ async def stop_computation(request: web.Request) -> web.Response:
         await asyncio.gather(
             *[computations.stop(pid, req_ctx.user_id) for pid in project_ids]
         )
-
-        # NOTE: our middleware has this issue
-        #
-        #  if 'return web.HTTPNoContent()' then 'await response.json()' raises ContentTypeError
-        #  if 'raise web.HTTPNoContent()' then 'await response.json() == None'
-        #
-        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+        return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
     except DirectorServiceError as exc:
         return create_http_error(

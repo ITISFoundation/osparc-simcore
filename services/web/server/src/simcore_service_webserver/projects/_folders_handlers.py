@@ -69,4 +69,4 @@ async def replace_project_folder(request: web.Request):
         folder_id=path_params.folder_id,
         product_name=req_ctx.product_name,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

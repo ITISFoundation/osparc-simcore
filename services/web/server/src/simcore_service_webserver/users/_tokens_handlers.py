@@ -85,4 +85,4 @@ async def delete_token(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.parse_obj(request)
     req_path_params = parse_request_path_parameters_as(_TokenPathParams, request)
     await _tokens.delete_token(request.app, req_ctx.user_id, req_path_params.service)
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)

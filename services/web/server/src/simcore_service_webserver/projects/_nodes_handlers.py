@@ -238,7 +238,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
         node_patch=node_patch,
     )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.delete(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="delete_node")
@@ -263,7 +263,7 @@ async def delete_node(request: web.Request) -> web.Response:
         req_ctx.product_name,
     )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.post(
@@ -333,7 +333,7 @@ async def start_node(request: web.Request) -> web.Response:
         node_id=path_params.node_id,
     )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 async def _stop_dynamic_service_task(
@@ -347,15 +347,15 @@ async def _stop_dynamic_service_task(
         await dynamic_scheduler_api.stop_dynamic_service(
             app, dynamic_service_stop=dynamic_service_stop
         )
-        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+        return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
-    # in case there is an error reply as not found
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
+        # in case there is an error reply as not found
         raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-    # in case the service is not found reply as all OK
-    except ServiceWasNotFoundError as exc:
-        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON) from exc
+    except ServiceWasNotFoundError:
+        # in case the service is not found reply as all OK
+        return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.post(
@@ -413,7 +413,7 @@ async def restart_node(request: web.Request) -> web.Response:
 
     await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
 
-    raise web.HTTPNoContent
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 #

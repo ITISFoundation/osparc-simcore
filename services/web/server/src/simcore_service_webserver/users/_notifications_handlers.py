@@ -84,7 +84,7 @@ async def create_user_notification(request: web.Request) -> web.Response:
         pipe.ltrim(key, 0, MAX_NOTIFICATIONS_FOR_USER_TO_KEEP - 1)
         await pipe.execute()
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 class _NotificationPathParams(BaseModel):
@@ -115,9 +115,9 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
             await handle_redis_returns_union_types(
                 redis_client.lset(key, k, user_notification.json())
             )
-            raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+            return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
 
 @routes.get(f"/{API_VTAG}/me/permissions", name="list_user_permissions")

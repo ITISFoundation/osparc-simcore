@@ -84,4 +84,4 @@ async def delete_api_key(request: web.Request):
             "Failed to delete API key %s. Ignoring error", name, exc_info=err
         )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
