@@ -145,7 +145,7 @@ async def test_disk_usage_monitor(
         mock_disk_usage(
             {
                 f"{p}": _get_byte_size(f"{i*2}kb")
-                for p in disk_usage_monitor._flat_monitored_paths  # noqa: SLF001
+                for p in disk_usage_monitor._monitored_paths_set  # noqa: SLF001
             },
         )
 
@@ -199,7 +199,7 @@ async def test_disk_usage_monitor_new_frontend_format(
     mock_disk_usage(
         {
             f"{p}": ByteSize(1294390525952)
-            for p in disk_usage_monitor._flat_monitored_paths  # noqa: SLF001
+            for p in disk_usage_monitor._monitored_paths_set  # noqa: SLF001
         },
     )
 

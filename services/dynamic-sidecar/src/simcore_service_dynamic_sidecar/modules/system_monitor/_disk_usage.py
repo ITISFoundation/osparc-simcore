@@ -59,7 +59,7 @@ def _get_normalized_folder_name(path: Path) -> str:
 
 
 def _have_common_entries(a: set[str], b: set[str]) -> bool:
-    return len(a & b) > 0
+    return bool(len(a & b) > 0)
 
 
 @dataclass
@@ -72,15 +72,30 @@ class DiskUsageMonitor:
 
     dy_volumes_mount_dir: Path
     _monitor_task: asyncio.Task | None = None
-    _incoming_overwrite_usage: dict[str, DiskUsage] = field(default_factory=dict)
+
+    # tracked disk usage
     _last_usage: dict[str, DiskUsage] = field(default_factory=dict)
+    _usage_overwrite: dict[str, DiskUsage] = field(
+        default_factory=dict,
+        metadata={
+            "description": (
+                "third party services can update the disk usage for certain paths "
+                "monitored by the dynamic-sidecar. This is the case for the efs-guardian."
+            )
+        },
+    )
 
     @cached_property
-    def _flat_monitored_paths(self) -> set[Path]:
+    def _monitored_paths_set(self) -> set[Path]:
         return set.union(*self.monitored_paths.values())
 
     @cached_property
     def _normalized_monitored_paths(self) -> dict[MountPathCategory, set[str]]:
+        """
+        Transforms Path -> str form `/tmp/.some_file/here` -> `_tmp_.some_file_here`.
+        This a one way transformation used to uniquely identify volume mounts inside
+        by the dynamic-sidecar. These are also used by the efs-guardian.
+        """
         return {
             k: {
                 _get_normalized_folder_name(
@@ -93,29 +108,24 @@ class DiskUsageMonitor:
 
     async def _get_measured_disk_usage(self) -> list[DiskUsage]:
         return await logged_gather(
-            *[
-                get_usage(monitored_path)
-                for monitored_path in self._flat_monitored_paths
-            ]
+            *[get_usage(monitored_path) for monitored_path in self._monitored_paths_set]
         )
 
-    def _get_normalized_disk_usage(
+    def _get_local_disk_usage(
         self, measured_disk_usage: list[DiskUsage]
     ) -> dict[str, DiskUsage]:
         return {
             _get_normalized_folder_name(
                 get_relative_path(p, self.dy_volumes_mount_dir)
             ): u
-            for p, u in zip(
-                self._flat_monitored_paths, measured_disk_usage, strict=True
-            )
+            for p, u in zip(self._monitored_paths_set, measured_disk_usage, strict=True)
         }
 
-    def _overwrite_with_incoming_disk_usage(
+    def _replace_incoming_usage(
         self, normalized_disk_usage: dict[str, DiskUsage]
     ) -> None:
-        # overwrite disk usage with incoming usage from EFS
-        for key, overwrite_usage in self._incoming_overwrite_usage.items():
+        """overwrites local disk usage with incoming usage from egs-guardian"""
+        for key, overwrite_usage in self._usage_overwrite.items():
             normalized_disk_usage[key] = overwrite_usage  # noqa: PERF403
 
     @staticmethod
@@ -139,12 +149,12 @@ class DiskUsageMonitor:
     async def _monitor(self) -> None:
         measured_disk_usage = await self._get_measured_disk_usage()
 
-        normalized_disk_usage = self._get_normalized_disk_usage(measured_disk_usage)
+        local_disk_usage = self._get_local_disk_usage(measured_disk_usage)
 
-        self._overwrite_with_incoming_disk_usage(normalized_disk_usage)
+        self._replace_incoming_usage(local_disk_usage)
 
         usage_to_folder_names = self._get_grouped_usage_to_folder_names(
-            normalized_disk_usage
+            local_disk_usage
         )
 
         # compute new version of DiskUsage for FE, only 1 label for each unique disk usage entry
@@ -210,7 +220,7 @@ class DiskUsageMonitor:
         EFS service manages disk quotas since the underlying FS has no support for them.
         Currently this service is
         """
-        self._incoming_overwrite_usage = overwrite_usage
+        self._usage_overwrite = overwrite_usage
 
 
 def _get_monitored_paths(app: FastAPI) -> dict[MountPathCategory, set[Path]]:

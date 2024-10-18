@@ -73,6 +73,4 @@ async def test_get_state(app: FastAPI, rpc_client: RabbitMQRPCClient):
     result = await disk_usage.update_disk_usage(rpc_client, usage=usage)
     assert result is None
 
-    assert (
-        get_disk_usage_monitor(app)._incoming_overwrite_usage == usage  # noqa: SLF001
-    )
+    assert get_disk_usage_monitor(app)._usage_overwrite == usage  # noqa: SLF001
