@@ -351,7 +351,6 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         # NOTE: will raise ValueError if allowed_instance_types not in allowed_instance_type_names
         return allowed_instance_type_names.index(f"{instance_type.name}")
 
-    # some instances might be able to run several tasks
     allowed_instance_types.sort(key=_as_selection)
     return allowed_instance_types
 
@@ -501,7 +500,7 @@ async def _assign_tasks_to_current_cluster(
 ) -> tuple[list, Cluster]:
     """
         Evaluates whether a task can be executed on any instance within the cluster. If the task's resource requirements are met, the task is *denoted* as assigned to the cluster.
-        Note: This is an estimation only since actual scheduling is handled by Dask.
+        Note: This is an estimation only since actual scheduling is handled by Dask/Docker (depending on the mode).
 
     Returns:
         A tuple containing:
