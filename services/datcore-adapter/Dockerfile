@@ -71,7 +71,7 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   build-essential
 
 # install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
-ARG UV_VERSION="0.4.24"
+ARG UV_VERSION="0.4"
 COPY --from=ghcr.io/astral-sh/uv:${UV_VERSION} /uv /uvx /bin/
 
 # NOTE: python virtualenv is used here such that installed
