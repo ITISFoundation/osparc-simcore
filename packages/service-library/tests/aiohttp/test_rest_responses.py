@@ -16,11 +16,10 @@ from aiohttp.web_exceptions import (
     HTTPOk,
 )
 from servicelib.aiohttp import status
-from servicelib.aiohttp.rest_responses import (
+from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
+from servicelib.aiohttp.web_exceptions_extension import (
     _STATUS_CODE_TO_HTTP_ERRORS,
-    create_http_error,
-    exception_to_response,
-    get_http_error,
+    get_http_error_class_or_none,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
@@ -36,17 +35,17 @@ ABOVE_599 = (600, 10000.1)
 
 
 @pytest.mark.parametrize(
-    "http_exc", (HTTPBadRequest, HTTPGone, HTTPInternalServerError)
+    "http_exc", [HTTPBadRequest, HTTPGone, HTTPInternalServerError]
 )
 def test_get_http_exception_class_from_code(http_exc: HTTPException):
-    assert get_http_error(http_exc.status_code) == http_exc
+    assert get_http_error_class_or_none(http_exc.status_code) == http_exc
 
 
 @pytest.mark.parametrize(
     "status_code", itertools.chain(BELOW_1XX, NONE_ERRORS, ABOVE_599)
 )
 def test_get_none_for_invalid_or_not_errors_code(status_code):
-    assert get_http_error(status_code) is None
+    assert get_http_error_class_or_none(status_code) is None
 
 
 @pytest.mark.parametrize(

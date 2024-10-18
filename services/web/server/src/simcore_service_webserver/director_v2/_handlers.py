@@ -10,11 +10,8 @@ from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
-from servicelib.aiohttp.rest_responses import (
-    create_http_error,
-    exception_to_response,
-    get_http_error,
-)
+from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
+from servicelib.aiohttp.web_exceptions_extension import get_http_error_class_or_none
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
@@ -170,7 +167,8 @@ async def start_computation(request: web.Request) -> web.Response:
             create_http_error(
                 exc,
                 reason=exc.reason,
-                http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+                http_error_cls=get_http_error_class_or_none(exc.status)
+                or web.HTTPServiceUnavailable,
             )
         )
     except UserDefaultWalletNotFoundError as exc:
@@ -210,7 +208,8 @@ async def stop_computation(request: web.Request) -> web.Response:
         return create_http_error(
             exc,
             reason=exc.reason,
-            http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+            http_error_cls=get_http_error_class_or_none(exc.status)
+            or web.HTTPServiceUnavailable,
         )
 
 
@@ -259,7 +258,8 @@ async def get_computation(request: web.Request) -> web.Response:
         return create_http_error(
             exc,
             reason=exc.reason,
-            http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+            http_error_cls=get_http_error_class_or_none(exc.status)
+            or web.HTTPServiceUnavailable,
         )
     except ValidationError as exc:
         return create_http_error(exc, http_error_cls=web.HTTPInternalServerError)
