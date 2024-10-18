@@ -2,7 +2,6 @@ import logging
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import DynamicServiceRunningMessage
-from pydantic import parse_raw_as
 from servicelib.logging_utils import log_context
 from simcore_service_efs_guardian.services.modules.redis import get_redis_lock_client
 
@@ -14,8 +13,8 @@ _logger = logging.getLogger(__name__)
 
 async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> bool:
     assert app  # nosec
-    rabbit_message: DynamicServiceRunningMessage = parse_raw_as(
-        DynamicServiceRunningMessage, data
+    rabbit_message: DynamicServiceRunningMessage = (
+        DynamicServiceRunningMessage.model_validate_json(data)
     )
     _logger.debug(
         "Process dynamic service running msg, project ID: %s node ID: %s, current user: %s",

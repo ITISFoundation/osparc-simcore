@@ -98,22 +98,7 @@ def mocked_ssm_server_envs(
         f"{CLUSTERS_KEEPER_ENV_PREFIX}{k}": (
             v.get_secret_value() if isinstance(v, SecretStr) else v
         )
-        for k, v in mocked_ssm_server_settings.dict().items()
-    }
-    return setenvs_from_dict(monkeypatch, changed_envs)
-
-
-@pytest.fixture
-def mocked_ssm_server_envs(
-    mocked_ssm_server_settings: SSMSettings,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    # NOTE: overrides the SSMSettings with what clusters-keeper expects
-    changed_envs: EnvVarsDict = {
-        f"{CLUSTERS_KEEPER_ENV_PREFIX}{k}": (
-            v.get_secret_value() if isinstance(v, SecretStr) else v
-        )
-        for k, v in mocked_ssm_server_settings.dict().items()
+        for k, v in mocked_ssm_server_settings.model_dump().items()
     }
     return setenvs_from_dict(monkeypatch, changed_envs)
 
