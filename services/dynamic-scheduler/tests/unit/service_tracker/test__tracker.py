@@ -7,6 +7,7 @@ import pytest
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeInt
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.utils import logged_gather
 from settings_library.redis import RedisSettings
@@ -25,7 +26,16 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.fixture
+def disable_monitor_task(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_scheduler.services.status_monitor._monitor.Monitor._worker_start_get_status_requests",
+        autospec=True,
+    )
+
+
+@pytest.fixture
 def app_environment(
+    disable_monitor_task: None,
     disable_rabbitmq_setup: None,
     disable_deferred_manager_setup: None,
     disable_notifier_setup: None,
@@ -87,7 +97,6 @@ async def test_tracker_listing(tracker: Tracker, item_count: NonNegativeInt) -> 
     response = await tracker.all()
     for key in response:
         assert isinstance(key, NodeID)
-    assert len(response) == len(data_to_insert) == item_count
     assert response == data_to_insert
 
 
