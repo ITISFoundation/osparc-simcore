@@ -74,5 +74,11 @@ def app_environment(
             "EFS_PROJECT_SPECIFIC_DATA_DIRECTORY": "project-specific-data",
             "EFS_ONLY_ENABLED_FOR_USERIDS": "[]",
             "EFS_GUARDIAN_TRACING": "null",
+            "SC_USER_ID": "8004",
+            "SC_USER_NAME": "scu",
+            "EFS_USER_ID": "8006",
+            "EFS_USER_NAME": "efs",
+            "EFS_GROUP_ID": "8106",
+            "EFS_GROUP_NAME": "efs-group",
         },
     )
