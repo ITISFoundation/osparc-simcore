@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from typing import Final
 
 import redis
+import redis.exceptions
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
