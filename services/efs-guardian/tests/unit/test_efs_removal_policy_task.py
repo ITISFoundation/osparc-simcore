@@ -102,9 +102,11 @@ async def project_in_db(
         yield row
 
 
+@patch("simcore_service_efs_guardian.services.background_tasks.get_redis_lock_client")
 @patch("simcore_service_efs_guardian.services.background_tasks.lock_project")
 async def test_efs_removal_policy_task(
     mock_lock_project: MagicMock,
+    mock_get_redis_lock_client: MagicMock,
     faker: Faker,
     app: FastAPI,
     efs_cleanup: None,
@@ -167,6 +169,7 @@ async def test_efs_removal_policy_task(
 
     # 5. Now removal policy should remove those data
     await removal_policy_task(app)
-    assert mock_lock_project.called
+    assert mock_lock_project.assert_called_once
+    assert mock_get_redis_lock_client.assert_called_once
     projects_list = await efs_manager.list_projects_across_whole_efs()
     assert projects_list == []

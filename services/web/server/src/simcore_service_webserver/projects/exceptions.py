@@ -1,5 +1,5 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
-
+# mypy: disable-error-code=truthy-function
 from typing import Any
 
 from models_library.projects import ProjectID
