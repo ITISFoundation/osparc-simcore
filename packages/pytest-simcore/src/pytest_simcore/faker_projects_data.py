@@ -50,7 +50,7 @@ def node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-def project(
+def project_data(
     faker: Faker,
     project_id: ProjectID,
     user_id: UserID,

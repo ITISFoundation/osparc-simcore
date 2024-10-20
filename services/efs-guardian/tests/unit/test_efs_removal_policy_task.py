@@ -85,19 +85,19 @@ async def user_in_db(
 async def project_in_db(
     app: FastAPI,
     user_in_db: dict,
-    project: dict[str, Any],
+    project_data: dict[str, Any],
     project_id: ProjectID,
 ) -> AsyncIterator[dict[str, Any]]:
     """
     injects a project in db
     """
-    assert f"{project_id}" == project["uuid"]
+    assert f"{project_id}" == project_data["uuid"]
     async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         app.state.engine,
         table=projects,
-        values=project,
+        values=project_data,
         pk_col=projects.c.uuid,
-        pk_value=project["uuid"],
+        pk_value=project_data["uuid"],
     ) as row:
         yield row
 
