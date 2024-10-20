@@ -20,7 +20,7 @@ from simcore_service_efs_guardian.services.efs_manager import (
     ProjectID,
 )
 
-pytest_simcore_core_services_selection = ["rabbit", "postgres"]
+pytest_simcore_core_services_selection = ["rabbit"]
 pytest_simcore_ops_services_selection = []
 
 

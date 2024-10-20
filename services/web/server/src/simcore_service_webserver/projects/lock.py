@@ -6,8 +6,6 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
-
-# from .exceptions import ProjectLockError
 from servicelib.project_lock import PROJECT_LOCK_TIMEOUT, PROJECT_REDIS_LOCK_KEY
 from servicelib.project_lock import lock_project as common_lock_project
 

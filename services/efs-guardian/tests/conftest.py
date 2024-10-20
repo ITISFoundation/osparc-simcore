@@ -30,7 +30,6 @@ pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
-    # "pytest_simcore.db_entries_mocks",
 ]
 
 
