@@ -146,9 +146,9 @@ class StandardSimcoreDockerLabels(BaseModel):
 
     @classmethod
     def from_docker_task(cls, docker_task: Task) -> "StandardSimcoreDockerLabels":
-        assert docker_task.Spec  # nosec
-        assert docker_task.Spec.ContainerSpec_  # nosec
-        task_labels = docker_task.Spec.ContainerSpec_.Labels or {}
+        assert docker_task.spec  # nosec
+        assert docker_task.spec.container_spec  # nosec
+        task_labels = docker_task.spec.container_spec.labels or {}
         return cls.model_validate(task_labels)
 
     model_config = ConfigDict(

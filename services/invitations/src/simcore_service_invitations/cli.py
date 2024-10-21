@@ -125,7 +125,7 @@ def invite(
 
     invitation_link, _ = create_invitation_link_and_content(
         invitation_data=invitation_data,
-        secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
+        secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),  # pylint:disable=no-member
         base_url=settings.INVITATIONS_OSPARC_URL,
         default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
     )
@@ -144,7 +144,7 @@ def extract(ctx: typer.Context, invitation_url: str):
             invitation_code=extract_invitation_code_from_query(
                 TypeAdapter(HttpUrl).validate_python(invitation_url)
             ),
-            secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
+            secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),  # pylint:disable=no-member
             default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
         )
         assert invitation.product is not None  # nosec

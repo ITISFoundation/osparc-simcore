@@ -108,14 +108,14 @@ qx.Class.define("osparc.product.AboutProduct", {
 
     __buildS4LLiteLayout: function() {
       // https://zurichmedtech.github.io/s4l-lite-manual/#/docs/what_is_s4l_lite
-      const introText = "<i>S4L<sup>lite</sup></i> is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to design complex technical devices in a validated environment. With its intuitive interface and advanced tools, <i>S4L<sup>lite</sup></i> makes it easy to develop your simulation project, wherever you are.";
+      const introText = "Sim4Life.lite is a powerful web-based simulation platform that allows you to model and analyze real-world phenomena and to design complex technical devices in a validated environment. With its intuitive interface and advanced tools, Sim4Life.lite makes it easy to develop your simulation project, wherever you are.";
 
       const licenseUrl = "https://zurichmedtech.github.io/s4l-lite-manual/#/docs/licensing/copyright_Sim4Life";
       const licenseText = `Click ${osparc.utils.Utils.createHTMLLink("here", licenseUrl)} to read the license agreements.`;
 
       // more info ZMT website
       const moreInfoUrl = "https://zmt.swiss/";
-      const moreInfoText = `For more information about <i>S4L<sup>lite</sup></i>, visit ${osparc.utils.Utils.createHTMLLink("our website", moreInfoUrl)}.`;
+      const moreInfoText = `For more information about Sim4Life.lite, visit ${osparc.utils.Utils.createHTMLLink("our website", moreInfoUrl)}.`;
 
       [
         introText,

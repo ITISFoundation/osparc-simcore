@@ -13,8 +13,11 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_api_routes
 from ..api.rpc.routes import setup_rpc_routes
+from ..services.background_tasks_setup import setup as setup_background_tasks
 from ..services.efs_manager_setup import setup as setup_efs_manager
 from ..services.modules.rabbitmq import setup as setup_rabbitmq
+from ..services.modules.redis import setup as setup_redis
+from ..services.process_messages_setup import setup as setup_process_messages
 from .settings import ApplicationSettings
 
 logger = logging.getLogger(__name__)
@@ -40,11 +43,14 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # PLUGINS SETUP
     setup_rabbitmq(app)
+    setup_redis(app)
 
     setup_api_routes(app)
     setup_rpc_routes(app)
 
     setup_efs_manager(app)
+    setup_background_tasks(app)
+    setup_process_messages(app)
 
     # EVENTS
     async def _on_startup() -> None:

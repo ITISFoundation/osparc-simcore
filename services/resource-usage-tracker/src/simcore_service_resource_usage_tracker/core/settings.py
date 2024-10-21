@@ -1,6 +1,7 @@
 import datetime
 from functools import cached_property
 
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from models_library.basic_types import BootModeEnum
 from pydantic import AliasChoices, Field, PositiveInt, field_validator
 from settings_library.base import BaseCustomSettings
@@ -126,10 +127,9 @@ class ApplicationSettings(MinimalApplicationSettings):
 
     @field_validator(
         "RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC", mode="before"
-    ) # FIXME: GCR
+    )
     @classmethod
     def _validate_interval(cls, v):
         if isinstance(v, str) and v.isnumeric():
             return int(v)
         return v
-

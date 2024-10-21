@@ -18,17 +18,24 @@ Build() {
     --load \
     - <<EOF
 FROM python:${PYTHON_VERSION}-slim
-RUN pip install datamodel-code-generator[http]
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+RUN uv pip install --system datamodel-code-generator[http] && uv pip list
 ENTRYPOINT ["datamodel-codegen", \
-          "--field-constraints", \
-		      "--use_non_positive_negative_number_constrained_types", \
+          "--output-model-type=pydantic_v2.BaseModel", \
+          "--input-file-type=jsonschema", \
+          "--snake-case-field", \
           "--use-standard-collections", \
+          "--use-union-operator", \
           "--use-schema-description", \
+          "--use-subclass-enum", \
+          "--use-double-quotes", \
+          "--field-constraints", \
+		      "--use-non-positive-negative-number-constrained-types", \
           "--reuse-model", \
           "--set-default-enum-member", \
           "--use-title-as-name", \
-          "--use-subclass-enum", \
-          "--target-python-version=${PYTHON_VERSION}", \
+          "--target-python-version=${PYTHON_VERSION%.*}", \
+          "--use-default-kwarg", \
           "--validation"]
 EOF
 }

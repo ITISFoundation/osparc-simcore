@@ -1,6 +1,6 @@
 import datetime
 from functools import cached_property
-from typing import Annotated, Final, Literal, cast
+from typing import Final, Literal, cast
 
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2Tags
 from fastapi import FastAPI
@@ -13,14 +13,12 @@ from models_library.basic_types import (
 from models_library.clusters import InternalClusterAuthentication
 from pydantic import (
     AliasChoices,
-    BeforeValidator,
     Field,
     NonNegativeFloat,
     NonNegativeInt,
     PositiveInt,
     SecretStr,
     TypeAdapter,
-    WrapValidator,
     field_validator,
 )
 from pydantic_settings import SettingsConfigDict
@@ -56,18 +54,22 @@ class ClustersKeeperEC2Settings(EC2Settings):
 
 
 class ClustersKeeperSSMSettings(SSMSettings):
-    class Config(SSMSettings.Config):
-        env_prefix = CLUSTERS_KEEPER_ENV_PREFIX
-
-        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+    model_config = SettingsConfigDict(
+        env_prefix=CLUSTERS_KEEPER_ENV_PREFIX,
+        json_schema_extra={
             "examples": [
                 {
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}{key}": var
-                    for key, var in example.items()
+                    for key, var in example.items()  # type:ignore[union-attr]
                 }
-                for example in SSMSettings.Config.schema_extra["examples"]
+                for example in SSMSettings.model_config[  # type:ignore[union-attr,index]
+                    "json_schema_extra"
+                ][
+                    "examples"
+                ]
             ],
-        }
+        },
+    )
 
 
 class WorkersEC2InstancesSettings(BaseCustomSettings):
@@ -209,7 +211,6 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         "(see https://docs.docker.com/reference/cli/docker/swarm/init/)",
     )
 
-
     @field_validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_instance_names(
@@ -283,7 +284,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     CLUSTERS_KEEPER_SSM_ACCESS: ClustersKeeperSSMSettings | None = Field(
-        auto_default_from_env=True
+        json_schema_extra={"auto_default_from_env": True}
     )
 
     CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: PrimaryEC2InstancesSettings | None = Field(
@@ -325,11 +326,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
-    CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: NonNegativeInt = (
-        Field(
-            default=5,
-            description="Max number of missed heartbeats before a cluster is terminated",
-        )
+    CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: NonNegativeInt = Field(
+        default=5,
+        description="Max number of missed heartbeats before a cluster is terminated",
     )
 
     CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: str = Field(
@@ -355,7 +354,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ", see https://selectfrom.dev/deep-dive-into-dask-distributed-scheduler-9fdb3b36b7c7",
     )
     CLUSTERS_KEEPER_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemetry tracing"
+        json_schema_extra={"auto_default_from_env": True},
+        description="settings for opentelemetry tracing",
     )
 
     SWARM_STACK_NAME: str = Field(
@@ -370,11 +370,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def _valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
-    
-    
-    @field_validator("CLUSTERS_KEEPER_TASK_INTERVAL", "SERVICE_TRACKING_HEARTBEAT", mode="before")
+
+    @field_validator(
+        "CLUSTERS_KEEPER_TASK_INTERVAL", "SERVICE_TRACKING_HEARTBEAT", mode="before"
+    )
     @classmethod
-    def _validate_interval(cls, value: str | datetime.timedelta) -> int | datetime.timedelta:
+    def _validate_interval(
+        cls, value: str | datetime.timedelta
+    ) -> int | datetime.timedelta:
         if isinstance(value, str):
             return int(value)
         return value

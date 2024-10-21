@@ -31,7 +31,7 @@ async def test_python_package_installation(
         )
 
         dockerfile = dockerfile_path.read_text()
-        m = re.search(r"FROM (.+) as base", dockerfile)
+        m = re.search(r"FROM (.+) AS base", dockerfile)
         assert m, f"{dockerfile_path} has no 'base' alias!?"
         return m.group(0)
 

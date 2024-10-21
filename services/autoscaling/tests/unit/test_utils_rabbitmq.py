@@ -19,7 +19,7 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     ProgressType,
 )
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import BIND_TO_ALL_TOPICS, RabbitMQClient
 from settings_library.rabbit import RabbitSettings
@@ -78,12 +78,11 @@ async def test_post_task_log_message(
         osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
         "running",
     )
-    assert service_with_labels.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    assert service_with_labels.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
-            filters={"service": service_with_labels.Spec.Name}
-        ),
+            filters={"service": service_with_labels.spec.name}
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -104,7 +103,7 @@ async def test_post_task_log_message(
                     messages=[f"[cluster] {log_message}"],
                     log_level=0,
                 )
-                .json()
+                .model_dump_json()
                 .encode()
             )
             print("... message received")
@@ -125,12 +124,11 @@ async def test_post_task_log_message_does_not_raise_if_service_has_no_labels(
     faker: Faker,
 ):
     service_without_labels = await create_service(task_template, {}, "running")
-    assert service_without_labels.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    assert service_without_labels.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
-            filters={"service": service_without_labels.Spec.Name}
-        ),
+            filters={"service": service_without_labels.spec.name}
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -170,12 +168,11 @@ async def test_post_task_progress_message(
         osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
         "running",
     )
-    assert service_with_labels.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    assert service_with_labels.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
-            filters={"service": service_with_labels.Spec.Name}
-        ),
+            filters={"service": service_with_labels.spec.name}
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -196,7 +193,7 @@ async def test_post_task_progress_message(
                     progress_type=ProgressType.CLUSTER_UP_SCALING,
                     report=ProgressReport(actual_value=progress_value, total=1),
                 )
-                .json()
+                .model_dump_json()
                 .encode()
             )
             print("... message received")
@@ -217,12 +214,11 @@ async def test_post_task_progress_does_not_raise_if_service_has_no_labels(
     faker: Faker,
 ):
     service_without_labels = await create_service(task_template, {}, "running")
-    assert service_without_labels.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    assert service_without_labels.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
-            filters={"service": service_without_labels.Spec.Name}
-        ),
+            filters={"service": service_without_labels.spec.name}
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1

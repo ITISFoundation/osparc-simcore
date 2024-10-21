@@ -1,7 +1,7 @@
 import datetime
 import hashlib
 import logging
-from typing import Any, ClassVar, TypeAlias
+from typing import Annotated, Any, ClassVar, TypeAlias
 from uuid import UUID, uuid4
 
 from models_library.projects import ProjectID
@@ -9,7 +9,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import (
     BaseModel,
-    ConstrainedInt,
     Extra,
     Field,
     HttpUrl,
@@ -247,9 +246,7 @@ class Job(BaseModel):
         return self.name
 
 
-class PercentageInt(ConstrainedInt):
-    ge = 0
-    le = 100
+PercentageInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]
 
 
 class JobStatus(BaseModel):

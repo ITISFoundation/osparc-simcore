@@ -3,13 +3,15 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import pytest
+import respx
 from faker import Faker
+from fastapi import status
 from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -24,7 +26,6 @@ from simcore_service_payments.models.db import PaymentsTransactionsDB
 from simcore_service_payments.services.notifier_email import (
     _PRODUCT_NOTIFICATIONS_TEMPLATES,
     EmailProvider,
-    _add_attachments,
     _create_email_session,
     _create_user_email,
     _PaymentData,
@@ -60,13 +61,34 @@ def smtp_mock_or_none(
     return None
 
 
-@pytest.fixture
-def mock_get_invoice(mocker: MockerFixture) -> MagicMock:
-    _mock_get_invoice = mocker.patch(
-        "simcore_service_payments.services.notifier_email._get_invoice_pdf"
-    )
-    _mock_get_invoice.return_value = None
-    return _mock_get_invoice
+@pytest.fixture(params=["ok", "ko"])
+def mocked_get_invoice_pdf_response(
+    request: pytest.FixtureRequest,
+    respx_mock: respx.MockRouter,
+    transaction: PaymentsTransactionsDB,
+) -> respx.MockRouter:
+    if request.param == "ok":
+        file_name = "test-attachment.pdf"
+        file_content = b"%PDF-1.4 ... (file content here) ..."
+
+        response = httpx.Response(
+            status.HTTP_200_OK,
+            content=file_content,
+            headers={
+                "Content-Type": "application/pdf",
+                "Content-Disposition": f'attachment; filename="{file_name}"',
+            },
+        )
+    else:
+        assert request.param == "ko"
+        response = httpx.Response(
+            status.HTTP_404_NOT_FOUND,
+            text=f"{request.fixturename} is set to '{request.param}'",
+        )
+
+    respx_mock.get(f"{transaction.invoice_pdf_url}").mock(return_value=response)
+
+    return respx_mock
 
 
 @pytest.fixture
@@ -75,7 +97,7 @@ def transaction(
 ) -> PaymentsTransactionsDB:
     kwargs = {
         k: successful_transaction[k]
-        for k in PaymentsTransactionsDB.__fields__
+        for k in PaymentsTransactionsDB.model_fields
         if k in successful_transaction
     }
     return PaymentsTransactionsDB(**kwargs)
@@ -83,14 +105,13 @@ def transaction(
 
 async def test_send_email_workflow(
     app_environment: EnvVarsDict,
-    tmp_path: Path,
     faker: Faker,
     transaction: PaymentsTransactionsDB,
     user_email: EmailStr,
     product_name: ProductName,
     product: dict[str, Any],
     smtp_mock_or_none: MagicMock | None,
-    mock_get_invoice: MagicMock,
+    mocked_get_invoice_pdf_response: respx.MockRouter,
 ):
     """
     Example of usage with external email and envfile
@@ -128,10 +149,6 @@ async def test_send_email_workflow(
 
     msg = await _create_user_email(env, user_data, payment_data, product_data)
 
-    attachment = tmp_path / "test-attachment.txt"
-    attachment.write_text(faker.text())
-    _add_attachments(msg, [attachment])
-
     async with _create_email_session(settings) as smtp:
         await smtp.send_message(msg)
 
@@ -153,7 +170,7 @@ async def test_email_provider(
     product: dict[str, Any],
     transaction: PaymentsTransactionsDB,
     smtp_mock_or_none: MagicMock | None,
-    mock_get_invoice: MagicMock,
+    mocked_get_invoice_pdf_response: respx.MockRouter,
 ):
     settings = SMTPSettings.create_from_envs()
 
@@ -178,7 +195,6 @@ async def test_email_provider(
 
     await provider.notify_payment_completed(user_id=user_id, payment=transaction)
     assert get_notification_data_mock.called
-    assert mock_get_invoice.called
 
     if smtp_mock_or_none:
         assert smtp_mock_or_none.called

@@ -23,6 +23,7 @@ from simcore_service_payments.services.payments_gateway import (
     _raise_as_payments_gateway_error,
     setup_payments_gateway,
 )
+from yarl import URL
 
 
 async def test_setup_payment_gateway_api(app_environment: EnvVarsDict):
@@ -120,7 +121,7 @@ async def test_one_time_payment_workflow(
     )
 
     app_settings: ApplicationSettings = app.state.settings
-    assert submission_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
+    assert submission_link.host == URL(app_settings.PAYMENTS_GATEWAY_URL).host
 
     # cancel
     payment_canceled = await payment_gateway_api.cancel_payment(payment_initiated)
@@ -159,7 +160,7 @@ async def test_payment_methods_workflow(
     )
 
     app_settings: ApplicationSettings = app.state.settings
-    assert form_link.host == app_settings.PAYMENTS_GATEWAY_URL.host
+    assert form_link.host == URL(app_settings.PAYMENTS_GATEWAY_URL).host
 
     # CRUD
     payment_method_id = initiated.payment_method_id
@@ -169,7 +170,7 @@ async def test_payment_methods_workflow(
         payment_method_id
     )
     assert got_payment_method.id == payment_method_id
-    print(got_payment_method.json(indent=2))
+    print(got_payment_method.model_dump_json(indent=2))
 
     # list payment-methods
     items = await payments_gateway_api.get_many_payment_methods([payment_method_id])
