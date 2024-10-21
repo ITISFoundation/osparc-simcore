@@ -25,7 +25,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
   cd services/dask-sidecar
-  uv pip install --no-cache-dir -r requirements/dev.txt
+  uv pip sync --quiet --no-cache-dir requirements/dev.txt
   cd -
   print_info "PIP :"
   uv pip list | sed 's/^/    /'

@@ -25,7 +25,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
 
   # NOTE: uv does not like this requirement file...
   cd /devel/services/dynamic-sidecar
-  pip --quiet --no-cache-dir install -r requirements/dev.txt
+  uv pip --quiet --no-cache-dir sync requirements/dev.txt
   cd -
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'

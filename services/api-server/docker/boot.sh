@@ -20,7 +20,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
 
   cd services/api-server
   pip install uv
-  uv pip --quiet --no-cache-dir install -r requirements/dev.txt
+  uv pip --quiet --no-cache-dir sync requirements/dev.txt
   cd -
   echo "$INFO" "PIP :"
   uv pip list | sed 's/^/    /'
