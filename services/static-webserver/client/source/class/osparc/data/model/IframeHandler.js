@@ -202,9 +202,14 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         }
         case "pending": {
           if (data["service_message"]) {
-            const serviceName = node.getLabel();
             const serviceMessage = data["service_message"];
             loadingPage.setMessages([serviceMessage]);
+            // show pending messages only after 10"
+            loadingPage.getMessageLabels().forEach(label => label.exclude());
+            setTimeout(() => {
+              loadingPage.getMessageLabels().forEach(label => label.show());
+            }, 10000);
+            const serviceName = node.getLabel();
             const msg = `The service "${serviceName}" is waiting for available ` +
               `resources. Please inform support and provide the following message ` +
               `in case this does not resolve in a few minutes: "${nodeId}" ` +
