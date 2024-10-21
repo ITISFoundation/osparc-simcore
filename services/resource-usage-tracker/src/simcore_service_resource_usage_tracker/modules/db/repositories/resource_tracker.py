@@ -1213,9 +1213,9 @@ class ResourceTrackerRepository(
                 .values(
                     pricing_plan_id=data.pricing_plan_id,
                     unit_name=data.unit_name,
-                    unit_extra_info=data.unit_extra_info.dict(),
+                    unit_extra_info=data.unit_extra_info.model_dump(),
                     default=data.default,
-                    specific_info=data.specific_info.dict(),
+                    specific_info=data.specific_info.model_dump(),
                     created=sa.func.now(),
                     modified=sa.func.now(),
                 )
@@ -1265,9 +1265,9 @@ class ResourceTrackerRepository(
                 resource_tracker_pricing_units.update()
                 .values(
                     unit_name=data.unit_name,
-                    unit_extra_info=data.unit_extra_info.dict(),
+                    unit_extra_info=data.unit_extra_info.model_dump(),
                     default=data.default,
-                    specific_info=data.specific_info.dict(),
+                    specific_info=data.specific_info.model_dump(),
                     modified=sa.func.now(),
                 )
                 .where(
