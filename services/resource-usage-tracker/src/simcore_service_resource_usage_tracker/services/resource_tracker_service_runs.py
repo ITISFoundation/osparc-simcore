@@ -18,7 +18,7 @@ from models_library.resource_tracker import (
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import AnyUrl, PositiveInt, TypeAdapter
+from pydantic import PositiveInt, TypeAdapter
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
 )
@@ -153,7 +153,7 @@ async def export_service_runs(
     access_all_wallet_usage: bool = False,
     order_by: OrderBy | None = None,
     filters: ServiceResourceUsagesFilters | None = None,
-) -> AnyUrl:
+) -> str:
     started_from = filters.started_at.from_ if filters else None
     started_until = filters.started_at.until if filters else None
 
@@ -177,7 +177,7 @@ async def export_service_runs(
     )
 
     # Create presigned S3 link
-    generated_url: AnyUrl = await s3_client.create_single_presigned_download_link(
+    generated_url: str = await s3_client.create_single_presigned_download_link(
         bucket=s3_bucket_name,
         object_key=s3_object_key,
         expiration_secs=_PRESIGNED_LINK_EXPIRATION_SEC,

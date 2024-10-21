@@ -1,7 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, PlainSerializer
 
 from ..resource_tracker import (
     HardwareInfo,
@@ -18,7 +19,9 @@ class PricingUnitGet(BaseModel):
     pricing_unit_id: PricingUnitId
     unit_name: str
     unit_extra_info: UnitExtraInfo
-    current_cost_per_unit: Decimal
+    current_cost_per_unit: Annotated[
+        Decimal, PlainSerializer(float, return_type=float, when_used="json")
+    ]
     current_cost_per_unit_id: PricingUnitCostId
     default: bool
     specific_info: HardwareInfo
