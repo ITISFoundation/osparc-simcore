@@ -290,7 +290,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._resourcesList.push(study);
         }
       });
-      this._reloadNewCards();
+      this.__reloadNewCards();
 
       studiesList.forEach(study => {
         const state = study["state"];
@@ -365,7 +365,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
-    _reloadNewCards: function() {
+    __reloadNewCards: function() {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadNewCards();
       this.__configureStudyCards(cards);
