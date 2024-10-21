@@ -18,7 +18,7 @@ from models_library.rest_pagination import (
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
 )
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
-from pydantic import BaseModel, ConfigDict, NonNegativeInt, field_validator
+from pydantic import BaseModel, ConfigDict, NonNegativeInt, ValidationInfo, field_validator
 
 T = TypeVar("T")
 
@@ -50,12 +50,12 @@ class OnePage(BaseModel, Generic[T]):
     """
 
     items: Sequence[T]
-    total: NonNegativeInt = FieldNotRequired()
+    total: NonNegativeInt = FieldNotRequired(validate_default=True)
 
     @field_validator("total", mode="before")
     @classmethod
-    def check_total(cls, v, values):
-        items = values["items"]
+    def _check_total(cls, v, info: ValidationInfo):
+        items = info.data.get("items", [])
         if v is None:
             return len(items)
 
