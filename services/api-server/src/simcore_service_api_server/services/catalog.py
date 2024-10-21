@@ -43,7 +43,7 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
     that asks only what is needed.
     """
 
-    owner: LowerCaseEmailStr | None
+    owner: LowerCaseEmailStr | None = None
     model_config = ConfigDict(extra="ignore")
 
     # Converters

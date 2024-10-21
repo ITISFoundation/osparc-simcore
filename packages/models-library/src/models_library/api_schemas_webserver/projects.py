@@ -78,9 +78,9 @@ class ProjectGet(OutputSchema):
     ui: EmptyModel | StudyUI | None = None
     quality: dict[str, Any] = {}
     dev: dict | None = None
-    permalink: ProjectPermalink = FieldNotRequired()
-    workspace_id: WorkspaceID | None
-    folder_id: FolderID | None
+    permalink: ProjectPermalink | None = FieldNotRequired()
+    workspace_id: WorkspaceID | None = None
+    folder_id: FolderID | None = None
 
     model_config = ConfigDict(
         frozen=False
