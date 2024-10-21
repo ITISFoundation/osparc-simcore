@@ -187,7 +187,7 @@ class DirectorV2Api(BaseServiceClientApi):
         response.raise_for_status()
 
         log_links: list[LogLink] = []
-        for r in TypeAdapter(list[TaskLogFileGet]).validate_python(
+        for r in TypeAdapter(list[TaskLogFileGet]).validate_json(
             response.text or "[]"
         ):
             if r.download_link:
