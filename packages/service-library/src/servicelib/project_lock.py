@@ -11,8 +11,9 @@ from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from redis.asyncio.lock import Lock
-from servicelib.background_task import periodic_task
-from servicelib.logging_utils import log_context
+
+from .background_task import periodic_task
+from .logging_utils import log_context
 
 _logger = logging.getLogger(__name__)
 

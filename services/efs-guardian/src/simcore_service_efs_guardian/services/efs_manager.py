@@ -110,12 +110,12 @@ class EfsManager:
                     _project_id = parse_obj_as(ProjectID, item)
                     directories.append(_project_id)
                 except ValueError:
-                    _logger.warning(
+                    _logger.error(
                         "This is not a project ID. This should not happen! %s",
                         _item_path,
                     )
             else:
-                _logger.warning(
+                _logger.error(
                     "This is not a directory. This should not happen! %s",
                     _item_path,
                 )
@@ -131,7 +131,16 @@ class EfsManager:
 
         if Path.exists(_dir_path):
             # Remove the directory and all its contents
-            shutil.rmtree(_dir_path)
-            _logger.info("%s has been deleted.", _dir_path)
+            try:
+                shutil.rmtree(_dir_path)
+                _logger.info("%s has been deleted.", _dir_path)
+            except FileNotFoundError as e:
+                _logger.error("Directory %s does not exist.", _dir_path)
+            except PermissionError as e:
+                _logger.error("Permission denied when trying to delete %s.", _dir_path)
+            except NotADirectoryError as e:
+                _logger.error("%s is not a directory.", _dir_path)
+            except OSError as e:
+                _logger.error("Error: %s. Issue with path: %s", e, _dir_path)
         else:
-            _logger.warning("%s does not exist.", _dir_path)
+            _logger.error("%s does not exist.", _dir_path)
