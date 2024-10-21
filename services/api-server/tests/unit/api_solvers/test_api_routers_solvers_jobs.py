@@ -191,9 +191,9 @@ async def test_solver_logs(
     # was a re-direction
     resp0 = resp.history[0]
     assert resp0.status_code == status.HTTP_307_TEMPORARY_REDIRECT
-    assert resp0.headers["location"] == presigned_download_link
+    assert resp0.headers["location"] == f"{presigned_download_link}"
 
-    assert resp.url == presigned_download_link
+    assert f"{resp.url}" == f"{presigned_download_link}"
     pprint(dict(resp.headers))  # noqa: T203
 
 
