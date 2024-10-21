@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from ..products import ProductName
 from ..resource_tracker import CreditTransactionId
@@ -13,7 +13,9 @@ class WalletTotalCredits(BaseModel):
     wallet_id: WalletID
     available_osparc_credits: Decimal
 
-    @field_validator("available_osparc_credits")
+    model_config = ConfigDict(json_encoders={Decimal: float})
+
+    @field_validator("available_osparc_credits", mode="before")
     @classmethod
     def ensure_rounded(cls, v):
         return round(v, 2)
