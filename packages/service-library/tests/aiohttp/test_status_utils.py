@@ -1,10 +1,10 @@
 from http import HTTPStatus
 
 import pytest
-from fastapi import HTTPException
 from servicelib.aiohttp import status
 from servicelib.aiohttp.web_exceptions_extension import (
     STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS,
+    HTTPException,
     get_all_aiohttp_http_exceptions,
 )
 from servicelib.status_codes_utils import (
