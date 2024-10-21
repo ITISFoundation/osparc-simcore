@@ -5,6 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 from operator import attrgetter
+from typing import Final
 
 from fastapi import FastAPI, status
 from models_library.emails import LowerCaseEmailStr
@@ -68,11 +69,11 @@ class TruncatedCatalogServiceOut(ServiceMetaDataPublished):
 
 _exception_mapper = partial(service_exception_mapper, "Catalog")
 
-_TRUNCATED_CATALOG_SERVICE_OUT_ADAPTER: TypeAdapter[
-    TruncatedCatalogServiceOut
+TruncatedCatalogServiceOutAdapter: Final[
+    TypeAdapter[TruncatedCatalogServiceOut]
 ] = TypeAdapter(TruncatedCatalogServiceOut)
-_LIST_OF_TRUNCATED_CATALOG_SERVICE_OUT_ADAPTER: TypeAdapter[
-    list[TruncatedCatalogServiceOut]
+TruncatedCatalogServiceOutListAdapter: Final[
+    TypeAdapter[list[TruncatedCatalogServiceOut]]
 ] = TypeAdapter(list[TruncatedCatalogServiceOut])
 
 
@@ -110,8 +111,8 @@ class CatalogApi(BaseServiceClientApi):
         ] = await asyncio.get_event_loop().run_in_executor(
             None,
             _parse_response,
-            _LIST_OF_TRUNCATED_CATALOG_SERVICE_OUT_ADAPTER,
-            response.text,
+            TruncatedCatalogServiceOutListAdapter,
+            response,
         )
         solvers = []
         for service in services:
@@ -152,7 +153,7 @@ class CatalogApi(BaseServiceClientApi):
         service: (
             TruncatedCatalogServiceOut
         ) = await asyncio.get_event_loop().run_in_executor(
-            None, _parse_response, _TRUNCATED_CATALOG_SERVICE_OUT_ADAPTER, response.text
+            None, _parse_response, TruncatedCatalogServiceOutAdapter, response
         )
         assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
