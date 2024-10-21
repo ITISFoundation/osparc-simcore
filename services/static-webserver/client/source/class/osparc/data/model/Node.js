@@ -1108,6 +1108,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (nodeStatus.getProgressSequence()) {
         nodeStatus.getProgressSequence().addProgressMessage(progressType, progressReport);
       }
+      // there might be some pending ``service_message`` still shown, remove it
       if (this.getIframeHandler()) {
         const loadingPage = this.getIframeHandler().getLoadingPage();
         loadingPage.clearMessages();
