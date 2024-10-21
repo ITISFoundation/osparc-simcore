@@ -3,12 +3,12 @@ import logging
 
 from aiohttp import web
 from pydantic import BaseModel
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
@@ -85,4 +85,4 @@ async def delete_token(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.parse_obj(request)
     req_path_params = parse_request_path_parameters_as(_TokenPathParams, request)
     await _tokens.delete_token(request.app, req_ctx.user_id, req_path_params.service)
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

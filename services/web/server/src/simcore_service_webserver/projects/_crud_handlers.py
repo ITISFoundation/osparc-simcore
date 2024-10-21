@@ -26,6 +26,7 @@ from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
 from pydantic import parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -576,7 +577,7 @@ async def patch_project(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #
@@ -661,7 +662,7 @@ async def delete_project(request: web.Request):
     except ProjectDeleteError as err:
         raise web.HTTPConflict(reason=f"{err}") from err
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #

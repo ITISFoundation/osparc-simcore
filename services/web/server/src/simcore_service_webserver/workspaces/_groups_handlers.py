@@ -9,12 +9,12 @@ from aiohttp import web
 from models_library.users import GroupID, UserID
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, Extra, Field
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
@@ -162,4 +162,4 @@ async def delete_workspace_group(request: web.Request):
         group_id=path_params.group_id,
         product_name=req_ctx.product_name,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

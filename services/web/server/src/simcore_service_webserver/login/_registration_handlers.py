@@ -8,6 +8,7 @@ from models_library.api_schemas_webserver.auth import (
 )
 from models_library.users import UserID
 from pydantic import BaseModel, Field
+from servicelib.aiohttp import status
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import get_log_record_extra, log_context
@@ -85,7 +86,7 @@ async def request_product_account(request: web.Request):
         task_suffix_name=f"{__name__}.request_product_account.send_account_request_email_to_support",
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
-    raise web.HTTPNoContent
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 class _AuthenticatedContext(BaseModel):

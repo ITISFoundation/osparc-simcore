@@ -13,6 +13,7 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.users import GroupID, UserID
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Extra, Field, parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
@@ -169,7 +170,7 @@ async def delete_group(request: web.Request):
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
 
     await api.delete_user_group(request.app, req_ctx.user_id, path_params.gid)
-    raise web.HTTPNoContent
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.get(f"/{API_VTAG}/groups/{{gid}}/users", name="get_group_users")
@@ -215,7 +216,7 @@ async def add_group_user(request: web.Request):
         new_user_id=new_user_id,
         new_user_email=new_user_email,
     )
-    raise web.HTTPNoContent
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 class _GroupUserPathParams(BaseModel):
@@ -275,7 +276,7 @@ async def delete_group_user(request: web.Request):
     await api.delete_user_in_group(
         request.app, req_ctx.user_id, path_params.gid, path_params.uid
     )
-    raise web.HTTPNoContent
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #

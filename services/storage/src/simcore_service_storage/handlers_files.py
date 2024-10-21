@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import NoReturn, cast
+from typing import cast
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -25,7 +25,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ._meta import API_VTAG
 from .dsm import get_dsm_provider
@@ -249,7 +248,7 @@ async def upload_file(request: web.Request) -> web.Response:
     f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}:abort",
     name="abort_upload_file",
 )
-async def abort_upload_file(request: web.Request) -> NoReturn:
+async def abort_upload_file(request: web.Request) -> web.Response:
     query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
         StorageQueryParamsBase, request
     )
@@ -261,7 +260,7 @@ async def abort_upload_file(request: web.Request) -> NoReturn:
 
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
     await dsm.abort_file_upload(query_params.user_id, path_params.file_id)
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.post(
@@ -374,7 +373,7 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
 @routes.delete(
     f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}", name="delete_file"
 )
-async def delete_file(request: web.Request) -> NoReturn:
+async def delete_file(request: web.Request) -> web.Response:
     query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
         StorageQueryParamsBase, request
     )
@@ -386,7 +385,7 @@ async def delete_file(request: web.Request) -> NoReturn:
 
     dsm = get_dsm_provider(request.app).get(path_params.location_id)
     await dsm.delete_file(query_params.user_id, path_params.file_id)
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.post(f"/{API_VTAG}/files/{{file_id}}:soft-copy", name="copy_as_soft_link")
