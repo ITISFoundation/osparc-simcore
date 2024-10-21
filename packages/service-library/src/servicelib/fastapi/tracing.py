@@ -13,9 +13,10 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 #########
 try:
     from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
@@ -59,7 +60,7 @@ def setup_tracing(
         not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT
         and not tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
     ):
-        log.warning("Skipping opentelemetry tracing setup")
+        _logger.warning("Skipping opentelemetry tracing setup")
         return
 
     # Set up the tracer provider
@@ -68,7 +69,7 @@ def setup_tracing(
     global_tracer_provider = trace.get_tracer_provider()
     assert isinstance(global_tracer_provider, TracerProvider)  # nosec
     tracing_destination: str = f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}:{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT}/v1/traces"
-    log.info(
+    _logger.info(
         "Trying to connect service %s to opentelemetry tracing collector at %s.",
         service_name,
         tracing_destination,
@@ -81,17 +82,37 @@ def setup_tracing(
     FastAPIInstrumentor().instrument_app(app)
 
     if HAS_AIOPG:
-        log.info("Attempting to add aiopg opentelemetry autoinstrumentation...")
-        AiopgInstrumentor().instrument()
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
+        ):
+            AiopgInstrumentor().instrument()
     if HAS_ASYNCPG:
-        log.info("Attempting to add asyncpg opentelemetry autoinstrumentation...")
-        AsyncPGInstrumentor().instrument()
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
+        ):
+            AsyncPGInstrumentor().instrument()
     if HAS_AIOPIKA:
-        log.info("Attempting to add aio-pika opentelemetry autoinstrumentation...")
-        AioPikaInstrumentor().instrument()
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add aio-pika opentelemetry autoinstrumentation...",
+        ):
+            AioPikaInstrumentor().instrument()
     if HAS_REDIS:
-        log.info("Attempting to add redis opentelemetry autoinstrumentation...")
-        RedisInstrumentor().instrument()
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add redis opentelemetry autoinstrumentation...",
+        ):
+            RedisInstrumentor().instrument()
     if HAS_BOTOCORE:
-        log.info("Attempting to add botocore opentelemetry autoinstrumentation...")
-        BotocoreInstrumentor().instrument()
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add botocore opentelemetry autoinstrumentation...",
+        ):
+            BotocoreInstrumentor().instrument()
