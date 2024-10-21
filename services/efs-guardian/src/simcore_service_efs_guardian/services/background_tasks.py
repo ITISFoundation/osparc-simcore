@@ -9,7 +9,10 @@ from servicelib.project_lock import (
     PROJECT_REDIS_LOCK_KEY,
     lock_project,
 )
-from simcore_postgres_database.utils_projects import ProjectsRepo
+from simcore_postgres_database.utils_projects import (
+    DBProjectNotFoundError,
+    ProjectsRepo,
+)
 
 from ..core.settings import ApplicationSettings
 from .efs_manager import EfsManager
@@ -33,12 +36,17 @@ async def removal_policy_task(app: FastAPI) -> None:
 
     projects_repo = ProjectsRepo(app.state.engine)
     for project_id in efs_project_ids:
-        _project_last_change_date = await projects_repo.get_project_last_change_date(
-            project_id
-        )
+        try:
+            _project_last_change_date = (
+                await projects_repo.get_project_last_change_date(project_id)
+            )
+        except DBProjectNotFoundError as exc:
+            _logger.warning(
+                "Project %s not found, this should not happen, please investigate (contact MD)",
+                exc.project_uuid,
+            )
         if (
-            _project_last_change_date is None
-            or _project_last_change_date
+            _project_last_change_date
             < base_start_timestamp
             - app_settings.EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA
         ):
