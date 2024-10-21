@@ -26,3 +26,4 @@ fsspec[http, s3] # sub types needed as we acces http and s3 here
 lz4 # for compression
 pydantic[email,dotenv]
 prometheus_client
+repro-zipfile
