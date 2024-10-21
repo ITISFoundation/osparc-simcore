@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import NoReturn, cast
+from typing import cast
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -373,7 +373,7 @@ async def is_completed_upload_file(request: web.Request) -> web.Response:
 @routes.delete(
     f"/{API_VTAG}/locations/{{location_id}}/files/{{file_id}}", name="delete_file"
 )
-async def delete_file(request: web.Request) -> NoReturn:
+async def delete_file(request: web.Request) -> web.Response:
     query_params: StorageQueryParamsBase = parse_request_query_parameters_as(
         StorageQueryParamsBase, request
     )
