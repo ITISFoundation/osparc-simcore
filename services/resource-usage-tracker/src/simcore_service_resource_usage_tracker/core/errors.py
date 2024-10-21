@@ -12,8 +12,10 @@ class ConfigurationError(ResourceUsageTrackerRuntimeError):
 
 def http404_error_handler(
     request: Request,  # pylint: disable=unused-argument
-    error: CustomResourceUsageTrackerError,
+    error: Exception,
 ) -> JSONResponse:
+    assert isinstance(error, CustomResourceUsageTrackerError)  # nosec
+
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
         content={"message": f"{error.msg_template}"},
