@@ -180,7 +180,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       });
 
 
-      if (this.__tagButtons.length >= maxTags) {
+      if (this.__tagButtons.length > maxTags) {
         const showAllButton = new qx.ui.form.Button(this.tr("All Tags..."), "@FontAwesome5Solid/tags/20");
         showAllButton.set({
           appearance: "filter-toggle-button"
