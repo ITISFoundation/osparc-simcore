@@ -121,8 +121,8 @@ RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/storage,target=/build/services/storage,rw \
   --mount=type=cache,target=/root/.cache/uv \
-  uv pip install \
-  --requirement requirements/prod.txt \
+  uv pip sync \
+  requirements/prod.txt \
   && uv pip list
 # -------------------------- -------------------------------
 

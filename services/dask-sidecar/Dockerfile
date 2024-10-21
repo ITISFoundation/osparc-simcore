@@ -116,8 +116,8 @@ RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/dask-sidecar,target=/build/services/dask-sidecar,rw \
   --mount=type=cache,target=/root/.cache/uv \
-  uv pip install \
-  --requirement requirements/prod.txt \
+  uv pip sync \
+  requirements/prod.txt \
   && uv pip list
 
 # --------------------------Production stage -------------------

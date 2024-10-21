@@ -131,13 +131,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 WORKDIR /build
 
-# install base 3rd party dependencies
-# NOTE: copies to /build to avoid overwriting later which would invalidate this layer
-RUN \
-  --mount=type=bind,source=services/dynamic-sidecar/requirements/_base.txt,target=_base.txt \
-  --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  uv pip install \
-  --requirement _base.txt
 
 # copy utility devops scripts
 COPY --chown=scu:scu services/dynamic-sidecar/scripts/Makefile /home/scu
@@ -159,8 +152,8 @@ RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/dynamic-sidecar,target=/build/services/dynamic-sidecar,rw \
   --mount=type=cache,target=/root/.cache/uv \
-  uv pip install \
-  --requirement requirements/prod.txt \
+  uv pip sync \
+  requirements/prod.txt \
   && uv pip list
 
 # --------------------------Production stage -------------------
