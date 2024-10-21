@@ -46,21 +46,6 @@ def metadata_file(project_slug_dir: Path, request: pytest.FixtureRequest) -> Pat
     return metadata_file
 
 
-def get_expected_files(docker_name: str) -> tuple[str, ...]:
-    return (
-        ".cookiecutterrc",
-        ".dockerignore",
-        "metadata:metadata.yml",
-        f"docker/{docker_name}:entrypoint.sh",
-        f"docker/{docker_name}:Dockerfile",
-        "service.cli:execute.sh",
-        "docker-compose-build.yml",
-        "docker-compose-meta.yml",
-        "docker-compose.devel.yml",
-        "docker-compose.yml",
-    )
-
-
 def assert_path_in_repo(expected_path: str, project_slug_dir: Path):
 
     if ":" in expected_path:
