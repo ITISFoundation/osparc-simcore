@@ -50,6 +50,7 @@ qx.Class.define("osparc.store.Folders", {
 
       const curatedOrderBy = osparc.utils.Utils.deepCloneObject(orderBy);
       if (curatedOrderBy.field !== "name") {
+        // only "modified_at" and "name" supported
         curatedOrderBy.field = "modified_at";
       }
 
