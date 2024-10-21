@@ -6,9 +6,9 @@ from models_library.projects import ProjectID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, Extra, validator
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .._meta import api_version_prefix as VTAG
 from ..folders.errors import FolderAccessForbiddenError, FolderNotFoundError
@@ -81,4 +81,4 @@ async def replace_project_workspace(request: web.Request):
         workspace_id=path_params.workspace_id,
         product_name=req_ctx.product_name,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
