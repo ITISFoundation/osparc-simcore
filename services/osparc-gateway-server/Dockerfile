@@ -79,8 +79,6 @@ RUN  --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
 
 # install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
 COPY --from=uv_build /uv /uvx /bin/
-# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"
@@ -140,6 +138,8 @@ ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
 
 ENV PYTHONOPTIMIZE=TRUE
+# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /home/scu
 # ensure home folder is read/writable for user scu

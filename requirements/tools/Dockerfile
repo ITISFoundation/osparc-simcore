@@ -26,8 +26,6 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
 
 # install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
 COPY --from=uv_build /uv /uvx /bin/
-# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
 
 RUN uv venv "${VIRTUAL_ENV}"
 
