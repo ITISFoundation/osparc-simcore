@@ -11,6 +11,7 @@ import pytest
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
+from faker import Faker
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.utils_projects import (
     DBProjectNotFoundError,
@@ -51,10 +52,8 @@ async def registered_project(
 
 
 async def test_get_project_last_change_date(
-    asyncpg_engine: AsyncEngine,
-    registered_project: dict,
+    asyncpg_engine: AsyncEngine, registered_project: dict, faker: Faker
 ):
-    # conn = connection
     projects_repo = ProjectsRepo(asyncpg_engine)
 
     project_last_change_date = await projects_repo.get_project_last_change_date(
@@ -64,5 +63,5 @@ async def test_get_project_last_change_date(
 
     with pytest.raises(DBProjectNotFoundError):
         await projects_repo.get_project_last_change_date(
-            project_uuid="976b031b-828e-4d88-836a-6c2fe4823c6b"  # <-- Non existing uuid in DB
+            project_uuid=faker.uuid4()  # <-- Non existing uuid in DB
         )
