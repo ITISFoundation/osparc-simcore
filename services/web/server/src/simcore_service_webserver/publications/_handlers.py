@@ -3,6 +3,7 @@ import logging
 from aiohttp import MultipartReader, hdrs, web
 from json2html import json2html  # type: ignore[import-untyped]
 from models_library.utils.json_serialization import json_dumps
+from servicelib.aiohttp import status
 from servicelib.mimetype_constants import (
     MIMETYPE_APPLICATION_JSON,
     MIMETYPE_APPLICATION_ZIP,
@@ -93,4 +94,4 @@ async def service_submission(request: web.Request):
         _logger.exception("Error while sending the 'new service submission' mail.")
         raise web.HTTPServiceUnavailable from exc
 
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

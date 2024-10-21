@@ -9,12 +9,12 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import GroupID
 from pydantic import BaseModel, Extra
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
@@ -154,4 +154,4 @@ async def delete_project_group(request: web.Request):
         group_id=path_params.group_id,
         product_name=req_ctx.product_name,
     )
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

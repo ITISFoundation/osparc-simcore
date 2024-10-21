@@ -17,6 +17,7 @@ from models_library.users import UserID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from models_library.workspaces import WorkspaceID
 from pydantic import Extra, Field, Json, parse_obj_as, validator
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
     StrictRequestParams,
@@ -246,4 +247,4 @@ async def delete_folder_group(request: web.Request):
         folder_id=path_params.folder_id,
         product_name=req_ctx.product_name,
     )
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

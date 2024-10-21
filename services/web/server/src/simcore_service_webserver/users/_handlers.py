@@ -4,13 +4,13 @@ import logging
 from aiohttp import web
 from models_library.users import UserID
 from pydantic import BaseModel, Field
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -85,7 +85,7 @@ async def update_my_profile(request: web.Request) -> web.Response:
     await api.update_user_profile(
         request.app, req_ctx.user_id, profile_update, as_patch=False
     )
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 class _SearchQueryParams(BaseModel):

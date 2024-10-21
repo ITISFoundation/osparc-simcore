@@ -5,6 +5,7 @@ from aiohttp.web import RouteTableDef
 from models_library.api_schemas_webserver.auth import ApiKeyCreate
 from models_library.users import UserID
 from pydantic import Field
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import RequestParams, parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.errors import DatabaseError
@@ -84,4 +85,4 @@ async def delete_api_key(request: web.Request):
             "Failed to delete API key %s. Ignoring error", name, exc_info=err
         )
 
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

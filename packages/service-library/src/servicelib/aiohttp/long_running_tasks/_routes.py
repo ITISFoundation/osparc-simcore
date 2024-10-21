@@ -4,11 +4,11 @@ from typing import Any
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel
+from servicelib.aiohttp import status
 
 from ...long_running_tasks._errors import TaskNotCompletedError, TaskNotFoundError
 from ...long_running_tasks._models import TaskGet, TaskId, TaskStatus
 from ...long_running_tasks._task import TrackedTask
-from ...mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..requests_validation import parse_request_path_parameters_as
 from ._dependencies import get_task_context, get_tasks_manager
 
@@ -89,7 +89,7 @@ async def cancel_and_delete_task(request: web.Request) -> web.Response:
     tasks_manager = get_tasks_manager(request.app)
     task_context = get_task_context(request)
     await tasks_manager.remove_task(path_params.task_id, with_task_context=task_context)
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 __all__: tuple[str, ...] = (

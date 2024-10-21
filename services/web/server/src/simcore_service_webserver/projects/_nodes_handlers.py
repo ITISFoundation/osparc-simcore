@@ -33,6 +33,7 @@ from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field, parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
     start_long_running_task,
@@ -238,7 +239,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
         node_patch=node_patch,
     )
 
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.delete(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="delete_node")
@@ -263,7 +264,7 @@ async def delete_node(request: web.Request) -> web.Response:
         req_ctx.product_name,
     )
 
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.post(
@@ -310,7 +311,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
         node_errors=None,
         ui_changed_keys=ui_changed_keys,
     )
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.post(
@@ -333,7 +334,7 @@ async def start_node(request: web.Request) -> web.Response:
         node_id=path_params.node_id,
     )
 
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 async def _stop_dynamic_service_task(
@@ -347,7 +348,7 @@ async def _stop_dynamic_service_task(
         await dynamic_scheduler_api.stop_dynamic_service(
             app, dynamic_service_stop=dynamic_service_stop
         )
-        return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+        return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
         # in case there is an error reply as not found
@@ -355,7 +356,7 @@ async def _stop_dynamic_service_task(
 
     except ServiceWasNotFoundError:
         # in case the service is not found reply as all OK
-        return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+        return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.post(
@@ -413,7 +414,7 @@ async def restart_node(request: web.Request) -> web.Response:
 
     await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
 
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #
