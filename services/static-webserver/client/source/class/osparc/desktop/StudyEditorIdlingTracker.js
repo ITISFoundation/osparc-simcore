@@ -101,17 +101,18 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
           const timeSinceInactivityThreshold = this.__idlingTime - inactivityThresholdT;
           if (timeSinceInactivityThreshold % this.self().INACTIVITY_REQUEST_PERIOD_S == 0) {
             // check if backend reports project as inactive
-            osparc.data.Resources.fetch("studies", "getInactivity", {
+            const params = {
               url: {
                 studyId: this.__studyUuid
               }
-            }).then(data => {
-              if (data["is_inactive"]) {
-                this.__displayFlashMessage(flashMessageDurationS);
-              }
-            }).catch(err => {
-              console.error(err);
-            });
+            };
+            osparc.data.Resources.fetch("studies", "getInactivity", params)
+              .then(data => {
+                if (data["is_inactive"]) {
+                  this.__displayFlashMessage(flashMessageDurationS);
+                }
+              })
+              .catch(err => console.error(err));
           }
         }
       };
