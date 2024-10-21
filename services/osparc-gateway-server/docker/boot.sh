@@ -19,8 +19,8 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
   cd services/osparc-gateway-server
-  pip install --no-cache-dir -r requirements/dev.txt
-  cd - || exit 1
+  uv pip install --no-cache-dir -r requirements/dev.txt
+  cd -
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'
 fi
