@@ -156,12 +156,12 @@ def app_routes(
         # get url and deliver product
         product_name = expected_product_name
         await _remember_product_name(request, product_name)
-        return web.HTTPOk()
+        return web.json_response(status=status.HTTP_200_OK)
 
     @routes.post("/v0/hack/{product_name}")
     async def _set_other_product(request: web.Request):
         await _remember_product_name(request, request.match_info["product_name"])
-        return web.HTTPOk()
+        return web.json_response(status=status.HTTP_200_OK)
 
     @routes.post("/v0/login")
     async def _login(request: web.Request):
@@ -183,7 +183,7 @@ def app_routes(
     @routes.post("/v0/public")
     async def _public(request: web.Request):
         assert await _get_product_name(request) == expected_product_name
-        return web.HTTPOk()
+        return web.json_response(status=status.HTTP_200_OK)
 
     @routes.post("/v0/admin")
     @login_required  # NOTE: same as `await check_user_authorized(request)``
@@ -192,7 +192,7 @@ def app_routes(
     )
     async def _admin_only(request: web.Request):
         assert await _get_product_name(request) == expected_product_name
-        return web.HTTPOk()
+        return web.json_response(status=status.HTTP_200_OK)
 
     @routes.post("/v0/logout")
     async def _logout(request: web.Request):
