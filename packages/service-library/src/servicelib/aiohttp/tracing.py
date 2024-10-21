@@ -101,7 +101,7 @@ def setup_tracing(
     AioHttpClientInstrumentor().instrument()
     if HAS_AIOPG:
         AiopgInstrumentor().instrument()
-        _logger.info("Attempting to add aiopg opentelemetry autoinstrumentation...")
+        _logger.info("Added aiopg opentelemetry instrumentation.")
     if HAS_BOTOCORE:
         BotocoreInstrumentor().instrument()
         _logger.info("Attempting to add botocore opentelemetry autoinstrumentation...")
