@@ -119,7 +119,7 @@ def mocked_directorv2_service_api(
         json=[
             {
                 "task_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                "download_link": presigned_download_link,
+                "download_link": f"{presigned_download_link}",
             }
         ],
     )
