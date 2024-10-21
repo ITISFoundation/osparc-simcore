@@ -459,7 +459,7 @@
             "$ref": "#/components/schemas/UnitExtraInfo"
           },
           "current_cost_per_unit": {
-            "type": "string",
+            "type": "number",
             "title": "Current Cost Per Unit"
           },
           "current_cost_per_unit_id": {
