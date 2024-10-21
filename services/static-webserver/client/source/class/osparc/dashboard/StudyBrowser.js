@@ -177,7 +177,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
         this.__setFoldersToList([]);
-        osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
+        osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId, this.getOrderBy())
           .then(folders => {
             this.__setFoldersToList(folders);
           })
@@ -317,24 +317,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __setFoldersToList: function(folders) {
       this.__foldersList = folders;
       folders.forEach(folder => folder["resourceType"] = "folder");
-
-      const sortByValueBE = this.getOrderBy().field;
-      let sortByValue = null;
-      switch (sortByValueBE) {
-        case "name":
-          sortByValue = "name";
-          break;
-        case "prj_owner":
-          sortByValue = "owner";
-          break;
-        case "creation_date":
-          sortByValue = "createdAt";
-          break;
-        case "last_change_date":
-          sortByValue = "lastModified";
-          break;
-      }
-      this.self().sortFoldersList(this.__foldersList, sortByValue);
       this.__reloadFolderCards();
     },
 

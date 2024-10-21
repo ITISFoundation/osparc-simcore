@@ -299,7 +299,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}"
+            url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           getOne: {
             method: "GET",
