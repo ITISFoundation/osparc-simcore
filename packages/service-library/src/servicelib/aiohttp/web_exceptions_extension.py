@@ -3,7 +3,7 @@
 """
 
 import inspect
-from typing import Any
+from typing import Any, TypeVar
 
 from aiohttp import web_exceptions
 from aiohttp.web_exceptions import (
@@ -40,15 +40,18 @@ class HTTPLoopDetectedError(HTTPServerError):
     status_code = status.HTTP_508_LOOP_DETECTED
 
 
+E = TypeVar("E", bound="HTTPException")
+
+
 def get_all_aiohttp_http_exceptions(
-    exception_cls: type[HTTPException] = HTTPException,
-) -> dict[int, type[HTTPException]]:
+    base_http_exception_cls: type[E],
+) -> dict[int, type[E]]:
     # Inverse map from code to HTTPException classes
 
     def _pred(obj) -> bool:
         return (
             inspect.isclass(obj)
-            and issubclass(obj, exception_cls)
+            and issubclass(obj, base_http_exception_cls)
             and getattr(obj, "status_code", 0) > 0
         )
 
@@ -62,8 +65,7 @@ def get_all_aiohttp_http_exceptions(
         HTTPLockedError,
         HTTPLoopDetectedError,
     ):
-
-        status_to_http_exception_map[cls.status_code] = cls  # type:ignore
+        status_to_http_exception_map[cls.status_code] = cls
 
     return status_to_http_exception_map
 

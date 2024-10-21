@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 import pytest
+from fastapi import HTTPException
 from servicelib.aiohttp import status
 from servicelib.aiohttp.web_exceptions_extension import (
     STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS,
@@ -68,7 +69,9 @@ def test_predicates_with_status():
     ]
 
 
-AIOHTTP_EXCEPTION_CLASSES_MAP = get_all_aiohttp_http_exceptions()
+AIOHTTP_EXCEPTION_CLASSES_MAP: dict[
+    int, type[HTTPException]
+] = get_all_aiohttp_http_exceptions(HTTPException)
 
 
 @pytest.mark.parametrize("status_code", get_http_status_codes(status))
