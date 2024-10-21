@@ -89,12 +89,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 WORKDIR /build
 
-# install base 3rd party dependencies (NOTE: this speeds up devel mode)
-RUN \
-  --mount=type=bind,source=services/osparc-gateway-server/requirements/_base.txt,target=_base.txt \
-  --mount=type=cache,target=/root/.cache/uv \
-  uv pip install \
-  --requirement _base.txt
+
 
 # in ARM64 mode there is a catch: the piwheels package does not contain the dask-gateway-proxy executable in 64-bit
 RUN dpkgArch="$(dpkg --print-architecture)";\

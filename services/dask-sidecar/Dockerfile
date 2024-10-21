@@ -98,12 +98,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 WORKDIR /build
 
-# install base 3rd party dependencies (NOTE: this speeds up devel mode)
-RUN \
-  --mount=type=bind,source=services/dask-sidecar/requirements/_base.txt,target=_base.txt \
-  --mount=type=cache,target=/root/.cache/uv \
-  uv pip install \
-  --requirement _base.txt
+
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)

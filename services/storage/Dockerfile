@@ -97,12 +97,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 WORKDIR /build
 
-# install only base 3rd party dependencies
-RUN \
-  --mount=type=bind,source=services/storage/requirements/_base.txt,target=_base.txt \
-  --mount=type=cache,target=/root/.cache/uv \
-  uv pip install \
-  --requirement _base.txt
+
 
 # -------------------------- -------------------------------
 
