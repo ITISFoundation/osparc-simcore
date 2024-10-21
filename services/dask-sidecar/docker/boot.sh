@@ -24,7 +24,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   print_info "Python :"
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
-  cd services/dask-sidecar || exit 1
+  cd services/dask-sidecar
   pip install --no-cache-dir -r requirements/dev.txt
   cd - || exit 1
   print_info "PIP :"

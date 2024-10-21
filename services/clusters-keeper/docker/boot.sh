@@ -23,7 +23,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
 
-  cd services/clusters-keeper || exit 1
+  cd services/clusters-keeper
   pip install uv
   uv pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1

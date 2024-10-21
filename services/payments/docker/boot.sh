@@ -23,7 +23,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
 
-  cd services/payments || exit 1
+  cd services/payments
   pip install uv
   uv pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
