@@ -17,34 +17,35 @@ from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
 
 _logger = logging.getLogger(__name__)
-#########
+
 try:
     from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
 
     HAS_ASYNCPG = True
 except ImportError:
     HAS_ASYNCPG = False
-#########
+
 try:
     from opentelemetry.instrumentation.aio_pika import AioPikaInstrumentor
 
     HAS_AIOPIKA = True
 except ImportError:
     HAS_AIOPIKA = False
-#########
+
 try:
     from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
 
     HAS_AIOPG = True
 except ImportError:
     HAS_AIOPG = False
-#########
+
 try:
     from opentelemetry.instrumentation.redis import RedisInstrumentor
 
     HAS_REDIS = True
 except ImportError:
     HAS_REDIS = False
+
 try:
     from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
 

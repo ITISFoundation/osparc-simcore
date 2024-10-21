@@ -19,6 +19,7 @@ from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
 
 _logger = logging.getLogger(__name__)
@@ -100,9 +101,17 @@ def setup_tracing(
     # Instrument aiohttp client
     AioHttpClientInstrumentor().instrument()
     if HAS_AIOPG:
-        AiopgInstrumentor().instrument()
-        _logger.info("Added aiopg opentelemetry instrumentation.")
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add aio-pika opentelemetry autoinstrumentation...",
+        ):
+            AiopgInstrumentor().instrument()
     if HAS_BOTOCORE:
-        BotocoreInstrumentor().instrument()
-        _logger.info("Attempting to add botocore opentelemetry autoinstrumentation...")
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add botocore opentelemetry autoinstrumentation...",
+        ):
+            BotocoreInstrumentor().instrument()
     RequestsInstrumentor().instrument()
