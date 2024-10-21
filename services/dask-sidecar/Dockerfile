@@ -143,11 +143,13 @@ ENV PYTHONOPTIMIZE=TRUE
 ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /home/scu
-
 # ensure home folder is read/writable for user scu
 RUN chown -R scu /home/scu
-# bring installed package without build tools
+
+# Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
 COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+
+# Copies booting scripts
 COPY --chown=scu:scu services/dask-sidecar/docker services/dask-sidecar/docker
 RUN chmod +x services/dask-sidecar/docker/*.sh
 
