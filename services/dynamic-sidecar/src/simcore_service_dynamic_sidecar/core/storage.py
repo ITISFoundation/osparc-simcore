@@ -4,7 +4,7 @@ from typing import Final, NamedTuple
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 from servicelib.logging_utils import log_context
 from settings_library.node_ports import StorageAuthSettings
 
@@ -33,8 +33,10 @@ def _get_auth_or_none(storage_auth_settings: StorageAuthSettings) -> _AuthTuple 
 
 
 def _get_url(storage_auth_settings: StorageAuthSettings) -> str:
-    url: str = parse_obj_as(AnyUrl, f"{storage_auth_settings.api_base_url}/")
-    return url
+    url: AnyUrl = TypeAdapter(AnyUrl).validate_python(
+        f"{storage_auth_settings.api_base_url}/"
+    )
+    return f"{url}"
 
 
 async def _is_storage_responsive(storage_auth_settings: StorageAuthSettings) -> bool:

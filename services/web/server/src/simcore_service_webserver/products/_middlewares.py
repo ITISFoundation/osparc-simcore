@@ -1,4 +1,5 @@
 import logging
+import textwrap
 from collections import OrderedDict
 
 from aiohttp import web
@@ -12,12 +13,25 @@ from ._model import Product
 _logger = logging.getLogger(__name__)
 
 
+def _get_default_product_name(app: web.Application) -> str:
+    product_name: str = app[f"{APP_PRODUCTS_KEY}_default"]
+    return product_name
+
+
 def _discover_product_by_hostname(request: web.Request) -> str | None:
     products: OrderedDict[str, Product] = request.app[APP_PRODUCTS_KEY]
+    #
+    # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host
+    # SEE https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
+    originating_hosts = [
+        request.headers.get("X-Forwarded-Host"),
+        request.host,
+    ]
     for product in products.values():
-        if product.host_regex.search(request.host):
-            product_name: str = product.name
-            return product_name
+        for host in originating_hosts:
+            if host and product.host_regex.search(host):
+                product_name: str = product.name
+                return product_name
     return None
 
 
@@ -30,9 +44,17 @@ def _discover_product_by_request_header(request: web.Request) -> str | None:
     return None
 
 
-def _get_app_default_product_name(request: web.Request) -> str:
-    product_name: str = request.app[f"{APP_PRODUCTS_KEY}_default"]
-    return product_name
+def _get_debug_msg(request: web.Request):
+    return "\n".join(
+        [
+            f"{request.url=}",
+            f"{request.host=}",
+            f"{request.remote=}",
+            *[f"{k}:{request.headers[k][:20]}" for k in request.headers],
+            f"{request.headers.get('X-Forwarded-Host')=}",
+            f"{request.get(RQ_PRODUCT_KEY)=}",
+        ]
+    )
 
 
 @web.middleware
@@ -43,35 +65,37 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
         - request[RQ_PRODUCT_KEY] is set to discovered product in 3 types of entrypoints
         - if no product discovered, then it is set to default
     """
-    # - API entrypoints
-    # - /static info for front-end
+
     if (
+        # - API entrypoints
+        # - /static info for front-end
+        # - socket-io
         request.path.startswith(f"/{API_VTAG}")
-        or request.path == "/static-frontend-data.json"
-        or request.path == "/socket.io/"
+        or request.path in {"/static-frontend-data.json", "/socket.io/"}
     ):
-        product_name = (
+        request[RQ_PRODUCT_KEY] = (
             _discover_product_by_request_header(request)
             or _discover_product_by_hostname(request)
-            or _get_app_default_product_name(request)
+            or _get_default_product_name(request.app)
         )
-        request[RQ_PRODUCT_KEY] = product_name
 
-    # - Publications entrypoint: redirections from other websites. SEE studies_access.py::access_study
-    # - Root entrypoint: to serve front-end apps
-    elif (
-        request.path.startswith("/study/")
-        or request.path.startswith("/view")
-        or request.path == "/"
-    ):
-        product_name = _discover_product_by_hostname(
+    else:
+        # - Publications entrypoint: redirections from other websites. SEE studies_access.py::access_study
+        # - Root entrypoint: to serve front-end apps
+        assert (  # nosec
+            request.path.startswith("/dev/")
+            or request.path.startswith("/study/")
+            or request.path.startswith("/view")
+            or request.path == "/"
+        )
+        request[RQ_PRODUCT_KEY] = _discover_product_by_hostname(
             request
-        ) or _get_app_default_product_name(request)
+        ) or _get_default_product_name(request.app)
 
-        request[RQ_PRODUCT_KEY] = product_name
-
-    assert request.get(RQ_PRODUCT_KEY) is not None or request.path.startswith(  # nosec
-        "/dev/doc"
+    _logger.debug(
+        "Product middleware result: \n%s\n",
+        textwrap.indent(_get_debug_msg(request), " "),
     )
+    assert request[RQ_PRODUCT_KEY]  # nosec
 
     return await handler(request)

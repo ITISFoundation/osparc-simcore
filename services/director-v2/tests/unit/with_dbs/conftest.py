@@ -8,15 +8,16 @@
 import datetime
 import json
 from collections.abc import Awaitable, Callable, Iterator
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
 from _helpers import PublishedProject, RunningProject
 from faker import Faker
+from fastapi.encoders import jsonable_encoder
 from models_library.clusters import Cluster
-from models_library.projects import ProjectAtDB
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.main import BaseModel
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
@@ -25,7 +26,11 @@ from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipel
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
-from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
+from simcore_service_director_v2.models.comp_runs import (
+    CompRunsAtDB,
+    ProjectMetadataDict,
+    RunMetadataDict,
+)
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dask import generate_dask_job_id
@@ -84,28 +89,36 @@ def tasks(
                 "project_id": f"{project.uuid}",
                 "node_id": f"{node_id}",
                 "schema": {"inputs": {}, "outputs": {}},
-                "inputs": {
-                    key: json.loads(value.json(by_alias=True, exclude_unset=True))
-                    if isinstance(value, BaseModel)
-                    else value
-                    for key, value in node_data.inputs.items()
-                }
-                if node_data.inputs
-                else {},
-                "outputs": {
-                    key: json.loads(value.json(by_alias=True, exclude_unset=True))
-                    if isinstance(value, BaseModel)
-                    else value
-                    for key, value in node_data.outputs.items()
-                }
-                if node_data.outputs
-                else {},
+                "inputs": (
+                    {
+                        key: (
+                            json.loads(value.json(by_alias=True, exclude_unset=True))
+                            if isinstance(value, BaseModel)
+                            else value
+                        )
+                        for key, value in node_data.inputs.items()
+                    }
+                    if node_data.inputs
+                    else {}
+                ),
+                "outputs": (
+                    {
+                        key: (
+                            json.loads(value.json(by_alias=True, exclude_unset=True))
+                            if isinstance(value, BaseModel)
+                            else value
+                        )
+                        for key, value in node_data.outputs.items()
+                    }
+                    if node_data.outputs
+                    else {}
+                ),
                 "image": Image(name=node_data.key, tag=node_data.version).dict(  # type: ignore
                     by_alias=True, exclude_unset=True
                 ),  # type: ignore
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
-                "submit": datetime.datetime.now(tz=datetime.timezone.utc),
+                "submit": datetime.datetime.now(tz=datetime.UTC),
                 "job_id": generate_dask_job_id(
                     service_key=node_data.key,
                     service_version=node_data.version,
@@ -136,8 +149,25 @@ def tasks(
 
 
 @pytest.fixture
+def project_metadata(faker: Faker) -> ProjectMetadataDict:
+    return ProjectMetadataDict(
+        parent_node_id=cast(NodeID, faker.uuid4(cast_to=None)),
+        parent_node_name=faker.pystr(),
+        parent_project_id=cast(ProjectID, faker.uuid4(cast_to=None)),
+        parent_project_name=faker.pystr(),
+        root_parent_project_id=cast(ProjectID, faker.uuid4(cast_to=None)),
+        root_parent_project_name=faker.pystr(),
+        root_parent_node_id=cast(NodeID, faker.uuid4(cast_to=None)),
+        root_parent_node_name=faker.pystr(),
+    )
+
+
+@pytest.fixture
 def run_metadata(
-    osparc_product_name: str, simcore_user_agent: str, faker: Faker
+    osparc_product_name: str,
+    simcore_user_agent: str,
+    project_metadata: ProjectMetadataDict,
+    faker: Faker,
 ) -> RunMetadataDict:
     return RunMetadataDict(
         node_id_names_map={},
@@ -147,6 +177,7 @@ def run_metadata(
         user_email=faker.email(),
         wallet_id=faker.pyint(min_value=1),
         wallet_name=faker.name(),
+        project_metadata=project_metadata,
     )
 
 
@@ -171,7 +202,7 @@ def runs(
         with postgres_db.connect() as conn:
             result = conn.execute(
                 comp_runs.insert()
-                .values(**run_config)
+                .values(**jsonable_encoder(run_config))
                 .returning(sa.literal_column("*"))
             )
             new_run = CompRunsAtDB.from_orm(result.first())
@@ -298,7 +329,7 @@ async def running_project(
             project=created_project,
             state=StateType.RUNNING,
             progress=0.0,
-            start=datetime.datetime.now(tz=datetime.timezone.utc),
+            start=datetime.datetime.now(tz=datetime.UTC),
         ),
         runs=runs(user=user, project=created_project, result=StateType.RUNNING),
     )

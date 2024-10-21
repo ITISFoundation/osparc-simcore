@@ -174,9 +174,9 @@ def setup_volume_manager(app: FastAPI) -> None:
 
         volumes_manager = VolumesManager(
             app=app,
-            book_keeping_interval=settings.AGENT_VOLUMES_CLENUP_BOOK_KEEPING_INTERVAL,
+            book_keeping_interval=settings.AGENT_VOLUMES_CLEANUP_BOOK_KEEPING_INTERVAL,
             volume_cleanup_interval=settings.AGENT_VOLUMES_CLEANUP_INTERVAL,
-            remove_volumes_inactive_for=settings.AGENT_VOLUMES_CLENUP_REMOVE_VOLUMES_INACTIVE_FOR.total_seconds(),
+            remove_volumes_inactive_for=settings.AGENT_VOLUMES_CLEANUP_REMOVE_VOLUMES_INACTIVE_FOR.total_seconds(),
         )
         volumes_manager.set_to_app_state(app)
         await volumes_manager.setup()

@@ -128,7 +128,8 @@ help: ## help on rule's targets
 
 
 test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
-	python ./scripts/test_python_version.py
+	# Checking python version
+	@.venv/bin/python ./scripts/test_python_version.py
 
 
 ## DOCKER BUILD -------------------------------
@@ -332,6 +333,7 @@ printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin admi
 printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
 printf "$$rows" "Storage S3 Minio" "http://$(get_my_ip).nip.io:9001" 12345678 12345678;\
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
+printf "$$rows" "Vendor Manual (Fake)" "http://manual.$(get_my_ip).nip.io:9081";\
 
 printf "\n%s\n" "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar";\
 echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081";
@@ -481,7 +483,7 @@ push-version: tag-version
 
 .venv: .check-uv-installed
 	@uv venv $@
-	## upgrading tools to latest version in $(shell python3 --version)
+	@echo "# upgrading tools to latest version in" && $@/bin/python --version
 	@uv pip --quiet install --upgrade \
 		pip~=24.0 \
 		wheel \
@@ -683,9 +685,9 @@ info-registry: ## info on local registry (if any)
 
 ## INFO -------------------------------
 
-.PHONY: info info-images info-swarm  info-tools
+.PHONY: info info-images info-swarm
 info: ## displays setup information
-	# setup info:
+	@echo setup info  --------------------------------
 	@echo ' Detected OS          : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WSL2)$(IS_WIN)'
 	@echo ' SWARM_STACK_NAME     : ${SWARM_STACK_NAME}'
 	@echo ' DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
@@ -695,19 +697,23 @@ info: ## displays setup information
 	@echo '  - ULR                : ${VCS_URL}'
 	@echo '  - REF                : ${VCS_REF}'
 	@echo '  - (STATUS)REF_CLIENT : (${VCS_STATUS_CLIENT}) ${VCS_REF_CLIENT}'
-	@echo ' DIRECTOR_API_VERSION  : ${DIRECTOR_API_VERSION}'
-	@echo ' STORAGE_API_VERSION   : ${STORAGE_API_VERSION}'
-	@echo ' DATCORE_ADAPTER_API_VERSION   : ${DATCORE_ADAPTER_API_VERSION}'
-	@echo ' WEBSERVER_API_VERSION : ${WEBSERVER_API_VERSION}'
-	# dev tools version
-	@echo ' make          : $(shell make --version 2>&1 | head -n 1)'
-	@echo ' jq            : $(shell jq --version)'
+	@make --silent info-tools
+
+
+.PHONY: show-tools
+info-tools: ## displays tools versions
+	@echo dev-tools versions -------------------------
 	@echo ' awk           : $(shell awk -W version 2>&1 | head -n 1)'
-	@echo ' python        : $(shell python3 --version)'
-	@echo ' node          : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
 	@echo ' docker        : $(shell docker --version)'
 	@echo ' docker buildx : $(shell docker buildx version)'
 	@echo ' docker compose: $(shell docker compose version)'
+	@echo ' jq            : $(shell jq --version)'
+	@echo ' make          : $(shell make --version 2>&1 | head -n 1)'
+	@echo ' node          : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
+	@echo ' python        : $(shell python3 --version)'
+	@echo ' uv            : $(shell uv --version 2> /dev/null || echo ERROR uv missing)'
+	@echo ' ubuntu        : $(shell lsb_release --description --short 2> /dev/null | tail || echo ERROR Not an Ubuntu OS )'
+
 
 
 define show-meta

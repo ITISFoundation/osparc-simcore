@@ -1,3 +1,4 @@
+# pylint: disable=no-member
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -30,7 +31,7 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     Task,
 )
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.docker_utils import to_datetime
@@ -81,23 +82,23 @@ async def create_node_labels(
     host_node: Node,
     async_docker_client: aiodocker.Docker,
 ) -> AsyncIterator[Callable[[list[str]], Awaitable[None]]]:
-    assert host_node.Spec
-    old_labels = deepcopy(host_node.Spec.Labels)
+    assert host_node.spec
+    old_labels = deepcopy(host_node.spec.labels)
 
     async def _creator(labels: list[str]) -> None:
-        assert host_node.ID
-        assert host_node.Version
-        assert host_node.Version.Index
-        assert host_node.Spec
-        assert host_node.Spec.Role
-        assert host_node.Spec.Availability
+        assert host_node.id
+        assert host_node.version
+        assert host_node.version.index
+        assert host_node.spec
+        assert host_node.spec.role
+        assert host_node.spec.availability
         await async_docker_client.nodes.update(
-            node_id=host_node.ID,
-            version=host_node.Version.Index,
+            node_id=host_node.id,
+            version=host_node.version.index,
             spec={
                 "Name": "foo",
-                "Availability": host_node.Spec.Availability.value,
-                "Role": host_node.Spec.Role.value,
+                "Availability": host_node.spec.availability.value,
+                "Role": host_node.spec.role.value,
                 "Labels": {f"{label}": "true" for label in labels},
             },
         )
@@ -158,12 +159,12 @@ async def test_get_monitored_nodes_with_valid_label(
 
     # this is the host node with some keys slightly changed
     EXCLUDED_KEYS = {
-        "Index": True,
-        "UpdatedAt": True,
-        "Version": True,
-        "Spec": {"Labels", "Name"},
+        "index": True,
+        "updated_at": True,
+        "version": True,
+        "spec": {"labels", "name"},
     }
-    assert host_node.dict(exclude=EXCLUDED_KEYS) == monitored_nodes[0].dict(
+    assert host_node.model_dump(exclude=EXCLUDED_KEYS) == monitored_nodes[0].model_dump(
         exclude=EXCLUDED_KEYS
     )
 
@@ -191,10 +192,10 @@ async def test_remove_monitored_down_nodes_of_non_down_node_does_nothing(
 
 @pytest.fixture
 def fake_docker_node(host_node: Node, faker: Faker) -> Node:
-    fake_node = host_node.copy(deep=True)
-    fake_node.ID = faker.uuid4()
+    fake_node = host_node.model_copy(deep=True)
+    fake_node.id = faker.uuid4(cast_to=str)
     assert (
-        host_node.ID != fake_node.ID
+        host_node.id != fake_node.id
     ), "this should never happen, or you are really unlucky"
     return fake_node
 
@@ -205,15 +206,15 @@ async def test_remove_monitored_down_nodes_of_down_node(
     mocker: MockerFixture,
 ):
     mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
-    assert fake_docker_node.Status
-    fake_docker_node.Status.State = NodeState.down
-    assert fake_docker_node.Status.State == NodeState.down
+    assert fake_docker_node.status
+    fake_docker_node.status.state = NodeState.down
+    assert fake_docker_node.status.state == NodeState.down
     assert await remove_nodes(autoscaling_docker, nodes=[fake_docker_node]) == [
         fake_docker_node
     ]
     # NOTE: this is the same as calling with aiodocker.Docker() as docker: docker.nodes.remove()
     mocked_aiodocker.remove.assert_called_once_with(
-        node_id=fake_docker_node.ID, force=False
+        node_id=fake_docker_node.id, force=False
     )
 
 
@@ -221,9 +222,9 @@ async def test_remove_monitored_down_node_with_unexpected_state_does_nothing(
     autoscaling_docker: AutoscalingDocker,
     fake_docker_node: Node,
 ):
-    assert fake_docker_node.Status
-    fake_docker_node.Status = None
-    assert not fake_docker_node.Status
+    assert fake_docker_node.status
+    fake_docker_node.status = None
+    assert not fake_docker_node.status
     assert await remove_nodes(autoscaling_docker, nodes=[fake_docker_node]) == []
 
 
@@ -276,7 +277,7 @@ async def test_pending_service_task_with_placement_constrain_is_skipped(
     service_with_too_many_resources = await create_service(
         task_template_with_too_many_resource, {}, "pending"
     )
-    assert service_with_too_many_resources.Spec
+    assert service_with_too_many_resources.spec
 
     pending_tasks = await pending_service_tasks_with_insufficient_resources(
         autoscaling_docker, service_labels=[]
@@ -312,13 +313,12 @@ async def test_pending_service_task_with_insufficient_resources_with_service_lac
     service_with_too_many_resources = await create_service(
         task_template_with_too_many_resource, {}, "pending"
     )
-    assert service_with_too_many_resources.Spec
+    assert service_with_too_many_resources.spec
 
-    service_tasks = parse_obj_as(
-        list[Task],
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(
-            filters={"service": service_with_too_many_resources.Spec.Name}
-        ),
+            filters={"service": service_with_too_many_resources.spec.name}
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -382,16 +382,15 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
     service_with_labels = await create_service(
         task_template_with_too_many_resource, service_labels, "pending"
     )
-    assert service_with_labels.Spec
+    assert service_with_labels.spec
     pending_tasks = await pending_service_tasks_with_insufficient_resources(
         autoscaling_docker, service_labels=list(service_labels)
     )
 
-    service_tasks = parse_obj_as(
-        list[Task],
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(
-            filters={"service": service_with_labels.Spec.Name}
-        ),
+            filters={"service": service_with_labels.spec.name}
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -438,21 +437,16 @@ async def test_pending_service_task_with_insufficient_resources_properly_sorts_t
 
     assert len(pending_tasks) == len(services)
     # check sorting is done by creation date
-    last_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
-        days=1
-    )
+    last_date = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=1)
     for task in pending_tasks:
-        assert task.CreatedAt  # NOTE: in this case they are but they might be None
-        assert (
-            to_datetime(task.CreatedAt).replace(tzinfo=datetime.timezone.utc)
-            > last_date
-        )
-        last_date = to_datetime(task.CreatedAt).replace(tzinfo=datetime.timezone.utc)
+        assert task.created_at  # NOTE: in this case they are but they might be None
+        assert to_datetime(task.created_at).replace(tzinfo=datetime.UTC) > last_date
+        last_date = to_datetime(task.created_at).replace(tzinfo=datetime.UTC)
 
 
 def test_safe_sort_key_callback():
     tasks_with_faulty_timestamp = [
-        Task(ID=n, CreatedAt=value)  # type: ignore
+        Task(ID=f"{n}", CreatedAt=value)
         for n, value in enumerate(
             [
                 # SEE test_to_datetime_conversion_known_errors
@@ -460,7 +454,7 @@ def test_safe_sort_key_callback():
                 "2023-03-15 09:20:58.123456",
                 "2023-03-15T09:20:58.123456",
                 "2023-03-15T09:20:58.123456Z",
-                f"{datetime.datetime.now(datetime.timezone.utc)}",
+                f"{datetime.datetime.now(datetime.UTC)}",
                 "corrupted string",
             ]
         )
@@ -468,16 +462,16 @@ def test_safe_sort_key_callback():
     sorted_tasks = sorted(tasks_with_faulty_timestamp, key=_by_created_dt)
 
     assert len(sorted_tasks) == len(tasks_with_faulty_timestamp)
-    assert {t.ID for t in sorted_tasks} == {t.ID for t in tasks_with_faulty_timestamp}
+    assert {t.id for t in sorted_tasks} == {t.id for t in tasks_with_faulty_timestamp}
 
 
 def test_get_node_total_resources(host_node: Node):
     resources = get_node_total_resources(host_node)
-    assert host_node.Description
-    assert host_node.Description.Resources
-    assert host_node.Description.Resources.NanoCPUs
-    assert resources.cpus == (host_node.Description.Resources.NanoCPUs / 10**9)
-    assert resources.ram == host_node.Description.Resources.MemoryBytes
+    assert host_node.description
+    assert host_node.description.resources
+    assert host_node.description.resources.nano_cp_us
+    assert resources.cpus == (host_node.description.resources.nano_cp_us / 10**9)
+    assert resources.ram == host_node.description.resources.memory_bytes
 
 
 async def test_compute_cluster_total_resources_with_no_nodes_returns_0(
@@ -502,12 +496,11 @@ async def test_get_resources_from_docker_task_with_no_reservation_returns_0(
     task_template: dict[str, Any],
 ):
     service_with_no_resources = await create_service(task_template, {}, "running")
-    assert service_with_no_resources.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    assert service_with_no_resources.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(
-            filters={"service": service_with_no_resources.Spec.Name}
-        ),
+            filters={"service": service_with_no_resources.spec.name}
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -531,10 +524,9 @@ async def test_get_resources_from_docker_task_with_reservations(
         NUM_CPUS, 0
     )
     service = await create_service(task_template_with_reservations, {}, "running")
-    assert service.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
-        await async_docker_client.tasks.list(filters={"service": service.Spec.Name}),
+    assert service.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
+        await async_docker_client.tasks.list(filters={"service": service.spec.name})
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -559,19 +551,18 @@ async def test_get_resources_from_docker_task_with_reservations_and_limits_retur
         NUM_CPUS, 0
     )
     task_template_with_reservations["Resources"] |= create_task_limits(
-        host_cpu_count, parse_obj_as(ByteSize, "100Mib")
+        host_cpu_count, TypeAdapter(ByteSize).validate_python("100Mib")
     )["Resources"]
     service = await create_service(task_template_with_reservations, {}, "running")
-    assert service.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
-        await async_docker_client.tasks.list(filters={"service": service.Spec.Name}),
+    assert service.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
+        await async_docker_client.tasks.list(filters={"service": service.spec.name})
     )
     assert service_tasks
     assert len(service_tasks) == 1
 
     assert get_max_resources_from_docker_task(service_tasks[0]) == Resources(
-        cpus=host_cpu_count, ram=parse_obj_as(ByteSize, "100Mib")
+        cpus=host_cpu_count, ram=TypeAdapter(ByteSize).validate_python("100Mib")
     )
 
 
@@ -619,10 +610,9 @@ async def test_get_task_instance_restriction(
         "pending" if placement_constraints else "running",
         placement_constraints,
     )
-    assert service.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
-        await autoscaling_docker.tasks.list(filters={"service": service.Spec.Name}),
+    assert service.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
+        await autoscaling_docker.tasks.list(filters={"service": service.spec.name})
     )
     instance_type_or_none = await get_task_instance_restriction(
         autoscaling_docker, service_tasks[0]
@@ -642,12 +632,11 @@ async def test_compute_tasks_needed_resources(
     faker: Faker,
 ):
     service_with_no_resources = await create_service(task_template, {}, "running")
-    assert service_with_no_resources.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    assert service_with_no_resources.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(
-            filters={"service": service_with_no_resources.Spec.Name}
-        ),
+            filters={"service": service_with_no_resources.spec.name}
+        )
     )
     assert compute_tasks_needed_resources(service_tasks) == Resources.create_as_empty()
 
@@ -662,10 +651,9 @@ async def test_compute_tasks_needed_resources(
     )
     all_tasks = service_tasks
     for s in services:
-        assert s.Spec
-        service_tasks = parse_obj_as(
-            list[Task],
-            await autoscaling_docker.tasks.list(filters={"service": s.Spec.Name}),
+        assert s.spec
+        service_tasks = TypeAdapter(list[Task]).validate_python(
+            await autoscaling_docker.tasks.list(filters={"service": s.spec.name})
         )
         assert compute_tasks_needed_resources(service_tasks) == Resources(
             cpus=1, ram=ByteSize(0)
@@ -872,7 +860,7 @@ async def test_get_docker_swarm_join_script_returning_unexpected_command_raises(
 
 def test_get_docker_login_on_start_bash_command():
     registry_settings = RegistrySettings(
-        **RegistrySettings.Config.schema_extra["examples"][0]
+        **RegistrySettings.model_config["json_schema_extra"]["examples"][0]
     )
     returned_command = get_docker_login_on_start_bash_command(registry_settings)
     assert (
@@ -884,11 +872,11 @@ def test_get_docker_login_on_start_bash_command():
 async def test_try_get_node_with_name(
     autoscaling_docker: AutoscalingDocker, host_node: Node
 ):
-    assert host_node.Description
-    assert host_node.Description.Hostname
+    assert host_node.description
+    assert host_node.description.hostname
 
     received_node = await find_node_with_name(
-        autoscaling_docker, host_node.Description.Hostname
+        autoscaling_docker, host_node.description.hostname
     )
     assert received_node == host_node
 
@@ -896,11 +884,11 @@ async def test_try_get_node_with_name(
 async def test_try_get_node_with_name_fake(
     autoscaling_docker: AutoscalingDocker, fake_node: Node
 ):
-    assert fake_node.Description
-    assert fake_node.Description.Hostname
+    assert fake_node.description
+    assert fake_node.description.hostname
 
     received_node = await find_node_with_name(
-        autoscaling_docker, fake_node.Description.Hostname
+        autoscaling_docker, fake_node.description.hostname
     )
     assert received_node is None
 
@@ -921,8 +909,8 @@ async def test_find_node_with_name_with_common_prefixed_nodes(
     needed_host_name = f"{common_prefix}11"
     found_node = await find_node_with_name(autoscaling_docker, needed_host_name)
     assert found_node
-    assert found_node.Description
-    assert found_node.Description.Hostname == needed_host_name
+    assert found_node.description
+    assert found_node.description.hostname == needed_host_name
 
 
 async def test_find_node_with_smaller_name_with_common_prefixed_nodes_returns_none(
@@ -946,53 +934,53 @@ async def test_find_node_with_smaller_name_with_common_prefixed_nodes_returns_no
 async def test_tag_node(
     autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker
 ):
-    assert host_node.Description
-    assert host_node.Description.Hostname
+    assert host_node.description
+    assert host_node.description.hostname
     tags = faker.pydict(allowed_types=(str,))
     await tag_node(autoscaling_docker, host_node, tags=tags, available=False)
     updated_node = await find_node_with_name(
-        autoscaling_docker, host_node.Description.Hostname
+        autoscaling_docker, host_node.description.hostname
     )
     assert updated_node
-    assert updated_node.Spec
-    assert updated_node.Spec.Availability == Availability.drain
-    assert updated_node.Spec.Labels == tags
+    assert updated_node.spec
+    assert updated_node.spec.availability == Availability.drain
+    assert updated_node.spec.labels == tags
 
     await tag_node(autoscaling_docker, updated_node, tags={}, available=True)
     updated_node = await find_node_with_name(
-        autoscaling_docker, host_node.Description.Hostname
+        autoscaling_docker, host_node.description.hostname
     )
     assert updated_node
-    assert updated_node.Spec
-    assert updated_node.Spec.Availability == Availability.active
-    assert updated_node.Spec.Labels == {}
+    assert updated_node.spec
+    assert updated_node.spec.availability == Availability.active
+    assert updated_node.spec.labels == {}
 
 
 async def test_tag_node_out_of_sequence_error(
     autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker
 ):
-    assert host_node.Description
-    assert host_node.Description.Hostname
+    assert host_node.description
+    assert host_node.description.hostname
     tags = faker.pydict(allowed_types=(str,))
     # this works
     updated_node = await tag_node(
         autoscaling_docker, host_node, tags=tags, available=False
     )
     assert updated_node
-    assert host_node.Version
-    assert host_node.Version.Index
-    assert updated_node.Version
-    assert updated_node.Version.Index
-    assert host_node.Version.Index < updated_node.Version.Index
+    assert host_node.version
+    assert host_node.version.index
+    assert updated_node.version
+    assert updated_node.version.index
+    assert host_node.version.index < updated_node.version.index
 
     # running the same call with the old node should not raise an out of sequence error
     updated_node2 = await tag_node(
         autoscaling_docker, host_node, tags=tags, available=True
     )
     assert updated_node2
-    assert updated_node2.Version
-    assert updated_node2.Version.Index
-    assert updated_node2.Version.Index > updated_node.Version.Index
+    assert updated_node2.version
+    assert updated_node2.version.index
+    assert updated_node2.version.index > updated_node.version.index
 
 
 async def test_set_node_availability(
@@ -1132,25 +1120,25 @@ def test_is_node_ready_and_available(create_fake_node: Callable[..., Node]):
 
 def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Faker):
     fake_node = create_fake_node()
-    assert fake_node.Spec
-    assert fake_node.Spec.Availability is Availability.drain
+    assert fake_node.spec
+    assert fake_node.spec.availability is Availability.drain
     # no labels, not ready and drained
     assert not is_node_osparc_ready(fake_node)
     # no labels, not ready, but active
-    fake_node.Spec.Availability = Availability.active
+    fake_node.spec.availability = Availability.active
     assert not is_node_osparc_ready(fake_node)
     # no labels, ready and active
-    fake_node.Status = NodeStatus(State=NodeState.ready, Message=None, Addr=None)
+    fake_node.status = NodeStatus(State=NodeState.ready, Message=None, Addr=None)
     assert not is_node_osparc_ready(fake_node)
     # add some random labels
-    assert fake_node.Spec
-    fake_node.Spec.Labels = faker.pydict(allowed_types=(str,))
+    assert fake_node.spec
+    fake_node.spec.labels = faker.pydict(allowed_types=(str,))
     assert not is_node_osparc_ready(fake_node)
     # add the expected label
-    fake_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
+    fake_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
     assert not is_node_osparc_ready(fake_node)
     # make it ready
-    fake_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
+    fake_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
     assert is_node_osparc_ready(fake_node)
 
 
@@ -1209,9 +1197,9 @@ async def test_set_node_found_empty(
 ):
     # initial state
     assert is_node_ready_and_available(host_node, availability=Availability.active)
-    assert host_node.Spec
-    assert host_node.Spec.Labels
-    assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in host_node.Spec.Labels
+    assert host_node.spec
+    assert host_node.spec.labels
+    assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in host_node.spec.labels
 
     # the date does not exist as nothing was done
     node_empty_since = await get_node_empty_since(host_node)
@@ -1219,9 +1207,9 @@ async def test_set_node_found_empty(
 
     # now we set it to empty
     updated_node = await set_node_found_empty(autoscaling_docker, host_node, empty=True)
-    assert updated_node.Spec
-    assert updated_node.Spec.Labels
-    assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY in updated_node.Spec.Labels
+    assert updated_node.spec
+    assert updated_node.spec.labels
+    assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY in updated_node.spec.labels
 
     # we can get that empty date back
     node_empty_since = await get_node_empty_since(updated_node)
@@ -1232,9 +1220,9 @@ async def test_set_node_found_empty(
     updated_node = await set_node_found_empty(
         autoscaling_docker, host_node, empty=False
     )
-    assert updated_node.Spec
-    assert updated_node.Spec.Labels
-    assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in updated_node.Spec.Labels
+    assert updated_node.spec
+    assert updated_node.spec.labels
+    assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in updated_node.spec.labels
 
     # we can't get a date anymore
     node_empty_since = await get_node_empty_since(updated_node)
@@ -1253,9 +1241,9 @@ async def test_set_node_begin_termination_process(
 ):
     # initial state
     assert is_node_ready_and_available(host_node, availability=Availability.active)
-    assert host_node.Spec
-    assert host_node.Spec.Labels
-    assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY not in host_node.Spec.Labels
+    assert host_node.spec
+    assert host_node.spec.labels
+    assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY not in host_node.spec.labels
 
     # the termination was not started, therefore no date
     assert get_node_termination_started_since(host_node) is None
@@ -1263,9 +1251,9 @@ async def test_set_node_begin_termination_process(
     updated_node = await set_node_begin_termination_process(
         autoscaling_docker, host_node
     )
-    assert updated_node.Spec
-    assert updated_node.Spec.Labels
-    assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY in updated_node.Spec.Labels
+    assert updated_node.spec
+    assert updated_node.spec.labels
+    assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY in updated_node.spec.labels
 
     await asyncio.sleep(1)
 

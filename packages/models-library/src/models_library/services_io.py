@@ -149,7 +149,6 @@ class ServiceInput(BaseServiceIOModel):
     )
 
     model_config = ConfigDict(
-        **BaseServiceIOModel.model_config,
         json_schema_extra={
             "examples": [
                 # file-wo-widget:
@@ -222,7 +221,6 @@ class ServiceOutput(BaseServiceIOModel):
     )
 
     model_config = ConfigDict(
-        **BaseServiceIOModel.model_config,
         json_schema_extra={
             "examples": [
                 {

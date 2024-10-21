@@ -247,7 +247,7 @@ class Job(BaseModel):
         return self.name
 
 
-PercentageInt = Annotated[int, Field(ge=0, le=100)]
+PercentageInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]
 
 
 class JobStatus(BaseModel):
