@@ -15,6 +15,8 @@ from aiohttp.web_exceptions import (
 
 from . import status
 
+assert issubclass(HTTPError, HTTPException)  # nsoec
+
 # NOTE: these are the status codes that DO NOT have an aiohttp.HTTPException associated
 STATUS_CODES_WITHOUT_AIOHTTP_EXCEPTION_CLASS = (
     status.HTTP_100_CONTINUE,
