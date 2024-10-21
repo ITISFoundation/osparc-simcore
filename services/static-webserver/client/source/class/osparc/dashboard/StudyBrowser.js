@@ -661,7 +661,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       requestParams.orderBy = JSON.stringify(this.getOrderBy());
 
       const filterData = this._searchBarFilter.getFilterData();
-      if (filterData.text || filterData.tags.length) {
+      // Use the ``search`` functionality only if the user types some text
+      // tags should only be used to filter the current context (search context ot workspace/folder context)
+      if (filterData.text) {
         requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
         requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
         return requestParams;
