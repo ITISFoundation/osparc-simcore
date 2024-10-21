@@ -161,7 +161,7 @@ class ResourceTrackerRepository(
         row = result.first()
         if row is None:
             return None
-        return ServiceRunDB.from_orm(row)
+        return ServiceRunDB.model_validate(row)
 
     async def update_service_run_stopped_at(
         self, data: ServiceRunStoppedAtUpdate
@@ -191,7 +191,7 @@ class ResourceTrackerRepository(
         row = result.first()
         if row is None:
             return None
-        return ServiceRunDB.from_orm(row)
+        return ServiceRunDB.model_validate(row)
 
     async def get_service_run_by_id(
         self, service_run_id: ServiceRunId
@@ -204,7 +204,7 @@ class ResourceTrackerRepository(
         row = result.first()
         if row is None:
             return None
-        return ServiceRunDB.from_orm(row)
+        return ServiceRunDB.model_validate(row)
 
     async def list_service_runs_by_product_and_user_and_wallet(
         self,
@@ -309,7 +309,9 @@ class ResourceTrackerRepository(
 
             result = await conn.execute(query)
 
-        return [ServiceRunWithCreditsDB.from_orm(row) for row in result.fetchall()]
+        return [
+            ServiceRunWithCreditsDB.model_validate(row) for row in result.fetchall()
+        ]
 
     async def get_osparc_credits_aggregated_by_service(
         self,
@@ -405,7 +407,7 @@ class ResourceTrackerRepository(
         return (
             cast(int, count_result.scalar()),
             [
-                OsparcCreditsAggregatedByServiceKeyDB.from_orm(row)
+                OsparcCreditsAggregatedByServiceKeyDB.model_validate(row)
                 for row in list_result.fetchall()
             ],
         )
@@ -571,7 +573,7 @@ class ResourceTrackerRepository(
             )
             result = await conn.execute(query)
 
-        return [ServiceRunForCheckDB.from_orm(row) for row in result.fetchall()]
+        return [ServiceRunForCheckDB.model_validate(row) for row in result.fetchall()]
 
     async def total_service_runs_with_running_status_across_all_products(
         self,
@@ -620,7 +622,7 @@ class ResourceTrackerRepository(
         row = result.first()
         if row is None:
             return None
-        return ServiceRunDB.from_orm(row)
+        return ServiceRunDB.model_validate(row)
 
     #################################
     # Credit transactions
@@ -847,7 +849,7 @@ class ResourceTrackerRepository(
             result = await conn.execute(query)
 
         return [
-            PricingPlansWithServiceDefaultPlanDB.from_orm(row)
+            PricingPlansWithServiceDefaultPlanDB.model_validate(row)
             for row in result.fetchall()
         ]
 
@@ -873,7 +875,7 @@ class ResourceTrackerRepository(
             raise CustomResourceUsageTrackerError(
                 msg=f"Pricing plan does not exists: {pricing_plan_id}"
             )
-        return PricingPlansDB.from_orm(row)
+        return PricingPlansDB.model_validate(row)
 
     async def list_pricing_plans_by_product(
         self, product_name: ProductName
@@ -890,7 +892,7 @@ class ResourceTrackerRepository(
             ).where(resource_tracker_pricing_plans.c.product_name == product_name)
             result = await conn.execute(select_stmt)
 
-        return [PricingPlansDB.from_orm(row) for row in result.fetchall()]
+        return [PricingPlansDB.model_validate(row) for row in result.fetchall()]
 
     async def create_pricing_plan(self, data: PricingPlanCreate) -> PricingPlansDB:
         async with self.db_engine.begin() as conn:
@@ -924,7 +926,7 @@ class ResourceTrackerRepository(
             raise CustomResourceUsageTrackerError(
                 msg=f"Pricing plan was not created: {data}"
             )
-        return PricingPlansDB.from_orm(row)
+        return PricingPlansDB.model_validate(row)
 
     async def update_pricing_plan(
         self, product_name: ProductName, data: PricingPlanUpdate
@@ -961,7 +963,7 @@ class ResourceTrackerRepository(
         row = result.first()
         if row is None:
             return None
-        return PricingPlansDB.from_orm(row)
+        return PricingPlansDB.model_validate(row)
 
     #################################
     # Pricing plan to service
@@ -1000,7 +1002,9 @@ class ResourceTrackerRepository(
             )
             result = await conn.execute(query)
 
-            return [PricingPlanToServiceDB.from_orm(row) for row in result.fetchall()]
+            return [
+                PricingPlanToServiceDB.model_validate(row) for row in result.fetchall()
+            ]
 
     async def upsert_service_to_pricing_plan(
         self,
@@ -1087,7 +1091,7 @@ class ResourceTrackerRepository(
                 raise CustomResourceUsageTrackerError(
                     msg="Pricing plan to service record was not created"
                 )
-            return PricingPlanToServiceDB.from_orm(row)
+            return PricingPlanToServiceDB.model_validate(row)
 
     #################################
     # Pricing units
@@ -1145,7 +1149,7 @@ class ResourceTrackerRepository(
             )
             result = await conn.execute(query)
 
-        return [PricingUnitsDB.from_orm(row) for row in result.fetchall()]
+        return [PricingUnitsDB.model_validate(row) for row in result.fetchall()]
 
     async def get_valid_pricing_unit(
         self,
@@ -1197,7 +1201,7 @@ class ResourceTrackerRepository(
             raise CustomResourceUsageTrackerError(
                 msg=f"Pricing plan {pricing_plan_id} and pricing unit {pricing_unit_id} for product {product_name} not found"
             )
-        return PricingUnitsDB.from_orm(row)
+        return PricingUnitsDB.model_validate(row)
 
     async def create_pricing_unit_with_cost(
         self, data: PricingUnitWithCostCreate, pricing_plan_key: str
@@ -1348,4 +1352,4 @@ class ResourceTrackerRepository(
             raise CustomResourceUsageTrackerError(
                 msg=f"Pricing unit cost id {pricing_unit_cost_id} not found in the resource_tracker_pricing_unit_costs table",
             )
-        return PricingUnitCostsDB.from_orm(row)
+        return PricingUnitCostsDB.model_validate(row)
