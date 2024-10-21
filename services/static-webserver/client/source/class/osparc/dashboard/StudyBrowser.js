@@ -615,8 +615,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       delete reqParams["limit"];
       delete reqParams["offset"];
 
+      const cParams = this.__getRequestParams();
+      const currentParams = {};
+      Object.entries(cParams).forEach(([snakeKey, value]) => {
+        const key = osparc.utils.Utils.snakeToCamel(snakeKey);
+        currentParams[key] = value === "null" ? null : value;
+      });
+
       // check the entries in currentParams are the same as the reqParams
-      const currentParams = this.__getRequestParams();
       let sameContext = true;
       Object.entries(currentParams).forEach(([key, value]) => {
         sameContext &= key in reqParams && reqParams[key] === value;
