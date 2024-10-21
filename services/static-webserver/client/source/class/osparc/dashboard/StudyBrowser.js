@@ -334,6 +334,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const cards = this._resourcesContainer.reloadCards("studies");
       this.__configureStudyCards(cards);
 
+      // they were removed in the above reloadCards
+      this.__reloadFolders();
+
       this.__addNewStudyButtons();
 
       const loadMoreBtn = this.__createLoadMoreButton();
