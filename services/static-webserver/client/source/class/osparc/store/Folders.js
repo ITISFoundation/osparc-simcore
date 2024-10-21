@@ -34,17 +34,31 @@ qx.Class.define("osparc.store.Folders", {
   members: {
     foldersCached: null,
 
-    fetchFolders: function(folderId = null, workspaceId = null) {
+    fetchFolders: function(
+      folderId = null,
+      workspaceId = null,
+      orderBy = {
+        field: "modified_at",
+        direction: "desc"
+      }
+    ) {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
           resolve([]);
         });
       }
 
+      const curatedOrderBy = osparc.utils.Utils.deepCloneObject(orderBy);
+      if (curatedOrderBy.field !== "name") {
+        // only "modified_at" and "name" supported
+        curatedOrderBy.field = "modified_at";
+      }
+
       const params = {
-        "url": {
+        url: {
           workspaceId,
           folderId,
+          orderBy: JSON.stringify(curatedOrderBy),
         }
       };
       return osparc.data.Resources.getInstance().getAllPages("folders", params)

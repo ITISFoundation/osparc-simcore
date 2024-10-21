@@ -177,7 +177,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
         this.__setFoldersToList([]);
-        osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId)
+        osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId, this.getOrderBy())
           .then(folders => {
             this.__setFoldersToList(folders);
           })
@@ -290,7 +290,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._resourcesList.push(study);
         }
       });
-      this._reloadNewCards();
+      this.__reloadNewCards();
 
       studiesList.forEach(study => {
         const state = study["state"];
@@ -317,24 +317,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __setFoldersToList: function(folders) {
       this.__foldersList = folders;
       folders.forEach(folder => folder["resourceType"] = "folder");
-
-      const sortByValueBE = this.getOrderBy().field;
-      let sortByValue = null;
-      switch (sortByValueBE) {
-        case "name":
-          sortByValue = "name";
-          break;
-        case "prj_owner":
-          sortByValue = "owner";
-          break;
-        case "creation_date":
-          sortByValue = "createdAt";
-          break;
-        case "last_change_date":
-          sortByValue = "lastModified";
-          break;
-      }
-      this.self().sortFoldersList(this.__foldersList, sortByValue);
       this.__reloadFolderCards();
     },
 
@@ -352,6 +334,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const cards = this._resourcesContainer.reloadCards("studies");
       this.__configureStudyCards(cards);
 
+      // they were removed in the above reloadCards
+      this.__reloadFolders();
+
       this.__addNewStudyButtons();
 
       const loadMoreBtn = this.__createLoadMoreButton();
@@ -365,7 +350,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
-    _reloadNewCards: function() {
+    __reloadNewCards: function() {
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       const cards = this._resourcesContainer.reloadNewCards();
       this.__configureStudyCards(cards);
@@ -615,8 +600,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       delete reqParams["limit"];
       delete reqParams["offset"];
 
+      const cParams = this.__getRequestParams();
+      const currentParams = {};
+      Object.entries(cParams).forEach(([snakeKey, value]) => {
+        const key = osparc.utils.Utils.snakeToCamel(snakeKey);
+        currentParams[key] = value === "null" ? null : value;
+      });
+
       // check the entries in currentParams are the same as the reqParams
-      const currentParams = this.__getRequestParams();
       let sameContext = true;
       Object.entries(currentParams).forEach(([key, value]) => {
         sameContext &= key in reqParams && reqParams[key] === value;
@@ -655,8 +646,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       requestParams.orderBy = JSON.stringify(this.getOrderBy());
 
       const filterData = this._searchBarFilter.getFilterData();
+      // Use the ``search`` functionality only if the user types some text
+      // tags should only be used to filter the current context (search context ot workspace/folder context)
       if (filterData.text) {
-        requestParams.text = encodeURIComponent(filterData.text); // name, description and uuid
+        requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
+        requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
         return requestParams;
       }
 
@@ -988,9 +982,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       osparc.utils.Utils.setIdToWidget(sortByButton, "sortByButton");
       sortByButton.addListener("sortByChanged", e => {
-        this.setOrderBy(e.getData())
-        this.__resetStudiesList();
-        this.__reloadStudies();
+        this.setOrderBy(e.getData());
+        this.invalidateStudies();
+        this.reloadResources();
       }, this);
       this._toolbar.add(sortByButton);
     },
@@ -1228,13 +1222,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _updateStudyData: function(studyData) {
       studyData["resourceType"] = "study";
-      const studies = this._resourcesList;
-      const index = studies.findIndex(study => study["uuid"] === studyData["uuid"]);
+      const index = this._resourcesList.findIndex(study => study["uuid"] === studyData["uuid"]);
       if (index === -1) {
         // add it in first position, most likely it's a new study
-        studies.unshift(studyData);
+        this._resourcesList.unshift(studyData);
       } else {
-        studies[index] = studyData;
+        this._resourcesList[index] = studyData;
       }
       this._reloadCards();
     },
