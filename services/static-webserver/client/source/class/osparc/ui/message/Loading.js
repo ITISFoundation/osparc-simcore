@@ -248,6 +248,10 @@ qx.Class.define("osparc.ui.message.Loading", {
       this.__messagesContainer.removeAll();
     },
 
+    getMessageLabels: function() {
+      return this.__messagesContainer.getChildren();
+    },
+
     addWidgetToMessages: function(widget) {
       if (widget) {
         this.__messagesContainer.add(widget);
