@@ -979,9 +979,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       osparc.utils.Utils.setIdToWidget(sortByButton, "sortByButton");
       sortByButton.addListener("sortByChanged", e => {
-        this.setOrderBy(e.getData())
-        this.__resetStudiesList();
-        this.__reloadStudies();
+        this.setOrderBy(e.getData());
+        this.invalidateStudies();
+        this.reloadResources();
       }, this);
       this._toolbar.add(sortByButton);
     },
@@ -1219,13 +1219,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _updateStudyData: function(studyData) {
       studyData["resourceType"] = "study";
-      const studies = this._resourcesList;
-      const index = studies.findIndex(study => study["uuid"] === studyData["uuid"]);
+      const index = this._resourcesList.findIndex(study => study["uuid"] === studyData["uuid"]);
       if (index === -1) {
         // add it in first position, most likely it's a new study
-        studies.unshift(studyData);
+        this._resourcesList.unshift(studyData);
       } else {
-        studies[index] = studyData;
+        this._resourcesList[index] = studyData;
       }
       this._reloadCards();
     },
