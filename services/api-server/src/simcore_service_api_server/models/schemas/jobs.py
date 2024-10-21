@@ -34,6 +34,7 @@ from ..api_resources import (
 )
 
 JobID: TypeAlias = UUID
+assert JobID == ProjectID
 
 # ArgumentTypes are types used in the job inputs (see ResultsTypes)
 ArgumentTypes: TypeAlias = (

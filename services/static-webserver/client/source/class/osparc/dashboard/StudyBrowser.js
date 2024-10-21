@@ -673,24 +673,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES,
         }
       };
-
       const nextPageParams = this.__getNextPageParams();
       if (nextPageParams) {
         params.url.offset = nextPageParams.offset;
         params.url.limit = nextPageParams.limit;
       }
-      const options = {
-        resolveWResponse: true
-      };
-
       const requestParams = this.__getRequestParams();
       Object.entries(requestParams).forEach(([key, value]) => {
         params.url[key] = value;
       });
+
+      const options = {
+        resolveWResponse: true
+      };
+
       if ("text" in requestParams) {
-        return osparc.data.Resources.fetch("studies", "getPageSearch", params, undefined, options);
+        return osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
       }
-      return osparc.data.Resources.fetch("studies", "getPage", params, undefined, options);
+      return osparc.data.Resources.fetch("studies", "getPage", params, options);
     },
 
     invalidateStudies: function() {
@@ -1221,7 +1221,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             studyId
           }
         };
-        osparc.data.Resources.fetch("studies", "delete", params, studyId);
+        osparc.data.Resources.fetch("studies", "delete", params);
       };
       const isStudyCreation = true;
       this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
@@ -1546,7 +1546,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           "studyId": studyData["uuid"]
         }
       };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, null, {"pollTask": true});
+      const options = {
+        pollTask: true
+      };
+      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
       const interval = 1000;
       const pollTasks = osparc.data.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise, interval)

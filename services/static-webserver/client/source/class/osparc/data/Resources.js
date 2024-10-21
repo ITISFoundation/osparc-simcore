@@ -113,6 +113,7 @@ qx.Class.define("osparc.data.Resources", {
       "studies": {
         useCache: true,
         idField: "uuid",
+        deleteId: "studyId",
         endpoints: {
           get: {
             method: "GET",
@@ -710,6 +711,7 @@ qx.Class.define("osparc.data.Resources", {
       "tokens": {
         useCache: true,
         idField: "service",
+        deleteId: "service",
         endpoints: {
           get: {
             method: "GET",
@@ -1199,8 +1201,9 @@ qx.Class.define("osparc.data.Resources", {
        * TAGS
        */
       "tags": {
-        idField: "id",
         useCache: true,
+        idField: "id",
+        deleteId: "tagId",
         endpoints: {
           get: {
             method: "GET",
@@ -1243,20 +1246,22 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {String} endpoint Name of the endpoint. Several endpoints can be defined for each resource.
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
-     * @param {String} deleteId When deleting, id of the element that needs to be deleted from the cache.
-     * @param {Object} options Collections of options
+     * @param {Object} options Collections of options (pollTask, resolveWResponse, timeout, timeoutRetries)
      */
-    fetch: function(resource, endpoint, params = {}, deleteId, options = {}) {
+    fetch: function(resource, endpoint, params = {}, options = {}) {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
         }
 
         const resourceDefinition = this.self().resources[resource];
-        const res = new osparc.io.rest.Resource(resourceDefinition.endpoints);
-
+        const res = new osparc.io.rest.Resource(resourceDefinition.endpoints, options.timeout);
         if (!res.includesRoute(endpoint)) {
           reject(Error(`Error while fetching ${resource}: the endpoint is not defined`));
+        }
+
+        const sendRequest = () => {
+          res[endpoint](params.url || null, params.data || null);
         }
 
         res.addListenerOnce(endpoint + "Success", e => {
@@ -1275,7 +1280,8 @@ qx.Class.define("osparc.data.Resources", {
             }
           }
           if (useCache) {
-            if (endpoint.includes("delete")) {
+            if (endpoint.includes("delete") && resourceDefinition["deleteId"] && resourceDefinition["deleteId"] in params.url) {
+              const deleteId = params.url[resourceDefinition["deleteId"]];
               this.__removeCached(resource, deleteId);
             } else if (endpointDef.method === "POST" && options.pollTask !== true) {
               this.__addCached(resource, data);
@@ -1296,7 +1302,15 @@ qx.Class.define("osparc.data.Resources", {
           }
         }, this);
 
-        res.addListenerOnce(endpoint + "Error", e => {
+        res.addListener(endpoint + "Error", e => {
+          if (e.getPhase() === "timeout") {
+            if (options.timeout && options.timeoutRetries) {
+              options.timeoutRetries--;
+              sendRequest();
+              return;
+            }
+          }
+
           let message = null;
           let status = null;
           if (e.getData().error) {
@@ -1329,7 +1343,7 @@ qx.Class.define("osparc.data.Resources", {
                 if ("status" in err && err.status === 401) {
                   // Unauthorized again, the cookie might have expired.
                   // We can assume that all calls after this will respond with 401, so bring the user ot the login page.
-                  qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You were logged out"));
+                  qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You were logged out. Your cookie might have expired."));
                 }
               });
           }
@@ -1344,7 +1358,7 @@ qx.Class.define("osparc.data.Resources", {
           reject(err);
         });
 
-        res[endpoint](params.url || null, params.data || null);
+        sendRequest();
       });
     },
 
@@ -1361,7 +1375,7 @@ qx.Class.define("osparc.data.Resources", {
         const options = {
           resolveWResponse: true
         };
-        this.fetch(resource, endpoint, params, null, options)
+        this.fetch(resource, endpoint, params, options)
           .then(resp => {
             // sometimes there is a kind of a double "data"
             const meta = ("_meta" in resp["data"]) ? resp["data"]["_meta"] : resp["_meta"];
@@ -1425,14 +1439,14 @@ qx.Class.define("osparc.data.Resources", {
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
      * @param {Boolean} useCache Whether the cache has to be used. If false, an API call will be issued.
      */
-    get: function(resource, params, useCache = true) {
+    get: function(resource, params = {}, useCache = true, options = {}) {
       if (useCache) {
         const stored = this.__getCached(resource);
         if (stored) {
           return Promise.resolve(stored);
         }
       }
-      return this.fetch(resource, "get", params || {});
+      return this.fetch(resource, "get", params, options);
     },
 
     /**
@@ -1488,14 +1502,14 @@ qx.Class.define("osparc.data.Resources", {
 
   statics: {
     API: "/v0",
-    fetch: function(resource, endpoint, params, deleteId, options = {}) {
-      return this.getInstance().fetch(resource, endpoint, params, deleteId, options);
+    fetch: function(resource, endpoint, params, options = {}) {
+      return this.getInstance().fetch(resource, endpoint, params, options);
     },
     getOne: function(resource, params, id, useCache) {
       return this.getInstance().getOne(resource, params, id, useCache);
     },
-    get: function(resource, params, useCache) {
-      return this.getInstance().get(resource, params, useCache);
+    get: function(resource, params, useCache, options) {
+      return this.getInstance().get(resource, params, useCache, options);
     },
 
     getServiceUrl: function(key, version) {
