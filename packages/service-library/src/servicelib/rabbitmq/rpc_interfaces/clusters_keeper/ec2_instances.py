@@ -1,3 +1,5 @@
+from typing import Literal
+
 from models_library.api_schemas_clusters_keeper import CLUSTERS_KEEPER_RPC_NAMESPACE
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -7,7 +9,7 @@ from ..._constants import RPC_REMOTE_METHOD_TIMEOUT_S
 
 
 async def get_instance_type_details(
-    client: RabbitMQRPCClient, *, instance_type_names: set[str]
+    client: RabbitMQRPCClient, *, instance_type_names: set[str] | Literal["ALL"]
 ) -> list[EC2InstanceTypeGet]:
     """**Remote method**
 
