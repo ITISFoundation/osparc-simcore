@@ -1,5 +1,10 @@
 # syntax=docker/dockerfile:1
+
+# Define arguments in the global scope
 ARG PYTHON_VERSION="3.11.9"
+ARG UV_VERSION="0.4"
+FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
+# we docker image is built based on debian
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
 RUN \
