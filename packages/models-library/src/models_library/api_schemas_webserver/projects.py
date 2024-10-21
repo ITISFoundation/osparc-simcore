@@ -10,7 +10,7 @@ from typing import Any, Literal, TypeAlias
 from common_library.pydantic_basic_types import LongTruncatedStr, ShortTruncatedStr
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
-from pydantic import Field, HttpUrl, field_validator
+from pydantic import ConfigDict, Field, HttpUrl, field_validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..emails import LowerCaseEmailStr
@@ -81,6 +81,10 @@ class ProjectGet(OutputSchema):
     permalink: ProjectPermalink = FieldNotRequired()
     workspace_id: WorkspaceID | None
     folder_id: FolderID | None
+
+    model_config = ConfigDict(
+        frozen=False
+    )
 
     _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
