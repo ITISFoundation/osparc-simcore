@@ -20,7 +20,6 @@ echo "$INFO" "User : $(id scu)"
 echo "$INFO" "python : $(command -v python)"
 echo "$INFO" "pip : $(command -v pip)"
 
-
 #
 # DEVELOPMENT MODE
 # - expects docker run ... -v $(pwd):$SC_DEVEL_MOUNT
@@ -66,7 +65,7 @@ fi
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
-  pip install --no-cache-dir debugpy
+  uv pip install --no-cache-dir debugpy
 fi
 
 echo "$INFO Starting $* ..."

@@ -15,7 +15,6 @@ ERROR="ERROR: [$(basename "$0")] "
 # It needs to be executed as root.
 update-ca-certificates
 
-
 # This entrypoint script:
 #
 # - Executes *inside* of the container upon start as --user [default root]
@@ -28,7 +27,6 @@ echo "$INFO" "Workdir : $(pwd)"
 echo "$INFO" "User : $(id scu)"
 echo "$INFO" "python : $(command -v python)"
 echo "$INFO" "pip : $(command -v pip)"
-
 
 if [ "${SC_BUILD_TARGET}" = "development" ]; then
   echo "$INFO" "development mode detected..."
@@ -72,7 +70,7 @@ fi
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
-  pip install --no-cache-dir debugpy
+  uv pip install --no-cache-dir debugpy
 fi
 
 echo "$INFO Starting $* ..."

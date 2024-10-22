@@ -65,7 +65,7 @@ fi
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
-  pip install --no-cache-dir debugpy
+  uv pip install --no-cache-dir debugpy
 fi
 
 # Appends docker group if socket is mounted
