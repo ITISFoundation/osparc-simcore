@@ -24,7 +24,6 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   command -v python | sed 's/^/    /'
 
   cd services/dynamic-scheduler
-  pip install uv
   uv pip --quiet --no-cache-dir sync requirements/dev.txt
   cd -
   echo "$INFO" "PIP :"
