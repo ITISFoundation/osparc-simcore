@@ -48,7 +48,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def LOG_LEVEL(self):  # noqa: N802
         return self.PAYMENTS_LOGLEVEL
 
-    @validator("PAYMENTS_LOGLEVEL")
+    @validator("PAYMENTS_LOGLEVEL", pre=True)
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
