@@ -40,11 +40,9 @@ def app_environment(
     )
 
 
-@patch(
-    "simcore_service_efs_guardian.services.process_messages.Notifier.get_from_app_state"
-)
+@patch("simcore_service_efs_guardian.services.process_messages.update_disk_usage")
 async def test_process_msg(
-    mock_notifier_get_from_app_state,
+    mock_update_disk_usage,
     faker: Faker,
     mocked_redis_server: None,
     app: FastAPI,
@@ -64,35 +62,32 @@ async def test_process_msg(
     json_str = model_instance.json()
     model_bytes = json_str.encode("utf-8")
 
+    _expected_project_node_states = [".data_assets", "home_user_workspace"]
     # Mock efs_manager and its methods
     mock_efs_manager = AsyncMock()
     app.state.efs_manager = mock_efs_manager
     mock_efs_manager.check_project_node_data_directory_exits.return_value = True
     mock_efs_manager.get_project_node_data_size.return_value = 4000
-
-    # Mock the Notifier
-    mock_notifier = AsyncMock()
-    mock_notifier_get_from_app_state.return_value = mock_notifier
+    mock_efs_manager.list_project_node_state_names.return_value = (
+        _expected_project_node_states
+    )
 
     result = await process_dynamic_service_running_message(app, data=model_bytes)
 
     # Check the actual arguments passed to notify_service_efs_disk_usage
-    _, kwargs = mock_notifier.notify_service_efs_disk_usage.call_args
-    assert kwargs["user_id"] == user_id
-    efs_node_disk_usage = kwargs["efs_node_disk_usage"]
+    _, kwargs = mock_update_disk_usage.call_args
+    assert kwargs["usage"]
+    assert len(kwargs["usage"]) == 2
+    for key, value in kwargs["usage"].items():
+        assert key in _expected_project_node_states
+        assert value.used == 4000
+        assert value.free == 6000
+        assert value.total == 10000
+        assert value.used_percent == 40.0
 
-    # Check EfsNodeDiskUsage values
-    assert efs_node_disk_usage.node_id == node_id
-    assert efs_node_disk_usage.used == 4000
-    assert efs_node_disk_usage.free == 6000
-    assert efs_node_disk_usage.total == 10000
-    assert efs_node_disk_usage.used_percent == 40.0
-
-    # Check that the function returns True
     assert result is True
 
 
-@pytest.mark.skip()
 async def test_process_msg__dir_not_exists(
     mocked_redis_server: None,
     app: FastAPI,

@@ -1,17 +1,19 @@
 import logging
 
 from fastapi import FastAPI
+from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
 from models_library.rabbitmq_messages import DynamicServiceRunningMessage
-from pydantic import ByteSize, parse_raw_as
+from pydantic import parse_raw_as
 from servicelib.logging_utils import log_context
-from simcore_service_efs_guardian.services.modules.redis import get_redis_lock_client
-from simcore_service_efs_guardian.services.notifier_setup import (
-    EfsNodeDiskUsage,
-    Notifier,
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar.disk_usage import (
+    update_disk_usage,
 )
 
 from ..core.settings import get_application_settings
 from ..services.efs_manager import EfsManager
+from ..services.modules.rabbitmq import get_rabbitmq_rpc_client
+from ..services.modules.redis import get_redis_lock_client
 
 _logger = logging.getLogger(__name__)
 
@@ -53,18 +55,23 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
         rabbit_message.node_id,
         rabbit_message.user_id,
     )
-    percentage = round(size / settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES * 100, 2)
-    efs_node_disk_usage = EfsNodeDiskUsage(
-        node_id=rabbit_message.node_id,
-        used=size,
-        free=ByteSize(max(settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES - size, 0)),
-        total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES,
-        used_percent=min(percentage, 100.0),
+
+    project_node_state_names = await efs_manager.list_project_node_state_names(
+        rabbit_message.project_id, node_id=rabbit_message.node_id
     )
-    notifier: Notifier = Notifier.get_from_app_state(app)
-    await notifier.notify_service_efs_disk_usage(
-        user_id=rabbit_message.user_id, efs_node_disk_usage=efs_node_disk_usage
-    )
+    rpc_client: RabbitMQRPCClient = get_rabbitmq_rpc_client(app)
+    _used = min(size, settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES)
+    usage: dict[str, DiskUsage] = {}
+    for name in project_node_state_names:
+        usage[name] = DiskUsage.from_efs_guardian(
+            used=_used, total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES
+        )
+
+    # usage = {
+    #     ".data_assets": DiskUsage.from_efs_guardian(used=_used, total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES),
+    #     "home_user_workspace": DiskUsage.from_efs_guardian(used=_used, total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES)
+    # }
+    await update_disk_usage(rpc_client, usage=usage)
 
     if size > settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES:
         msg = f"Removing write permissions inside of EFS starts for project ID: {rabbit_message.project_id}, node ID: {rabbit_message.node_id}, current user: {rabbit_message.user_id}, size: {size}, upper limit: {settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES}"

@@ -17,7 +17,6 @@ from ..services.background_tasks_setup import setup as setup_background_tasks
 from ..services.efs_manager_setup import setup as setup_efs_manager
 from ..services.modules.rabbitmq import setup as setup_rabbitmq
 from ..services.modules.redis import setup as setup_redis
-from ..services.notifications._setup import setup_notifications
 from ..services.process_messages_setup import setup as setup_process_messages
 from .settings import ApplicationSettings
 
@@ -52,8 +51,6 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_efs_manager(app)
     setup_background_tasks(app)
     setup_process_messages(app)
-
-    setup_notifications(app)
 
     # EVENTS
     async def _on_startup() -> None:
