@@ -98,29 +98,25 @@ class EfsManager:
     async def list_projects_across_whole_efs(self) -> list[ProjectID]:
         _dir_path = self._efs_mounted_path / self._project_specific_data_base_directory
 
-        # List all items in the directory
-        items = os.listdir(_dir_path)
-
         # Filter and list only directories (which should be Project UUIDs)
-        directories = []
-        for item in items:
-            _item_path = _dir_path / item
-            if Path.is_dir(_item_path):
+        project_uuids = []
+        for child in _dir_path.iterdir():
+            if child.is_dir():
                 try:
-                    _project_id = parse_obj_as(ProjectID, item)
-                    directories.append(_project_id)
+                    _project_id = parse_obj_as(ProjectID, child.name)
+                    project_uuids.append(_project_id)
                 except ValueError:
                     _logger.error(
                         "This is not a project ID. This should not happen! %s",
-                        _item_path,
+                        _dir_path / child.name,
                     )
             else:
                 _logger.error(
                     "This is not a directory. This should not happen! %s",
-                    _item_path,
+                    _dir_path / child.name,
                 )
 
-        return directories
+        return project_uuids
 
     async def remove_project_efs_data(self, project_id: ProjectID) -> None:
         _dir_path = (
