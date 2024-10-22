@@ -101,7 +101,7 @@ async def test_capture_http_dynamic_call(
             respx_mock.request(
                 method=captured.method,
                 path__regex=re.sub(
-                    f"{sample_uid!r}", pattern, captured.path
+                    f"{sample_uid}", pattern, captured.path
                 ),  # using REGEX
                 name=captured.name,
             ).respond(
