@@ -22,6 +22,7 @@
  * [CLUSTER_UP_SCALING]
  * [SIDECARS_PULLING]
  * [SERVICE_OUTPUTS_PULLING, SERVICE_STATE_PULLING, SERVICE_IMAGES_PULLING] (notice the parallelism here)
+ * [SERVICE_CONTAINERS_STARTING]
  * [SERVICE_INPUTS_PULLING] (when this happens, the frontend has already loaded the service and is displaying it to the user) I would still keep it as is, when we decide to make inputs pulling part of the boot sequence this will be helpful.
  *
  * This class provides different widgets that render the progress status

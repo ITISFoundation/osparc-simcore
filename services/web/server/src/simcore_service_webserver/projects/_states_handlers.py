@@ -10,6 +10,7 @@ import logging
 from aiohttp import web
 from models_library.projects_state import ProjectState
 from pydantic import BaseModel
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
@@ -20,7 +21,6 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
@@ -222,7 +222,7 @@ async def close_project(request: web.Request) -> web.Response:
         ),
     )
     await project_logs.unsubscribe(request.app, path_params.project_id)
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #

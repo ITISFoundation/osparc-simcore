@@ -4,11 +4,11 @@ import logging
 import redis.asyncio as aioredis
 from aiohttp import web
 from pydantic import BaseModel
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis_utils import handle_redis_returns_union_types
 
 from .._meta import API_VTAG
@@ -84,7 +84,7 @@ async def create_user_notification(request: web.Request) -> web.Response:
         pipe.ltrim(key, 0, MAX_NOTIFICATIONS_FOR_USER_TO_KEEP - 1)
         await pipe.execute()
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 class _NotificationPathParams(BaseModel):
@@ -115,9 +115,9 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
             await handle_redis_returns_union_types(
                 redis_client.lset(key, k, user_notification.json())
             )
-            raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+            return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.get(f"/{API_VTAG}/me/permissions", name="list_user_permissions")

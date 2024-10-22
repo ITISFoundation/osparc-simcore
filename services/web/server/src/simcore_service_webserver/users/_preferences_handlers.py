@@ -8,12 +8,12 @@ from models_library.api_schemas_webserver.users_preferences import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import BaseModel, Field
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_user_preferences import (
     CouldNotCreateOrUpdateUserPreferenceError,
@@ -66,4 +66,4 @@ async def set_frontend_preference(request: web.Request) -> web.Response:
         frontend_preference_identifier=req_path_params.preference_id,
         value=req_body.value,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

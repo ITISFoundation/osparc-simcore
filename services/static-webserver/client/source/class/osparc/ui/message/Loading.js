@@ -93,7 +93,7 @@ qx.Class.define("osparc.ui.message.Loading", {
     __mainLayout: null,
     __thumbnail: null,
     __header: null,
-    __messages: null,
+    __messagesContainer: null,
     __extraWidgets: null,
     __maxButton: null,
 
@@ -162,7 +162,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         row: this.self().GRID_POS.WAITING
       });
 
-      const messages = this.__messages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+      const messages = this.__messagesContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
       }));
       mainLayout.addAt(messages, {
@@ -236,24 +236,28 @@ qx.Class.define("osparc.ui.message.Loading", {
             rich: true,
             wrap: true
           });
-          this.__messages.add(text);
+          this.__messagesContainer.add(text);
         });
-        this.__messages.show();
+        this.__messagesContainer.show();
       } else {
-        this.__messages.exclude();
+        this.__messagesContainer.exclude();
       }
     },
 
     clearMessages: function() {
-      this.__messages.removeAll();
+      this.__messagesContainer.removeAll();
+    },
+
+    getMessageLabels: function() {
+      return this.__messagesContainer.getChildren();
     },
 
     addWidgetToMessages: function(widget) {
       if (widget) {
-        this.__messages.add(widget);
-        this.__messages.show();
+        this.__messagesContainer.add(widget);
+        this.__messagesContainer.show();
       } else {
-        this.__messages.exclude();
+        this.__messagesContainer.exclude();
       }
     },
 
