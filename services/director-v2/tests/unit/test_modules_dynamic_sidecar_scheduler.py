@@ -162,7 +162,7 @@ def mocked_director_v0(
             ),
             name="service labels",
         ).respond(
-            json={"data": SimcoreServiceLabels.Config.schema_extra["examples"][0]}
+            json={"data": SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][0]}
         )
         yield mock
 

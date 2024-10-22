@@ -482,7 +482,7 @@ def task_labels(comp_run_metadata: RunMetadataDict) -> ContainerLabelsDict:
 
 @pytest.fixture
 def hardware_info() -> HardwareInfo:
-    return HardwareInfo.parse_obj(HardwareInfo.Config.schema_extra["examples"][0])
+    return HardwareInfo.parse_obj(HardwareInfo.model_config["json_schema_extra"]["examples"][0])
 
 
 @pytest.fixture

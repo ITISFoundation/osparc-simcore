@@ -336,7 +336,7 @@ def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
 
-    fake_data = ApiKeyGet.parse_obj(ApiKeyGet.Config.schema_extra["examples"][0])
+    fake_data = ApiKeyGet.parse_obj(ApiKeyGet.model_config["json_schema_extra"]["examples"][0])
 
     async def _create(
         app: FastAPI,

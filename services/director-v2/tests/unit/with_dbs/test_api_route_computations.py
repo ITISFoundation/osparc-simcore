@@ -109,7 +109,7 @@ def fake_service_details(mocks_dir: Path) -> ServiceMetaDataPublished:
 
 @pytest.fixture
 def fake_service_extras() -> ServiceExtras:
-    extra_example = ServiceExtras.Config.schema_extra["examples"][2]
+    extra_example = ServiceExtras.model_config["json_schema_extra"]["examples"][2]
     random_extras = ServiceExtras(**extra_example)
     assert random_extras is not None
     return random_extras
@@ -119,13 +119,13 @@ def fake_service_extras() -> ServiceExtras:
 def fake_service_resources() -> ServiceResourcesDict:
     return parse_obj_as(
         ServiceResourcesDict,
-        ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
+        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
     )
 
 
 @pytest.fixture
 def fake_service_labels() -> dict[str, Any]:
-    return choice(SimcoreServiceLabels.Config.schema_extra["examples"])  # noqa: S311
+    return choice(SimcoreServiceLabels.model_config["json_schema_extra"]["examples"])  # noqa: S311
 
 
 @pytest.fixture
@@ -257,7 +257,7 @@ def mocked_catalog_service_fcts_deprecated(
 
 
 @pytest.fixture(
-    params=PricingPlanGet.Config.schema_extra["examples"],
+    params=PricingPlanGet.model_config["json_schema_extra"]["examples"],
     ids=["with ec2 restriction", "without"],
 )
 def default_pricing_plan(request: pytest.FixtureRequest) -> PricingPlanGet:
@@ -301,7 +301,7 @@ def mocked_resource_usage_tracker_service_fcts(
                 (
                     default_pricing_plan.pricing_units[0]
                     if default_pricing_plan.pricing_units
-                    else PricingUnitGet.Config.schema_extra["examples"][0]
+                    else PricingUnitGet.model_config["json_schema_extra"]["examples"][0]
                 ),
                 by_alias=True,
             ),
@@ -461,7 +461,7 @@ def mocked_clusters_keeper_service_get_instance_type_details_with_invalid_name(
     )
 
 
-@pytest.fixture(params=ServiceResourcesDictHelpers.Config.schema_extra["examples"])
+@pytest.fixture(params=ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"])
 def project_nodes_overrides(request: pytest.FixtureRequest) -> dict[str, Any]:
     return request.param
 
@@ -570,7 +570,7 @@ async def test_create_computation_with_wallet(
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [PricingPlanGet.construct(**PricingPlanGet.Config.schema_extra["examples"][0])],
+    [PricingPlanGet.construct(**PricingPlanGet.model_config["json_schema_extra"]["examples"][0])],
 )
 async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_raises_422(
     minimal_configuration: None,
@@ -608,7 +608,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
 
 @pytest.mark.parametrize(
     "default_pricing_plan",
-    [PricingPlanGet.construct(**PricingPlanGet.Config.schema_extra["examples"][0])],
+    [PricingPlanGet.construct(**PricingPlanGet.model_config["json_schema_extra"]["examples"][0])],
 )
 async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503(
     minimal_configuration: None,
@@ -709,7 +709,7 @@ async def test_start_computation_with_project_node_resources_defined(
     proj = await project(
         user,
         project_nodes_overrides={
-            "required_resources": ServiceResourcesDictHelpers.Config.schema_extra[
+            "required_resources": ServiceResourcesDictHelpers.model_config["json_schema_extra"][
                 "examples"
             ][0]
         },
