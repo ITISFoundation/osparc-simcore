@@ -24,7 +24,9 @@ from settings_library.tracing import TracingSettings
 
 _logger = logging.getLogger(__name__)
 try:
-    from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
+    from opentelemetry.instrumentation.botocore import (
+        BotocoreInstrumentor,  # type: ignore
+    )
 
     HAS_BOTOCORE = True
 except ImportError:

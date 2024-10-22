@@ -19,7 +19,9 @@ from settings_library.tracing import TracingSettings
 _logger = logging.getLogger(__name__)
 
 try:
-    from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
+    from opentelemetry.instrumentation.asyncpg import (
+        AsyncPGInstrumentor,  # type: ignore
+    )
 
     HAS_ASYNCPG = True
 except ImportError:
@@ -47,7 +49,9 @@ except ImportError:
     HAS_REDIS = False
 
 try:
-    from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
+    from opentelemetry.instrumentation.botocore import (
+        BotocoreInstrumentor,  # type: ignore
+    )
 
     HAS_BOTOCORE = True
 except ImportError:
