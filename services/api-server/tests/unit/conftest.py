@@ -378,7 +378,7 @@ def mocked_storage_service_api_base(
                     "url": faker.url(),
                     "diagnostics_url": faker.url(),
                 }
-            ).model_dump(),
+            ).model_dump(mode="json"),
         )
 
         # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
