@@ -1,5 +1,9 @@
 # syntax=docker/dockerfile:1
-FROM python:3.6-slim AS base
+ARG PYTHON_VERSION="3.11.9"
+ARG UV_VERSION="0.4"
+FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
+# we docker image is built based on debian
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
 LABEL maintainer=sanderegg
 
@@ -30,7 +34,6 @@ RUN uv venv "${VIRTUAL_ENV}"
 
 RUN --mount=type=cache,target=/root/.cache/uv \
   uv pip install --upgrade \
-  pip~=24.0  \
   wheel \
   setuptools
 

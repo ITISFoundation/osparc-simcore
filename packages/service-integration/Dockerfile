@@ -43,11 +43,12 @@ ENV LANG=C.UTF-8
 # Turns off writing .pyc files; superfluous on an ephemeral container.
 ENV PYTHONDONTWRITEBYTECODE=1 \
   VIRTUAL_ENV=/home/scu/.venv
+# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1
 
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
-
 
 # -------------------------- Build stage -------------------
 
@@ -90,10 +91,6 @@ FROM base AS development
 # NOTE: this is necessary to allow to build development images but is the same as production here
 FROM base AS production
 
-ENV PYTHONOPTIMIZE=TRUE
-# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
-
 WORKDIR /home/scu
 # ensure home folder is read/writable for user scu
 RUN chown -R scu /home/scu
@@ -102,7 +99,5 @@ USER scu
 
 COPY --from=build --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-# NOTE: do not activate ENV PYTHONOPTIMIZE=TRUE
-# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1 since excutable contains pytest code
+# NOTE: do not activate ENV PYTHONOPTIMIZE=TRUE since excutable contains pytest code
 ENTRYPOINT [ "ooil" ]

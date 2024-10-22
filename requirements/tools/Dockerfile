@@ -9,6 +9,9 @@
 #
 #
 ARG PYTHON_VERSION="3.11.9"
+ARG UV_VERSION="0.4"
+FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
+# we docker image is built based on debian
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
 ENV VIRTUAL_ENV=/home/scu/.venv
@@ -39,7 +42,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # devenv
 RUN --mount=type=cache,target=/root/.cache/uv \
   uv pip install \
-  pip-tools \
   pipreqs \
   pipdeptree && \
   uv pip list -vv
