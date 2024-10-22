@@ -83,9 +83,7 @@ qx.Class.define("osparc.WindowSizeTracker", {
           this.__tooSmallDialog.open();
         } else {
           this.__tooSmallDialog = osparc.TooSmallDialog.openWindow();
-          this.__tooSmallDialog.addListener("close", () => {
-            this.__tooSmallDialog = null;
-          }, this);
+          this.__tooSmallDialog.addListener("close", () => this.__tooSmallDialog = null, this);
         }
       } else if (this.__tooSmallDialog) {
         this.__tooSmallDialog.close();
