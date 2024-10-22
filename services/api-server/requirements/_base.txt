@@ -136,7 +136,7 @@ email-validator==2.1.1
     # via
     #   fastapi
     #   pydantic
-fast-depends==2.4.2
+fast-depends==2.4.12
     # via faststream
 fastapi==0.99.1
     # via
