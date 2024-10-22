@@ -28,7 +28,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   uv pip sync --quiet --no-cache-dir requirements/dev.txt
   cd -
   print_info "PIP :"
-  uv pip list | sed 's/^/    /'
+  uv pip list
 fi
 
 # RUNNING application ----------------------------------------

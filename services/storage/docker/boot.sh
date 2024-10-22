@@ -22,7 +22,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   uv pip --quiet --no-cache-dir sync requirements/dev.txt
   cd -
   echo "$INFO" "PIP :"
-  uv pip list | sed 's/^/    /'
+  uv pip list
 
   echo "$INFO" "Setting entrypoint to use watchmedo autorestart..."
   entrypoint='watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories --'
