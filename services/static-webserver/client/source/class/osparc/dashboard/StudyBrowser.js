@@ -170,6 +170,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadFolders: function() {
+      if (!osparc.auth.Manager.getInstance().isLoggedIn()) {
+        return;
+      }
+
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         const folderId = this.getCurrentFolderId();
         const workspaceId = this.getCurrentWorkspaceId();
@@ -186,7 +190,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadStudies: function() {
-      if (this._loadingResourcesBtn.isFetching()) {
+      if (this._loadingResourcesBtn.isFetching() || !osparc.auth.Manager.getInstance().isLoggedIn()) {
         return;
       }
       const workspaceId = this.getCurrentWorkspaceId();
