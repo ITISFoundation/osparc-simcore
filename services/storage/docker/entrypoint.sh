@@ -68,11 +68,6 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   fi
 fi
 
-if [ "${SC_BOOT_MODE}" = "debug" ]; then
-  # NOTE: production does NOT pre-installs debugpy
-  uv pip install --no-cache-dir debugpy
-fi
-
 echo "$INFO Starting $* ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"

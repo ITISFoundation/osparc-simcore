@@ -31,6 +31,11 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   uv pip list
 fi
 
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
+  # NOTE: production does NOT pre-installs debugpy
+  uv pip install --no-cache-dir debugpy
+fi
+
 # RUNNING application ----------------------------------------
 #
 # - If DASK_START_AS_SCHEDULER is set, then it boots as scheduler otherwise as worker

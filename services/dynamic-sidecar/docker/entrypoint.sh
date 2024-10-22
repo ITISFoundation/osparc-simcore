@@ -74,11 +74,6 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   fi
 fi
 
-if [ "${SC_BOOT_MODE}" = "debug" ]; then
-  # NOTE: production does NOT pre-installs debugpy
-  uv pip install --no-cache-dir debugpy
-fi
-
 # Appends docker group if socket is mounted
 DOCKER_MOUNT=/var/run/docker.sock
 if stat $DOCKER_MOUNT >/dev/null 2>&1; then

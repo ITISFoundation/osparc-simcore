@@ -65,11 +65,6 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   fi
 fi
 
-if [ "${SC_BOOT_MODE}" = "debug" ]; then
-  # NOTE: production does NOT pre-installs debugpy
-  uv pip install --no-cache-dir debugpy
-fi
-
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
 
   echo "$INFO Starting $* as SCHEDULER ..."
