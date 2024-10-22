@@ -104,14 +104,12 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
         case "shared-icon":
           control = new osparc.dashboard.FolderWithSharedIcon().set({
             anonymous: true,
-            maxHeight: 20,
+            maxHeight: 26,
             padding: 0
           });
-          // make it smaller
-          control.getChildControl("folder-icon").setSource("@FontAwesome5Solid/folder/22");
           control.getChildControl("shared-icon").setLayoutProperties({
-            bottom: 1,
-            left: 1
+            bottom: 4,
+            left: 2
           });
           layout = this.getChildControl("header");
           layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.HPOS.SHARED);
