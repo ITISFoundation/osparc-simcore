@@ -23,14 +23,14 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
 
-    DYNAMIC_SCHEDULER__LOGLEVEL: LogLevel = Field(
+    DYNAMIC_SCHEDULER_LOGLEVEL: LogLevel = Field(
         default=LogLevel.INFO,
-        env=["DYNAMIC_SCHEDULER__LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        env=["DYNAMIC_SCHEDULER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
     DYNAMIC_SCHEDULER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         env=[
-            "DYNAMIC_SCHEDULER__LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "DYNAMIC_SCHEDULER_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
@@ -46,9 +46,9 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     @cached_property
     def LOG_LEVEL(self):  # noqa: N802
-        return self.DYNAMIC_SCHEDULER__LOGLEVEL
+        return self.DYNAMIC_SCHEDULER_LOGLEVEL
 
-    @validator("DYNAMIC_SCHEDULER__LOGLEVEL")
+    @validator("DYNAMIC_SCHEDULER_LOGLEVEL")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
