@@ -47,7 +47,7 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
 
     @field_validator("R_CLONE_POLL_INTERVAL_SECONDS")
     @classmethod
-    def enforce_r_clone_requirement(cls, v: int, info: ValidationInfo) -> PositiveInt:
+    def _enforce_r_clone_requirement(cls, v: int, info: ValidationInfo) -> PositiveInt:
         dir_cache_time = info.data["R_CLONE_DIR_CACHE_TIME_SECONDS"]
         if v >= dir_cache_time:
             msg = f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
@@ -85,7 +85,7 @@ class PlacementSettings(BaseCustomSettings):
 
     @field_validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
     @classmethod
-    def warn_if_any_values_provided(cls, value: dict) -> dict:
+    def _warn_if_any_values_provided(cls, value: dict) -> dict:
         if len(value) > 0:
             warnings.warn(  # noqa: B028
                 "Generic resources will be replaced by the following "
@@ -160,8 +160,8 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @field_validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", mode="before")
     @classmethod
-    def auto_disable_if_production(cls, v, values):
-        if v and values.get("DYNAMIC_SIDECAR_SC_BOOT_MODE") == BootModeEnum.PRODUCTION:
+    def _auto_disable_if_production(cls, v, info: ValidationInfo):
+        if v and info.data.get("DYNAMIC_SIDECAR_SC_BOOT_MODE") == BootModeEnum.PRODUCTION:
             _logger.warning(
                 "In production DYNAMIC_SIDECAR_MOUNT_PATH_DEV cannot be set to %s, enforcing None",
                 v,
@@ -171,9 +171,9 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @field_validator("DYNAMIC_SIDECAR_EXPOSE_PORT", mode="before")
     @classmethod
-    def auto_enable_if_development(cls, v, values):
+    def _auto_enable_if_development(cls, v, info: ValidationInfo):
         if (
-            boot_mode := values.get("DYNAMIC_SIDECAR_SC_BOOT_MODE")
+            boot_mode := info.data.get("DYNAMIC_SIDECAR_SC_BOOT_MODE")
         ) and boot_mode.is_devel_mode():
             # Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc
             return True
@@ -181,7 +181,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @field_validator("DYNAMIC_SIDECAR_IMAGE", mode="before")
     @classmethod
-    def strip_leading_slashes(cls, v: str) -> str:
+    def _strip_leading_slashes(cls, v: str) -> str:
         return v.lstrip("/")
 
     @field_validator("DYNAMIC_SIDECAR_LOG_LEVEL")
