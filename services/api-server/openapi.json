@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.2",
+  "openapi": "3.1.0",
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",

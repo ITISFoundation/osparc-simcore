@@ -15,8 +15,8 @@ reqs: ## compiles pip requirements (.in -> .txt)
 
 
 # specification of the used openapi-generator-cli (see also https://github.com/ITISFoundation/openapi-generator)
-OPENAPI_GENERATOR_NAME := itisfoundation/openapi-generator-cli-openapi-generator-v4.2.3
-OPENAPI_GENERATOR_TAG := v0
+OPENAPI_GENERATOR_NAME := openapitools/openapi-generator-cli
+OPENAPI_GENERATOR_TAG := latest
 OPENAPI_GENERATOR_IMAGE := $(OPENAPI_GENERATOR_NAME):$(OPENAPI_GENERATOR_TAG)
 
 define _create_and_validate_openapi
@@ -24,10 +24,6 @@ define _create_and_validate_openapi
 	@source .env; \
 	export API_SERVER_DEV_FEATURES_ENABLED=$1; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
-
-	# patching version until tools adapted
-	@sed -i 's/"openapi": "3.1.0",/"openapi": "3.0.2",/g' $@
-
 
 	# validates OAS file: $@
 	docker run --rm \
