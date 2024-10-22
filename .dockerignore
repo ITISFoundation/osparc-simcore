@@ -8,7 +8,7 @@ ops/
 *.py[cod]
 
 # virtualenv
-.venv
+**/.venv
 
 #python eggs
 **/*.egg-info
