@@ -40,7 +40,7 @@ qx.Class.define("osparc.WindowSizeTracker", {
     },
 
     tooSmall: {
-      check: [null, "shortText", "longText"], // display short message, long one or none
+      check: [null, "logout", "shortText", "longText"],
       init: null,
       nullable: true,
       apply: "__applyTooSmall"
@@ -71,22 +71,14 @@ qx.Class.define("osparc.WindowSizeTracker", {
 
       this.setCompactVersion(width < this.self().WIDTH_COMPACT_BREAKPOINT);
 
-      if (width < this.self().WIDTH_BREAKPOINT || height < this.self().HEIGHT_BREAKPOINT) {
-        this.setTooSmall(width < this.self().WIDTH_COMPACT_BREAKPOINT ? "shortText" : "longText");
+      if (width < this.self().WIDTH_LOGOUT_BREAKPOINT) {
+        this.setTooSmall("logout");
+      } else if (width < this.self().WIDTH_COMPACT_BREAKPOINT) {
+        this.setTooSmall("shortText");
+      } else if (width < this.self().WIDTH_BREAKPOINT) {
+        this.setTooSmall("longText");
       } else {
         this.setTooSmall(null);
-      }
-
-      if (width < this.self().MIN_WIDTH_LOGOUT) {
-        if (this.__tooSmallDialog) {
-          this.__tooSmallDialog.center();
-          this.__tooSmallDialog.open();
-        } else {
-          this.__tooSmallDialog = osparc.TooSmallDialog.openWindow();
-          this.__tooSmallDialog.addListener("close", () => this.__tooSmallDialog = null, this);
-        }
-      } else if (this.__tooSmallDialog) {
-        this.__tooSmallDialog.close();
       }
 
       this.set({
@@ -103,7 +95,7 @@ qx.Class.define("osparc.WindowSizeTracker", {
       }
 
       let notification = null;
-      if (tooSmall === "shortText") {
+      if (tooSmall === "logout" || tooSmall === "shortText") {
         notification = new osparc.notification.RibbonNotification(null, "smallWindow", true);
       } else if (tooSmall === "longText") {
         const text = this.__getLongText(true);
@@ -111,6 +103,8 @@ qx.Class.define("osparc.WindowSizeTracker", {
       }
       osparc.notification.RibbonNotifications.getInstance().addNotification(notification);
       this.__lastRibbonMessage = notification;
+
+      this.evaluateTooSmallDialog();
     },
 
     __getLongText: function() {
@@ -124,6 +118,21 @@ qx.Class.define("osparc.WindowSizeTracker", {
       if (this.__lastRibbonMessage) {
         osparc.notification.RibbonNotifications.getInstance().removeNotification(this.__lastRibbonMessage);
         this.__lastRibbonMessage = null;
+      }
+    },
+
+    evaluateTooSmallDialog: function() {
+      const tooSmall = this.getTooSmall();
+      if (tooSmall === "logout") {
+        if (this.__tooSmallDialog) {
+          this.__tooSmallDialog.center();
+          this.__tooSmallDialog.open();
+        } else {
+          this.__tooSmallDialog = osparc.TooSmallDialog.openWindow();
+          this.__tooSmallDialog.addListener("close", () => this.__tooSmallDialog = null, this);
+        }
+      } else if (this.__tooSmallDialog) {
+        this.__tooSmallDialog.close();
       }
     }
   }
