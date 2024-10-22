@@ -68,14 +68,15 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 190,
     PADDING: 10,
-    SPACING_IN: 5,
+    SPACING_IN: 0,
     SPACING: 15,
     HEADER_MAX_HEIGHT: 44,
     ICON_SIZE: 60,
     POS: {
-      HEADER: 0,
-      BODY: 1,
-      FOOTER: 2
+      FOLDER_LOOK: 0,
+      HEADER: 1,
+      BODY: 2,
+      FOOTER: 3
     },
     HPOS: {
       SHARED: 0,
@@ -108,9 +109,11 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
       switch (id) {
         case "main-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(this.self().SPACING_IN));
+          const folderLook = this.getChildControl("folder-look");
           const header = this.getChildControl("header");
           const body = this.getChildControl("body");
           const footer = this.getChildControl("footer");
+          control.addAt(folderLook, this.self().POS.FOLDER_LOOK);
           control.addAt(header, this.self().POS.HEADER);
           control.addAt(body, this.self().POS.BODY, {
             flex: 1
@@ -124,9 +127,26 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
           });
           break;
         }
+        case "folder-look": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
+            backgroundColor: "background-main",
+            maxHeight: 8,
+          });
+          const spacer = new qx.ui.core.Widget().set({
+            backgroundColor: "background-workspace-card-overlay"
+          });
+          spacer.getContentElement().setStyles({
+            "border-top-right-radius": "6px",
+          });
+          const spacer2 = new qx.ui.core.Widget();
+          control.add(spacer, {flex: 1});
+          control.add(spacer2, {flex: 1});
+          break;
+        }
         case "header":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
             backgroundColor: "background-workspace-card-overlay",
+            opacity: 0.8,
             anonymous: true,
             maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().HEADER_MAX_HEIGHT,

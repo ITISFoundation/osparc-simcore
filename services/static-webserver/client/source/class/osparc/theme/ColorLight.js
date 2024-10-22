@@ -32,7 +32,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "background-main-5": "c06",
 
     "background-card-overlay": "rgba(229, 229, 229, 0.8)",
-    "background-workspace-card-overlay": "rgba(165, 223, 252, 0.8)",
+    "background-workspace-card-overlay": "rgb(165, 223, 252)",
 
     "primary-background-color": "rgba(255, 255, 255, 1)",
     "navigation_bar_background_color": "rgba(229, 229, 229, 0.8)",
