@@ -14,11 +14,8 @@ from contextlib import contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, TypeAlias, TypedDict, TypeVar
+from typing import Any, NotRequired, TypeAlias, TypedDict, TypeVar
 
-from models_library.utils.json_serialization import json_dumps
-
-from .error_codes import ErrorCodeStr
 from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
@@ -321,9 +318,9 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
             raise exc from exc
 
 
-class LogExtra(TypedDict, total=False):
-    log_uid: str
-    log_oec: str
+class LogExtra(TypedDict):
+    log_uid: NotRequired[str]
+    log_oec: NotRequired[str]
 
 
 LogLevelInt: TypeAlias = int
@@ -344,35 +341,6 @@ def get_log_record_extra(
         extra["log_oec"] = error_code
 
     return extra or None
-
-
-def create_troubleshotting_log_message(
-    message_to_user: str,
-    error: BaseException,
-    error_code: ErrorCodeStr,
-    error_context: dict[str, Any] | None = None,
-    tip: str | None = None,
-) -> str:
-    """Create a formatted message for _logger.exception(...)
-
-    Arguments:
-        message_to_user -- A user-friendly message to be displayed on the front-end explaining the issue in simple terms.
-        error -- the instance of the handled exception
-        error_code -- A unique error code (e.g., OEC or osparc-specific) to identify the type or source of the error for easier tracking.
-        error_context -- Additional context surrounding the exception, such as environment variables or function-specific data. This can be derived from exc.error_context() (relevant when using the OsparcErrorMixin)
-        tip -- Helpful suggestions or possible solutions explaining why the error may have occurred and how it could potentially be resolved
-    """
-    debug_data = json_dumps(
-        {
-            "exception_details": f"{error}",
-            "error_code": error_code,
-            "context": error_context,
-            "tip": tip,
-        },
-        indent=1,
-    )
-
-    return f"{message_to_user}.\n{debug_data}"
 
 
 def _un_capitalize(s: str) -> str:

@@ -2,7 +2,8 @@ import logging
 
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
-from servicelib.error_codes import create_error_code
+from models_library.error_codes import create_error_code
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 
 from ._utils import ExceptionHandler, create_error_json_response
 
@@ -30,19 +31,22 @@ def make_handler_for_exception(
         assert request  # nosec
         assert isinstance(exception, exception_cls)  # nosec
 
-        msg = error_message
+        user_error_msg = error_message
         if add_exception_to_message:
-            msg += f" {exception}"
+            user_error_msg += f" {exception}"
 
+        error_code = create_error_code(exception)
         if add_oec_to_message:
-            error_code = create_error_code(exception)
-            msg += f" [{error_code}]"
-            _logger.exception(
-                "Unexpected %s: %s",
-                exception.__class__.__name__,
-                msg,
-                extra={"error_code": error_code},
+            user_error_msg += f" [{error_code}]"
+
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                user_error_msg,
+                error=exception,
+                error_code=error_code,
+                tip="Unexpected error",
             )
-        return create_error_json_response(msg, status_code=status_code)
+        )
+        return create_error_json_response(user_error_msg, status_code=status_code)
 
     return _http_error_handler

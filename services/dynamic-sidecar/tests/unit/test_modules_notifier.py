@@ -25,6 +25,7 @@ from models_library.api_schemas_dynamic_sidecar.socketio import (
 )
 from models_library.api_schemas_dynamic_sidecar.telemetry import (
     DiskUsage,
+    MountPathCategory,
     ServiceDiskUsage,
 )
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
@@ -130,7 +131,7 @@ async def _assert_call_count(mock: AsyncMock, *, call_count: int) -> None:
 
 def _get_mocked_disk_usage(byte_size_str: str) -> DiskUsage:
     return DiskUsage(
-        total=ByteSize(0),
+        total=ByteSize.validate(byte_size_str),
         used=ByteSize(0),
         free=ByteSize.validate(byte_size_str),
         used_percent=0,
@@ -155,11 +156,13 @@ def _get_on_service_disk_usage_spy(
     "usage",
     [
         pytest.param({}, id="empty"),
-        pytest.param({Path("/"): _get_mocked_disk_usage("1kb")}, id="one_entry"),
+        pytest.param(
+            {MountPathCategory.HOST: _get_mocked_disk_usage("1kb")}, id="one_entry"
+        ),
         pytest.param(
             {
-                Path("/"): _get_mocked_disk_usage("1kb"),
-                Path("/tmp"): _get_mocked_disk_usage("2kb"),  # noqa: S108
+                MountPathCategory.HOST: _get_mocked_disk_usage("1kb"),
+                MountPathCategory.STATES_VOLUMES: _get_mocked_disk_usage("2kb"),
             },
             id="two_entries",
         ),
@@ -289,7 +292,7 @@ async def test_notifier_send_input_port_status(
                 await port_notifier.send_input_port_download_finished_succesfully(
                     port_key
                 )
-            case InputStatus.DOWNLOAD_FINISHED_WITH_ERRROR:
+            case InputStatus.DOWNLOAD_FINISHED_WITH_ERROR:
                 await port_notifier.send_input_port_download_finished_with_error(
                     port_key
                 )
@@ -378,7 +381,7 @@ async def test_notifier_send_output_port_status(
                 await port_notifier.send_output_port_upload_finished_successfully(
                     port_key
                 )
-            case OutputStatus.UPLOAD_FINISHED_WITH_ERRROR:
+            case OutputStatus.UPLOAD_FINISHED_WITH_ERROR:
                 await port_notifier.send_output_port_upload_finished_with_error(
                     port_key
                 )

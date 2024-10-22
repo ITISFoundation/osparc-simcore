@@ -27,7 +27,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
     });
 
     this.set({
-      maxWidth: 200 - 10
+      maxWidth: osparc.dashboard.ResourceBrowserBase.SIDE_SPACER_WIDTH - 12
     });
 
     this.setNotHoveredStyle();

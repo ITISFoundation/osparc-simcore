@@ -430,11 +430,11 @@ qx.Class.define("osparc.store.Store", {
     deleteStudy: function(studyId) {
       const params = {
         url: {
-          "studyId": studyId
+          studyId
         }
       };
       return new Promise((resolve, reject) => {
-        osparc.data.Resources.fetch("studies", "delete", params, studyId)
+        osparc.data.Resources.fetch("studies", "delete", params)
           .then(() => {
             this.remove("studies", "uuid", studyId);
             resolve();
