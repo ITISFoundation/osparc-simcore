@@ -34,7 +34,7 @@ async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
 
     async with ClientSession() as session:
         total_size = await download_to_file_or_raise(
-            session, f"{httpbin_base_url}/bytes/{expected_size}", destination
+            session, f"{httpbin_base_url}bytes/{expected_size}", destination
         )
         assert destination.exists()
         assert expected_size == total_size

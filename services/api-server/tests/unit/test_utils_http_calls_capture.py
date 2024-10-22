@@ -10,6 +10,7 @@ from pathlib import Path
 
 import httpx
 import jinja2
+import pytest
 import respx
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
@@ -64,7 +65,7 @@ async def test_capture_http_dynamic_call(
         sample_uid = faker.uuid4()  # used during test sampling
 
         response: httpx.Response = await client.post(
-            f"{httpbin_base_url}anything/{sample_uid!r}",
+            f"{httpbin_base_url}anything/{sample_uid}",
             params={"n": 42},
             json={
                 "resource_id": sample_uid,
@@ -100,7 +101,7 @@ async def test_capture_http_dynamic_call(
             respx_mock.request(
                 method=captured.method,
                 path__regex=re.sub(
-                    f"{sample_uid}", pattern, captured.path
+                    f"{sample_uid!r}", pattern, captured.path
                 ),  # using REGEX
                 name=captured.name,
             ).respond(
@@ -110,7 +111,7 @@ async def test_capture_http_dynamic_call(
 
             other_uid = faker.uuid4()
 
-            response: httpx.Response = await client.post(
+            response = await client.post(
                 f"http://test.it/anything/{other_uid}",
                 params={"n": 42},
                 json={
