@@ -126,7 +126,6 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
         }
         case "header":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
-            backgroundColor: "background-card-overlay",
             anonymous: true,
             maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().HEADER_MAX_HEIGHT,
@@ -162,6 +161,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
             textColor: "contrasted-text-light",
             font: "text-14",
             allowGrowX: true,
+            alignY: "middle",
             maxHeight: this.self().HEADER_MAX_HEIGHT
           });
           layout = this.getChildControl("header");
