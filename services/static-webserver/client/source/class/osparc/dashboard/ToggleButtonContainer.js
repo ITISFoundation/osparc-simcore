@@ -95,7 +95,7 @@ qx.Class.define("osparc.dashboard.ToggleButtonContainer", {
     },
 
     areMoreResourcesRequired: function(loadingResourcesBtn) {
-      if (this.nextRequest !== null && loadingResourcesBtn && osparc.utils.Utils.checkIsOnScreen(loadingResourcesBtn)) {
+      if (this.nextRequest !== null && loadingResourcesBtn && osparc.utils.Utils.isWidgetOnScreen(loadingResourcesBtn)) {
         return true;
       }
       return false;

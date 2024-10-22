@@ -50,7 +50,7 @@ class CompRunsRepository(BaseRepository):
             )
             row: RowProxy | None = await result.first()
             if not row:
-                raise ComputationalRunNotFoundError()
+                raise ComputationalRunNotFoundError
             return CompRunsAtDB.from_orm(row)
 
     async def list(
@@ -80,7 +80,7 @@ class CompRunsRepository(BaseRepository):
         project_id: ProjectID,
         cluster_id: ClusterID,
         iteration: PositiveInt | None = None,
-        metadata: RunMetadataDict | None,
+        metadata: RunMetadataDict,
         use_on_demand_clusters: bool,
     ) -> CompRunsAtDB:
         try:
@@ -102,13 +102,13 @@ class CompRunsRepository(BaseRepository):
                     .values(
                         user_id=user_id,
                         project_uuid=f"{project_id}",
-                        cluster_id=cluster_id
-                        if cluster_id != DEFAULT_CLUSTER_ID
-                        else None,
+                        cluster_id=(
+                            cluster_id if cluster_id != DEFAULT_CLUSTER_ID else None
+                        ),
                         iteration=iteration,
                         result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
-                        started=datetime.datetime.now(tz=datetime.timezone.utc),
-                        metadata=jsonable_encoder(metadata) if metadata else None,
+                        started=datetime.datetime.now(tz=datetime.UTC),
+                        metadata=jsonable_encoder(metadata),
                         use_on_demand_clusters=use_on_demand_clusters,
                     )
                     .returning(literal_column("*"))
@@ -146,7 +146,7 @@ class CompRunsRepository(BaseRepository):
     ) -> CompRunsAtDB | None:
         values: dict[str, Any] = {"result": RUNNING_STATE_TO_DB[result_state]}
         if final_state:
-            values.update({"ended": datetime.datetime.now(tz=datetime.timezone.utc)})
+            values.update({"ended": datetime.datetime.now(tz=datetime.UTC)})
         return await self.update(
             user_id,
             project_id,

@@ -13,7 +13,7 @@ from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp.status import HTTP_200_OK
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from ..status_utils import get_code_description
+from ..status_codes_utils import get_code_description
 from .rest_models import ErrorItemType, ErrorType
 
 _ENVELOPE_KEYS = ("data", "error")
@@ -110,7 +110,7 @@ def create_http_error(
         error = ErrorType(
             errors=items,
             status=http_error_cls.status_code,
-            message=items[0].message if items else default_message,
+            message=default_message,
         )
 
     assert not http_error_cls.empty_body  # nosec
@@ -151,16 +151,3 @@ def _collect_http_exceptions(exception_cls: type[HTTPException] = HTTPException)
     assert len(http_statuses) == len(found), "No duplicates"  # nosec
 
     return http_statuses
-
-
-_STATUS_CODE_TO_HTTP_ERRORS: dict[int, type[HTTPError]] = _collect_http_exceptions(
-    HTTPError
-)
-
-
-def get_http_error(status_code: int) -> type[HTTPError] | None:
-    """Returns aiohttp error class corresponding to a 4XX or 5XX status code
-
-    NOTICE that any non-error code (i.e. 2XX, 3XX and 4XX) will return None
-    """
-    return _STATUS_CODE_TO_HTTP_ERRORS.get(status_code)

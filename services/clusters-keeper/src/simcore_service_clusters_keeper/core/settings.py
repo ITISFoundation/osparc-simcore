@@ -25,6 +25,7 @@ from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.ssm import SSMSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
@@ -46,6 +47,21 @@ class ClustersKeeperEC2Settings(EC2Settings):
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_REGION_NAME": "us-east-1",
                     f"{CLUSTERS_KEEPER_ENV_PREFIX}EC2_SECRET_ACCESS_KEY": "my_secret_access_key",
                 }
+            ],
+        }
+
+
+class ClustersKeeperSSMSettings(SSMSettings):
+    class Config(SSMSettings.Config):
+        env_prefix = CLUSTERS_KEEPER_ENV_PREFIX
+
+        schema_extra: ClassVar[dict[str, Any]] = {  # type: ignore[misc]
+            "examples": [
+                {
+                    f"{CLUSTERS_KEEPER_ENV_PREFIX}{key}": var
+                    for key, var in example.items()
+                }
+                for example in SSMSettings.Config.schema_extra["examples"]
             ],
         }
 
@@ -183,6 +199,12 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
     )
 
+    PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL: str = Field(
+        default="172.20.0.0/14",
+        description="defines the docker swarm default address pool in CIDR format "
+        "(see https://docs.docker.com/reference/cli/docker/swarm/init/)",
+    )
+
     @validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
     def check_valid_instance_names(
@@ -250,6 +272,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True
     )
 
+    CLUSTERS_KEEPER_SSM_ACCESS: ClustersKeeperSSMSettings | None = Field(
+        auto_default_from_env=True
+    )
+
     CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: PrimaryEC2InstancesSettings | None = Field(
         auto_default_from_env=True
     )
@@ -285,9 +311,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
-    CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: NonNegativeInt = Field(
-        default=5,
-        description="Max number of missed heartbeats before a cluster is terminated",
+    CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: NonNegativeInt = (
+        Field(
+            default=5,
+            description="Max number of missed heartbeats before a cluster is terminated",
+        )
     )
 
     CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: str = Field(

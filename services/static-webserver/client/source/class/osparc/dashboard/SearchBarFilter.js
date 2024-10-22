@@ -28,10 +28,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.set({
       backgroundColor: "input_background",
       paddingLeft: 6,
-      height: this.self().HEIGHT
-    });
-    this.getContentElement().setStyles({
-      "border-radius": "5px"
+      height: this.self().HEIGHT,
+      decorator: "rounded",
     });
 
     this.__buildLayout();
@@ -287,10 +285,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       });
     },
 
-    resetSharedWithActiveFilter: function() {
-      this.__removeChips("shared-with");
-      this.__filter();
-    },
 
     setSharedWithActiveFilter: function(optionId, optionLabel) {
       this.__removeChips("shared-with");
@@ -355,9 +349,13 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
-    __resetFilters: function() {
+    resetFilters: function() {
       this.__removeChips();
       this.getChildControl("text-field").resetValue();
+    },
+
+    __resetFilters: function() {
+      this.resetFilters();
       this.__filter();
     },
 

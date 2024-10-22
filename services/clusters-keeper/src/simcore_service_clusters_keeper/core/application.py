@@ -19,6 +19,7 @@ from ..modules.clusters_management_task import setup as setup_clusters_managemen
 from ..modules.ec2 import setup as setup_ec2
 from ..modules.rabbitmq import setup as setup_rabbitmq
 from ..modules.redis import setup as setup_redis
+from ..modules.ssm import setup as setup_ssm
 from ..rpc.rpc_routes import setup_rpc_routes
 from .settings import ApplicationSettings
 
@@ -55,6 +56,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     setup_rabbitmq(app)
     setup_rpc_routes(app)
     setup_ec2(app)
+    setup_ssm(app)
     setup_redis(app)
     setup_clusters_management(app)
 

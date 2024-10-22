@@ -1,0 +1,36 @@
+
+# NOTE: this stack is only for development and testing of vendor services.
+# the actualy code is deployed inside the ops repository.
+
+services:
+
+  manual:
+    image: ${VENDOR_DEV_MANUAL_IMAGE}
+    init: true
+    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    deploy:
+      replicas: ${VENDOR_DEV_MANUAL_REPLICAS}
+      labels:
+        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+        - traefik.enable=true
+        - traefik.docker.network=${SWARM_STACK_NAME}_default
+        # auth: https://doc.traefik.io/traefik/middlewares/http/forwardauth
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.address=http://${WEBSERVER_HOST}:${WEBSERVER_PORT}/v0/auth:check
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.trustForwardHeader=true
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.authResponseHeaders=Set-Cookie,osparc-sc2
+        # routing
+        - traefik.http.services.${SWARM_STACK_NAME}_manual.loadbalancer.server.port=80
+        - traefik.http.services.${SWARM_STACK_NAME}_manual.loadbalancer.healthcheck.path=/
+        - traefik.http.services.${SWARM_STACK_NAME}_manual.loadbalancer.healthcheck.interval=2000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_manual.loadbalancer.healthcheck.timeout=1000ms
+        - traefik.http.routers.${SWARM_STACK_NAME}_manual.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_manual.priority=10
+        - traefik.http.routers.${SWARM_STACK_NAME}_manual.rule=HostRegexp(`${VENDOR_DEV_MANUAL_SUBDOMAIN}\.(?P<host>.+)`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_manual.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME}_manual-auth
+    networks:
+      - simcore_default
+
+networks:
+  simcore_default:
+    name: ${SWARM_STACK_NAME}_default
+    external: true

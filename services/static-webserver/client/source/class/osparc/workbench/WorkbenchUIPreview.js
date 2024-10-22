@@ -60,6 +60,7 @@ qx.Class.define("osparc.workbench.WorkbenchUIPreview", {
         for (const nodeId in nodes) {
           const node = nodes[nodeId];
           const nodeUI = this._createNodeUI(nodeId);
+          nodeUI.setIsMovable(false);
           this._addNodeUIToWorkbench(nodeUI, node.getPosition());
         }
         qx.ui.core.queue.Layout.flush();

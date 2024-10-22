@@ -4,12 +4,13 @@ import logging
 from aiohttp import web
 from models_library.users import UserID
 from pydantic import BaseModel, Field
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -19,8 +20,13 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _api, api
+from ._constants import FMSG_MISSING_CONFIG_WITH_OEC
 from ._schemas import PreUserProfile
-from .exceptions import AlreadyPreRegisteredError, UserNotFoundError
+from .exceptions import (
+    AlreadyPreRegisteredError,
+    MissingGroupExtraPropertiesForProductError,
+    UserNotFoundError,
+)
 from .schemas import ProfileGet, ProfileUpdate
 
 _logger = logging.getLogger(__name__)
@@ -42,6 +48,18 @@ def _handle_users_exceptions(handler: Handler):
 
         except UserNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"{exc}") from exc
+        except MissingGroupExtraPropertiesForProductError as exc:
+            error_code = exc.error_code()
+            user_error_msg = FMSG_MISSING_CONFIG_WITH_OEC.format(error_code=error_code)
+            _logger.exception(
+                **create_troubleshotting_log_kwargs(
+                    user_error_msg,
+                    error=exc,
+                    error_code=error_code,
+                    tip="Row in `groups_extra_properties` for this product is missing.",
+                )
+            )
+            raise web.HTTPServiceUnavailable(reason=user_error_msg) from exc
 
     return wrapper
 
@@ -67,7 +85,7 @@ async def update_my_profile(request: web.Request) -> web.Response:
     await api.update_user_profile(
         request.app, req_ctx.user_id, profile_update, as_patch=False
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 class _SearchQueryParams(BaseModel):

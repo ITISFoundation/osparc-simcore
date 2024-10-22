@@ -117,12 +117,16 @@ CLASSIC_TIP_INPUT_FILE := .e2e-playwright-classictip-env.txt
 $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE):
 	@read -p "Enter your product URL: " PRODUCT_URL; \
 	read -p "Is the product billable [y/n]: " BILLABLE; \
+	read -p "Is the product lite [y/n]: " IS_LITE; \
 	read -p "Is the test running in autoscaled deployment [y/n]: " AUTOSCALED; \
 	read -p "Enter your username: " USER_NAME; \
 	read -s -p "Enter your password: " PASSWORD; echo ""; \
 	echo "--product-url=$$PRODUCT_URL --user-name=$$USER_NAME --password=$$PASSWORD" > $@; \
 	if [ "$$BILLABLE" = "y" ]; then \
 		echo "--product-billable" >> $@; \
+	fi; \
+	if [ "$$IS_LITE" = "y" ]; then \
+		echo "--product-lite" >> $@; \
 	fi; \
 	if [ "$$AUTOSCALED" = "y" ]; then \
 		echo "--autoscaled" >> $@; \
@@ -183,4 +187,4 @@ define run_test_on_chrome
 endef
 
 clean:
-	@rm -rf $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE)
+	-@rm -rf $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE)

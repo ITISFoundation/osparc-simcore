@@ -11,8 +11,7 @@ from models_library.api_schemas_webserver.catalog import (
     ServiceOutputKey,
 )
 from models_library.services import BaseServiceIOModel
-from pint import PintError, UnitRegistry
-from pint.quantity import Quantity
+from pint import PintError, Quantity, UnitRegistry
 
 _logger = logging.getLogger(__name__)
 

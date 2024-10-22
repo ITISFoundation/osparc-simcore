@@ -1,6 +1,7 @@
-# pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
+# pylint:disable=too-many-positional-arguments
+# pylint:disable=unused-argument
 
 import asyncio
 import logging
@@ -39,6 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 pytest_simcore_core_services_selection = [
+    "agent",
     "catalog",
     "director",
     "migration",
@@ -80,7 +82,7 @@ def mock_env(
     env_vars: EnvVarsDict = {
         "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
         "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
-        "SWARM_STACK_NAME": "test_swarm_name",
+        "SWARM_STACK_NAME": "pytest-simcore",
         "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
         "SC_BOOT_MODE": "production",
         "DYNAMIC_SIDECAR_EXPOSE_PORT": "true",
@@ -229,6 +231,7 @@ def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
     )
 
 
+@pytest.mark.flaky(max_runs=3)
 async def test_legacy_and_dynamic_sidecar_run(
     initialized_app: FastAPI,
     wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],

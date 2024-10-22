@@ -128,10 +128,10 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
             this._hideLoadingPage();
             const params = {
               url: {
-                "studyId": studyId
+                studyId
               }
             };
-            osparc.data.Resources.fetch("studies", "delete", params, studyId);
+            osparc.data.Resources.fetch("studies", "delete", params);
           };
           const isStudyCreation = true;
           this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
@@ -145,6 +145,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     // LAYOUT //
     _createLayout: function() {
+      this._createSearchBar();
       this._createResourcesLayout();
       const list = this._resourcesContainer.getFlatList();
       if (list) {

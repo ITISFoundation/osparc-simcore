@@ -1,5 +1,7 @@
 from pydantic.errors import PydanticErrorMixin
 
+from .error_codes import create_error_code
+
 
 class _DefaultDict(dict):
     def __missing__(self, key):
@@ -30,3 +32,11 @@ class OsparcErrorMixin(PydanticErrorMixin):
             )
         ]
         return ".".join(reversed(relevant_classes))
+
+    def error_context(self):
+        """Returns context in which error occurred and stored within the exception"""
+        return dict(**self.__dict__)
+
+    def error_code(self) -> str:
+        assert isinstance(self, Exception), "subclass must be exception"  # nosec
+        return create_error_code(self)

@@ -13,12 +13,14 @@ from servicelib.logging_utils import config_all_loggers
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
-from ..api import get_main_router
+from ..api.rest import get_main_router
+from ..api.rpc.routes import setup_rpc_api_routes
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
 from ..modules.inputs import setup_inputs
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
+from ..modules.notifications import setup_notifications
 from ..modules.outputs import setup_outputs
 from ..modules.prometheus_metrics import setup_prometheus_metrics
 from ..modules.resource_tracking import setup_resource_tracking
@@ -170,8 +172,10 @@ def create_app():
     application_settings: ApplicationSettings = app.state.settings
 
     setup_rabbitmq(app)
+    setup_rpc_api_routes(app)
     setup_background_log_fetcher(app)
     setup_resource_tracking(app)
+    setup_notifications(app)
     setup_system_monitor(app)
 
     setup_mounted_fs(app)

@@ -22,11 +22,9 @@ from simcore_postgres_database.models.products import (
     WebFeedback,
     products,
 )
-from simcore_service_webserver.db.plugin import APP_DB_ENGINE_KEY
+from simcore_service_webserver.db.plugin import APP_AIOPG_ENGINE_KEY
 from simcore_service_webserver.products._db import ProductRepository
-from simcore_service_webserver.products._middlewares import (
-    _get_app_default_product_name,
-)
+from simcore_service_webserver.products._middlewares import _get_default_product_name
 from simcore_service_webserver.products._model import Product
 
 
@@ -42,7 +40,7 @@ async def product_row(app: web.Application, product_data: dict[str, Any]) -> Row
 
     Note that product_data is a SUBSET of product_row (e.g. modified dattimes etc)!
     """
-    engine = app[APP_DB_ENGINE_KEY]
+    engine = app[APP_AIOPG_ENGINE_KEY]
     assert engine
 
     async with engine.acquire() as conn:
@@ -89,7 +87,6 @@ async def product_repository(
                 url="https://acme.com",
                 license_url="http://docs.acme.app/#/license-terms",
                 invitation_url="http://docs.acme.app/#/how-to-request-invitation",
-                has_landing_page=False,
             ),
             "issues": [
                 IssueTracker(
@@ -151,8 +148,6 @@ async def test_product_repository_get_product(
     assert await product_repository.get_product(product.name) == product
 
     # tests definitions of default from utle_products and web-server.products are in sync
-    mock_request = mocker.MagicMock()
-    mock_request.app = app
     async with product_repository.engine.acquire() as conn:
         default_product = await utils_products.get_default_product_name(conn)
-        assert default_product == _get_app_default_product_name(mock_request)
+        assert default_product == _get_default_product_name(app)

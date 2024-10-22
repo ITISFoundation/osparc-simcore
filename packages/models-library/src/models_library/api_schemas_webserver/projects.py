@@ -84,6 +84,7 @@ class ProjectGet(OutputSchema):
     dev: dict | None
     permalink: ProjectPermalink = FieldNotRequired()
     workspace_id: WorkspaceID | None
+    folder_id: FolderID | None
 
     _empty_description = validator("description", allow_reuse=True, pre=True)(
         none_to_empty_str_pre_validator

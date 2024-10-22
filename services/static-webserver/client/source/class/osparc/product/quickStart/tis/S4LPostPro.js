@@ -21,7 +21,8 @@ qx.Class.define("osparc.product.quickStart.tis.S4LPostPro", {
   construct: function() {
     let title = "";
     if (osparc.product.Utils.isProduct("tiplite")) {
-      title += "<i>" + this.tr("(Not available in TIP lite)") + "</i><br><br>";
+      const notAvailableText = this.tr("Not available in");
+      title += ` <i>(${notAvailableText} ${osparc.store.StaticInfo.getInstance().getDisplayName()})</i><br><br>`;
     }
     title += this.tr("Sim4Life Post Processing");
     this.base(arguments, title);

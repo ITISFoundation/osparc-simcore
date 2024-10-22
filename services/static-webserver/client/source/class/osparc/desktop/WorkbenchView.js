@@ -1032,11 +1032,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       // OUTPUTS
       const outputsBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(spacing));
-      if (node.hasOutputs()) {
-        const nodeOutputs = new osparc.widget.NodeOutputs(node, node.getMetaData().outputs).set({
+      const outputsForm = node.getOutputsForm();
+      if (node.hasOutputs() && outputsForm) {
+        outputsForm.set({
           offerProbes: true
         });
-        outputsBox.add(nodeOutputs);
+        outputsBox.add(outputsForm);
       }
 
       const nodeFilesBtn = new qx.ui.form.Button(this.tr("Service data"), "@FontAwesome5Solid/folder-open/14").set({

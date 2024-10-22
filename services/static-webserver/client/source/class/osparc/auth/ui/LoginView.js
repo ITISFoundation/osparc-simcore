@@ -45,8 +45,7 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         this.addAt(announcementUIFactory.createLoginAnnouncement(), 0);
       } else {
         announcementUIFactory.addListenerOnce("changeAnnouncement", e => {
-          const announcement = e.getData();
-          if (announcement) {
+          if (announcementUIFactory.hasLoginAnnouncement()) {
             this.addAt(announcementUIFactory.createLoginAnnouncement(), 0);
           }
         });
@@ -94,15 +93,15 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         createAccountBtn.setLabel(this.tr("Request Account"));
       }
       createAccountBtn.addListener("execute", () => {
-        createAccountBtn.setEnabled(false);
-        if (createAccountAction === "REGISTER") {
+        if (window.location.hostname === "tip.itis.swiss") {
+          this.__openTIPITISSWISSPhaseOutDialog();
+        } else if (createAccountAction === "REGISTER") {
           this.fireEvent("toRegister");
         } else if (createAccountAction === "REQUEST_ACCOUNT_FORM") {
           this.fireEvent("toRequestAccount");
         } else if (createAccountAction === "REQUEST_ACCOUNT_INSTRUCTIONS") {
           osparc.store.Support.openInvitationRequiredDialog();
         }
-        createAccountBtn.setEnabled(true);
       }, this);
       osparc.utils.Utils.setIdToWidget(createAccountBtn, "loginCreateAccountBtn");
 
@@ -161,6 +160,21 @@ qx.Class.define("osparc.auth.ui.LoginView", {
         poweredByLayout.add(s4lLogo);
         this.add(poweredByLayout);
       }
+    },
+
+    __openTIPITISSWISSPhaseOutDialog: function() {
+      const createAccountWindow = new osparc.ui.window.Dialog("Request Account").set({
+        maxWidth: 380
+      });
+      let message = "This version of the planning tool will be phased out soon and no longer accepts new users.";
+      message += "<br>";
+      const tipLiteLabel = osparc.utils.Utils.createHTMLLink("TIP.lite", "https://tip-lite.science/");
+      const tipLabel = osparc.utils.Utils.createHTMLLink("TIP", "https://tip.science/");
+      const hereLabel = osparc.utils.Utils.createHTMLLink("here", "https://itis.swiss/tools-and-systems/ti-planning/overview/");
+      message += `Please visit ${tipLiteLabel} or ${tipLabel} instead. See ${hereLabel} for more information.`;
+      createAccountWindow.setMessage(message);
+      createAccountWindow.center();
+      createAccountWindow.open();
     },
 
     getEmail: function() {

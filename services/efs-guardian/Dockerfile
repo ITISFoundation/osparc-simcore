@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.11.9"
-FROM python:${PYTHON_VERSION}-slim-bookworm as base
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
 #
 #  USAGE:
@@ -96,7 +96,7 @@ EXPOSE 3000
 #
 # + /build             WORKDIR
 #
-FROM base as build
+FROM base AS build
 
 ENV SC_BUILD_TARGET=build
 
@@ -138,7 +138,7 @@ RUN \
 #  + /build
 #    + services/efs-guardian [scu:scu] WORKDIR
 #
-FROM build as prod-only-deps
+FROM build AS prod-only-deps
 
 ENV SC_BUILD_TARGET prod-only-deps
 
@@ -160,7 +160,7 @@ RUN \
 #  + /home/scu     $HOME = WORKDIR
 #    + services/efs-guardian [scu:scu]
 #
-FROM base as production
+FROM base AS production
 
 ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
@@ -168,14 +168,12 @@ ENV SC_BUILD_TARGET=production \
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/efs
-# ensure home folder is read/writable for user efs
-RUN chown -R efs /home/efs
 
 # Starting from clean base image, copies pre-installed virtualenv from prod-only-deps
-COPY --chown=efs:efs --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --from=prod-only-deps  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
-COPY --chown=efs:efs services/efs-guardian/docker services/efs-guardian/docker
+COPY services/efs-guardian/docker services/efs-guardian/docker
 RUN chmod +x services/efs-guardian/docker/*.sh
 
 
@@ -198,14 +196,14 @@ CMD ["/bin/sh", "services/efs-guardian/docker/boot.sh"]
 #  + /devel         WORKDIR
 #    + services  (mounted volume)
 #
-FROM build as development
+FROM build AS development
 
 ENV SC_BUILD_TARGET=development \
   SC_DEVEL_MOUNT=/devel/services/efs-guardian
 
 WORKDIR /devel
 
-RUN chown -R efs:efs "${VIRTUAL_ENV}"
+RUN chown -R root:root "${VIRTUAL_ENV}"
 
 ENTRYPOINT ["/bin/sh", "services/efs-guardian/docker/entrypoint.sh"]
 CMD ["/bin/sh", "services/efs-guardian/docker/boot.sh"]

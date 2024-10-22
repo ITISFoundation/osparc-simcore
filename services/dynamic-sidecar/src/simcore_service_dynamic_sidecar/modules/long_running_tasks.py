@@ -52,6 +52,7 @@ from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports, user_services_preferences
 from ..modules.mounted_fs import MountedVolumes
+from ..modules.notifications._notifications_ports import PortNotifier
 from ..modules.outputs import OutputsManager, event_propagation_disabled
 from .long_running_tasksutils import run_before_shutdown_actions
 from .resource_tracking import send_service_started, send_service_stopped
@@ -472,6 +473,7 @@ async def task_ports_inputs_pull(
     port_keys: list[str] | None,
     mounted_volumes: MountedVolumes,
     app: FastAPI,
+    settings: ApplicationSettings,
     *,
     inputs_pulling_enabled: bool,
 ) -> int:
@@ -505,6 +507,12 @@ async def task_ports_inputs_pull(
                     post_sidecar_log_message, app, log_level=logging.INFO
                 ),
                 progress_bar=root_progress,
+                port_notifier=PortNotifier(
+                    app,
+                    settings.DY_SIDECAR_USER_ID,
+                    settings.DY_SIDECAR_PROJECT_ID,
+                    settings.DY_SIDECAR_NODE_ID,
+                ),
             )
     await post_sidecar_log_message(
         app, "Finished pulling inputs", log_level=logging.INFO
@@ -541,6 +549,7 @@ async def task_ports_outputs_pull(
                 post_sidecar_log_message, app, log_level=logging.INFO
             ),
             progress_bar=root_progress,
+            port_notifier=None,
         )
     await post_sidecar_log_message(
         app, "Finished pulling outputs", log_level=logging.INFO

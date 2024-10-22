@@ -38,10 +38,10 @@ def classifiers_bundle(web_client_resource_folder: Path) -> dict:
 
 
 async def test_operations_on_group_classifiers(
-    pg_engine: Engine, classifiers_bundle: dict
+    aiopg_engine: Engine, classifiers_bundle: dict
 ):
     # NOTE: mostly for TDD
-    async with pg_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         # creates a group
         stmt = (
             groups.insert()

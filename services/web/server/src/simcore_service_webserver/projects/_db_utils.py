@@ -20,7 +20,7 @@ from simcore_postgres_database.models.projects_to_products import projects_to_pr
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import select
-from sqlalchemy.sql.selectable import Select
+from sqlalchemy.sql.selectable import CompoundSelect, Select
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
 from ..users.exceptions import UserNotFoundError
@@ -64,6 +64,7 @@ def convert_to_db_names(project_document_data: dict) -> dict:
     exclude_keys = [
         "tags",
         "prjOwner",
+        "folderId",
     ]  # No column for tags, prjOwner is a foreign key in db
     for key, value in project_document_data.items():
         if key not in exclude_keys:
@@ -180,7 +181,7 @@ class BaseProjectDB:
         conn: SAConnection,
         user_id: UserID,
         *,
-        select_projects_query: Select,
+        select_projects_query: Select | CompoundSelect,
         filter_by_services: list[dict] | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType]]:
         api_projects: list[dict] = []  # API model-compatible projects

@@ -189,6 +189,11 @@ services:
       CLUSTERS_KEEPER_EC2_ENDPOINT: ${CLUSTERS_KEEPER_EC2_ENDPOINT}
       CLUSTERS_KEEPER_EC2_REGION_NAME: ${CLUSTERS_KEEPER_EC2_REGION_NAME}
       CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY: ${CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY}
+      CLUSTERS_KEEPER_SSM_ACCESS: ${CLUSTERS_KEEPER_SSM_ACCESS}
+      CLUSTERS_KEEPER_SSM_ACCESS_KEY_ID: ${CLUSTERS_KEEPER_SSM_ACCESS_KEY_ID}
+      CLUSTERS_KEEPER_SSM_ENDPOINT: ${CLUSTERS_KEEPER_SSM_ENDPOINT}
+      CLUSTERS_KEEPER_SSM_REGION_NAME: ${CLUSTERS_KEEPER_SSM_REGION_NAME}
+      CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY: ${CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY}
       CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX: ${CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES: ${CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES}
@@ -204,6 +209,8 @@ services:
       PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY: ${PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_KEY}
       PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME: ${PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME}
       PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD: ${PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD}
+      PRIMARY_EC2_INSTANCES_MAX_START_TIME: ${PRIMARY_EC2_INSTANCES_MAX_START_TIME}
+      PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL: ${PRIMARY_EC2_INSTANCES_DOCKER_DEFAULT_ADDRESS_POOL}
       RABBIT_HOST: ${RABBIT_HOST}
       RABBIT_PASSWORD: ${RABBIT_PASSWORD}
       RABBIT_PORT: ${RABBIT_PORT}
@@ -313,6 +320,7 @@ services:
       DYNAMIC_SIDECAR_LOG_LEVEL: ${DYNAMIC_SIDECAR_LOG_LEVEL}
       DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS: ${DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS}
       DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS: ${DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS}
+      DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: ${DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT}
 
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       DIRECTOR_V2_LOGLEVEL: ${DIRECTOR_V2_LOGLEVEL}
@@ -372,6 +380,9 @@ services:
       TRAEFIK_SIMCORE_ZONE: ${TRAEFIK_SIMCORE_ZONE}
       TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
       TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
+
+      WEBSERVER_HOST: ${WEBSERVER_HOST}
+      WEBSERVER_PORT: ${WEBSERVER_PORT}
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
@@ -397,6 +408,11 @@ services:
       RABBIT_PORT: ${RABBIT_PORT}
       RABBIT_SECURE: ${RABBIT_SECURE}
       RABBIT_USER: ${RABBIT_USER}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_SECURE: ${REDIS_SECURE}
+      REDIS_USER: ${REDIS_USER}
       SC_USER_ID: ${SC_USER_ID}
       SC_USER_NAME: ${SC_USER_NAME}
       EFS_USER_ID: ${EFS_USER_ID}
@@ -998,6 +1014,12 @@ services:
       AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY: ${AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY}
       AGENT_VOLUMES_CLEANUP_S3_BUCKET: ${AGENT_VOLUMES_CLEANUP_S3_BUCKET}
       AGENT_VOLUMES_CLEANUP_S3_PROVIDER: ${AGENT_VOLUMES_CLEANUP_S3_PROVIDER}
+      AGENT_DOCKER_NODE_ID: "{{.Node.ID}}"
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_PORT: ${RABBIT_PORT}
+      RABBIT_USER: ${RABBIT_USER}
+      RABBIT_SECURE: ${RABBIT_SECURE}
 
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -1161,7 +1183,19 @@ services:
       # also aof (append only) is also enabled such that we get full durability at the expense
       # of backup size. The backup is written into /data.
       # https://redis.io/topics/persistence
-      [ "redis-server", "--save", "60 1", "--loglevel", "verbose", "--databases", "8", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}" ]
+      [
+        "redis-server",
+        "--save",
+        "60 1",
+        "--loglevel",
+        "verbose",
+        "--databases",
+        "9",
+        "--appendonly",
+        "yes",
+        "--requirepass",
+        "${REDIS_PASSWORD}"
+      ]
     networks:
       - default
       - autoscaling_subnet
@@ -1192,8 +1226,14 @@ services:
       - "--metrics.prometheus.entryPoint=metrics"
       - "--entryPoints.http.address=:80"
       - "--entryPoints.http.forwardedHeaders.insecure"
+      - "--entryPoints.http.transport.respondingTimeouts.idleTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
+      - "--entryPoints.http.transport.respondingTimeouts.writeTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
+      - "--entryPoints.http.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805      - "--entryPoints.simcore_api.address=:10081"
       - "--entryPoints.simcore_api.address=:10081"
       - "--entryPoints.simcore_api.forwardedHeaders.insecure"
+      - "--entryPoints.simcore_api.transport.respondingTimeouts.idleTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
+      - "--entryPoints.simcore_api.transport.respondingTimeouts.writeTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
+      - "--entryPoints.simcore_api.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805
       - "--entryPoints.traefik_monitor.address=:8080"
       - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
       - "--providers.swarm.endpoint=unix:///var/run/docker.sock"
@@ -1206,7 +1246,6 @@ services:
       - "--tracing.addinternals"
       - "--tracing.otlp=true"
       - "--tracing.otlp.http=true"
-      # - "--tracing.otlp.http.endpoint=0.0.0.0:4318/v1/traces"
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock

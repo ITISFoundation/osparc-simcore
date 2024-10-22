@@ -223,6 +223,9 @@ async def create_user_services(  # pylint: disable=too-many-statements
 
     scheduler_data.dynamic_sidecar.were_containers_created = True
 
+    # NOTE: user services are already in running state, meaning it is safe to pull inputs
+    await sidecars_client.pull_service_input_ports(dynamic_sidecar_endpoint)
+
     start_duration = (
         scheduler_data.dynamic_sidecar.instrumentation.elapsed_since_start_request()
     )

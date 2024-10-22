@@ -37,6 +37,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyHttpUrl, parse_obj_as
 from servicelib.async_utils import run_sequentially_in_context
+from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
 from starlette import status
@@ -150,6 +151,7 @@ async def _check_pipeline_startable(
 _UNKNOWN_NODE: Final[str] = "unknown node"
 
 
+@log_decorator(_logger)
 async def _get_project_metadata(
     project_id: ProjectID,
     project_repo: ProjectsRepository,
@@ -160,7 +162,7 @@ async def _get_project_metadata(
             project_id
         )
         if project_ancestors.parent_project_uuid is None:
-            # no parents here
+            _logger.debug("no parent found for project %s", project_id)
             return {}
 
         assert project_ancestors.parent_node_id is not None  # nosec
@@ -286,7 +288,7 @@ async def _try_start_pipeline(
 )
 # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
 @run_sequentially_in_context(target_args=["computation.project_id"])
-async def create_computation(  # noqa: PLR0913
+async def create_computation(  # noqa: PLR0913  # pylint:disable=too-many-positional-arguments
     computation: ComputationCreate,
     request: Request,
     project_repo: Annotated[

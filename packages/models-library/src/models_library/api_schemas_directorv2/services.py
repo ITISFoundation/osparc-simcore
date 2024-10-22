@@ -1,4 +1,4 @@
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Final
 
 from pydantic import BaseModel, Field, validator
 from pydantic.types import ByteSize, NonNegativeInt
@@ -90,3 +90,6 @@ class ServiceExtras(BaseModel):
                 for node_example in NodeRequirements.Config.schema_extra["examples"]
             ]
         }
+
+
+CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME: Final[NonNegativeInt] = 89

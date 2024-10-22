@@ -1,4 +1,6 @@
 import logging
+from abc import ABC, abstractmethod
+from asyncio import CancelledError
 from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
@@ -25,6 +27,20 @@ from .port_utils import is_file_type
 from .ports_mapping import InputsList, OutputsList
 
 log = logging.getLogger(__name__)
+
+
+class OutputsCallbacks(ABC):
+    @abstractmethod
+    async def aborted(self, key: ServicePortKey) -> None:
+        pass
+
+    @abstractmethod
+    async def finished_succesfully(self, key: ServicePortKey) -> None:
+        pass
+
+    @abstractmethod
+    async def finished_with_error(self, key: ServicePortKey) -> None:
+        pass
 
 
 class Nodeports(BaseModel):
@@ -148,6 +164,7 @@ class Nodeports(BaseModel):
         ],
         *,
         progress_bar: ProgressBarData,
+        outputs_callbacks: OutputsCallbacks | None,
     ) -> None:
         """
         Sets the provided values to the respective input or output ports
@@ -156,26 +173,44 @@ class Nodeports(BaseModel):
 
         raises ValidationError
         """
+
+        async def _set_with_notifications(
+            port_key: ServicePortKey,
+            value: ItemConcreteValue | None,
+            set_kwargs: SetKWargs | None,
+            sub_progress: ProgressBarData,
+        ) -> None:
+            try:
+                # pylint: disable=protected-access
+                await self.internal_outputs[port_key]._set(  # noqa: SLF001
+                    value, set_kwargs=set_kwargs, progress_bar=sub_progress
+                )
+                if outputs_callbacks:
+                    await outputs_callbacks.finished_succesfully(port_key)
+            except UnboundPortError:
+                # not available try inputs
+                # if this fails it will raise another exception
+                # pylint: disable=protected-access
+                await self.internal_inputs[port_key]._set(  # noqa: SLF001
+                    value, set_kwargs=set_kwargs, progress_bar=sub_progress
+                )
+            except CancelledError:
+                if outputs_callbacks:
+                    await outputs_callbacks.aborted(port_key)
+                raise
+            except Exception:
+                if outputs_callbacks:
+                    await outputs_callbacks.finished_with_error(port_key)
+                raise
+
         tasks = []
         async with progress_bar.sub_progress(
             steps=len(port_values.items()), description=IDStr("set multiple")
         ) as sub_progress:
             for port_key, (value, set_kwargs) in port_values.items():
-                # pylint: disable=protected-access
-                try:
-                    tasks.append(
-                        self.internal_outputs[port_key]._set(
-                            value, set_kwargs=set_kwargs, progress_bar=sub_progress
-                        )
-                    )
-                except UnboundPortError:
-                    # not available try inputs
-                    # if this fails it will raise another exception
-                    tasks.append(
-                        self.internal_inputs[port_key]._set(
-                            value, set_kwargs=set_kwargs, progress_bar=sub_progress
-                        )
-                    )
+                tasks.append(
+                    _set_with_notifications(port_key, value, set_kwargs, sub_progress)
+                )
 
             results = await logged_gather(*tasks)
             await self.save_to_db_cb(self)

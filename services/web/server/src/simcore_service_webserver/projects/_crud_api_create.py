@@ -398,6 +398,13 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         # Adds permalink
         await update_or_pop_permalink_in_project(request, new_project)
 
+        # Adds folderId
+        user_specific_project_data_db = await db.get_user_specific_project_data_db(
+            project_uuid=new_project["uuid"],
+            private_workspace_user_id_or_none=user_id if workspace_id is None else None,
+        )
+        new_project["folderId"] = user_specific_project_data_db.folder_id
+
         # Overwrite project access rights
         if workspace_id:
             workspace_db: UserWorkspaceAccessRightsDB = (

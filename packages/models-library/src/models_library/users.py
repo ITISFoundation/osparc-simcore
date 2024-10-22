@@ -22,7 +22,7 @@ class UserBillingDetails(BaseModel):
     address: str | None
     city: str | None
     state: str | None = Field(description="State, province, canton, ...")
-    country: str
+    country: str  # Required for taxes
     postal_code: str | None
     phone: str | None
 

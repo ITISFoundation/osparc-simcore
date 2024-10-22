@@ -25,9 +25,6 @@ qx.Class.define("osparc.tours.Step", {
 
     const hintContainer = this.getChildControl("hint-container");
     hintContainer.setPadding(15);
-    hintContainer.getContentElement().setStyles({
-      "border-radius": "8px"
-    });
 
     this.getChildControl("title");
     this.getChildControl("message");

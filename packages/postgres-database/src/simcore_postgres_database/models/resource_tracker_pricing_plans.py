@@ -33,9 +33,14 @@ resource_tracker_pricing_plans = sa.Table(
     sa.Column(
         "product_name",
         sa.String,
+        sa.ForeignKey(
+            "products.name",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+            name="fk_rut_pricing_plans_product_name",
+        ),
         nullable=False,
-        doc="Product name",
-        index=True,
+        doc="Products unique name",
     ),
     sa.Column(
         "display_name",
