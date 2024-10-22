@@ -466,6 +466,7 @@ qx.Class.define("osparc.Application", {
 
     __loadMainPage: function(studyId = null) {
       // logged in
+      osparc.WindowSizeTracker.getInstance().evaluateTooSmallDialog();
       osparc.data.Resources.getOne("profile")
         .then(profile => {
           if (profile) {
