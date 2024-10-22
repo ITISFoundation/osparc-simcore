@@ -126,6 +126,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
         }
         case "header":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+            backgroundColor: "rgba(33, 93, 122, 0.8)",
             anonymous: true,
             maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().HEADER_MAX_HEIGHT,
