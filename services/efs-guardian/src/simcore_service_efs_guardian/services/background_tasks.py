@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectStatus
+from servicelib.logging_utils import log_context
 from servicelib.project_lock import (
     PROJECT_LOCK_TIMEOUT,
     PROJECT_REDIS_LOCK_KEY,
@@ -50,17 +51,18 @@ async def removal_policy_task(app: FastAPI) -> None:
             < base_start_timestamp
             - app_settings.EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA
         ):
-            _logger.info(
-                "Removing data for project %s started, project last change date %s, efs removal policy task age limit timedelta %s",
-                project_id,
-                _project_last_change_date,
-                app_settings.EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA,
-            )
-            redis_lock = get_redis_lock_client(app).redis.lock(
-                PROJECT_REDIS_LOCK_KEY.format(project_id),
-                timeout=PROJECT_LOCK_TIMEOUT.total_seconds(),
-            )
-            async with lock_project(
-                redis_lock, project_uuid=project_id, status=ProjectStatus.MAINTAINING
+            with log_context(
+                _logger,
+                logging.INFO,
+                msg=f"Removing data for project {project_id} started, project last change date {_project_last_change_date}, efs removal policy task age limit timedelta {app_settings.EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA}",
             ):
-                await efs_manager.remove_project_efs_data(project_id)
+                redis_lock = get_redis_lock_client(app).redis.lock(
+                    PROJECT_REDIS_LOCK_KEY.format(project_id),
+                    timeout=PROJECT_LOCK_TIMEOUT.total_seconds(),
+                )
+                async with lock_project(
+                    redis_lock,
+                    project_uuid=project_id,
+                    status=ProjectStatus.MAINTAINING,
+                ):
+                    await efs_manager.remove_project_efs_data(project_id)
