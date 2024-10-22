@@ -117,7 +117,7 @@ docker==7.1.0
     #   -r requirements/_test.in
 email-validator==2.2.0
     # via pydantic
-fast-depends==2.4.11
+fast-depends==2.4.12
     # via faststream
 faststream==0.5.23
     # via
