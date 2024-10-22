@@ -1,5 +1,4 @@
 import datetime
-from functools import cached_property
 
 from pydantic import Field, parse_obj_as, validator
 from settings_library.application import BaseApplicationSettings
@@ -44,13 +43,9 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     )
 
-    @cached_property
-    def LOG_LEVEL(self):  # noqa: N802
-        return self.DYNAMIC_SCHEDULER_LOGLEVEL
-
-    @validator("DYNAMIC_SCHEDULER_LOGLEVEL")
+    @validator("DYNAMIC_SCHEDULER_LOGLEVEL", pre=True)
     @classmethod
-    def valid_log_level(cls, value: str) -> str:
+    def _validate_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
 
 
