@@ -9,7 +9,7 @@ from models_library.utils.common_validators import (
     ensure_unique_dict_values_validator,
     ensure_unique_list_values_validator,
 )
-from pydantic import AliasChoices, field_validator, Field, PositiveInt
+from pydantic import AliasChoices, ValidationInfo, field_validator, Field, PositiveInt
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
@@ -47,8 +47,8 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
 
     @field_validator("R_CLONE_POLL_INTERVAL_SECONDS")
     @classmethod
-    def enforce_r_clone_requirement(cls, v: int, values) -> PositiveInt:
-        dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
+    def enforce_r_clone_requirement(cls, v: int, info: ValidationInfo) -> PositiveInt:
+        dir_cache_time = info.data["R_CLONE_DIR_CACHE_TIME_SECONDS"]
         if v >= dir_cache_time:
             msg = f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
             raise ValueError(msg)
