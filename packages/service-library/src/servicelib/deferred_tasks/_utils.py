@@ -30,6 +30,8 @@ def stop_retry_for_unintended_errors(func):
                 f"Please check code at: '{func.__module__}.{func.__name__}'"
             )
             _logger.exception(msg)
-            raise RejectMessage(msg) from e
+            # NOTE: the new version of fast-depends allows to pass a parameter until then we keep it simple
+            # raise RejectMessage(reason=msg) from e
+            raise RejectMessage from e
 
     return wrapper
