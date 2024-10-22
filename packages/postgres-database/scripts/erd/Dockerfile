@@ -20,15 +20,14 @@ RUN apt-get update \
   && apt-get clean
 
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install --upgrade \
-  pip~=24.0  \
+RUN --mount=type=cache,target=/root/.cache/uv \
+  uv pip install --upgrade \
   wheel \
   setuptools
 
 
 # devenv
 COPY requirements.txt requirements.txt
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install \
-  -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/uv \
+  uv pip sync \
+  requirements.txt
