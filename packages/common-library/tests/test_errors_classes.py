@@ -136,16 +136,10 @@ def test_msg_template_with_different_formats(
 
 
 def test_missing_keys_in_msg_template_does_not_raise():
-    class MyErrorBefore(OsparcErrorMixin, ValueError):
+    class MyError(OsparcErrorMixin, ValueError):
         msg_template = "{value} and {missing}"
 
-    with pytest.raises(KeyError, match="missing"):
-        str(MyErrorBefore(value=42))
-
-    class MyErrorAfter(OsparcErrorMixin, ValueError):
-        msg_template = "{value} and {missing}"
-
-    assert str(MyErrorAfter(value=42)) == "42 and 'missing=?'"
+    assert str(MyError(value=42)) == "42 and 'missing=?'"
 
 
 def test_exception_context():
@@ -153,7 +147,17 @@ def test_exception_context():
         msg_template = "{value} and {missing}"
 
     exc = MyError(value=42, missing="foo", extra="bar")
-    assert exc.error_context() == {"value": 42, "missing": "foo", "extra": "bar"}
+    assert exc.error_context() == {
+        "code": "ValueError.MyError",
+        "message": "42 and foo",
+        "value": 42,
+        "missing": "foo",
+        "extra": "bar",
+    }
 
     exc = MyError(value=42)
-    assert exc.error_context() == {"value": 42}
+    assert exc.error_context() == {
+        "code": "ValueError.MyError",
+        "message": "42 and 'missing=?'",
+        "value": 42,
+    }
