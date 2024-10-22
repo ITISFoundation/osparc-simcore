@@ -1,21 +1,21 @@
+import uuid
 from datetime import datetime, timezone
 
 import sqlalchemy as sa
-from models_library.errors_classes import OsparcErrorMixin
-from models_library.projects import ProjectID
 from pydantic import parse_obj_as
+from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .models.projects import projects
 from .utils_repos import transaction_context
 
 
-class DBBaseProjectError(OsparcErrorMixin, Exception):
-    ...
+class DBBaseProjectError(PydanticErrorMixin, Exception):
+    msg_template: str = "Project utils unexpected error"
 
 
 class DBProjectNotFoundError(DBBaseProjectError):
-    project_uuid: ProjectID
+    msg_template: str = "Project project_uuid={project_uuid!r} not found"
 
 
 class ProjectsRepo:
@@ -24,7 +24,7 @@ class ProjectsRepo:
 
     async def get_project_last_change_date(
         self,
-        project_uuid: ProjectID,
+        project_uuid: uuid.UUID,
         *,
         connection: AsyncConnection | None = None,
     ) -> datetime:

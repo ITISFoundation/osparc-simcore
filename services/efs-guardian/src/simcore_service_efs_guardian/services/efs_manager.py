@@ -131,12 +131,16 @@ class EfsManager:
                 shutil.rmtree(_dir_path)
                 _logger.info("%s has been deleted.", _dir_path)
             except FileNotFoundError as e:
-                _logger.error("Directory %s does not exist.", _dir_path)
+                _logger.error("Directory %s does not exist. Error: %s", _dir_path, e)
             except PermissionError as e:
-                _logger.error("Permission denied when trying to delete %s.", _dir_path)
+                _logger.error(
+                    "Permission denied when trying to delete %s. Error: %s",
+                    _dir_path,
+                    e,
+                )
             except NotADirectoryError as e:
-                _logger.error("%s is not a directory.", _dir_path)
+                _logger.error("%s is not a directory. Error: %s", _dir_path, e)
             except OSError as e:
-                _logger.error("Error: %s. Issue with path: %s", e, _dir_path)
+                _logger.error("Issue with path: %s Error: %s", _dir_path, e)
         else:
             _logger.error("%s does not exist.", _dir_path)
