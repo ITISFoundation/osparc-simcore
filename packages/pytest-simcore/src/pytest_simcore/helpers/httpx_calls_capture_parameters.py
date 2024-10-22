@@ -11,7 +11,7 @@ class CapturedParameterSchema(BaseModel):
     pattern: str | None = None
     format_: Literal["uuid"] | None = Field(None, alias="format")
     exclusiveMinimum: bool | None = None
-    minimum: int | None = None
+    minimum: int | float | None = None
     anyOf: list["CapturedParameterSchema"] | None = None
     allOf: list["CapturedParameterSchema"] | None = None
     oneOf: list["CapturedParameterSchema"] | None = None
@@ -42,7 +42,7 @@ class CapturedParameterSchema(BaseModel):
         oneOf = values.oneOf
         if not any([type_, oneOf, anyOf, allOf]):
             type_ = "str"  # this default is introduced because we have started using json query params in the webserver
-            values["type_"] = type_
+            values.type_ = type_
         if type_ != "str" and any([pattern, format_]):
             msg = f"For {type_=} both {pattern=} and {format_=} must be None"
             raise ValueError(msg)

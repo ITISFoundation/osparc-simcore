@@ -78,7 +78,7 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
 
 class ApplicationSettings(BasicSettings):
     # DOCKER BOOT
-    SC_BOOT_MODE: BootModeEnum | None
+    SC_BOOT_MODE: BootModeEnum | None = None
 
     API_SERVER_POSTGRES: PostgresSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True}

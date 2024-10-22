@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Annotated, Any
 
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import AfterValidator, AnyUrl, BaseModel, Field
 
 
 class AppStatusCheck(BaseModel):
@@ -15,11 +15,11 @@ class AppStatusCheck(BaseModel):
         description="Client sessions info. If single session per app, then is denoted as main",
     )
 
-    url: AnyUrl | None = Field(
+    url: Annotated[AnyUrl, AfterValidator(str)] | None = Field(
         default=None,
         description="Link to current resource",
     )
-    diagnostics_url: AnyUrl | None = Field(
+    diagnostics_url: Annotated[AnyUrl, AfterValidator(str)] | None = Field(
         default=None,
         description="Link to diagnostics report sub-resource. This MIGHT take some time to compute",
     )
