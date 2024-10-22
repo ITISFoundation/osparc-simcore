@@ -22,7 +22,7 @@ async def test_capture_http_call(
 ):
     # CAPTURE
     async with httpx.AsyncClient() as client:
-        response: httpx.Response = await client.get(f"{httpbin_base_url}/json")
+        response: httpx.Response = await client.get(f"{httpbin_base_url}json")
         print(response)
 
         _request: httpx.Request = response.request
@@ -64,7 +64,7 @@ async def test_capture_http_dynamic_call(
         sample_uid = faker.uuid4()  # used during test sampling
 
         response: httpx.Response = await client.post(
-            f"{httpbin_base_url}/anything/{sample_uid}",
+            f"{httpbin_base_url}anything/{sample_uid!r}",
             params={"n": 42},
             json={
                 "resource_id": sample_uid,
