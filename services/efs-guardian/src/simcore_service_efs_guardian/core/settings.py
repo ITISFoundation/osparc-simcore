@@ -1,3 +1,4 @@
+import datetime
 from functools import cached_property
 from typing import Final, cast
 
@@ -11,6 +12,7 @@ from models_library.basic_types import (
 from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
+from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.tracing import TracingSettings
@@ -61,6 +63,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     EFS_DEFAULT_USER_SERVICE_SIZE_BYTES: ByteSize = Field(
         default=parse_obj_as(ByteSize, "500GiB")
     )
+    EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA: datetime.timedelta = Field(
+        default=datetime.timedelta(days=10),
+        description="For how long must a project remain unused before we remove its data from the EFS. (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+    )
 
     # RUNTIME  -----------------------------------------------------------
     EFS_GUARDIAN_DEBUG: bool = Field(
@@ -79,6 +85,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings = Field(auto_default_from_env=True)
+    EFS_GUARDIAN_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
     EFS_GUARDIAN_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
     EFS_GUARDIAN_REDIS: RedisSettings = Field(auto_default_from_env=True)
     EFS_GUARDIAN_TRACING: TracingSettings | None = Field(
