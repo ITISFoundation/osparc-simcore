@@ -64,7 +64,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
         return self.RESOURCE_USAGE_TRACKER_LOGLEVEL
 
-    @validator("RESOURCE_USAGE_TRACKER_LOGLEVEL")
+    @validator("RESOURCE_USAGE_TRACKER_LOGLEVEL", pre=True)
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)

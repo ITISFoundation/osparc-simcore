@@ -54,7 +54,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self):
         return self.INVITATIONS_LOGLEVEL
 
-    @validator("INVITATIONS_LOGLEVEL")
+    @validator("INVITATIONS_LOGLEVEL", pre=True)
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)

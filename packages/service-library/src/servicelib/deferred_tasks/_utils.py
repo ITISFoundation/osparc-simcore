@@ -30,6 +30,6 @@ def stop_retry_for_unintended_errors(func):
                 f"Please check code at: '{func.__module__}.{func.__name__}'"
             )
             _logger.exception(msg)
-            raise RejectMessage(reason=msg) from e
+            raise RejectMessage(msg) from e
 
     return wrapper
