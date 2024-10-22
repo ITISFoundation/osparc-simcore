@@ -20,7 +20,7 @@ from models_library.clusters import (
     ClusterTypeInModel,
     NoAuthentication,
 )
-from pydantic import AnyHttpUrl, AnyUrl, Field, NonNegativeInt, validator
+from pydantic import AliasChoices, field_validator, AnyHttpUrl, AnyUrl, Field, NonNegativeInt
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
@@ -107,7 +107,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
             type=ClusterTypeInModel.ON_PREMISE,
         )
 
-    @validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", pre=True)
+    @field_validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", mode="before")
     @classmethod
     def _empty_auth_is_none(cls, v):
         if not v:
@@ -122,14 +122,14 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
-        env=["DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        validation_alias=AliasChoices("DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
     )
     DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=AliasChoices(
             "DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
@@ -161,7 +161,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_V2_REMOTE_DEBUGGING_PORT: PortInt | None
 
     # extras
-    SWARM_STACK_NAME: str = Field("undefined-please-check", env="SWARM_STACK_NAME")
+    SWARM_STACK_NAME: str = Field("undefined-please-check", validation_alias="SWARM_STACK_NAME")
     SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
         default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
         description="Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)"
@@ -227,10 +227,10 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Base URL used to access the public api e.g. http://127.0.0.1:6000 for development or https://api.osparc.io",
     )
     DIRECTOR_V2_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemetry tracing"
+        json_schema_extra={"auto_default_from_env": True}, description="settings for opentelemetry tracing"
     )
 
-    @validator("LOG_LEVEL", pre=True)
+    @field_validator("LOG_LEVEL", mode="before")
     @classmethod
     def _validate_loglevel(cls, value: str) -> str:
         log_level: str = cls.validate_log_level(value)

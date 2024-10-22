@@ -6,7 +6,7 @@ from models_library.resource_tracker import (
     PricingUnitCostId,
     PricingUnitId,
 )
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 
 
 class PricingInfo(BaseModel):
@@ -14,9 +14,8 @@ class PricingInfo(BaseModel):
     pricing_unit_id: PricingUnitId
     pricing_unit_cost_id: PricingUnitCostId
     pricing_unit_cost: Decimal
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "pricing_plan_id": 1,
@@ -26,3 +25,4 @@ class PricingInfo(BaseModel):
                 }
             ]
         }
+    )
