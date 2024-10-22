@@ -15,10 +15,14 @@ from models_library.services import ServiceInputsDict, ServiceOutput, ServicePor
 from models_library.services_regex import SERVICE_KEY_RE
 from models_library.services_resources import BootMode
 from pydantic import (
-    TypeAdapter, ValidationInfo, field_validator, ConfigDict, BaseModel,
+    BaseModel,
     ByteSize,
+    ConfigDict,
     Field,
     PositiveInt,
+    TypeAdapter,
+    ValidationInfo,
+    field_validator,
 )
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -37,7 +41,9 @@ class Image(BaseModel):
         default=None, deprecated=True, description="Use instead node_requirements"
     )
     node_requirements: NodeRequirements | None = Field(
-        default=None, description="the requirements for the service to run on a node", validate_default=True
+        default=None,
+        description="the requirements for the service to run on a node",
+        validate_default=True,
     )
     boot_mode: BootMode = BootMode.CPU
     command: list[str] = Field(
@@ -64,6 +70,7 @@ class Image(BaseModel):
                 RAM=TypeAdapter(ByteSize).validate_python("128 MiB"),
             )
         return v
+
     model_config = ConfigDict(
         from_attributes=True,
         json_schema_extra={
@@ -73,7 +80,9 @@ class Image(BaseModel):
                     "tag": "1.3.1",
                     "node_requirements": node_req_example,
                 }
-                for node_req_example in NodeRequirements.model_config["json_schema_extra"]["examples"]
+                for node_req_example in NodeRequirements.model_config[
+                    "json_schema_extra"
+                ]["examples"]
             ]
             +
             # old version
@@ -85,16 +94,14 @@ class Image(BaseModel):
                     "requires_mpi": False,
                 }
             ]
-        }
+        },
     )
 
 
 # NOTE: for a long time defaultValue field was added to ServiceOutput wrongly in the DB.
 # this flags allows parsing of the outputs without error. This MUST not leave the director-v2!
 class _ServiceOutputOverride(ServiceOutput):
-    model_config = ConfigDict(
-        extra = "ignore"
-    )
+    model_config = ConfigDict(extra="ignore")
 
 
 _ServiceOutputsOverride = dict[ServicePortKey, _ServiceOutputOverride]
@@ -103,7 +110,7 @@ _ServiceOutputsOverride = dict[ServicePortKey, _ServiceOutputOverride]
 class NodeSchema(BaseModel):
     inputs: ServiceInputsDict = Field(..., description="the inputs scheam")
     outputs: _ServiceOutputsOverride = Field(..., description="the outputs schema")
-    model_config = ConfigDict(extra="ignore", extra="forbid", from_attributes=True)
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
 
 class CompTaskAtDB(BaseModel):
@@ -170,8 +177,73 @@ class CompTaskAtDB(BaseModel):
         return v
 
     def to_db_model(self, **exclusion_rules) -> dict[str, Any]:
-        comp_task_dict = self.model_dump(by_alias=True, exclude_unset=True, **exclusion_rules)
+        comp_task_dict = self.model_dump(
+            by_alias=True, exclude_unset=True, **exclusion_rules
+        )
         if "state" in comp_task_dict:
             comp_task_dict["state"] = RUNNING_STATE_TO_DB[comp_task_dict["state"]].value
         return comp_task_dict
-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    model_config = ConfigDict(
+        extra="forbid",
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                # DB model
+                {
+                    "task_id": 324,
+                    "project_id": "341351c4-23d1-4366-95d0-bc01386001a7",
+                    "node_id": "7f62be0e-1298-4fe4-be76-66b6e859c260",
+                    "job_id": None,
+                    "internal_id": 3,
+                    "schema": {
+                        "inputs": {
+                            "input_1": {
+                                "label": "input_files",
+                                "description": "Any input files. One or serveral files compressed in a zip will be downloaded in an inputs folder.",
+                                "type": "data:*/*",
+                                "displayOrder": 1.0,
+                            }
+                        },
+                        "outputs": {
+                            "output_1": {
+                                "label": "Output files",
+                                "description": "Output files uploaded from the outputs folder",
+                                "type": "data:*/*",
+                                "displayOrder": 1.0,
+                            }
+                        },
+                    },
+                    "inputs": {
+                        "input_1": {
+                            "nodeUuid": "48a7ac7a-cfc3-44a6-ba9b-5a1a578b922c",
+                            "output": "output_1",
+                        }
+                    },
+                    "outputs": {
+                        "output_1": {
+                            "store": 0,
+                            "path": "341351c4-23d1-4366-95d0-bc01386001a7/7f62be0e-1298-4fe4-be76-66b6e859c260/output_1.zip",
+                        }
+                    },
+                    "image": image_example,
+                    "submit": "2021-03-01 13:07:34.19161",
+                    "node_class": "INTERACTIVE",
+                    "state": "NOT_STARTED",
+                    "progress": 0.44,
+                    "last_heartbeat": None,
+                    "created": "2022-05-20 13:28:31.139+00",
+                    "modified": "2023-06-23 15:58:32.833081+00",
+                    "pricing_info": {
+                        "pricing_plan_id": 1,
+                        "pricing_unit_id": 1,
+                        "pricing_unit_cost_id": 1,
+                    },
+                    "hardware_info": HardwareInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
+                }
+                for image_example in Image.model_config["json_schema_extra"]["examples"]
+            ]
+        },
+    )

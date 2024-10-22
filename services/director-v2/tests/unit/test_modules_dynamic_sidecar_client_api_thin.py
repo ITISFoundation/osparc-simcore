@@ -11,7 +11,7 @@ from fastapi import FastAPI, status
 from httpx import Response
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter, Route
 from respx.types import SideEffectTypes

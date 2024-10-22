@@ -1,14 +1,14 @@
 import datetime
 from contextlib import suppress
-from typing import Any, ClassVar, TypedDict
 
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pydantic import field_validator, ConfigDict, BaseModel, PositiveInt
+from pydantic import BaseModel, ConfigDict, PositiveInt, field_validator
 from simcore_postgres_database.models.comp_pipeline import StateType
+from typing_extensions import TypedDict
 
 from ..utils.db import DB_TO_RUNNING_STATE
 
@@ -81,6 +81,7 @@ class CompRunsAtDB(BaseModel):
         if v is None:
             v = RunMetadataDict()
         return v
+
     model_config = ConfigDict(
         from_attributes=True,
         json_schema_extra={
@@ -118,5 +119,5 @@ class CompRunsAtDB(BaseModel):
                     "use_on_demand_clusters": False,
                 },
             ]
-        }
+        },
     )
