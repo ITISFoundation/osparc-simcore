@@ -2608,6 +2608,15 @@
             "description": "set True if the dy-sidecar saves the state and uploads the outputs",
             "default": false
           },
+          "instrumentation": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServicesInstrumentation"
+              }
+            ],
+            "title": "Instrumentation",
+            "description": "keeps track times for various operations"
+          },
           "dynamic_sidecar_id": {
             "type": "string",
             "maxLength": 25,
@@ -3613,16 +3622,35 @@
       },
       "ServiceState": {
         "enum": [
+          "failed",
           "pending",
           "pulling",
           "starting",
           "running",
+          "stopping",
           "complete",
-          "failed",
-          "stopping"
+          "idle"
         ],
         "title": "ServiceState",
         "description": "An enumeration."
+      },
+      "ServicesInstrumentation": {
+        "properties": {
+          "start_requested_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Requested At",
+            "description": "moment in which the process of starting the service was requested"
+          },
+          "close_requested_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Close Requested At",
+            "description": "moment in which the process of stopping the service was requested"
+          }
+        },
+        "type": "object",
+        "title": "ServicesInstrumentation"
       },
       "SimpleAuthentication": {
         "properties": {

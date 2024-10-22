@@ -1,5 +1,4 @@
 import datetime
-from functools import cached_property
 
 from pydantic import Field, parse_obj_as, validator
 from settings_library.application import BaseApplicationSettings
@@ -7,6 +6,7 @@ from settings_library.basic_types import LogLevel, VersionTag
 from settings_library.director_v2 import DirectorV2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -22,14 +22,14 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
 
-    DYNAMIC_SCHEDULER__LOGLEVEL: LogLevel = Field(
+    DYNAMIC_SCHEDULER_LOGLEVEL: LogLevel = Field(
         default=LogLevel.INFO,
-        env=["DYNAMIC_SCHEDULER__LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        env=["DYNAMIC_SCHEDULER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
     DYNAMIC_SCHEDULER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         env=[
-            "DYNAMIC_SCHEDULER__LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "DYNAMIC_SCHEDULER_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
@@ -43,13 +43,9 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     )
 
-    @cached_property
-    def LOG_LEVEL(self):  # noqa: N802
-        return self.DYNAMIC_SCHEDULER__LOGLEVEL
-
-    @validator("DYNAMIC_SCHEDULER__LOGLEVEL")
+    @validator("DYNAMIC_SCHEDULER_LOGLEVEL", pre=True)
     @classmethod
-    def valid_log_level(cls, value: str) -> str:
+    def _validate_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
 
 
@@ -78,3 +74,6 @@ class ApplicationSettings(_BaseApplicationSettings):
     DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
     DYNAMIC_SCHEDULER_PROFILING: bool = False
+    DYNAMIC_SCHEDULER_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
+    )

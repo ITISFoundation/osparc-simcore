@@ -14,8 +14,9 @@ would still have these invariants.
 
 from common_library.pydantic_fields_extension import is_nullable
 from pydantic import ValidationInfo, field_validator
-from pydantic.fields import PydanticUndefined
+from pydantic_core import PydanticUndefined
 from pydantic_settings import BaseSettings
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 
 
 def assert_field_specs(
@@ -131,17 +132,21 @@ def test_construct(monkeypatch):
     # from __init__
     settings_from_init = Settings(
         VALUE=1,
+        VALUE_ALSO_REQUIRED=10,
         VALUE_NULLABLE_REQUIRED=None,
-        VALUE_NULLABLE_REQUIRED_AS_WELL=None,
-        VALUE_REQUIRED_AS_WELL=10,
     )
+
     print(settings_from_init.model_dump_json(exclude_unset=True, indent=1))
 
     # from env vars
-    monkeypatch.setenv("VALUE", "1")
-    monkeypatch.setenv("VALUE_REQUIRED_AS_WELL", "10")
-    monkeypatch.setenv("VALUE_NULLABLE_REQUIRED", "null")
-    monkeypatch.setenv("VALUE_NULLABLE_REQUIRED_AS_WELL", None)
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "VALUE": "1",
+            "VALUE_ALSO_REQUIRED": "10",
+            "VALUE_NULLABLE_REQUIRED": "null",
+        },
+    )  # WARNING: set this env to None would not work w/o ``parse_none`` validator! bug???
 
     settings_from_env = Settings()  # type: ignore[call-arg]
     print(settings_from_env.model_dump_json(exclude_unset=True, indent=1))

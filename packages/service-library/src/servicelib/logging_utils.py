@@ -14,7 +14,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, TypeAlias, TypedDict, TypeVar
+from typing import Any, NotRequired, TypeAlias, TypedDict, TypeVar
 
 from .utils_secrets import mask_sensitive_data
 
@@ -318,19 +318,28 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
             raise exc from exc
 
 
-class LogExtra(TypedDict, total=False):
-    log_uid: str
+class LogExtra(TypedDict):
+    log_uid: NotRequired[str]
+    log_oec: NotRequired[str]
 
 
 LogLevelInt: TypeAlias = int
 LogMessageStr: TypeAlias = str
 
 
-def get_log_record_extra(*, user_id: int | str | None = None) -> LogExtra | None:
+def get_log_record_extra(
+    *,
+    user_id: int | str | None = None,
+    error_code: str | None = None,
+) -> LogExtra | None:
     extra: LogExtra = {}
+
     if user_id:
         assert int(user_id) > 0  # nosec
         extra["log_uid"] = f"{user_id}"
+    if error_code:
+        extra["log_oec"] = error_code
+
     return extra or None
 
 
@@ -392,3 +401,8 @@ def guess_message_log_level(message: str) -> LogLevelInt:
     ):
         return logging.WARNING
     return logging.INFO
+
+
+def set_parent_module_log_level(current_module: str, desired_log_level: int) -> None:
+    parent_module = ".".join(current_module.split(".")[:-1])
+    logging.getLogger(parent_module).setLevel(desired_log_level)

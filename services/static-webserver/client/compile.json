@@ -56,7 +56,7 @@
       "class": "osparc.Application",
       "theme": "osparc.theme.products.s4l.ThemeDark",
       "name": "s4llite",
-      "title": "Sim4Life Lite",
+      "title": "Sim4Life.lite",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
@@ -136,7 +136,7 @@
       "class": "osparc.Application",
       "theme": "osparc.theme.products.tis.ThemeDark",
       "name": "tis",
-      "title": "TI Plan - IT'IS",
+      "title": "TIP V3.0 - IT'IS",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
@@ -144,6 +144,22 @@
       ],
       "environment": {
         "product.name": "tis"
+      },
+      "addTimestampsToUrls": true,
+      "bootPath": "source/boot"
+    },
+    {
+      "class": "osparc.Application",
+      "theme": "osparc.theme.products.tis.ThemeDark",
+      "name": "tiplite",
+      "title": "TIP.lite - IT'IS",
+      "include": [
+        "iconfont.material.Load",
+        "iconfont.fontawesome5.Load",
+        "osparc.theme.products.tis.ThemeLight"
+      ],
+      "environment": {
+        "product.name": "tiplite"
       },
       "addTimestampsToUrls": true,
       "bootPath": "source/boot"

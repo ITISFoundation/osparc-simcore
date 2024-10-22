@@ -14,6 +14,8 @@ import simcore_service_webserver
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
@@ -78,12 +80,21 @@ SLOW_HANDLER_DELAY_SECS = 2.0  # secs
 
 
 @pytest.fixture
-def mock_environment(mock_env_devel_environment: dict[str, str], monkeypatch):
-    monkeypatch.setenv("AIODEBUG_SLOW_DURATION_SECS", f"{SLOW_HANDLER_DELAY_SECS / 10}")
-    monkeypatch.setenv("DIAGNOSTICS_MAX_TASK_DELAY", f"{SLOW_HANDLER_DELAY_SECS}")
-    monkeypatch.setenv("DIAGNOSTICS_MAX_AVG_LATENCY", f"{2.0}")
-    monkeypatch.setenv("DIAGNOSTICS_START_SENSING_DELAY", f"{0}")
-    monkeypatch.setenv("SC_HEALTHCHECK_TIMEOUT", "2m")
+def mock_environment(
+    mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **mock_env_devel_environment,
+            "AIODEBUG_SLOW_DURATION_SECS": f"{SLOW_HANDLER_DELAY_SECS / 10}",
+            "DIAGNOSTICS_MAX_TASK_DELAY": f"{SLOW_HANDLER_DELAY_SECS}",
+            "DIAGNOSTICS_MAX_AVG_LATENCY": f"{2.0}",
+            "DIAGNOSTICS_START_SENSING_DELAY": f"{0}",
+            "SC_HEALTHCHECK_TIMEOUT": "2m",
+            "DIAGNOSTICS_HEALTHCHECK_ENABLED": "1",
+        },
+    )
 
 
 @pytest.fixture
@@ -92,7 +103,7 @@ def client(
     unused_tcp_port_factory: Callable,
     aiohttp_client: Callable,
     api_version_prefix: str,
-    mock_environment: None,
+    mock_environment: EnvVarsDict,
 ) -> TestClient:
 
     routes = web.RouteTableDef()

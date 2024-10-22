@@ -24,7 +24,7 @@
 qx.Class.define("osparc.dashboard.ListButtonNew", {
   extend: osparc.dashboard.ListButtonBase,
 
-  construct: function(title, description) {
+  construct: function(title) {
     this.base(arguments);
 
     this.setPriority(osparc.dashboard.CardBase.CARD_PRIORITY.NEW);
@@ -34,16 +34,17 @@ qx.Class.define("osparc.dashboard.ListButtonNew", {
     });
 
     if (title) {
+      title = osparc.utils.Utils.replaceTokens(
+        title,
+        "replace_me_product_name",
+        osparc.store.StaticInfo.getInstance().getDisplayName()
+      );
+
       const titleLabel = this.getChildControl("title");
       titleLabel.set({
         value: title,
         rich: true
       });
-    }
-
-    if (description) {
-      const descLabel = this.getChildControl("description");
-      descLabel.setValue(description);
     }
 
     this.setIcon(osparc.dashboard.CardBase.NEW_ICON);

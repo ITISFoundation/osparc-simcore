@@ -15,6 +15,7 @@ from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID
 from pydantic import Extra, Field, Json, parse_obj_as, validator
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
     StrictRequestParams,
@@ -209,4 +210,4 @@ async def delete_workspace(request: web.Request):
         workspace_id=path_params.workspace_id,
         product_name=req_ctx.product_name,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

@@ -5,13 +5,14 @@ import mimetypes
 import time
 import zipfile
 from collections.abc import Awaitable, Callable
-from io import BytesIO
+from io import IOBase
 from pathlib import Path
 from typing import Any, Final, TypedDict, cast
 
 import aiofiles
 import aiofiles.tempfile
 import fsspec  # type: ignore[import-untyped]
+import repro_zipfile  # type: ignore[import-untyped]
 from pydantic import ByteSize, FileUrl, parse_obj_as
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
@@ -33,7 +34,7 @@ def _file_progress_cb(
     log_publishing_cb: LogPublishingCB,
     text_prefix: str,
     main_loop: asyncio.AbstractEventLoop,
-    **kwargs,
+    **kwargs,  # noqa: ARG001
 ):
     asyncio.run_coroutine_threadsafe(
         log_publishing_cb(
@@ -78,7 +79,7 @@ def _s3fs_settings_from_s3_settings(s3_settings: S3Settings) -> S3FsSettingsDict
     return s3fs_settings
 
 
-def _file_chunk_streamer(src: BytesIO, dst: BytesIO):
+def _file_chunk_streamer(src: IOBase, dst: IOBase):
     data = src.read(CHUNK_SIZE)
     segment_len = dst.write(data)
     return (data, segment_len)
@@ -98,6 +99,8 @@ async def _copy_file(
     with fsspec.open(src_url, mode="rb", **src_storage_kwargs) as src_fp, fsspec.open(
         dst_url, "wb", **dst_storage_kwargs
     ) as dst_fp:
+        assert isinstance(src_fp, IOBase)  # nosec
+        assert isinstance(dst_fp, IOBase)  # nosec
         file_size = getattr(src_fp, "size", None)
         data_read = True
         total_data_written = 0
@@ -159,7 +162,7 @@ async def pull_file_from_remote(
     if src_mime_type == _ZIP_MIME_TYPE and target_mime_type != _ZIP_MIME_TYPE:
         await log_publishing_cb(f"Uncompressing '{dst_path.name}'...", logging.INFO)
         logger.debug("%s is a zip file and will be now uncompressed", dst_path)
-        with zipfile.ZipFile(dst_path, "r") as zip_obj:
+        with repro_zipfile.ReproducibleZipFile(dst_path, "r") as zip_obj:
             await asyncio.get_event_loop().run_in_executor(
                 None, zip_obj.extractall, dst_path.parents[0]
             )
@@ -248,7 +251,8 @@ async def push_file_to_remote(
                 f"Compressing '{src_path.name}' to '{archive_file_path.name}'...",
                 logging.INFO,
             )
-            with zipfile.ZipFile(
+
+            with repro_zipfile.ReproducibleZipFile(
                 archive_file_path, mode="w", compression=zipfile.ZIP_STORED
             ) as zfp:
                 await asyncio.get_event_loop().run_in_executor(

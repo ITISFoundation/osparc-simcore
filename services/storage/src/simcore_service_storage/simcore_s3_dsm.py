@@ -38,8 +38,8 @@ from servicelib.utils import ensure_ends_with, limited_gather
 
 from . import db_file_meta_data, db_projects, db_tokens
 from .constants import (
+    APP_AIOPG_ENGINE_KEY,
     APP_CONFIG_KEY,
-    APP_DB_ENGINE_KEY,
     DATCORE_ID,
     EXPAND_DIR_MAX_ITEM_COUNT,
     MAX_CONCURRENT_S3_TASKS,
@@ -1084,7 +1084,7 @@ def create_simcore_s3_data_manager(app: web.Application) -> SimcoreS3DataManager
     cfg: Settings = app[APP_CONFIG_KEY]
     assert cfg.STORAGE_S3  # nosec
     return SimcoreS3DataManager(
-        engine=app[APP_DB_ENGINE_KEY],
+        engine=app[APP_AIOPG_ENGINE_KEY],
         simcore_bucket_name=parse_obj_as(S3BucketName, cfg.STORAGE_S3.S3_BUCKET_NAME),
         app=app,
         settings=cfg,

@@ -1,5 +1,5 @@
 #
-# NOTE: This files copies some of the types from models_library.basic_types
+# NOTE: This file copies some of the types from models_library.basic_types
 #       This is a minor evil to avoid the maintenance burden that creates
 #       an extra dependency to a larger models_library (intra-repo library)
 
@@ -54,3 +54,4 @@ class BuildTargetEnum(str, Enum):
 IDStr: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)
 ]
+RegisteredPortInt: TypeAlias = Annotated[int, Field(gt=1024, lt=65535)]

@@ -10,6 +10,7 @@ from settings_library.prometheus import PrometheusSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.s3 import S3Settings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -63,7 +64,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
         return self.RESOURCE_USAGE_TRACKER_LOGLEVEL
 
-    @validator("RESOURCE_USAGE_TRACKER_LOGLEVEL")
+    @validator("RESOURCE_USAGE_TRACKER_LOGLEVEL", pre=True)
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
@@ -110,3 +111,6 @@ class ApplicationSettings(MinimalApplicationSettings):
     )
     RESOURCE_USAGE_TRACKER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     RESOURCE_USAGE_TRACKER_S3: S3Settings | None = Field(auto_default_from_env=True)
+    RESOURCE_USAGE_TRACKER_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
+    )

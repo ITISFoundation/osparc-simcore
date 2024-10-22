@@ -28,6 +28,7 @@ from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.ssm import SSMSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -59,7 +60,8 @@ class AutoscalingEC2Settings(EC2Settings):
 class EC2InstancesSettings(BaseCustomSettings):
     EC2_INSTANCES_ALLOWED_TYPES: dict[str, EC2InstanceBootSpecific] = Field(
         ...,
-        description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
+        description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters"
+        "NOTE: minimum length >0",
     )
 
     EC2_INSTANCES_KEY_NAME: str = Field(
@@ -112,7 +114,7 @@ class EC2InstancesSettings(BaseCustomSettings):
     )
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=1),
-        description="Time after which an EC2 instance may being the termination process (0<=T<=59 minutes, is automatically capped)"
+        description="Time after which an EC2 instance may begin the termination process (0<=T<=59 minutes, is automatically capped)"
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
     EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION: datetime.timedelta = Field(
@@ -132,7 +134,7 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     @validator("EC2_INSTANCES_TIME_BEFORE_DRAINING")
     @classmethod
-    def ensure_draining_delay_time_is_in_range(
+    def _ensure_draining_delay_time_is_in_range(
         cls, value: datetime.timedelta
     ) -> datetime.timedelta:
         if value < datetime.timedelta(seconds=10):
@@ -143,7 +145,7 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     @validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
     @classmethod
-    def ensure_termination_delay_time_is_in_range(
+    def _ensure_termination_delay_time_is_in_range(
         cls, value: datetime.timedelta
     ) -> datetime.timedelta:
         if value < datetime.timedelta(minutes=0):
@@ -154,12 +156,18 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     @validator("EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
-    def check_valid_instance_names(
+    def _check_valid_instance_names_and_not_empty(
         cls, value: dict[str, EC2InstanceBootSpecific]
     ) -> dict[str, EC2InstanceBootSpecific]:
         # NOTE: needed because of a flaw in BaseCustomSettings
         # issubclass raises TypeError if used on Aliases
         parse_obj_as(list[InstanceTypeType], list(value))
+
+        if not value:
+            # NOTE: Field( ... , min_items=...) cannot be used to contraint number of iterms in a dict
+            msg = "At least one item expecte EC2_INSTANCES_ALLOWED_TYPES, got none"
+            raise ValueError(msg)
+
         return value
 
 
@@ -271,19 +279,33 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         " are maintained as active (in the docker terminology) "
         "but a docker node label named osparc-services-ready is attached",
     )
+    AUTOSCALING_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
+    )
+
+    AUTOSCALING_DOCKER_JOIN_DRAINED: bool = Field(
+        default=True,
+        description="If true, new nodes join the swarm as drained. If false as active.",
+    )
+
+    AUTOSCALING_WAIT_FOR_CLOUD_INIT_BEFORE_WARM_BUFFER_ACTIVATION: bool = Field(
+        default=False,
+        description="If True, then explicitely wait for cloud-init process to be completed before issuing commands. "
+        "TIP: might be useful when cheap machines are used",
+    )
 
     @cached_property
     def LOG_LEVEL(self):  # noqa: N802
         return self.AUTOSCALING_LOGLEVEL
 
-    @validator("AUTOSCALING_LOGLEVEL")
+    @validator("AUTOSCALING_LOGLEVEL", pre=True)
     @classmethod
-    def valid_log_level(cls, value: str) -> str:
+    def _valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
 
     @root_validator()
     @classmethod
-    def exclude_both_dynamic_computational_mode(cls, values):
+    def _exclude_both_dynamic_computational_mode(cls, values):
         if (
             values.get("AUTOSCALING_DASK") is not None
             and values.get("AUTOSCALING_NODES_MONITORING") is not None

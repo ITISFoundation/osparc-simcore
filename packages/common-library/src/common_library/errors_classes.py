@@ -1,5 +1,8 @@
 from typing import Any
+
 from pydantic.errors import PydanticErrorMixin
+
+from .error_codes import create_error_code
 
 
 class _DefaultDict(dict):
@@ -8,7 +11,7 @@ class _DefaultDict(dict):
 
 
 class OsparcErrorMixin(PydanticErrorMixin):
-    code: str   # type: ignore[assignment]
+    code: str  # type: ignore[assignment]
     msg_template: str
 
     def __new__(cls, *_args, **_kwargs):
@@ -18,7 +21,7 @@ class OsparcErrorMixin(PydanticErrorMixin):
 
     def __init__(self, **ctx: Any) -> None:
         self.__dict__ = ctx
-        super().__init__(message=self._build_message(), code=self.code) # type: ignore[arg-type]
+        super().__init__(message=self._build_message(), code=self.code)  # type: ignore[arg-type]
 
     def __str__(self) -> str:
         return self._build_message()
@@ -41,3 +44,11 @@ class OsparcErrorMixin(PydanticErrorMixin):
             )
         ]
         return ".".join(reversed(relevant_classes))
+
+    def error_context(self):
+        """Returns context in which error occurred and stored within the exception"""
+        return dict(**self.__dict__)
+
+    def error_code(self) -> str:
+        assert isinstance(self, Exception), "subclass must be exception"  # nosec
+        return create_error_code(self)

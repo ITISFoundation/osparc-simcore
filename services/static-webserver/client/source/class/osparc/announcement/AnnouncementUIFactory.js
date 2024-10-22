@@ -30,38 +30,34 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
   },
 
   statics: {
-    createLoginAnnouncement: function(title, text) {
+    createLoginAnnouncement: function(title, description) {
       const loginAnnouncement = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
         backgroundColor: "strong-main",
         alignX: "center",
         padding: 12,
         allowGrowX: true,
-        maxWidth: 300
-      });
-      loginAnnouncement.getContentElement().setStyles({
-        "border-radius": "8px"
+        maxWidth: osparc.auth.core.BaseAuthPage.FORM_WIDTH,
+        decorator: "rounded",
       });
 
       if (title) {
         const titleLabel = new qx.ui.basic.Label().set({
           value: title,
           font: "text-16",
-          textColor: "white",
           alignX: "center",
-          rich: true,
-          wrap: true
+          textAlign: "center",
+          rich: true
         });
         loginAnnouncement.add(titleLabel);
       }
 
-      if (text) {
+      if (description) {
         const descriptionLabel = new qx.ui.basic.Label().set({
-          value: text,
+          value: description,
           font: "text-14",
-          textColor: "white",
           alignX: "center",
-          rich: true,
-          wrap: true
+          textAlign: "center",
+          rich: true
         });
         loginAnnouncement.add(descriptionLabel);
       }
@@ -75,16 +71,12 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
 
     __isValid: function(widgetType) {
       const announcement = this.getAnnouncement();
-
-      const now = new Date();
-      if (
-        announcement &&
-        announcement.getProducts().includes(osparc.product.Utils.getProductName()) &&
-        announcement.getWidgets().includes(widgetType) &&
-        now > announcement.getStart() &&
-        now < announcement.getEnd()
-      ) {
-        return true;
+      if (announcement) {
+        const now = new Date();
+        const validPeriod = now > announcement.getStart() && now < announcement.getEnd();
+        const validProduct = announcement.getProducts().includes(osparc.product.Utils.getProductName());
+        const validWidgetType = widgetType ? announcement.getWidgets().includes(widgetType) : true;
+        return validPeriod && validProduct && validWidgetType;
       }
       return false;
     },
@@ -124,8 +116,10 @@ qx.Class.define("osparc.announcement.AnnouncementUIFactory", {
         return;
       }
 
-      let text = announcement.getTitle() + ": ";
-      text += announcement.getDescription();
+      let text = announcement.getTitle();
+      if (announcement.getDescription()) {
+        text += ": " + announcement.getDescription();
+      }
 
       const ribbonAnnouncement = this.__ribbonAnnouncement = new osparc.notification.RibbonNotification(text, "announcement", true);
       ribbonAnnouncement.announcementId = announcement.getId();

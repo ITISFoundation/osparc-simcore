@@ -92,19 +92,36 @@ class NodeGet(OutputSchema):
     user_id: str = Field(..., description="the user that started the service")
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
-                "published_port": 30000,
-                "entrypoint": "/the/entry/point/is/here",
-                "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                "service_key": "simcore/services/comp/itis/sleeper",
-                "service_version": "1.2.3",
-                "service_host": "jupyter_E1O2E-LAH",
-                "service_port": 8081,
-                "service_basepath": "/x/E1O2E-LAH",
-                "service_state": "pending",
-                "service_message": "no suitable node (insufficient resources on 1 node)",
-                "user_id": "123",
-            }
+            "examples": [
+                # computational
+                {
+                    "published_port": 30000,
+                    "entrypoint": "/the/entry/point/is/here",
+                    "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "service_key": "simcore/services/comp/itis/sleeper",
+                    "service_version": "1.2.3",
+                    "service_host": "jupyter_E1O2E-LAH",
+                    "service_port": 8081,
+                    "service_basepath": "/x/E1O2E-LAH",
+                    "service_state": "pending",
+                    "service_message": "no suitable node (insufficient resources on 1 node)",
+                    "user_id": 123,
+                },
+                # dynamic
+                {
+                    "published_port": 30000,
+                    "entrypoint": "/the/entry/point/is/here",
+                    "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "service_key": "simcore/services/dynamic/some-dynamic-service",
+                    "service_version": "1.2.3",
+                    "service_host": "jupyter_E1O2E-LAH",
+                    "service_port": 8081,
+                    "service_basepath": "/x/E1O2E-LAH",
+                    "service_state": "pending",
+                    "service_message": "no suitable node (insufficient resources on 1 node)",
+                    "user_id": 123,
+                },
+            ]
         }
     )
 

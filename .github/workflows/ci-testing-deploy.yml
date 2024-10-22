@@ -279,6 +279,18 @@ jobs:
       fail-fast: false
     name: "[build] docker images"
     steps:
+      - name: Remove unused software
+        run: |
+          echo "Available storage before:"
+          sudo df -h
+          echo
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          echo "Available storage after:"
+          sudo df -h
+          echo
       - uses: actions/checkout@v4
       - name: setup docker buildx
         id: buildx
@@ -341,7 +353,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -380,7 +392,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -419,7 +431,7 @@ jobs:
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -461,7 +473,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -505,7 +517,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/agent.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -586,14 +598,14 @@ jobs:
       - name: OAS backwards compatibility check
         if: always()
         run: ./ci/github/unit-testing/api-server.bash openapi-diff
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
   unit-test-autoscaling:
     needs: changes
     if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 22 # temporary: mypy takes a huge amount of time to run here, maybe we should cache it
     name: "[unit] autoscaling"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -628,7 +640,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/autoscaling.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -676,7 +688,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -729,7 +741,7 @@ jobs:
           source .venv/bin/activate && \
           pushd services/clusters-keeper && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -777,7 +789,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -812,7 +824,7 @@ jobs:
         run: ./ci/github/unit-testing/director.bash install
       - name: test
         run: ./ci/github/unit-testing/director.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -860,7 +872,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -902,7 +914,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/aws-library.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -944,7 +956,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -986,7 +998,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dask-sidecar.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1038,7 +1050,7 @@ jobs:
           source .venv/bin/activate && \
           pushd services/osparc-gateway-server && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1080,7 +1092,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/payments.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1122,7 +1134,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dynamic-scheduler.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1174,7 +1186,7 @@ jobs:
           source .venv/bin/activate && \
           pushd services/resource-usage-tracker && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1216,7 +1228,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1269,7 +1281,7 @@ jobs:
           source .venv/bin/activate && \
           pushd services/efs-guardian && \
           make test-ci-unit
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1291,7 +1303,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           driver: docker-container
-      - uses: actions/setup-node@v4.0.3
+      - uses: actions/setup-node@v4.0.4
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -1383,7 +1395,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/postgres-database.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1425,7 +1437,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/invitations.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1467,7 +1479,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/service-integration.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1509,7 +1521,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/service-library.bash test_all
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1551,7 +1563,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/settings-library.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1592,7 +1604,7 @@ jobs:
         run: ./ci/github/unit-testing/models-library.bash typecheck
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1679,7 +1691,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/notifications-library.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1723,7 +1735,7 @@ jobs:
       - name: test
         if: always()
         run: ./ci/github/unit-testing/simcore-sdk.bash test
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: unittests #optional
 
@@ -1833,7 +1845,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: integrationtests #optional
 
@@ -1895,7 +1907,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: integrationtests #optional
 
@@ -1957,7 +1969,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: integrationtests #optional
 
@@ -2023,7 +2035,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: integrationtests #optional
 
@@ -2087,7 +2099,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/dynamic-sidecar.bash clean_up
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: integrationtests #optional
 
@@ -2164,7 +2176,7 @@ jobs:
         run: |
           pushd services/osparc-gateway-server && \
           make down
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: integrationtests #optional
 
@@ -2226,7 +2238,7 @@ jobs:
       - name: cleanup
         if: always()
         run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
-      - uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.6.0
         with:
           flags: integrationtests
 
@@ -2404,7 +2416,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/setup-node@v4.0.3
+      - uses: actions/setup-node@v4.0.4
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -2529,7 +2541,6 @@ jobs:
         with:
           name: ${{ github.job }}_tracing
           path: tests/e2e-playwright/test-results
-
 
   system-test-environment-setup:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests

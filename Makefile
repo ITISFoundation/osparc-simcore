@@ -128,7 +128,8 @@ help: ## help on rule's targets
 
 
 test_python_version: ## Check Python version, throw error if compilation would fail with the installed version
-	python ./scripts/test_python_version.py
+	# Checking python version
+	@.venv/bin/python ./scripts/test_python_version.py
 
 
 ## DOCKER BUILD -------------------------------
@@ -269,6 +270,11 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 		services/docker-compose.local.yml \
 		> $@
 
+.stack-vendor-services.yml: .env $(docker-compose-configs)
+	# Creating config for vendors stack to $@
+	@scripts/docker/docker-stack-config.bash -e $< \
+		services/docker-compose-dev-vendors.yml \
+		> $@
 
 .stack-ops.yml: .env $(docker-compose-configs)
 	# Creating config for ops stack to $@
@@ -288,7 +294,11 @@ endif
 
 
 
-.PHONY: up-devel up-prod up-prod-ci up-version up-latest .deploy-ops
+.PHONY: up-devel up-prod up-prod-ci up-version up-latest .deploy-ops .deploy-vendors
+
+.deploy-vendors: .stack-vendor-services.yml
+	# Deploy stack 'vendors'
+	docker stack deploy --detach=true --with-registry-auth -c $< vendors
 
 .deploy-ops: .stack-ops.yml
 	# Deploy stack 'ops'
@@ -310,18 +320,20 @@ TableWidth=140;\
 printf "%24s | %90s | %12s | %12s\n" Name Endpoint User Password;\
 printf "%.$${TableWidth}s\n" "$$separator";\
 printf "$$rows" "oSparc platform" "http://$(get_my_ip).nip.io:9081";\
-printf "$$rows" "oSparc web API doc" "http://$(get_my_ip).nip.io:9081/dev/doc";\
 printf "$$rows" "oSparc public API doc" "http://$(get_my_ip).nip.io:8006/dev/doc";\
-printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username="$${POSTGRES_USER}"&db="$${POSTGRES_DB}"&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
-printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
-printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
+printf "$$rows" "oSparc web API doc" "http://$(get_my_ip).nip.io:9081/dev/doc";\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";\
 printf "$$rows" "Docker Registry" "http://$${REGISTRY_URL}/v2/_catalog" $${REGISTRY_USER} $${REGISTRY_PW};\
 printf "$$rows" "Invitations" "http://$(get_my_ip).nip.io:8008/dev/doc" $${INVITATIONS_USERNAME} $${INVITATIONS_PASSWORD};\
+printf "$$rows" "Jaeger" "http://$(get_my_ip).nip.io:16686";\
 printf "$$rows" "Payments" "http://$(get_my_ip).nip.io:8011/dev/doc" $${PAYMENTS_USERNAME} $${PAYMENTS_PASSWORD};\
+printf "$$rows" "Portainer" "http://$(get_my_ip).nip.io:9000" admin adminadmin;\
+printf "$$rows" "Postgres DB" "http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username="$${POSTGRES_USER}"&db="$${POSTGRES_DB}"&ns=public" $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
 printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15672" admin adminadmin;\
-printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
+printf "$$rows" "Redis" "http://$(get_my_ip).nip.io:18081";\
 printf "$$rows" "Storage S3 Minio" "http://$(get_my_ip).nip.io:9001" 12345678 12345678;\
+printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";\
+printf "$$rows" "Vendor Manual (Fake)" "http://manual.$(get_my_ip).nip.io:9081";\
 
 printf "\n%s\n" "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar";\
 echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081";
@@ -337,6 +349,7 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@$(MAKE) .deploy-vendors
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
@@ -347,6 +360,7 @@ up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every 
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)  [back-end]
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@$(MAKE) .deploy-vendors
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
@@ -357,6 +371,7 @@ ifeq ($(target),)
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@$(MAKE) .deploy-vendors
 	@$(MAKE) .deploy-ops
 else
 	# deploys ONLY $(target) service
@@ -368,6 +383,7 @@ up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@$(MAKE) .deploy-vendors
 	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 
@@ -467,7 +483,7 @@ push-version: tag-version
 
 .venv: .check-uv-installed
 	@uv venv $@
-	## upgrading tools to latest version in $(shell python3 --version)
+	@echo "# upgrading tools to latest version in" && $@/bin/python --version
 	@uv pip --quiet install --upgrade \
 		pip~=24.0 \
 		wheel \
@@ -669,9 +685,9 @@ info-registry: ## info on local registry (if any)
 
 ## INFO -------------------------------
 
-.PHONY: info info-images info-swarm  info-tools
+.PHONY: info info-images info-swarm
 info: ## displays setup information
-	# setup info:
+	@echo setup info  --------------------------------
 	@echo ' Detected OS          : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WSL2)$(IS_WIN)'
 	@echo ' SWARM_STACK_NAME     : ${SWARM_STACK_NAME}'
 	@echo ' DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
@@ -681,19 +697,23 @@ info: ## displays setup information
 	@echo '  - ULR                : ${VCS_URL}'
 	@echo '  - REF                : ${VCS_REF}'
 	@echo '  - (STATUS)REF_CLIENT : (${VCS_STATUS_CLIENT}) ${VCS_REF_CLIENT}'
-	@echo ' DIRECTOR_API_VERSION  : ${DIRECTOR_API_VERSION}'
-	@echo ' STORAGE_API_VERSION   : ${STORAGE_API_VERSION}'
-	@echo ' DATCORE_ADAPTER_API_VERSION   : ${DATCORE_ADAPTER_API_VERSION}'
-	@echo ' WEBSERVER_API_VERSION : ${WEBSERVER_API_VERSION}'
-	# dev tools version
-	@echo ' make          : $(shell make --version 2>&1 | head -n 1)'
-	@echo ' jq            : $(shell jq --version)'
+	@make --silent info-tools
+
+
+.PHONY: show-tools
+info-tools: ## displays tools versions
+	@echo dev-tools versions -------------------------
 	@echo ' awk           : $(shell awk -W version 2>&1 | head -n 1)'
-	@echo ' python        : $(shell python3 --version)'
-	@echo ' node          : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
 	@echo ' docker        : $(shell docker --version)'
 	@echo ' docker buildx : $(shell docker buildx version)'
 	@echo ' docker compose: $(shell docker compose version)'
+	@echo ' jq            : $(shell jq --version)'
+	@echo ' make          : $(shell make --version 2>&1 | head -n 1)'
+	@echo ' node          : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
+	@echo ' python        : $(shell python3 --version)'
+	@echo ' uv            : $(shell uv --version 2> /dev/null || echo ERROR uv missing)'
+	@echo ' ubuntu        : $(shell lsb_release --description --short 2> /dev/null | tail || echo ERROR Not an Ubuntu OS )'
+
 
 
 define show-meta

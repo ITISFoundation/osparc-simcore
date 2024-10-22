@@ -19,12 +19,20 @@ qx.Class.define("osparc.product.quickStart.tis.S4LPostPro", {
   extend: osparc.product.quickStart.SlideBase,
 
   construct: function() {
-    const title = this.tr("Sim4Life Post Processing");
+    let title = "";
+    if (osparc.product.Utils.isProduct("tiplite")) {
+      const notAvailableText = this.tr("Not available in");
+      title += ` <i>(${notAvailableText} ${osparc.store.StaticInfo.getInstance().getDisplayName()})</i><br><br>`;
+    }
+    title += this.tr("Sim4Life Post Processing");
     this.base(arguments, title);
   },
 
   members: {
     _populateCard: function() {
+      if (osparc.product.Utils.isProduct("tiplite")) {
+        this.setEnabled(false);
+      }
       const text1 = this.tr("\
         Finally, and optionally, exposure conditions-of-interest can be visualized and analyzed freely, using the web-version of the \
         Sim4Life (ZMT Zurich MedTech AG) computational life sciences platform.\

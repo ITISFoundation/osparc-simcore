@@ -165,7 +165,10 @@ qx.Class.define("osparc.study.Utils", {
 
     createStudyAndPoll: function(params) {
       return new Promise((resolve, reject) => {
-        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudy", params, null, {"pollTask": true});
+        const options = {
+          pollTask: true
+        };
+        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudy", params, options);
         const pollTasks = osparc.data.PollTasks.getInstance();
         const interval = 1000;
         pollTasks.createPollingTask(fetchPromise, interval)
@@ -175,7 +178,8 @@ qx.Class.define("osparc.study.Utils", {
               resolve(resultData);
             });
             task.addListener("pollingError", e => {
-              reject("Polling Error");
+              const err = e.getData();
+              reject(err);
             });
           })
           .catch(err => reject(err));
@@ -203,7 +207,10 @@ qx.Class.define("osparc.study.Utils", {
           },
           data: minStudyData
         };
-        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, null, {"pollTask": true});
+        const options = {
+          pollTask: true
+        };
+        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, options);
         const pollTasks = osparc.data.PollTasks.getInstance();
         const interval = 1000;
         pollTasks.createPollingTask(fetchPromise, interval)
@@ -220,7 +227,7 @@ qx.Class.define("osparc.study.Utils", {
               if ("task_progress" in updateData && loadingPage) {
                 const progress = updateData["task_progress"];
                 const message = progress["message"];
-                const percent = progress["percent"];
+                const percent = progress["percent"] ? parseFloat(progress["percent"].toFixed(3)) : progress["percent"];
                 progressSequence.setOverallProgress(percent);
                 const existingTask = progressSequence.getTask(message);
                 if (existingTask) {
@@ -250,8 +257,8 @@ qx.Class.define("osparc.study.Utils", {
               resolve(studyData["uuid"]);
             }, this);
             task.addListener("pollingError", e => {
-              const errMsg = e.getData();
-              reject(errMsg);
+              const err = e.getData();
+              reject(err);
             }, this);
           })
           .catch(err => reject(err));
@@ -316,9 +323,9 @@ qx.Class.define("osparc.study.Utils", {
       return ["UNKNOWN_SERVICES", false].includes(blocked);
     },
 
-    canMoveToFolder: function(studyData) {
+    canMoveTo: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
       return ["UNKNOWN_SERVICES", false].includes(blocked);
-    }
+    },
   }
 });

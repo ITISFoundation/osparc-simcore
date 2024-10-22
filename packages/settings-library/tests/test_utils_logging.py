@@ -25,11 +25,13 @@ def test_mixin_logging(monkeypatch):
             ),
         )
 
-        APPNAME_DEBUG: bool = Field(False, description="Starts app in debug mode")
+        APPNAME_DEBUG: bool = Field(
+            default=False, description="Starts app in debug mode"
+        )
 
-        @field_validator("LOG_LEVEL")
+        @field_validator("LOG_LEVEL", mode="before")
         @classmethod
-        def _v(cls, value) -> str:
+        def _v(cls, value: str) -> str:
             return cls.validate_log_level(value)
 
     # -----------------------------------------------------------
@@ -46,4 +48,3 @@ def test_mixin_logging(monkeypatch):
 
     # test cached-property
     assert settings.log_level == logging.DEBUG
-

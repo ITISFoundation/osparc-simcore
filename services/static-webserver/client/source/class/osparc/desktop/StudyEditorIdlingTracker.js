@@ -87,8 +87,13 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
     },
 
     __startTimer: function() {
+      const inactivityThresholdT = osparc.Preferences.getInstance().getUserInactivityThreshold();
+      if (inactivityThresholdT === 0) {
+        // If 0, "Automatic Shutdown of Idle Instances" is disabled
+        return;
+      }
+
       const checkFn = () => {
-        const inactivityThresholdT = osparc.Preferences.getInstance().getUserInactivityThreshold();
         const flashMessageDurationS = Math.round(inactivityThresholdT * 0.2);
         this.__idlingTime++;
 
@@ -96,17 +101,18 @@ qx.Class.define("osparc.desktop.StudyEditorIdlingTracker", {
           const timeSinceInactivityThreshold = this.__idlingTime - inactivityThresholdT;
           if (timeSinceInactivityThreshold % this.self().INACTIVITY_REQUEST_PERIOD_S == 0) {
             // check if backend reports project as inactive
-            osparc.data.Resources.fetch("studies", "getInactivity", {
+            const params = {
               url: {
                 studyId: this.__studyUuid
               }
-            }).then(data => {
-              if (data["is_inactive"]) {
-                this.__displayFlashMessage(flashMessageDurationS);
-              }
-            }).catch(err => {
-              console.error(err);
-            });
+            };
+            osparc.data.Resources.fetch("studies", "getInactivity", params)
+              .then(data => {
+                if (data["is_inactive"]) {
+                  this.__displayFlashMessage(flashMessageDurationS);
+                }
+              })
+              .catch(err => console.error(err));
           }
         }
       };

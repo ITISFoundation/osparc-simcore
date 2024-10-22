@@ -16,6 +16,7 @@ from models_library.rest_pagination import (
 )
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import BaseModel, Extra, Field, NonNegativeInt
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -223,7 +224,7 @@ async def delete_project_comment(request: web.Request):
         request=request,
         comment_id=path_params.comment_id,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.get(

@@ -17,10 +17,12 @@ import asyncio
 import contextlib
 import functools
 import logging
+import time
 from asyncio import Lock, Queue, Task
 from dataclasses import dataclass, field
 from typing import Final
 
+import arrow
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceCreate,
@@ -54,6 +56,11 @@ from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from .....models.dynamic_services_scheduler import SchedulerData, ServiceName
+from .....modules.instrumentation import (
+    get_instrumentation,
+    get_metrics_labels,
+    get_rate,
+)
 from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import update_scheduler_data_label
 from ...errors import DynamicSidecarError, DynamicSidecarNotFoundError
@@ -86,7 +93,6 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
     )
     _inverse_search_mapping: dict[NodeID, ServiceName] = field(default_factory=dict)
     _scheduler_task: Task | None = None
-    _cleanup_volume_removal_services_task: Task | None = None
     _trigger_observation_queue_task: Task | None = None
     _trigger_observation_queue: Queue = field(default_factory=Queue)
     _observation_counter: int = 0
@@ -116,22 +122,12 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             name="dynamic-scheduler-trigger-obs-queue",
         )
 
-        self._cleanup_volume_removal_services_task = asyncio.create_task(
-            _scheduler_utils.cleanup_volume_removal_services(self.app),
-            name="dynamic-scheduler-cleanup-volume-removal-services",
-        )
         await _scheduler_utils.discover_running_services(self)
 
     async def shutdown(self) -> None:
         logger.info("Shutting down dynamic-sidecar scheduler")
         self._inverse_search_mapping = {}
         self._to_observe = {}
-
-        if self._cleanup_volume_removal_services_task is not None:
-            self._cleanup_volume_removal_services_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._cleanup_volume_removal_services_task
-            self._cleanup_volume_removal_services_task = None
 
         if self._scheduler_task is not None:
             await stop_periodic_task(self._scheduler_task, timeout=5)
@@ -255,6 +251,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             request_simcore_user_agent=request_simcore_user_agent,
             can_save=can_save,
         )
+        scheduler_data.dynamic_sidecar.instrumentation.start_requested_at = (
+            arrow.utcnow().datetime
+        )
         await self.add_service_from_scheduler_data(scheduler_data)
 
     async def add_service_from_scheduler_data(
@@ -352,6 +351,10 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                     node_uuid,
                 )
                 return
+
+            current.dynamic_sidecar.instrumentation.close_requested_at = (
+                arrow.utcnow().datetime
+            )
 
             # PC-> ANE: could you please review what to do when can_save=None
             assert can_save is not None  # nosec
@@ -455,8 +458,18 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         dynamic_sidecar_endpoint: AnyHttpUrl = scheduler_data.endpoint
         sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_uuid)
 
+        started = time.time()
         transferred_bytes = await sidecars_client.pull_service_input_ports(
             dynamic_sidecar_endpoint, port_keys
+        )
+        duration = time.time() - started
+
+        get_instrumentation(
+            self.app
+        ).dynamic_sidecar_metrics.input_ports_pull_rate.labels(
+            **get_metrics_labels(scheduler_data)
+        ).observe(
+            get_rate(transferred_bytes, duration)
         )
 
         if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:

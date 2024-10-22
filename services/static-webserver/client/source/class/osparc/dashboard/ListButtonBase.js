@@ -28,54 +28,50 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
   construct: function() {
     this.base(arguments);
     this.set({
-      width: osparc.dashboard.ListButtonBase.ITEM_WIDTH,
       minHeight: osparc.dashboard.ListButtonBase.ITEM_HEIGHT,
       allowGrowX: true
     });
 
     const layout = new qx.ui.layout.Grid();
     layout.setSpacing(10);
-    layout.setColumnFlex(osparc.dashboard.ListButtonBase.POS.DESCRIPTION, 1);
+    layout.setColumnFlex(osparc.dashboard.ListButtonBase.POS.SPACER, 1);
     this._setLayout(layout);
+
+    this.getChildControl("spacer");
   },
 
   statics: {
-    ITEM_WIDTH: 600,
-    ITEM_HEIGHT: 40,
+    ITEM_HEIGHT: 35,
     SPACING: 5,
     POS: {
       THUMBNAIL: 0,
       LOCK_STATUS: 1,
       TITLE: 2,
-      PROGRESS: 3,
-      DESCRIPTION: 4,
+      SPACER: 3,
+      PROGRESS: 4,
       TAGS: 5,
-      UPDATES: 6,
-      UI_MODE: 7,
-      STATUS: 8,
-      PERMISSION: 9,
+      ICONS_LAYOUT: 6,
+      SHARED: 7,
+      OWNER: 8,
+      LAST_CHANGE: 9,
       TSR: 10,
-      OWNER: 11,
-      SHARED: 12,
-      LAST_CHANGE: 13,
-      HITS: 14,
-      OPTIONS: 15
+      HITS: 11,
+      OPTIONS: 12
     }
   },
 
   members: {
     _createChildControlImpl: function(id) {
       let control;
-      let titleRow;
       switch (id) {
         case "icon": {
-          control = new osparc.ui.basic.Thumbnail(null, 40, this.self().ITEM_HEIGHT-2*5).set({
-            minHeight: 40,
-            minWidth: 40
+          control = new osparc.ui.basic.Thumbnail(null, this.self().ITEM_HEIGHT, this.self().ITEM_HEIGHT-2*5).set({
+            minHeight: this.self().ITEM_HEIGHT,
+            minWidth: this.self().ITEM_HEIGHT
           });
           control.getChildControl("image").set({
             anonymous: true,
-            decorator: "rounded"
+            decorator: "rounded",
           });
           this._add(control, {
             row: 0,
@@ -83,43 +79,24 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           });
           break;
         }
-        case "title-row":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
-            anonymous: true,
-            allowGrowX: true
-          });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.TITLE
-          });
-          break;
         case "title":
           control = new qx.ui.basic.Label().set({
             textColor: "contrasted-text-light",
             font: "text-14",
             alignY: "middle",
             maxWidth: 300,
-            allowGrowX: true,
             rich: true,
-          });
-          titleRow = this.getChildControl("title-row");
-          titleRow.addAt(control, 0, {
-            flex: 1
-          });
-          break;
-        case "description":
-          control = new qx.ui.basic.Label().set({
-            textColor: "contrasted-text-dark",
-            rich: true,
-            maxHeight: 16,
-            minWidth: 100,
-            font: "text-14",
-            alignY: "middle",
-            allowGrowX: true
           });
           this._add(control, {
             row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.DESCRIPTION
+            column: osparc.dashboard.ListButtonBase.POS.TITLE
+          });
+          break;
+        case "spacer":
+          control = new qx.ui.core.Spacer();
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.SPACER
           });
           break;
         case "owner":
@@ -134,6 +111,15 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             column: osparc.dashboard.ListButtonBase.POS.OWNER
           });
           break;
+        case "icons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignY: "middle"
+          }))
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.ICONS_LAYOUT
+          });
+          break;
         case "project-status":
           control = new qx.ui.basic.Image().set({
             alignY: "middle",
@@ -141,10 +127,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             height: 12,
             width: 12
           });
-          this._add(control, {
-            row: 0,
-            column: osparc.dashboard.ListButtonBase.POS.STATUS
-          });
+          this.getChildControl("icons-layout").add(control);
           break;
       }
       return control || this.base(arguments, id);

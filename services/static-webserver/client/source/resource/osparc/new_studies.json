@@ -55,6 +55,67 @@
       "label": "Personalized: In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
     }]
   },
+  "tiplite": {
+    "linkedResource": "templates",
+    "resources": [{
+      "expectedTemplateLabel": "TI Planning Tool",
+      "title": "Classic TI",
+      "description": "",
+      "newStudyLabel": "Classic TI",
+      "category": "precomputed",
+      "idToWidget": "newTIPlanButton"
+    }, {
+      "showDisabled": true,
+      "expectedTemplateLabel": "mcTI Planning Tool",
+      "title": "Multichannel TI",
+      "description": "Not available in ${replace_me_product_name}",
+      "newStudyLabel": "Multichannel TI",
+      "category": "precomputed",
+      "idToWidget": "newMTIPlanButton"
+    }, {
+      "showDisabled": true,
+      "expectedTemplateLabel": "pmTI Planning Tool",
+      "title": "Phase-modulation TI",
+      "description": "Not available in ${replace_me_product_name}",
+      "newStudyLabel": "Phase-modulation TI",
+      "category": "precomputed",
+      "idToWidget": "newPMTIPlanButton"
+    }, {
+      "showDisabled": true,
+      "expectedTemplateLabel": "personalized TI Planning Tool",
+      "title": "Personalized<br>Classic TI",
+      "description": "Not available in ${replace_me_product_name}",
+      "newStudyLabel": "Personalized Classic TI",
+      "category": "personalized",
+      "idToWidget": "personalizationNewTIPlanButton",
+      "billable": true
+    }, {
+      "showDisabled": true,
+      "expectedTemplateLabel": "personalized mcTI Planning Tool",
+      "title": "Personalized<br>Multichannel TI",
+      "description": "Not available in ${replace_me_product_name}",
+      "newStudyLabel": "Personalized Multichannel TI",
+      "category": "personalized",
+      "idToWidget": "personalizationNewMTIPlanButton",
+      "billable": true
+    }, {
+      "showDisabled": true,
+      "expectedTemplateLabel": "personalized pmTI Planning Tool",
+      "title": "Personalized<br>Phase-modulation TI",
+      "description": "Not available in ${replace_me_product_name}",
+      "newStudyLabel": "Personalized Phase-modulation TI",
+      "category": "personalized",
+      "idToWidget": "personalizationNewPMTIPlanButton",
+      "billable": true
+    }],
+    "categories": [{
+      "id": "precomputed",
+      "label": "Precomputed"
+    }, {
+      "id": "personalized",
+      "label": "Personalized: In the process, TIP will launch simulations on AWS.<br>The associated resource costs will be deduced from your Credits."
+    }]
+  },
   "s4l": {
     "linkedResource": "services",
     "resources": [{
@@ -79,7 +140,7 @@
     "linkedResource": "services",
     "resources": [{
       "expectedKey": "simcore/services/dynamic/sim4life-lite",
-      "title": "Start <i>S4L<sup>lite</sup></i>",
+      "title": "Start ${replace_me_product_name}",
       "description": "New project",
       "newStudyLabel": "New project",
       "idToWidget": "startS4LButton"

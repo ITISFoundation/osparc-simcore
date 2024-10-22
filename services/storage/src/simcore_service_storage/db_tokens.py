@@ -7,7 +7,7 @@ from aiopg.sa.engine import Engine
 from models_library.users import UserID
 from simcore_postgres_database.storage_models import tokens
 
-from .constants import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from .constants import APP_AIOPG_ENGINE_KEY, APP_CONFIG_KEY
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ async def get_api_token_and_secret(
     app: web.Application, user_id: UserID
 ) -> tuple[str, str]:
     # from the client side together with the userid?
-    engine = app[APP_DB_ENGINE_KEY]
+    engine = app[APP_AIOPG_ENGINE_KEY]
 
     # defaults from config if any, othewise None
     api_token = app[APP_CONFIG_KEY].BF_API_KEY

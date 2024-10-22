@@ -4,6 +4,7 @@ FRONTEND_APPS_AVAILABLE = frozenset(
     {
         "osparc",
         "tis",
+        "tiplite",
         "s4l",
         "s4llite",
         "s4lacad",

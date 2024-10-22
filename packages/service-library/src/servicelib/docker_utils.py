@@ -178,12 +178,19 @@ async def _parse_pull_information(
             layer_id_to_size.setdefault(
                 parsed_progress.id, _PulledStatus(0)
             ).extracted = layer_id_to_size[parsed_progress.id].size
+        case "already exists":
+            assert parsed_progress.id  # nosec
+            layer_id_to_size.setdefault(
+                parsed_progress.id, _PulledStatus(0)
+            ).extracted = layer_id_to_size[parsed_progress.id].size
+            layer_id_to_size.setdefault(
+                parsed_progress.id, _PulledStatus(0)
+            ).downloaded = layer_id_to_size[parsed_progress.id].size
         case progress_status if any(
             msg in progress_status
             for msg in [
                 "status: downloaded newer image for ",
                 "status: image is up to date for ",
-                "already exists",
             ]
         ):
             for layer_pull_status in layer_id_to_size.values():

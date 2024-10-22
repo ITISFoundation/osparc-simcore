@@ -22,6 +22,7 @@
  * [CLUSTER_UP_SCALING]
  * [SIDECARS_PULLING]
  * [SERVICE_OUTPUTS_PULLING, SERVICE_STATE_PULLING, SERVICE_IMAGES_PULLING] (notice the parallelism here)
+ * [SERVICE_CONTAINERS_STARTING]
  * [SERVICE_INPUTS_PULLING] (when this happens, the frontend has already loaded the service and is displaying it to the user) I would still keep it as is, when we decide to make inputs pulling part of the boot sequence this will be helpful.
  *
  * This class provides different widgets that render the progress status
@@ -96,6 +97,16 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       apply: "__applyImagesPulling"
     },
 
+    startingSoftware: {
+      check: "Object",
+      init: {
+        progressLabel: qx.locale.Manager.tr("Waiting ..."),
+        value: 0
+      },
+      nullable: false,
+      apply: "__applyStartingSoftware"
+    },
+
     inputsPulling: {
       check: "Object",
       init: {
@@ -135,6 +146,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __pullingOutputsLayout: null,
     __pullingStateLayout: null,
     __pullingImagesLayout: null,
+    __startingSoftwareLayout: null,
     __pullingInputsLayout: null,
     __disclaimerTimer: null,
     __disclaimerText: null,
@@ -168,6 +180,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       this.setOutputsPulling(defaultVals);
       this.setStatePulling(defaultVals);
       this.setImagesPulling(defaultVals);
+      this.setStartingSoftware(defaultVals);
       this.setInputsPulling(defaultVals);
     },
 
@@ -203,6 +216,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         case "SERVICE_IMAGES_PULLING":
           this.setImagesPulling(progress);
           break;
+        case "SERVICE_CONTAINERS_STARTING":
+          this.setStartingSoftware(progress);
+          break;
         case "SERVICE_INPUTS_PULLING":
           this.setInputsPulling(progress);
           break;
@@ -213,13 +229,14 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       this.__mainLoadingPage = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
 
       const sequenceLoadingPage = new osparc.widget.ProgressSequence(qx.locale.Manager.tr("LOADING ..."));
-      const nTasks = 6;
+      const nTasks = 7;
       this.__overallProgressBar = sequenceLoadingPage.addOverallProgressBar(nTasks);
       this.__clusterUpScalingLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Increasing system capacity ..."));
       this.__pullingSidecarLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Setting up key components ..."));
       this.__pullingOutputsLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Retrieving your output data ..."));
       this.__pullingStateLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Retrieving your work ..."));
       this.__pullingImagesLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Installing software ..."));
+      this.__startingSoftwareLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Starting software ..."));
       this.__pullingInputsLayout = sequenceLoadingPage.addNewTask(qx.locale.Manager.tr("Retrieving your input data ..."));
       this.__mainLoadingPage.addAt(sequenceLoadingPage, 0, {
         flex: 1
@@ -294,6 +311,16 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         this.setSidecarPulling(defaultEndVals);
       }
       osparc.widget.ProgressSequence.updateTaskProgress(this.__pullingImagesLayout, value);
+
+      this.__computeOverallProgress();
+    },
+
+    __applyStartingSoftware: function(value) {
+      if (value.value > 0) {
+        const defaultEndVals = this.getDefaultEndValues();
+        this.setSidecarPulling(defaultEndVals);
+      }
+      osparc.widget.ProgressSequence.updateTaskProgress(this.__startingSoftwareLayout, value);
 
       this.__computeOverallProgress();
     },

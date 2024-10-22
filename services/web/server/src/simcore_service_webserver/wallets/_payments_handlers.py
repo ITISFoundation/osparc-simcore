@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.products import CreditResultGet
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
+from servicelib.aiohttp import status
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -22,7 +23,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.logging_utils import get_log_record_extra, log_context
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.utils import fire_and_forget_task
 
 from .._meta import API_VTAG as VTAG
@@ -185,7 +185,7 @@ async def _cancel_payment(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #
@@ -261,7 +261,7 @@ async def _cancel_creation_of_payment_method(request: web.Request):
             product_name=req_ctx.product_name,
         )
 
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.get(
@@ -323,7 +323,7 @@ async def _delete_payment_method(request: web.Request):
         payment_method_id=path_params.payment_method_id,
         product_name=req_ctx.product_name,
     )
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 _TINY_WAIT_TO_TRIGGER_CONTEXT_SWITCH = 0.1

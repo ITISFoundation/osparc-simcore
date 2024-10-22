@@ -33,7 +33,7 @@ qx.Class.define("osparc.auth.Manager", {
   */
 
   events: {
-    "logout": "qx.event.type.Event"
+    "loggedOut": "qx.event.type.Event"
   },
 
 
@@ -212,10 +212,15 @@ qx.Class.define("osparc.auth.Manager", {
           "client_session_id": osparc.utils.Utils.getClientSessionID()
         }
       };
-      osparc.data.Resources.fetch("auth", "postLogout", params)
-        .then(data => this.fireEvent("logout"))
-        .catch(error => console.log("already logged out"))
-        .finally(this.__logoutUser());
+      const options = {
+        timeout: 5000,
+        timeoutRetries: 5
+      };
+      return osparc.data.Resources.fetch("auth", "postLogout", params, options)
+        .finally(() => {
+          this.__logoutUser();
+          this.fireEvent("loggedOut");
+        });
     },
 
     resetPasswordRequest: function(email, successCbk, failCbk, context) {

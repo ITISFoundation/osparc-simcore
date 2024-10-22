@@ -50,7 +50,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       paddingLeft: 10,
       paddingRight: 10,
       height: this.self().HEIGHT,
-      backgroundColor: "navigation_bar_background_color"
     });
 
     osparc.utils.Utils.setIdToWidget(this, "navigationBar");
@@ -183,6 +182,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             width: osparc.product.Utils.isS4LProduct() ? 150 : 100,
             height: osparc.navigation.NavigationBar.HEIGHT
           });
+          if (osparc.product.Utils.isProduct("tiplite")) {
+            control.set({
+              cursor: "pointer",
+              toolTipText: this.tr("This is TIP.lite, a light version of TIP.<br>Request access to TIP.")
+            });
+            control.addListener("tap", () => osparc.product.TIPTeaser.getInstance().open());
+          }
           this.getChildControl("left-items").add(control);
           break;
         case "logo-powered":
@@ -226,16 +232,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           control.addListenerOnce("appear", () => hint.attachShowHideHandlers());
           this.getChildControl("center-items").add(control);
-          break;
-        }
-        case "credits-menu-button": {
-          const currentUsage = new osparc.desktop.credits.CurrentUsage();
-          control = new osparc.navigation.CreditsMenuButton().set({
-            appearance: "fab-button",
-            currentUsage,
-            maxHeight: this.self().HEIGHT
-          });
-          this.getChildControl("right-items").add(control);
           break;
         }
         case "credits-button":

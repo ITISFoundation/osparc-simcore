@@ -33,6 +33,7 @@ from models_library.users import GroupID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field, parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,
     start_long_running_task,
@@ -57,6 +58,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
 )
+from servicelib.services_utils import get_status_as_dict
 from simcore_postgres_database.models.users import UserRole
 
 from .._meta import API_VTAG as VTAG
@@ -67,11 +69,12 @@ from ..groups.api import get_group_from_gid, list_all_user_groups
 from ..groups.exceptions import GroupNotFoundError
 from ..login.decorators import login_required
 from ..projects.api import has_user_project_access_rights
+from ..resource_usage.errors import DefaultPricingPlanNotFoundError
 from ..security.decorators import permission_required
 from ..users.api import get_user_id_from_gid, get_user_role
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..utils_aiohttp import envelope_json_response
-from ..wallets.errors import WalletNotEnoughCreditsError
+from ..wallets.errors import WalletAccessForbiddenError, WalletNotEnoughCreditsError
 from . import nodes_utils, projects_api
 from ._common_models import ProjectPathParams, RequestContext
 from ._nodes_api import NodeScreenshot, get_node_screenshots
@@ -100,6 +103,7 @@ def _handle_project_nodes_exceptions(handler: Handler):
             ProjectNotFoundError,
             NodeNotFoundError,
             UserDefaultWalletNotFoundError,
+            DefaultPricingPlanNotFoundError,
             DefaultPricingUnitNotFoundError,
             GroupNotFoundError,
             CatalogItemNotFoundError,
@@ -117,6 +121,10 @@ def _handle_project_nodes_exceptions(handler: Handler):
             raise web.HTTPConflict(reason=f"{exc}") from exc
         except CatalogForbiddenError as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
+        except WalletAccessForbiddenError as exc:
+            raise web.HTTPForbidden(
+                reason=f"Payment required, but the user lacks access to the project's linked wallet.: {exc}"
+            ) from exc
 
     return wrapper
 
@@ -208,11 +216,7 @@ async def get_node(request: web.Request) -> web.Response:
         )
     )
 
-    return envelope_json_response(
-        service_data.dict(by_alias=True)
-        if isinstance(service_data, DynamicServiceGet)
-        else service_data.dict()
-    )
+    return envelope_json_response(get_status_as_dict(service_data))
 
 
 @routes.patch(
@@ -235,7 +239,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
         node_patch=node_patch,
     )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.delete(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="delete_node")
@@ -260,7 +264,7 @@ async def delete_node(request: web.Request) -> web.Response:
         req_ctx.product_name,
     )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.post(
@@ -307,7 +311,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
         node_errors=None,
         ui_changed_keys=ui_changed_keys,
     )
-    return web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.post(
@@ -330,7 +334,7 @@ async def start_node(request: web.Request) -> web.Response:
         node_id=path_params.node_id,
     )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 async def _stop_dynamic_service_task(
@@ -344,15 +348,15 @@ async def _stop_dynamic_service_task(
         await dynamic_scheduler_api.stop_dynamic_service(
             app, dynamic_service_stop=dynamic_service_stop
         )
-        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+        return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
-    # in case there is an error reply as not found
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
+        # in case there is an error reply as not found
         raise web.HTTPNotFound(reason=f"{exc}") from exc
 
-    # in case the service is not found reply as all OK
-    except ServiceWasNotFoundError as exc:
-        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON) from exc
+    except ServiceWasNotFoundError:
+        # in case the service is not found reply as all OK
+        return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 @routes.post(
@@ -410,7 +414,7 @@ async def restart_node(request: web.Request) -> web.Response:
 
     await director_v2_api.restart_dynamic_service(request.app, f"{path_params.node_id}")
 
-    raise web.HTTPNoContent
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #

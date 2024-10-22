@@ -95,12 +95,6 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.cluster.Utils.popUpClustersDetails(), this);
           this.add(control);
           break;
-        case "license":
-          control = new qx.ui.menu.Button(this.tr("License"));
-          osparc.store.Support.getLicenseURL()
-            .then(licenseURL => control.addListener("execute", () => window.open(licenseURL)));
-          this.add(control);
-          break;
         case "about":
           control = new qx.ui.menu.Button(this.tr("About oSPARC"));
           control.addListener("execute", () => osparc.About.getInstance().open());
@@ -116,6 +110,18 @@ qx.Class.define("osparc.navigation.UserMenu", {
           this.add(control);
           break;
         }
+        case "license":
+          control = new qx.ui.menu.Button(this.tr("License"));
+          osparc.store.Support.getLicenseURL()
+            .then(licenseURL => control.addListener("execute", () => window.open(licenseURL)));
+          this.add(control);
+          break;
+        case "tip-lite-button":
+          control = new qx.ui.menu.Button(this.tr("Access Full TIP"));
+          osparc.utils.Utils.setIdToWidget(control, "userMenuAccessTIPBtn");
+          control.addListener("execute", () => osparc.product.TIPTeaser.getInstance().open());
+          this.add(control);
+          break;
         case "log-out": {
           const authData = osparc.auth.Data.getInstance();
           control = new qx.ui.menu.Button(authData.isGuest() ? this.tr("Exit") : this.tr("Log out"));
@@ -167,6 +173,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
         this.getChildControl("about-product");
       }
       this.getChildControl("license");
+      if (osparc.product.Utils.isProduct("tiplite")) {
+        this.getChildControl("tip-lite-button");
+      }
       this.addSeparator();
 
       this.getChildControl("log-out");
@@ -220,6 +229,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
         this.getChildControl("about-product");
       }
       this.getChildControl("license");
+      if (osparc.product.Utils.isProduct("tiplite")) {
+        this.getChildControl("tip-lite-button");
+      }
       this.addSeparator();
       this.getChildControl("log-out");
 

@@ -181,7 +181,8 @@ class CreateSidecars(DynamicSchedulerEvent):
         groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
 
         assert scheduler_data.product_name is not None  # nosec
-        allow_internet_access: bool = await groups_extra_properties.has_internet_access(
+
+        user_extra_properties = await groups_extra_properties.get_user_extra_properties(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
         )
 
@@ -194,7 +195,7 @@ class CreateSidecars(DynamicSchedulerEvent):
                 "uuid": f"{scheduler_data.node_uuid}",  # needed for removal when project is closed
             },
             "Attachable": True,
-            "Internal": not allow_internet_access,
+            "Internal": not user_extra_properties.is_internet_enabled,
         }
         dynamic_sidecar_network_id = await create_network(network_config)
 
@@ -217,11 +218,6 @@ class CreateSidecars(DynamicSchedulerEvent):
         # generate a new `run_id` to avoid resource collisions
         scheduler_data.run_id = RunID.create()
 
-        # telemetry configuration
-        is_telemetry_enabled = await groups_extra_properties.is_telemetry_enabled(
-            user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
-        )
-
         rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
 
         # WARNING: do NOT log, this structure has secrets in the open
@@ -235,9 +231,8 @@ class CreateSidecars(DynamicSchedulerEvent):
             app_settings=app.state.settings,
             hardware_info=scheduler_data.hardware_info,
             has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
-            allow_internet_access=allow_internet_access,
             metrics_collection_allowed=metrics_collection_allowed,
-            telemetry_enabled=is_telemetry_enabled,
+            user_extra_properties=user_extra_properties,
             rpc_client=rpc_client,
         )
 

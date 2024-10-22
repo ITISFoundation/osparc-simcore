@@ -3,7 +3,7 @@ attrs==24.2.0
     #   jsonschema
     #   pytest-docker
     #   referencing
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -13,11 +13,9 @@ coverage==7.6.1
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-exceptiongroup==1.2.2
-    # via pytest
-greenlet==3.0.3
+greenlet==3.1.1
     # via sqlalchemy
-idna==3.7
+idna==3.10
     # via requests
 iniconfig==2.0.0
     # via pytest
@@ -25,7 +23,7 @@ jsonschema==4.23.0
     # via -r requirements/_test.in
 jsonschema-specifications==2023.12.1
     # via jsonschema
-mypy==1.11.1
+mypy==1.12.0
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -33,7 +31,7 @@ packaging==24.1
     # via pytest
 pluggy==1.5.0
     # via pytest
-pytest==8.3.2
+pytest==8.3.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -68,7 +66,7 @@ rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
-sqlalchemy==1.4.53
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
@@ -76,16 +74,11 @@ sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
 tenacity==9.0.0
     # via -r requirements/_test.in
-tomli==2.0.1
-    # via
-    #   coverage
-    #   mypy
-    #   pytest
 typing-extensions==4.12.2
     # via
     #   mypy
     #   sqlalchemy2-stubs
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

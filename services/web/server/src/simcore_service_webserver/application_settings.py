@@ -108,6 +108,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
         # NOTE: suffix '_LOGLEVEL' is used overall
     )
+
     WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         env=["WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
@@ -286,9 +287,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         level: int = getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
         return level
 
-    @validator("WEBSERVER_LOGLEVEL")
+    @validator("WEBSERVER_LOGLEVEL", pre=True)
     @classmethod
-    def valid_log_level(cls, value):
+    def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
 
     @validator("SC_HEALTHCHECK_TIMEOUT", pre=True)

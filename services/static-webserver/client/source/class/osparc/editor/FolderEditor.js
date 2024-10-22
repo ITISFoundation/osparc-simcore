@@ -27,7 +27,7 @@ qx.Class.define("osparc.editor.FolderEditor", {
     const title = this.getChildControl("title");
     title.setRequired(true);
     manager.add(title);
-    newFolder ? this.getChildControl("create") : this.getChildControl("save");
+    this.__doButton = newFolder ? this.getChildControl("create") : this.getChildControl("save");
 
     this.addListener("appear", this.__onAppear, this);
   },
@@ -48,6 +48,8 @@ qx.Class.define("osparc.editor.FolderEditor", {
   },
 
   members: {
+    __doButton: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -56,7 +58,7 @@ qx.Class.define("osparc.editor.FolderEditor", {
             font: "text-14",
             backgroundColor: "background-main",
             placeholder: this.tr("Title"),
-            height: 35
+            height: 27
           });
           this.bind("label", control, "value");
           control.bind("value", this, "label");
@@ -69,6 +71,8 @@ qx.Class.define("osparc.editor.FolderEditor", {
             appearance: "form-button"
           });
           control.addListener("execute", () => {
+            const title = this.getChildControl("title");
+            title.blur();
             if (this.__validator.validate()) {
               control.setFetching(true);
               this.fireEvent("createFolder");
@@ -83,6 +87,8 @@ qx.Class.define("osparc.editor.FolderEditor", {
             appearance: "form-button"
           });
           control.addListener("execute", () => {
+            const title = this.getChildControl("title");
+            title.blur();
             if (this.__validator.validate()) {
               control.setFetching(true);
               this.fireEvent("updateFolder");
@@ -112,6 +118,9 @@ qx.Class.define("osparc.editor.FolderEditor", {
       const title = this.getChildControl("title");
       title.focus();
       title.activate();
+
+      const command = new qx.ui.command.Command("Enter");
+      this.__doButton.setCommand(command);
     }
   }
 });

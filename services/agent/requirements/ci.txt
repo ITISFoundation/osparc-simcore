@@ -9,12 +9,13 @@
 # installs base + tests requirements
 --requirement _base.txt
 --requirement _test.txt
+--requirement _tools.txt
 
 # installs this repo's packages
 simcore-common-library @ ../../packages/common-library
 simcore-models-library @ ../../packages/models-library
 pytest-simcore @ ../../packages/pytest-simcore
-simcore-service-library @ ../../packages/service-library
+simcore-service-library[fastapi] @ ../../packages/service-library
 simcore-settings-library @ ../../packages/settings-library
 
 # installs current package

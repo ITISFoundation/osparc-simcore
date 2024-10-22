@@ -496,7 +496,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       nodeUI.addListener("requestOpenLogger", () => this.fireDataEvent("requestOpenLogger", nodeUI.getNodeId()), this);
 
       nodeUI.addListener("nodeMovingStart", () => {
-        this.__selectNode(nodeUI);
+        if (!this.getSelectedNodeIDs().includes(nodeUI.getNodeId())) {
+          this.__selectNode(nodeUI);
+        }
         this.__itemStartedMoving();
       }, this);
 
@@ -2014,7 +2016,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       if (this.__isDraggingLink && "dragData" in this.__isDraggingLink) {
         const pos = this.__pointerEventToWorkbenchPos(e, false);
         const service = qx.data.marshal.Json.createModel(osparc.service.Utils.getFilePicker());
-        const nodeUI = this.__addNode(service, pos);
+        const nodeUI = await this.__addNode(service, pos);
         if (nodeUI) {
           const node = nodeUI.getNode();
           const data = this.__isDraggingLink["dragData"];

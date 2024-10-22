@@ -9,11 +9,15 @@
 """
 
 
+from typing import Any
+
 import pytest
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from pydantic import TypeAdapter
+from pytest_simcore.helpers.faker_factories import random_project
 
 _MESSAGE = (
     "If set, it overrides the fake value of `{}` fixture."
@@ -42,3 +46,12 @@ def project_id(faker: Faker, request: pytest.FixtureRequest) -> ProjectID:
 @pytest.fixture
 def node_id(faker: Faker) -> NodeID:
     return TypeAdapter(NodeID).validate_python(faker.uuid4())
+
+
+@pytest.fixture
+def project_data(
+    faker: Faker,
+    project_id: ProjectID,
+    user_id: UserID,
+) -> dict[str, Any]:
+    return random_project(fake=faker, uuid=f"{project_id}", prj_owner=user_id)

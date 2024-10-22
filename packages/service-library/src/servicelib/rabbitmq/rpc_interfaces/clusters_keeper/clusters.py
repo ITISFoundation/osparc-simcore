@@ -1,6 +1,6 @@
 from typing import Final
 
-from aiocache import cached  # type: ignore[import-not-found]
+from aiocache import cached  # type: ignore[import-untyped]
 from models_library.api_schemas_clusters_keeper import CLUSTERS_KEEPER_RPC_NAMESPACE
 from models_library.api_schemas_clusters_keeper.clusters import OnDemandCluster
 from models_library.rabbitmq_basic_types import RPCMethodName

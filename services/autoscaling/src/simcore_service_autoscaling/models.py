@@ -98,6 +98,11 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             "description": "This is a EC2-backed docker node which is docker drained and waiting for termination"
         }
     )
+    retired_nodes: list[AssociatedInstance] = field(
+        metadata={
+            "description": "This is a EC2-backed docker node which was retired and waiting to be drained and eventually terminated or re-used"
+        }
+    )
     terminated_instances: list[NonAssociatedInstance]
 
     def can_scale_down(self) -> bool:
@@ -107,6 +112,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             or self.drained_nodes
             or self.pending_ec2s
             or self.terminating_nodes
+            or self.retired_nodes
         )
 
     def total_number_of_machines(self) -> int:
@@ -119,6 +125,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             + len(self.pending_ec2s)
             + len(self.broken_ec2s)
             + len(self.terminating_nodes)
+            + len(self.retired_nodes)
         )
 
     def __repr__(self) -> str:
@@ -137,6 +144,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
             f"buffer-ec2s: count={len(self.buffer_ec2s)} {_get_instance_ids(self.buffer_ec2s)}, "
             f"disconnected-nodes: count={len(self.disconnected_nodes)}, "
             f"terminating-nodes: count={len(self.terminating_nodes)} {_get_instance_ids(self.terminating_nodes)}, "
+            f"retired-nodes: count={len(self.retired_nodes)} {_get_instance_ids(self.retired_nodes)}, "
             f"terminated-ec2s: count={len(self.terminated_instances)} {_get_instance_ids(self.terminated_instances)})"
         )
 

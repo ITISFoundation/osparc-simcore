@@ -17,6 +17,7 @@ from models_library.users import UserID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from models_library.workspaces import WorkspaceID
 from pydantic import Extra, Field, Json, parse_obj_as, validator
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
     StrictRequestParams,
@@ -28,7 +29,6 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_postgres_database.utils_folders import FoldersError
 
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
@@ -41,7 +41,12 @@ from ..workspaces.errors import (
     WorkspaceNotFoundError,
 )
 from . import _folders_api
-from .errors import FolderAccessForbiddenError, FolderNotFoundError
+from .errors import (
+    FolderAccessForbiddenError,
+    FolderNotFoundError,
+    FoldersValueError,
+    FolderValueNotPermittedError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -62,7 +67,7 @@ def handle_folders_exceptions(handler: Handler):
         ) as exc:
             raise web.HTTPForbidden(reason=f"{exc}") from exc
 
-        except FoldersError as exc:
+        except (FolderValueNotPermittedError, FoldersValueError) as exc:
             raise web.HTTPBadRequest(reason=f"{exc}") from exc
 
     return wrapper
@@ -242,4 +247,4 @@ async def delete_folder_group(request: web.Request):
         folder_id=path_params.folder_id,
         product_name=req_ctx.product_name,
     )
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)

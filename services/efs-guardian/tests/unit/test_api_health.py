@@ -6,10 +6,9 @@ import httpx
 import pytest
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.rabbit import RabbitSettings
 from starlette import status
 
-pytest_simcore_core_services_selection = ["rabbit"]
+pytest_simcore_core_services_selection = []
 pytest_simcore_ops_services_selection = []
 
 
@@ -17,18 +16,21 @@ pytest_simcore_ops_services_selection = []
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
-    rabbit_env_vars_dict: EnvVarsDict,  # rabbitMQ settings from 'rabbit' service
-) -> EnvVarsDict:
+    with_disabled_redis_and_background_tasks: None,
+    with_disabled_rabbitmq_and_rpc: None,
+    with_disabled_postgres: None,
+):
     return setenvs_from_dict(
         monkeypatch,
         {
             **app_environment,
-            **rabbit_env_vars_dict,
         },
     )
 
 
-async def test_healthcheck(rabbit_service: RabbitSettings, client: httpx.AsyncClient):
+async def test_healthcheck(
+    client: httpx.AsyncClient,
+):
     response = await client.get("/")
     response.raise_for_status()
     assert response.status_code == status.HTTP_200_OK

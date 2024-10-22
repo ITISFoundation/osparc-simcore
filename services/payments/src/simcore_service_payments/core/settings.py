@@ -16,6 +16,7 @@ from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
+from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME
@@ -47,7 +48,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def LOG_LEVEL(self):  # noqa: N802
         return self.PAYMENTS_LOGLEVEL
 
-    @validator("PAYMENTS_LOGLEVEL")
+    @validator("PAYMENTS_LOGLEVEL", pre=True)
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
@@ -111,6 +112,10 @@ class ApplicationSettings(_BaseApplicationSettings):
 
     PAYMENTS_RABBITMQ: RabbitSettings = Field(
         auto_default_from_env=True, description="settings for service/rabbitmq"
+    )
+
+    PAYMENTS_TRACING: TracingSettings | None = Field(
+        auto_default_from_env=True, description="settings for opentelemetry tracing"
     )
 
     PAYMENTS_POSTGRES: PostgresSettings = Field(
