@@ -417,7 +417,8 @@ async def test_get_solver_job_outputs(
         capture: HttpApiCallCaptureModel,
     ):
         wallet = TypeAdapter(
-            Envelope[WalletGetWithAvailableCredits], capture.response_body
+            Envelope[WalletGetWithAvailableCredits]).validate_python(
+                capture.response_body
         ).data
         assert wallet is not None
         wallet.available_credits = (
