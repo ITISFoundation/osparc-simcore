@@ -97,7 +97,8 @@ def pydantic_encoder(obj: Any) -> Any:
         return obj.model_dump()
 
     if is_dataclass(obj):
-        return asdict(obj)  # type: ignore[call-overload]
+        assert not isinstance(obj, type)  # nosec
+        return asdict(obj)
 
     # Check the class type and its superclasses for a matching encoder
     for base in obj.__class__.__mro__[:-1]:
@@ -108,9 +109,8 @@ def pydantic_encoder(obj: Any) -> Any:
         return encoder(obj)
 
     # We have exited the for loop without finding a suitable encoder
-    raise TypeError(
-        f"Object of type '{obj.__class__.__name__}' is not JSON serializable"
-    )
+    msg = f"Object of type '{obj.__class__.__name__}' is not JSON serializable"
+    raise TypeError(msg)
 
 
 def json_dumps(

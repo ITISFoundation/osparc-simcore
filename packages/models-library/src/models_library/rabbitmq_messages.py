@@ -192,7 +192,7 @@ class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
 
 class DynamicServiceRunningMessage(RabbitMessageBase):
     channel_name: Literal["io.simcore.service.dynamic-service-running"] = Field(
-        default="io.simcore.service.dynamic-service-running", const=True
+        default="io.simcore.service.dynamic-service-running"
     )
 
     project_id: ProjectID

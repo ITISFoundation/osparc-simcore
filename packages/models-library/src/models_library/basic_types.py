@@ -28,8 +28,7 @@ PortInt: TypeAlias = Annotated[int, Field(gt=0, lt=65535)]
 
 
 # https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Registered_ports
-class RegisteredPortInt:
-    TypeAlias = Annotated[int, Field(gt=1024, lt=65535)]
+RegisteredPortInt: TypeAlias = Annotated[int, Field(gt=1024, lt=65535)]
 
 
 # e.g. 'v5'
