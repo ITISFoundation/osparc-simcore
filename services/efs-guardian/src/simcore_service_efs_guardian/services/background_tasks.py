@@ -44,7 +44,7 @@ async def removal_policy_task(app: FastAPI) -> None:
         except DBProjectNotFoundError as exc:
             _logger.warning(
                 "Project %s not found, this should not happen, please investigate (contact MD)",
-                exc.project_uuid,
+                exc.msg_template,
             )
         if (
             _project_last_change_date
