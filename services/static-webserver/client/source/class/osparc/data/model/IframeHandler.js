@@ -115,7 +115,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const nodeStatus = node.getStatus();
       const sequenceWidget = nodeStatus.getProgressSequence().getWidgetForLoadingPage();
       nodeStatus.bind("interactive", sequenceWidget, "visibility", {
-        converter: state => ["starting", "pulling", "pending", "connecting"].includes(state) ? "visible" : "excluded"
+        converter: state => ["pending", "pulling", "starting", "connecting"].includes(state) ? "visible" : "excluded"
       });
       loadingPage.addExtraWidget(sequenceWidget);
 
@@ -189,6 +189,8 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const nodeId = data["service_uuid"];
       const node = this.getNode();
       const status = node.getStatus();
+      const loadingPage = this.getLoadingPage();
+      loadingPage.clearMessages();
       switch (serviceState) {
         case "idle": {
           status.setInteractive(serviceState);
@@ -200,8 +202,14 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         }
         case "pending": {
           if (data["service_message"]) {
-            const serviceName = node.getLabel();
             const serviceMessage = data["service_message"];
+            loadingPage.setMessages([serviceMessage]);
+            // show pending messages only after 10"
+            loadingPage.getMessageLabels().forEach(label => label.exclude());
+            setTimeout(() => {
+              loadingPage.getMessageLabels().forEach(label => label.show());
+            }, 10000);
+            const serviceName = node.getLabel();
             const msg = `The service "${serviceName}" is waiting for available ` +
               `resources. Please inform support and provide the following message ` +
               `in case this does not resolve in a few minutes: "${nodeId}" ` +
