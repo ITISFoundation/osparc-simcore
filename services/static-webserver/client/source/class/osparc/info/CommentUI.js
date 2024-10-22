@@ -60,10 +60,8 @@ qx.Class.define("osparc.info.CommentUI", {
           control = new qx.ui.basic.Image().set({
             scale: true,
             maxWidth: 32,
-            maxHeight: 32
-          });
-          control.getContentElement().setStyles({
-            "border-radius": "8px"
+            maxHeight: 32,
+            decorator: "rounded",
           });
           this.getChildControl("meta-data-grid").add(control, {
             row: 0,

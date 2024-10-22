@@ -116,21 +116,23 @@ async def test_get_ec2_instance_capabilities(
         )
     )
     assert instance_types
-    assert len(instance_types) == len(ec2_allowed_instances)
-
-    # all the instance names are found and valid
-    assert all(i.name in ec2_allowed_instances for i in instance_types)
-    for instance_type_name in ec2_allowed_instances:
-        assert any(i.name == instance_type_name for i in instance_types)
+    assert [_.name for _ in instance_types] == sorted(ec2_allowed_instances)
 
 
-async def test_get_ec2_instance_capabilities_empty_list_returns_all_options(
+async def test_get_ec2_instance_capabilities_returns_all_options(
     simcore_ec2_api: SimcoreEC2API,
 ):
-    instance_types = await simcore_ec2_api.get_ec2_instance_capabilities(set())
+    instance_types = await simcore_ec2_api.get_ec2_instance_capabilities("ALL")
     assert instance_types
     # NOTE: this might need adaptation when moto is updated
-    assert 700 < len(instance_types) < 807
+    assert 700 < len(instance_types) < 828
+
+
+async def test_get_ec2_instance_capabilities_raise_with_empty_set(
+    simcore_ec2_api: SimcoreEC2API,
+):
+    with pytest.raises(ValueError, match="instance_type_names"):
+        await simcore_ec2_api.get_ec2_instance_capabilities(set())
 
 
 async def test_get_ec2_instance_capabilities_with_invalid_type_raises(

@@ -9,7 +9,7 @@ from ..workspaces.api import get_workspace
 from ._access_rights_db import get_project_owner
 from .db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .models import UserProjectAccessRights
+from .models import UserProjectAccessRightsWithWorkspace
 
 
 async def validate_project_ownership(
@@ -31,7 +31,7 @@ async def get_user_project_access_rights(
     project_id: ProjectID,
     user_id: UserID,
     product_name: ProductName,
-) -> UserProjectAccessRights:
+) -> UserProjectAccessRightsWithWorkspace:
     """
     This function resolves user access rights on the project resource.
 
@@ -51,11 +51,14 @@ async def get_user_project_access_rights(
             workspace_id=project_db.workspace_id,
             product_name=product_name,
         )
-        _user_project_access_rights = UserProjectAccessRights(
-            uid=user_id,
-            read=workspace.my_access_rights.read,
-            write=workspace.my_access_rights.write,
-            delete=workspace.my_access_rights.delete,
+        _user_project_access_rights_with_workspace = (
+            UserProjectAccessRightsWithWorkspace(
+                uid=user_id,
+                workspace_id=project_db.workspace_id,
+                read=workspace.my_access_rights.read,
+                write=workspace.my_access_rights.write,
+                delete=workspace.my_access_rights.delete,
+            )
         )
     else:
         _user_project_access_rights = (
@@ -63,7 +66,16 @@ async def get_user_project_access_rights(
                 user_id, project_id
             )
         )
-    return _user_project_access_rights
+        _user_project_access_rights_with_workspace = (
+            UserProjectAccessRightsWithWorkspace(
+                uid=user_id,
+                workspace_id=None,
+                read=_user_project_access_rights.read,
+                write=_user_project_access_rights.write,
+                delete=_user_project_access_rights.delete,
+            )
+        )
+    return _user_project_access_rights_with_workspace
 
 
 async def has_user_project_access_rights(
@@ -92,7 +104,7 @@ async def check_user_project_permission(
     user_id: UserID,
     product_name: ProductName,
     permission: PermissionStr = "read",
-) -> UserProjectAccessRights:
+) -> UserProjectAccessRightsWithWorkspace:
     _user_project_access_rights = await get_user_project_access_rights(
         app, project_id=project_id, user_id=user_id, product_name=product_name
     )

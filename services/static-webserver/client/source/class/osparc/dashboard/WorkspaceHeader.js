@@ -36,9 +36,13 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
     });
 
     this.__spacers = [];
+
+    this.initCurrentWorkspaceId();
+    this.initCurrentFolderId();
   },
 
   events: {
+    "contextChanged": "qx.event.type.Data",
     "workspaceUpdated": "qx.event.type.Data",
     "deleteWorkspaceRequested": "qx.event.type.Data"
   },
@@ -50,6 +54,13 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       init: null,
       event: "changeCurrentWorkspaceId",
       apply: "__buildLayout"
+    },
+
+    currentFolderId: {
+      check: "Number",
+      nullable: true,
+      init: null,
+      event: "changeCurrentFolderId",
     },
 
     accessRights: {
@@ -84,17 +95,26 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
             alignY: "middle",
             alignX: "center",
             allowGrowX: true,
-            allowGrowY: true
-          });
-          control.getContentElement().setStyles({
-            "border-radius": "4px"
+            allowGrowY: true,
+            decorator: "rounded",
           });
           this._add(control);
           break;
-        case "title":
+        case "workspace-title":
           control = new qx.ui.basic.Label().set({
             font: "text-16",
             alignY: "middle",
+          });
+          this._add(control);
+          break;
+        case "breadcrumbs":
+          control = new osparc.dashboard.ContextBreadcrumbs();
+          this.bind("currentWorkspaceId", control, "currentWorkspaceId");
+          this.bind("currentFolderId", control, "currentFolderId");
+          control.bind("currentWorkspaceId", this, "currentWorkspaceId");
+          control.bind("currentFolderId", this, "currentFolderId");
+          control.addListener("contextChanged", e => {
+            this.fireDataEvent("contextChanged", e.getData())
           });
           this._add(control);
           break;
@@ -158,25 +178,47 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
 
     __buildLayout: function(workspaceId) {
       this.getChildControl("icon");
-      const title = this.getChildControl("title");
-
+      const title = this.getChildControl("workspace-title");
+      this.getChildControl("breadcrumbs");
       this.getChildControl("edit-button").exclude();
       this.resetAccessRights();
       this.resetMyAccessRights();
 
-      const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
-      if (workspaceId === -1) {
+      if (workspaceId === -2) {
+        this.__setIcon("@FontAwesome5Solid/search/24");
+        title.set({
+          value: this.tr("Search results"),
+          cursor: "auto",
+        });
+      } else if (workspaceId === -1) {
         this.__setIcon(osparc.store.Workspaces.iconPath(32));
-        title.setValue(this.tr("Shared Workspaces"));
-      } else if (workspace) {
-        const thumbnail = workspace.getThumbnail();
-        this.__setIcon(thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32));
-        workspace.bind("name", title, "value");
-        workspace.bind("accessRights", this, "accessRights");
-        workspace.bind("myAccessRights", this, "myAccessRights");
+        title.set({
+          value: this.tr("Shared Workspaces"),
+          cursor: "auto",
+        })
       } else {
-        this.__setIcon("@FontAwesome5Solid/home/30");
-        title.setValue(this.tr("My Workspace"));
+        title.set({
+          cursor: "pointer"
+        });
+        title.addListener("tap", () => {
+          const folderId = null;
+          this.setCurrentFolderId(folderId);
+          this.fireDataEvent("contextChanged", {
+            workspaceId,
+            folderId,
+          });
+        });
+        const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
+        if (workspace) {
+          const thumbnail = workspace.getThumbnail();
+          this.__setIcon(thumbnail ? thumbnail : osparc.store.Workspaces.iconPath(32));
+          workspace.bind("name", title, "value");
+          workspace.bind("accessRights", this, "accessRights");
+          workspace.bind("myAccessRights", this, "myAccessRights");
+        } else {
+          this.__setIcon("@FontAwesome5Solid/home/30");
+          title.setValue(this.tr("My Workspace"));
+        }
       }
     },
 
@@ -189,15 +231,21 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       this._add(spacer);
     },
 
-    __setIcon: function(source) {
+    __resetIcon: function() {
       const icon = this.getChildControl("icon");
       const image = icon.getChildControl("image");
       image.resetSource();
       icon.getContentElement().setStyles({
         "background-image": "none"
       });
+    },
 
+    __setIcon: function(source) {
+      this.__resetIcon();
+
+      const icon = this.getChildControl("icon");
       if (source.includes("@")) {
+        const image = icon.getChildControl("image");
         image.set({
           source
         });

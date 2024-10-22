@@ -229,7 +229,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
             tagId: this.getId()
           }
         };
-        osparc.data.Resources.fetch("tags", "delete", params, this.getId())
+        osparc.data.Resources.fetch("tags", "delete", params)
           .then(() => this.fireEvent("deleteTag"))
           .catch(console.error)
           .finally(() => deleteButton.setFetching(false));

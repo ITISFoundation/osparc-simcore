@@ -131,20 +131,6 @@ qx.Class.define("osparc.product.Utils", {
       });
     },
 
-    getManifestIconUrl: function(icon, fbIcon = "favicon-osparc.png") {
-      let productName = osparc.product.Utils.getProductName();
-      if (this.isS4LProduct() || this.isProduct("s4llite")) {
-        productName = "s4l";
-      } else if (this.isProduct("tis") || this.isProduct("tiplite")) {
-        productName = "tis";
-      }
-      const iconPath = `https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/main/app/favicons/${productName}/icons/${icon}`;
-      const fallbackIcon = `/resource/osparc/${fbIcon}`;
-      return this.__linkExists(iconPath)
-        .then(() => iconPath)
-        .catch(() => fallbackIcon);
-    },
-
     getLogoPath: function(longLogo = true) {
       let logosPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();

@@ -91,6 +91,13 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 110000,
 
+    replaceTokens: function(str, key, value) {
+      // `str` might be a a localized string, get the string first
+      str = str.toString ? str.toString() : str;
+      const regex = new RegExp("\\${"+key+"\\}", "g");
+      return str.replace(regex, value);
+    },
+
     /**
      * @param {qx.ui.basic.Image} image
      */
@@ -249,6 +256,27 @@ qx.Class.define("osparc.utils.Utils", {
       // window.location.href = window.location.href.replace(/#.*$/, "");
     },
 
+    reloadNoCacheButton: function() {
+      const reloadButton = new qx.ui.form.Button().set({
+        label: qx.locale.Manager.tr("Reload"),
+        icon: "@FontAwesome5Solid/redo/16",
+        font: "text-16",
+        gap: 10,
+        appearance: "strong-button",
+        allowGrowX: false,
+        center: true,
+        alignX: "center",
+      });
+      reloadButton.addListener("execute", () => {
+        // this argument, which is passed and consumed by the boot.js init file,
+        // adds a `nocache=rand()` query argument to the js resource calls.
+        // This forces a hard reload
+        const noCacheUrl = window.location.href + "?qooxdoo:add-no-cache=true";
+        window.location.href = noCacheUrl;
+      });
+      return reloadButton;
+    },
+
     getUniqueStudyName: function(preferredName, list) {
       let title = preferredName;
       const existingTitles = list.map(study => study.name);
@@ -262,27 +290,27 @@ qx.Class.define("osparc.utils.Utils", {
       return title;
     },
 
-    checkIsOnScreen: function(elem) {
-      const isInViewport = element => {
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          const html = document.documentElement;
-          return (
-            rect.width > 0 &&
-            rect.height > 0 &&
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            // a bit of tolerance to deal with zooming factors
-            rect.bottom*0.95 <= (window.innerHeight || html.clientHeight) &&
-            rect.right*0.95 <= (window.innerWidth || html.clientWidth)
-          );
-        }
-        return false;
-      };
+    isElementOnScreen: function(element) {
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        const html = document.documentElement;
+        return (
+          rect.width > 0 &&
+          rect.height > 0 &&
+          rect.top >= 0 &&
+          rect.left >= 0 &&
+          // a bit of tolerance to deal with zooming factors
+          rect.bottom*0.95 <= (window.innerHeight || html.clientHeight) &&
+          rect.right*0.95 <= (window.innerWidth || html.clientWidth)
+        );
+      }
+      return false;
+    },
 
-      const domElem = elem.getContentElement().getDomElement();
-      const checkIsOnScreen = isInViewport(domElem);
-      return checkIsOnScreen;
+    isWidgetOnScreen: function(widget) {
+      const domElem = widget.getContentElement().getDomElement();
+      const isWidgetOnScreen = this.isElementOnScreen(domElem);
+      return isWidgetOnScreen;
     },
 
     growSelectBox: function(selectBox, maxWidth) {
@@ -969,16 +997,29 @@ qx.Class.define("osparc.utils.Utils", {
 
     getParamFromURL: (urlStr, param) => {
       const url = new URL(urlStr);
-      const args = new URLSearchParams(url.search);
-      return args.get(param);
+      const urlParams = new URLSearchParams(url.search);
+      return urlParams.get(param);
     },
 
-    hasParamFromURL: (url, param) => {
-      const urlParams = new URLSearchParams(url);
+    hasParamFromURL: (urlStr, param) => {
+      const url = new URL(urlStr);
+      const urlParams = new URLSearchParams(url.search);
       return urlParams.has(param);
     },
 
     isUrl: url => /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/gm.test(url),
+
+    snakeToCamel: str => {
+      if (str.includes("_")) {
+        return str.toLowerCase().replace(/([-_][a-z])/g, group =>
+          group
+            .toUpperCase()
+            .replace("-", "")
+            .replace("_", "")
+        );
+      }
+      return str;
+    },
 
     setIdToWidget: (qWidget, id) => {
       if (qWidget.getContentElement) {
@@ -995,11 +1036,13 @@ qx.Class.define("osparc.utils.Utils", {
     // Function that creates a unique tabId even for duplicated tabs
     getClientSessionID: function() {
       const getUniqueSessionId = () => {
-        const uuid = osparc.utils.Utils.uuidV4();
+        // before creating a new one, check if the websocket has it set
+        const webSocket = osparc.wrapper.WebSocket.getInstance().getSocket();
+        const clientSessionId = webSocket ? webSocket.io.engine.opts.query["client_session_id"] : osparc.utils.Utils.uuidV4();
         // Set window.name. This property is persistent on window reloads, but it doesn't get copied in a duplicated tab
-        window.name = uuid;
-        sessionStorage.setItem("clientsessionid", uuid);
-        return uuid;
+        window.name = clientSessionId;
+        sessionStorage.setItem("clientsessionid", clientSessionId);
+        return clientSessionId;
       };
 
       let uniqueSessionId = sessionStorage.getItem("clientsessionid");

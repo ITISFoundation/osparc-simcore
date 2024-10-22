@@ -6,6 +6,8 @@ from typing import Final, TypedDict
 
 import arrow
 from playwright.sync_api import FrameLocator, Page, WebSocket, expect
+from pydantic import TypeAdapter  # pylint: disable=no-name-in-module
+from pydantic import ByteSize
 
 from .logging_tools import log_context
 from .playwright import (
@@ -17,7 +19,8 @@ from .playwright import (
     wait_for_service_running,
 )
 
-_S4L_STREAMING_ESTABLISHMENT_MAX_TIME: Final[int] = 15 * SECOND
+_S4L_STREAMING_ESTABLISHMENT_MIN_WAITING_TIME: Final[int] = 5 * SECOND
+_S4L_STREAMING_ESTABLISHMENT_MAX_TIME: Final[int] = 30 * SECOND
 _S4L_SOCKETIO_REGEX: Final[re.Pattern] = re.compile(
     r"^(?P<protocol>[^:]+)://(?P<node_id>[^\.]+)\.services\.(?P<hostname>[^\/]+)\/socket\.io\/.+$"
 )
@@ -45,7 +48,7 @@ class S4LWaitForWebsocket:
 
 @dataclass(kw_only=True)
 class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
-    observation_time: datetime.timedelta
+    min_waiting_time_before_checking_bitrate: datetime.timedelta
     logger: logging.Logger
     _initial_bit_rate: float = 0
     _initial_bit_rate_time: datetime.datetime = arrow.utcnow().datetime
@@ -57,28 +60,33 @@ class _S4LSocketIOCheckBitRateIncreasesMessagePrinter:
                 decoded_message.name == "server.video_stream.bitrate_data"
                 and "bitrate" in decoded_message.obj
             ):
-                current_bitrate = decoded_message.obj["bitrate"]
+                current_bit_rate = decoded_message.obj["bitrate"]
                 if self._initial_bit_rate == 0:
-                    self._initial_bit_rate = current_bitrate
+                    self._initial_bit_rate = current_bit_rate
                     self._initial_bit_rate_time = arrow.utcnow().datetime
                     self.logger.info(
                         "%s",
-                        f"{self._initial_bit_rate=} at {self._initial_bit_rate_time.isoformat()}",
+                        f"{TypeAdapter(ByteSize).validate_python(self._initial_bit_rate).human_readable()}/s at {self._initial_bit_rate_time.isoformat()}",
                     )
                     return False
 
                 # NOTE: MaG says the value might also go down, but it shall definitely change,
                 # if this code proves unsafe we should change it.
+                if "bitrate" in decoded_message.obj:
+                    self.logger.info(
+                        "bitrate: %s",
+                        f"{TypeAdapter(ByteSize).validate_python(current_bit_rate).human_readable()}/s",
+                    )
                 elapsed_time = arrow.utcnow().datetime - self._initial_bit_rate_time
                 if (
-                    elapsed_time > self.observation_time
+                    elapsed_time > self.min_waiting_time_before_checking_bitrate
                     and "bitrate" in decoded_message.obj
                 ):
-                    current_bitrate = decoded_message.obj["bitrate"]
-                    bitrate_test = bool(self._initial_bit_rate != current_bitrate)
+                    current_bit_rate = decoded_message.obj["bitrate"]
+                    bitrate_test = bool(self._initial_bit_rate != current_bit_rate)
                     self.logger.info(
                         "%s",
-                        f"{current_bitrate=} after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
+                        f"{TypeAdapter(ByteSize).validate_python(current_bit_rate).human_readable()}/s after {elapsed_time=}: {'good!' if bitrate_test else 'failed! bitrate did not change! TIP: talk with MaG about underwater cables!'}",
                     )
                     return bitrate_test
 
@@ -142,10 +150,14 @@ def interact_with_s4l(page: Page, s4l_iframe: FrameLocator) -> None:
 def check_video_streaming(
     page: Page, s4l_iframe: FrameLocator, s4l_websocket: WebSocket
 ) -> None:
+    assert (
+        _S4L_STREAMING_ESTABLISHMENT_MIN_WAITING_TIME
+        < _S4L_STREAMING_ESTABLISHMENT_MAX_TIME
+    )
     with log_context(logging.INFO, "Check videostreaming works") as ctx:
         waiter = _S4LSocketIOCheckBitRateIncreasesMessagePrinter(
-            observation_time=datetime.timedelta(
-                milliseconds=_S4L_STREAMING_ESTABLISHMENT_MAX_TIME / 2.0,
+            min_waiting_time_before_checking_bitrate=datetime.timedelta(
+                milliseconds=_S4L_STREAMING_ESTABLISHMENT_MIN_WAITING_TIME,
             ),
             logger=ctx.logger,
         )

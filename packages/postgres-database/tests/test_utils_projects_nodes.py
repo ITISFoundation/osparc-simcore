@@ -309,7 +309,7 @@ async def test_delete_project_delete_all_nodes(
 
 @pytest.mark.parametrize("num_concurrent_workflows", [1, 250])
 async def test_multiple_creation_deletion_of_nodes(
-    pg_engine: Engine,
+    aiopg_engine: Engine,
     registered_user: RowProxy,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
@@ -318,7 +318,7 @@ async def test_multiple_creation_deletion_of_nodes(
     NUM_NODES = 11
 
     async def _workflow() -> None:
-        async with pg_engine.acquire() as connection:
+        async with aiopg_engine.acquire() as connection:
             project = await create_fake_project(connection, registered_user)
             projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
 
@@ -341,7 +341,7 @@ async def test_multiple_creation_deletion_of_nodes(
 
 
 async def test_get_project_id_from_node_id(
-    pg_engine: Engine,
+    aiopg_engine: Engine,
     connection: SAConnection,
     projects_nodes_repo: ProjectNodesRepo,
     registered_user: RowProxy,
@@ -351,7 +351,7 @@ async def test_get_project_id_from_node_id(
     NUM_NODES = 11
 
     async def _workflow() -> dict[uuid.UUID, list[uuid.UUID]]:
-        async with pg_engine.acquire() as connection:
+        async with aiopg_engine.acquire() as connection:
             project = await create_fake_project(connection, registered_user)
             projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
 
@@ -379,7 +379,7 @@ async def test_get_project_id_from_node_id(
 
 
 async def test_get_project_id_from_node_id_raises_for_invalid_node_id(
-    pg_engine: Engine,
+    aiopg_engine: Engine,
     connection: SAConnection,
     projects_nodes_repo: ProjectNodesRepo,
     faker: Faker,
@@ -393,7 +393,7 @@ async def test_get_project_id_from_node_id_raises_for_invalid_node_id(
 
 
 async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same_node_id_exist(
-    pg_engine: Engine,
+    aiopg_engine: Engine,
     connection: SAConnection,
     projects_nodes_repo: ProjectNodesRepo,
     registered_user: RowProxy,

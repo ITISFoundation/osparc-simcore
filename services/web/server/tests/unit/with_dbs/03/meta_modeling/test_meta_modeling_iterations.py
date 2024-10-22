@@ -23,7 +23,7 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
 )
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.projects import projects
-from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
+from simcore_service_webserver._constants import APP_AIOPG_ENGINE_KEY
 from simcore_service_webserver.director_v2.api import get_project_run_policy
 from simcore_service_webserver.meta_modeling._handlers import (
     Page,
@@ -62,7 +62,7 @@ async def context_with_logged_user(client: TestClient, logged_user: UserInfoDict
     yield
 
     assert client.app
-    engine = client.app[APP_DB_ENGINE_KEY]
+    engine = client.app[APP_AIOPG_ENGINE_KEY]
     async with engine.acquire() as conn:
         # cascade deletes everything except projects_vc_snapshot
         await conn.execute(projects.delete())

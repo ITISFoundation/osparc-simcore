@@ -6,10 +6,10 @@ import logging
 
 import aiohttp_session
 from aiohttp import web
-from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 
+from ._cookie_storage import SharedCookieEncryptedCookieStorage
 from .settings import SessionSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ def setup_session(app: web.Application):
     #
 
     # SEE https://aiohttp-session.readthedocs.io/en/latest/reference.html#abstract-storage
-    encrypted_cookie_sessions = EncryptedCookieStorage(
+    encrypted_cookie_sessions = SharedCookieEncryptedCookieStorage(
         secret_key=settings.SESSION_SECRET_KEY.get_secret_value(),
         cookie_name=DEFAULT_SESSION_COOKIE_NAME,
         secure=settings.SESSION_COOKIE_SECURE,

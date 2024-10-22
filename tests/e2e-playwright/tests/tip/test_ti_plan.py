@@ -47,8 +47,8 @@ _JLAB_AUTOSCALED_MAX_STARTUP_TIME: Final[int] = (
     + _JLAB_MAX_STARTUP_MAX_TIME
 )
 _JLAB_RUN_OPTIMIZATION_APPEARANCE_TIME: Final[int] = 2 * MINUTE
-_JLAB_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 2 * MINUTE
-_JLAB_REPORTING_MAX_TIME: Final[int] = 20 * SECOND
+_JLAB_RUN_OPTIMIZATION_MAX_TIME: Final[int] = 4 * MINUTE
+_JLAB_REPORTING_MAX_TIME: Final[int] = 60 * SECOND
 
 
 _POST_PRO_MAX_STARTUP_TIME: Final[int] = 2 * MINUTE
@@ -86,21 +86,50 @@ class _JLabWebSocketWaiter:
             return False
 
 
-def test_tip(  # noqa: PLR0915
+def test_classic_ti_plan(  # noqa: PLR0915
     page: Page,
-    create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
     log_in_and_out: WebSocket,
-    autoscaled: bool,
+    is_autoscaled: bool,
+    is_product_lite: bool,
+    create_tip_plan_from_dashboard: Callable[[str], dict[str, Any]],
 ):
+    with log_context(logging.INFO, "Checking 'Access TIP' teaser"):
+        # click to open and expand
+        page.get_by_test_id("userMenuBtn").click()
+
+        if is_product_lite:
+            page.get_by_test_id("userMenuAccessTIPBtn").click()
+            assert page.get_by_test_id("tipTeaserWindow").is_visible()
+            page.get_by_test_id("tipTeaserWindowCloseBtn").click()
+        else:
+            assert (
+                page.get_by_test_id("userMenuAccessTIPBtn").count() == 0
+            ), "full version should NOT have a teaser"
+            # click to close
+            page.get_by_test_id("userMenuBtn").click()
+
+    # press + button
     project_data = create_tip_plan_from_dashboard("newTIPlanButton")
     assert "workbench" in project_data, "Expected workbench to be in project data!"
     assert isinstance(
         project_data["workbench"], dict
     ), "Expected workbench to be a dict!"
     node_ids: list[str] = list(project_data["workbench"])
-    assert len(node_ids) >= 3, "Expected at least 3 nodes in the workbench!"
 
-    with log_context(logging.INFO, "Electrode Selector step") as ctx:
+    if is_product_lite:
+        expected_number_of_steps = 2
+        assert (
+            len(node_ids) == expected_number_of_steps
+        ), f"Expected {expected_number_of_steps=} in the app-mode"
+    else:
+        expected_number_of_steps = 3
+        assert (
+            len(node_ids) >= expected_number_of_steps
+        ), f"Expected at least {expected_number_of_steps} nodes in the workbench"
+
+    with log_context(
+        logging.INFO, "Electrode Selector step (1/%s)", expected_number_of_steps
+    ) as ctx:
         # NOTE: creating the plan auto-triggers the first service to start, which might already triggers socket events
         electrode_selector_iframe = wait_for_service_running(
             page=page,
@@ -108,7 +137,7 @@ def test_tip(  # noqa: PLR0915
             websocket=log_in_and_out,
             timeout=(
                 _ELECTRODE_SELECTOR_AUTOSCALED_MAX_STARTUP_TIME
-                if autoscaled
+                if is_autoscaled
                 else _ELECTRODE_SELECTOR_MAX_STARTUP_TIME
             ),
             press_start_button=False,
@@ -149,13 +178,15 @@ def test_tip(  # noqa: PLR0915
             response_body = response.json()
             ctx.logger.info("the following output was generated: %s", response_body)
 
-    with log_context(logging.INFO, "Classic TI step") as ctx:
+    with log_context(
+        logging.INFO, "Classic TI step (2/%s)", expected_number_of_steps
+    ) as ctx:
         with page.expect_websocket(
             _JLabWaitForWebSocket(),
             timeout=_OUTER_EXPECT_TIMEOUT_RATIO
             * (
                 _JLAB_AUTOSCALED_MAX_STARTUP_TIME
-                if autoscaled
+                if is_autoscaled
                 else _JLAB_MAX_STARTUP_MAX_TIME
             ),
         ) as ws_info:
@@ -165,7 +196,7 @@ def test_tip(  # noqa: PLR0915
                 websocket=log_in_and_out,
                 timeout=(
                     _JLAB_AUTOSCALED_MAX_STARTUP_TIME
-                    if autoscaled
+                    if is_autoscaled
                     else _JLAB_MAX_STARTUP_MAX_TIME
                 ),
                 press_start_button=False,
@@ -193,43 +224,76 @@ def test_tip(  # noqa: PLR0915
             )
 
         with log_context(logging.INFO, "Create report"):
+
             ti_iframe.get_by_role("button", name="Load Analysis").click()
             page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
             ti_iframe.get_by_role("button", name="Load").nth(1).click()
             page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-            ti_iframe.get_by_role("button", name="Add to Report (0)").nth(0).click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-            ti_iframe.get_by_role("button", name="Export to S4L").click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-            ti_iframe.get_by_role("button", name="Add to Report (1)").nth(1).click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
-            ti_iframe.get_by_role("button", name="Export Report").click()
-            page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+
+            if is_product_lite:
+                assert (
+                    not ti_iframe.get_by_role("button", name="Add to Report (0)")
+                    .nth(0)
+                    .is_enabled()
+                )
+                assert not ti_iframe.get_by_role(
+                    "button", name="Export to S4L"
+                ).is_enabled()
+                assert not ti_iframe.get_by_role(
+                    "button", name="Export Report"
+                ).is_enabled()
+
+            else:
+                ti_iframe.get_by_role("button", name="Add to Report (0)").nth(0).click()
+                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                ti_iframe.get_by_role("button", name="Export to S4L").click()
+                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                ti_iframe.get_by_role("button", name="Add to Report (1)").nth(1).click()
+                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
+                ti_iframe.get_by_role("button", name="Export Report").click()
+                page.wait_for_timeout(_JLAB_REPORTING_MAX_TIME)
 
         with log_context(logging.INFO, "Check outputs"):
-            expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv"]
-            text_on_output_button = f"Outputs ({len(expected_outputs)})"
-            page.get_by_test_id("outputsBtn").get_by_text(text_on_output_button).click()
+            if is_product_lite:
+                expected_outputs = ["results.csv"]
+                text_on_output_button = f"Outputs ({len(expected_outputs)})"
+                page.get_by_test_id("outputsBtn").get_by_text(
+                    text_on_output_button
+                ).click()
 
-    with log_context(logging.INFO, "Exposure Analysis step"):
-        with expected_service_running(
-            page=page,
-            node_id=node_ids[2],
-            websocket=log_in_and_out,
-            timeout=(
-                _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME
-                if autoscaled
-                else _POST_PRO_MAX_STARTUP_TIME
-            ),
-            press_start_button=False,
-        ) as service_running:
-            app_mode_trigger_next_app(page)
-        s4l_postpro_iframe = service_running.iframe_locator
-        assert s4l_postpro_iframe
+            else:
+                expected_outputs = ["output_1.zip", "TIP_report.pdf", "results.csv"]
+                text_on_output_button = f"Outputs ({len(expected_outputs)})"
+                page.get_by_test_id("outputsBtn").get_by_text(
+                    text_on_output_button
+                ).click()
 
-        with log_context(logging.INFO, "Post process"):
-            # click on the postpro mode button
-            s4l_postpro_iframe.get_by_test_id("mode-button-postro").click()
-            # click on the surface viewer
-            s4l_postpro_iframe.get_by_test_id("tree-item-ti_field.cache").click()
-            s4l_postpro_iframe.get_by_test_id("tree-item-SurfaceViewer").nth(0).click()
+    if is_product_lite:
+        assert expected_number_of_steps == 2
+    else:
+        with log_context(
+            logging.INFO, "Exposure Analysis step (3/%s)", expected_number_of_steps
+        ):
+            with expected_service_running(
+                page=page,
+                node_id=node_ids[2],
+                websocket=log_in_and_out,
+                timeout=(
+                    _POST_PRO_AUTOSCALED_MAX_STARTUP_TIME
+                    if is_autoscaled
+                    else _POST_PRO_MAX_STARTUP_TIME
+                ),
+                press_start_button=False,
+            ) as service_running:
+                app_mode_trigger_next_app(page)
+            s4l_postpro_iframe = service_running.iframe_locator
+            assert s4l_postpro_iframe
+
+            with log_context(logging.INFO, "Post process"):
+                # click on the postpro mode button
+                s4l_postpro_iframe.get_by_test_id("mode-button-postro").click()
+                # click on the surface viewer
+                s4l_postpro_iframe.get_by_test_id("tree-item-ti_field.cache").click()
+                s4l_postpro_iframe.get_by_test_id("tree-item-SurfaceViewer").nth(
+                    0
+                ).click()

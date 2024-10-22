@@ -12,8 +12,10 @@ from typing import Any, Union
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
+from models_library.error_codes import create_error_code
 from models_library.utils.json_serialization import json_dumps
 
+from ..logging_errors import create_troubleshotting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..utils import is_production_environ
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
@@ -28,6 +30,11 @@ from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 
 DEFAULT_API_VERSION = "v0"
+_FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC = (
+    "We apologize for the inconvenience."
+    " Our team has recorded the issue [{error_code}] and is working to resolve it as quickly as possible."
+    " Thank you for your patience"
+)
 
 
 _logger = logging.getLogger(__name__)
@@ -40,29 +47,35 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
 
 def error_middleware_factory(
     api_version: str,
-    log_exceptions: bool = True,
 ) -> Middleware:
     _is_prod: bool = is_production_environ()
 
     def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
+
+        error_code = create_error_code(err)
+        error_context: dict[str, Any] = {
+            "request.remote": f"{request.remote}",
+            "request.method": f"{request.method}",
+            "request.path": f"{request.path}",
+        }
+
+        user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY_WITH_OEC.format(
+            error_code=error_code
+        )
         http_error = create_http_error(
             err,
-            "Unexpected Server error",
+            user_error_msg,
             web.HTTPInternalServerError,
             skip_internal_error_details=_is_prod,
         )
-
-        if log_exceptions:
-            _logger.error(
-                'Unexpected server error "%s" from access: %s "%s %s". Responding with status %s',
-                type(err),
-                request.remote,
-                request.method,
-                request.path,
-                http_error.status,
-                exc_info=err,
-                stack_info=True,
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                user_error_msg,
+                error=err,
+                error_context=error_context,
+                error_code=error_code,
             )
+        )
         raise http_error
 
     @web.middleware

@@ -2,6 +2,7 @@ import psutil
 import pytest
 from models_library.api_schemas_dynamic_sidecar.telemetry import DiskUsage
 from psutil._common import sdiskusage
+from pydantic import ByteSize, ValidationError
 
 
 def _assert_same_value(ps_util_disk_usage: sdiskusage) -> None:
@@ -27,3 +28,35 @@ def test_disk_usage_regression_cases(ps_util_disk_usage: sdiskusage):
 def test_disk_usage():
     ps_util_disk_usage = psutil.disk_usage("/")
     _assert_same_value(ps_util_disk_usage)
+
+
+def test_from_efs_guardian_constructor():
+    result = DiskUsage.from_efs_guardian(10, 100)
+    assert result.used == ByteSize(10)
+    assert result.free == ByteSize(90)
+    assert result.total == ByteSize(100)
+    assert result.used_percent == 10
+
+
+def test_failing_validation():
+    with pytest.raises(ValidationError) as exc:
+        assert DiskUsage.from_efs_guardian(100, 10)
+
+    assert "free=" in f"{exc.value}"
+    assert "negative value" in f"{exc.value}"
+
+    with pytest.raises(ValidationError) as exc:
+        assert DiskUsage(
+            used=-10,  # type: ignore
+            free=ByteSize(10),
+            total=ByteSize(0),
+            used_percent=-10,
+        )
+    assert "used=" in f"{exc.value}"
+    assert "negative value" in f"{exc.value}"
+
+    with pytest.raises(ValidationError) as exc:
+        DiskUsage(
+            used=ByteSize(10), free=ByteSize(10), total=ByteSize(21), used_percent=0
+        )
+    assert "is different than the sum of" in f"{exc.value}"

@@ -5,6 +5,7 @@
 
 from pathlib import Path
 from typing import Any, Callable
+from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
@@ -138,6 +139,7 @@ async def test_node_ports_accessors(
                 + list(original_outputs.values())
             },
             progress_bar=progress_bar,
+            outputs_callbacks=AsyncMock(),
         )
     assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
 

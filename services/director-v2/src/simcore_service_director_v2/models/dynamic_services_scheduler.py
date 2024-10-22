@@ -16,6 +16,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 )
 from models_library.basic_types import PortInt
 from models_library.callbacks_mapping import CallbacksMapping
+from models_library.error_codes import ErrorCodeStr
 from models_library.generated_models.docker_rest_api import ContainerState, Status2
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo, PricingInfo
@@ -36,7 +37,6 @@ from pydantic import (
     parse_obj_as,
     validator,
 )
-from servicelib.error_codes import ErrorCodeStr
 from servicelib.exception_utils import DelayedExceptionHandler
 
 from ..constants import (

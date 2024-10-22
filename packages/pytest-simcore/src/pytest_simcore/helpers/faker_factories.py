@@ -235,7 +235,6 @@ def random_product(
             license_url=fake.url(),
             invitation_url=fake.url(),
             invitation_form=fake.boolean(),
-            has_landing_page=fake.boolean(),
             address=fake.address().replace("\n", ". "),
         ),
         "registration_email_template": registration_email_template,

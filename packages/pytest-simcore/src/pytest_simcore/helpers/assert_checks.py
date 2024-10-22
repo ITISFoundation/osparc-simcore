@@ -7,7 +7,7 @@ from pprint import pformat
 from aiohttp import ClientResponse
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import unwrap_envelope
-from servicelib.status_utils import get_code_display_name, is_error
+from servicelib.status_codes_utils import get_code_display_name, is_error
 
 
 async def assert_status(
@@ -15,6 +15,7 @@ async def assert_status(
     expected_status_code: int,
     expected_msg: str | None = None,
     expected_error_code: str | None = None,
+    *,
     include_meta: bool | None = False,
     include_links: bool | None = False,
 ) -> tuple[dict, ...]:

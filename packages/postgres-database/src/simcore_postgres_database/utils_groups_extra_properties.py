@@ -32,6 +32,7 @@ class GroupExtraProperties(FromRowMixin):
     enable_telemetry: bool
     created: datetime.datetime
     modified: datetime.datetime
+    enable_efs: bool
 
 
 async def _list_table_entries_ordered_by_group_type(

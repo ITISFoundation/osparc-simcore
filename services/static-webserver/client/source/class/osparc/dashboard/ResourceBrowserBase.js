@@ -42,15 +42,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     const mainLayoutWithSideSpacers = new qx.ui.container.Composite(new qx.ui.layout.HBox(spacing))
     this._addToMainLayout(mainLayoutWithSideSpacers);
 
-    this.__leftFilters = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+    this.__leftFilters = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
       width: leftColumnWidth
     });
     mainLayoutWithSideSpacers.add(this.__leftFilters);
 
-    this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
     mainLayoutWithSideSpacers.add(this.__centerLayout);
 
-    const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     mainLayoutWithSideSpacers.add(rightColum, {
       flex: 1
     });
@@ -77,11 +77,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   events: {
+    "changeTab": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data"
   },
 
   statics: {
-    PAGINATED_STUDIES: 10,
+    PAGINATED_STUDIES: 5,
     MIN_GRID_CARDS_PER_ROW: 3,
     SIDE_SPACER_WIDTH: 200,
 
@@ -222,7 +223,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    reloadResources: function() {
+    reloadMoreResources: function() {
       throw new Error("Abstract method called!");
     },
 
@@ -230,10 +231,17 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _createResourcesLayout: function() {
-      const topBar = this.__createTopBar();
-      this._addToLayout(topBar);
+    _createSearchBar: function() {
+      const searchBarFilter = this._searchBarFilter = new osparc.dashboard.SearchBarFilter(this._resourceType).set({
+        marginRight: 22
+      });
+      const textField = searchBarFilter.getChildControl("text-field");
+      osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
 
+      this._addToLayout(searchBarFilter);
+    },
+
+    _createResourcesLayout: function() {
       const toolbar = this._toolbar = new qx.ui.toolbar.ToolBar().set({
         backgroundColor: "transparent",
         spacing: 10,
@@ -245,6 +253,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this.__viewModeLayout = new qx.ui.toolbar.Part();
 
       const resourcesContainer = this._resourcesContainer = new osparc.dashboard.ResourceContainerManager();
+      if (this._resourceType === "study") {
+        const viewMode = osparc.utils.Utils.localCache.getLocalStorageItem("studiesViewMode");
+        if (viewMode) {
+          this._resourcesContainer.setMode(viewMode);
+        }
+      }
       resourcesContainer.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourcesContainer.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
       resourcesContainer.addListener("updateService", e => this._updateServiceData(e.getData()));
@@ -252,48 +266,20 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
       resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
       resourcesContainer.addListener("folderUpdated", e => this._folderUpdated(e.getData()));
-      resourcesContainer.addListener("moveFolderToFolderRequested", e => this._moveFolderToFolderRequested(e.getData()));
-      resourcesContainer.addListener("moveFolderToWorkspaceRequested", e => this._moveFolderToWorkspaceRequested(e.getData()));
+      resourcesContainer.addListener("moveFolderToRequested", e => this._moveFolderToRequested(e.getData()));
       resourcesContainer.addListener("deleteFolderRequested", e => this._deleteFolderRequested(e.getData()));
       resourcesContainer.addListener("folderSelected", e => {
         const folderId = e.getData();
         this._folderSelected(folderId);
-        this._resourceFilter.folderSelected(folderId);
       }, this);
       resourcesContainer.addListener("workspaceSelected", e => {
         const workspaceId = e.getData();
         this._workspaceSelected(workspaceId);
-        this._resourceFilter.workspaceSelected(workspaceId);
       }, this);
       resourcesContainer.addListener("workspaceUpdated", e => this._workspaceUpdated(e.getData()));
       resourcesContainer.addListener("deleteWorkspaceRequested", e => this._deleteWorkspaceRequested(e.getData()));
 
-      const containerHeader = this._resourcesContainer.getContainerHeader();
-      containerHeader.addListener("changeContext", e => {
-        const {
-          workspaceId,
-          folderId,
-        } = e.getData();
-        this._resourceFilter.contextChanged(workspaceId, folderId);
-      }, this);
-
       this._addToLayout(resourcesContainer);
-    },
-
-    __createTopBar: function() {
-      const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        paddingRight: 22,
-        alignY: "middle"
-      });
-
-      const searchBarFilter = this._searchBarFilter = new osparc.dashboard.SearchBarFilter(this._resourceType);
-      const textField = searchBarFilter.getChildControl("text-field");
-      osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
-      topBar.add(searchBarFilter, {
-        flex: 1
-      });
-
-      return topBar;
     },
 
     _groupByChanged: function(groupBy) {
@@ -307,6 +293,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     _viewByChanged: function(viewMode) {
       this._resourcesContainer.setMode(viewMode);
       this._reloadCards();
+
+      if (this._resourceType === "study") {
+        osparc.utils.Utils.localCache.setLocalStorageItem("studiesViewMode", viewMode);
+      }
     },
 
     _addGroupByButton: function() {
@@ -368,45 +358,28 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         radioGroup.add(btn);
       });
 
+      if (this._resourceType === "study") {
+        const viewMode = osparc.utils.Utils.localCache.getLocalStorageItem("studiesViewMode");
+        if (viewMode) {
+          if (viewMode === "list") {
+            radioGroup.setSelection([listBtn]);
+          }
+        }
+      }
+
       this._toolbar.add(viewModeLayout);
     },
 
     _addResourceFilter: function() {
       const resourceFilter = this._resourceFilter = new osparc.dashboard.ResourceFilter(this._resourceType).set({
-        marginTop: osparc.dashboard.SearchBarFilter.HEIGHT,
+        marginTop: osparc.dashboard.SearchBarFilter.HEIGHT + 10,
         maxWidth: this.self().SIDE_SPACER_WIDTH,
         width: this.self().SIDE_SPACER_WIDTH
       });
 
       resourceFilter.addListener("changeSharedWith", e => {
-        if (this._resourceType === "study") {
-          this.setCurrentWorkspaceId(null);
-        }
         const sharedWith = e.getData();
         this._searchBarFilter.setSharedWithActiveFilter(sharedWith.id, sharedWith.label);
-      }, this);
-
-      if (this._resourceType === "study" && osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const workspacesAndFoldersTree = resourceFilter.getWorkspacesAndFoldersTree();
-        workspacesAndFoldersTree.getSelection().addListener("change", () => {
-          const selection = workspacesAndFoldersTree.getSelection();
-          if (selection.getLength() > 0) {
-            const item = selection.getItem(0);
-            const workspaceId = item.getWorkspaceId();
-            const folderId = item.getFolderId();
-            this._changeContext(workspaceId, folderId);
-          }
-        }, this);
-        this.bind("currentWorkspaceId", workspacesAndFoldersTree, "currentWorkspaceId");
-        this.bind("currentFolderId", workspacesAndFoldersTree, "currentFolderId");
-      }
-
-      resourceFilter.addListener("changeWorkspace", e => {
-        const workspaceId = e.getData();
-        this.setCurrentWorkspaceId(workspaceId);
-        if (this._resourceType === "study") {
-          this._searchBarFilter.resetSharedWithActiveFilter();
-        }
       }, this);
 
       resourceFilter.addListener("changeSelectedTags", e => {
@@ -459,7 +432,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _moreResourcesRequired: function() {
       if (this._resourcesContainer && this._resourcesContainer.areMoreResourcesRequired(this._loadingResourcesBtn)) {
-        this.reloadResources();
+        this.reloadMoreResources();
       }
     },
 
@@ -484,6 +457,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
+      if (isStudyCreation) {
+        this.fireDataEvent("changeTab", "studiesTab");
+      }
       this.self().startStudyById(studyId, openCB, cancelCB, isStudyCreation);
     },
 
@@ -499,10 +475,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _changeContext: function(workspaceId, folderId) {
-      throw new Error("Abstract method called!");
-    },
-
     _folderSelected: function(folderId) {
       throw new Error("Abstract method called!");
     },
@@ -511,11 +483,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _moveFolderToFolderRequested: function(folderId) {
-      throw new Error("Abstract method called!");
-    },
-
-    _moveFolderToWorkspaceRequested: function(folderId) {
+    _moveFolderToRequested: function(folderId) {
       throw new Error("Abstract method called!");
     },
 

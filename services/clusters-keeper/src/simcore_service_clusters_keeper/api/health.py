@@ -21,7 +21,7 @@ router = APIRouter()
 @router.get("/", include_in_schema=True, response_class=PlainTextResponse)
 async def health_check():
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!
-    return f"{__name__}.health_check@{datetime.datetime.now(datetime.timezone.utc).isoformat()}"
+    return f"{__name__}.health_check@{datetime.datetime.now(datetime.UTC).isoformat()}"
 
 
 class _ComponentStatus(BaseModel):
@@ -33,6 +33,7 @@ class _StatusGet(BaseModel):
     rabbitmq: _ComponentStatus
     ec2: _ComponentStatus
     redis_client_sdk: _ComponentStatus
+    ssm: _ComponentStatus
 
 
 @router.get("/status", include_in_schema=True, response_model=_StatusGet)
@@ -40,18 +41,26 @@ async def get_status(app: Annotated[FastAPI, Depends(get_app)]) -> _StatusGet:
     return _StatusGet(
         rabbitmq=_ComponentStatus(
             is_enabled=is_rabbitmq_enabled(app),
-            is_responsive=await get_rabbitmq_client(app).ping()
-            if is_rabbitmq_enabled(app)
-            else False,
+            is_responsive=(
+                await get_rabbitmq_client(app).ping()
+                if is_rabbitmq_enabled(app)
+                else False
+            ),
         ),
         ec2=_ComponentStatus(
             is_enabled=bool(app.state.ec2_client),
-            is_responsive=await app.state.ec2_client.ping()
-            if app.state.ec2_client
-            else False,
+            is_responsive=(
+                await app.state.ec2_client.ping() if app.state.ec2_client else False
+            ),
         ),
         redis_client_sdk=_ComponentStatus(
             is_enabled=bool(app.state.redis_client_sdk),
             is_responsive=await get_redis_client(app).ping(),
+        ),
+        ssm=_ComponentStatus(
+            is_enabled=(app.state.ssm_client is not None),
+            is_responsive=(
+                await app.state.ssm_client.ping() if app.state.ssm_client else False
+            ),
         ),
     )

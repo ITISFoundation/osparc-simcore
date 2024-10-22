@@ -4,10 +4,11 @@ from asyncio import Queue
 from collections.abc import AsyncIterable
 from typing import Final
 
+from models_library.error_codes import create_error_code
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import NonNegativeInt
-from servicelib.error_codes import create_error_code
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
@@ -124,21 +125,26 @@ class LogStreamer:
                     yield log.json() + _NEW_LINE
                 except asyncio.TimeoutError:
                     done = await self._project_done()
+
         except BaseBackEndError as exc:
             _logger.info("%s", f"{exc}")
+
             yield ErrorGet(errors=[f"{exc}"]).json() + _NEW_LINE
+
         except Exception as exc:  # pylint: disable=W0718
             error_code = create_error_code(exc)
-            _logger.exception(
-                "Unexpected %s: %s",
-                exc.__class__.__name__,
-                f"{exc}",
-                extra={"error_code": error_code},
+            user_error_msg = (
+                MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" [{error_code}]"
             )
-            yield ErrorGet(
-                errors=[
-                    MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" (OEC: {error_code})"
-                ]
-            ).json() + _NEW_LINE
+
+            _logger.exception(
+                **create_troubleshotting_log_kwargs(
+                    user_error_msg,
+                    error=exc,
+                    error_code=error_code,
+                )
+            )
+            yield ErrorGet(errors=[user_error_msg]).json() + _NEW_LINE
+
         finally:
             await self._log_distributor.deregister(self._job_id)
