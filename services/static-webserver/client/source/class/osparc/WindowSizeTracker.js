@@ -48,7 +48,7 @@ qx.Class.define("osparc.WindowSizeTracker", {
   },
 
   statics: {
-    WIDTH_LOGOUT_BREAKPOINT: 700,
+    WIDTH_LOGOUT_BREAKPOINT: 600,
     WIDTH_COMPACT_BREAKPOINT: 1100,
     WIDTH_BREAKPOINT: 1180, // - iPad Pro 11" 1194x834 inclusion
     HEIGHT_BREAKPOINT: 720, // - iPad Pro 11" 1194x834 inclusion
