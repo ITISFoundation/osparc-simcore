@@ -466,8 +466,6 @@ qx.Class.define("osparc.data.model.Study", {
       }
 
       const foldersPathIds = this.__getFoldersPath(this.getFolderId());
-      // remove the first one
-      foldersPathIds.shift();
       foldersPathIds.forEach(folderId => {
         const folder = osparc.store.Folders.getInstance().getFolder(folderId);
         if (folder) {
