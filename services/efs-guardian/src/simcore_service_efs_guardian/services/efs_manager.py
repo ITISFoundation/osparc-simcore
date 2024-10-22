@@ -1,14 +1,18 @@
+import logging
 import os
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import ByteSize
+from pydantic import ByteSize, parse_obj_as
 
 from ..core.settings import ApplicationSettings, get_application_settings
 from . import efs_manager_utils
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -90,3 +94,53 @@ class EfsManager:
         )
 
         await efs_manager_utils.remove_write_permissions_bash_async(_dir_path)
+
+    async def list_projects_across_whole_efs(self) -> list[ProjectID]:
+        _dir_path = self._efs_mounted_path / self._project_specific_data_base_directory
+
+        # Filter and list only directories (which should be Project UUIDs)
+        project_uuids = []
+        for child in _dir_path.iterdir():
+            if child.is_dir():
+                try:
+                    _project_id = parse_obj_as(ProjectID, child.name)
+                    project_uuids.append(_project_id)
+                except ValueError:
+                    _logger.error(
+                        "This is not a project ID. This should not happen! %s",
+                        _dir_path / child.name,
+                    )
+            else:
+                _logger.error(
+                    "This is not a directory. This should not happen! %s",
+                    _dir_path / child.name,
+                )
+
+        return project_uuids
+
+    async def remove_project_efs_data(self, project_id: ProjectID) -> None:
+        _dir_path = (
+            self._efs_mounted_path
+            / self._project_specific_data_base_directory
+            / f"{project_id}"
+        )
+
+        if Path.exists(_dir_path):
+            # Remove the directory and all its contents
+            try:
+                shutil.rmtree(_dir_path)
+                _logger.info("%s has been deleted.", _dir_path)
+            except FileNotFoundError as e:
+                _logger.error("Directory %s does not exist. Error: %s", _dir_path, e)
+            except PermissionError as e:
+                _logger.error(
+                    "Permission denied when trying to delete %s. Error: %s",
+                    _dir_path,
+                    e,
+                )
+            except NotADirectoryError as e:
+                _logger.error("%s is not a directory. Error: %s", _dir_path, e)
+            except OSError as e:
+                _logger.error("Issue with path: %s Error: %s", _dir_path, e)
+        else:
+            _logger.error("%s does not exist.", _dir_path)

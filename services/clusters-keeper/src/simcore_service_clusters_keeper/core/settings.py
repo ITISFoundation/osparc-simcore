@@ -311,11 +311,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
     )
 
-    CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: NonNegativeInt = (
-        Field(
-            default=5,
-            description="Max number of missed heartbeats before a cluster is terminated",
-        )
+    CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION: NonNegativeInt = Field(
+        default=5,
+        description="Max number of missed heartbeats before a cluster is terminated",
     )
 
     CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: str = Field(
@@ -352,7 +350,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
         return self.CLUSTERS_KEEPER_LOGLEVEL
 
-    @validator("CLUSTERS_KEEPER_LOGLEVEL")
+    @validator("CLUSTERS_KEEPER_LOGLEVEL", pre=True)
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)

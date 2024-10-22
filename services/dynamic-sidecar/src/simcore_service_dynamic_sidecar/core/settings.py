@@ -165,9 +165,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def are_prometheus_metrics_enabled(self) -> bool:
         return self.DY_SIDECAR_CALLBACKS_MAPPING.metrics is not None
 
-    @validator("LOG_LEVEL")
+    @validator("LOG_LEVEL", pre=True)
     @classmethod
-    def _check_log_level(cls, value):
+    def _check_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
 
 

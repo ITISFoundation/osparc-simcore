@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import hashlib
 import mimetypes
 import zipfile
 from collections.abc import AsyncIterable
@@ -375,3 +376,74 @@ async def test_pull_compressed_zip_file_from_remote(
         assert file.exists()
         assert file.name in file_names_within_zip_file
     mocked_log_publishing_cb.assert_called()
+
+
+def _compute_hash(file_path: Path) -> str:
+    with file_path.open("rb") as file_to_hash:
+        file_hash = hashlib.sha256()
+        chunk = file_to_hash.read(8192)
+        while chunk:
+            file_hash.update(chunk)
+            chunk = file_to_hash.read(8192)
+
+    return file_hash.hexdigest()
+
+
+async def test_push_file_to_remote_creates_reproducible_zip_archive(
+    remote_parameters: StorageParameters,
+    tmp_path: Path,
+    faker: Faker,
+    mocked_log_publishing_cb: mock.AsyncMock,
+):
+    destination_url1 = parse_obj_as(AnyUrl, f"{remote_parameters.remote_file_url}1.zip")
+    destination_url2 = parse_obj_as(AnyUrl, f"{remote_parameters.remote_file_url}2.zip")
+    src_path = tmp_path / faker.file_name()
+    TEXT_IN_FILE = faker.text()
+    src_path.write_text(TEXT_IN_FILE)
+    assert src_path.exists()
+
+    # pushing 2 times should produce the same archive with the same hash
+    await push_file_to_remote(
+        src_path,
+        destination_url1,
+        mocked_log_publishing_cb,
+        remote_parameters.s3_settings,
+    )
+    await asyncio.sleep(
+        5
+    )  # NOTE: we wait a bit to ensure the created zipfile has a different creation time (that is normally used for computing the hash)
+    await push_file_to_remote(
+        src_path,
+        destination_url2,
+        mocked_log_publishing_cb,
+        remote_parameters.s3_settings,
+    )
+
+    # now we pull both file and compare their hash
+
+    # USE-CASE 1: if destination is a zip then no decompression is done
+    download_folder = tmp_path / "download"
+    download_folder.mkdir(parents=True, exist_ok=True)
+    assert download_folder.exists()
+    dst_path1 = download_folder / f"{faker.file_name()}1.zip"
+    dst_path2 = download_folder / f"{faker.file_name()}2.zip"
+
+    await pull_file_from_remote(
+        src_url=destination_url1,
+        target_mime_type=None,
+        dst_path=dst_path1,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+    )
+    assert dst_path1.exists()
+
+    await pull_file_from_remote(
+        src_url=destination_url2,
+        target_mime_type=None,
+        dst_path=dst_path2,
+        log_publishing_cb=mocked_log_publishing_cb,
+        s3_settings=remote_parameters.s3_settings,
+    )
+    assert dst_path2.exists()
+
+    assert _compute_hash(dst_path1) == _compute_hash(dst_path2)
