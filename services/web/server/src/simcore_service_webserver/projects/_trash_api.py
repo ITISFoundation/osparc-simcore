@@ -1,11 +1,11 @@
 import arrow
 from aiohttp import web
-from models_library.api_schemas_webserver.projects import ProjectPatchExtended
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 
 from . import projects_api
+from .models import ProjectPatchExtended
 
 
 async def empty_trash(app: web.Application, product_name: ProductName, user_id: UserID):

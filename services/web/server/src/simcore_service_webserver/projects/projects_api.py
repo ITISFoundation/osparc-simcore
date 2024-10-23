@@ -30,10 +30,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
 )
-from models_library.api_schemas_webserver.projects import (
-    ProjectPatch,
-    ProjectPatchExtended,
-)
+from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_nodes import NodePatch
 from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
@@ -147,7 +144,7 @@ from .exceptions import (
     ProjectTooManyProjectOpenedError,
 )
 from .lock import get_project_locked_state, is_project_locked, lock_project
-from .models import ProjectDict
+from .models import ProjectDict, ProjectPatchExtended
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
