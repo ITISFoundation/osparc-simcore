@@ -63,14 +63,13 @@ qx.Class.define("osparc.Application", {
         return;
       }
 
-      const intlTelInput = osparc.wrapper.IntlTelInput.getInstance();
-      intlTelInput.init();
+      // libs
+      osparc.wrapper.IntlTelInput.getInstance().init();
+      osparc.wrapper.Three.getInstance().init();
 
-      const threejs = osparc.wrapper.Three.getInstance();
-      threejs.init();
-
-      const announcementsTracker = osparc.announcement.Tracker.getInstance();
-      announcementsTracker.startTracker();
+      // trackers
+      osparc.announcement.Tracker.getInstance().startTracker();
+      osparc.WindowSizeTracker.getInstance().startTracker();
 
       const webSocket = osparc.wrapper.WebSocket.getInstance();
       webSocket.addListener("connect", () => osparc.WatchDog.getInstance().setOnline(true));
@@ -467,6 +466,7 @@ qx.Class.define("osparc.Application", {
 
     __loadMainPage: function(studyId = null) {
       // logged in
+      osparc.WindowSizeTracker.getInstance().evaluateTooSmallDialog();
       osparc.data.Resources.getOne("profile")
         .then(profile => {
           if (profile) {
