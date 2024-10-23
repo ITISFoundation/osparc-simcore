@@ -155,7 +155,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
           });
           break;
         case "body":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
             decorator: "main",
             allowGrowY: true,
             allowGrowX: true,
