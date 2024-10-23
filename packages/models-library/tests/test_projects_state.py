@@ -22,5 +22,5 @@ def test_project_locked_with_missing_owner_ok_during_maintaining():
     + [(True, ProjectStatus.CLOSED)],
 )
 def test_project_locked_with_allowed_values(lock: bool, status: ProjectStatus):
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         ProjectLocked.parse_obj({"value": lock, "status": status})
