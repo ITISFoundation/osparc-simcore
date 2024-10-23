@@ -804,11 +804,10 @@ qx.Class.define("osparc.utils.Utils", {
               loadedCb();
             }
             const blob = new Blob([xhr.response]);
-            const urlBlob = window.URL.createObjectURL(blob);
             if (!fileName) {
               fileName = this.self().filenameFromContentDisposition(xhr);
             }
-            this.self().downloadContent(urlBlob, fileName);
+            this.self().downloadBlobContent(blob, fileName);
             resolve();
           } else {
             reject(xhr);
@@ -820,9 +819,9 @@ qx.Class.define("osparc.utils.Utils", {
       });
     },
 
-    downloadContent: function(content, filename = "file") {
+    downloadBlobContent: function(blob, filename = "file") {
       let downloadAnchorNode = document.createElement("a");
-      downloadAnchorNode.setAttribute("href", content);
+      downloadAnchorNode.setAttribute("href", window.URL.createObjectURL(blob));
       downloadAnchorNode.setAttribute("download", filename);
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
