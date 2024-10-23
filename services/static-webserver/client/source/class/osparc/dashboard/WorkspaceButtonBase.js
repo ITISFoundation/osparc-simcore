@@ -68,7 +68,6 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 190,
     PADDING: 10,
-    SPACING_IN: 0,
     SPACING: 15,
     HEADER_MAX_HEIGHT: 44,
     ICON_SIZE: 60,
@@ -108,7 +107,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
       let control;
       switch (id) {
         case "main-layout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(this.self().SPACING_IN));
+          control = new qx.ui.container.Composite();
           const folderLook = this.getChildControl("folder-look");
           const header = this.getChildControl("header");
           const body = this.getChildControl("body");
