@@ -1,8 +1,7 @@
 from typing import Final
 
 from aiohttp import web
-from pydantic import AliasChoices, field_validator, PositiveInt
-from pydantic.class_validators import field_validator
+from pydantic import AliasChoices, PositiveInt, field_validator
 from pydantic.fields import Field
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
@@ -22,7 +21,9 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
         description="Secret key to encrypt cookies. "
         'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
         min_length=44,
-        validation_alias=AliasChoices("SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"),
+        validation_alias=AliasChoices(
+            "SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"
+        ),
     )
 
     SESSION_ACCESS_TOKENS_EXPIRATION_INTERVAL_SECS: int = Field(
