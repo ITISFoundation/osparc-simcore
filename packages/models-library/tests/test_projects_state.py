@@ -2,6 +2,16 @@ import pytest
 from models_library.projects_state import ProjectLocked, ProjectStatus
 
 
+def test_project_locked_with_missing_owner_raises():
+    with pytest.raises(ValueError):
+        ProjectLocked(value=True, status=ProjectStatus.OPENED)
+    ProjectLocked.parse_obj({"value": False, "status": ProjectStatus.OPENED})
+
+
+def test_project_locked_with_missing_owner_ok_during_maintaining():
+    ProjectLocked.parse_obj({"value": True, "status": ProjectStatus.MAINTAINING})
+
+
 @pytest.mark.parametrize(
     "lock, status",
     [
@@ -12,5 +22,5 @@ from models_library.projects_state import ProjectLocked, ProjectStatus
     + [(True, ProjectStatus.CLOSED)],
 )
 def test_project_locked_with_allowed_values(lock: bool, status: ProjectStatus):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as e:
         ProjectLocked.parse_obj({"value": lock, "status": status})

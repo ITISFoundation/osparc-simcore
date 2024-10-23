@@ -57,10 +57,10 @@ class ProjectStatus(str, Enum):
 
 class ProjectLocked(BaseModel):
     value: bool = Field(..., description="True if the project is locked")
+    status: ProjectStatus = Field(..., description="The status of the project")
     owner: Owner | None = Field(
         default=None, description="If locked, the user that owns the lock"
     )
-    status: ProjectStatus = Field(..., description="The status of the project")
 
     class Config:
         extra = Extra.forbid
@@ -88,6 +88,23 @@ class ProjectLocked(BaseModel):
             raise ValueError(msg)
         if values["value"] is True and v == "CLOSED":
             msg = f"status is set to {v} and lock is set to {values['value']}!"
+            raise ValueError(msg)
+        return v
+
+    @validator("owner", always=True)
+    @classmethod
+    def check_owner_compatible(cls, v, values):
+        if (
+            values["value"] is True
+            and v is None
+            and values.get("status")
+            in [
+                status.value
+                for status in ProjectStatus
+                if status != ProjectStatus.MAINTAINING
+            ]
+        ):
+            msg = "Owner must be specified when the project is not in the 'MAINTAINING' status."
             raise ValueError(msg)
         return v
 
