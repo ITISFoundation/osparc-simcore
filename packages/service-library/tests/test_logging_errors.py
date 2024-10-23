@@ -4,7 +4,7 @@ import logging
 
 import pytest
 from models_library.error_codes import create_error_code
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 from servicelib.logging_errors import (
     create_troubleshotting_log_kwargs,
     create_troubleshotting_log_message,
