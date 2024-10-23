@@ -138,6 +138,11 @@ class ProjectPatch(InputSchema):
     )
 
 
+class ProjectPatchExtended(ProjectPatch):
+    # Only used internally
+    trashed_at: datetime | None = None
+
+
 __all__: tuple[str, ...] = (
     "EmptyModel",
     "ProjectCopyOverride",
