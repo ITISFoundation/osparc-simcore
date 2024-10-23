@@ -24,11 +24,16 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   print_info "Python :"
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
-  cd services/dask-sidecar || exit 1
-  pip install --no-cache-dir -r requirements/dev.txt
-  cd - || exit 1
+  cd services/dask-sidecar
+  uv pip sync --quiet --no-cache-dir requirements/dev.txt
+  cd -
   print_info "PIP :"
-  uv pip list | sed 's/^/    /'
+  uv pip list
+fi
+
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
+  # NOTE: production does NOT pre-installs debugpy
+  uv pip install --no-cache-dir debugpy
 fi
 
 # RUNNING application ----------------------------------------
