@@ -5,10 +5,13 @@
 import sys
 from pathlib import Path
 
+from pydantic import TypeAdapter
 import pytest
 import simcore_service_api_server
 from dotenv import dotenv_values
+from models_library.projects import ProjectID
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
+from simcore_service_api_server.models.schemas.jobs import JobID
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -96,3 +99,11 @@ def tests_utils_dir(project_tests_dir: Path) -> Path:
     utils_dir = (project_tests_dir / "utils").resolve()
     assert utils_dir.exists()
     return utils_dir
+
+
+## BASIC IDENTIFIERS ---
+
+
+@pytest.fixture
+def job_id(project_id: ProjectID) -> JobID:
+    return TypeAdapter(JobID).validate_python(project_id)
