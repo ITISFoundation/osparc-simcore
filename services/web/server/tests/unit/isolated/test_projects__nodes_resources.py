@@ -18,7 +18,9 @@ from simcore_service_webserver.projects.exceptions import (
     "resources",
     [
         parse_obj_as(ServiceResourcesDict, example)
-        for example in ServiceResourcesDictHelpers.Config.schema_extra["examples"]
+        for example in ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+            "examples"
+        ]
     ],
 )
 def test_check_can_update_service_resources_with_same_does_not_raise(
@@ -32,7 +34,9 @@ def test_check_can_update_service_resources_with_same_does_not_raise(
     "resources",
     [
         parse_obj_as(ServiceResourcesDict, example)
-        for example in ServiceResourcesDictHelpers.Config.schema_extra["examples"]
+        for example in ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+            "examples"
+        ]
     ],
 )
 def test_check_can_update_service_resources_with_invalid_container_name_raises(
@@ -51,7 +55,9 @@ def test_check_can_update_service_resources_with_invalid_container_name_raises(
     "resources",
     [
         parse_obj_as(ServiceResourcesDict, example)
-        for example in ServiceResourcesDictHelpers.Config.schema_extra["examples"]
+        for example in ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+            "examples"
+        ]
     ],
 )
 def test_check_can_update_service_resources_with_invalid_image_name_raises(

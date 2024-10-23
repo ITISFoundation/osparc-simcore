@@ -18,9 +18,13 @@ from models_library.utils.common_validators import (
 )
 from models_library.workspaces import WorkspaceID
 from pydantic import (
-    TypeAdapter, field_validator, ConfigDict, BaseModel,
+    BaseModel,
+    ConfigDict,
     Field,
     Json,
+    TypeAdapter,
+    field_validator,
+    model_validator,
 )
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -65,6 +69,7 @@ class ProjectCreateHeaders(BaseModel):
             msg = "Both parent_project_uuid and parent_node_id must be set or both null or both unset"
             raise ValueError(msg)
         return values
+
     model_config = ConfigDict(populate_by_name=False)
 
 
@@ -115,9 +120,9 @@ class ProjectListParams(PageQueryParameters):
             return None
         return v
 
-    _null_or_none_str_to_none_validator = field_validator(
-        "folder_id", mode="before"
-    )(null_or_none_str_to_none_validator)
+    _null_or_none_str_to_none_validator = field_validator("folder_id", mode="before")(
+        null_or_none_str_to_none_validator
+    )
 
     _null_or_none_str_to_none_validator2 = field_validator(
         "workspace_id", mode="before"
@@ -147,6 +152,7 @@ class ProjectListWithOrderByParams(BaseModel):
             msg = f"We do not support ordering by provided field {v.field}"
             raise ValueError(msg)
         return v
+
     model_config = ConfigDict(extra="forbid")
 
 

@@ -10,11 +10,12 @@ import traceback
 import tracemalloc
 from datetime import datetime
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, cast
 
 import orjson
 from models_library.basic_types import SHA1Str
 from models_library.error_codes import ErrorCodeStr
+from typing_extensions import TypedDict
 
 _CURRENT_DIR = (
     Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent

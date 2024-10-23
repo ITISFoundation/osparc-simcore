@@ -13,7 +13,7 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID
-from pydantic import parse_raw_as
+from pydantic import TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
@@ -58,17 +58,19 @@ async def _convert_to_node_update_event(
                     "data": project["workbench"][f"{message.node_id}"],
                 },
             )
-        _logger.warning("node not found: '%s'", message.dict())
+        _logger.warning("node not found: '%s'", message.model_dump())
     except ProjectNotFoundError:
-        _logger.warning("project not found: '%s'", message.dict())
+        _logger.warning("project not found: '%s'", message.model_dump())
     return None
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message: (
         ProgressRabbitMessageNode | ProgressRabbitMessageProject
-    ) = parse_raw_as(
-        ProgressRabbitMessageNode | ProgressRabbitMessageProject, data  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+    ) = TypeAdapter(
+        ProgressRabbitMessageNode | ProgressRabbitMessageProject
+    ).validate_json(
+        data
     )
     message: SocketMessageDict | None = None
     if isinstance(rabbit_message, ProgressRabbitMessageProject):
@@ -126,7 +128,7 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
 
 
 async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> bool:
-    rabbit_message = parse_raw_as(WalletCreditsMessage, data)
+    rabbit_message = TypeAdapter(WalletCreditsMessage).validate_json(data)
     wallet_groups = await wallets_api.list_wallet_groups_with_read_access_by_wallet(
         app, wallet_id=rabbit_message.wallet_id
     )

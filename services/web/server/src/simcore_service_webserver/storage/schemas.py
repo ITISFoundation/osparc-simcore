@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, TypeAlias
 
 from models_library.api_schemas_storage import TableSynchronisation
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 
 # NOTE: storage generates URLs that contain double encoded
 # slashes, and when applying validation via `StorageFileID`
@@ -24,8 +24,8 @@ class FileLocation(BaseModel):
     )
 
 
-class FileLocationArray(BaseModel):
-    __root__: list[FileLocation]
+class FileLocationArray(RootModel[list[FileLocation]]):
+    ...
 
 
 class Links(BaseModel):
@@ -70,8 +70,8 @@ class DatasetMetaData(BaseModel):
     )
 
 
-class DatasetMetaDataArray(BaseModel):
-    __root__: list[DatasetMetaData]
+class DatasetMetaDataArray(RootModel[list[DatasetMetaData]]):
+    ...
 
 
 class FileLocationEnveloped(BaseModel):
@@ -141,8 +141,8 @@ class FileMetaData(BaseModel):
     )
 
 
-class FileMetaDataArray(BaseModel):
-    __root__: list[FileMetaData]
+class FileMetaDataArray(RootModel[list[FileMetaData]]):
+    ...
 
 
 class FileMetaEnvelope(BaseModel):
@@ -153,9 +153,8 @@ class FileMetaEnvelope(BaseModel):
 class PresignedLink(BaseModel):
     link: str | None = None
 
-    model_config = ConfigDict(
-        json_schema_extra={"example": {"link": "example_link"}}
-    )
+    model_config = ConfigDict(json_schema_extra={"example": {"link": "example_link"}})
+
 
 class PresignedLinkEnveloped(BaseModel):
     data: PresignedLink
