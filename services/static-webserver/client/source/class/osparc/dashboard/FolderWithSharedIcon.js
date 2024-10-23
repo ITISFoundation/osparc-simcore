@@ -23,27 +23,28 @@ qx.Class.define("osparc.dashboard.FolderWithSharedIcon", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    this._createChildControlImpl("folder-icon");
-    this._createChildControlImpl("shared-icon");
+    this.getChildControl("folder-icon");
+    this.getChildControl("shared-icon");
   },
 
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "folder-icon": {
-          control = new qx.ui.basic.Image().set({
-            source: "@FontAwesome5Solid/folder/26"
-          });
-          const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        case "icon-container":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
           }));
-          iconContainer.add(control);
-          this._add(iconContainer, {
+          this._add(control, {
             height: "100%"
           });
           break;
-        }
+        case "folder-icon":
+          control = new qx.ui.basic.Image().set({
+            source: "@FontAwesome5Solid/folder/26"
+          });
+          this.getChildControl("icon-container").add(control);
+          break;
         case "shared-icon":
           control = new qx.ui.basic.Image().set({
             textColor: "strong-main",
