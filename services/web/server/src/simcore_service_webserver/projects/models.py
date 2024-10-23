@@ -51,7 +51,7 @@ class ProjectDB(BaseModel):
     published: bool
     hidden: bool
     workspace_id: WorkspaceID | None = None
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
     # validators
     _empty_thumbnail_is_none = field_validator("thumbnail", mode="before")(
