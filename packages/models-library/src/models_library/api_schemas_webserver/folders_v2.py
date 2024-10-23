@@ -1,14 +1,14 @@
 from datetime import datetime
 from typing import NamedTuple
 
-from models_library.access_rights import AccessRights
-from models_library.basic_types import IDStr
-from models_library.folders import FolderID
-from models_library.users import GroupID
-from models_library.utils.common_validators import null_or_none_str_to_none_validator
-from models_library.workspaces import WorkspaceID
 from pydantic import Extra, PositiveInt, validator
 
+from ..access_rights import AccessRights
+from ..basic_types import IDStr
+from ..folders import FolderID
+from ..users import GroupID, UserNameID
+from ..utils.common_validators import null_or_none_str_to_none_validator
+from ..workspaces import WorkspaceID
 from ._base import InputSchema, OutputSchema
 
 
@@ -21,6 +21,8 @@ class FolderGet(OutputSchema):
     owner: GroupID
     workspace_id: WorkspaceID | None
     my_access_rights: AccessRights
+    trashed_at: datetime | None
+    trashed_by: UserNameID | None
 
 
 class FolderGetPage(NamedTuple):
