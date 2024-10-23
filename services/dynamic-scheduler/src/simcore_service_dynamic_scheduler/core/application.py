@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
@@ -26,9 +28,27 @@ from ..services.service_tracker import setup_service_tracker
 from ..services.status_monitor import setup_status_monitor
 from .settings import ApplicationSettings
 
+LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
+NOISY_LOGGERS = (
+    "faststream",
+    "faststream.access",
+    "simcore_service_dynamic_scheduler.services.deferred_manager_common",
+)
+
+_logger = logging.getLogger(__name__)
+
 
 def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     app_settings = settings or ApplicationSettings.create_from_envs()
+
+    # keep mostly quiet noisy loggers
+    quiet_level: int = max(
+        min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
+    )
+    for name in NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(quiet_level)
+
+    _logger.debug("App settings:\n%s", app_settings.json(indent=2))
 
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
