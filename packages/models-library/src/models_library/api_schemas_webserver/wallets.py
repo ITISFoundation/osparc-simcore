@@ -21,6 +21,10 @@ class WalletGet(OutputSchema):
     created: datetime
     modified: datetime
 
+    model_config = ConfigDict(
+        frozen=False
+    )
+
 
 class WalletGetWithAvailableCredits(WalletGet):
     available_credits: Decimal
