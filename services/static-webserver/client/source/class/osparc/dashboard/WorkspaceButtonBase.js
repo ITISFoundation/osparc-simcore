@@ -127,19 +127,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
           break;
         }
         case "folder-look": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
-            backgroundColor: "background-main",
-            maxHeight: 8,
-          });
-          const spacer = new qx.ui.core.Widget().set({
-            backgroundColor: "background-workspace-card-overlay"
-          });
-          spacer.getContentElement().setStyles({
-            "border-top-right-radius": "4px",
-          });
-          const spacer2 = new qx.ui.core.Widget();
-          control.add(spacer, {flex: 1});
-          control.add(spacer2, {flex: 1});
+          control = this.__createFolderLookHeader();
           break;
         }
         case "header":
@@ -151,9 +139,6 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
             maxHeight: this.self().HEADER_MAX_HEIGHT,
             padding: this.self().PADDING,
             alignY: "middle",
-          });
-          control.getContentElement().setStyles({
-            "border-top-right-radius": "4px",
           });
           break;
         case "body":
@@ -211,6 +196,50 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
         }
       }
       return control || this.base(arguments, id);
+    },
+
+    __createFolderLookHeader: function() {
+      const grid = new qx.ui.layout.Grid(0, 0);
+      grid.setColumnFlex(0, 1);
+      grid.setColumnFlex(1, 1);
+      grid.setRowHeight(0, 8);
+      grid.setRowHeight(1, 4);
+      const layout = new qx.ui.container.Composite(grid).set({
+        backgroundColor: "background-main",
+      });
+      const spacer00 = new qx.ui.core.Widget().set({
+        backgroundColor: "background-workspace-card-overlay"
+      });
+      spacer00.getContentElement().setStyles({
+        "border-top-right-radius": "4px",
+      });
+      const spacer01 = new qx.ui.core.Widget();
+      const spacer10 = new qx.ui.core.Widget().set({
+        backgroundColor: "background-workspace-card-overlay"
+      });
+      const spacer11 = new qx.ui.core.Widget().set({
+        backgroundColor: "background-workspace-card-overlay"
+      });
+      spacer11.getContentElement().setStyles({
+        "border-top-right-radius": "4px",
+      });
+      layout.add(spacer00, {
+        row: 0,
+        column: 0,
+      });
+      layout.add(spacer01, {
+        row: 0,
+        column: 1,
+      });
+      layout.add(spacer10, {
+        row: 1,
+        column: 0,
+      });
+      layout.add(spacer11, {
+        row: 1,
+        column: 1,
+      });
+      return layout;
     },
 
     // overridden
