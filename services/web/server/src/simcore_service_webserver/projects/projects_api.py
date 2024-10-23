@@ -30,7 +30,10 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
 )
-from models_library.api_schemas_webserver.projects import ProjectPatch
+from models_library.api_schemas_webserver.projects import (
+    ProjectPatch,
+    ProjectPatchExtended,
+)
 from models_library.api_schemas_webserver.projects_nodes import NodePatch
 from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
@@ -249,7 +252,7 @@ async def patch_project(
     *,
     user_id: UserID,
     project_uuid: ProjectID,
-    project_patch: ProjectPatch,
+    project_patch: ProjectPatch | ProjectPatchExtended,
     product_name: ProductName,
 ):
     _project_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
