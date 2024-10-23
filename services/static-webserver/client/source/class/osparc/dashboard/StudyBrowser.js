@@ -283,6 +283,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __resetStudiesList: function() {
       this._resourcesList = [];
+      this._resourcesContainer.getFlatList().nextRequest = null;
+
+      // It will remove the study cards
       this._reloadCards();
     },
 
@@ -693,7 +696,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     invalidateStudies: function() {
       osparc.store.Store.getInstance().invalidate("studies");
       this.__resetStudiesList();
-      this._resourcesContainer.getFlatList().nextRequest = null;
     },
 
     __addNewStudyButtons: function() {
@@ -1233,6 +1235,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         this._resourcesList[index] = studyData;
       }
+      // it will render the studies in the right order
       this._reloadCards();
     },
 
