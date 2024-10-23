@@ -20,7 +20,6 @@ echo "$INFO" "User : $(id scu)"
 echo "$INFO" "python : $(command -v python)"
 echo "$INFO" "pip : $(command -v pip)"
 
-
 #
 # DEVELOPMENT MODE
 # - expects docker run ... -v $(pwd):$SC_DEVEL_MOUNT
@@ -62,11 +61,6 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
     echo "$INFO" "Changing ownership properties of files around from $SC_USER_ID to group $CONT_GROUPNAME"
     find / -path /proc -prune -o -user "$SC_USER_ID" -exec chown --no-dereference "$SC_USER_NAME" {} \;
   fi
-fi
-
-if [ "${SC_BOOT_MODE}" = "debug" ]; then
-  # NOTE: production does NOT pre-installs debugpy
-  pip install --no-cache-dir debugpy
 fi
 
 echo "$INFO Starting $* ..."
