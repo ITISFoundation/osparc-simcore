@@ -3041,6 +3041,13 @@ paths:
         in: query
       - required: false
         schema:
+          title: Filters
+          type: string
+          format: json-string
+        name: filters
+        in: query
+      - required: false
+        schema:
           title: Limit
           exclusiveMaximum: true
           minimum: 1
@@ -4331,7 +4338,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
