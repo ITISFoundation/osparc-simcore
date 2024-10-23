@@ -64,14 +64,20 @@ async def list_projects(  # pylint: disable=too-many-arguments
     request: web.Request,
     user_id: UserID,
     product_name: str,
+    *,
+    # hierachy filter
+    workspace_id: WorkspaceID | None,
+    folder_id: FolderID | None,
+    # attrs filter
     project_type: ProjectTypeAPI,
     show_hidden: bool,
+    trashed: bool | None,
+    # pagination
     offset: NonNegativeInt,
     limit: int,
-    search: str | None,
     order_by: OrderBy,
-    folder_id: FolderID | None,
-    workspace_id: WorkspaceID | None,
+    # search
+    search: str | None,
 ) -> tuple[list[ProjectDict], int]:
     app = request.app
     db = ProjectDBAPI.get_from_app_context(app)
@@ -104,15 +110,20 @@ async def list_projects(  # pylint: disable=too-many-arguments
     db_projects, db_project_types, total_number_projects = await db.list_projects(
         product_name=product_name,
         user_id=user_id,
+        workspace_id=workspace_id,
+        folder_id=folder_id,
+        # attrs
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
         filter_by_services=user_available_services,
+        trashed=trashed,
+        include_hidden=show_hidden,
+        # composed attrs
+        search=search,
+        # pagination
         offset=offset,
         limit=limit,
-        include_hidden=show_hidden,
-        search=search,
+        # order
         order_by=order_by,
-        folder_id=folder_id,
-        workspace_id=workspace_id,
     )
 
     # If workspace, override project access rights

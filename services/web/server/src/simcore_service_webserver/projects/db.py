@@ -353,20 +353,25 @@ class ProjectDBAPI(BaseProjectDB):
     async def list_projects(  # pylint: disable=too-many-arguments
         self,
         *,
+        # hierarchy filters
         product_name: str,
         user_id: PositiveInt,
+        workspace_id: WorkspaceID | None,
+        folder_id: FolderID | None = None,
+        # attribute filters
+        search: str | None = None,
         filter_by_project_type: ProjectType | None = None,
         filter_by_services: list[dict] | None = None,
         only_published: bool | None = False,
         include_hidden: bool | None = False,
+        trashed: bool | None = False,
+        # pagination
         offset: int | None = 0,
         limit: int | None = None,
-        search: str | None = None,
+        # order
         order_by: OrderBy = OrderBy(
             field=IDStr("last_change_date"), direction=OrderDirection.DESC
         ),
-        folder_id: FolderID | None = None,
-        workspace_id: WorkspaceID | None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType], int]:
         """
         If workspace_id is provided, then listing in workspace is considered/preffered
@@ -412,21 +417,6 @@ class ProjectDBAPI(BaseProjectDB):
                 .select_from(_join_query)
                 .where(
                     (
-                        (projects.c.type == filter_by_project_type.value)
-                        if filter_by_project_type
-                        else (projects.c.type.is_not(None))
-                    )
-                    & (
-                        (projects.c.published.is_(True))
-                        if only_published
-                        else sa.text("")
-                    )
-                    & (
-                        (projects.c.hidden.is_(False))
-                        if not include_hidden
-                        else sa.text("")
-                    )
-                    & (
                         (projects_to_products.c.product_name == product_name)
                         # This was added for backward compatibility, including old projects not in the projects_to_products table.
                         | (projects_to_products.c.product_name.is_(None))
@@ -443,6 +433,27 @@ class ProjectDBAPI(BaseProjectDB):
                     )
                 )
             )
+
+            # attributes filters
+            attributes_filters = []
+            if filter_by_project_type:
+                attributes_filters.append(
+                    projects.c.type == filter_by_project_type.value
+                )
+
+            if include_hidden:
+                attributes_filters.append(projects.c.hidden.is_(True))
+
+            if only_published:
+                attributes_filters.append(projects.c.published.is_(True))
+
+            if trashed is not None:
+                attributes_filters.append(
+                    projects.c.trashed_at.is_not(None)
+                    if trashed
+                    else projects.c.trashed_at.is_(None)
+                )
+            query = query.where(sa.and_(*attributes_filters))
 
             if private_workspace_user_id_or_none:
                 # If Private workspace we check to which projects user has access
@@ -472,11 +483,13 @@ class ProjectDBAPI(BaseProjectDB):
             else:
                 query = query.order_by(sa.desc(getattr(projects.c, order_by.field)))
 
+            # page meta
             total_number_of_projects = await conn.scalar(
                 query.with_only_columns(func.count()).order_by(None)
             )
             assert total_number_of_projects is not None  # nosec
 
+            # page data
             prjs, prj_types = await self._execute_without_permission_check(
                 conn,
                 user_id=user_id,
