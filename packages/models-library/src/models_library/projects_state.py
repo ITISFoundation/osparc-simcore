@@ -80,14 +80,6 @@ class ProjectLocked(BaseModel):
             ]
         }
 
-    @validator("owner", pre=True, always=True)
-    @classmethod
-    def check_not_null(cls, v, values):
-        if values["value"] is True and v is None:
-            msg = "value cannot be None when project is locked"
-            raise ValueError(msg)
-        return v
-
     @validator("status", always=True)
     @classmethod
     def check_status_compatible(cls, v, values):
