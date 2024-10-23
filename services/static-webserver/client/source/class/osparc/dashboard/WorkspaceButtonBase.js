@@ -199,10 +199,11 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     },
 
     __createFolderLookHeader: function() {
+      const topHeight = 8;
       const grid = new qx.ui.layout.Grid(0, 0);
       grid.setColumnFlex(0, 1);
       grid.setColumnFlex(2, 1);
-      grid.setRowHeight(0, 8);
+      grid.setRowHeight(0, topHeight);
       grid.setRowHeight(1, 4);
       const layout = new qx.ui.container.Composite(grid).set({
         backgroundColor: "background-main",
@@ -211,15 +212,22 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
         backgroundColor: "background-workspace-card-overlay"
       });
       const triangle = new qx.ui.core.Widget().set({
-        width: 8,
-        height: 8,
+        width: topHeight,
+        height: topHeight,
       });
       triangle.getContentElement().setStyles({
         "width": "0",
         "height": "0",
-        "border-bottom": "8px solid rgb(35, 93, 122)", // get color dynamically
-        "border-right": "8px solid transparent",
+        "border-right": topHeight + "px solid transparent",
       });
+      const colorTriangle = () => {
+        const color = qx.theme.manager.Color.getInstance().resolve("background-workspace-card-overlay");
+        triangle.getContentElement().setStyles({
+          "border-bottom": topHeight + "px solid " + color,
+        });
+      };
+      colorTriangle();
+      qx.theme.manager.Color.getInstance().addListener("changeTheme", colorTriangle);
       const spacer01 = new qx.ui.core.Widget();
       const spacer10 = new qx.ui.core.Widget().set({
         backgroundColor: "background-workspace-card-overlay"
