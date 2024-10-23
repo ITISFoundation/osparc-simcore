@@ -102,14 +102,10 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       let layout;
       switch (id) {
         case "shared-icon":
-          control = new osparc.dashboard.FolderWithSharedIcon().set({
-            anonymous: true,
-            maxHeight: 26,
-            padding: 0
-          });
-          control.getChildControl("shared-icon").setLayoutProperties({
-            bottom: 4,
-            left: 2
+          control = new qx.ui.basic.Image().set({
+            alignY: "middle",
+            allowGrowX: false,
+            allowShrinkX: false
           });
           layout = this.getChildControl("header");
           layout.addAt(control, osparc.dashboard.WorkspaceButtonBase.HPOS.SHARED);
@@ -214,14 +210,12 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
     __applyAccessRights: function(value) {
       if (value && Object.keys(value).length) {
-        const icon = this.getChildControl("shared-icon");
-        icon.addListener("tap", e => {
-          // OM check this
+        const shareIcon = this.getChildControl("shared-icon");
+        shareIcon.addListener("tap", e => {
           e.stopPropagation();
           this.__openShareWith();
         }, this);
-        icon.addListener("pointerdown", e => e.stopPropagation());
-        const shareIcon = this.getChildControl("shared-icon").getChildControl("shared-icon");
+        shareIcon.addListener("pointerdown", e => e.stopPropagation());
         osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
       }
     },
