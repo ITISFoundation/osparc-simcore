@@ -3041,6 +3041,13 @@ paths:
         in: query
       - required: false
         schema:
+          title: Filters
+          type: string
+          format: json-string
+        name: filters
+        in: query
+      - required: false
+        schema:
           title: Limit
           exclusiveMaximum: true
           minimum: 1
