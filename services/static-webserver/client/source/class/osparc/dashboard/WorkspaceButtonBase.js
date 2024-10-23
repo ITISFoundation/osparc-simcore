@@ -135,7 +135,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
             backgroundColor: "background-workspace-card-overlay"
           });
           spacer.getContentElement().setStyles({
-            "border-top-right-radius": "6px",
+            "border-top-right-radius": "4px",
           });
           const spacer2 = new qx.ui.core.Widget();
           control.add(spacer, {flex: 1});
@@ -151,6 +151,9 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
             maxHeight: this.self().HEADER_MAX_HEIGHT,
             padding: this.self().PADDING,
             alignY: "middle",
+          });
+          control.getContentElement().setStyles({
+            "border-top-right-radius": "4px",
           });
           break;
         case "body":
