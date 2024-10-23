@@ -1,8 +1,5 @@
-from typing import Any
-
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
 class WebServerBaseError(OsparcErrorMixin, Exception):
-    def __init__(self, **ctx: Any) -> None:
-        super().__init__(**ctx)
+    """WebServer base error."""
