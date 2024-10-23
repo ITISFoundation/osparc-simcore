@@ -81,7 +81,7 @@ email-validator==2.2.0
     # via pydantic
 fast-depends==2.4.12
     # via faststream
-faststream==0.5.23
+faststream==0.5.28
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 flexcache==0.3
     # via pint
