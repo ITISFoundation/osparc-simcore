@@ -10,6 +10,7 @@ from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.rest_filters import Filters, FiltersQueryParameters
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
 from models_library.utils.common_validators import (
@@ -96,6 +97,13 @@ class ProjectCreateParams(BaseModel):
         extra = Extra.forbid
 
 
+class ProjectFilters(Filters):
+    trashed: bool | None = Field(
+        default=False,
+        description="Set to true to list trashed, false to list non-trashed (default), None to list all",
+    )
+
+
 class ProjectListParams(PageQueryParameters):
     project_type: ProjectTypeAPI = Field(default=ProjectTypeAPI.all, alias="type")
     show_hidden: bool = Field(
@@ -160,7 +168,9 @@ class ProjectListSortParams(BaseModel):
         extra = Extra.forbid
 
 
-class ProjectListWithJsonStrParams(ProjectListParams, ProjectListSortParams):
+class ProjectListWithJsonStrParams(
+    ProjectListParams, ProjectListSortParams, FiltersQueryParameters[ProjectFilters]
+):
     ...
 
 
