@@ -57,10 +57,10 @@ class ProjectStatus(str, Enum):
 
 class ProjectLocked(BaseModel):
     value: bool = Field(..., description="True if the project is locked")
-    status: ProjectStatus = Field(..., description="The status of the project")
     owner: Owner | None = Field(
         default=None, description="If locked, the user that owns the lock"
     )
+    status: ProjectStatus = Field(..., description="The status of the project")
 
     class Config:
         extra = Extra.forbid
