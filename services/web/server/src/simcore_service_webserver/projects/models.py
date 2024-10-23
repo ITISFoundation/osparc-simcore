@@ -13,7 +13,7 @@ from models_library.utils.common_validators import (
     none_to_empty_str_pre_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, validator
+from pydantic import ConfigDict, BaseModel, field_validator
 from simcore_postgres_database.models.projects import ProjectType, projects
 
 ProjectDict: TypeAlias = dict[str, Any]
@@ -40,38 +40,34 @@ class ProjectDB(BaseModel):
     uuid: ProjectID
     name: str
     description: str
-    thumbnail: HttpUrlWithCustomMinLength | None
+    thumbnail: HttpUrlWithCustomMinLength | None = None
     prj_owner: UserID
     creation_date: datetime
     last_change_date: datetime
-    ui: StudyUI | None
+    ui: StudyUI | None = None
     classifiers: list[ClassifierID]
-    dev: dict | None
+    dev: dict | None = None
     quality: dict[str, Any]
     published: bool
     hidden: bool
-    workspace_id: WorkspaceID | None
-
-    class Config:
-        orm_mode = True
+    workspace_id: WorkspaceID | None = None
+    model_config = ConfigDict(from_attributes=True)
 
     # validators
-    _empty_thumbnail_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+    _empty_thumbnail_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )
-    _none_description_is_empty = validator("description", allow_reuse=True, pre=True)(
+    _none_description_is_empty = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
     )
 
 
 class UserSpecificProjectDataDB(ProjectDB):
-    folder_id: FolderID | None
-
-    class Config:
-        orm_mode = True
+    folder_id: FolderID | None = None
+    model_config = ConfigDict(from_attributes=True)
 
 
-assert set(ProjectDB.__fields__.keys()).issubset(  # nosec
+assert set(ProjectDB.model_fields.keys()).issubset(  # nosec
     {c.name for c in projects.columns if c.name not in ["access_rights"]}
 )
 
@@ -81,20 +77,16 @@ class UserProjectAccessRightsDB(BaseModel):
     read: bool
     write: bool
     delete: bool
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserProjectAccessRightsWithWorkspace(BaseModel):
     uid: UserID
-    workspace_id: WorkspaceID | None  # None if it's a private workspace
+    workspace_id: WorkspaceID | None = None  # None if it's a private workspace
     read: bool
     write: bool
     delete: bool
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 __all__: tuple[str, ...] = (

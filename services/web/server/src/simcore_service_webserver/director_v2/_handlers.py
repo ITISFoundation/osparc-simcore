@@ -8,7 +8,7 @@ from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
-from pydantic import BaseModel, Field, ValidationError, parse_obj_as
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp import status
 from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
@@ -64,7 +64,7 @@ class _ComputationStarted(BaseModel):
 async def start_computation(request: web.Request) -> web.Response:
     # pylint: disable=too-many-statements
     try:
-        req_ctx = RequestContext.parse_obj(request)
+        req_ctx = RequestContext.model_validate(request)
         computations = ComputationsApi(request.app)
 
         run_policy = get_project_run_policy(request.app)
@@ -78,7 +78,9 @@ async def start_computation(request: web.Request) -> web.Response:
 
         if request.can_read_body:
             body = await request.json()
-            assert parse_obj_as(ComputationStart, body) is not None  # nosec
+            assert (
+                TypeAdapter(ComputationStart).validate_python(body) is not None
+            )  # nosec
 
             subgraph = body.get("subgraph", [])
             force_restart = bool(body.get("force_restart", force_restart))
@@ -158,7 +160,9 @@ async def start_computation(request: web.Request) -> web.Response:
         if project_vc_commits:
             data["ref_ids"] = project_vc_commits
 
-        assert parse_obj_as(_ComputationStarted, data) is not None  # nosec
+        assert (
+            TypeAdapter(_ComputationStarted).validate_python(data) is not None
+        )  # nosec
 
         return envelope_json_response(data, status_cls=web.HTTPCreated)
 
@@ -234,8 +238,7 @@ async def get_computation(request: web.Request) -> web.Response:
             request, project_id
         )
         _logger.debug("Project %s will get %d variants", project_id, len(project_ids))
-        list_computation_tasks = parse_obj_as(
-            list[ComputationTaskGet],
+        list_computation_tasks = TypeAdapter(list[ComputationTaskGet]).validate_python(
             await asyncio.gather(
                 *[
                     computations.get(project_id=pid, user_id=user_id)

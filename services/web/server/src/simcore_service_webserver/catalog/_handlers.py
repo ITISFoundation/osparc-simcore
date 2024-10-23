@@ -26,7 +26,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import BaseModel, Extra, Field, parse_obj_as, validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -54,12 +54,12 @@ routes = RouteTableDef()
 class ServicePathParams(BaseModel):
     service_key: ServiceKey
     service_version: ServiceVersion
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
+    )
 
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
-
-    @validator("service_key", pre=True)
+    @field_validator("service_key", mode="before")
     @classmethod
     def ensure_unquoted(cls, v):
         # NOTE: this is needed as in pytest mode, the aiohttp server does not seem to unquote automatically
@@ -387,4 +387,6 @@ async def get_service_pricing_plan(request: Request):
             service_version=f"{path_params.service_version}",
         )
 
-    return envelope_json_response(parse_obj_as(PricingPlanGet, pricing_plan))
+    return envelope_json_response(
+        TypeAdapter(PricingPlanGet).validate_python(pricing_plan)
+    )

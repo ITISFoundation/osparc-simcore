@@ -275,7 +275,7 @@ async def login_2fa(request: web.Request):
 
 class LogoutBody(InputSchema):
     client_session_id: str | None = Field(
-        None, example="5ac57685-c40f-448f-8711-70be1936fd63"
+        None, examples=["5ac57685-c40f-448f-8711-70be1936fd63"]
     )
 
 

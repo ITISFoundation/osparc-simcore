@@ -14,15 +14,13 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
 from models_library.users import UserID
 from pydantic import (
-    BaseModel,
+    model_validator, BaseModel,
     Field,
     HttpUrl,
     NonNegativeFloat,
     NonNegativeInt,
     ValidationError,
-    parse_obj_as,
-    root_validator,
-)
+    parse_obj_as)
 from servicelib.utils import logged_gather
 
 from ..application_settings import get_application_settings
@@ -96,10 +94,10 @@ class NodeScreenshot(BaseModel):
     mimetype: str | None = Field(
         default=None,
         description="File's media type or None if unknown. SEE https://www.iana.org/assignments/media-types/media-types.xhtml",
-        example="image/jpeg",
+        examples=["image/jpeg"],
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def guess_mimetype_if_undefined(cls, values):
         mimetype = values.get("mimetype")

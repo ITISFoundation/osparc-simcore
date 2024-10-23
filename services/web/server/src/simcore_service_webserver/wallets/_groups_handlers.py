@@ -8,7 +8,7 @@ import logging
 from aiohttp import web
 from models_library.users import GroupID, UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, Extra, Field
+from pydantic import ConfigDict, BaseModel, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -60,18 +60,14 @@ routes = web.RouteTableDef()
 class _WalletsGroupsPathParams(BaseModel):
     wallet_id: WalletID
     group_id: GroupID
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class _WalletsGroupsBodyParams(BaseModel):
     read: bool
     write: bool
     delete: bool
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.post(

@@ -24,7 +24,7 @@ from models_library.utils.json_schema import (
     jsonschema_validate_data,
 )
 from models_library.utils.services_io import JsonSchemaDict, get_service_io_json_schema
-from pydantic import ValidationError
+from pydantic import ConfigDict, ValidationError
 
 from ..director_v2.api import get_batch_tasks_outputs
 from .exceptions import InvalidInputValue
@@ -163,8 +163,9 @@ def set_inputs_in_project(
 
 
 class _NonStrictPortLink(PortLink):
-    class Config(PortLink.Config):
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True
+    )
 
 
 class _OutputPortInfo(NamedTuple):

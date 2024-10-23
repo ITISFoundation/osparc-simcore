@@ -9,7 +9,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.projects import ProjectID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, Extra
+from pydantic import ConfigDict, BaseModel
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from simcore_service_webserver.utils_aiohttp import envelope_json_response
@@ -69,9 +69,7 @@ async def get_project_wallet(request: web.Request):
 class _ProjectWalletPathParams(BaseModel):
     project_id: ProjectID
     wallet_id: WalletID
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.put(

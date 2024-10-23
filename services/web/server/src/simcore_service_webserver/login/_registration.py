@@ -19,9 +19,9 @@ from pydantic import (
     Field,
     Json,
     PositiveInt,
+    TypeAdapter,
     ValidationError,
-    parse_obj_as,
-    validator,
+    field_validator,
 )
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -78,7 +78,7 @@ class _InvitationValidator(BaseModel):
     action: ConfirmationAction
     data: Json[InvitationData]  # pylint: disable=unsubscriptable-object
 
-    @validator("action", pre=True)
+    @field_validator("action", mode="before")
     @classmethod
     def ensure_enum(cls, v):
         if isinstance(v, ConfirmationAction):
@@ -256,7 +256,7 @@ async def extract_email_from_invitation(
     """Returns associated email"""
     with _invitations_request_context(invitation_code=invitation_code) as url:
         content = await extract_invitation(app, invitation_url=f"{url}")
-        return parse_obj_as(LowerCaseEmailStr, content.guest)
+        return TypeAdapter(LowerCaseEmailStr).validate_python(content.guest)
 
 
 async def check_and_consume_invitation(

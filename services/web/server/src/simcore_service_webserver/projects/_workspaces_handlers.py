@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, Extra, validator
+from pydantic import ConfigDict, BaseModel, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
@@ -50,14 +50,12 @@ routes = web.RouteTableDef()
 
 class _ProjectWorkspacesPathParams(BaseModel):
     project_id: ProjectID
-    workspace_id: WorkspaceID | None
-
-    class Config:
-        extra = Extra.forbid
+    workspace_id: WorkspaceID | None = None
+    model_config = ConfigDict(extra="forbid")
 
     # validators
-    _null_or_none_str_to_none_validator = validator(
-        "workspace_id", allow_reuse=True, pre=True
+    _null_or_none_str_to_none_validator = field_validator(
+        "workspace_id", mode="before"
     )(null_or_none_str_to_none_validator)
 
 

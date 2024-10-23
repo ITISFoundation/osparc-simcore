@@ -4,7 +4,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import BaseModel, validator
+from pydantic import field_validator, BaseModel
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -46,7 +46,7 @@ class _CheckpointsPathParam(BaseModel):
     project_uuid: ProjectID
     ref_id: RefID
 
-    @validator("ref_id", pre=True)
+    @field_validator("ref_id", mode="before")
     @classmethod
     def _normalize_refid(cls, v):
         if v and v == "HEAD":

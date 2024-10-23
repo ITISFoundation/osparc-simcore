@@ -20,7 +20,7 @@ from models_library.resource_tracker import (
     PricingUnitWithCostUpdate,
 )
 from models_library.users import UserID
-from pydantic import BaseModel, Extra, Field
+from pydantic import ConfigDict, BaseModel, Field
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -72,9 +72,7 @@ routes = web.RouteTableDef()
 
 class _GetPricingPlanPathParams(BaseModel):
     pricing_plan_id: PricingPlanId
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.get(
@@ -256,9 +254,7 @@ async def update_pricing_plan(request: web.Request):
 class _GetPricingUnitPathParams(BaseModel):
     pricing_plan_id: PricingPlanId
     pricing_unit_id: PricingUnitId
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.get(

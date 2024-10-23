@@ -9,7 +9,7 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, HttpUrl, PositiveInt, parse_obj_as
+from pydantic import BaseModel, ConfigDict, HttpUrl, PositiveInt, TypeAdapter
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
     payments_transactions,
@@ -26,6 +26,8 @@ from .errors import PaymentCompletedError, PaymentNotFoundError
 
 _logger = logging.getLogger(__name__)
 
+
+PaymentIDTypeAdapter: TypeAdapter[PaymentID] = TypeAdapter(PaymentID)
 
 #
 # NOTE: this will be moved to the payments service
@@ -44,9 +46,7 @@ class PaymentsTransactionsDB(BaseModel):
     completed_at: datetime.datetime | None
     state: PaymentTransactionState
     state_message: str | None
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 async def list_user_payment_transactions(
@@ -64,7 +64,7 @@ async def list_user_payment_transactions(
         total_number_of_items, rows = await get_user_payments_transactions(
             conn, user_id=user_id, offset=offset, limit=limit
         )
-        page = parse_obj_as(list[PaymentsTransactionsDB], rows)
+        page = TypeAdapter(list[PaymentsTransactionsDB]).validate_python(rows)
         return total_number_of_items, page
 
 
@@ -76,7 +76,7 @@ async def get_pending_payment_transactions_ids(app: web.Application) -> list[Pay
             .order_by(payments_transactions.c.initiated_at.asc())  # oldest first
         )
         rows = await result.fetchall() or []
-        return [parse_obj_as(PaymentID, row.payment_id) for row in rows]
+        return [PaymentIDTypeAdapter.validate_python(row.payment_id) for row in rows]
 
 
 async def complete_payment_transaction(
@@ -113,4 +113,4 @@ async def complete_payment_transaction(
             raise PaymentCompletedError(payment_id=row.payment_id)
 
         assert row  # nosec
-        return PaymentsTransactionsDB.from_orm(row)
+        return PaymentsTransactionsDB.model_validate(row)

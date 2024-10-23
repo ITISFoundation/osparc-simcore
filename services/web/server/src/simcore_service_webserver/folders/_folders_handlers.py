@@ -16,7 +16,7 @@ from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from models_library.workspaces import WorkspaceID
-from pydantic import Extra, Field, Json, parse_obj_as, validator
+from pydantic import ConfigDict, Field, Json, TypeAdapter, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
@@ -94,7 +94,7 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
     order_by: Json[OrderBy] = Field(
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
         description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
-        example='{"field": "name", "direction": "desc"}',
+        examples=['{"field": "name", "direction": "desc"}'],
         alias="order_by",
     )
     folder_id: FolderID | None = Field(
@@ -106,7 +106,7 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
         description="List folders in specific workspace. By default, list in the user private workspace",
     )
 
-    @validator("order_by", check_fields=False)
+    @field_validator("order_by", check_fields=False)
     @classmethod
     def validate_order_by_field(cls, v):
         if v.field not in {
@@ -120,16 +120,15 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
             v.field = "modified"
         return v
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     # validators
-    _null_or_none_str_to_none_validator = validator(
-        "folder_id", allow_reuse=True, pre=True
-    )(null_or_none_str_to_none_validator)
+    _null_or_none_str_to_none_validator = field_validator("folder_id", mode="before")(
+        null_or_none_str_to_none_validator
+    )
 
-    _null_or_none_str_to_none_validator2 = validator(
-        "workspace_id", allow_reuse=True, pre=True
+    _null_or_none_str_to_none_validator2 = field_validator(
+        "workspace_id", mode="before"
     )(null_or_none_str_to_none_validator)
 
 
@@ -138,7 +137,7 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
 @permission_required("folder.create")
 @handle_folders_exceptions
 async def create_folder(request: web.Request):
-    req_ctx = FoldersRequestContext.parse_obj(request)
+    req_ctx = FoldersRequestContext.model_validate(request)
     body_params = await parse_request_body_as(CreateFolderBodyParams, request)
 
     folder = await _folders_api.create_folder(
@@ -158,7 +157,7 @@ async def create_folder(request: web.Request):
 @permission_required("folder.read")
 @handle_folders_exceptions
 async def list_folders(request: web.Request):
-    req_ctx = FoldersRequestContext.parse_obj(request)
+    req_ctx = FoldersRequestContext.model_validate(request)
     query_params: FolderListWithJsonStrQueryParams = parse_request_query_parameters_as(
         FolderListWithJsonStrQueryParams, request
     )
@@ -171,10 +170,10 @@ async def list_folders(request: web.Request):
         workspace_id=query_params.workspace_id,
         offset=query_params.offset,
         limit=query_params.limit,
-        order_by=parse_obj_as(OrderBy, query_params.order_by),
+        order_by=TypeAdapter(OrderBy).validate_python(query_params.order_by),
     )
 
-    page = Page[FolderGet].parse_obj(
+    page = Page[FolderGet].model_validate(
         paginate_data(
             chunk=folders.items,
             request_url=request.url,
@@ -194,7 +193,7 @@ async def list_folders(request: web.Request):
 @permission_required("folder.read")
 @handle_folders_exceptions
 async def get_folder(request: web.Request):
-    req_ctx = FoldersRequestContext.parse_obj(request)
+    req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
 
     folder: FolderGet = await _folders_api.get_folder(
@@ -215,7 +214,7 @@ async def get_folder(request: web.Request):
 @permission_required("folder.update")
 @handle_folders_exceptions
 async def replace_folder(request: web.Request):
-    req_ctx = FoldersRequestContext.parse_obj(request)
+    req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
     body_params = await parse_request_body_as(PutFolderBodyParams, request)
 
@@ -238,7 +237,7 @@ async def replace_folder(request: web.Request):
 @permission_required("folder.delete")
 @handle_folders_exceptions
 async def delete_folder_group(request: web.Request):
-    req_ctx = FoldersRequestContext.parse_obj(request)
+    req_ctx = FoldersRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
 
     await _folders_api.delete_folder(
