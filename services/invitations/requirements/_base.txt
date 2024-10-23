@@ -91,7 +91,7 @@ fastapi==0.99.1
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   prometheus-fastapi-instrumentator
-faststream==0.5.10
+faststream==0.5.28
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.4.1
     # via
@@ -324,7 +324,6 @@ typer==0.12.3
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
-    #   faststream
 types-python-dateutil==2.9.0.20240316
     # via arrow
 typing-extensions==4.10.0
