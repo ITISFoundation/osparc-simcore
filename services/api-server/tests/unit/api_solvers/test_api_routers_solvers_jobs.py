@@ -52,7 +52,7 @@ def presigned_download_link(
     node_id: str,
     bucket_name: str,
     mocked_s3_server_url: HttpUrl,
-) -> Iterator[AnyUrl]:
+) -> AnyUrl:
     s3_client = boto3.client(
         "s3",
         endpoint_url=f"{mocked_s3_server_url}",
