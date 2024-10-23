@@ -87,7 +87,7 @@ def test_job_resouce_names_has_associated_url(app: FastAPI):
 def test_parsing_job_custom_metadata(job_id: JobID, faker: Faker):
     job_name = faker.name()
 
-    got = Envelope[ProjectMetadataGet].parse_raw(
+    got = Envelope[ProjectMetadataGet].model_validate_json(
         textwrap.dedent(
             f"""
         {{
