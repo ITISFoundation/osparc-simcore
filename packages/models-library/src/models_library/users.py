@@ -1,8 +1,10 @@
 from typing import TypeAlias
 
+from models_library.basic_types import IDStr
 from pydantic import BaseModel, ConstrainedStr, Field, PositiveInt
 
 UserID: TypeAlias = PositiveInt
+UserNameID: TypeAlias = IDStr
 GroupID: TypeAlias = PositiveInt
 
 

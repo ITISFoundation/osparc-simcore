@@ -5,6 +5,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 """
 
+from datetime import datetime
 from typing import Any, Literal, TypeAlias
 
 from models_library.folders import FolderID
@@ -22,6 +23,7 @@ from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
 from ..projects_state import ProjectState
 from ..projects_ui import StudyUI
+from ..users import UserNameID
 from ..utils.common_validators import (
     empty_str_to_none_pre_validator,
     none_to_empty_str_pre_validator,
@@ -85,6 +87,8 @@ class ProjectGet(OutputSchema):
     permalink: ProjectPermalink = FieldNotRequired()
     workspace_id: WorkspaceID | None
     folder_id: FolderID | None
+    trashed_at: datetime | None
+    trashed_by: UserNameID | None
 
     _empty_description = validator("description", allow_reuse=True, pre=True)(
         none_to_empty_str_pre_validator
