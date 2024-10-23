@@ -142,6 +142,12 @@ projects = sa.Table(
         doc="If true, the project is by default not listed in the API",
     ),
     sa.Column(
+        "trashed_at",
+        sa.DateTime(timezone=True),
+        nullable=True,
+        doc="If set, it determines the time in which this project was sent to the trashed.",
+    ),
+    sa.Column(
         "workspace_id",
         sa.BigInteger,
         sa.ForeignKey(
