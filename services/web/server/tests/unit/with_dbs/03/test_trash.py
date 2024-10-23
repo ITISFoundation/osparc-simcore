@@ -3,7 +3,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-from typing import Callable
+from collections.abc import Callable
 from uuid import UUID
 
 import arrow

@@ -53,7 +53,6 @@ async def trash_project(request: web.Request):
 @routes.post(f"/{VTAG}/projects/{{project_uuid}}:untrash", name="untrash_project")
 @login_required
 @permission_required("project.delete")
-@_handle_trash_exceptions
 async def untrash_project(request: web.Request):
     user_id = get_user_id(request)
     product_name = get_product_name(request)
