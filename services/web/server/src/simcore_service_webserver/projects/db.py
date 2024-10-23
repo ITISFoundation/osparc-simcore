@@ -743,6 +743,7 @@ class ProjectDBAPI(BaseProjectDB):
         projects.c.published,
         projects.c.hidden,
         projects.c.workspace_id,
+        projects.c.trashed_at,
     ]
 
     async def get_project_db(self, project_uuid: ProjectID) -> ProjectDB:
