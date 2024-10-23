@@ -296,7 +296,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       });
     },
 
-    reloadCards: function(resourceType) {
+    __rebuildLayout: function(resourceType) {
       this.__cleanAll();
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         this.__addFoldersContainer();
@@ -321,8 +321,12 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         });
         this._add(this.__nonGroupedContainer);
       }
+    },
 
-      let cards = [];
+    reloadCards: function(resourceType) {
+      this.__rebuildLayout(resourceType);
+
+      const cards = [];
       this.__resourcesList.forEach(resourceData => {
         Array.prototype.push.apply(cards, this.__resourceToCards(resourceData));
       });
