@@ -40,7 +40,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
     this.setIcon(osparc.dashboard.CardBase.NEW_ICON);
 
     this.getChildControl("header").set({
-      opacity: 0.8
+      opacity: 1
     });
     this.getChildControl("footer").exclude();
   },
