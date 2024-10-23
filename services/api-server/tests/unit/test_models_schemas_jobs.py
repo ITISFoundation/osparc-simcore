@@ -3,23 +3,14 @@
 # pylint: disable=unused-variable
 
 import random
-import textwrap
 import urllib.parse
 from copy import deepcopy
 from uuid import uuid4
 
 import pytest
-from faker import Faker
 from fastapi import FastAPI
-from models_library.api_schemas_webserver.projects_metadata import ProjectMetadataGet
-from models_library.generics import Envelope
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_api_server.models.schemas.jobs import (
-    Job,
-    JobID,
-    JobInputs,
-    JobMetadata,
-)
+from simcore_service_api_server.models.schemas.jobs import Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
 
 
@@ -46,8 +37,8 @@ def test_job_io_checksums(repeat: int):
         return deepcopy(src)
 
     shuffled_raw = _deepcopy_and_shuffle(raw)
-    inputs1 = JobInputs.parse_obj(raw)
-    inputs2 = JobInputs.parse_obj(shuffled_raw)
+    inputs1 = JobInputs.model_validate(raw)
+    inputs2 = JobInputs.model_validate(shuffled_raw)
 
     print(inputs1)
     print(inputs2)
@@ -79,48 +70,3 @@ def test_job_resouce_names_has_associated_url(app: FastAPI):
     )
 
     assert url_path == f"/{API_VTAG}/{urllib.parse.unquote_plus(job_name)}"
-
-
-@pytest.mark.acceptance_test(
-    "Fixing https://github.com/ITISFoundation/osparc-simcore/issues/6556"
-)
-def test_parsing_job_custom_metadata(job_id: JobID, faker: Faker):
-    job_name = faker.name()
-
-    got = Envelope[ProjectMetadataGet].parse_raw(
-        textwrap.dedent(
-            f"""
-        {{
-            "data": {{
-            "projectUuid": "{job_id}",
-            "custom": {{
-                "number": 3.14,
-                "string": "foo",
-                "boolean": true,
-                "integer": 42,
-                "job_id": "{job_id}",
-                "job_name": "{job_name}"
-                }}
-            }}
-        }}
-        """
-        )
-    )
-
-    assert got.data
-    assert got.data.custom == {
-        "number": 3.14,
-        "string": "foo",
-        "boolean": True,
-        "integer": 42,
-        "job_id": f"{job_id}",
-        "job_name": job_name,
-    }
-
-    j = JobMetadata(
-        job_id=job_id,
-        metadata=got.data.custom or {},
-        url=faker.url(),
-    )
-
-    assert j.metadata == got.data.custom

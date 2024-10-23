@@ -18,7 +18,7 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.services import ServiceMetaDataPublished
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, HttpUrl, parse_obj_as
+from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.core.settings import ApplicationSettings
@@ -55,7 +55,7 @@ def presigned_download_link(
 ) -> Iterator[AnyUrl]:
     s3_client = boto3.client(
         "s3",
-        endpoint_url=mocked_s3_server_url,
+        endpoint_url=f"{mocked_s3_server_url}",
         # Some fake auth, otherwise botocore.exceptions.NoCredentialsError: Unable to locate credentials
         aws_secret_access_key="xxx",  # noqa: S106
         aws_access_key_id="xxx",
@@ -79,7 +79,7 @@ def presigned_download_link(
     print("generated link", presigned_url)
 
     # SEE also https://gist.github.com/amarjandu/77a7d8e33623bae1e4e5ba40dc043cb9
-    return parse_obj_as(AnyUrl, presigned_url)
+    return TypeAdapter(AnyUrl).validate_python(presigned_url)
 
 
 @pytest.fixture
@@ -119,7 +119,7 @@ def mocked_directorv2_service_api(
         json=[
             {
                 "task_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                "download_link": presigned_download_link,
+                "download_link": f"{presigned_download_link}",
             }
         ],
     )
@@ -131,7 +131,7 @@ def test_download_presigned_link(
     presigned_download_link: AnyUrl, tmp_path: Path, project_id: str, node_id: str
 ):
     """Cheks that the generation of presigned_download_link works as expected"""
-    r = httpx.get(presigned_download_link)
+    r = httpx.get(f"{presigned_download_link}")
     ## pprint(dict(r.headers))
     # r.headers looks like:
     # {
@@ -191,9 +191,9 @@ async def test_solver_logs(
     # was a re-direction
     resp0 = resp.history[0]
     assert resp0.status_code == status.HTTP_307_TEMPORARY_REDIRECT
-    assert resp0.headers["location"] == presigned_download_link
+    assert resp0.headers["location"] == f"{presigned_download_link}"
 
-    assert resp.url == presigned_download_link
+    assert f"{resp.url}" == f"{presigned_download_link}"
     pprint(dict(resp.headers))  # noqa: T203
 
 
@@ -247,7 +247,7 @@ async def test_run_solver_job(
     ).respond(
         status.HTTP_201_CREATED,
         json=jsonable_encoder(
-            ComputationTaskGet.parse_obj(
+            ComputationTaskGet.model_validate(
                 {
                     "id": project_id,
                     "state": "UNKNOWN",
@@ -314,7 +314,7 @@ async def test_run_solver_job(
 
     example = next(
         e
-        for e in ServiceMetaDataPublished.Config.schema_extra["examples"]
+        for e in ServiceMetaDataPublished.model_config["json_schema_extra"]["examples"]
         if "boot-options" in e
     )
 
@@ -350,7 +350,7 @@ async def test_run_solver_job(
                 # Tests https://github.com/ITISFoundation/osparc-issues/issues/948
                 "a_list": [1, 2, 3],
             }
-        ).dict(),
+        ).model_dump(),
     )
     assert resp.status_code == status.HTTP_201_CREATED
 
@@ -358,7 +358,7 @@ async def test_run_solver_job(
     assert mocked_webserver_service_api["get_task_status"].called
     assert mocked_webserver_service_api["get_task_result"].called
 
-    job = Job.parse_obj(resp.json())
+    job = Job.model_validate(resp.json())
 
     # Start Job
     resp = await client.post(
@@ -369,5 +369,5 @@ async def test_run_solver_job(
     assert resp.status_code == status.HTTP_202_ACCEPTED
     assert mocked_directorv2_service_api["inspect_computation"].called
 
-    job_status = JobStatus.parse_obj(resp.json())
+    job_status = JobStatus.model_validate(resp.json())
     assert job_status.progress == 0.0

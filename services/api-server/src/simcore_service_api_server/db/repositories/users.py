@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 from models_library.emails import LowerCaseEmailStr
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from ..tables import UserStatus, users
 from ._base import BaseRepository
@@ -14,4 +14,8 @@ class UsersRepository(BaseRepository):
                     (users.c.id == user_id) & (users.c.status == UserStatus.ACTIVE)
                 )
             )
-        return parse_obj_as(LowerCaseEmailStr, email) if email is not None else None
+        return (
+            TypeAdapter(LowerCaseEmailStr).validate_python(email)
+            if email is not None
+            else None
+        )
