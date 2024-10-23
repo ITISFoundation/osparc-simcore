@@ -290,7 +290,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._reloadCards();
     },
 
-    _viewByChanged: function(viewMode) {
+    _viewModeChanged: function(viewMode) {
       this._resourcesContainer.setMode(viewMode);
       this._reloadCards();
 
@@ -343,10 +343,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _addViewModeButton: function() {
       const gridBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/th/14", this.tr("Grid view"), "left");
-      gridBtn.addListener("execute", () => this._viewByChanged("grid"));
+      gridBtn.addListener("execute", () => this._viewModeChanged("grid"));
 
       const listBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/bars/14", this.tr("List view"), "right");
-      listBtn.addListener("execute", () => this._viewByChanged("list"));
+      listBtn.addListener("execute", () => this._viewModeChanged("list"));
 
       const viewModeLayout = this.__viewModeLayout;
       const radioGroup = new qx.ui.form.RadioGroup();

@@ -59,8 +59,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       check: ["grid", "list"],
       init: "grid",
       nullable: false,
-      event: "changeMode",
-      apply: "__reloadCards"
+      event: "changeMode"
     },
 
     groupBy: {
@@ -275,10 +274,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       });
       this.__groupedContainersList = [];
       this._removeAll();
-    },
-
-    __reloadCards: function(mode) {
-      this.reloadCards();
     },
 
     __addFoldersContainer: function() {
