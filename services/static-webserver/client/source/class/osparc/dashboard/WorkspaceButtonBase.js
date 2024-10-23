@@ -69,7 +69,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     ITEM_HEIGHT: 190,
     PADDING: 10,
     SPACING: 15,
-    HEADER_MAX_HEIGHT: 44,
+    HEADER_MAX_HEIGHT: 40, // two lines in Manrope
     ICON_SIZE: 60,
     POS: {
       FOLDER_LOOK: 0,
