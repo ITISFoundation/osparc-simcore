@@ -107,7 +107,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
       let control;
       switch (id) {
         case "main-layout": {
-          control = new qx.ui.container.Composite();
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox());
           const folderLook = this.getChildControl("folder-look");
           const header = this.getChildControl("header");
           const body = this.getChildControl("body");
