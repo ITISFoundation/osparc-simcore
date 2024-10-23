@@ -6,7 +6,7 @@
 
 from enum import Enum
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from models_library.projects import ProjectID
 from simcore_service_webserver._meta import API_VTAG
 
@@ -18,6 +18,7 @@ router = APIRouter(
 
 @router.delete(
     "/trash",
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 def empty_trash():
     ...
@@ -31,6 +32,7 @@ _extra_tags: list[str | Enum] = ["projects"]
 @router.post(
     "/projects/{project_uuid}:trash",
     tags=_extra_tags,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 def trash_project(
     project_uuid: ProjectID,
@@ -38,7 +40,11 @@ def trash_project(
     ...
 
 
-@router.post("/projects/{project_uuid}:untrash", tags=_extra_tags)
+@router.post(
+    "/projects/{project_uuid}:untrash",
+    tags=_extra_tags,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 def untrash_project(
     project_uuid: ProjectID,
 ):

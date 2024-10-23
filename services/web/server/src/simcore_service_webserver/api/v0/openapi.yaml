@@ -2651,7 +2651,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/_folders__Envelope[FolderGet]'
+                $ref: '#/components/schemas/Envelope_FolderGet_'
   /v0/folders/{folder_id}:
     get:
       tags:
@@ -2673,7 +2673,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/_folders__Envelope[FolderGet]'
+                $ref: '#/components/schemas/Envelope_FolderGet_'
     put:
       tags:
       - folders
@@ -2700,7 +2700,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/_folders__Envelope[FolderGet]'
+                $ref: '#/components/schemas/Envelope_FolderGet_'
     delete:
       tags:
       - folders
@@ -5342,11 +5342,8 @@ paths:
       summary: Empty Trash
       operationId: empty_trash
       responses:
-        '200':
+        '204':
           description: Successful Response
-          content:
-            application/json:
-              schema: {}
   /v0/projects/{project_uuid}:trash:
     post:
       tags:
@@ -5363,12 +5360,8 @@ paths:
         name: project_uuid
         in: path
       responses:
-        '200':
+        '204':
           description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectGet_'
   /v0/projects/{project_uuid}:untrash:
     post:
       tags:
@@ -5385,56 +5378,8 @@ paths:
         name: project_uuid
         in: path
       responses:
-        '200':
+        '204':
           description: Successful Response
-          content:
-            application/json:
-              schema: {}
-  /v0/folders/{folder_id}:trash:
-    post:
-      tags:
-      - trash
-      - folders
-      summary: Trash Folder
-      operationId: trash_folder
-      parameters:
-      - required: true
-        schema:
-          title: Folder Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: folder_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/_trash__Envelope[FolderGet]'
-  /v0/folders/{folder_id}:untrash:
-    post:
-      tags:
-      - trash
-      - folders
-      summary: Untrash Folder
-      operationId: untrash_folder
-      parameters:
-      - required: true
-        schema:
-          title: Folder Id
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name: folder_id
-        in: path
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
   /v0/repos/projects:
     get:
       tags:
@@ -7292,6 +7237,14 @@ components:
           $ref: '#/components/schemas/FileUploadSchema'
         error:
           title: Error
+    Envelope_FolderGet_:
+      title: Envelope[FolderGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/FolderGet'
+        error:
+          title: Error
     Envelope_GetCreditPrice_:
       title: Envelope[GetCreditPrice]
       type: object
@@ -7849,7 +7802,7 @@ components:
           title: Data
           type: array
           items:
-            $ref: '#/components/schemas/models_library__api_schemas_webserver__folders_v2__FolderGet'
+            $ref: '#/components/schemas/FolderGet'
         error:
           title: Error
     Envelope_list_models_library.api_schemas_webserver.groups.GroupUserGet__:
@@ -8460,6 +8413,59 @@ components:
             format: uri
         links:
           $ref: '#/components/schemas/FileUploadLinks'
+    FolderGet:
+      title: FolderGet
+      required:
+      - folderId
+      - name
+      - createdAt
+      - modifiedAt
+      - owner
+      - myAccessRights
+      type: object
+      properties:
+        folderId:
+          title: Folderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        parentFolderId:
+          title: Parentfolderid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name:
+          title: Name
+          type: string
+        createdAt:
+          title: Createdat
+          type: string
+          format: date-time
+        modifiedAt:
+          title: Modifiedat
+          type: string
+          format: date-time
+        owner:
+          title: Owner
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        workspaceId:
+          title: Workspaceid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        myAccessRights:
+          $ref: '#/components/schemas/models_library__access_rights__AccessRights'
+        trashedAt:
+          title: Trashedat
+          type: string
+          format: date-time
+        trashedBy:
+          title: Trashedby
+          maxLength: 100
+          minLength: 1
+          type: string
     GenerateInvitation:
       title: GenerateInvitation
       required:
@@ -10353,11 +10359,6 @@ components:
           title: Trashedat
           type: string
           format: date-time
-        trashedBy:
-          title: Trashedby
-          maxLength: 100
-          minLength: 1
-          type: string
     ProjectGroupGet:
       title: ProjectGroupGet
       required:
@@ -10633,11 +10634,6 @@ components:
           title: Trashedat
           type: string
           format: date-time
-        trashedBy:
-          title: Trashedby
-          maxLength: 100
-          minLength: 1
-          type: string
     ProjectLocked:
       title: ProjectLocked
       required:
@@ -13124,22 +13120,6 @@ components:
           title: Delete
           type: boolean
       additionalProperties: false
-    _folders__Envelope[FolderGet]:
-      title: Envelope[FolderGet]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/models_library__api_schemas_webserver__folders_v2__FolderGet'
-        error:
-          title: Error
-    _trash__Envelope[FolderGet]:
-      title: Envelope[FolderGet]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/models_library__api_schemas_webserver__folders__FolderGet'
-        error:
-          title: Error
     models_library__access_rights__AccessRights:
       title: AccessRights
       required:
@@ -13161,108 +13141,6 @@ components:
           type: boolean
           description: has deletion rights
       additionalProperties: false
-    models_library__api_schemas_webserver__folders__FolderGet:
-      title: FolderGet
-      required:
-      - folderId
-      - name
-      - description
-      - createdAt
-      - modifiedAt
-      - owner
-      - myAccessRights
-      - accessRights
-      type: object
-      properties:
-        folderId:
-          title: Folderid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        parentFolderId:
-          title: Parentfolderid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name:
-          title: Name
-          type: string
-        description:
-          title: Description
-          type: string
-        createdAt:
-          title: Createdat
-          type: string
-          format: date-time
-        modifiedAt:
-          title: Modifiedat
-          type: string
-          format: date-time
-        owner:
-          title: Owner
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        myAccessRights:
-          $ref: '#/components/schemas/models_library__projects_access__AccessRights'
-        accessRights:
-          title: Accessrights
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
-    models_library__api_schemas_webserver__folders_v2__FolderGet:
-      title: FolderGet
-      required:
-      - folderId
-      - name
-      - createdAt
-      - modifiedAt
-      - owner
-      - myAccessRights
-      type: object
-      properties:
-        folderId:
-          title: Folderid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        parentFolderId:
-          title: Parentfolderid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        name:
-          title: Name
-          type: string
-        createdAt:
-          title: Createdat
-          type: string
-          format: date-time
-        modifiedAt:
-          title: Modifiedat
-          type: string
-          format: date-time
-        owner:
-          title: Owner
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        workspaceId:
-          title: Workspaceid
-          exclusiveMinimum: true
-          type: integer
-          minimum: 0
-        myAccessRights:
-          $ref: '#/components/schemas/models_library__access_rights__AccessRights'
-        trashedAt:
-          title: Trashedat
-          type: string
-          format: date-time
-        trashedBy:
-          title: Trashedby
-          maxLength: 100
-          minLength: 1
-          type: string
     models_library__projects_access__AccessRights:
       title: AccessRights
       required:
