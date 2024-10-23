@@ -201,7 +201,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
     __createFolderLookHeader: function() {
       const grid = new qx.ui.layout.Grid(0, 0);
       grid.setColumnFlex(0, 1);
-      grid.setColumnFlex(1, 1);
+      grid.setColumnFlex(2, 1);
       grid.setRowHeight(0, 8);
       grid.setRowHeight(1, 4);
       const layout = new qx.ui.container.Composite(grid).set({
@@ -210,8 +210,15 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
       const spacer00 = new qx.ui.core.Widget().set({
         backgroundColor: "background-workspace-card-overlay"
       });
-      spacer00.getContentElement().setStyles({
-        "border-top-right-radius": "4px",
+      const triangle = new qx.ui.core.Widget().set({
+        width: 8,
+        height: 8,
+      });
+      triangle.getContentElement().setStyles({
+        "width": "0",
+        "height": "0",
+        "border-bottom": "8px solid rgb(35, 93, 122)", // get color dynamically
+        "border-right": "8px solid transparent",
       });
       const spacer01 = new qx.ui.core.Widget();
       const spacer10 = new qx.ui.core.Widget().set({
@@ -227,17 +234,22 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonBase", {
         row: 0,
         column: 0,
       });
-      layout.add(spacer01, {
+      layout.add(triangle, {
         row: 0,
         column: 1,
+      });
+      layout.add(spacer01, {
+        row: 0,
+        column: 2,
       });
       layout.add(spacer10, {
         row: 1,
         column: 0,
+        colSpan: 2,
       });
       layout.add(spacer11, {
         row: 1,
-        column: 1,
+        column: 2,
       });
       return layout;
     },
