@@ -1,5 +1,10 @@
 # syntax=docker/dockerfile:1
+
+# Define arguments in the global scope
 ARG PYTHON_VERSION="3.11.9"
+ARG UV_VERSION="0.4"
+FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
+# we docker image is built based on debian
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 #
 #  USAGE:
@@ -53,14 +58,14 @@ RUN \
   ./install_rclone.bash
 
 RUN AWS_CLI_VERSION="2.11.11" \
-    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
-    && apt-get update && apt-get install -y unzip \
-    && unzip awscliv2.zip \
-    && ./aws/install \
-    && apt-get remove --purge -y unzip \
-    && rm awscliv2.zip \
-    && rm -rf awscliv2 \
-    && aws --version
+  && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
+  && apt-get update && apt-get install -y unzip \
+  && unzip awscliv2.zip \
+  && ./aws/install \
+  && apt-get remove --purge -y unzip \
+  && rm awscliv2.zip \
+  && rm -rf awscliv2 \
+  && aws --version
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -110,31 +115,22 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   && apt-get install -y --no-install-recommends \
   build-essential
 
-# NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install uv~=0.2
+# install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=uv_build /uv /uvx /bin/
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}" \
   && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv \
   uv pip install --upgrade  \
-  pip~=24.0  \
   wheel \
   setuptools
 
 
 WORKDIR /build
 
-# install base 3rd party dependencies
-# NOTE: copies to /build to avoid overwriting later which would invalidate this layer
-RUN \
-  --mount=type=bind,source=services/dynamic-sidecar/requirements/_base.txt,target=_base.txt \
-  --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  uv pip install \
-  --requirement _base.txt
 
 # copy utility devops scripts
 COPY --chown=scu:scu services/dynamic-sidecar/scripts/Makefile /home/scu
@@ -155,9 +151,9 @@ WORKDIR /build/services/dynamic-sidecar
 RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=bind,source=services/dynamic-sidecar,target=/build/services/dynamic-sidecar,rw \
-  --mount=type=cache,mode=0755,target=/root/.cache/uv \
-  uv pip install \
-  --requirement requirements/prod.txt \
+  --mount=type=cache,target=/root/.cache/uv \
+  uv pip sync \
+  requirements/prod.txt \
   && uv pip list
 
 # --------------------------Production stage -------------------
@@ -173,6 +169,8 @@ ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
 
 ENV PYTHONOPTIMIZE=TRUE
+# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /home/scu
 

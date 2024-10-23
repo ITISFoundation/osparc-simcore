@@ -160,7 +160,7 @@ et-xmlfile==1.1.0
     # via openpyxl
 faker==19.6.1
     # via -r requirements/_base.in
-fast-depends==2.4.2
+fast-depends==2.4.12
     # via faststream
 faststream==0.5.10
     # via
