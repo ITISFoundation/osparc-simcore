@@ -47,7 +47,7 @@ async def test_trash_projects(
     url = client.app.router["list_projects"].url_for()
     assert f"{url}" == "/v0/projects"
 
-    # list projects -> non trashed
+    # LIST NOT trashed
     resp = await client.get("/v0/projects")
     await assert_status(resp, status.HTTP_200_OK)
 
@@ -57,36 +57,30 @@ async def test_trash_projects(
     got = page.data[0]
     assert got.uuid == project_uuid
     assert got.trashed_at is None
-    # TODO: assert got.trashed_by is None
 
+    # LIST trashed
     resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
 
     page = Page[ProjectListItem].parse_obj(await resp.json())
     assert page.meta.total == 0
 
-    # trash project ------------
+    # TRASH
     trashing_at = arrow.utcnow().datetime
-    resp = await client.get(f"/v0/projects/{project_uuid}:trash")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    resp = await client.post(f"/v0/projects/{project_uuid}:trash")
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
+    # GET
+    resp = await client.get(f"/v0/projects/{project_uuid}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = ProjectGet.parse_obj(data)
     assert got.uuid == project_uuid
 
     assert got.trashed_at
     assert trashing_at < got.trashed_at
     assert got.trashed_at < arrow.utcnow().datetime
-    # TODO: assert got.trashed_by == logged_user["name"]
 
-    # get trashed project
-    expected = got.copy()
-
-    resp = await client.get(f"/v0/projects/{project_uuid}")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got = ProjectGet.parse_obj(data)
-    assert got == expected
-
-    # list trashed projects
+    # LIST trashed
     resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
 
@@ -94,20 +88,14 @@ async def test_trash_projects(
     assert page.meta.total == 1
     assert page.data[0].uuid == project_uuid
 
-    # untrash project
+    # UNTRASH
     resp = await client.post(f"/v0/projects/{project_uuid}:untrash")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
+    # GET
+    resp = await client.get(f"/v0/projects/{project_uuid}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
     got = ProjectGet.parse_obj(data)
 
     assert got.uuid == project_uuid
     assert got.trashed_at is None
-    # TODO: assert got.trashed_by is None
-
-    # get untrashed project
-    expected = got.copy()
-
-    resp = await client.get(f"/v0/projects/{project_uuid}")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got = ProjectGet.parse_obj(data)
-    assert got == expected
