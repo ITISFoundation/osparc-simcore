@@ -136,7 +136,8 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
 
         # NOTE: this logger is very noisy, or the way we use it makes it very noisy.
         # in the end this creates 1000s of useless logs everytime a message passes,
-        # creating 1000s of INFO logs per minute. ANE I let you fix it.
+        # creating 1000s of INFO logs per minute, as INFO is the default log level
+        # for messages. ANE I let you fix it.
         self.broker: RabbitBroker = RabbitBroker(
             rabbit_settings.dsn, logger=_logger, log_level=logging.DEBUG
         )
