@@ -317,9 +317,10 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
     },
 
     __getLogsString: function() {
+      const newLine = "\r\n";
       let logs = "";
       this.__loggerModel.getFilteredRows().forEach(rowData => {
-        logs += this.self().printRow(rowData) + "\n";
+        logs += this.self().printRow(rowData) + newLine;
       });
       return logs;
     },
