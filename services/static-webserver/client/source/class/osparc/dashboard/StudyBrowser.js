@@ -283,7 +283,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __resetStudiesList: function() {
       this._resourcesList = [];
-      this._resourcesContainer.getFlatList().nextRequest = null;
+      if (this._resourcesContainer.getFlatList()) {
+        this._resourcesContainer.getFlatList().nextRequest = null;
+      }
 
       // It will remove the study cards
       this._reloadCards();
