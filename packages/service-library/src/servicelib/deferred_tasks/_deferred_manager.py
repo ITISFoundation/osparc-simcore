@@ -134,7 +134,12 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             ClassUniqueReference, type[BaseDeferredHandler]
         ] = {}
 
-        self.broker: RabbitBroker = RabbitBroker(rabbit_settings.dsn)
+        # NOTE: this logger is very noisy, or the way we use it makes it very noisy.
+        # in the end this creates 1000s of useless logs everytime a message passes,
+        # creating 1000s of INFO logs per minute. ANE I let you fix it.
+        self.broker: RabbitBroker = RabbitBroker(
+            rabbit_settings.dsn, logger=_logger, log_level=logging.DEBUG
+        )
         self.router: RabbitRouter = RabbitRouter()
 
         # NOTE: do not move this to a function, must remain in constructor
