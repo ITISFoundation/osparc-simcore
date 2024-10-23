@@ -1,6 +1,6 @@
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
-from pydantic import BaseModel, ByteSize, Field
+from pydantic import BaseModel, ByteSize, ConfigDict, Field
 
 from ..resource_tracker import HardwareInfo, PricingInfo
 from ..services import ServicePortKey
@@ -30,10 +30,9 @@ class RetrieveDataOutEnveloped(BaseModel):
     ) -> "RetrieveDataOutEnveloped":
         return cls(data=RetrieveDataOut(size_bytes=ByteSize(transferred_bytes)))
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
-            "examples": [{"data": {"size_bytes": 42}}]
-        }
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [{"data": {"size_bytes": 42}}]}
+    )
 
 
 class DynamicServiceCreate(ServiceDetails):
@@ -55,9 +54,8 @@ class DynamicServiceCreate(ServiceDetails):
         default=None,
         description="contains harware information (ex. aws_ec2_instances)",
     )
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "key": "simcore/services/dynamic/3dviewer",
                 "version": "2.4.5",
@@ -67,14 +65,13 @@ class DynamicServiceCreate(ServiceDetails):
                 "basepath": "/x/75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "product_name": "osparc",
                 "can_save": True,
-                "service_resources": ServiceResourcesDictHelpers.Config.schema_extra[
-                    "examples"
-                ][0],
-                "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
-                "pricing_info": PricingInfo.Config.schema_extra["examples"][0],
-                "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
+                "service_resources": ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                "wallet_info": WalletInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                "pricing_info": PricingInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                "hardware_info": HardwareInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
             }
         }
+    )
 
 
 DynamicServiceGet: TypeAlias = RunningDynamicServiceDetails

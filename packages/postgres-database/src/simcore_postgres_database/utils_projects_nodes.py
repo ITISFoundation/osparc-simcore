@@ -5,8 +5,8 @@ from typing import Any
 
 import sqlalchemy
 from aiopg.sa.connection import SAConnection
-from pydantic import BaseModel, Field
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .errors import ForeignKeyViolation, UniqueViolation
@@ -17,7 +17,7 @@ from .models.projects_nodes import projects_nodes
 #
 # Errors
 #
-class BaseProjectNodesError(PydanticErrorMixin, RuntimeError):
+class BaseProjectNodesError(OsparcErrorMixin, RuntimeError):
     msg_template: str = "Project nodes unexpected error"
 
 
@@ -43,18 +43,16 @@ class ProjectNodeCreate(BaseModel):
 
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
-        return {name for name in cls.__fields__ if name not in exclude}
+        return {name for name in cls.model_fields.keys() if name not in exclude}
 
-    class Config:
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class ProjectNode(ProjectNodeCreate):
     created: datetime.datetime
     modified: datetime.datetime
 
-    class Config(ProjectNodeCreate.Config):
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -85,7 +83,7 @@ class ProjectNodesRepo:
                 [
                     {
                         "project_uuid": f"{self.project_uuid}",
-                        **node.dict(),
+                        **node.model_dump(),
                     }
                     for node in nodes
                 ]

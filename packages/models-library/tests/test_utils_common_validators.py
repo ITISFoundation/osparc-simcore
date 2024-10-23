@@ -7,7 +7,7 @@ from models_library.utils.common_validators import (
     none_to_empty_str_pre_validator,
     null_or_none_str_to_none_validator,
 )
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, ValidationError, field_validator
 
 
 def test_enums_pre_validator():
@@ -20,13 +20,14 @@ def test_enums_pre_validator():
     class ModelWithPreValidator(BaseModel):
         color: Enum1
 
-        _from_equivalent_enums = validator("color", allow_reuse=True, pre=True)(
+        _from_equivalent_enums = field_validator("color", mode="before")(
             create_enums_pre_validator(Enum1)
         )
 
     # with Enum1
     model = Model(color=Enum1.RED)
-    assert ModelWithPreValidator(color=Enum1.RED) == model
+    # See: https://docs.pydantic.dev/latest/migration/#changes-to-pydanticbasemodel
+    assert ModelWithPreValidator(color=Enum1.RED).model_dump() == model.model_dump()
 
     # with Enum2
     class Enum2(Enum):
@@ -35,55 +36,56 @@ def test_enums_pre_validator():
     with pytest.raises(ValidationError):
         Model(color=Enum2.RED)
 
-    assert ModelWithPreValidator(color=Enum2.RED) == model
+    # See: https://docs.pydantic.dev/latest/migration/#changes-to-pydanticbasemodel
+    assert ModelWithPreValidator(color=Enum2.RED).model_dump() == model.model_dump()
 
 
 def test_empty_str_to_none_pre_validator():
     class Model(BaseModel):
         nullable_message: str | None
 
-        _empty_is_none = validator("nullable_message", allow_reuse=True, pre=True)(
+        _empty_is_none = field_validator("nullable_message", mode="before")(
             empty_str_to_none_pre_validator
         )
 
-    model = Model.parse_obj({"nullable_message": None})
-    assert model == Model.parse_obj({"nullable_message": ""})
+    model = Model.model_validate({"nullable_message": None})
+    assert model == Model.model_validate({"nullable_message": ""})
 
 
 def test_none_to_empty_str_pre_validator():
     class Model(BaseModel):
         message: str
 
-        _none_is_empty = validator("message", allow_reuse=True, pre=True)(
+        _none_is_empty = field_validator("message", mode="before")(
             none_to_empty_str_pre_validator
         )
 
-    model = Model.parse_obj({"message": ""})
-    assert model == Model.parse_obj({"message": None})
+    model = Model.model_validate({"message": ""})
+    assert model == Model.model_validate({"message": None})
 
 
 def test_null_or_none_str_to_none_validator():
     class Model(BaseModel):
         message: str | None
 
-        _null_or_none_str_to_none_validator = validator(
-            "message", allow_reuse=True, pre=True
-        )(null_or_none_str_to_none_validator)
+        _null_or_none_str_to_none_validator = field_validator("message", mode="before")(
+            null_or_none_str_to_none_validator
+        )
 
-    model = Model.parse_obj({"message": "none"})
-    assert model == Model.parse_obj({"message": None})
+    model = Model.model_validate({"message": "none"})
+    assert model == Model.model_validate({"message": None})
 
-    model = Model.parse_obj({"message": "null"})
-    assert model == Model.parse_obj({"message": None})
+    model = Model.model_validate({"message": "null"})
+    assert model == Model.model_validate({"message": None})
 
-    model = Model.parse_obj({"message": "NoNe"})
-    assert model == Model.parse_obj({"message": None})
+    model = Model.model_validate({"message": "NoNe"})
+    assert model == Model.model_validate({"message": None})
 
-    model = Model.parse_obj({"message": "NuLl"})
-    assert model == Model.parse_obj({"message": None})
+    model = Model.model_validate({"message": "NuLl"})
+    assert model == Model.model_validate({"message": None})
 
-    model = Model.parse_obj({"message": None})
-    assert model == Model.parse_obj({"message": None})
+    model = Model.model_validate({"message": None})
+    assert model == Model.model_validate({"message": None})
 
-    model = Model.parse_obj({"message": ""})
-    assert model == Model.parse_obj({"message": ""})
+    model = Model.model_validate({"message": ""})
+    assert model == Model.model_validate({"message": ""})

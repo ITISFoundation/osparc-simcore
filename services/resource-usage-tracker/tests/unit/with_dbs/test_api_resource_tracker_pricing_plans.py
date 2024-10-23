@@ -76,7 +76,9 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=_PRICING_PLAN_ID,
                 unit_name="S",
-                unit_extra_info=UnitExtraInfo.Config.schema_extra["examples"][0],
+                unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"][
+                    "examples"
+                ][0],
                 default=False,
                 specific_info={},
                 created=datetime.now(tz=timezone.utc),
@@ -101,7 +103,9 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=_PRICING_PLAN_ID,
                 unit_name="M",
-                unit_extra_info=UnitExtraInfo.Config.schema_extra["examples"][0],
+                unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"][
+                    "examples"
+                ][0],
                 default=True,
                 specific_info={},
                 created=datetime.now(tz=timezone.utc),
@@ -126,7 +130,9 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=_PRICING_PLAN_ID,
                 unit_name="L",
-                unit_extra_info=UnitExtraInfo.Config.schema_extra["examples"][0],
+                unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"][
+                    "examples"
+                ][0],
                 default=False,
                 specific_info={},
                 created=datetime.now(tz=timezone.utc),
@@ -165,7 +171,9 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=_PRICING_PLAN_ID_2,
                 unit_name="XXL",
-                unit_extra_info=UnitExtraInfo.Config.schema_extra["examples"][0],
+                unit_extra_info=UnitExtraInfo.model_config["json_schema_extra"][
+                    "examples"
+                ][0],
                 default=True,
                 specific_info={},
                 created=datetime.now(tz=timezone.utc),

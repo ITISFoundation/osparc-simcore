@@ -110,7 +110,7 @@ def are_all_containers_in_expected_states(
     states: Iterable[ContainerState | None],
 ) -> bool:
     return all(
-        s is not None and s.Status in _ACCEPTED_CONTAINER_STATUSES for s in states
+        s is not None and s.status in _ACCEPTED_CONTAINER_STATUSES for s in states
     )
 
 

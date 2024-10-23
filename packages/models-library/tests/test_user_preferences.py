@@ -15,20 +15,24 @@ from models_library.user_preferences import (
     _AutoRegisterMeta,
     _BaseUserPreferenceModel,
 )
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 _SERVICE_KEY_AND_VERSION_SAMPLES: list[tuple[ServiceKey, ServiceVersion]] = [
     (
-        parse_obj_as(ServiceKey, "simcore/services/comp/something-1231"),
-        parse_obj_as(ServiceVersion, "0.0.1"),
+        TypeAdapter(ServiceKey).validate_python("simcore/services/comp/something-1231"),
+        TypeAdapter(ServiceVersion).validate_python("0.0.1"),
     ),
     (
-        parse_obj_as(ServiceKey, "simcore/services/dynamic/something-1231"),
-        parse_obj_as(ServiceVersion, "0.0.1"),
+        TypeAdapter(ServiceKey).validate_python(
+            "simcore/services/dynamic/something-1231"
+        ),
+        TypeAdapter(ServiceVersion).validate_python("0.0.1"),
     ),
     (
-        parse_obj_as(ServiceKey, "simcore/services/frontend/something-1231"),
-        parse_obj_as(ServiceVersion, "0.0.1"),
+        TypeAdapter(ServiceKey).validate_python(
+            "simcore/services/frontend/something-1231"
+        ),
+        TypeAdapter(ServiceVersion).validate_python("0.0.1"),
     ),
 ]
 
@@ -54,7 +58,7 @@ def test_base_user_preference_model(value: Any, preference_type: PreferenceType)
     base_data = _get_base_user_preferences_data(
         preference_type=preference_type, value=value
     )
-    assert parse_obj_as(_BaseUserPreferenceModel, base_data)
+    assert TypeAdapter(_BaseUserPreferenceModel).validate_python(base_data)
 
 
 def test_frontend_preferences(value: Any):
@@ -64,7 +68,7 @@ def test_frontend_preferences(value: Any):
 
     base_data.update({"preference_identifier": "pref-name"})
     # check serialization
-    frontend_preference = parse_obj_as(FrontendUserPreference, base_data)
+    frontend_preference = TypeAdapter(FrontendUserPreference).validate_python(base_data)
     assert set(frontend_preference.to_db().keys()) == {"value"}
 
 
@@ -80,7 +84,7 @@ def test_user_service_preferences(value: Any, mock_file_path: Path):
             "file_path": mock_file_path,
         }
     )
-    instance = parse_obj_as(UserServiceUserPreference, base_data)
+    instance = TypeAdapter(UserServiceUserPreference).validate_python(base_data)
     assert set(instance.to_db().keys()) == {
         "value",
         "service_key",
@@ -96,7 +100,7 @@ def unregister_defined_classes() -> Iterator[None]:
 
 
 def test__frontend__user_preference(value: Any, unregister_defined_classes: None):
-    pref1 = FrontendUserPreference.parse_obj(
+    pref1 = FrontendUserPreference.model_validate(
         {"preference_identifier": "pref_id", "value": value}
     )
     assert isinstance(pref1, FrontendUserPreference)
@@ -112,7 +116,7 @@ def test__user_service__user_preference(
     mock_file_path: Path,
     unregister_defined_classes: None,
 ):
-    pref1 = UserServiceUserPreference.parse_obj(
+    pref1 = UserServiceUserPreference.model_validate(
         {
             "value": value,
             "service_key": service_key,
@@ -123,8 +127,8 @@ def test__user_service__user_preference(
 
     # NOTE: these will be stored as bytes,
     # check bytes serialization/deserialization
-    pref1_as_bytes = pref1.json().encode()
-    new_instance = UserServiceUserPreference.parse_raw(pref1_as_bytes)
+    pref1_as_bytes = pref1.model_dump_json().encode()
+    new_instance = UserServiceUserPreference.model_validate_json(pref1_as_bytes)
     assert new_instance == pref1
 
 

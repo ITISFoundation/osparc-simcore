@@ -1,12 +1,7 @@
-from typing import Any
-
-from models_library.errors_classes import OsparcErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
 class AutoscalingRuntimeError(OsparcErrorMixin, RuntimeError):
-    def __init__(self, **ctx: Any) -> None:
-        super().__init__(**ctx)
-
     msg_template: str = "Autoscaling unexpected error"
 
 

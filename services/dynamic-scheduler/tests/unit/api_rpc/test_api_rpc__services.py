@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
@@ -52,14 +53,16 @@ def node_not_found(faker: Faker) -> NodeID:
 
 @pytest.fixture
 def service_status_new_style() -> DynamicServiceGet:
-    return DynamicServiceGet.parse_obj(
-        DynamicServiceGet.Config.schema_extra["examples"][1]
+    return TypeAdapter(DynamicServiceGet).validate_python(
+        DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
     )
 
 
 @pytest.fixture
 def service_status_legacy() -> NodeGet:
-    return NodeGet.parse_obj(NodeGet.Config.schema_extra["examples"][1])
+    return TypeAdapter(NodeGet).validate_python(
+        NodeGet.model_config["json_schema_extra"]["examples"][1]
+    )
 
 
 @pytest.fixture
@@ -81,7 +84,9 @@ def mock_director_v0_service_state(
     ) as mock:
         mock.get(f"/fake-status/{node_id_legacy}").respond(
             status.HTTP_200_OK,
-            text=json.dumps(jsonable_encoder({"data": service_status_legacy.dict()})),
+            text=json.dumps(
+                jsonable_encoder({"data": service_status_legacy.model_dump()})
+            ),
         )
 
         # service was not found response
@@ -104,7 +109,7 @@ def mock_director_v2_service_state(
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as mock:
         mock.get(f"/dynamic_services/{node_id_new_style}").respond(
-            status.HTTP_200_OK, text=service_status_new_style.json()
+            status.HTTP_200_OK, text=service_status_new_style.model_dump_json()
         )
 
         # emulate redirect response to director-v0
@@ -173,8 +178,8 @@ async def test_get_state(
 @pytest.fixture
 def dynamic_service_start() -> DynamicServiceStart:
     # one for legacy and one for new style?
-    return DynamicServiceStart.parse_obj(
-        DynamicServiceStart.Config.schema_extra["example"]
+    return TypeAdapter(DynamicServiceStart).validate_python(
+        DynamicServiceStart.model_config["json_schema_extra"]["example"]
     )
 
 
@@ -189,7 +194,9 @@ def mock_director_v0_service_run(
     ) as mock:
         mock.post("/fake-service-run").respond(
             status.HTTP_201_CREATED,
-            text=json.dumps(jsonable_encoder({"data": service_status_legacy.dict()})),
+            text=json.dumps(
+                jsonable_encoder({"data": service_status_legacy.model_dump()})
+            ),
         )
 
         yield None
@@ -216,7 +223,7 @@ def mock_director_v2_service_run(
         else:
             request.respond(
                 status.HTTP_201_CREATED,
-                text=service_status_new_style.json(),
+                text=service_status_new_style.model_dump_json(),
             )
         yield None
 

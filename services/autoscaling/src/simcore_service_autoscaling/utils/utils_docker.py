@@ -29,7 +29,7 @@ from models_library.generated_models.docker_rest_api import (
     Task,
     TaskState,
 )
-from pydantic import ByteSize, ValidationError, parse_obj_as
+from pydantic import ByteSize, TypeAdapter, ValidationError
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
@@ -59,25 +59,27 @@ _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS: Final[list[str]] = [
 _PENDING_DOCKER_TASK_MESSAGE: Final[str] = "pending task scheduling"
 _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on"
 _NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR: Final[str] = "no suitable node"
-_OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
-    DockerLabelKey, "io.simcore.osparc-services-ready"
+_OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(
+    DockerLabelKey
+).validate_python(
+    "io.simcore.osparc-services-ready",
 )
-_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
-    DockerLabelKey, f"{_OSPARC_SERVICE_READY_LABEL_KEY}-last-changed"
-)
+_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(
+    DockerLabelKey
+).validate_python(f"{_OSPARC_SERVICE_READY_LABEL_KEY}-last-changed")
 _OSPARC_SERVICE_READY_LABEL_KEYS: Final[list[DockerLabelKey]] = [
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 ]
 
 
-_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
-    DockerLabelKey, "io.simcore.osparc-node-found-empty"
-)
+_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(
+    DockerLabelKey
+).validate_python("io.simcore.osparc-node-found-empty")
 
-_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: Final[DockerLabelKey] = parse_obj_as(
-    DockerLabelKey, "io.simcore.osparc-node-termination-started"
-)
+_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(
+    DockerLabelKey
+).validate_python("io.simcore.osparc-node-termination-started")
 
 
 async def get_monitored_nodes(
@@ -86,15 +88,13 @@ async def get_monitored_nodes(
     node_label_filters = [f"{label}=true" for label in node_labels] + [
         f"{label}" for label in _OSPARC_SERVICE_READY_LABEL_KEYS
     ]
-    return parse_obj_as(
-        list[Node],
-        await docker_client.nodes.list(filters={"node.label": node_label_filters}),
+    return TypeAdapter(list[Node]).validate_python(
+        await docker_client.nodes.list(filters={"node.label": node_label_filters})
     )
 
 
 async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
-    return parse_obj_as(
-        list[Node],
+    return TypeAdapter(list[Node]).validate_python(
         await docker_client.nodes.list(
             filters={
                 "role": ["worker"],
@@ -102,7 +102,7 @@ async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
                     f"{label}" for label in _OSPARC_SERVICE_READY_LABEL_KEYS
                 ],
             }
-        ),
+        )
     )
 
 
@@ -112,8 +112,8 @@ async def remove_nodes(
     """removes docker nodes that are in the down state (unless force is used and they will be forcibly removed)"""
 
     def _check_if_node_is_removable(node: Node) -> bool:
-        if node.Status and node.Status.State:
-            return node.Status.State in [
+        if node.status and node.status.state:
+            return node.status.state in [
                 NodeState.down,
                 NodeState.disconnected,
                 NodeState.unknown,
@@ -129,30 +129,30 @@ async def remove_nodes(
         n for n in nodes if (force is True) or _check_if_node_is_removable(n)
     ]
     for node in nodes_that_need_removal:
-        assert node.ID  # nosec
-        with log_context(logger, logging.INFO, msg=f"remove {node.ID=}"):
-            await docker_client.nodes.remove(node_id=node.ID, force=force)
+        assert node.id  # nosec
+        with log_context(logger, logging.INFO, msg=f"remove {node.id=}"):
+            await docker_client.nodes.remove(node_id=node.id, force=force)
     return nodes_that_need_removal
 
 
 def _is_task_waiting_for_resources(task: Task) -> bool:
     # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
     with log_context(
-        logger, level=logging.DEBUG, msg=f"_is_task_waiting_for_resources: {task.ID}"
+        logger, level=logging.DEBUG, msg=f"_is_task_waiting_for_resources: {task.id}"
     ):
         if (
-            not task.Status
-            or not task.Status.State
-            or not task.Status.Message
-            or not task.Status.Err
+            not task.status
+            or not task.status.state
+            or not task.status.message
+            or not task.status.err
         ):
             return False
         return (
-            task.Status.State == TaskState.pending
-            and task.Status.Message == _PENDING_DOCKER_TASK_MESSAGE
+            task.status.state == TaskState.pending
+            and task.status.message == _PENDING_DOCKER_TASK_MESSAGE
             and (
-                _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.Status.Err
-                or _NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR in task.Status.Err
+                _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR in task.status.err
+                or _NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR in task.status.err
             )
         )
 
@@ -160,21 +160,21 @@ def _is_task_waiting_for_resources(task: Task) -> bool:
 async def _associated_service_has_no_node_placement_contraints(
     docker_client: AutoscalingDocker, task: Task
 ) -> bool:
-    assert task.ServiceID  # nosec
-    service_inspect = parse_obj_as(
-        Service, await docker_client.services.inspect(task.ServiceID)
+    assert task.service_id  # nosec
+    service_inspect = TypeAdapter(Service).validate_python(
+        await docker_client.services.inspect(task.service_id)
     )
-    assert service_inspect.Spec  # nosec
-    assert service_inspect.Spec.TaskTemplate  # nosec
+    assert service_inspect.spec  # nosec
+    assert service_inspect.spec.task_template  # nosec
 
     if (
-        not service_inspect.Spec.TaskTemplate.Placement
-        or not service_inspect.Spec.TaskTemplate.Placement.Constraints
+        not service_inspect.spec.task_template.placement
+        or not service_inspect.spec.task_template.placement.constraints
     ):
         return True
     # parse the placement contraints
     service_placement_constraints = (
-        service_inspect.Spec.TaskTemplate.Placement.Constraints
+        service_inspect.spec.task_template.placement.constraints
     )
     for constraint in service_placement_constraints:
         # is of type node.id==alskjladskjs or node.hostname==thiscomputerhostname or node.role==manager, sometimes with spaces...
@@ -186,15 +186,13 @@ async def _associated_service_has_no_node_placement_contraints(
 
 
 def _by_created_dt(task: Task) -> datetime.datetime:
-    # NOTE: SAFE implementation to extract task.CreatedAt as datetime for comparison
-    if task.CreatedAt:
+    # NOTE: SAFE implementation to extract task.created_at as datetime for comparison
+    if task.created_at:
         with suppress(ValueError):
-            created_at = to_datetime(task.CreatedAt)
-            created_at_utc: datetime.datetime = created_at.replace(
-                tzinfo=datetime.timezone.utc
-            )
+            created_at = to_datetime(task.created_at)
+            created_at_utc: datetime.datetime = created_at.replace(tzinfo=datetime.UTC)
             return created_at_utc
-    return datetime.datetime.now(datetime.timezone.utc)
+    return datetime.datetime.now(datetime.UTC)
 
 
 async def pending_service_tasks_with_insufficient_resources(
@@ -209,20 +207,19 @@ async def pending_service_tasks_with_insufficient_resources(
     - have an error message with "insufficient resources"
     - are not scheduled on any node
     """
-    tasks = parse_obj_as(
-        list[Task],
+    tasks = TypeAdapter(list[Task]).validate_python(
         await docker_client.tasks.list(
             filters={
                 "desired-state": "running",
                 "label": service_labels,
             }
-        ),
+        )
     )
 
     sorted_tasks = sorted(tasks, key=_by_created_dt)
     logger.debug(
         "found following tasks that might trigger autoscaling: %s",
-        [task.ID for task in tasks],
+        [task.id for task in tasks],
     )
 
     return [
@@ -238,13 +235,13 @@ async def pending_service_tasks_with_insufficient_resources(
 
 
 def get_node_total_resources(node: Node) -> Resources:
-    assert node.Description  # nosec
-    assert node.Description.Resources  # nosec
-    assert node.Description.Resources.NanoCPUs  # nosec
-    assert node.Description.Resources.MemoryBytes  # nosec
+    assert node.description  # nosec
+    assert node.description.resources  # nosec
+    assert node.description.resources.nano_cp_us  # nosec
+    assert node.description.resources.memory_bytes  # nosec
     return Resources(
-        cpus=node.Description.Resources.NanoCPUs / _NANO_CPU,
-        ram=ByteSize(node.Description.Resources.MemoryBytes),
+        cpus=node.description.resources.nano_cp_us / _NANO_CPU,
+        ram=ByteSize(node.description.resources.memory_bytes),
     )
 
 
@@ -254,47 +251,46 @@ async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
     """
     cluster_resources_counter = collections.Counter({"ram": 0, "cpus": 0})
     for node in nodes:
-        assert node.Description  # nosec
-        assert node.Description.Resources  # nosec
-        assert node.Description.Resources.NanoCPUs  # nosec
+        assert node.description  # nosec
+        assert node.description.resources  # nosec
+        assert node.description.resources.nano_cp_us  # nosec
         cluster_resources_counter.update(
             {
-                "ram": node.Description.Resources.MemoryBytes,
-                "cpus": node.Description.Resources.NanoCPUs / _NANO_CPU,
+                "ram": node.description.resources.memory_bytes,
+                "cpus": node.description.resources.nano_cp_us / _NANO_CPU,
             }
         )
 
-    return Resources.parse_obj(dict(cluster_resources_counter))
+    return Resources.model_validate(dict(cluster_resources_counter))
 
 
 def get_max_resources_from_docker_task(task: Task) -> Resources:
     """returns the highest values for resources based on both docker reservations and limits"""
-    assert task.Spec  # nosec
-    if task.Spec.Resources:
+    assert task.spec  # nosec
+    if task.spec.resources:
         return Resources(
             cpus=max(
                 (
-                    task.Spec.Resources.Reservations
-                    and task.Spec.Resources.Reservations.NanoCPUs
+                    task.spec.resources.reservations
+                    and task.spec.resources.reservations.nano_cp_us
                     or 0
                 ),
                 (
-                    task.Spec.Resources.Limits
-                    and task.Spec.Resources.Limits.NanoCPUs
+                    task.spec.resources.limits
+                    and task.spec.resources.limits.nano_cp_us
                     or 0
                 ),
             )
             / _NANO_CPU,
-            ram=parse_obj_as(
-                ByteSize,
+            ram=TypeAdapter(ByteSize).validate_python(
                 max(
-                    task.Spec.Resources.Reservations
-                    and task.Spec.Resources.Reservations.MemoryBytes
+                    task.spec.resources.reservations
+                    and task.spec.resources.reservations.memory_bytes
                     or 0,
-                    task.Spec.Resources.Limits
-                    and task.Spec.Resources.Limits.MemoryBytes
+                    task.spec.resources.limits
+                    and task.spec.resources.limits.memory_bytes
                     or 0,
-                ),
+                )
             ),
         )
     return Resources(cpus=0, ram=ByteSize(0))
@@ -304,21 +300,21 @@ async def get_task_instance_restriction(
     docker_client: AutoscalingDocker, task: Task
 ) -> InstanceTypeType | None:
     with contextlib.suppress(ValidationError):
-        assert task.ServiceID  # nosec
-        service_inspect = parse_obj_as(
-            Service, await docker_client.services.inspect(task.ServiceID)
+        assert task.service_id  # nosec
+        service_inspect = TypeAdapter(Service).validate_python(
+            await docker_client.services.inspect(task.service_id)
         )
-        assert service_inspect.Spec  # nosec
-        assert service_inspect.Spec.TaskTemplate  # nosec
+        assert service_inspect.spec  # nosec
+        assert service_inspect.spec.task_template  # nosec
 
         if (
-            not service_inspect.Spec.TaskTemplate.Placement
-            or not service_inspect.Spec.TaskTemplate.Placement.Constraints
+            not service_inspect.spec.task_template.placement
+            or not service_inspect.spec.task_template.placement.constraints
         ):
             return None
         # parse the placement contraints
         service_placement_constraints = (
-            service_inspect.Spec.TaskTemplate.Placement.Constraints
+            service_inspect.spec.task_template.placement.constraints
         )
         # should be node.labels.{}
         node_label_to_find = (
@@ -326,8 +322,8 @@ async def get_task_instance_restriction(
         )
         for constraint in service_placement_constraints:
             if constraint.startswith(node_label_to_find):
-                return parse_obj_as(
-                    InstanceTypeType, constraint.removeprefix(node_label_to_find)  # type: ignore[arg-type]
+                return TypeAdapter(InstanceTypeType).validate_python(
+                    constraint.removeprefix(node_label_to_find)
                 )
 
         return None
@@ -347,30 +343,29 @@ async def compute_node_used_resources(
     service_labels: list[DockerLabelKey] | None = None,
 ) -> Resources:
     cluster_resources_counter = collections.Counter({"ram": 0, "cpus": 0})
-    assert node.ID  # nosec
-    task_filters: dict[str, str | list[DockerLabelKey]] = {"node": node.ID}
+    assert node.id  # nosec
+    task_filters: dict[str, str | list[DockerLabelKey]] = {"node": node.id}
     if service_labels is not None:
         task_filters |= {"label": service_labels}
-    all_tasks_on_node = parse_obj_as(
-        list[Task],
-        await docker_client.tasks.list(filters=task_filters),
+    all_tasks_on_node = TypeAdapter(list[Task]).validate_python(
+        await docker_client.tasks.list(filters=task_filters)
     )
     for task in all_tasks_on_node:
-        assert task.Status  # nosec
+        assert task.status  # nosec
         if (
-            task.Status.State in _TASK_STATUS_WITH_ASSIGNED_RESOURCES
-            and task.Spec
-            and task.Spec.Resources
-            and task.Spec.Resources.Reservations
+            task.status.state in _TASK_STATUS_WITH_ASSIGNED_RESOURCES
+            and task.spec
+            and task.spec.resources
+            and task.spec.resources.reservations
         ):
-            task_reservations = task.Spec.Resources.Reservations.dict(exclude_none=True)
             cluster_resources_counter.update(
                 {
-                    "ram": task_reservations.get("MemoryBytes", 0),
-                    "cpus": task_reservations.get("NanoCPUs", 0) / _NANO_CPU,
+                    "ram": task.spec.resources.reservations.memory_bytes or 0,
+                    "cpus": (task.spec.resources.reservations.nano_cp_us or 0)
+                    / _NANO_CPU,
                 }
             )
-    return Resources.parse_obj(dict(cluster_resources_counter))
+    return Resources.model_validate(dict(cluster_resources_counter))
 
 
 async def compute_cluster_used_resources(
@@ -380,11 +375,11 @@ async def compute_cluster_used_resources(
     list_of_used_resources = await logged_gather(
         *(compute_node_used_resources(docker_client, node) for node in nodes)
     )
-    counter = collections.Counter({k: 0 for k in Resources.__fields__})
+    counter = collections.Counter({k: 0 for k in Resources.model_fields})
     for result in list_of_used_resources:
-        counter.update(result.dict())
+        counter.update(result.model_dump())
 
-    return Resources.parse_obj(dict(counter))
+    return Resources.model_validate(dict(counter))
 
 
 _COMMAND_TIMEOUT_S = 10
@@ -446,10 +441,7 @@ def write_compose_file_command(
         },
     }
     compose_yaml = yaml.safe_dump(compose)
-    write_compose_file_cmd = " ".join(
-        ["echo", f'"{compose_yaml}"', ">", f"{_PRE_PULL_COMPOSE_PATH}"]
-    )
-    return write_compose_file_cmd
+    return " ".join(["echo", f'"{compose_yaml}"', ">", f"{_PRE_PULL_COMPOSE_PATH}"])
 
 
 def get_docker_pull_images_on_start_bash_command(
@@ -504,10 +496,10 @@ async def find_node_with_name(
     if not list_of_nodes:
         return None
     # note that there might be several nodes with a common_prefixed name. so now we want exact matching
-    parsed_list_of_nodes = parse_obj_as(list[Node], list_of_nodes)
+    parsed_list_of_nodes = TypeAdapter(list[Node]).validate_python(list_of_nodes)
     for node in parsed_list_of_nodes:
-        assert node.Description  # nosec
-        if node.Description.Hostname == name:
+        assert node.description  # nosec
+        if node.description.hostname == name:
             return node
 
     return None
@@ -521,39 +513,41 @@ async def tag_node(
     available: bool,
 ) -> Node:
     with log_context(
-        logger, logging.DEBUG, msg=f"tagging {node.ID=} with {tags=} and {available=}"
+        logger, logging.DEBUG, msg=f"tagging {node.id=} with {tags=} and {available=}"
     ):
-        assert node.ID  # nosec
+        assert node.id  # nosec
 
-        latest_version_node = parse_obj_as(
-            Node, await docker_client.nodes.inspect(node_id=node.ID)
+        latest_version_node = TypeAdapter(Node).validate_python(
+            await docker_client.nodes.inspect(node_id=node.id)
         )
-        assert latest_version_node.Version  # nosec
-        assert latest_version_node.Version.Index  # nosec
-        assert latest_version_node.Spec  # nosec
-        assert latest_version_node.Spec.Role  # nosec
+        assert latest_version_node.version  # nosec
+        assert latest_version_node.version.index  # nosec
+        assert latest_version_node.spec  # nosec
+        assert latest_version_node.spec.role  # nosec
 
         # updating now should work nicely
         await docker_client.nodes.update(
-            node_id=node.ID,
-            version=latest_version_node.Version.Index,
+            node_id=node.id,
+            version=latest_version_node.version.index,
             spec={
                 "Availability": "active" if available else "drain",
                 "Labels": tags,
-                "Role": latest_version_node.Spec.Role.value,
+                "Role": latest_version_node.spec.role.value,
             },
         )
-        return parse_obj_as(Node, await docker_client.nodes.inspect(node_id=node.ID))
+        return TypeAdapter(Node).validate_python(
+            await docker_client.nodes.inspect(node_id=node.id)
+        )
 
 
 async def set_node_availability(
     docker_client: AutoscalingDocker, node: Node, *, available: bool
 ) -> Node:
-    assert node.Spec  # nosec
+    assert node.spec  # nosec
     return await tag_node(
         docker_client,
         node,
-        tags=cast(dict[DockerLabelKey, str], node.Spec.Labels),
+        tags=cast(dict[DockerLabelKey, str], node.spec.labels),
         available=available,
     )
 
@@ -576,21 +570,21 @@ def get_new_node_docker_tags(
 
 
 def is_node_ready_and_available(node: Node, *, availability: Availability) -> bool:
-    assert node.Status  # nosec
-    assert node.Spec  # nosec
+    assert node.status  # nosec
+    assert node.spec  # nosec
     return bool(
-        node.Status.State == NodeState.ready and node.Spec.Availability == availability
+        node.status.state == NodeState.ready and node.spec.availability == availability
     )
 
 
 def is_node_osparc_ready(node: Node) -> bool:
     if not is_node_ready_and_available(node, availability=Availability.active):
         return False
-    assert node.Spec  # nosec
+    assert node.spec  # nosec
     return bool(
-        node.Spec.Labels
-        and _OSPARC_SERVICE_READY_LABEL_KEY in node.Spec.Labels
-        and node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] == "true"
+        node.spec.labels
+        and _OSPARC_SERVICE_READY_LABEL_KEY in node.spec.labels
+        and node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] == "true"
     )
 
 
@@ -601,8 +595,8 @@ async def set_node_osparc_ready(
     *,
     ready: bool,
 ) -> Node:
-    assert node.Spec  # nosec
-    new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.Spec.Labels))
+    assert node.spec  # nosec
+    new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.spec.labels))
     new_tags[_OSPARC_SERVICE_READY_LABEL_KEY] = "true" if ready else "false"
     new_tags[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
     # NOTE: docker drain sometimes impeed on performance when undraining see https://github.com/ITISFoundation/osparc-simcore/issues/5339
@@ -616,10 +610,10 @@ async def set_node_osparc_ready(
 
 
 def get_node_last_readyness_update(node: Node) -> datetime.datetime:
-    assert node.Spec  # nosec
-    assert node.Spec.Labels  # nosec
+    assert node.spec  # nosec
+    assert node.spec.labels  # nosec
     return arrow.get(
-        node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]
+        node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]
     ).datetime
 
 
@@ -629,8 +623,8 @@ async def set_node_found_empty(
     *,
     empty: bool,
 ) -> Node:
-    assert node.Spec  # nosec
-    new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.Spec.Labels))
+    assert node.spec  # nosec
+    new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.spec.labels))
     if empty:
         new_tags[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
     else:
@@ -639,25 +633,25 @@ async def set_node_found_empty(
         docker_client,
         node,
         tags=new_tags,
-        available=bool(node.Spec.Availability is Availability.active),
+        available=bool(node.spec.availability is Availability.active),
     )
 
 
 async def get_node_empty_since(node: Node) -> datetime.datetime | None:
     """returns the last time when the node was found empty or None if it was not empty"""
-    assert node.Spec  # nosec
-    assert node.Spec.Labels  # nosec
-    if _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in node.Spec.Labels:
+    assert node.spec  # nosec
+    assert node.spec.labels  # nosec
+    if _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in node.spec.labels:
         return None
-    return arrow.get(node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY]).datetime
+    return arrow.get(node.spec.labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY]).datetime
 
 
 async def set_node_begin_termination_process(
     docker_client: AutoscalingDocker, node: Node
 ) -> Node:
     """sets the node to drain and adds a docker label with the time"""
-    assert node.Spec  # nosec
-    new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.Spec.Labels))
+    assert node.spec  # nosec
+    new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.spec.labels))
     new_tags[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY] = arrow.utcnow().isoformat()
 
     return await tag_node(
@@ -669,12 +663,12 @@ async def set_node_begin_termination_process(
 
 
 def get_node_termination_started_since(node: Node) -> datetime.datetime | None:
-    assert node.Spec  # nosec
-    assert node.Spec.Labels  # nosec
-    if _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY not in node.Spec.Labels:
+    assert node.spec  # nosec
+    assert node.spec.labels  # nosec
+    if _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY not in node.spec.labels:
         return None
     return arrow.get(
-        node.Spec.Labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY]
+        node.spec.labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY]
     ).datetime
 
 
@@ -685,8 +679,8 @@ async def attach_node(
     *,
     tags: dict[DockerLabelKey, str],
 ) -> Node:
-    assert node.Spec  # nosec
-    current_tags = cast(dict[DockerLabelKey, str], node.Spec.Labels or {})
+    assert node.spec  # nosec
+    current_tags = cast(dict[DockerLabelKey, str], node.spec.labels or {})
     new_tags = current_tags | tags | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"}
     new_tags[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
     return await tag_node(

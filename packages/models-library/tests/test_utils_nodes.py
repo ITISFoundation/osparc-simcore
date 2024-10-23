@@ -14,7 +14,6 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
 )
 from models_library.utils.nodes import compute_node_hash
-from pydantic import AnyUrl, parse_obj_as
 
 ANOTHER_NODE_ID = uuid4()
 ANOTHER_NODE_OUTPUT_KEY = "the_output_link"
@@ -39,9 +38,7 @@ ANOTHER_NODE_PAYLOAD = {"outputs": {ANOTHER_NODE_OUTPUT_KEY: 36}}
                     "input_bool": True,
                     "input_string": "string",
                     "input_downloadlink": DownloadLink(
-                        downloadLink=parse_obj_as(
-                            AnyUrl, "http://httpbin.org/image/jpeg"
-                        )
+                        downloadLink="http://httpbin.org/image/jpeg"
                     ),
                     "input_simcorelink": SimCoreFileLink(
                         store=0,

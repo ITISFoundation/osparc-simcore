@@ -36,9 +36,14 @@ from models_library.utils.labels_annotations import (
     from_labels,
     to_labels,
 )
-from pydantic import NonNegativeInt, ValidationError
-from pydantic.class_validators import root_validator, validator
-from pydantic.config import Extra
+from pydantic import (
+    ConfigDict,
+    NonNegativeInt,
+    ValidationError,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 from pydantic.fields import Field
 from pydantic.main import BaseModel
 
@@ -67,7 +72,7 @@ class DockerComposeOverwriteConfig(ComposeSpecification):
     def create_default(
         cls, service_name: str | None = None
     ) -> "DockerComposeOverwriteConfig":
-        model: "DockerComposeOverwriteConfig" = cls.parse_obj(
+        model: "DockerComposeOverwriteConfig" = cls.model_validate(
             {
                 "services": {
                     service_name: {
@@ -84,7 +89,7 @@ class DockerComposeOverwriteConfig(ComposeSpecification):
     def from_yaml(cls, path: Path) -> "DockerComposeOverwriteConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-        model: "DockerComposeOverwriteConfig" = cls.parse_obj(data)
+        model: "DockerComposeOverwriteConfig" = cls.model_validate(data)
         return model
 
 
@@ -101,11 +106,11 @@ class MetadataConfig(ServiceMetaDataPublished):
         exclude=True,
     )
 
-    @validator("contact")
+    @field_validator("contact")
     @classmethod
-    def _check_contact_in_authors(cls, v, values):
+    def _check_contact_in_authors(cls, v, info: ValidationInfo):
         """catalog service relies on contact and author to define access rights"""
-        authors_emails = {author.email for author in values["authors"]}
+        authors_emails = {author.email for author in info.data["authors"]}
         if v not in authors_emails:
             msg = "Contact {v} must be registered as an author"
             raise ValueError(msg)
@@ -115,7 +120,7 @@ class MetadataConfig(ServiceMetaDataPublished):
     def from_yaml(cls, path: Path) -> "MetadataConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-        model: "MetadataConfig" = cls.parse_obj(data)
+        model: "MetadataConfig" = cls.model_validate(data)
         return model
 
     @classmethod
@@ -123,12 +128,12 @@ class MetadataConfig(ServiceMetaDataPublished):
         data = from_labels(
             labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
         )
-        model: "MetadataConfig" = cls.parse_obj(data)
+        model: "MetadataConfig" = cls.model_validate(data)
         return model
 
     def to_labels_annotations(self) -> dict[str, str]:
         labels: dict[str, str] = to_labels(
-            self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
+            self.model_dump(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[0],
             trim_key_head=False,
         )
@@ -175,7 +180,7 @@ class SettingsItem(BaseModel):
         description="The value of the service setting (shall follow Docker REST API scheme for services",
     )
 
-    @validator("type_", pre=True)
+    @field_validator("type_", mode="before")
     @classmethod
     def ensure_backwards_compatible_setting_type(cls, v):
         if v == "resources":
@@ -183,18 +188,16 @@ class SettingsItem(BaseModel):
             return "Resources"
         return v
 
-    @validator("value", pre=True)
+    @field_validator("value", mode="before")
     @classmethod
-    def check_value_against_custom_types(cls, v, values):
-        if (type_ := values.get("type_")) and type_ == "ContainerSpec":
-            ContainerSpec.parse_obj(v)
+    def check_value_against_custom_types(cls, v, info: ValidationInfo):
+        if (type_ := info.data.get("type_")) and type_ == "ContainerSpec":
+            ContainerSpec.model_validate(v)
         return v
 
 
 class ValidatingDynamicSidecarServiceLabels(DynamicSidecarServiceLabels):
-    class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
 
 def _underscore_as_minus(field_name: str) -> str:
@@ -225,13 +228,13 @@ class RuntimeConfig(BaseModel):
 
     settings: list[SettingsItem] = Field(default_factory=list)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     @classmethod
     def ensure_compatibility(cls, v):
         # NOTE: if changes are applied to `DynamicSidecarServiceLabels`
         # these are also validated when ooil runs.
         try:
-            ValidatingDynamicSidecarServiceLabels.parse_obj(v)
+            ValidatingDynamicSidecarServiceLabels.model_validate(v)
         except ValidationError:
             _logger.exception(
                 "Could not validate %s via %s",
@@ -242,25 +245,26 @@ class RuntimeConfig(BaseModel):
 
         return v
 
-    class Config:
-        alias_generator = _underscore_as_minus
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(
+        alias_generator=_underscore_as_minus,
+        populate_by_name=True,
+        extra="forbid",
+    )
 
     @classmethod
     def from_yaml(cls, path: Path) -> "RuntimeConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-        return cls.parse_obj(data)
+        return cls.model_validate(data)
 
     @classmethod
     def from_labels_annotations(cls, labels: dict[str, str]) -> "RuntimeConfig":
         data = from_labels(labels, prefix_key=OSPARC_LABEL_PREFIXES[1])
-        return cls.parse_obj(data)
+        return cls.model_validate(data)
 
     def to_labels_annotations(self) -> dict[str, str]:
         labels: dict[str, str] = to_labels(
-            self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
+            self.model_dump(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[1],
         )
         return labels

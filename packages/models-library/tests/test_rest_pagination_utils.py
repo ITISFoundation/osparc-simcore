@@ -41,7 +41,7 @@ def test_paginating_data(base_url):
     )
     assert data_obj
 
-    model_instance = Page[int].parse_obj(data_obj)
+    model_instance = Page[int].model_validate(data_obj)
     assert model_instance
     assert model_instance.meta == PageMetaInfoLimitOffset(
         total=total_number_of_items, count=len(data_chunk), limit=limit, offset=offset
@@ -75,7 +75,7 @@ def test_paginating_data(base_url):
         offset += len(data_chunk)
         assert model_instance.links.next is not None
 
-        data_obj: PageDict = paginate_data(
+        data_obj: PageDict = paginate_data(  # type: ignore[no-redef]
             data_chunk,
             request_url=URL(model_instance.links.next),
             total=total_number_of_items,
@@ -83,7 +83,7 @@ def test_paginating_data(base_url):
             offset=offset,
         )
 
-        model_instance = Page[int].parse_obj(data_obj)
+        model_instance = Page[int].model_validate(data_obj)
         assert model_instance
         assert model_instance.meta == PageMetaInfoLimitOffset(
             total=total_number_of_items,
@@ -127,7 +127,7 @@ def test_paginating_data(base_url):
     assert offset == last_chunk_offset
 
     assert model_instance.links.next is not None
-    data_obj: PageDict = paginate_data(
+    data_obj: PageDict = paginate_data(  # type: ignore[no-redef]
         data_chunk,
         request_url=URL(model_instance.links.next),
         total=total_number_of_items,
@@ -136,7 +136,7 @@ def test_paginating_data(base_url):
     )
     assert data_obj
 
-    model_instance = Page[int].parse_obj(data_obj)
+    model_instance = Page[int].model_validate(data_obj)
     assert model_instance
 
     assert model_instance.meta == PageMetaInfoLimitOffset(

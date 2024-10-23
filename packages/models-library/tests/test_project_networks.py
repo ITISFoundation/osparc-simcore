@@ -7,7 +7,7 @@ from models_library.projects_networks import (
     DockerNetworkName,
     NetworksWithAliases,
 )
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 
 
 @pytest.mark.parametrize(
@@ -19,7 +19,7 @@ from pydantic import ValidationError, parse_obj_as
     ],
 )
 def test_networks_with_aliases_ok(valid_example: dict) -> None:
-    assert NetworksWithAliases.parse_obj(valid_example)
+    assert NetworksWithAliases.model_validate(valid_example)
 
 
 @pytest.mark.parametrize(
@@ -39,26 +39,26 @@ def test_networks_with_aliases_ok(valid_example: dict) -> None:
 )
 def test_networks_with_aliases_fail(invalid_example: dict) -> None:
     with pytest.raises(ValidationError):
-        assert NetworksWithAliases.parse_obj(invalid_example)
+        assert NetworksWithAliases.model_validate(invalid_example)
 
 
 @pytest.mark.parametrize("network_name", ["a", "ok", "a_", "A_", "a1", "a-"])
 def test_projects_networks_validation(network_name: str) -> None:
-    assert parse_obj_as(DockerNetworkName, network_name) == network_name
-    assert parse_obj_as(DockerNetworkAlias, network_name) == network_name
+    assert TypeAdapter(DockerNetworkName).validate_python(network_name) == network_name
+    assert TypeAdapter(DockerNetworkAlias).validate_python(network_name) == network_name
 
 
 @pytest.mark.parametrize("network_name", ["", "1", "-", "_"])
 def test_projects_networks_validation_fails(network_name: str) -> None:
     with pytest.raises(ValidationError):
-        parse_obj_as(DockerNetworkName, network_name)
+        TypeAdapter(DockerNetworkName).validate_python(network_name)
     with pytest.raises(ValidationError):
-        parse_obj_as(DockerNetworkAlias, network_name)
+        TypeAdapter(DockerNetworkAlias).validate_python(network_name)
 
 
 def test_class_constructors_fail() -> None:
     with pytest.raises(ValidationError):
-        NetworksWithAliases.parse_obj(
+        NetworksWithAliases.model_validate(
             {
                 "ok-netowrk_naeme": {
                     UUID(

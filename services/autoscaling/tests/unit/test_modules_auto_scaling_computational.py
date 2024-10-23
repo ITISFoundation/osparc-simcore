@@ -31,7 +31,7 @@ from models_library.generated_models.docker_rest_api import Availability
 from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.generated_models.docker_rest_api import NodeState, NodeStatus
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_computational_ec2_instances
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -109,12 +109,12 @@ def _assert_rabbit_autoscaling_message_sent(
         nodes_total=0,
         nodes_active=0,
         nodes_drained=0,
-        cluster_total_resources=Resources.create_as_empty().dict(),
-        cluster_used_resources=Resources.create_as_empty().dict(),
+        cluster_total_resources=Resources.create_as_empty().model_dump(),
+        cluster_used_resources=Resources.create_as_empty().model_dump(),
         instances_pending=0,
         instances_running=0,
     )
-    expected_message = default_message.copy(update=message_update_kwargs)
+    expected_message = default_message.model_copy(update=message_update_kwargs)
     mock_rabbitmq_post_message.assert_called_once_with(
         app,
         expected_message,
@@ -241,7 +241,9 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
     dask_spec_local_cluster: distributed.SpecCluster,
 ):
     # create a task that needs too much power
-    dask_future = create_dask_task({"RAM": int(parse_obj_as(ByteSize, "12800GiB"))})
+    dask_future = create_dask_task(
+        {"RAM": int(TypeAdapter(ByteSize).validate_python("12800GiB"))}
+    )
     assert dask_future
 
     await auto_scale_cluster(
@@ -317,8 +319,7 @@ async def _create_task_with_resources(
         assert instance_types["InstanceTypes"]
         assert "MemoryInfo" in instance_types["InstanceTypes"][0]
         assert "SizeInMiB" in instance_types["InstanceTypes"][0]["MemoryInfo"]
-        dask_ram = parse_obj_as(
-            ByteSize,
+        dask_ram = TypeAdapter(ByteSize).validate_python(
             f"{instance_types['InstanceTypes'][0]['MemoryInfo']['SizeInMiB']}MiB",
         )
     dask_task_resources = create_dask_task_resources(
@@ -335,7 +336,7 @@ async def _create_task_with_resources(
     [
         pytest.param(
             None,
-            parse_obj_as(ByteSize, "128Gib"),
+            TypeAdapter(ByteSize).validate_python("128Gib"),
             "r5n.4xlarge",
             id="No explicit instance defined",
         ),
@@ -347,7 +348,7 @@ async def _create_task_with_resources(
         ),
         pytest.param(
             "r5n.8xlarge",
-            parse_obj_as(ByteSize, "116Gib"),
+            TypeAdapter(ByteSize).validate_python("116Gib"),
             "r5n.8xlarge",
             id="Explicitely ask for r5n.8xlarge and set the resources",
         ),
@@ -458,22 +459,22 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: expected_ec2_type
     }
     assert mock_docker_tag_node.call_count == 2
-    assert fake_node.Spec
-    assert fake_node.Spec.Labels
+    assert fake_node.spec
+    assert fake_node.spec.labels
     fake_attached_node = deepcopy(fake_node)
-    assert fake_attached_node.Spec
-    fake_attached_node.Spec.Availability = (
+    assert fake_attached_node.spec
+    fake_attached_node.spec.availability = (
         Availability.active if with_drain_nodes_labelled else Availability.drain
     )
-    assert fake_attached_node.Spec.Labels
-    fake_attached_node.Spec.Labels |= expected_docker_node_tags | {
+    assert fake_attached_node.spec.labels
+    fake_attached_node.spec.labels |= expected_docker_node_tags | {
         _OSPARC_SERVICE_READY_LABEL_KEY: "false",
     }
     # check attach call
     assert mock_docker_tag_node.call_args_list[0] == mock.call(
         get_docker_client(initialized_app),
         fake_node,
-        tags=fake_node.Spec.Labels
+        tags=fake_node.spec.labels
         | expected_docker_node_tags
         | {
             _OSPARC_SERVICE_READY_LABEL_KEY: "false",
@@ -482,7 +483,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         available=with_drain_nodes_labelled,
     )
     # update our fake node
-    fake_attached_node.Spec.Labels[
+    fake_attached_node.spec.labels[
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
     ] = mock_docker_tag_node.call_args_list[0][1]["tags"][
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
@@ -502,7 +503,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert mock_docker_tag_node.call_args_list[1] == mock.call(
         get_docker_client(initialized_app),
         fake_attached_node,
-        tags=fake_node.Spec.Labels
+        tags=fake_node.spec.labels
         | expected_docker_node_tags
         | {
             _OSPARC_SERVICE_READY_LABEL_KEY: "true",
@@ -511,7 +512,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         available=True,
     )
     # update our fake node
-    fake_attached_node.Spec.Labels[
+    fake_attached_node.spec.labels[
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
     ] = mock_docker_tag_node.call_args_list[1][1]["tags"][
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
@@ -522,13 +523,13 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_rabbitmq_post_message.reset_mock()
 
     # now we have 1 monitored node that needs to be mocked
-    fake_attached_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
-    fake_attached_node.Status = NodeStatus(
+    fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
+    fake_attached_node.status = NodeStatus(
         State=NodeState.ready, Message=None, Addr=None
     )
-    fake_attached_node.Spec.Availability = Availability.active
-    assert fake_attached_node.Description
-    fake_attached_node.Description.Hostname = internal_dns_name
+    fake_attached_node.spec.availability = Availability.active
+    assert fake_attached_node.description
+    fake_attached_node.description.hostname = internal_dns_name
 
     auto_scaling_mode = ComputationalAutoscaling()
     mocker.patch.object(
@@ -591,7 +592,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_attached_node,
-        tags=fake_attached_node.Spec.Labels
+        tags=fake_attached_node.spec.labels
         | {
             _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: mock.ANY,
         },
@@ -601,7 +602,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
 
     # now update the fake node to have the required label as expected
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    fake_attached_node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY] = (
+    fake_attached_node.spec.labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY] = (
         arrow.utcnow()
         .shift(
             seconds=-app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING.total_seconds()
@@ -625,7 +626,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_attached_node,
-        tags=fake_attached_node.Spec.Labels
+        tags=fake_attached_node.spec.labels
         | {
             _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: mock.ANY,
             _OSPARC_SERVICE_READY_LABEL_KEY: "false",
@@ -639,7 +640,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
         ]
     ) > arrow.get(
-        fake_attached_node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]
+        fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]
     )
     mock_docker_tag_node.reset_mock()
 
@@ -653,9 +654,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
 
     # we artifically set the node to drain
-    fake_attached_node.Spec.Availability = Availability.drain
-    fake_attached_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
-    fake_attached_node.Spec.Labels[
+    fake_attached_node.spec.availability = Availability.drain
+    fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
+    fake_attached_node.spec.labels[
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
     ] = datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
 
@@ -682,7 +683,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
 
     # now changing the last update timepoint will trigger the node removal and shutdown the ec2 instance
-    fake_attached_node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+    fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
         datetime.datetime.now(tz=datetime.timezone.utc)
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         - datetime.timedelta(seconds=1)
@@ -701,7 +702,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_attached_node,
-        tags=fake_attached_node.Spec.Labels
+        tags=fake_attached_node.spec.labels
         | {
             _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: mock.ANY,
         },
@@ -709,8 +710,8 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     mock_docker_tag_node.reset_mock()
     # set the fake node to drain
-    fake_attached_node.Spec.Availability = Availability.drain
-    fake_attached_node.Spec.Labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY] = (
+    fake_attached_node.spec.availability = Availability.drain
+    fake_attached_node.spec.labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY] = (
         arrow.utcnow()
         .shift(
             seconds=-app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION.total_seconds()
@@ -751,7 +752,7 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
 
     # create a task that needs more power
     dask_task_resources = create_dask_task_resources(
-        faker.pystr(), parse_obj_as(ByteSize, "128GiB")
+        faker.pystr(), TypeAdapter(ByteSize).validate_python("128GiB")
     )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
@@ -787,7 +788,7 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
 
     # create a task that needs more power
     dask_task_resources = create_dask_task_resources(
-        "t2.xlarge", parse_obj_as(ByteSize, "128GiB")
+        "t2.xlarge", TypeAdapter(ByteSize).validate_python("128GiB")
     )
     dask_future = create_dask_task(dask_task_resources)
     assert dask_future
@@ -817,7 +818,8 @@ class _ScaleUpParams:
 
 def _dask_task_resources_from_resources(resources: Resources) -> DaskTaskResources:
     return {
-        res_key.upper(): res_value for res_key, res_value in resources.dict().items()
+        res_key.upper(): res_value
+        for res_key, res_value in resources.model_dump().items()
     }
 
 
@@ -847,7 +849,9 @@ def patch_ec2_client_launch_instancess_min_number_of_instances(
     [
         pytest.param(
             _ScaleUpParams(
-                task_resources=Resources(cpus=5, ram=parse_obj_as(ByteSize, "36Gib")),
+                task_resources=Resources(
+                    cpus=5, ram=TypeAdapter(ByteSize).validate_python("36Gib")
+                ),
                 num_tasks=10,
                 expected_instance_type="g3.4xlarge",
                 expected_num_instances=4,
@@ -1106,7 +1110,7 @@ async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_star
     [
         pytest.param(
             None,
-            parse_obj_as(ByteSize, "128Gib"),
+            TypeAdapter(ByteSize).validate_python("128Gib"),
             "r5n.4xlarge",
             id="No explicit instance defined",
         ),

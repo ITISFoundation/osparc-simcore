@@ -16,7 +16,7 @@ from models_library.resource_tracker import (
     PricingPlanUpdate,
 )
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeInt, TypeAdapter
 
 from ....logging_utils import log_decorator
 from ....rabbitmq import RabbitMQRPCClient
@@ -25,6 +25,8 @@ _logger = logging.getLogger(__name__)
 
 
 _DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 20
+
+_RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -36,7 +38,7 @@ async def get_pricing_plan(
 ) -> PricingPlanGet:
     result: PricingPlanGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_pricing_plan"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_pricing_plan"),
         product_name=product_name,
         pricing_plan_id=pricing_plan_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
@@ -53,7 +55,7 @@ async def list_pricing_plans(
 ) -> list[PricingPlanGet]:
     result: PricingPlanGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "list_pricing_plans"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("list_pricing_plans"),
         product_name=product_name,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
@@ -69,7 +71,7 @@ async def create_pricing_plan(
 ) -> PricingPlanGet:
     result: PricingPlanGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "create_pricing_plan"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("create_pricing_plan"),
         data=data,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
@@ -86,7 +88,7 @@ async def update_pricing_plan(
 ) -> PricingPlanGet:
     result: PricingPlanGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "update_pricing_plan"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("update_pricing_plan"),
         product_name=product_name,
         data=data,
         timeout_s=_DEFAULT_TIMEOUT_S,
@@ -104,8 +106,8 @@ async def list_connected_services_to_pricing_plan_by_pricing_plan(
 ) -> list[PricingPlanToServiceGet]:
     result: PricingPlanGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        parse_obj_as(
-            RPCMethodName, "list_connected_services_to_pricing_plan_by_pricing_plan"
+        _RPC_METHOD_NAME_ADAPTER.validate_python(
+            "list_connected_services_to_pricing_plan_by_pricing_plan"
         ),
         product_name=product_name,
         pricing_plan_id=pricing_plan_id,
@@ -126,7 +128,7 @@ async def connect_service_to_pricing_plan(
 ) -> PricingPlanToServiceGet:
     result: PricingPlanGet = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "connect_service_to_pricing_plan"),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("connect_service_to_pricing_plan"),
         product_name=product_name,
         pricing_plan_id=pricing_plan_id,
         service_key=service_key,

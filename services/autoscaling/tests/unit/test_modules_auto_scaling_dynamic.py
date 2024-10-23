@@ -35,7 +35,7 @@ from models_library.generated_models.docker_rest_api import (
     Task,
 )
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_dynamic_ec2_instances
@@ -130,51 +130,51 @@ def with_valid_time_before_termination(
 ) -> datetime.timedelta:
     time = "00:11:00"
     monkeypatch.setenv("EC2_INSTANCES_TIME_BEFORE_TERMINATION", time)
-    return parse_obj_as(datetime.timedelta, time)
+    return TypeAdapter(datetime.timedelta).validate_python(time)
 
 
 @pytest.fixture
 async def drained_host_node(
     host_node: Node, async_docker_client: aiodocker.Docker
 ) -> AsyncIterator[Node]:
-    assert host_node.ID
-    assert host_node.Version
-    assert host_node.Version.Index
-    assert host_node.Spec
-    assert host_node.Spec.Availability
-    assert host_node.Spec.Role
+    assert host_node.id
+    assert host_node.version
+    assert host_node.version.index
+    assert host_node.spec
+    assert host_node.spec.availability
+    assert host_node.spec.role
 
-    old_availability = host_node.Spec.Availability
+    old_availability = host_node.spec.availability
     await async_docker_client.nodes.update(
-        node_id=host_node.ID,
-        version=host_node.Version.Index,
+        node_id=host_node.id,
+        version=host_node.version.index,
         spec={
             "Availability": "drain",
-            "Labels": host_node.Spec.Labels,
-            "Role": host_node.Spec.Role.value,
+            "Labels": host_node.spec.labels,
+            "Role": host_node.spec.role.value,
         },
     )
-    drained_node = parse_obj_as(
-        Node, await async_docker_client.nodes.inspect(node_id=host_node.ID)
+    drained_node = TypeAdapter(Node).validate_python(
+        await async_docker_client.nodes.inspect(node_id=host_node.id)
     )
     yield drained_node
     # revert
     # NOTE: getting the node again as the version might have changed
-    drained_node = parse_obj_as(
-        Node, await async_docker_client.nodes.inspect(node_id=host_node.ID)
+    drained_node = TypeAdapter(Node).validate_python(
+        await async_docker_client.nodes.inspect(node_id=host_node.id)
     )
-    assert drained_node.ID
-    assert drained_node.Version
-    assert drained_node.Version.Index
-    assert drained_node.Spec
-    assert drained_node.Spec.Role
+    assert drained_node.id
+    assert drained_node.version
+    assert drained_node.version.index
+    assert drained_node.spec
+    assert drained_node.spec.role
     await async_docker_client.nodes.update(
-        node_id=drained_node.ID,
-        version=drained_node.Version.Index,
+        node_id=drained_node.id,
+        version=drained_node.version.index,
         spec={
             "Availability": old_availability.value,
-            "Labels": drained_node.Spec.Labels,
-            "Role": drained_node.Spec.Role.value,
+            "Labels": drained_node.spec.labels,
+            "Role": drained_node.spec.role.value,
         },
     )
 
@@ -208,12 +208,12 @@ def _assert_rabbit_autoscaling_message_sent(
         nodes_total=0,
         nodes_active=0,
         nodes_drained=0,
-        cluster_total_resources=Resources.create_as_empty().dict(),
-        cluster_used_resources=Resources.create_as_empty().dict(),
+        cluster_total_resources=Resources.create_as_empty().model_dump(),
+        cluster_used_resources=Resources.create_as_empty().model_dump(),
         instances_pending=0,
         instances_running=0,
     )
-    expected_message = default_message.copy(update=message_update_kwargs)
+    expected_message = default_message.model_copy(update=message_update_kwargs)
     assert mock_rabbitmq_post_message.call_args == mock.call(app, expected_message)
 
 
@@ -322,10 +322,10 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
     )
-    assert fake_node.Description
-    assert fake_node.Description.Resources
-    assert fake_node.Description.Resources.NanoCPUs
-    assert fake_node.Description.Resources.MemoryBytes
+    assert fake_node.description
+    assert fake_node.description.resources
+    assert fake_node.description.resources.nano_cp_us
+    assert fake_node.description.resources.memory_bytes
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
         app_settings,
@@ -335,9 +335,9 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         instances_running=mock_machines_buffer,
         cluster_total_resources={
             "cpus": mock_machines_buffer
-            * fake_node.Description.Resources.NanoCPUs
+            * fake_node.description.resources.nano_cp_us
             / 1e9,
-            "ram": mock_machines_buffer * fake_node.Description.Resources.MemoryBytes,
+            "ram": mock_machines_buffer * fake_node.description.resources.memory_bytes,
         },
     )
 
@@ -533,11 +533,11 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
 
     fake_attached_node = deepcopy(fake_node)
-    assert fake_attached_node.Spec
-    fake_attached_node.Spec.Availability = (
+    assert fake_attached_node.spec
+    fake_attached_node.spec.availability = (
         Availability.active if with_drain_nodes_labelled else Availability.drain
     )
-    assert fake_attached_node.Spec.Labels
+    assert fake_attached_node.spec.labels
     assert app_settings.AUTOSCALING_NODES_MONITORING
     expected_docker_node_tags = {
         tag_key: "true"
@@ -548,7 +548,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     } | {
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: scale_up_params.expected_instance_type
     }
-    fake_attached_node.Spec.Labels |= expected_docker_node_tags | {
+    fake_attached_node.spec.labels |= expected_docker_node_tags | {
         _OSPARC_SERVICE_READY_LABEL_KEY: "false"
     }
 
@@ -557,13 +557,13 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_find_node_with_name_returns_fake_node.reset_mock()
 
     assert mock_docker_tag_node.call_count == 2
-    assert fake_node.Spec
-    assert fake_node.Spec.Labels
+    assert fake_node.spec
+    assert fake_node.spec.labels
     # check attach call
     assert mock_docker_tag_node.call_args_list[0] == mock.call(
         get_docker_client(initialized_app),
         fake_node,
-        tags=fake_node.Spec.Labels
+        tags=fake_node.spec.labels
         | expected_docker_node_tags
         | {
             _OSPARC_SERVICE_READY_LABEL_KEY: "false",
@@ -572,7 +572,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         available=with_drain_nodes_labelled,
     )
     # update our fake node
-    fake_attached_node.Spec.Labels[
+    fake_attached_node.spec.labels[
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
     ] = mock_docker_tag_node.call_args_list[0][1]["tags"][
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
@@ -596,7 +596,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert mock_docker_tag_node.call_args_list[1] == mock.call(
         get_docker_client(initialized_app),
         fake_attached_node,
-        tags=fake_node.Spec.Labels
+        tags=fake_node.spec.labels
         | expected_docker_node_tags
         | {
             _OSPARC_SERVICE_READY_LABEL_KEY: "true",
@@ -605,7 +605,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         available=True,
     )
     # update our fake node
-    fake_attached_node.Spec.Labels[
+    fake_attached_node.spec.labels[
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
     ] = mock_docker_tag_node.call_args_list[1][1]["tags"][
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
@@ -629,9 +629,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     internal_dns_name = instances[0]["PrivateDnsName"].removesuffix(".ec2.internal")
 
     # check rabbit messages were sent, we do have worker
-    assert fake_attached_node.Description
-    assert fake_attached_node.Description.Resources
-    assert fake_attached_node.Description.Resources.NanoCPUs
+    assert fake_attached_node.description
+    assert fake_attached_node.description.resources
+    assert fake_attached_node.description.resources.nano_cp_us
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
         app_settings,
@@ -639,8 +639,8 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         nodes_total=scale_up_params.expected_num_instances,
         nodes_active=scale_up_params.expected_num_instances,
         cluster_total_resources={
-            "cpus": fake_attached_node.Description.Resources.NanoCPUs / 1e9,
-            "ram": fake_attached_node.Description.Resources.MemoryBytes,
+            "cpus": fake_attached_node.description.resources.nano_cp_us / 1e9,
+            "ram": fake_attached_node.description.resources.memory_bytes,
         },
         cluster_used_resources={
             "cpus": float(0),
@@ -651,12 +651,12 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_rabbitmq_post_message.reset_mock()
 
     # now we have 1 monitored node that needs to be mocked
-    fake_attached_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
-    fake_attached_node.Status = NodeStatus(
+    fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
+    fake_attached_node.status = NodeStatus(
         State=NodeState.ready, Message=None, Addr=None
     )
-    fake_attached_node.Spec.Availability = Availability.active
-    fake_attached_node.Description.Hostname = internal_dns_name
+    fake_attached_node.spec.availability = Availability.active
+    fake_attached_node.description.hostname = internal_dns_name
 
     auto_scaling_mode = DynamicAutoscaling()
     mocker.patch.object(
@@ -700,9 +700,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     #
     await asyncio.gather(
         *(
-            async_docker_client.services.delete(d.ID)
+            async_docker_client.services.delete(d.id)
             for d in created_docker_services
-            if d.ID
+            if d.id
         )
     )
 
@@ -723,7 +723,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_attached_node,
-        tags=fake_attached_node.Spec.Labels
+        tags=fake_attached_node.spec.labels
         | {
             _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: mock.ANY,
         },
@@ -733,7 +733,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
 
     # now update the fake node to have the required label as expected
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    fake_attached_node.Spec.Labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY] = (
+    fake_attached_node.spec.labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY] = (
         arrow.utcnow()
         .shift(
             seconds=-app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING.total_seconds()
@@ -748,7 +748,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_attached_node,
-        tags=fake_attached_node.Spec.Labels
+        tags=fake_attached_node.spec.labels
         | {
             _OSPARC_SERVICE_READY_LABEL_KEY: "false",
             _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
@@ -761,7 +761,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
         ]
     ) > arrow.get(
-        fake_attached_node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]
+        fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]
     )
     mock_docker_tag_node.reset_mock()
 
@@ -771,7 +771,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_attached_node,
-        tags=fake_attached_node.Spec.Labels
+        tags=fake_attached_node.spec.labels
         | {
             _OSPARC_SERVICE_READY_LABEL_KEY: "false",
             _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
@@ -793,9 +793,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
 
     # we artifically set the node to drain
     if not with_drain_nodes_labelled:
-        fake_attached_node.Spec.Availability = Availability.drain
-    fake_attached_node.Spec.Labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
-    fake_attached_node.Spec.Labels[
+        fake_attached_node.spec.availability = Availability.drain
+    fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
+    fake_attached_node.spec.labels[
         _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
     ] = datetime.datetime.now(tz=datetime.UTC).isoformat()
 
@@ -824,7 +824,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     assert created_instances == instances
 
     # now changing the last update timepoint will trigger the node removal process
-    fake_attached_node.Spec.Labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
+    fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
         datetime.datetime.now(tz=datetime.UTC)
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         - datetime.timedelta(seconds=1)
@@ -845,7 +845,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_attached_node,
-        tags=fake_attached_node.Spec.Labels
+        tags=fake_attached_node.spec.labels
         | {
             _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: mock.ANY,
         },
@@ -853,8 +853,8 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     mock_docker_tag_node.reset_mock()
     # set the fake node to drain
-    fake_attached_node.Spec.Availability = Availability.drain
-    fake_attached_node.Spec.Labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY] = (
+    fake_attached_node.spec.availability = Availability.drain
+    fake_attached_node.spec.labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY] = (
         arrow.utcnow()
         .shift(
             seconds=-app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_FINAL_TERMINATION.total_seconds()
@@ -907,7 +907,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(
-                    cpus=4, ram=parse_obj_as(ByteSize, "128Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("128Gib")
                 ),
                 num_services=1,
                 expected_instance_type="r5n.4xlarge",
@@ -918,7 +918,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         pytest.param(
             _ScaleUpParams(
                 imposed_instance_type="t2.xlarge",
-                service_resources=Resources(cpus=4, ram=parse_obj_as(ByteSize, "4Gib")),
+                service_resources=Resources(
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("4Gib")
+                ),
                 num_services=1,
                 expected_instance_type="t2.xlarge",
                 expected_num_instances=1,
@@ -929,7 +931,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _ScaleUpParams(
                 imposed_instance_type="r5n.8xlarge",
                 service_resources=Resources(
-                    cpus=4, ram=parse_obj_as(ByteSize, "128Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("128Gib")
                 ),
                 num_services=1,
                 expected_instance_type="r5n.8xlarge",
@@ -998,7 +1000,7 @@ async def test_cluster_scaling_up_and_down(
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(
-                    cpus=4, ram=parse_obj_as(ByteSize, "62Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("62Gib")
                 ),
                 num_services=1,
                 expected_instance_type="r6a.2xlarge",
@@ -1084,7 +1086,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(
-                    cpus=5, ram=parse_obj_as(ByteSize, "36Gib")
+                    cpus=5, ram=TypeAdapter(ByteSize).validate_python("36Gib")
                 ),
                 num_services=10,
                 expected_instance_type="g3.4xlarge",  # 1 GPU, 16 CPUs, 122GiB
@@ -1096,7 +1098,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
             _ScaleUpParams(
                 imposed_instance_type="g4dn.8xlarge",
                 service_resources=Resources(
-                    cpus=5, ram=parse_obj_as(ByteSize, "20480MB")
+                    cpus=5, ram=TypeAdapter(ByteSize).validate_python("20480MB")
                 ),
                 num_services=7,
                 expected_instance_type="g4dn.8xlarge",  # 1 GPU, 32 CPUs, 128GiB
@@ -1190,7 +1192,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
     [
         pytest.param(
             None,
-            parse_obj_as(ByteSize, "128Gib"),
+            TypeAdapter(ByteSize).validate_python("128Gib"),
             "r5n.4xlarge",
             id="No explicit instance defined",
         ),
@@ -1451,12 +1453,11 @@ async def test__activate_drained_nodes_with_no_drained_nodes(
     service_with_no_reservations = await create_service(
         task_template_that_runs, {}, "running"
     )
-    assert service_with_no_reservations.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    assert service_with_no_reservations.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(
-            filters={"service": service_with_no_reservations.Spec.Name}
-        ),
+            filters={"service": service_with_no_reservations.spec.name}
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -1495,12 +1496,11 @@ async def test__activate_drained_nodes_with_drained_node(
     service_with_no_reservations = await create_service(
         task_template_that_runs, {}, "pending"
     )
-    assert service_with_no_reservations.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    assert service_with_no_reservations.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(
-            filters={"service": service_with_no_reservations.Spec.Name}
-        ),
+            filters={"service": service_with_no_reservations.spec.name}
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -1518,7 +1518,7 @@ async def test__activate_drained_nodes_with_drained_node(
         initialized_app, cluster_with_drained_nodes, DynamicAutoscaling()
     )
     assert updated_cluster.active_nodes == cluster_with_drained_nodes.drained_nodes
-    assert drained_host_node.Spec
+    assert drained_host_node.spec
     mock_docker_tag_node.assert_called_once_with(
         mock.ANY,
         drained_host_node,

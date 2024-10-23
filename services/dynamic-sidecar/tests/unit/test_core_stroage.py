@@ -12,6 +12,7 @@ import requests
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from settings_library.node_ports import StorageAuthSettings
 from simcore_service_dynamic_sidecar.core.storage import (
@@ -60,7 +61,7 @@ def mock_storage_app(username: str | None, password: str | None) -> FastAPI:
 def storage_auth_settings(
     username: str | None, password: str | None
 ) -> StorageAuthSettings:
-    return StorageAuthSettings.parse_obj(
+    return TypeAdapter(StorageAuthSettings).validate_python(
         {
             "STORAGE_HOST": "localhost",
             "STORAGE_PORT": 44332,

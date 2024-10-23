@@ -16,7 +16,7 @@ from aws_library.ec2 import EC2InstanceType
 from faker import Faker
 from models_library.docker import DockerGenericTag
 from models_library.generated_models.docker_rest_api import Node as DockerNode
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_autoscaling.core.errors import Ec2InvalidDnsNameError
@@ -129,10 +129,10 @@ async def test_associate_ec2_instances_with_corresponding_nodes(
     assert len(associated_instances) == len(ec2_instances)
     assert len(associated_instances) == len(nodes)
     for associated_instance in associated_instances:
-        assert associated_instance.node.Description
-        assert associated_instance.node.Description.Hostname
+        assert associated_instance.node.description
+        assert associated_instance.node.description.hostname
         assert (
-            associated_instance.node.Description.Hostname
+            associated_instance.node.description.hostname
             in associated_instance.ec2_instance.aws_private_dns
         )
 
@@ -211,14 +211,13 @@ def ec2_instances_boot_ami_scripts(
 def ec2_instances_boot_ami_pre_pull(
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
 ) -> EnvVarsDict:
-    images = parse_obj_as(
-        list[DockerGenericTag],
+    images = TypeAdapter(list[DockerGenericTag]).validate_python(
         [
             "nginx:latest",
             "itisfoundation/my-very-nice-service:latest",
             "simcore/services/dynamic/another-nice-one:2.4.5",
             "asd",
-        ],
+        ]
     )
     envs = setenvs_from_dict(
         monkeypatch,
@@ -364,9 +363,9 @@ def test_sort_drained_nodes(
 
     for _ in range(_NUM_NODES_TERMINATING):
         fake_node = create_fake_node()
-        assert fake_node.Spec
-        assert fake_node.Spec.Labels
-        fake_node.Spec.Labels[
+        assert fake_node.spec
+        assert fake_node.spec.labels
+        fake_node.spec.labels[
             _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY
         ] = arrow.utcnow().datetime.isoformat()
         fake_associated_instance = create_associated_instance(
@@ -404,6 +403,6 @@ def test_sort_drained_nodes(
     )
     assert len(terminating_nodes) == _NUM_NODES_TERMINATING
     for n in terminating_nodes:
-        assert n.node.Spec
-        assert n.node.Spec.Labels
-        assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY in n.node.Spec.Labels
+        assert n.node.spec
+        assert n.node.spec.labels
+        assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY in n.node.spec.labels

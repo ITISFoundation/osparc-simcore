@@ -5,15 +5,18 @@
 
 
 import asyncio
+import datetime
+from typing import Final
 from unittest import mock
 
 import pytest
 from fastapi import FastAPI
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 
-_FAST_POLL_INTERVAL = 1
+_FAST_POLL_INTERVAL: Final[int] = 1
 
 
 @pytest.fixture
@@ -26,7 +29,10 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     # fast interval
-    monkeypatch.setenv("AUTOSCALING_POLL_INTERVAL", f"{_FAST_POLL_INTERVAL}")
+    monkeypatch.setenv(
+        "AUTOSCALING_POLL_INTERVAL",
+        f"{TypeAdapter(datetime.timedelta).validate_python(_FAST_POLL_INTERVAL)}",
+    )
     app_environment["AUTOSCALING_POLL_INTERVAL"] = f"{_FAST_POLL_INTERVAL}"
     return app_environment
 

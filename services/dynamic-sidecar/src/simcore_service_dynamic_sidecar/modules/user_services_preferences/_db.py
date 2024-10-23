@@ -6,7 +6,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.user_preferences import PreferenceName
 from models_library.users import UserID
 from packaging.version import Version
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_postgres_database.utils_user_preferences import (
     UserServicesUserPreferencesRepo,
 )
@@ -73,5 +73,7 @@ async def load_preferences(
     if payload is None:
         return
 
-    preference = parse_obj_as(preference_class, umsgpack.unpackb(payload))
+    preference = TypeAdapter(preference_class).validate_python(
+        umsgpack.unpackb(payload)
+    )
     await dir_from_bytes(preference.value, user_preferences_path)

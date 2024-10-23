@@ -56,8 +56,8 @@ async def associate_ec2_instances_with_nodes(
     non_associated_instances: list[EC2InstanceData] = []
 
     def _find_node_with_name(node: Node) -> bool:
-        assert node.Description  # nosec
-        return bool(node.Description.Hostname == docker_node_name)
+        assert node.description  # nosec
+        return bool(node.description.hostname == docker_node_name)
 
     for instance_data in ec2_instances:
         try:

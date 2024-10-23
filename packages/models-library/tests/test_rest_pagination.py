@@ -7,7 +7,7 @@ from pydantic.main import BaseModel
 
 @pytest.mark.parametrize("cls_model", [Page[str], PageMetaInfoLimitOffset])
 def test_page_response_limit_offset_models(cls_model: BaseModel):
-    examples = cls_model.Config.schema_extra["examples"]
+    examples = cls_model.model_config["json_schema_extra"]["examples"]
 
     for index, example in enumerate(examples):
         print(f"{index:-^10}:\n", example)
@@ -35,14 +35,14 @@ def test_invalid_count(count: int, offset: int):
 
 
 def test_data_size_does_not_fit_count():
-    example = deepcopy(Page[str].Config.schema_extra["examples"][0])
+    example = deepcopy(Page[str].model_config["json_schema_extra"]["examples"][0])
     example["_meta"]["count"] = len(example["data"]) - 1
     with pytest.raises(ValueError):
         Page[str](**example)
 
 
 def test_empty_data_is_converted_to_list():
-    example = deepcopy(Page[str].Config.schema_extra["examples"][0])
+    example = deepcopy(Page[str].model_config["json_schema_extra"]["examples"][0])
     example["data"] = None
     example["_meta"]["count"] = 0
     model_instance = Page[str](**example)

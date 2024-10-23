@@ -44,7 +44,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     for name in _NOISY_LOGGERS:
         logging.getLogger(name).setLevel(quiet_level)
 
-    logger.info("app settings: %s", settings.json(indent=1))
+    logger.info("app settings: %s", settings.model_dump_json(indent=1))
 
     app = FastAPI(
         debug=settings.AUTOSCALING_DEBUG,

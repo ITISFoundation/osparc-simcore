@@ -9,7 +9,7 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
+from pydantic import AliasChoices, ByteSize, Field, PositiveInt, field_validator
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.postgres import PostgresSettings
@@ -70,33 +70,45 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # RUNTIME  -----------------------------------------------------------
     EFS_GUARDIAN_DEBUG: bool = Field(
-        default=False, description="Debug mode", env=["EFS_GUARDIAN_DEBUG", "DEBUG"]
+        default=False,
+        description="Debug mode",
+        validation_alias=AliasChoices("EFS_GUARDIAN_DEBUG", "DEBUG"),
     )
     EFS_GUARDIAN_LOGLEVEL: LogLevel = Field(
-        LogLevel.INFO, env=["EFS_GUARDIAN_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        LogLevel.INFO,
+        validation_alias=AliasChoices("EFS_GUARDIAN_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
     )
     EFS_GUARDIAN_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
+        validation_alias=AliasChoices(
             "EFS_GUARDIAN_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
-    EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings = Field(auto_default_from_env=True)
-    EFS_GUARDIAN_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
-    EFS_GUARDIAN_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
-    EFS_GUARDIAN_REDIS: RedisSettings = Field(auto_default_from_env=True)
+    EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+    EFS_GUARDIAN_POSTGRES: PostgresSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+    EFS_GUARDIAN_RABBITMQ: RabbitSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+    EFS_GUARDIAN_REDIS: RedisSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
     EFS_GUARDIAN_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemetry tracing"
+        description="settings for opentelemetry tracing",
+        json_schema_extra={"auto_default_from_env": True},
     )
 
     @cached_property
     def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
         return self.EFS_GUARDIAN_LOGLEVEL
 
-    @validator("EFS_GUARDIAN_LOGLEVEL", pre=True)
+    @field_validator("EFS_GUARDIAN_LOGLEVEL", mode="before")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)

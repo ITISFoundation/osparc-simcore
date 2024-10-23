@@ -1,10 +1,10 @@
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
-class BaseLongRunningError(PydanticErrorMixin, Exception):
+class BaseLongRunningError(OsparcErrorMixin, Exception):
     """base exception for this module"""
 
-    code: str = "long_running_task.base_long_running_error"
+    code: str = "long_running_task.base_long_running_error"  # type: ignore[assignment]
 
 
 class TaskAlreadyRunningError(BaseLongRunningError):

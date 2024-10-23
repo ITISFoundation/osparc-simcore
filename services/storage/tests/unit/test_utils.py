@@ -16,7 +16,7 @@ from aiohttp import ClientSession
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import ByteSize, HttpUrl, parse_obj_as
+from pydantic import ByteSize, HttpUrl, TypeAdapter, parse_obj_as
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.models import ETag, FileMetaData, S3BucketName, UploadID
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -79,7 +79,7 @@ def test_file_entry_valid(
     fmd = FileMetaData.from_simcore_node(
         user_id=faker.pyint(min_value=1),
         file_id=file_id,
-        bucket=S3BucketName("pytest-bucket"),
+        bucket=TypeAdapter(S3BucketName).validate_python("pytest-bucket"),
         location_id=SimcoreS3DataManager.get_location_id(),
         location_name=SimcoreS3DataManager.get_location_name(),
         sha256_checksum=None,

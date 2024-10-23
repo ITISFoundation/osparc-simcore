@@ -15,9 +15,11 @@ _logger = logging.getLogger(__name__)
 
 
 async def http_exception_as_json_response(
-    request: Request, exc: HTTPException
+    request: Request, exc: Exception
 ) -> JSONResponse:
+    assert isinstance(exc, HTTPException)  # nosec
     assert request  # nosec
+
     error = DefaultApiError.from_status_code(exc.status_code)
 
     error_detail = error.detail or ""

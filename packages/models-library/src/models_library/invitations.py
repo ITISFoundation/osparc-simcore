@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Final
 
-from pydantic import BaseModel, EmailStr, Field, PositiveInt, validator
+from pydantic import BaseModel, EmailStr, Field, PositiveInt, field_validator
 
 from .products import ProductName
 
@@ -35,7 +35,7 @@ class InvitationInputs(BaseModel):
         description="If None, it will use INVITATIONS_DEFAULT_PRODUCT",
     )
 
-    @validator("issuer", pre=True)
+    @field_validator("issuer", mode="before")
     @classmethod
     def trim_long_issuers_to_max_length(cls, v):
         if v and isinstance(v, str):
@@ -50,14 +50,14 @@ class InvitationContent(InvitationInputs):
     created: datetime = Field(..., description="Timestamp for creation")
 
     def as_invitation_inputs(self) -> InvitationInputs:
-        return self.copy(exclude={"created"})
+        return self.model_validate(self.model_dump(exclude={"created"}))    # copy excluding "created"
 
     @classmethod
     def create_from_inputs(
         cls, invitation_inputs: InvitationInputs, default_product: ProductName
     ) -> "InvitationContent":
 
-        kwargs = invitation_inputs.dict(exclude_none=True)
+        kwargs = invitation_inputs.model_dump(exclude_none=True)
         kwargs.setdefault("product", default_product)
         return cls(
             created=datetime.now(tz=timezone.utc),

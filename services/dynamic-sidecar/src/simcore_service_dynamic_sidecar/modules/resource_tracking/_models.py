@@ -1,10 +1,8 @@
 from asyncio import Task
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ResourceTrackingState(BaseModel):
     heart_beat_task: Task | None = None
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)

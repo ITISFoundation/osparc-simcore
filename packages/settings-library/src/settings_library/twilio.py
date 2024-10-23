@@ -6,29 +6,25 @@ For twilio SMS services:
 """
 
 
-import re
-from re import Pattern
+from typing import Annotated, TypeAlias
 
-from pydantic import ConstrainedStr, Field, parse_obj_as
+from pydantic import BeforeValidator, Field, StringConstraints, TypeAdapter
 
 from .base import BaseCustomSettings
 
-
-class CountryCodeStr(ConstrainedStr):
-    # Based on https://countrycode.org/
-    strip_whitespace: bool = True
-    regex: Pattern[str] | None = re.compile(r"^\d{1,4}")
-
-    class Config:
-        frozen = True
+# Based on https://countrycode.org/
+CountryCodeStr: TypeAlias = Annotated[
+    str,
+    BeforeValidator(str),
+    StringConstraints(strip_whitespace=True, pattern=r"^\d{1,4}"),
+]
 
 
 class TwilioSettings(BaseCustomSettings):
     TWILIO_ACCOUNT_SID: str = Field(..., description="Twilio account String Identifier")
     TWILIO_AUTH_TOKEN: str = Field(..., description="API tokens")
     TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT: list[CountryCodeStr] = Field(
-        default=parse_obj_as(
-            list[CountryCodeStr],
+        default=TypeAdapter(list[CountryCodeStr]).validate_python(
             [
                 "41",
             ],

@@ -1,7 +1,7 @@
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
-class SSMRuntimeError(PydanticErrorMixin, RuntimeError):
+class SSMRuntimeError(OsparcErrorMixin, RuntimeError):
     msg_template: str = "SSM client unexpected error"
 
 

@@ -1,14 +1,16 @@
 from functools import cached_property
 
+from common_library.pydantic_networks_extension import HttpUrlLegacy
 from models_library.basic_types import NonNegativeDecimal
 from pydantic import (
+    AliasChoices,
+    ConfigDict,
     EmailStr,
     Field,
-    HttpUrl,
     PositiveFloat,
     SecretStr,
-    parse_obj_as,
-    validator,
+    TypeAdapter,
+    field_validator,
 )
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
@@ -28,19 +30,19 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = PROJECT_NAME
-    API_VTAG: VersionTag = parse_obj_as(VersionTag, API_VTAG)
+    API_VTAG: VersionTag = TypeAdapter(VersionTag).validate_python(API_VTAG)
 
     # RUNTIME  -----------------------------------------------------------
 
     PAYMENTS_LOGLEVEL: LogLevel = Field(
-        default=LogLevel.INFO, env=["PAYMENTS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        default=LogLevel.INFO,
+        validation_alias=AliasChoices("PAYMENTS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
     )
     PAYMENTS_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=[
-            "PAYMENTS_LOG_FORMAT_LOCAL_DEV_ENABLED",
-            "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        validation_alias=AliasChoices(
+            "LOG_FORMAT_LOCAL_DEV_ENABLED", "PAYMENTS_LOG_FORMAT_LOCAL_DEV_ENABLED"
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
 
@@ -48,10 +50,12 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def LOG_LEVEL(self):  # noqa: N802
         return self.PAYMENTS_LOGLEVEL
 
-    @validator("PAYMENTS_LOGLEVEL", pre=True)
+    @field_validator("PAYMENTS_LOGLEVEL", mode="before")
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
+
+    model_config = ConfigDict(extra="allow")  # type:ignore[assignment]
 
 
 class ApplicationSettings(_BaseApplicationSettings):
@@ -60,7 +64,7 @@ class ApplicationSettings(_BaseApplicationSettings):
     These settings includes extra configuration for the http-API
     """
 
-    PAYMENTS_GATEWAY_URL: HttpUrl = Field(
+    PAYMENTS_GATEWAY_URL: HttpUrlLegacy = Field(
         ..., description="Base url to the payment gateway"
     )
 
@@ -111,18 +115,21 @@ class ApplicationSettings(_BaseApplicationSettings):
     )
 
     PAYMENTS_RABBITMQ: RabbitSettings = Field(
-        auto_default_from_env=True, description="settings for service/rabbitmq"
+        json_schema_extra={"auto_default_from_env": True},
+        description="settings for service/rabbitmq",
     )
 
     PAYMENTS_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemetry tracing"
+        json_schema_extra={"auto_default_from_env": True},
+        description="settings for opentelemetry tracing",
     )
 
     PAYMENTS_POSTGRES: PostgresSettings = Field(
-        auto_default_from_env=True, description="settings for postgres service"
+        json_schema_extra={"auto_default_from_env": True},
+        description="settings for postgres service",
     )
 
-    PAYMENTS_STRIPE_URL: HttpUrl = Field(
+    PAYMENTS_STRIPE_URL: HttpUrlLegacy = Field(
         ..., description="Base url to the payment Stripe"
     )
     PAYMENTS_STRIPE_API_SECRET: SecretStr = Field(
@@ -134,12 +141,13 @@ class ApplicationSettings(_BaseApplicationSettings):
     )
 
     PAYMENTS_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings = Field(
-        auto_default_from_env=True, description="settings for RUT service"
+        json_schema_extra={"auto_default_from_env": True},
+        description="settings for RUT service",
     )
 
     PAYMENTS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
     PAYMENTS_EMAIL: SMTPSettings | None = Field(
-        auto_default_from_env=True,
+        json_schema_extra={"auto_default_from_env": True},
         description="optional email (see notifier_email service)",
     )

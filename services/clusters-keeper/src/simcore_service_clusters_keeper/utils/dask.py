@@ -1,13 +1,15 @@
 from aws_library.ec2 import EC2InstanceData
 from fastapi import FastAPI
 from models_library.clusters import InternalClusterAuthentication
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 
 from ..core.settings import get_application_settings
 
 
 def get_scheduler_url(ec2_instance: EC2InstanceData) -> AnyUrl:
-    url: AnyUrl = parse_obj_as(AnyUrl, f"tls://{ec2_instance.aws_private_dns}:8786")
+    url: AnyUrl = TypeAdapter(AnyUrl).validate_python(
+        f"tls://{ec2_instance.aws_private_dns}:8786"
+    )
     return url
 
 

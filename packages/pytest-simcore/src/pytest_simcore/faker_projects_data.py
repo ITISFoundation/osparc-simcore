@@ -16,7 +16,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.faker_factories import random_project
 
 _MESSAGE = (
@@ -38,15 +38,14 @@ def pytest_addoption(parser: pytest.Parser):
 
 @pytest.fixture
 def project_id(faker: Faker, request: pytest.FixtureRequest) -> ProjectID:
-    return parse_obj_as(
-        ProjectID,
+    return TypeAdapter(ProjectID).validate_python(
         request.config.getoption("--faker-project-id", default=None) or faker.uuid4(),
     )
 
 
 @pytest.fixture
 def node_id(faker: Faker) -> NodeID:
-    return parse_obj_as(NodeID, faker.uuid4())
+    return TypeAdapter(NodeID).validate_python(faker.uuid4())
 
 
 @pytest.fixture

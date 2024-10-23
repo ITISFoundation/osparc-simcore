@@ -13,7 +13,7 @@ from aws_library.ec2 import EC2InstanceData, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
 from distributed.core import Status
 from models_library.clusters import InternalClusterAuthentication, TLSAuthentication
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 
 from ..core.errors import (
     DaskNoWorkersError,
@@ -59,7 +59,7 @@ async def _scheduler_client(
                 require_encryption=True,
             )
         async with distributed.Client(
-            url,
+            f"{url}",
             asynchronous=True,
             timeout=f"{_DASK_SCHEDULER_CONNECT_TIMEOUT_S}",
             security=security,
@@ -173,9 +173,9 @@ async def list_unrunnable_tasks(
         }
 
     async with _scheduler_client(scheduler_url, authentication) as client:
-        list_of_tasks: dict[dask.typing.Key, DaskTaskResources] = (
-            await _wrap_client_async_routine(client.run_on_scheduler(_list_tasks))
-        )
+        list_of_tasks: dict[
+            dask.typing.Key, DaskTaskResources
+        ] = await _wrap_client_async_routine(client.run_on_scheduler(_list_tasks))
         _logger.debug("found unrunnable tasks: %s", list_of_tasks)
         return [
             DaskTask(
@@ -207,10 +207,10 @@ async def list_processing_tasks_per_worker(
         return worker_to_processing_tasks
 
     async with _scheduler_client(scheduler_url, authentication) as client:
-        worker_to_tasks: dict[str, list[tuple[dask.typing.Key, DaskTaskResources]]] = (
-            await _wrap_client_async_routine(
-                client.run_on_scheduler(_list_processing_tasks)
-            )
+        worker_to_tasks: dict[
+            str, list[tuple[dask.typing.Key, DaskTaskResources]]
+        ] = await _wrap_client_async_routine(
+            client.run_on_scheduler(_list_processing_tasks)
         )
         _logger.debug("found processing tasks: %s", worker_to_tasks)
         tasks_per_worker = defaultdict(list)
@@ -276,12 +276,12 @@ async def get_worker_used_resources(
         _logger.debug("looking for processing tasksfor %s", f"{worker_url=}")
 
         # now get the used resources
-        worker_processing_tasks: list[tuple[dask.typing.Key, DaskTaskResources]] = (
-            await _wrap_client_async_routine(
-                client.run_on_scheduler(
-                    _list_processing_tasks_on_worker, worker_url=worker_url
-                ),
-            )
+        worker_processing_tasks: list[
+            tuple[dask.typing.Key, DaskTaskResources]
+        ] = await _wrap_client_async_routine(
+            client.run_on_scheduler(
+                _list_processing_tasks_on_worker, worker_url=worker_url
+            ),
         )
 
         total_resources_used: collections.Counter[str] = collections.Counter()
@@ -291,7 +291,9 @@ async def get_worker_used_resources(
         _logger.debug("found %s for %s", f"{total_resources_used=}", f"{worker_url=}")
         return Resources(
             cpus=total_resources_used.get("CPU", 0),
-            ram=parse_obj_as(ByteSize, total_resources_used.get("RAM", 0)),
+            ram=TypeAdapter(ByteSize).validate_python(
+                total_resources_used.get("RAM", 0)
+            ),
         )
 
 

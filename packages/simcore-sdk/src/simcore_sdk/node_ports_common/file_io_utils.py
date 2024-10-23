@@ -253,7 +253,7 @@ def _check_for_aws_http_errors(exc: BaseException) -> bool:
 async def _session_put(
     session: ClientSession,
     file_part_size: int,
-    upload_url: AnyUrl,
+    upload_url: str,
     pbar: tqdm,
     io_log_redirect_cb: LogRedirectCB | None,
     progress_bar: ProgressBarData,
@@ -314,7 +314,7 @@ async def _upload_file_part(
             received_e_tag = await _session_put(
                 session=session,
                 file_part_size=file_part_size,
-                upload_url=upload_url,
+                upload_url=str(upload_url),
                 pbar=pbar,
                 io_log_redirect_cb=io_log_redirect_cb,
                 progress_bar=progress_bar,

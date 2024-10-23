@@ -1,0 +1,18 @@
+# Shortcut to install all packages needed to develop 'common-library'
+#
+# - As ci.txt but with current and repo packages in develop (edit) mode
+#
+# Usage:
+#   pip install -r requirements/dev.txt
+#
+
+# installs base + tests requirements
+--requirement _base.txt
+--requirement _test.txt
+--requirement _tools.txt
+
+# installs this repo's packages
+--editable ../pytest-simcore/
+
+# current module
+--editable .

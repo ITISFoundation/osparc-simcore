@@ -78,9 +78,9 @@ async def create_project(
         project_nodes={
             NodeID(node_id): ProjectNodeCreate(
                 node_id=NodeID(node_id),
-                required_resources=ServiceResourcesDictHelpers.Config.schema_extra[
-                    "examples"
-                ][0],
+                required_resources=ServiceResourcesDictHelpers.model_config[
+                    "json_schema_extra"
+                ]["examples"][0],
             )
             for node_id in project_data.get("workbench", {})
         },

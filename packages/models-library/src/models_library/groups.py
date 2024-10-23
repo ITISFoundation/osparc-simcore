@@ -1,7 +1,7 @@
 import enum
-from typing import Any, ClassVar, Final
+from typing import Final
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.types import PositiveInt
 
 from .utils.common_validators import create_enums_pre_validator
@@ -28,16 +28,15 @@ class Group(BaseModel):
     group_type: GroupTypeInModel = Field(..., alias="type")
     thumbnail: str | None
 
-    _from_equivalent_enums = validator("group_type", allow_reuse=True, pre=True)(
+    _from_equivalent_enums = field_validator("group_type", mode="before")(
         create_enums_pre_validator(GroupTypeInModel)
     )
 
 
 class GroupAtDB(Group):
-    class Config:
-        orm_mode = True
-
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "example": {
                 "gid": 218,
                 "name": "Friends group",
@@ -45,4 +44,5 @@ class GroupAtDB(Group):
                 "type": "standard",
                 "thumbnail": "https://image.flaticon.com/icons/png/512/23/23374.png",
             }
-        }
+        },
+    )

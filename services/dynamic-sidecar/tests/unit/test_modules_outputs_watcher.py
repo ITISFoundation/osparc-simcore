@@ -22,7 +22,7 @@ from pydantic import (
     NonNegativeFloat,
     NonNegativeInt,
     PositiveFloat,
-    parse_obj_as,
+    TypeAdapter,
 )
 from pytest_mock import MockerFixture
 from simcore_service_dynamic_sidecar.modules.mounted_fs import MountedVolumes
@@ -172,20 +172,20 @@ class FileGenerationInfo:
 @pytest.fixture(
     params=[
         FileGenerationInfo(
-            size=parse_obj_as(ByteSize, "100b"),
-            chunk_size=parse_obj_as(ByteSize, "1b"),
+            size=TypeAdapter(ByteSize).validate_python("100b"),
+            chunk_size=TypeAdapter(ByteSize).validate_python("1b"),
         ),
         FileGenerationInfo(
-            size=parse_obj_as(ByteSize, "100kib"),
-            chunk_size=parse_obj_as(ByteSize, "1kib"),
+            size=TypeAdapter(ByteSize).validate_python("100kib"),
+            chunk_size=TypeAdapter(ByteSize).validate_python("1kib"),
         ),
         FileGenerationInfo(
-            size=parse_obj_as(ByteSize, "100mib"),
-            chunk_size=parse_obj_as(ByteSize, "1mib"),
+            size=TypeAdapter(ByteSize).validate_python("100mib"),
+            chunk_size=TypeAdapter(ByteSize).validate_python("1mib"),
         ),
         FileGenerationInfo(
-            size=parse_obj_as(ByteSize, "100mib"),
-            chunk_size=parse_obj_as(ByteSize, "10mib"),
+            size=TypeAdapter(ByteSize).validate_python("100mib"),
+            chunk_size=TypeAdapter(ByteSize).validate_python("10mib"),
         ),
     ]
 )

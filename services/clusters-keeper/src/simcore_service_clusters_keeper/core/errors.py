@@ -1,7 +1,7 @@
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
-class ClustersKeeperRuntimeError(PydanticErrorMixin, RuntimeError):
+class ClustersKeeperRuntimeError(OsparcErrorMixin, RuntimeError):
     msg_template: str = "clusters-keeper unexpected error"
 
 

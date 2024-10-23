@@ -1,7 +1,7 @@
 import json
 import os
 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 # Expects env var: FUNCTION_SERVICES_AUTHORS='{"OM":{"name": ...}, "EN":{...} }'
 try:

@@ -32,7 +32,7 @@ async def s3_client(s3_settings: S3Settings) -> typing.AsyncIterator[S3Client]:
         config=Config(signature_version="s3v4"),
     )
     assert isinstance(session_client, ClientCreatorContext)
-    client = typing.cast(S3Client, await exit_stack.enter_async_context(session_client))
+    client = typing.cast(S3Client, await exit_stack.enter_async_context(session_client))    # type: ignore[arg-type]
 
     yield client
 

@@ -19,7 +19,7 @@ from models_library.products import ProductName, StripePriceID, StripeTaxRateID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
@@ -87,7 +87,7 @@ async def test_webserver_init_and_cancel_payment_method_workflow(
 
     initiated = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "init_creation_of_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("init_creation_of_payment_method"),
         wallet_id=wallet_id,
         wallet_name=wallet_name,
         user_id=user_id,
@@ -104,7 +104,7 @@ async def test_webserver_init_and_cancel_payment_method_workflow(
 
     cancelled = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "cancel_creation_of_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("cancel_creation_of_payment_method"),
         payment_method_id=initiated.payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
@@ -135,7 +135,7 @@ async def test_webserver_crud_payment_method_workflow(
 
     inited = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "init_creation_of_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("init_creation_of_payment_method"),
         wallet_id=wallet_id,
         wallet_name=wallet_name,
         user_id=user_id,
@@ -161,7 +161,7 @@ async def test_webserver_crud_payment_method_workflow(
 
     listed = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "list_payment_methods"),
+        TypeAdapter(RPCMethodName).validate_python("list_payment_methods"),
         user_id=user_id,
         wallet_id=wallet_id,
         timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
@@ -175,7 +175,7 @@ async def test_webserver_crud_payment_method_workflow(
 
     got = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("get_payment_method"),
         payment_method_id=inited.payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
@@ -187,7 +187,7 @@ async def test_webserver_crud_payment_method_workflow(
 
     await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "delete_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("delete_payment_method"),
         payment_method_id=inited.payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,
@@ -230,7 +230,7 @@ async def test_webserver_pay_with_payment_method_workflow(
 
     transaction = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "pay_with_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("pay_with_payment_method"),
         payment_method_id=created.payment_method_id,
         amount_dollars=faker.pyint(),
         target_credits=faker.pyint(),

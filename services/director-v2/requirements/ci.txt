@@ -13,6 +13,7 @@
 --requirement _tools.txt
 
 # installs this repo's packages
+simcore-common-library @ ../../packages/common-library/
 simcore-dask-task-models-library @ ../../packages/dask-task-models-library/
 simcore-models-library @ ../../packages/models-library
 simcore-postgres-database @ ../../packages/postgres-database

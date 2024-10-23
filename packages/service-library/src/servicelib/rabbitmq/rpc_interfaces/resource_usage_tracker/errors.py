@@ -1,7 +1,7 @@
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 
 
-class ResourceUsageTrackerRuntimeError(PydanticErrorMixin, RuntimeError):
+class ResourceUsageTrackerRuntimeError(OsparcErrorMixin, RuntimeError):
     msg_template: str = "Resource-usage-tracker unexpected error"
 
 

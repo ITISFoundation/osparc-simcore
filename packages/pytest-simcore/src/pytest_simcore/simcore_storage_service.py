@@ -10,7 +10,7 @@ import pytest
 import tenacity
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib.minio_utils import ServiceRetryPolicyUponInitialization
 from yarl import URL
@@ -82,6 +82,8 @@ def create_simcore_file_id() -> Callable[[ProjectID, NodeID, str], SimcoreS3File
     def _creator(
         project_id: ProjectID, node_id: NodeID, file_name: str
     ) -> SimcoreS3FileID:
-        return parse_obj_as(SimcoreS3FileID, f"{project_id}/{node_id}/{file_name}")
+        return TypeAdapter(SimcoreS3FileID).validate_python(
+            f"{project_id}/{node_id}/{file_name}"
+        )
 
     return _creator

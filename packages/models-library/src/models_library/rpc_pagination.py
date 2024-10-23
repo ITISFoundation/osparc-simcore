@@ -1,8 +1,8 @@
 # mypy: disable-error-code=truthy-function
 from math import ceil
-from typing import Any, ClassVar, Generic
+from typing import Any, Generic
 
-from pydantic import Extra, Field
+from pydantic import ConfigDict, Field
 
 from .rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
@@ -31,7 +31,7 @@ class PageRefsParams(PageRefs[PageQueryParameters]):
     @classmethod
     def create(cls, total: int, limit: int, offset: int) -> "PageRefsParams":
         last_page = ceil(total / limit) - 1
-        return cls.parse_obj(
+        return cls.model_validate(
             {
                 "self": {"offset": offset, "limit": limit},
                 "first": {"offset": 0, "limit": limit},
@@ -74,10 +74,9 @@ class PageRpc(Page[ItemT], Generic[ItemT]):
             data=chunk,
         )
 
-    class Config:
-        extra = Extra.forbid
-
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 # first page Page[str]
                 {
@@ -104,4 +103,5 @@ class PageRpc(Page[ItemT], Generic[ItemT]):
                     "data": ["data 5", "data 6", "data 7"],
                 },
             ]
-        }
+        },
+    )

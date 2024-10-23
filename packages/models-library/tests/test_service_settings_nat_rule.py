@@ -9,7 +9,7 @@ from models_library.osparc_variable_identifier import (
     replace_osparc_variable_identifier,
 )
 from models_library.service_settings_nat_rule import NATRule
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 SUPPORTED_TEMPLATES: set[str] = {
     "$OSPARC_VARIABLE_%s",
@@ -79,7 +79,7 @@ def _all_combinations_from_dict(data: dict[Any, Any]) -> list[dict[Any, Any]]:
 def test_nat_rule_with_osparc_variable_identifier(
     nat_rule_dict: dict[str, Any], osparc_variables: dict[str, Any]
 ):
-    nat_rule = parse_obj_as(NATRule, nat_rule_dict)
+    nat_rule = TypeAdapter(NATRule).validate_python(nat_rule_dict)
 
     with pytest.raises(UnresolvedOsparcVariableIdentifierError):
         list(nat_rule.iter_tcp_ports())
@@ -87,7 +87,7 @@ def test_nat_rule_with_osparc_variable_identifier(
     # NOTE: values are mostly replaced in place unless it's used as first level
     replace_osparc_variable_identifier(nat_rule, osparc_variables)
 
-    nat_rule_str = nat_rule.json()
+    nat_rule_str = nat_rule.model_dump_json()
     for osparc_variable_name in osparc_variables:
         assert osparc_variable_name not in nat_rule_str
 
@@ -108,7 +108,9 @@ def test_nat_rule_with_osparc_variable_identifier(
     ],
 )
 def test_______(replace_with_value: Any):
-    a_var = parse_obj_as(OsparcVariableIdentifier, "$OSPARC_VARIABLE_some_var")
+    a_var = TypeAdapter(OsparcVariableIdentifier).validate_python(
+        "$OSPARC_VARIABLE_some_var"
+    )
     assert isinstance(a_var, OsparcVariableIdentifier)
 
     replaced_var = replace_osparc_variable_identifier(
@@ -151,7 +153,7 @@ def test_replace_an_instance_of_osparc_variable_identifier(
     except TypeError:
         formatted_template = var_template
 
-    a_var = parse_obj_as(OsparcVariableIdentifier, formatted_template)
+    a_var = TypeAdapter(OsparcVariableIdentifier).validate_python(formatted_template)
     assert isinstance(a_var, OsparcVariableIdentifier)
 
     replace_with_identifier_default = identifier_has_default and replace_with_default

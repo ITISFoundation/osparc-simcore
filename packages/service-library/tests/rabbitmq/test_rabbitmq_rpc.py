@@ -350,11 +350,12 @@ async def test_get_namespaced_method_name_max_length(
         pass
 
     if expect_fail:
-        with pytest.raises(ValidationError) as exec_info:
+        with pytest.raises(
+            ValidationError, match="String should have at most 255 characters"
+        ):
             await rpc_server.register_handler(
                 RPCNamespace("a"), RPCMethodName(handler_name), _a_handler
             )
-        assert "ensure this value has at most 255 characters" in f"{exec_info.value}"
     else:
         await rpc_server.register_handler(
             RPCNamespace("a"), RPCMethodName(handler_name), _a_handler

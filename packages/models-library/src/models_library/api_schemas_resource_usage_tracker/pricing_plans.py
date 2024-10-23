@@ -1,8 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, ClassVar
+from typing import Annotated
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, PlainSerializer
 
 from ..resource_tracker import (
     HardwareInfo,
@@ -19,26 +19,31 @@ class PricingUnitGet(BaseModel):
     pricing_unit_id: PricingUnitId
     unit_name: str
     unit_extra_info: UnitExtraInfo
-    current_cost_per_unit: Decimal
+    current_cost_per_unit: Annotated[
+        Decimal, PlainSerializer(float, return_type=float, when_used="json")
+    ]
     current_cost_per_unit_id: PricingUnitCostId
     default: bool
     specific_info: HardwareInfo
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "pricing_unit_id": 1,
                     "unit_name": "SMALL",
-                    "unit_extra_info": UnitExtraInfo.Config.schema_extra["examples"][0],
+                    "unit_extra_info": UnitExtraInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,
                     "specific_info": hw_config_example,
                 }
-                for hw_config_example in HardwareInfo.Config.schema_extra["examples"]
+                for hw_config_example in HardwareInfo.model_config["json_schema_extra"][
+                    "examples"
+                ]  # type: ignore[index,union-attr]
             ]
         }
+    )
 
 
 class PricingPlanGet(BaseModel):
@@ -51,8 +56,8 @@ class PricingPlanGet(BaseModel):
     pricing_units: list[PricingUnitGet] | None
     is_active: bool
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "pricing_plan_id": 1,
@@ -64,11 +69,14 @@ class PricingPlanGet(BaseModel):
                     "pricing_units": [pricing_unit_get_example],
                     "is_active": True,
                 }
-                for pricing_unit_get_example in PricingUnitGet.Config.schema_extra[
+                for pricing_unit_get_example in PricingUnitGet.model_config[
+                    "json_schema_extra"
+                ][
                     "examples"
-                ]
+                ]  # type: ignore[index,union-attr]
             ]
         }
+    )
 
 
 class PricingPlanToServiceGet(BaseModel):
@@ -77,8 +85,8 @@ class PricingPlanToServiceGet(BaseModel):
     service_version: ServiceVersion
     created: datetime
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "pricing_plan_id": 1,
@@ -88,3 +96,4 @@ class PricingPlanToServiceGet(BaseModel):
                 }
             ]
         }
+    )

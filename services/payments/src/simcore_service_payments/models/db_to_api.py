@@ -15,7 +15,7 @@ def to_payments_api_model(transaction: PaymentsTransactionsDB) -> PaymentTransac
         "osparc_credits": transaction.osparc_credits,
         "wallet_id": transaction.wallet_id,
         "created_at": transaction.initiated_at,
-        "state": transaction.state,
+        "state": f"{transaction.state}",
         "completed_at": transaction.completed_at,
     }
 

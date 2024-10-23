@@ -145,16 +145,16 @@ class ComputationalAutoscaling(BaseAutoscaling):
     async def compute_cluster_used_resources(
         app: FastAPI, instances: list[AssociatedInstance]
     ) -> Resources:
-        list_of_used_resources = await logged_gather(
+        list_of_used_resources: list[Resources] = await logged_gather(
             *(
                 ComputationalAutoscaling.compute_node_used_resources(app, i)
                 for i in instances
             )
         )
-        counter = collections.Counter({k: 0 for k in Resources.__fields__})
+        counter = collections.Counter({k: 0 for k in Resources.model_fields})
         for result in list_of_used_resources:
-            counter.update(result.dict())
-        return Resources.parse_obj(dict(counter))
+            counter.update(result.model_dump())
+        return Resources.model_validate(dict(counter))
 
     @staticmethod
     async def compute_cluster_total_resources(

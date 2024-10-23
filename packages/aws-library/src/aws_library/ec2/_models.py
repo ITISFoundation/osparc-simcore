@@ -2,18 +2,19 @@ import datetime
 import re
 import tempfile
 from dataclasses import dataclass
-from typing import Any, ClassVar, TypeAlias
+from typing import Annotated, Final, TypeAlias
 
 import sh  # type: ignore[import-untyped]
 from models_library.docker import DockerGenericTag
 from pydantic import (
     BaseModel,
     ByteSize,
-    ConstrainedStr,
+    ConfigDict,
     Field,
     NonNegativeFloat,
     NonNegativeInt,
-    validator,
+    StringConstraints,
+    field_validator,
 )
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
@@ -33,26 +34,26 @@ class Resources(BaseModel, frozen=True):
         return self.cpus > other.cpus or self.ram > other.ram
 
     def __add__(self, other: "Resources") -> "Resources":
-        return Resources.construct(
+        return Resources.model_construct(
             **{
                 key: a + b
                 for (key, a), b in zip(
-                    self.dict().items(), other.dict().values(), strict=True
+                    self.model_dump().items(), other.model_dump().values(), strict=True
                 )
             }
         )
 
     def __sub__(self, other: "Resources") -> "Resources":
-        return Resources.construct(
+        return Resources.model_construct(
             **{
                 key: a - b
                 for (key, a), b in zip(
-                    self.dict().items(), other.dict().values(), strict=True
+                    self.model_dump().items(), other.model_dump().values(), strict=True
                 )
             }
         )
 
-    @validator("cpus", pre=True)
+    @field_validator("cpus", mode="before")
     @classmethod
     def _floor_cpus_to_0(cls, v: float) -> float:
         return max(v, 0)
@@ -67,19 +68,31 @@ class EC2InstanceType:
 InstancePrivateDNSName: TypeAlias = str
 
 
-class AWSTagKey(ConstrainedStr):
+AWS_TAG_KEY_MIN_LENGTH: Final[int] = 1
+AWS_TAG_KEY_MAX_LENGTH: Final[int] = 128
+AWSTagKey: TypeAlias = Annotated[
     # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
-    regex = re.compile(r"^(?!(_index|\.{1,2})$)[a-zA-Z0-9\+\-=\._:@]+$")
-    min_length = 1
-    max_length = 128
+    str,
+    StringConstraints(
+        min_length=AWS_TAG_KEY_MIN_LENGTH,
+        max_length=AWS_TAG_KEY_MAX_LENGTH,
+        pattern=re.compile(r"^(?!(_index|\.{1,2})$)[a-zA-Z0-9\+\-=\._:@]+$"),
+    ),
+]
 
 
-class AWSTagValue(ConstrainedStr):
+AWS_TAG_VALUE_MIN_LENGTH: Final[int] = 0
+AWS_TAG_VALUE_MAX_LENGTH: Final[int] = 256
+AWSTagValue: TypeAlias = Annotated[
     # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
     # quotes []{} were added as it allows to json encode. it seems to be accepted as a value
-    regex = re.compile(r"^[a-zA-Z0-9\s\+\-=\.,_:/@\"\'\[\]\{\}]*$")
-    min_length = 0
-    max_length = 256
+    str,
+    StringConstraints(
+        min_length=AWS_TAG_VALUE_MIN_LENGTH,
+        max_length=AWS_TAG_VALUE_MAX_LENGTH,
+        pattern=r"^[a-zA-Z0-9\s\+\-=\.,_:/@\"\'\[\]\{\}]*$",
+    ),
+]
 
 
 EC2Tags: TypeAlias = dict[AWSTagKey, AWSTagValue]
@@ -148,8 +161,23 @@ class EC2InstanceBootSpecific(BaseModel):
         default=0, description="number of buffer EC2s to keep (defaults to 0)"
     )
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    @field_validator("custom_boot_scripts")
+    @classmethod
+    def validate_bash_calls(cls, v):
+        try:
+            with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp_file:
+                temp_file.writelines(v)
+                temp_file.flush()
+                # NOTE: this will not capture runtime errors, but at least some syntax errors such as invalid quotes
+                sh.bash("-n", temp_file.name)
+        except sh.ErrorReturnCode as exc:
+            msg = f"Invalid bash call in custom_boot_scripts: {v}, Error: {exc.stderr}"
+            raise ValueError(msg) from exc
+
+        return v
+
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     # just AMI
@@ -205,18 +233,4 @@ class EC2InstanceBootSpecific(BaseModel):
                 },
             ]
         }
-
-    @validator("custom_boot_scripts")
-    @classmethod
-    def validate_bash_calls(cls, v):
-        try:
-            with tempfile.NamedTemporaryFile(mode="wt", delete=True) as temp_file:
-                temp_file.writelines(v)
-                temp_file.flush()
-                # NOTE: this will not capture runtime errors, but at least some syntax errors such as invalid quotes
-                sh.bash("-n", temp_file.name)
-        except sh.ErrorReturnCode as exc:
-            msg = f"Invalid bash call in custom_boot_scripts: {v}, Error: {exc.stderr}"
-            raise ValueError(msg) from exc
-
-        return v
+    )

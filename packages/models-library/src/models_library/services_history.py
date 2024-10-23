@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Any, ClassVar, TypeAlias
+from typing import TypeAlias
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .services_types import ServiceKey, ServiceVersion
 from .utils.change_case import snake_to_camel
@@ -21,9 +21,7 @@ class Compatibility(BaseModel):
         ..., description="Latest compatible service at this moment"
     )
 
-    class Config:
-        alias_generator = snake_to_camel
-        allow_population_by_field_name = True
+    model_config = ConfigDict(alias_generator=snake_to_camel, populate_by_name=True)
 
 
 class ServiceRelease(BaseModel):
@@ -46,10 +44,10 @@ class ServiceRelease(BaseModel):
         default=None, description="Compatibility with other releases at this moment"
     )
 
-    class Config:
-        alias_generator = snake_to_camel
-        allow_population_by_field_name = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        alias_generator=snake_to_camel,
+        populate_by_name=True,
+        json_schema_extra={
             "examples": [
                 # minimal
                 {
@@ -69,7 +67,8 @@ class ServiceRelease(BaseModel):
                     },
                 },
             ]
-        }
+        },
+    )
 
 
 ReleaseHistory: TypeAlias = list[ServiceRelease]

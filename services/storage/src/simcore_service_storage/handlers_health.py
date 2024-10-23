@@ -11,6 +11,7 @@ from aws_library.s3 import S3AccessError
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.utils.json_serialization import json_dumps
+from pydantic import TypeAdapter
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ._meta import API_VERSION, API_VTAG, PROJECT_NAME, VERSION
@@ -53,7 +54,9 @@ async def get_status(request: web.Request) -> web.Response:
             s3_state = (
                 "connected"
                 if await get_s3_client(request.app).bucket_exists(
-                    bucket=S3BucketName(app_settings.STORAGE_S3.S3_BUCKET_NAME)
+                    bucket=TypeAdapter(S3BucketName).validate_python(
+                        app_settings.STORAGE_S3.S3_BUCKET_NAME
+                    )
                 )
                 else "no access to S3 bucket"
             )

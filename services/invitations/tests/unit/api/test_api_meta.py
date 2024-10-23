@@ -19,7 +19,7 @@ def test_healthcheck(client: TestClient):
 def test_meta(client: TestClient):
     response = client.get(f"/{API_VTAG}/meta")
     assert response.status_code == status.HTTP_200_OK
-    meta = _Meta.parse_obj(response.json())
+    meta = _Meta.model_validate(response.json())
 
-    response = client.get(meta.docs_url)
+    response = client.get(f"{meta.docs_url}")
     assert response.status_code == status.HTTP_200_OK

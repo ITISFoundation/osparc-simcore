@@ -15,7 +15,7 @@ from servicelib.logging_utils import log_catch, log_context
 from simcore_service_agent.core.settings import ApplicationSettings
 from starlette import status
 
-from ..models.volumes import VolumeDetails
+from ..models.volumes import VolumeDetails, VolumeDetailsAdapter
 from .backup import backup_volume
 from .instrumentation import get_instrumentation
 
@@ -60,7 +60,7 @@ async def get_unused_dynamc_sidecar_volumes(docker: Docker) -> set[str]:
 
 async def get_volume_details(docker: Docker, *, volume_name: str) -> VolumeDetails:
     volume_details = await DockerVolume(docker, volume_name).show()
-    return VolumeDetails.parse_obj(volume_details)
+    return VolumeDetailsAdapter.validate_python(volume_details)
 
 
 @contextmanager

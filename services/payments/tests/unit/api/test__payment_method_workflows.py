@@ -9,6 +9,7 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
+from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_webserver.wallets import (
     PaymentMethodGet,
     PaymentMethodInitiated,
@@ -17,7 +18,7 @@ from models_library.basic_types import IDStr
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -89,7 +90,7 @@ async def test_successful_create_payment_method_workflow(
     # INIT via api/rpc
     inited = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "init_creation_of_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("init_creation_of_payment_method"),
         wallet_id=wallet_id,
         wallet_name=wallet_name,
         user_id=user_id,
@@ -104,7 +105,9 @@ async def test_successful_create_payment_method_workflow(
     # ACK via api/rest
     response = await client.post(
         f"/v1/payments-methods/{inited.payment_method_id}:ack",
-        json=AckPayment(success=True, invoice_url=faker.url()).dict(),
+        json=jsonable_encoder(
+            AckPayment(success=True, invoice_url=faker.url()).model_dump()
+        ),
         headers=auth_headers,
     )
 
@@ -114,7 +117,7 @@ async def test_successful_create_payment_method_workflow(
     # GET via api/rpc
     got = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_payment_method"),
+        TypeAdapter(RPCMethodName).validate_python("get_payment_method"),
         payment_method_id=inited.payment_method_id,
         user_id=user_id,
         wallet_id=wallet_id,

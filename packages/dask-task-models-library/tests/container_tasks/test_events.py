@@ -26,7 +26,7 @@ def test_task_event_abstract():
 
 @pytest.mark.parametrize("model_cls", [TaskProgressEvent, TaskLogEvent])
 def test_events_models_examples(model_cls):
-    examples = model_cls.Config.schema_extra["examples"]
+    examples = model_cls.model_config["json_schema_extra"]["examples"]
 
     for index, example in enumerate(examples):
         print(f"{index:-^10}:\n", example)
@@ -51,7 +51,7 @@ def mocked_dask_worker_job_id(mocker: MockerFixture, job_id: str) -> str:
     return job_id
 
 
-@pytest.fixture(params=TaskOwner.Config.schema_extra["examples"])
+@pytest.fixture(params=TaskOwner.model_config["json_schema_extra"]["examples"])
 def task_owner(request: pytest.FixtureRequest) -> TaskOwner:
     return TaskOwner(**request.param)
 

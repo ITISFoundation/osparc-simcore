@@ -204,7 +204,7 @@ def create_compose(
     for n, config_name in enumerate(configs_kwargs_map):
         nth_compose_spec = create_docker_compose_image_spec(
             settings, **configs_kwargs_map[config_name]
-        ).dict(exclude_unset=True)
+        ).model_dump(exclude_unset=True)
 
         if n == 0:
             compose_spec_dict = nth_compose_spec

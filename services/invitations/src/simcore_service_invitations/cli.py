@@ -5,7 +5,7 @@ import typer
 from cryptography.fernet import Fernet
 from models_library.emails import LowerCaseEmailStr
 from models_library.invitations import InvitationContent, InvitationInputs
-from pydantic import EmailStr, HttpUrl, ValidationError, parse_obj_as
+from pydantic import EmailStr, HttpUrl, TypeAdapter, ValidationError
 from rich.console import Console
 from servicelib.utils_secrets import generate_password
 from settings_library.utils_cli import (
@@ -96,19 +96,19 @@ def invite(
     ctx: typer.Context,
     email: str = typer.Argument(
         ...,
-        callback=lambda v: parse_obj_as(LowerCaseEmailStr, v),
+        callback=lambda v: TypeAdapter(LowerCaseEmailStr).validate_python(v),
         help="Custom invitation for a given guest",
     ),
     issuer: str = typer.Option(
-        ..., help=InvitationInputs.__fields__["issuer"].field_info.description
+        ..., help=InvitationInputs.model_fields["issuer"].description
     ),
     trial_account_days: int = typer.Option(
         None,
-        help=InvitationInputs.__fields__["trial_account_days"].field_info.description,
+        help=InvitationInputs.model_fields["trial_account_days"].description,
     ),
     product: str = typer.Option(
         None,
-        help=InvitationInputs.__fields__["product"].field_info.description,
+        help=InvitationInputs.model_fields["product"].description,
     ),
 ):
     """Creates an invitation link for user with 'email' and issued by 'issuer'"""
@@ -117,7 +117,7 @@ def invite(
 
     invitation_data = InvitationInputs(
         issuer=issuer,
-        guest=parse_obj_as(EmailStr, email),
+        guest=TypeAdapter(EmailStr).validate_python(email),
         trial_account_days=trial_account_days,
         extra_credits_in_usd=None,
         product=product,
@@ -125,7 +125,7 @@ def invite(
 
     invitation_link, _ = create_invitation_link_and_content(
         invitation_data=invitation_data,
-        secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
+        secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),  # pylint:disable=no-member
         base_url=settings.INVITATIONS_OSPARC_URL,
         default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
     )
@@ -142,14 +142,14 @@ def extract(ctx: typer.Context, invitation_url: str):
     try:
         invitation: InvitationContent = extract_invitation_content(
             invitation_code=extract_invitation_code_from_query(
-                parse_obj_as(HttpUrl, invitation_url)
+                TypeAdapter(HttpUrl).validate_python(invitation_url)
             ),
-            secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),
+            secret_key=settings.INVITATIONS_SECRET_KEY.get_secret_value().encode(),  # pylint:disable=no-member
             default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
         )
         assert invitation.product is not None  # nosec
 
-        print(invitation.json(indent=1))  # noqa: T201
+        print(invitation.model_dump_json(indent=1))  # noqa: T201
 
     except (InvalidInvitationCodeError, ValidationError):
         _err_console.print("[bold red]Invalid code[/bold red]")

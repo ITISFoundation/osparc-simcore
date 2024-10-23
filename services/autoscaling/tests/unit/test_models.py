@@ -10,7 +10,7 @@ import aiodocker
 import pytest
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.generated_models.docker_rest_api import Service, Task
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 
 
 async def test_get_simcore_service_docker_labels_from_task_with_missing_labels_raises(
@@ -19,12 +19,11 @@ async def test_get_simcore_service_docker_labels_from_task_with_missing_labels_r
     task_template: dict[str, Any],
 ):
     service_missing_osparc_labels = await create_service(task_template, {}, "running")
-    assert service_missing_osparc_labels.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    assert service_missing_osparc_labels.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
-            filters={"service": service_missing_osparc_labels.Spec.Name}
-        ),
+            filters={"service": service_missing_osparc_labels.spec.name}
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -45,12 +44,11 @@ async def test_get_simcore_service_docker_labels(
         osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
         "running",
     )
-    assert service_with_labels.Spec
-    service_tasks = parse_obj_as(
-        list[Task],
+    assert service_with_labels.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
         await async_docker_client.tasks.list(
-            filters={"service": service_with_labels.Spec.Name}
-        ),
+            filters={"service": service_with_labels.spec.name}
+        )
     )
     assert service_tasks
     assert len(service_tasks) == 1

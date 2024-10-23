@@ -1,8 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, ClassVar, Literal, TypeAlias
+from typing import Literal, TypeAlias
 
-from pydantic import Field, HttpUrl, validator
+from pydantic import ConfigDict, Field, HttpUrl, field_validator
 
 from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
 from ..users import GroupID
@@ -91,8 +91,8 @@ class PaymentMethodInitiated(OutputSchema):
         ..., description="Link to external site that holds the payment submission form"
     )
 
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "wallet_id": 1,
@@ -101,6 +101,7 @@ class PaymentMethodInitiated(OutputSchema):
                 }
             ]
         }
+    )
 
 
 class PaymentMethodTransaction(OutputSchema):
@@ -109,8 +110,8 @@ class PaymentMethodTransaction(OutputSchema):
     payment_method_id: PaymentMethodID
     state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"]
 
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "walletId": 1,
@@ -119,6 +120,7 @@ class PaymentMethodTransaction(OutputSchema):
                 }
             ]
         }
+    )
 
 
 class PaymentMethodGet(OutputSchema):
@@ -135,8 +137,8 @@ class PaymentMethodGet(OutputSchema):
         description="If true, this payment-method is used for auto-recharge",
     )
 
-    class Config(OutputSchema.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "idr": "pm_1234567890",
@@ -157,6 +159,7 @@ class PaymentMethodGet(OutputSchema):
                 },
             ],
         }
+    )
 
 
 #
@@ -194,7 +197,7 @@ class ReplaceWalletAutoRecharge(InputSchema):
     top_up_amount_in_usd: NonNegativeDecimal
     monthly_limit_in_usd: NonNegativeDecimal | None
 
-    @validator("monthly_limit_in_usd")
+    @field_validator("monthly_limit_in_usd")
     @classmethod
     def _monthly_limit_greater_than_top_up(cls, v, values):
         top_up = values["top_up_amount_in_usd"]

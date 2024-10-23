@@ -11,7 +11,7 @@ from aiohttp.test_utils import unused_port
 from faker import Faker
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
-from pydantic import AnyHttpUrl, SecretStr, parse_obj_as
+from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
 from settings_library.basic_types import IDStr
 from settings_library.ec2 import EC2Settings
@@ -75,7 +75,7 @@ def mocked_ec2_server_envs(
     mocked_ec2_server_settings: EC2Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    changed_envs: EnvVarsDict = mocked_ec2_server_settings.dict()
+    changed_envs: EnvVarsDict = mocked_ec2_server_settings.model_dump()
     return setenvs_from_dict(monkeypatch, {**changed_envs})
 
 
@@ -101,10 +101,7 @@ def mocked_ssm_server_settings(
 ) -> SSMSettings:
     return SSMSettings(
         SSM_ACCESS_KEY_ID=SecretStr("xxx"),
-        SSM_ENDPOINT=parse_obj_as(
-            AnyHttpUrl,
-            f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access  # noqa: SLF001
-        ),
+        SSM_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # type: ignore[arg-type] # pylint: disable=protected-access  # noqa: SLF001
         SSM_SECRET_ACCESS_KEY=SecretStr("xxx"),
     )
 
@@ -124,10 +121,7 @@ def mocked_s3_server_settings(
 ) -> S3Settings:
     return S3Settings(
         S3_ACCESS_KEY=IDStr("xxx"),
-        S3_ENDPOINT=parse_obj_as(
-            AnyHttpUrl,
-            f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # pylint: disable=protected-access  # noqa: SLF001
-        ),
+        S3_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # type: ignore[arg-type] # pylint: disable=protected-access  # noqa: SLF001
         S3_SECRET_KEY=IDStr("xxx"),
         S3_BUCKET_NAME=IDStr(f"pytest{faker.pystr().lower()}"),
         S3_REGION=IDStr("us-east-1"),
@@ -139,5 +133,7 @@ def mocked_s3_server_envs(
     mocked_s3_server_settings: S3Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    changed_envs: EnvVarsDict = mocked_s3_server_settings.dict(exclude_unset=True)
+    changed_envs: EnvVarsDict = mocked_s3_server_settings.model_dump(
+        mode="json", exclude_unset=True
+    )
     return setenvs_from_dict(monkeypatch, {**changed_envs})

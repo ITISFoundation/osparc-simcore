@@ -175,18 +175,32 @@
             "description": "Invitee's email. Note that the registration can ONLY be used with this email"
           },
           "trial_account_days": {
-            "type": "integer",
-            "exclusiveMinimum": true,
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": true,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Trial Account Days",
-            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
-            "minimum": 0
+            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires"
           },
           "extra_credits_in_usd": {
-            "type": "integer",
-            "exclusiveMinimum": true,
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": true,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Extra Credits In Usd",
-            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
-            "minimum": 0
+            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD"
           },
           "product": {
             "type": "string",
@@ -208,13 +222,12 @@
           "created"
         ],
         "title": "ApiInvitationContent",
-        "description": "Data in an invitation",
         "example": {
-          "issuer": "issuerid",
+          "created": "2023-01-11 13:11:47.293595",
           "guest": "invitedguest@company.com",
-          "trial_account_days": 2,
+          "issuer": "issuerid",
           "product": "osparc",
-          "created": "2023-01-11 13:11:47.293595"
+          "trial_account_days": 2
         }
       },
       "ApiInvitationContentAndLink": {
@@ -233,18 +246,32 @@
             "description": "Invitee's email. Note that the registration can ONLY be used with this email"
           },
           "trial_account_days": {
-            "type": "integer",
-            "exclusiveMinimum": true,
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": true,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Trial Account Days",
-            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
-            "minimum": 0
+            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires"
           },
           "extra_credits_in_usd": {
-            "type": "integer",
-            "exclusiveMinimum": true,
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": true,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Extra Credits In Usd",
-            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
-            "minimum": 0
+            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD"
           },
           "product": {
             "type": "string",
@@ -275,14 +302,13 @@
           "invitation_url"
         ],
         "title": "ApiInvitationContentAndLink",
-        "description": "Data in an invitation",
         "example": {
-          "issuer": "issuerid",
-          "guest": "invitedguest@company.com",
-          "trial_account_days": 2,
-          "product": "osparc",
           "created": "2023-01-11 13:11:47.293595",
-          "invitation_url": "https://foo.com/#/registration?invitation=1234"
+          "guest": "invitedguest@company.com",
+          "invitation_url": "https://foo.com/#/registration?invitation=1234",
+          "issuer": "issuerid",
+          "product": "osparc",
+          "trial_account_days": 2
         }
       },
       "ApiInvitationInputs": {
@@ -301,21 +327,42 @@
             "description": "Invitee's email. Note that the registration can ONLY be used with this email"
           },
           "trial_account_days": {
-            "type": "integer",
-            "exclusiveMinimum": true,
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": true,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Trial Account Days",
-            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires",
-            "minimum": 0
+            "description": "If set, this invitation will activate a trial account.Sets the number of days from creation until the account expires"
           },
           "extra_credits_in_usd": {
-            "type": "integer",
-            "exclusiveMinimum": true,
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": true,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Extra Credits In Usd",
-            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD",
-            "minimum": 0
+            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD"
           },
           "product": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Product",
             "description": "If None, it will use INVITATIONS_DEFAULT_PRODUCT"
           }
@@ -326,10 +373,9 @@
           "guest"
         ],
         "title": "ApiInvitationInputs",
-        "description": "Input data necessary to create an invitation",
         "example": {
-          "issuer": "issuerid",
           "guest": "invitedguest@company.com",
+          "issuer": "issuerid",
           "trial_account_days": 2
         }
       },

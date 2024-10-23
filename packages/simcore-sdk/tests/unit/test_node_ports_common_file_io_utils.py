@@ -20,7 +20,7 @@ from models_library.api_schemas_storage import (
 )
 from models_library.basic_types import IDStr
 from moto.server import ThreadedMotoServer
-from pydantic import AnyUrl, ByteSize, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib.aiohttp import status
 from servicelib.progress_bar import ProgressBarData
@@ -213,8 +213,7 @@ async def create_upload_links(
         assert "UploadId" in response
         upload_id = response["UploadId"]
 
-        upload_links = parse_obj_as(
-            list[AnyUrl],
+        upload_links = TypeAdapter(list[AnyUrl]).validate_python(
             await asyncio.gather(
                 *[
                     aiobotocore_s3_client.generate_presigned_url(
@@ -235,8 +234,8 @@ async def create_upload_links(
             chunk_size=chunk_size,
             urls=upload_links,
             links=FileUploadLinks(
-                abort_upload=parse_obj_as(AnyUrl, faker.uri()),
-                complete_upload=parse_obj_as(AnyUrl, faker.uri()),
+                abort_upload=TypeAdapter(AnyUrl).validate_python(faker.uri()),
+                complete_upload=TypeAdapter(AnyUrl).validate_python(faker.uri()),
             ),
         )
 
@@ -246,7 +245,12 @@ async def create_upload_links(
 @pytest.mark.skip(reason="this will allow to reproduce an issue")
 @pytest.mark.parametrize(
     "file_size,used_chunk_size",
-    [(parse_obj_as(ByteSize, 21800510238), parse_obj_as(ByteSize, 10485760))],
+    [
+        (
+            TypeAdapter(ByteSize).validate_python(21800510238),
+            TypeAdapter(ByteSize).validate_python(10485760),
+        )
+    ],
 )
 async def test_upload_file_to_presigned_links(
     client_session: ClientSession,
@@ -254,6 +258,7 @@ async def test_upload_file_to_presigned_links(
     create_file_of_size: Callable[[ByteSize], Path],
     file_size: ByteSize,
     used_chunk_size: ByteSize,
+    faker: Faker,
 ):
     """This test is here to reproduce the issue https://github.com/ITISFoundation/osparc-simcore/issues/3531
     One theory is that something might be wrong in how the chunking is done and that AWS times out
@@ -268,7 +273,9 @@ async def test_upload_file_to_presigned_links(
     """
     local_file = create_file_of_size(file_size)
     num_links = 2080
-    effective_chunk_size = parse_obj_as(ByteSize, local_file.stat().st_size / num_links)
+    effective_chunk_size = TypeAdapter(ByteSize).validate_python(
+        local_file.stat().st_size / num_links
+    )
     assert effective_chunk_size <= used_chunk_size
     upload_links = await create_upload_links(num_links, used_chunk_size)
     assert len(upload_links.urls) == num_links
@@ -281,5 +288,5 @@ async def test_upload_file_to_presigned_links(
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
         )
-    assert progress_bar._current_steps == pytest.approx(1)
+    assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
     assert uploaded_parts

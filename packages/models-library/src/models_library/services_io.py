@@ -1,15 +1,15 @@
-import re
-from typing import Any, ClassVar
+from typing import Annotated, Any, TypeAlias
 
 from pydantic import (
     BaseModel,
-    ConstrainedStr,
-    Extra,
+    ConfigDict,
     Field,
     StrictBool,
     StrictFloat,
     StrictInt,
-    validator,
+    StringConstraints,
+    ValidationInfo,
+    field_validator,
 )
 
 from .services_constants import ANY_FILETYPE
@@ -22,12 +22,7 @@ from .utils.json_schema import (
     jsonschema_validate_schema,
 )
 
-
-class PropertyTypeStr(ConstrainedStr):
-    regex = re.compile(PROPERTY_TYPE_RE)
-
-    class Config:
-        frozen = True
+PropertyTypeStr: TypeAlias = Annotated[str, StringConstraints(pattern=PROPERTY_TYPE_RE)]
 
 
 class BaseServiceIOModel(BaseModel):
@@ -45,11 +40,11 @@ class BaseServiceIOModel(BaseModel):
         description="DEPRECATED: new display order is taken from the item position. This will be removed.",
     )
 
-    label: str = Field(..., description="short name for the property", example="Age")
+    label: str = Field(..., description="short name for the property", examples=["Age"])
     description: str = Field(
         ...,
         description="description of the property",
-        example="Age in seconds since 1970",
+        examples=["Age in seconds since 1970"],
     )
 
     # mathematical and physics descriptors
@@ -92,18 +87,20 @@ class BaseServiceIOModel(BaseModel):
         deprecated=True,  # add x_unit in content_schema instead
     )
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
-    @validator("content_schema")
+    @field_validator("content_schema")
     @classmethod
-    def _check_type_is_set_to_schema(cls, v, values):
-        if v is not None and (ptype := values["property_type"]) != "ref_contentSchema":
+    def _check_type_is_set_to_schema(cls, v, info: ValidationInfo):
+        if (
+            v is not None
+            and (ptype := info.data["property_type"]) != "ref_contentSchema"
+        ):
             msg = f"content_schema is defined but set the wrong type. Expected type=ref_contentSchema but got ={ptype}."
             raise ValueError(msg)
         return v
 
-    @validator("content_schema")
+    @field_validator("content_schema")
     @classmethod
     def _check_valid_json_schema(cls, v):
         if v is not None:
@@ -151,8 +148,8 @@ class ServiceInput(BaseServiceIOModel):
         description="custom widget to use instead of the default one determined from the data-type",
     )
 
-    class Config(BaseServiceIOModel.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 # file-wo-widget:
                 {
@@ -206,13 +203,14 @@ class ServiceInput(BaseServiceIOModel):
                     },
                 },
             ],
-        }
+        },
+    )
 
     @classmethod
     def from_json_schema(cls, port_schema: dict[str, Any]) -> "ServiceInput":
         """Creates input port model from a json-schema"""
         data = cls._from_json_schema_base_implementation(port_schema)
-        return cls.parse_obj(data)
+        return cls.model_validate(data)
 
 
 class ServiceOutput(BaseServiceIOModel):
@@ -222,8 +220,8 @@ class ServiceOutput(BaseServiceIOModel):
         deprecated=True,
     )
 
-    class Config(BaseServiceIOModel.Config):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "displayOrder": 2,
@@ -251,10 +249,11 @@ class ServiceOutput(BaseServiceIOModel):
                     "type": ANY_FILETYPE,
                 },
             ]
-        }
+        },
+    )
 
     @classmethod
     def from_json_schema(cls, port_schema: dict[str, Any]) -> "ServiceOutput":
         """Creates output port model from a json-schema"""
         data = cls._from_json_schema_base_implementation(port_schema)
-        return cls.parse_obj(data)
+        return cls.model_validate(data)

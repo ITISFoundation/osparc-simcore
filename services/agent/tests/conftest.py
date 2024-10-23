@@ -3,10 +3,11 @@
 
 
 import pytest
+from common_library.pydantic_networks_extension import HttpUrlLegacy
 from faker import Faker
 from models_library.basic_types import BootModeEnum
 from moto.server import ThreadedMotoServer
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import HttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.r_clone import S3Provider
 
@@ -63,9 +64,8 @@ def mock_environment(
 
 
 @pytest.fixture(scope="module")
-def mocked_s3_server_url(mocked_aws_server: ThreadedMotoServer) -> HttpUrl:
+def mocked_s3_server_url(mocked_aws_server: ThreadedMotoServer) -> HttpUrlLegacy:
     # pylint: disable=protected-access
-    return parse_obj_as(
-        HttpUrl,
+    return TypeAdapter(HttpUrlLegacy).validate_python(
         f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # noqa: SLF001
     )

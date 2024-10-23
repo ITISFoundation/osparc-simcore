@@ -24,7 +24,6 @@ from models_library.rest_ordering import OrderBy
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import AnyUrl
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
@@ -79,7 +78,7 @@ async def export_service_runs(
     access_all_wallet_usage: bool = False,
     order_by: OrderBy | None = None,
     filters: ServiceResourceUsagesFilters | None = None,
-) -> AnyUrl:
+) -> str:
     app_settings: ApplicationSettings = app.state.settings
     s3_settings = app_settings.RESOURCE_USAGE_TRACKER_S3
     assert s3_settings  # nosec

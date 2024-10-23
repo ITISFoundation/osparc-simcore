@@ -152,7 +152,7 @@ async def test_process_event_functions(
     # Check max acceptable missed heartbeats reached before considering them as unhealthy
     with postgres_db.connect() as con:
         result = con.execute(sa.select(resource_tracker_service_runs))
-        service_run_db = [ServiceRunDB.from_orm(row) for row in result]
+        service_run_db = [ServiceRunDB.model_validate(row) for row in result]
     for service_run in service_run_db:
         if service_run.service_run_id in (
             _SERVICE_RUN_ID_OSPARC_10_MIN_OLD,
@@ -172,7 +172,7 @@ async def test_process_event_functions(
 
     with postgres_db.connect() as con:
         result = con.execute(sa.select(resource_tracker_service_runs))
-        service_run_db = [ServiceRunDB.from_orm(row) for row in result]
+        service_run_db = [ServiceRunDB.model_validate(row) for row in result]
     for service_run in service_run_db:
         if service_run.service_run_id in (
             _SERVICE_RUN_ID_OSPARC_10_MIN_OLD,
@@ -186,7 +186,9 @@ async def test_process_event_functions(
 
     with postgres_db.connect() as con:
         result = con.execute(sa.select(resource_tracker_credit_transactions))
-        credit_transaction_db = [CreditTransactionDB.from_orm(row) for row in result]
+        credit_transaction_db = [
+            CreditTransactionDB.model_validate(row) for row in result
+        ]
     for transaction in credit_transaction_db:
         if transaction.service_run_id in (
             _SERVICE_RUN_ID_OSPARC_10_MIN_OLD,

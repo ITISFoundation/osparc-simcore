@@ -12,7 +12,7 @@ from models_library.utils.specs_substitution import (
     SpecsSubstitutionsResolver,
     SubstitutionValue,
 )
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 
 @pytest.fixture()
@@ -49,7 +49,7 @@ def available_osparc_variables(
         "SERVICE_VERSION": service_version,
         "DISPLAY": "True",
     }
-    return parse_obj_as(dict[str, SubstitutionValue], environs)
+    return TypeAdapter(dict[str, SubstitutionValue]).validate_python(environs)
 
 
 @pytest.mark.parametrize(

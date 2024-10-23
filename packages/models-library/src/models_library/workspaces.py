@@ -3,7 +3,7 @@ from typing import TypeAlias
 
 from models_library.access_rights import AccessRights
 from models_library.users import GroupID
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 WorkspaceID: TypeAlias = PositiveInt
 
@@ -31,13 +31,11 @@ class WorkspaceDB(BaseModel):
         description="Timestamp of last modification",
     )
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserWorkspaceAccessRightsDB(WorkspaceDB):
     my_access_rights: AccessRights
     access_rights: dict[GroupID, AccessRights]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

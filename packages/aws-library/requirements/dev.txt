@@ -12,8 +12,9 @@
 --requirement _tools.txt
 
 # installs this repo's packages
---editable ../pytest-simcore
+--editable ../common-library/
 --editable ../models-library/
+--editable ../pytest-simcore/
 --editable ../service-library/
 --editable ../settings-library/
 

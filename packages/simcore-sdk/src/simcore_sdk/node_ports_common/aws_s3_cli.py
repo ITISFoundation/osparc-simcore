@@ -6,10 +6,11 @@ import shlex
 from asyncio.streams import StreamReader
 from pathlib import Path
 
+from common_library.errors_classes import OsparcErrorMixin
+
 from aiocache import cached  # type: ignore[import-untyped]
 from models_library.basic_types import IDStr
 from pydantic import AnyUrl, ByteSize
-from pydantic.errors import PydanticErrorMixin
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.aws_s3_cli import AwsS3CliSettings
@@ -24,7 +25,7 @@ _logger = logging.getLogger(__name__)
 _OSPARC_SYMLINK_EXTENSION = ".rclonelink"  # named `rclonelink` to maintain backwards
 
 
-class BaseAwsS3CliError(PydanticErrorMixin, RuntimeError):
+class BaseAwsS3CliError(OsparcErrorMixin, RuntimeError):
     ...
 
 

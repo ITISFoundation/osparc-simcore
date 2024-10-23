@@ -171,7 +171,7 @@ async def ack_payment(id_: PaymentID, acked: AckPayment, settings: Settings):
     async with httpx.AsyncClient() as client:
         await client.post(
             f"{settings.PAYMENTS_SERVICE_API_BASE_URL}/v1/payments/{id_}:ack",
-            json=acked.dict(),
+            json=acked.model_dump(),
             auth=PaymentsAuth(
                 username=settings.PAYMENTS_USERNAME,
                 password=settings.PAYMENTS_PASSWORD.get_secret_value(),
@@ -185,7 +185,7 @@ async def ack_payment_method(
     async with httpx.AsyncClient() as client:
         await client.post(
             f"{settings.PAYMENTS_SERVICE_API_BASE_URL}/v1/payments-methods/{id_}:ack",
-            json=acked.dict(),
+            json=acked.model_dump(),
             auth=PaymentsAuth(
                 username=settings.PAYMENTS_USERNAME,
                 password=settings.PAYMENTS_PASSWORD.get_secret_value(),

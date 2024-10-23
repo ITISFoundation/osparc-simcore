@@ -3,12 +3,14 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
+import asyncio
 from pathlib import Path
 from typing import Any, Callable
 from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
+from pydantic import ValidationError
 from pytest_mock import MockFixture
 from servicelib.progress_bar import ProgressBarData
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
@@ -51,6 +53,7 @@ async def test_nodeports_auto_updates(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
+            io_log_redirect_cb=None,
             save_to_db_cb=mock_save_db_cb,
             node_port_creator_cb=mock_node_port_creator_cb,
             auto_update=False,
@@ -63,6 +66,7 @@ async def test_nodeports_auto_updates(
         user_id=user_id,
         project_id=project_id,
         node_uuid=node_uuid,
+        io_log_redirect_cb=None,
         save_to_db_cb=mock_save_db_cb,
         node_port_creator_cb=mock_node_port_creator_cb,
         auto_update=auto_update,
@@ -102,6 +106,7 @@ async def test_node_ports_accessors(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
+            io_log_redirect_cb=None,
             save_to_db_cb=mock_save_db_cb,
             node_port_creator_cb=mock_node_port_creator_cb,
             auto_update=False,
@@ -114,6 +119,7 @@ async def test_node_ports_accessors(
         user_id=user_id,
         project_id=project_id,
         node_uuid=node_uuid,
+        io_log_redirect_cb=None,
         save_to_db_cb=mock_save_db_cb,
         node_port_creator_cb=mock_node_port_creator_cb,
         auto_update=False,
@@ -184,6 +190,7 @@ async def test_node_ports_set_file_by_keymap(
             user_id=user_id,
             project_id=project_id,
             node_uuid=node_uuid,
+            io_log_redirect_cb=None,
             save_to_db_cb=mock_save_db_cb,
             node_port_creator_cb=mock_node_port_creator_cb,
             auto_update=False,
@@ -196,6 +203,7 @@ async def test_node_ports_set_file_by_keymap(
         user_id=user_id,
         project_id=project_id,
         node_uuid=node_uuid,
+        io_log_redirect_cb=None,
         save_to_db_cb=mock_save_db_cb,
         node_port_creator_cb=mock_node_port_creator_cb,
         auto_update=False,
@@ -217,3 +225,57 @@ async def test_node_ports_v2_packages(
     db_manager = mock_db_manager(default_configuration)
     node_ports = await ports(user_id, project_id, node_uuid)
     node_ports = await ports(user_id, project_id, node_uuid, db_manager=db_manager)
+
+
+@pytest.fixture
+def mock_port_set(mocker: MockFixture) -> None:
+    async def _always_raise_error(*args, **kwargs):
+        async def _i_raise_errors():
+            raise ValidationError("invalid")
+
+        return asyncio.create_task(_i_raise_errors())
+
+    mocker.patch(
+        "simcore_sdk.node_ports_v2.port.Port._set", side_effect=_always_raise_error
+    )
+
+
+async def test_node_ports_v2_set_multiple_catch_multiple_failing_set_ports(
+    mock_port_set: None,
+    mock_db_manager: Callable,
+    default_configuration: dict[str, Any],
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    faker: Faker,
+):
+    db_manager = mock_db_manager(default_configuration)
+
+    original_inputs = create_valid_port_mapping(InputsList, suffix="original")
+    original_outputs = create_valid_port_mapping(OutputsList, suffix="original")
+
+    async def _mock_callback(*args, **kwargs):
+        pass
+
+    node_ports = Nodeports(
+        inputs=original_inputs,
+        outputs=original_outputs,
+        db_manager=db_manager,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        io_log_redirect_cb=None,
+        save_to_db_cb=_mock_callback,
+        node_port_creator_cb=_mock_callback,
+        auto_update=False,
+    )
+    async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
+        with pytest.raises(ValidationError):
+            await node_ports.set_multiple(
+                {
+                    port.key: (port.value, None)
+                    for port in list(original_inputs.values())
+                    + list(original_outputs.values())
+                },
+                progress_bar=progress_bar,
+            )

@@ -263,7 +263,7 @@ async def task_runs_docker_compose_down(
             simcore_platform_status = platform_status
             if not containers_were_ok:
                 any_container_oom_killed = any(
-                    c.OOMKilled is True
+                    c.oom_killed is True
                     for c in container_states.values()
                     if c is not None
                 )

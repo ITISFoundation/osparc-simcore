@@ -1,6 +1,6 @@
-from typing import Any, ClassVar, Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..basic_regex import PUBLIC_VARIABLE_NAME_RE
 from ..services import ServiceInput, ServiceOutput
@@ -17,7 +17,7 @@ class ServicePortGet(BaseModel):
     key: str = Field(
         ...,
         description="port identifier name",
-        regex=PUBLIC_VARIABLE_NAME_RE,
+        pattern=PUBLIC_VARIABLE_NAME_RE,
         title="Key name",
     )
     kind: PortKindStr
@@ -26,9 +26,8 @@ class ServicePortGet(BaseModel):
         None,
         description="jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/",
     )
-
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "key": "input_1",
                 "kind": "input",
@@ -41,6 +40,7 @@ class ServicePortGet(BaseModel):
                 },
             }
         }
+    )
 
     @classmethod
     def from_service_io(

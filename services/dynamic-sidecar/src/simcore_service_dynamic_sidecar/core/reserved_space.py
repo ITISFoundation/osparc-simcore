@@ -3,14 +3,14 @@ from pathlib import Path
 from typing import Final
 
 from fastapi import FastAPI
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 
 from .settings import ApplicationSettings
 
 _RESERVED_DISK_SPACE_NAME: Final[Path] = Path(
     "/tmp/reserved_disk_space"  # nosec # noqa: S108
 )
-_DEFAULT_CHUNK_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, "8k")
+_DEFAULT_CHUNK_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("8k")
 
 
 def _write_random_binary_file(

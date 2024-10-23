@@ -18,7 +18,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.fastapi import long_running_tasks
 from servicelib.long_running_tasks._models import TaskGet, TaskId
 from servicelib.long_running_tasks._task import TaskContext
@@ -94,7 +94,9 @@ def start_long_running_task() -> Callable[[FastAPI, AsyncClient], Awaitable[Task
         )
         resp = await client.post(f"{url}")
         assert resp.status_code == status.HTTP_202_ACCEPTED
-        task_id = parse_obj_as(long_running_tasks.server.TaskId, resp.json())
+        task_id = TypeAdapter(long_running_tasks.server.TaskId).validate_python(
+            resp.json()
+        )
         return task_id
 
     return _caller
@@ -122,7 +124,7 @@ def wait_for_task() -> Callable[
             with attempt:
                 result = await client.get(f"{status_url}")
                 assert result.status_code == status.HTTP_200_OK
-                task_status = long_running_tasks.server.TaskStatus.parse_obj(
+                task_status = long_running_tasks.server.TaskStatus.model_validate(
                     result.json()
                 )
                 assert task_status
@@ -149,12 +151,14 @@ async def test_workflow(
         with attempt:
             result = await client.get(f"{status_url}")
             assert result.status_code == status.HTTP_200_OK
-            task_status = long_running_tasks.server.TaskStatus.parse_obj(result.json())
+            task_status = long_running_tasks.server.TaskStatus.model_validate(
+                result.json()
+            )
             assert task_status
             progress_updates.append(
                 (task_status.task_progress.message, task_status.task_progress.percent)
             )
-            print(f"<-- received task status: {task_status.json(indent=2)}")
+            print(f"<-- received task status: {task_status.model_dump_json(indent=2)}")
             assert task_status.done, "task incomplete"
             print(
                 f"-- waiting for task status completed successfully: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
@@ -179,7 +183,7 @@ async def test_workflow(
     result = await client.get(f"{result_url}")
     # NOTE: this is DIFFERENT than with aiohttp where we return the real result
     assert result.status_code == status.HTTP_200_OK
-    task_result = long_running_tasks.server.TaskResult.parse_obj(result.json())
+    task_result = long_running_tasks.server.TaskResult.model_validate(result.json())
     assert not task_result.error
     assert task_result.result == [f"{x}" for x in range(10)]
     # getting the result again should raise a 404
@@ -218,7 +222,7 @@ async def test_failing_task_returns_error(
     result_url = app.url_path_for("get_task_result", task_id=task_id)
     result = await client.get(f"{result_url}")
     assert result.status_code == status.HTTP_200_OK
-    task_result = long_running_tasks.server.TaskResult.parse_obj(result.json())
+    task_result = long_running_tasks.server.TaskResult.model_validate(result.json())
 
     assert not task_result.result
     assert task_result.error
@@ -274,7 +278,7 @@ async def test_list_tasks_empty_list(app: FastAPI, client: AsyncClient):
     list_url = app.url_path_for("list_tasks")
     result = await client.get(f"{list_url}")
     assert result.status_code == status.HTTP_200_OK
-    list_of_tasks = parse_obj_as(list[TaskGet], result.json())
+    list_of_tasks = TypeAdapter(list[TaskGet]).validate_python(result.json())
     assert list_of_tasks == []
 
 
@@ -296,7 +300,7 @@ async def test_list_tasks(
     list_url = app.url_path_for("list_tasks")
     result = await client.get(f"{list_url}")
     assert result.status_code == status.HTTP_200_OK
-    list_of_tasks = parse_obj_as(list[TaskGet], result.json())
+    list_of_tasks = TypeAdapter(list[TaskGet]).validate_python(result.json())
     assert len(list_of_tasks) == NUM_TASKS
 
     # now wait for them to finish
@@ -311,5 +315,5 @@ async def test_list_tasks(
         # the list shall go down one by one
         result = await client.get(f"{list_url}")
         assert result.status_code == status.HTTP_200_OK
-        list_of_tasks = parse_obj_as(list[TaskGet], result.json())
+        list_of_tasks = TypeAdapter(list[TaskGet]).validate_python(result.json())
         assert len(list_of_tasks) == NUM_TASKS - (task_index + 1)

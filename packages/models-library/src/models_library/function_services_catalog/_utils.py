@@ -14,10 +14,10 @@ _DEFAULT = {
     "email": "unknown@osparc.io",
     "affiliation": "unknown",
 }
-EN = Author.parse_obj(AUTHORS.get("EN", _DEFAULT))
-OM = Author.parse_obj(AUTHORS.get("OM", _DEFAULT))
-PC = Author.parse_obj(AUTHORS.get("PC", _DEFAULT))
-WVG = Author.parse_obj(AUTHORS.get("WVG", _DEFAULT))
+EN = Author.model_validate(AUTHORS.get("EN", _DEFAULT))
+OM = Author.model_validate(AUTHORS.get("OM", _DEFAULT))
+PC = Author.model_validate(AUTHORS.get("PC", _DEFAULT))
+WVG = Author.model_validate(AUTHORS.get("WVG", _DEFAULT))
 
 
 def create_fake_thumbnail_url(label: str) -> str:

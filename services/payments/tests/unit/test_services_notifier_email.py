@@ -86,7 +86,7 @@ def mocked_get_invoice_pdf_response(
             text=f"{request.fixturename} is set to '{request.param}'",
         )
 
-    respx_mock.get(transaction.invoice_pdf_url).mock(return_value=response)
+    respx_mock.get(f"{transaction.invoice_pdf_url}").mock(return_value=response)
 
     return respx_mock
 
@@ -97,7 +97,7 @@ def transaction(
 ) -> PaymentsTransactionsDB:
     kwargs = {
         k: successful_transaction[k]
-        for k in PaymentsTransactionsDB.__fields__
+        for k in PaymentsTransactionsDB.model_fields
         if k in successful_transaction
     }
     return PaymentsTransactionsDB(**kwargs)

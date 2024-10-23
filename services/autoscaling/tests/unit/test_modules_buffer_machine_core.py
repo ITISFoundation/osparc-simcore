@@ -22,7 +22,7 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.docker import DockerGenericTag
 from models_library.utils.json_serialization import json_dumps
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import (
     assert_autoscaled_dynamic_warm_pools_ec2_instances,
@@ -47,14 +47,13 @@ from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
 
 @pytest.fixture
 def fake_pre_pull_images() -> list[DockerGenericTag]:
-    return parse_obj_as(
-        list[DockerGenericTag],
+    return TypeAdapter(list[DockerGenericTag]).validate_python(
         [
             "nginx:latest",
             "itisfoundation/my-very-nice-service:latest",
             "simcore/services/dynamic/another-nice-one:2.4.5",
             "asd",
-        ],
+        ]
     )
 
 
@@ -90,7 +89,7 @@ def ec2_instances_allowed_types_with_only_1_buffered(
         len(allowed_ec2_types_with_buffer_defined) == 1
     ), "more than one type with buffer is disallowed in this test!"
     return {
-        parse_obj_as(InstanceTypeType, k): v
+        TypeAdapter(InstanceTypeType).validate_python(k): v
         for k, v in allowed_ec2_types_with_buffer_defined.items()
     }
 
@@ -450,7 +449,11 @@ class _BufferMachineParams:
         _BufferMachineParams(
             "stopped",
             [],
-            [parse_obj_as(AWSTagKey, "io.simcore.autoscaling.pre_pulled_images")],
+            [
+                TypeAdapter(AWSTagKey).validate_python(
+                    "io.simcore.autoscaling.pre_pulled_images"
+                )
+            ],
         ),
     ],
 )
@@ -589,7 +592,11 @@ def unneeded_instance_type(
         _BufferMachineParams(
             "stopped",
             [],
-            [parse_obj_as(AWSTagKey, "io.simcore.autoscaling.pre_pulled_images")],
+            [
+                TypeAdapter(AWSTagKey).validate_python(
+                    "io.simcore.autoscaling.pre_pulled_images"
+                )
+            ],
         ),
     ],
 )

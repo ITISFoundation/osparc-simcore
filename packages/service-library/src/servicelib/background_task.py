@@ -5,7 +5,7 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Final
 
-from pydantic.errors import PydanticErrorMixin
+from common_library.errors_classes import OsparcErrorMixin
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
@@ -21,7 +21,7 @@ _DEFAULT_STOP_TIMEOUT_S: Final[int] = 5
 _MAX_TASK_CANCELLATION_ATTEMPTS: Final[int] = 3
 
 
-class PeriodicTaskCancellationError(PydanticErrorMixin, Exception):
+class PeriodicTaskCancellationError(OsparcErrorMixin, Exception):
     msg_template: str = "Could not cancel task '{task_name}'"
 
 

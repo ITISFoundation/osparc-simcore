@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Extra, SecretStr
+from pydantic import BaseModel, ConfigDict, SecretStr
 
 
 class DockerBasicAuth(BaseModel):
@@ -6,9 +6,9 @@ class DockerBasicAuth(BaseModel):
     username: str
     password: SecretStr
 
-    class Config:
-        extra = Extra.forbid
-        schema_extra = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "examples": [
                 {
                     "server_address": "docker.io",
@@ -16,4 +16,5 @@ class DockerBasicAuth(BaseModel):
                     "password": "123456",
                 }
             ]
-        }
+        },
+    )

@@ -13,7 +13,8 @@
 --requirement _tools.txt
 
 # installs this repo's packages
-pytest-simcore @ ../../packages/pytest-simcore/
+simcore-common-library @ ../common-library/
+pytest-simcore @ ../pytest-simcore/
 
 # current module
 simcore-postgres-database @ .

@@ -11,8 +11,7 @@ from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
-from pydantic import BaseModel, Field, ValidationError
-from pydantic.error_wrappers import flatten_errors
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from settings_library.aws_s3_cli import AwsS3CliSettings
@@ -63,9 +62,9 @@ class Nodeports(BaseModel):
     r_clone_settings: RCloneSettings | None = None
     io_log_redirect_cb: LogRedirectCB | None
     aws_s3_cli_settings: AwsS3CliSettings | None = None
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     def __init__(self, **data: Any):
         super().__init__(**data)
@@ -216,9 +215,11 @@ class Nodeports(BaseModel):
             await self.save_to_db_cb(self)
 
         # groups all ValidationErrors pre-pending 'port_key' to loc and raises ValidationError
-        if errors := [
-            list(flatten_errors([r], self.__config__, loc=(f"{port_key}",)))
-            for port_key, r in zip(port_values.keys(), results)
-            if isinstance(r, ValidationError)
+        if error_details := [
+            _get_error_details(r, port_key)
+            for port_key, r in zip(port_values.keys(), results, strict=False)
+            if r is not None
         ]:
-            raise ValidationError(errors, model=type(self))
+            raise ValidationError.from_exception_data(
+                title="Multiple port_key errors", line_errors=error_details
+            )

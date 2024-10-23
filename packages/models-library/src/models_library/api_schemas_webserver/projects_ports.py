@@ -15,19 +15,16 @@ class _ProjectIOBase(BaseModel):
 
 
 class ProjectInputUpdate(_ProjectIOBase):
-    class Config(InputSchemaWithoutCamelCase):
-        ...
+    model_config = InputSchemaWithoutCamelCase.model_config
 
 
 class ProjectInputGet(OutputSchema, _ProjectIOBase):
     label: str
 
-    class Config(InputSchemaWithoutCamelCase):
-        ...
+    model_config = InputSchemaWithoutCamelCase.model_config
 
 
 class ProjectOutputGet(_ProjectIOBase):
     label: str
 
-    class Config(OutputSchema):
-        ...
+    model_config = OutputSchema.model_config

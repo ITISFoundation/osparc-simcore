@@ -4,10 +4,9 @@
 # pylint: disable=too-many-arguments
 
 
-import asyncio
-import threading
 from collections.abc import AsyncIterable, Callable
 from contextlib import _AsyncGeneratorContextManager
+from typing import Awaitable
 from unittest.mock import AsyncMock
 
 import arrow
@@ -20,7 +19,7 @@ from models_library.api_schemas_payments.socketio import (
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.api_schemas_webserver.wallets import PaymentTransaction
 from models_library.users import GroupID, UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.faker_factories import random_payment_transaction
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -31,8 +30,7 @@ from simcore_service_payments.models.db_to_api import to_payments_api_model
 from simcore_service_payments.services.notifier import NotifierService
 from simcore_service_payments.services.rabbitmq import get_rabbitmq_settings
 from socketio import AsyncServer
-from tenacity import AsyncRetrying
-from tenacity.stop import stop_after_attempt
+from tenacity import AsyncRetrying, stop_after_delay
 from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
@@ -103,7 +101,7 @@ async def socketio_client_events(
     # emulates front-end receiving message
 
     async def on_payment(data):
-        assert parse_obj_as(PaymentTransaction, data) is not None
+        assert TypeAdapter(PaymentTransaction).validate_python(data) is not None
 
     on_event_spy = AsyncMock(wraps=on_payment)
     socketio_client.on(SOCKET_IO_PAYMENT_COMPLETED_EVENT, on_event_spy)
@@ -112,8 +110,10 @@ async def socketio_client_events(
 
 
 @pytest.fixture
-async def notify_payment(app: FastAPI, user_id: UserID) -> Callable:
-    async def _():
+async def notify_payment(
+    app: FastAPI, user_id: UserID
+) -> Callable[[], Awaitable[None]]:
+    async def _() -> None:
         transaction = PaymentsTransactionsDB(
             **random_payment_transaction(
                 user_id=user_id, completed_at=arrow.utcnow().datetime
@@ -127,23 +127,28 @@ async def notify_payment(app: FastAPI, user_id: UserID) -> Callable:
     return _
 
 
+async def _assert_called_once(mock: AsyncMock) -> None:
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1), stop=stop_after_delay(5), reraise=True
+    ):
+        with attempt:
+            assert mock.call_count == 1
+
+
 async def test_emit_message_as_external_process_to_frontend_client(
     socketio_server_events: dict[str, AsyncMock],
     socketio_client: socketio.AsyncClient,
     socketio_client_events: dict[str, AsyncMock],
-    notify_payment: Callable,
+    notify_payment: Callable[[], Awaitable[None]],
+    socketio_client_factory: Callable[
+        [], _AsyncGeneratorContextManager[socketio.AsyncClient]
+    ],
 ):
     """
     front-end  -> socketio client (many different clients)
     webserver  -> socketio server (one/more replicas)
     payments   -> Sends messages to clients from external processes (one/more replicas)
     """
-    # Used iusntead of a fix asyncio.sleep
-    context_switch_retry_kwargs = {
-        "wait": wait_fixed(0.1),
-        "stop": stop_after_attempt(5),
-        "reraise": True,
-    }
 
     # web server spy events
     server_connect = socketio_server_events["connect"]
@@ -160,20 +165,9 @@ async def test_emit_message_as_external_process_to_frontend_client(
     # client emits
     await socketio_client.emit("check", data="hoi")
 
-    async for attempt in AsyncRetrying(**context_switch_retry_kwargs):
-        with attempt:
-            assert server_on_check.called
+    await _assert_called_once(server_on_check)
 
     # payment server emits
-    def _(lp):
-        asyncio.run_coroutine_threadsafe(notify_payment(), lp)
+    await notify_payment()
 
-    threading.Thread(
-        target=_,
-        args=(asyncio.get_event_loop(),),
-        daemon=False,
-    ).start()
-
-    async for attempt in AsyncRetrying(**context_switch_retry_kwargs):
-        with attempt:
-            assert client_on_payment.called
+    await _assert_called_once(client_on_payment)

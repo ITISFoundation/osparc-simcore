@@ -115,7 +115,7 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
     config_all_loggers(
         log_format_local_dev_enabled=settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED
     )
-    _logger.debug(settings.json(indent=2))
+    _logger.debug(settings.model_dump_json(indent=2))
 
     # keep mostly quiet noisy loggers
     quiet_level: int = max(

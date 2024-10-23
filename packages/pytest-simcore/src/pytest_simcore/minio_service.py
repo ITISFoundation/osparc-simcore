@@ -31,5 +31,5 @@ def minio_s3_settings_envs(
     minio_s3_settings: S3Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    changed_envs: EnvVarsDict = minio_s3_settings.dict(exclude_unset=True)
+    changed_envs: EnvVarsDict = minio_s3_settings.model_dump(exclude_unset=True)
     return setenvs_from_dict(monkeypatch, changed_envs)

@@ -4,7 +4,7 @@ from typing import Final
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from .._meta import VERSION
 from ..constants import (
@@ -16,11 +16,13 @@ from ..constants import (
 from ..core.settings import ApplicationSettings
 
 _APPLICATION_TAG_KEY: Final[str] = "io.simcore.clusters-keeper"
-_APPLICATION_VERSION_TAG: Final[EC2Tags] = parse_obj_as(
-    EC2Tags, {f"{_APPLICATION_TAG_KEY}.version": f"{VERSION}"}
+_APPLICATION_VERSION_TAG: Final[EC2Tags] = TypeAdapter(EC2Tags).validate_python(
+    {f"{_APPLICATION_TAG_KEY}.version": f"{VERSION}"}
 )
 
-HEARTBEAT_TAG_KEY: Final[AWSTagKey] = parse_obj_as(AWSTagKey, "last_heartbeat")
+HEARTBEAT_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
+    "last_heartbeat"
+)
 CLUSTER_NAME_PREFIX: Final[str] = "osparc-computational-cluster-"
 
 

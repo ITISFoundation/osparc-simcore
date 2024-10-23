@@ -28,7 +28,7 @@ def minimal_project(faker: Faker) -> dict[str, Any]:
 
 
 def test_project_minimal_model(minimal_project: dict[str, Any]):
-    project = Project.parse_obj(minimal_project)
+    project = Project.model_validate(minimal_project)
     assert project
 
     assert project.thumbnail is None
@@ -37,7 +37,7 @@ def test_project_minimal_model(minimal_project: dict[str, Any]):
 def test_project_with_thumbnail_as_empty_string(minimal_project: dict[str, Any]):
     thumbnail_empty_string = deepcopy(minimal_project)
     thumbnail_empty_string.update({"thumbnail": ""})
-    project = Project.parse_obj(thumbnail_empty_string)
+    project = Project.model_validate(thumbnail_empty_string)
 
     assert project
     assert project.thumbnail is None

@@ -41,9 +41,9 @@ def create_image_spec(
 
     docker_compose_overwrite_cfg.services[service_name].build.labels = labels
 
-    overwrite_options = docker_compose_overwrite_cfg.services[service_name].build.dict(
-        exclude_none=True
-    )
+    overwrite_options = docker_compose_overwrite_cfg.services[
+        service_name
+    ].build.model_dump(exclude_none=True, serialize_as_any=True)
     build_spec = BuildItem(**overwrite_options)
 
     return ComposeSpecification(

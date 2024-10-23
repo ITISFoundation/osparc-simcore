@@ -33,6 +33,8 @@ aiosignal==1.3.1
     # via aiohttp
 alembic==1.13.3
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+annotated-types==0.7.0
+    # via pydantic
 anyio==4.6.0
     # via
     #   fast-depends
@@ -199,7 +201,7 @@ psycopg2-binary==2.9.9
     # via
     #   aiopg
     #   sqlalchemy
-pydantic==1.10.18
+pydantic==2.9.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -216,12 +218,28 @@ pydantic==1.10.18
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
     #   fast-depends
+    #   pydantic-extra-types
+    #   pydantic-settings
+pydantic-core==2.23.4
+    # via pydantic
+pydantic-extra-types==2.9.0
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+pydantic-settings==2.5.2
+    # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.18.0
     # via rich
 pyinstrument==4.7.3
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
+python-dotenv==1.0.1
+    # via pydantic-settings
 pyyaml==6.0.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -306,6 +324,7 @@ typing-extensions==4.12.2
     #   opentelemetry-sdk
     #   pint
     #   pydantic
+    #   pydantic-core
     #   typer
 urllib3==2.2.3
     # via

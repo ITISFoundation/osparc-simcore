@@ -13,7 +13,7 @@ from models_library.api_schemas_payments.errors import PaymentNotFoundError
 from models_library.api_schemas_webserver.wallets import WalletPaymentInitiated
 from models_library.payments import UserInvoiceAddress
 from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
@@ -83,7 +83,7 @@ async def test_rpc_init_payment_fail(
     with pytest.raises(RPCServerError) as exc_info:
         await rpc_client.request(
             PAYMENTS_RPC_NAMESPACE,
-            parse_obj_as(RPCMethodName, "init_payment"),
+            TypeAdapter(RPCMethodName).validate_python("init_payment"),
             **init_payment_kwargs,
         )
 
@@ -107,7 +107,7 @@ async def test_webserver_one_time_payment_workflow(
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "init_payment"),
+        TypeAdapter(RPCMethodName).validate_python("init_payment"),
         **init_payment_kwargs,
     )
 
@@ -118,7 +118,7 @@ async def test_webserver_one_time_payment_workflow(
 
     result = await rpc_client.request(
         PAYMENTS_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "cancel_payment"),
+        TypeAdapter(RPCMethodName).validate_python("cancel_payment"),
         payment_id=result.payment_id,
         user_id=init_payment_kwargs["user_id"],
         wallet_id=init_payment_kwargs["wallet_id"],
@@ -145,7 +145,7 @@ async def test_cancel_invalid_payment_id(
     with pytest.raises(PaymentNotFoundError) as exc_info:
         await rpc_client.request(
             PAYMENTS_RPC_NAMESPACE,
-            parse_obj_as(RPCMethodName, "cancel_payment"),
+            TypeAdapter(RPCMethodName).validate_python("cancel_payment"),
             payment_id=invalid_payment_id,
             user_id=init_payment_kwargs["user_id"],
             wallet_id=init_payment_kwargs["wallet_id"],

@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 
 
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.application import create_base_app
 from simcore_service_dynamic_sidecar.core.reserved_space import (
@@ -18,7 +18,9 @@ def test_reserved_disk_space_workflow(
     create_base_app()
 
     assert _RESERVED_DISK_SPACE_NAME.exists()
-    assert _RESERVED_DISK_SPACE_NAME.stat().st_size == parse_obj_as(ByteSize, "10MiB")
+    assert _RESERVED_DISK_SPACE_NAME.stat().st_size == TypeAdapter(
+        ByteSize
+    ).validate_python("10MiB")
 
     remove_reserved_disk_space()
     assert not _RESERVED_DISK_SPACE_NAME.exists()

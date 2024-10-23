@@ -35,7 +35,7 @@ async def _start(session: ClientSession, url: URL, json: RequestBody | None) -> 
         data, error = unwrap_envelope(await response.json())
     assert not error  # nosec
     assert data is not None  # nosec
-    return TaskGet.parse_obj(data)
+    return TaskGet.model_validate(data)
 
 
 @retry(**_DEFAULT_AIOHTTP_RETRY_POLICY)
@@ -57,7 +57,7 @@ async def _wait_for_completion(
                     data, error = unwrap_envelope(await response.json())
                     assert not error  # nosec
                     assert data is not None  # nosec
-                task_status = TaskStatus.parse_obj(data)
+                task_status = TaskStatus.model_validate(data)
                 yield task_status.task_progress
                 if not task_status.done:
                     await asyncio.sleep(

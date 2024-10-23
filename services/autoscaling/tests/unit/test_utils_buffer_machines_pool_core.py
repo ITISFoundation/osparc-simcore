@@ -6,7 +6,7 @@ from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.constants import (
     ACTIVATED_BUFFER_MACHINE_EC2_TAGS,
@@ -65,8 +65,8 @@ def test_get_deactivated_buffer_ec2_tags_dynamic(
         | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
     )
     assert "Name" in expected_tags
-    expected_tags[AWSTagKey("Name")] = parse_obj_as(
-        AWSTagValue, str(expected_tags[AWSTagKey("Name")]) + "-buffer"
+    expected_tags[AWSTagKey("Name")] = TypeAdapter(AWSTagValue).validate_python(
+        str(expected_tags[AWSTagKey("Name")]) + "-buffer"
     )
     assert expected_tags == deactivated_buffer_tags
 
@@ -107,8 +107,8 @@ def test_get_deactivated_buffer_ec2_tags_computational(
         | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
     )
     assert "Name" in expected_tags
-    expected_tags[AWSTagKey("Name")] = parse_obj_as(
-        AWSTagValue, str(expected_tags[AWSTagKey("Name")]) + "-buffer"
+    expected_tags[AWSTagKey("Name")] = TypeAdapter(AWSTagValue).validate_python(
+        str(expected_tags[AWSTagKey("Name")]) + "-buffer"
     )
     assert expected_tags == deactivated_buffer_tags
 
@@ -144,10 +144,10 @@ def test_is_buffer_machine(tags: EC2Tags, expected_is_buffer: bool):
                 "registry.pytest.com/simcore/services/dynamic/sym-server-8-0-0-dy:3.2.34",
             ],
             {
-                f"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_(0)": '["itisfoundation/dynamic-sidecar:latest","itisfoundation/agent:latest","registry.pytest.com/simcore/services/dynamic/ti-postpro:2.0.34","registry.pytest.com/simcore/services/dynamic/ti-simu:1.0.12","registry.pytest.com/simcore/services/dynamic/ti-pers:1.0.',
-                f"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_(1)": '19","registry.pytest.com/simcore/services/dynamic/sim4life-postpro:2.0.106","registry.pytest.com/simcore/services/dynamic/s4l-core-postpro:2.0.106","registry.pytest.com/simcore/services/dynamic/s4l-core-stream:2.0.106","registry.pytest.com/simcore/services',
-                f"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_(2)": '/dynamic/sym-server-8-0-0-dy:2.0.106","registry.pytest.com/simcore/services/dynamic/sim4life-8-0-0-modeling:3.2.34","registry.pytest.com/simcore/services/dynamic/s4l-core-8-0-0-modeling:3.2.34","registry.pytest.com/simcore/services/dynamic/s4l-stream-8-0-0',
-                f"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_(3)": '-dy:3.2.34","registry.pytest.com/simcore/services/dynamic/sym-server-8-0-0-dy:3.2.34"]',
+                f"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_0": '["itisfoundation/dynamic-sidecar:latest","itisfoundation/agent:latest","registry.pytest.com/simcore/services/dynamic/ti-postpro:2.0.34","registry.pytest.com/simcore/services/dynamic/ti-simu:1.0.12","registry.pytest.com/simcore/services/dynamic/ti-pers:1.0.',
+                f"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_1": '19","registry.pytest.com/simcore/services/dynamic/sim4life-postpro:2.0.106","registry.pytest.com/simcore/services/dynamic/s4l-core-postpro:2.0.106","registry.pytest.com/simcore/services/dynamic/s4l-core-stream:2.0.106","registry.pytest.com/simcore/services',
+                f"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_2": '/dynamic/sym-server-8-0-0-dy:2.0.106","registry.pytest.com/simcore/services/dynamic/sim4life-8-0-0-modeling:3.2.34","registry.pytest.com/simcore/services/dynamic/s4l-core-8-0-0-modeling:3.2.34","registry.pytest.com/simcore/services/dynamic/s4l-stream-8-0-0',
+                f"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_3": '-dy:3.2.34","registry.pytest.com/simcore/services/dynamic/sym-server-8-0-0-dy:3.2.34"]',
             },
             id="many images that get chunked to AWS Tag max length",
         ),

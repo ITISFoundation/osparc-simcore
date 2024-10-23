@@ -2,7 +2,7 @@ import logging
 
 import aiohttp
 from models_library.docker import DockerGenericTag
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 from settings_library.docker_registry import RegistrySettings
 from yarl import URL
 
@@ -68,9 +68,9 @@ async def retrieve_image_layer_information(
                 # if the image has multiple architectures
                 json_response = await response.json()
             try:
-                multi_arch_manifests = parse_obj_as(
-                    DockerImageMultiArchManifestsV2, json_response
-                )
+                multi_arch_manifests = TypeAdapter(
+                    DockerImageMultiArchManifestsV2
+                ).validate_python(json_response)
                 # find the correct platform
                 digest = ""
                 for manifest in multi_arch_manifests.manifests:
@@ -89,8 +89,12 @@ async def retrieve_image_layer_information(
                     response.raise_for_status()
                     assert response.status == status.HTTP_200_OK  # nosec
                     json_response = await response.json()
-                    return parse_obj_as(DockerImageManifestsV2, json_response)
+                    return TypeAdapter(DockerImageManifestsV2).validate_python(
+                        json_response
+                    )
 
             except ValidationError:
-                return parse_obj_as(DockerImageManifestsV2, json_response)
+                return TypeAdapter(DockerImageManifestsV2).validate_python(
+                    json_response
+                )
     return None

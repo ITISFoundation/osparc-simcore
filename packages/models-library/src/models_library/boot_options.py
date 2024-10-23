@@ -1,6 +1,4 @@
-from typing import Any, ClassVar
-
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 from typing_extensions import TypedDict
 
 from .basic_types import EnvVarKey
@@ -17,17 +15,17 @@ class BootOption(BaseModel):
     default: str
     items: dict[str, BootChoice]
 
-    @validator("items")
+    @field_validator("items")
     @classmethod
-    def ensure_default_included(cls, v, values):
-        default = values["default"]
+    def ensure_default_included(cls, v, info: ValidationInfo):
+        default = info.data["default"]
         if default not in v:
             msg = f"Expected default={default} to be present a key of items={v}"
             raise ValueError(msg)
         return v
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "label": "Boot mode",
@@ -61,6 +59,7 @@ class BootOption(BaseModel):
                 },
             ]
         }
+    )
 
 
 BootOptions = dict[EnvVarKey, BootOption]

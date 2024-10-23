@@ -30,12 +30,12 @@ class RabbitEventMessageType(str, Enum):
 
 
 class RabbitMessageBase(BaseModel):
-    channel_name: str = Field(..., const=True)
+    channel_name: str
 
     @classmethod
     def get_channel_name(cls) -> str:
         # NOTE: this returns the channel type name
-        name: str = cls.__fields__["channel_name"].default
+        name: str = cls.model_fields["channel_name"].default
         return name
 
     @abstractmethod
@@ -46,7 +46,7 @@ class RabbitMessageBase(BaseModel):
         """
 
     def body(self) -> bytes:
-        return self.json().encode()
+        return self.model_dump_json().encode()
 
 
 class ProjectMessageBase(BaseModel):
@@ -133,9 +133,7 @@ class InstrumentationRabbitMessage(RabbitMessageBase, NodeMessageBase):
 
 
 class _RabbitAutoscalingBaseMessage(RabbitMessageBase):
-    channel_name: Literal["io.simcore.autoscaling"] = Field(
-        default="io.simcore.autoscaling", const=True
-    )
+    channel_name: Literal["io.simcore.autoscaling"] = "io.simcore.autoscaling"
     origin: str = Field(
         ..., description="autoscaling app type, in case there would be more than one"
     )
@@ -178,9 +176,7 @@ class RabbitResourceTrackingMessageType(StrAutoEnum):
 
 
 class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
-    channel_name: Literal["io.simcore.service.tracking"] = Field(
-        default="io.simcore.service.tracking", const=True
-    )
+    channel_name: Literal["io.simcore.service.tracking"] = "io.simcore.service.tracking"
 
     service_run_id: str = Field(
         ..., description="uniquely identitifies the service run"
@@ -196,7 +192,7 @@ class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
 
 class DynamicServiceRunningMessage(RabbitMessageBase):
     channel_name: Literal["io.simcore.service.dynamic-service-running"] = Field(
-        default="io.simcore.service.dynamic-service-running", const=True
+        default="io.simcore.service.dynamic-service-running"
     )
 
     project_id: ProjectID
@@ -213,9 +209,9 @@ class DynamicServiceRunningMessage(RabbitMessageBase):
 
 
 class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
-    message_type: RabbitResourceTrackingMessageType = Field(
-        default=RabbitResourceTrackingMessageType.TRACKING_STARTED, const=True
-    )
+    message_type: Literal[
+        RabbitResourceTrackingMessageType.TRACKING_STARTED
+    ] = RabbitResourceTrackingMessageType.TRACKING_STARTED
 
     wallet_id: WalletID | None
     wallet_name: str | None
@@ -253,9 +249,9 @@ class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
 
 
 class RabbitResourceTrackingHeartbeatMessage(RabbitResourceTrackingBaseMessage):
-    message_type: RabbitResourceTrackingMessageType = Field(
-        default=RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT, const=True
-    )
+    message_type: Literal[
+        RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT
+    ] = RabbitResourceTrackingMessageType.TRACKING_HEARTBEAT
 
 
 class SimcorePlatformStatus(StrAutoEnum):
@@ -264,9 +260,9 @@ class SimcorePlatformStatus(StrAutoEnum):
 
 
 class RabbitResourceTrackingStoppedMessage(RabbitResourceTrackingBaseMessage):
-    message_type: RabbitResourceTrackingMessageType = Field(
-        default=RabbitResourceTrackingMessageType.TRACKING_STOPPED, const=True
-    )
+    message_type: Literal[
+        RabbitResourceTrackingMessageType.TRACKING_STOPPED
+    ] = RabbitResourceTrackingMessageType.TRACKING_STOPPED
 
     simcore_platform_status: SimcorePlatformStatus = Field(
         ...,
@@ -282,9 +278,7 @@ RabbitResourceTrackingMessages: TypeAlias = (
 
 
 class WalletCreditsMessage(RabbitMessageBase):
-    channel_name: Literal["io.simcore.service.wallets"] = Field(
-        default="io.simcore.service.wallets", const=True
-    )
+    channel_name: Literal["io.simcore.service.wallets"] = "io.simcore.service.wallets"
     created_at: datetime.datetime = Field(
         default_factory=lambda: arrow.utcnow().datetime,
         description="message creation datetime",
@@ -302,9 +296,9 @@ class CreditsLimit(IntEnum):
 
 
 class WalletCreditsLimitReachedMessage(RabbitMessageBase):
-    channel_name: Literal["io.simcore.service.wallets-credit-limit-reached"] = Field(
-        default="io.simcore.service.wallets-credit-limit-reached", const=True
-    )
+    channel_name: Literal[
+        "io.simcore.service.wallets-credit-limit-reached"
+    ] = "io.simcore.service.wallets-credit-limit-reached"
     created_at: datetime.datetime = Field(
         default_factory=lambda: arrow.utcnow().datetime,
         description="message creation datetime",

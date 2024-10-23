@@ -32,7 +32,9 @@ pytest-sugar==1.0.0
 python-dateutil==2.9.0.post0
     # via faker
 python-dotenv==1.0.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 six==1.16.0
     # via python-dateutil
 termcolor==2.4.0

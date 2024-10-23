@@ -209,7 +209,7 @@ def random_product(
     registration_email_template: str | None = None,
     fake: Faker = DEFAULT_FAKER,
     **overrides,
-):
+) -> dict[str, Any]:
     """
 
     Foreign keys are:
@@ -301,6 +301,10 @@ def random_payment_transaction(
         "initiated_at": utcnow(),
         "state": PaymentTransactionState.PENDING,
         "completed_at": None,
+        "invoice_url": None,
+        "stripe_invoice_id": None,
+        "invoice_pdf_url": None,
+        "state_message": None,
     }
     # state is not added on purpose
     assert set(data.keys()).issubset({c.name for c in payments_transactions.columns})

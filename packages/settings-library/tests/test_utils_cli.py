@@ -18,10 +18,10 @@ from settings_library.base import BaseCustomSettings
 from settings_library.utils_cli import (
     create_settings_command,
     create_version_callback,
+    model_dump_with_secrets,
     print_as_envfile,
     print_as_json,
 )
-from settings_library.utils_encoders import create_json_encoder_wo_secrets
 from typer.testing import CliRunner
 
 log = logging.getLogger(__name__)
@@ -84,12 +84,7 @@ def fake_granular_env_file_content() -> str:
 @pytest.fixture
 def export_as_dict() -> Callable:
     def _export(model_obj, **export_options):
-        return json.loads(
-            model_obj.json(
-                encoder=create_json_encoder_wo_secrets(model_obj.__class__),
-                **export_options,
-            )
-        )
+        return model_dump_with_secrets(model_obj, show_secrets=True, **export_options)
 
     return _export
 
@@ -136,7 +131,7 @@ def test_settings_as_json(
 
     # reuse resulting json to build settings
     settings: dict = json.loads(result.stdout)
-    assert fake_settings_class.parse_obj(settings)
+    assert fake_settings_class.model_validate(settings)
 
 
 def test_settings_as_json_schema(
@@ -439,7 +434,9 @@ def test_print_as(capsys: pytest.CaptureFixture):
     assert "secret" not in captured.out
     assert "Some info" not in captured.out
 
-    print_as_json(settings_obj, compact=True)
+    print_as_json(
+        settings_obj, compact=True, show_secrets=False, json_serializer=json.dumps
+    )
     captured = capsys.readouterr()
     assert "secret" not in captured.out
     assert "**" in captured.out
