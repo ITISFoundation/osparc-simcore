@@ -317,7 +317,7 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
     },
 
     __getLogsString: function() {
-      const newLine = "\r\n";
+      const newLine = "\n";
       let logs = "";
       this.__loggerModel.getFilteredRows().forEach(rowData => {
         logs += this.self().printRow(rowData) + newLine;
@@ -339,7 +339,8 @@ qx.Class.define("osparc.widget.logger.LoggerView", {
 
     downloadLogs: function() {
       const logs = this.__getLogsString();
-      osparc.utils.Utils.downloadContent("data:text/plain;charset=utf-8," + logs, "logs.log");
+      const blob = new Blob([logs], {type: "text/plain"});
+      osparc.utils.Utils.downloadBlobContent(blob, "logs.log");
     },
 
     debug: function(nodeId, msg = "") {
