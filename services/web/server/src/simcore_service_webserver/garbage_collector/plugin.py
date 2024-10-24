@@ -41,6 +41,8 @@ def setup_garbage_collector(app: web.Application) -> None:
         _logger.name, min(logging.INFO, get_application_settings(app).log_level)
     )
 
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/6592
+
     # NOTE: scaling web-servers will lead to having multiple tasks upgrading the db
     # not a huge deal. Instead this task runs in the GC.
     # If more tasks of this nature are needed, we should setup some sort of registration mechanism
