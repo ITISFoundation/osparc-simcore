@@ -35,7 +35,7 @@ from models_library.projects_nodes_io import (
     StorageFileID,
 )
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, parse_obj_as
+from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
@@ -257,7 +257,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 raise FileAccessRightError(access_right="read", file_id=file_id)
 
             fmd = await db_file_meta_data.get(
-                conn, parse_obj_as(SimcoreS3FileID, file_id)
+                conn, TypeAdapter(SimcoreS3FileID).validate_python(file_id)
             )
         if is_file_entry_valid(fmd):
             return convert_db_to_model(fmd)
@@ -412,7 +412,7 @@ class SimcoreS3DataManager(BaseDataManager):
             if not can.write:
                 raise FileAccessRightError(access_right="write", file_id=file_id)
             fmd = await db_file_meta_data.get(
-                conn, parse_obj_as(SimcoreS3FileID, file_id)
+                conn, TypeAdapter(SimcoreS3FileID).validate_python(file_id)
             )
 
         if is_valid_managed_multipart_upload(fmd.upload_id):
@@ -460,12 +460,12 @@ class SimcoreS3DataManager(BaseDataManager):
             ):
                 raise S3KeyNotFoundError(key=file_id, bucket=self.simcore_bucket_name)
             return await self.__get_link(
-                parse_obj_as(SimcoreS3FileID, file_id), link_type
+                TypeAdapter(SimcoreS3FileID).validate_python(file_id), link_type
             )
         # standard file link
         async with self.engine.acquire() as conn:
             fmd = await db_file_meta_data.get(
-                conn, parse_obj_as(SimcoreS3FileID, file_id)
+                conn, TypeAdapter(SimcoreS3FileID).validate_python(file_id)
             )
         if not is_file_entry_valid(fmd):
             # try lazy update
@@ -487,9 +487,8 @@ class SimcoreS3DataManager(BaseDataManager):
     async def __get_link(
         self, s3_file_id: SimcoreS3FileID, link_type: LinkType
     ) -> AnyUrl:
-        link: AnyUrl = parse_obj_as(
-            AnyUrl,
-            f"s3://{self.simcore_bucket_name}/{urllib.parse.quote(s3_file_id)}",
+        link: AnyUrl = TypeAdapter(AnyUrl).validate_python(
+            f"s3://{self.simcore_bucket_name}/{urllib.parse.quote(s3_file_id)}"
         )
         if link_type == LinkType.PRESIGNED:
             link = await get_s3_client(self.app).create_single_presigned_download_link(
@@ -528,7 +527,7 @@ class SimcoreS3DataManager(BaseDataManager):
             # NOTE: deleting might be slow, so better ensure we release the connection
             async with self.engine.acquire() as conn:
                 file: FileMetaDataAtDB = await db_file_meta_data.get(
-                    conn, parse_obj_as(SimcoreS3FileID, file_id)
+                    conn, TypeAdapter(SimcoreS3FileID).validate_python(file_id)
                 )
             await get_s3_client(self.app).delete_objects_recursively(
                 bucket=file.bucket_name,
@@ -632,9 +631,9 @@ class SimcoreS3DataManager(BaseDataManager):
                     limit=_MAX_PARALLEL_S3_CALLS,
                 )
             total_num_of_files = sum(n for _, n in sizes_and_num_files)
-            src_project_total_data_size: ByteSize = parse_obj_as(
-                ByteSize, sum(n for n, _ in sizes_and_num_files)
-            )
+            src_project_total_data_size: ByteSize = TypeAdapter(
+                ByteSize
+            ).validate_python(sum(n for n, _ in sizes_and_num_files))
         with log_context(
             _logger,
             logging.INFO,
@@ -660,7 +659,7 @@ class SimcoreS3DataManager(BaseDataManager):
                         self._copy_path_s3_s3(
                             user_id,
                             src_fmd=src_fmd,
-                            dst_file_id=SimcoreS3FileID(
+                            dst_file_id=TypeAdapter(SimcoreS3FileID).validate_python(
                                 f"{dst_project_uuid}/{new_node_id}/{src_fmd.object_name.split('/', maxsplit=2)[-1]}"
                             ),
                             bytes_transfered_cb=s3_transfered_data_cb.copy_transfer_cb,
@@ -718,7 +717,7 @@ class SimcoreS3DataManager(BaseDataManager):
             total_size += sum(x.size for x in s3_objects)
             total_num_s3_objects += len(s3_objects)
 
-        return parse_obj_as(ByteSize, total_size), total_num_s3_objects
+        return TypeAdapter(ByteSize).validate_python(total_size), total_num_s3_objects
 
     async def search_owned_files(
         self,
@@ -759,7 +758,7 @@ class SimcoreS3DataManager(BaseDataManager):
     ) -> FileMetaData:
         async with self.engine.acquire() as conn:
             if await db_file_meta_data.exists(
-                conn, parse_obj_as(SimcoreS3FileID, link_file_id)
+                conn, TypeAdapter(SimcoreS3FileID).validate_python(link_file_id)
             ):
                 raise LinkAlreadyExistsError(file_id=link_file_id)
         # validate target_uuid
@@ -908,7 +907,7 @@ class SimcoreS3DataManager(BaseDataManager):
             s3_metadata = await get_s3_client(self.app).get_object_metadata(
                 bucket=fmd.bucket_name, object_key=fmd.object_name
             )
-            fmd.file_size = parse_obj_as(ByteSize, s3_metadata.size)
+            fmd.file_size = TypeAdapter(ByteSize).validate_python(s3_metadata.size)
             fmd.last_modified = s3_metadata.last_modified
             fmd.entity_tag = s3_metadata.e_tag
         else:
@@ -945,12 +944,12 @@ class SimcoreS3DataManager(BaseDataManager):
         s3_metadata = await self._get_s3_metadata(fmd)
         if not fmd.is_directory:
             assert isinstance(s3_metadata, S3MetaData)  # nosec
-            fmd.file_size = parse_obj_as(ByteSize, s3_metadata.size)
+            fmd.file_size = TypeAdapter(ByteSize).validate_python(s3_metadata.size)
             fmd.last_modified = s3_metadata.last_modified
             fmd.entity_tag = s3_metadata.e_tag
         elif fmd.is_directory:
             assert isinstance(s3_metadata, S3DirectoryMetaData)  # nosec
-            fmd.file_size = parse_obj_as(ByteSize, s3_metadata.size)
+            fmd.file_size = TypeAdapter(ByteSize).validate_python(s3_metadata.size)
         fmd.upload_expires_at = None
         fmd.upload_id = None
         async with self.engine.acquire() as conn:
@@ -978,7 +977,9 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         assert dc_link.path  # nosec
         filename = Path(dc_link.path).name
-        dst_file_id = SimcoreS3FileID(f"{dest_project_id}/{dest_node_id}/{filename}")
+        dst_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
+            f"{dest_project_id}/{dest_node_id}/{filename}"
+        )
         _logger.debug("copying %s to %s", f"{source_uuid=}", f"{dst_file_id=}")
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1075,7 +1076,7 @@ class SimcoreS3DataManager(BaseDataManager):
         )
         fmd = FileMetaData.from_simcore_node(
             user_id=user_id,
-            file_id=parse_obj_as(SimcoreS3FileID, file_id),
+            file_id=TypeAdapter(SimcoreS3FileID).validate_python(file_id),
             bucket=self.simcore_bucket_name,
             location_id=self.location_id,
             location_name=self.location_name,
@@ -1092,7 +1093,9 @@ def create_simcore_s3_data_manager(app: web.Application) -> SimcoreS3DataManager
     assert cfg.STORAGE_S3  # nosec
     return SimcoreS3DataManager(
         engine=app[APP_AIOPG_ENGINE_KEY],
-        simcore_bucket_name=parse_obj_as(S3BucketName, cfg.STORAGE_S3.S3_BUCKET_NAME),
+        simcore_bucket_name=TypeAdapter(S3BucketName).validate_python(
+            cfg.STORAGE_S3.S3_BUCKET_NAME
+        ),
         app=app,
         settings=cfg,
     )

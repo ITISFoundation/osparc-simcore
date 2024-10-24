@@ -16,7 +16,7 @@ from faker import Faker
 from models_library.api_schemas_storage import FileMetaDataGet, SimcoreS3FileID
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 
@@ -58,12 +58,12 @@ async def test_get_files_metadata(
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
-    list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+    list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert not list_fmds
 
     # now add some stuff there
     NUM_FILES = 10
-    file_size = parse_obj_as(ByteSize, "15Mib")
+    file_size = TypeAdapter(ByteSize).validate_python("15Mib")
     files_owned_by_us = [
         await upload_file(file_size, faker.file_name()) for _ in range(NUM_FILES)
     ]
@@ -73,7 +73,7 @@ async def test_get_files_metadata(
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
-    list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+    list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert len(list_fmds) == NUM_FILES
 
     # checks project_id filter!
@@ -90,13 +90,13 @@ async def test_get_files_metadata(
     previous_data = deepcopy(data)
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
-    list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+    list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert len(list_fmds) == (NUM_FILES)
     assert previous_data == data
 
     # create some more files but with a base common name
     NUM_FILES = 10
-    file_size = parse_obj_as(ByteSize, "15Mib")
+    file_size = TypeAdapter(ByteSize).validate_python("15Mib")
     files_with_common_name = [
         await upload_file(file_size, f"common_name-{faker.file_name()}")
         for _ in range(NUM_FILES)
@@ -107,14 +107,14 @@ async def test_get_files_metadata(
     response = await client.get(f"{url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
-    list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+    list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert len(list_fmds) == (2 * NUM_FILES)
 
     # we can filter them now
     response = await client.get(f"{url.update_query(uuid_filter='common_name')}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
-    list_fmds = parse_obj_as(list[FileMetaDataGet], data)
+    list_fmds = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
     assert len(list_fmds) == (NUM_FILES)
 
 
@@ -171,7 +171,7 @@ async def test_get_file_metadata(
 
     # now add some stuff there
     NUM_FILES = 10
-    file_size = parse_obj_as(ByteSize, "15Mib")
+    file_size = TypeAdapter(ByteSize).validate_python("15Mib")
     files_owned_by_us = []
     for _ in range(NUM_FILES):
         files_owned_by_us.append(await upload_file(file_size, faker.file_name()))
@@ -188,6 +188,6 @@ async def test_get_file_metadata(
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     assert data
-    fmd = parse_obj_as(FileMetaDataGet, data)
+    fmd = TypeAdapter(FileMetaDataGet).validate_python(data)
     assert fmd.file_id == selected_file_uuid
     assert fmd.file_size == selected_file.stat().st_size
