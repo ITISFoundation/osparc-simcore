@@ -153,4 +153,4 @@ async def monitor_task_abortion(
 def publish_event(dask_pub: distributed.Pub, event: BaseTaskEvent) -> None:
     """never reraises, only CancellationError"""
     with log_catch(_logger, reraise=False):
-        dask_pub.put(event.json())
+        dask_pub.put(event.model_dump_json())
