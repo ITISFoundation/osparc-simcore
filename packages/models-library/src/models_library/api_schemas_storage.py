@@ -153,7 +153,7 @@ class FileMetaDataGet(BaseModel):
     )
 
     model_config = ConfigDict(
-        extra="forbid",
+        extra="ignore",
         from_attributes=True,
         json_schema_extra={
             "examples": [
