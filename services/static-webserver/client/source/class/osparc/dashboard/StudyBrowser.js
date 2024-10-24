@@ -701,7 +701,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (this._resourcesContainer.getFlatList()) {
         this._resourcesContainer.getFlatList().nextRequest = null;
       }
-
     },
 
     __addNewStudyButtons: function() {
