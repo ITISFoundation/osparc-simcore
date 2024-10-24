@@ -102,12 +102,36 @@ def config_all_loggers(*, log_format_local_dev_enabled: bool) -> None:
         fmt = LOCAL_FORMATTING
 
     for logger in loggers:
-        set_logging_handler(
+        _set_logging_handler(
             logger, fmt=fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
         )
 
+    LOGGER_FILTER_MAPPING = {
+        "uvicorn.access": [
+            '"GET / HTTP/1.1" 200',
+            '"GET /metrics HTTP/1.1" 200',
+        ],
+        "gunicorn.access": [
+            '"GET /v0/ HTTP/1.1" 200',
+            '"GET /v0/health HTTP/1.1" 200',
+        ],
+    }
+    logger_mapping = LOGGER_FILTER_MAPPING
+    for logger_name, filtered_routes in logger_mapping.items():
+        logger = logging.getLogger(logger_name)
+        # Check if the logger has any handlers or is in active use
+        if not logger.hasHandlers():
+            _logger.warning(
+                f"Logger %s does not have any handlers. Filter will not be added.",
+                logger_name,
+            )
+            continue
 
-def set_logging_handler(
+        log_filter = GeneralLogFilter(filtered_routes)
+        logger.addFilter(log_filter)
+
+
+def _set_logging_handler(
     logger: logging.Logger,
     *,
     fmt: str,
@@ -118,6 +142,20 @@ def set_logging_handler(
             CustomFormatter(
                 fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
             )
+        )
+
+
+class GeneralLogFilter(logging.Filter):
+    def __init__(self, filtered_routes):
+        super().__init__()
+        self.filtered_routes: list[str] = filtered_routes
+
+    def filter(self, record):
+        msg = record.getMessage()
+
+        # Check if the filtered routes exists in the message
+        return not any(
+            filter_criteria in msg for filter_criteria in self.filtered_routes
         )
 
 
