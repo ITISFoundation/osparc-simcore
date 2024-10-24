@@ -28,6 +28,8 @@ services:
     ports:
       - "8007:8000"
       - "3012:3000"
+    networks:
+      - default
 
   catalog:
     environment:
