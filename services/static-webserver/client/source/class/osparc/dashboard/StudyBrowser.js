@@ -194,11 +194,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadStudies: function() {
-      if (this._loadingResourcesBtn.isFetching() || !osparc.auth.Manager.getInstance().isLoggedIn()) {
-        return;
-      }
       const workspaceId = this.getCurrentWorkspaceId();
-      if (workspaceId === -1) { // shared workspace listing
+      if (
+        !osparc.auth.Manager.getInstance().isLoggedIn() ||
+        workspaceId === -1 || // listing workspaces
+        this._loadingResourcesBtn.isFetching()
+      ) {
         return;
       }
 
@@ -945,6 +946,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
 
+        this._loadingResourcesBtn.setFetching(false);
         this.resetSelection();
         this.setMultiSelection(false);
         this.set({
