@@ -52,6 +52,7 @@ class ProjectDB(BaseModel):
     published: bool
     hidden: bool
     workspace_id: WorkspaceID | None
+    trashed_at: datetime | None
 
     class Config:
         orm_mode = True
