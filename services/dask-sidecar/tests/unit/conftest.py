@@ -6,6 +6,7 @@
 from collections.abc import AsyncIterator, Callable, Iterator
 from pathlib import Path
 from pprint import pformat
+from typing import cast
 
 import dask
 import dask.config
@@ -19,7 +20,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -169,8 +170,7 @@ def s3_settings(mocked_s3_server_envs: None) -> S3Settings:
 @pytest.fixture
 def s3_endpoint_url(s3_settings: S3Settings) -> AnyUrl:
     assert s3_settings.S3_ENDPOINT
-    return parse_obj_as(
-        AnyUrl,
+    return TypeAdapter(AnyUrl).validate_python(
         f"{s3_settings.S3_ENDPOINT}",
     )
 
@@ -203,9 +203,7 @@ async def bucket(
     response = await aiobotocore_s3_client.list_buckets()
     assert response["Buckets"]
     assert len(response["Buckets"]) == 1
-    bucket_name = response["Buckets"][0]["Name"]
-    return bucket_name
-    # await _clean_bucket_content(aiobotocore_s3_client, bucket_name)
+    return response["Buckets"][0]["Name"]
 
 
 @pytest.fixture
@@ -214,7 +212,7 @@ def s3_remote_file_url(s3_settings: S3Settings, faker: Faker) -> Callable[..., A
         file_path_with_bucket = Path(s3_settings.S3_BUCKET_NAME) / (
             file_path or faker.file_name()
         )
-        return parse_obj_as(AnyUrl, f"s3://{file_path_with_bucket}")
+        return TypeAdapter(AnyUrl).validate_python(f"s3://{file_path_with_bucket}")
 
     return creator
 
@@ -230,7 +228,7 @@ def file_on_s3_server(
 
     def creator() -> AnyUrl:
         new_remote_file = s3_remote_file_url()
-        open_file = fsspec.open(new_remote_file, mode="wt", **s3_storage_kwargs)
+        open_file = fsspec.open(f"{new_remote_file}", mode="wt", **s3_storage_kwargs)
         with open_file as fp:
             fp.write(  # type: ignore
                 f"This is the file contents of file #'{(len(list_of_created_files)+1):03}'\n"
@@ -245,7 +243,7 @@ def file_on_s3_server(
     # cleanup
     fs = fsspec.filesystem("s3", **s3_storage_kwargs)
     for file in list_of_created_files:
-        fs.delete(file.partition(f"{file.scheme}://")[2])
+        fs.delete(f"{file}".partition(f"{file.scheme}://")[2])
 
 
 @pytest.fixture
@@ -255,12 +253,12 @@ def job_id() -> str:
 
 @pytest.fixture
 def project_id(faker: Faker) -> ProjectID:
-    return faker.uuid4(cast_to=None)
+    return cast(ProjectID, faker.uuid4(cast_to=None))
 
 
 @pytest.fixture
 def node_id(faker: Faker) -> NodeID:
-    return faker.uuid4(cast_to=None)
+    return cast(NodeID, faker.uuid4(cast_to=None))
 
 
 @pytest.fixture(params=["no_parent_node", "with_parent_node"])
@@ -276,9 +274,13 @@ def task_owner(
         project_id=project_id,
         node_id=node_id,
         parent_project_id=(
-            None if request.param == "no_parent_node" else faker.uuid4(cast_to=None)
+            None
+            if request.param == "no_parent_node"
+            else cast(ProjectID, faker.uuid4(cast_to=None))
         ),
         parent_node_id=(
-            None if request.param == "no_parent_node" else faker.uuid4(cast_to=None)
+            None
+            if request.param == "no_parent_node"
+            else cast(NodeID, faker.uuid4(cast_to=None))
         ),
     )
