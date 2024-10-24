@@ -12,7 +12,7 @@ from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
 
-from ..projects.api import prune_all_trashes
+from ..projects._trash_api import prune_all_trashes
 
 _logger = logging.getLogger(__name__)
 
