@@ -1139,7 +1139,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const selection = this._resourcesContainer.getSelection();
         const preferencesSettings = osparc.Preferences.getInstance();
         if (preferencesSettings.getConfirmDeleteStudy()) {
-          const win = this.__createConfirmWindow(selection.map(button => button.getTitle()));
+          const win = this.__createConfirmDeleteWindow(selection.map(button => button.getTitle()));
           win.center();
           win.open();
           win.addListener("close", () => {
@@ -1534,13 +1534,33 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _deleteResourceRequested: function(studyId) {
-      this.__deleteStudyRequested(this.__getStudyData(studyId));
+      if (this.getCurrentContext() === "trash") {
+        this.__deleteStudyRequested(this.__getStudyData(studyId));
+      } else {
+        this.__trashStudyRequested(this.__getStudyData(studyId));
+      }
+    },
+
+    __trashStudyRequested: function(studyData) {
+      const preferencesSettings = osparc.Preferences.getInstance();
+      if (preferencesSettings.getConfirmDeleteStudy()) {
+        const win = this.__createConfirmTrashWindow([studyData.name]);
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__trashStudy(studyData);
+          }
+        }, this);
+      } else {
+        this.__trashStudy(studyData);
+      }
     },
 
     __deleteStudyRequested: function(studyData) {
       const preferencesSettings = osparc.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteStudy()) {
-        const win = this.__createConfirmWindow([studyData.name]);
+        const win = this.__createConfirmDeleteWindow([studyData.name]);
         win.center();
         win.open();
         win.addListener("close", () => {
@@ -1551,6 +1571,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         this.__doDeleteStudy(studyData);
       }
+    },
+
+    __getTrashStudyMenuButton: function(studyData) {
+      const trashButton = new qx.ui.menu.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/12");
+      trashButton["deleteButton"] = true;
+      trashButton.set({
+        appearance: "menu-button"
+      });
+      osparc.utils.Utils.setIdToWidget(trashButton, "studyItemMenuDelete");
+      trashButton.addListener("execute", () => this.__trashStudyRequested(studyData), this);
+      return trashButton;
     },
 
     __getDeleteStudyMenuButton: function(studyData) {
@@ -1771,11 +1802,30 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studiesData.forEach(studyData => this.__doDeleteStudy(studyData));
     },
 
-    __createConfirmWindow: function(studyNames) {
-      const rUSure = this.tr("Are you sure you want to delete");
+    __deleteConfirmationWindow: function(msg, studyNames) {
       const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
-      const msg = rUSure + (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText} ?` : ` <b>${studyNames[0]}</b>?`)
+      msg += (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText} ?` : ` <b>${studyNames[0]}</b>?`);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Trash"),
+        confirmAction: "delete"
+      });
+      osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
+      return confirmationWin;
+    },
+
+    __createConfirmTrashWindow: function(studyNames) {
+      const rUSure = this.tr("Are you sure you want to move to the trash");
+      const confirmationWin = this.__deleteConfirmationWindow(rUSure, studyNames).set({
+        confirmText: this.tr("Trash"),
+        confirmAction: "delete"
+      });
+      osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
+      return confirmationWin;
+    },
+
+    __createConfirmDeleteWindow: function(studyNames) {
+      const rUSure = this.tr("Are you sure you want to delete");
+      const confirmationWin = this.__deleteConfirmationWindow(rUSure, studyNames).set({
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });
