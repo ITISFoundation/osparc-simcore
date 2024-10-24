@@ -46,6 +46,7 @@ async def test_trash_projects(
 ):
     assert client.app
 
+    # this test should have no errors stopping services
     mocker.patch(
         "simcore_service_webserver.projects._trash_api.projects_api.remove_project_dynamic_services",
         autospec=True,
