@@ -1,7 +1,7 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Literal, NamedTuple, Self
+from typing import Any, Literal, NamedTuple
 from uuid import UUID
 
 import arrow
@@ -186,14 +186,18 @@ class FileUploadQueryParams(StorageQueryParamsBase):
             return f"{v}".upper()
         return v
 
-    @model_validator(mode="after")
-    def when_directory_force_link_type_and_file_size(self) -> Self:
-        if self.is_directory is True:
+    @model_validator(mode="before")
+    @classmethod
+    def when_directory_force_link_type_and_file_size(cls, data: Any) -> Any:
+        assert isinstance(data, dict)
+
+        if bool(data.get("is_directory", False)) is True:
             # sets directory size by default to undefined
-            self.file_size = None
+            if int(data.get("file_size", -1)) < 0:
+                data["file_size"] = None
             # only 1 link will be returned manged by the uploader
-            self.link_type = LinkType.S3
-        return self
+            data["link_type"] = LinkType.S3.value
+        return data
 
     @property
     def is_v1_upload(self) -> bool:
