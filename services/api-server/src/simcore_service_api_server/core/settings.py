@@ -39,7 +39,6 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
 
     @field_validator("WEBSERVER_SESSION_SECRET_KEY")
     @classmethod
-    @classmethod
     def check_valid_fernet_key(cls, v):
         return cls.do_check_valid_fernet_key(v)
 
