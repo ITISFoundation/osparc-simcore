@@ -53,7 +53,7 @@ async def get_or_create_temporary_s3_access(request: web.Request) -> web.Respons
     s3_settings: S3Settings = await sts.get_or_create_temporary_token_for_user(
         request.app, query_params.user_id
     )
-    return web.json_response({"data": s3_settings.dict()}, dumps=json_dumps)
+    return web.json_response({"data": s3_settings.model_dump()}, dumps=json_dumps)
 
 
 async def _copy_folders_from_project(
@@ -160,6 +160,6 @@ async def search_files(request: web.Request) -> web.Response:
     )
 
     return web.json_response(
-        {"data": [jsonable_encoder(FileMetaDataGet.from_orm(d)) for d in data]},
+        {"data": [jsonable_encoder(FileMetaDataGet(**d.model_dump())) for d in data]},
         dumps=json_dumps,
     )

@@ -10,7 +10,7 @@ import pytest
 from faker import Faker
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from servicelib.utils import limited_gather
 from simcore_service_storage.models import FileMetaData, S3BucketName
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -31,7 +31,7 @@ async def dsm_mockup_complete_db(
     cleanup_user_projects_file_metadata: None,
     faker: Faker,
 ) -> tuple[FileMetaData, FileMetaData]:
-    file_size = parse_obj_as(ByteSize, "10Mib")
+    file_size = TypeAdapter(ByteSize).validate_python("10Mib")
     uploaded_files = await limited_gather(
         *(upload_file(file_size, faker.file_name(), None) for _ in range(2)),
         limit=2,

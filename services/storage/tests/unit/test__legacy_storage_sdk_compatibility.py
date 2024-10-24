@@ -56,7 +56,7 @@ def location_name() -> str:
     return SimcoreS3DataManager.get_location_name()
 
 
-async def test_storage_client_used_in_simcore_sdk_0_3_2(
+async def test_storage_client_used_in_simcore_sdk_0_3_2(  # noqa: PLR0915
     client: TestClient,
     file_id: str,
     user_id: str,

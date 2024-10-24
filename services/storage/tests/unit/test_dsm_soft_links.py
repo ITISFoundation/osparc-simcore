@@ -46,7 +46,7 @@ async def output_file(
     async with aiopg_engine.acquire() as conn:
         stmt = (
             file_meta_data.insert()
-            .values(jsonable_encoder(FileMetaDataAtDB.from_orm(file)))
+            .values(jsonable_encoder(FileMetaDataAtDB.model_validate(file)))
             .returning(literal_column("*"))
         )
         result = await conn.execute(stmt)

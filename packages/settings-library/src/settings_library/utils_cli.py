@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from collections.abc import Callable
+from enum import Enum
 from pprint import pformat
 from typing import Any
 
@@ -64,7 +65,8 @@ def print_as_envfile(
 
         if verbose and field.description:
             typer.echo(f"# {field.description}")
-
+        if isinstance(value, Enum):
+            value = value.value
         typer.echo(f"{name}={value}")
 
 

@@ -24,6 +24,7 @@ from uuid import UUID
 
 import orjson
 from pydantic import NameEmail, SecretBytes, SecretStr
+from pydantic_core import Url
 from pydantic_extra_types.color import Color
 
 
@@ -84,6 +85,7 @@ ENCODERS_BY_TYPE: dict[type[Any], Callable[[Any], Any]] = {
     SecretBytes: str,
     SecretStr: str,
     set: list,
+    Url: str,
     UUID: str,
 }
 
