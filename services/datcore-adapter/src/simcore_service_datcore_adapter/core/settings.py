@@ -1,7 +1,7 @@
 from functools import cached_property
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, parse_obj_as, validator
+from pydantic import AliasChoices, Field, field_validator, parse_obj_as
 from pydantic.networks import AnyUrl
 from settings_library.base import BaseCustomSettings
 from settings_library.tracing import TracingSettings
@@ -21,28 +21,31 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_BOOT_MODE: BootModeEnum | None
 
     LOG_LEVEL: LogLevel = Field(
-        LogLevel.INFO.value,
-        env=[
+        default=LogLevel.INFO.value,
+        validation_alias=AliasChoices(
             "DATCORE_ADAPTER_LOGLEVEL",
             "DATCORE_ADAPTER_LOG_LEVEL",
             "LOG_LEVEL",
             "LOGLEVEL",
-        ],
+        ),
     )
 
-    PENNSIEVE: PennsieveSettings = Field(auto_default_from_env=True)
+    PENNSIEVE: PennsieveSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        False,
-        env=[
+        default=False,
+        validation_alias=AliasChoices(
             "DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ],
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DATCORE_ADAPTER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     DATCORE_ADAPTER_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="settings for opentelemetry tracing"
+        description="settings for opentelemetry tracing",
+        json_schema_extra={"auto_default_from_env": True},
     )
 
     @cached_property
@@ -54,7 +57,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             BootModeEnum.LOCAL,
         ]
 
-    @validator("LOG_LEVEL", pre=True)
+    @field_validator("LOG_LEVEL", mode="before")
     @classmethod
-    def _validate_loglevel(cls, value) -> str:
+    def _validate_loglevel(cls, value: str) -> str:
         return cls.validate_log_level(value)
