@@ -11,12 +11,12 @@ import filecmp
 import json
 import logging
 import urllib.parse
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from pathlib import Path
 from random import choice
-from typing import Any, AsyncIterator, Literal
+from typing import Any, Literal
 from uuid import uuid4
 
 import pytest
@@ -43,7 +43,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyHttpUrl, ByteSize, HttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, ByteSize, HttpUrl, TypeAdapter, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
@@ -449,7 +449,7 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
         expected_upload_ids=([upload_id] if upload_id else None),
     )
     # delete/abort file upload
-    abort_url = URL(upload_link.links.abort_upload).relative()
+    abort_url = URL(f"{upload_link.links.abort_upload}").relative()
     response = await client.post(f"{abort_url}")
     await assert_status(response, status.HTTP_204_NO_CONTENT)
 
@@ -614,7 +614,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
         file, file_upload_link
     )
     # complete the upload
-    complete_url = URL(file_upload_link.links.complete_upload).relative()
+    complete_url = URL(f"{file_upload_link.links.complete_upload}").relative()
     response = await client.post(
         f"{complete_url}",
         json=jsonable_encoder(FileUploadCompletionBody(parts=part_to_etag)),
@@ -624,7 +624,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
     assert not error
     assert data
     file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
-    state_url = URL(file_upload_complete_response.links.state).relative()
+    state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
     # here we do not check now for the state completion. instead we simulate a restart where the tasks disappear
     client.app[UPLOAD_TASKS_KEY].clear()
@@ -754,7 +754,7 @@ async def test_upload_real_file_with_s3_client(
     assert s3_metadata.e_tag == upload_e_tag
 
     # complete the upload
-    complete_url = URL(file_upload_link.links.complete_upload).relative()
+    complete_url = URL(f"{file_upload_link.links.complete_upload}").relative()
     with log_context(logging.INFO, f"completing upload of {file=}"):
         response = await client.post(f"{complete_url}", json={"parts": []})
         response.raise_for_status()
@@ -762,7 +762,7 @@ async def test_upload_real_file_with_s3_client(
         assert not error
         assert data
         file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
-        state_url = URL(file_upload_complete_response.links.state).relative()
+        state_url = URL(f"{file_upload_complete_response.links.state}").relative()
         completion_etag = None
         async for attempt in AsyncRetrying(
             reraise=True,
@@ -865,7 +865,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
             )
 
     # 4. abort file upload
-    abort_url = URL(upload_link.links.abort_upload).relative()
+    abort_url = URL(f"{upload_link.links.abort_upload}").relative()
     response = await client.post(f"{abort_url}")
     await assert_status(response, status.HTTP_204_NO_CONTENT)
 
@@ -896,7 +896,7 @@ async def _assert_file_downloaded(
 ):
     dest_file = tmp_path / faker.file_name()
     async with ClientSession() as session:
-        response = await session.get(link)
+        response = await session.get(f"{link}")
         response.raise_for_status()
         with dest_file.open("wb") as fp:
             fp.write(await response.read())
@@ -1257,9 +1257,9 @@ async def _list_files_and_directories(
 @pytest.mark.parametrize(
     "file_size",
     [
-        parse_obj_as(ByteSize, "-1"),
-        parse_obj_as(ByteSize, "0"),
-        parse_obj_as(ByteSize, "1TB"),
+        ByteSize(-1),
+        TypeAdapter(ByteSize).validate_python("0"),
+        TypeAdapter(ByteSize).validate_python("1TB"),
     ],
 )
 async def test_is_directory_link_forces_link_type_and_size(
@@ -1435,11 +1435,11 @@ async def test_listing_with_project_id_filter(
         file_checksums=(SHA256Str(faker.sha256()),),
     )
     assert len(src_projects_list.keys()) > 0
-    node_id = list(src_projects_list.keys())[0]
+    node_id = next(iter(src_projects_list.keys()))
     project_files_in_db = set(src_projects_list[node_id])
     assert len(project_files_in_db) > 0
     project_id = project["uuid"]
-    project_file_name = Path(choice(list(project_files_in_db))).name
+    project_file_name = Path(choice(list(project_files_in_db))).name  # noqa: S311
 
     assert client.app
     query = {
