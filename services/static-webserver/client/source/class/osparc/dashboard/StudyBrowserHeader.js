@@ -20,7 +20,7 @@
  *
  */
 
-qx.Class.define("osparc.dashboard.WorkspaceHeader", {
+qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   extend: qx.ui.core.Widget,
 
   construct: function() {

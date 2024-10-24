@@ -49,6 +49,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   properties: {
+    currentContext: {
+      check: ["studiesAndFolders", "workspaces", "search", "bin"],
+      nullable: false,
+      init: "studiesAndFolders",
+      event: "changeCurrentContext"
+    },
+
     currentWorkspaceId: {
       check: "Number",
       nullable: true,
@@ -101,7 +108,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
   members: {
     __dontShowTutorial: null,
-    __workspaceHeader: null,
+    __header: null,
     __workspacesList: null,
     __foldersList: null,
 
@@ -177,7 +184,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         const folderId = this.getCurrentFolderId();
         const workspaceId = this.getCurrentWorkspaceId();
-        if (workspaceId === -1 || workspaceId === -2) {
+        if (this.getCurrentContext() !== "studiesAndFolders") {
           return;
         }
         this.__setFoldersToList([]);
@@ -412,7 +419,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addNewFolderButton: function() {
       const currentWorkspaceId = this.getCurrentWorkspaceId();
       if (currentWorkspaceId) {
-        if (currentWorkspaceId === -1 || currentWorkspaceId === -2) {
+        if (this.getCurrentContext() !== "studiesAndFolders") {
           return;
         }
         const currentWorkspace = osparc.store.Workspaces.getInstance().getWorkspace(this.getCurrentWorkspaceId());
@@ -697,11 +704,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addNewStudyButtons: function() {
+      if (this.getCurrentContext() !== "studiesAndFolders") {
+        return;
+      }
       const currentWorkspaceId = this.getCurrentWorkspaceId();
       if (currentWorkspaceId) {
-        if (currentWorkspaceId === -2) {
-          return;
-        }
         const currentWorkspace = osparc.store.Workspaces.getInstance().getWorkspace(currentWorkspaceId);
         if (currentWorkspace && !currentWorkspace.getMyAccessRights()["write"]) {
           // If user can't write in workspace, do not show plus buttons
@@ -827,8 +834,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._createSearchBar();
 
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const workspaceHeader = this.__workspaceHeader = new osparc.dashboard.WorkspaceHeader();
-        this._addToLayout(workspaceHeader);
+        const header = this.__header = new osparc.dashboard.StudyBrowserHeader();
+        this._addToLayout(header);
       }
 
       this._createResourcesLayout();
@@ -900,7 +907,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __connectContexts: function() {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const workspaceHeader = this.__workspaceHeader;
+        const workspaceHeader = this.__header;
         workspaceHeader.addListener("contextChanged", () => {
           const workspaceId = workspaceHeader.getCurrentWorkspaceId();
           const folderId = workspaceHeader.getCurrentFolderId();
@@ -940,31 +947,41 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
         this.resetSelection();
         this.setMultiSelection(false);
+        let currentContext = null;
+        switch (workspaceId) {
+          case -2:
+            currentContext = "search";
+            break;
+          case -1:
+            currentContext = "workspaces";
+            break;
+          default:
+            currentContext = "studiesAndFolders";
+            break;
+        }
         this.set({
+          currentContext,
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
         this.invalidateStudies();
         this._resourcesContainer.setResourcesToList([]);
 
-        if (workspaceId === -2) {
-          // Search result: no folders, just studies
+        if (currentContext === "search") {
           this.__setFoldersToList([]);
           this.__reloadStudies();
-        } else if (workspaceId === -1) {
-          // Workspaces
+        } else if (currentContext === "workspaces") {
           this._searchBarFilter.resetFilters();
           this.__reloadWorkspaces();
-        } else {
-          // Actual workspace
+        } else if (currentContext === "studiesAndFolders") {
           this._searchBarFilter.resetFilters();
           this.__reloadFolders();
           this.__reloadStudies();
         }
 
-        // notify workspaceHeader
-        const workspaceHeader = this.__workspaceHeader;
-        workspaceHeader.set({
+        // notify header
+        const header = this.__header;
+        header.set({
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
