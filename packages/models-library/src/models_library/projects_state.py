@@ -5,7 +5,7 @@
 from enum import Enum, unique
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, root_validator, validator
 
 from .projects_access import Owner
 
@@ -91,13 +91,13 @@ class ProjectLocked(BaseModel):
             raise ValueError(msg)
         return v
 
-    @validator("owner", always=True)
+    @root_validator(pre=True)
     @classmethod
-    def check_owner_compatible(cls, v, values):
+    def check_owner_compatible(cls, values):
         if (
             values["value"] is True
-            and v is None
-            and values.get("status")
+            and values.get("owner") is None
+            and values["status"]
             in [
                 status.value
                 for status in ProjectStatus
@@ -106,7 +106,7 @@ class ProjectLocked(BaseModel):
         ):
             msg = "Owner must be specified when the project is not in the 'MAINTAINING' status."
             raise ValueError(msg)
-        return v
+        return values
 
 
 class ProjectRunningState(BaseModel):
