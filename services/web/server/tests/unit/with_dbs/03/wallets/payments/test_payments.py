@@ -17,7 +17,7 @@ from models_library.api_schemas_webserver.wallets import (
     WalletPaymentInitiated,
 )
 from models_library.rest_pagination import Page
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
@@ -134,7 +134,7 @@ async def test_one_time_payment_worfklow(
         response = await client.get("/v0/wallets/-/payments")
         data, error = await assert_status(response, status.HTTP_200_OK)
 
-        page = parse_obj_as(Page[PaymentTransaction], data)
+        page = Page[PaymentTransaction].model_validate(data)
 
         assert page.data
         assert page.meta.total == 1
@@ -233,7 +233,7 @@ async def test_multiple_payments(
     response = await client.get("/v0/wallets/-/payments")
     data, error = await assert_status(response, status.HTTP_200_OK)
 
-    page = parse_obj_as(Page[PaymentTransaction], data)
+    page = Page[PaymentTransaction].model_validate(data)
 
     assert page.meta.total == num_payments
     all_transactions = {t.payment_id: t for t in page.data}
@@ -362,9 +362,11 @@ async def test_payment_not_found(
 
 
 def test_payment_transaction_state_and_literals_are_in_sync():
-    state_literals = PaymentTransaction.__fields__["state"].type_
+    state_literals = PaymentTransaction.model_fields["state"].type_
     assert (
-        parse_obj_as(list[state_literals], [f"{s}" for s in PaymentTransactionState])
+        TypeAdapter(list[state_literals]).validate_python(
+            [f"{s}" for s in PaymentTransactionState]
+        )
         is not None
     )
 

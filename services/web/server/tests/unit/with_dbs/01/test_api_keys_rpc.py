@@ -12,7 +12,7 @@ from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.auth import ApiKeyCreate
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -104,7 +104,7 @@ async def test_api_key_get(
     for api_key_name in fake_user_api_keys:
         result = await rpc_client.request(
             WEBSERVER_RPC_NAMESPACE,
-            parse_obj_as(RPCMethodName, "api_key_get"),
+            TypeAdapter(RPCMethodName).validate_python("api_key_get"),
             product_name=osparc_product_name,
             user_id=logged_user["id"],
             name=api_key_name,
@@ -124,7 +124,7 @@ async def test_api_keys_workflow(
     # creating a key
     created_api_key = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "create_api_keys"),
+        TypeAdapter(RPCMethodName).validate_python("create_api_keys"),
         product_name=osparc_product_name,
         user_id=logged_user["id"],
         new=ApiKeyCreate(display_name=key_name, expiration=None),
@@ -134,7 +134,7 @@ async def test_api_keys_workflow(
     # query the key is still present
     queried_api_key = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "api_key_get"),
+        TypeAdapter(RPCMethodName).validate_python("api_key_get"),
         product_name=osparc_product_name,
         user_id=logged_user["id"],
         name=key_name,
@@ -146,7 +146,7 @@ async def test_api_keys_workflow(
     # remove the key
     delete_key_result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "delete_api_keys"),
+        TypeAdapter(RPCMethodName).validate_python("delete_api_keys"),
         product_name=osparc_product_name,
         user_id=logged_user["id"],
         name=key_name,
@@ -156,7 +156,7 @@ async def test_api_keys_workflow(
     # key no longer present
     query_missing_query = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "api_key_get"),
+        TypeAdapter(RPCMethodName).validate_python("api_key_get"),
         product_name=osparc_product_name,
         user_id=logged_user["id"],
         name=key_name,
