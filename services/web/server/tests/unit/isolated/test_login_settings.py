@@ -121,12 +121,12 @@ def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
 
     settings = SMTPSettings.create_from_envs()
 
-    cfg = settings.dict(exclude_unset=True)
+    cfg = settings.model_dump(exclude_unset=True)
 
     for env_name in cfg:
         assert env_name in os.environ
 
-    cfg = settings.dict()
+    cfg = settings.model_dump()
 
     config = LoginOptions(**cfg)
     print(config.json(indent=1))

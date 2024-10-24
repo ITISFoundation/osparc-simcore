@@ -142,7 +142,7 @@ async def test_workflow(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert (
         data["workbench"]
-        == project.dict(exclude_none=True, exclude_unset=True)["workbench"]
+        == project.model_dump(exclude_none=True, exclude_unset=True)["workbench"]
     )
 
     # do some changes in project

@@ -26,12 +26,12 @@ def test_user_models_examples(
         assert model_instance, f"Failed with {name}"
 
         model_enveloped = Envelope[model_cls].from_data(
-            model_instance.dict(by_alias=True)
+            model_instance.model_dump(by_alias=True)
         )
         model_array_enveloped = Envelope[list[model_cls]].from_data(
             [
-                model_instance.dict(by_alias=True),
-                model_instance.dict(by_alias=True),
+                model_instance.model_dump(by_alias=True),
+                model_instance.model_dump(by_alias=True),
             ]
         )
 
@@ -52,7 +52,7 @@ def test_profile_get_expiration_date(faker: Faker):
 
     assert fake_expiration.date() == profile.expiration_date
 
-    body = jsonable_encoder(profile.dict(exclude_unset=True, by_alias=True))
+    body = jsonable_encoder(profile.model_dump(exclude_unset=True, by_alias=True))
     assert body["expirationDate"] == fake_expiration.date().isoformat()
 
 
@@ -68,7 +68,7 @@ def test_auto_compute_gravatar(faker: Faker):
     )
 
     envelope = Envelope[Any](data=profile)
-    data = envelope.dict(**RESPONSE_MODEL_POLICY)["data"]
+    data = envelope.model_dump(**RESPONSE_MODEL_POLICY)["data"]
 
     assert data["gravatar_id"]
     assert data["id"] == profile.id
@@ -135,4 +135,4 @@ def test_parsing_output_of_get_user_profile():
     }
 
     profile = ProfileGet.model_validate(result_from_db_query_and_composition)
-    assert "password" not in profile.dict(exclude_unset=True)
+    assert "password" not in profile.model_dump(exclude_unset=True)

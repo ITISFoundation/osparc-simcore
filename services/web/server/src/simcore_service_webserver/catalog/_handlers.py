@@ -160,7 +160,7 @@ async def update_service(request: Request):
         product_name=request_ctx.product_name,
         service_key=path_params.service_key,
         service_version=path_params.service_version,
-        update_data=update.dict(exclude_unset=True),
+        update_data=update.model_dump(exclude_unset=True),
         unit_registry=request_ctx.unit_registry,
     )
 
@@ -182,7 +182,7 @@ async def list_service_inputs(request: Request):
         path_params.service_key, path_params.service_version, ctx
     )
 
-    data = [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]
+    data = [m.model_dump(**RESPONSE_MODEL_POLICY) for m in response_model]
     return await asyncio.get_event_loop().run_in_executor(
         None, envelope_json_response, data
     )
@@ -210,7 +210,7 @@ async def get_service_input(request: Request):
         ctx,
     )
 
-    data = response_model.dict(**RESPONSE_MODEL_POLICY)
+    data = response_model.model_dump(**RESPONSE_MODEL_POLICY)
     return await asyncio.get_event_loop().run_in_executor(
         None, envelope_json_response, data
     )
@@ -265,7 +265,7 @@ async def list_service_outputs(request: Request):
         path_params.service_key, path_params.service_version, ctx
     )
 
-    data = [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]
+    data = [m.model_dump(**RESPONSE_MODEL_POLICY) for m in response_model]
     return await asyncio.get_event_loop().run_in_executor(
         None, envelope_json_response, data
     )
@@ -293,7 +293,7 @@ async def get_service_output(request: Request):
         ctx,
     )
 
-    data = response_model.dict(**RESPONSE_MODEL_POLICY)
+    data = response_model.model_dump(**RESPONSE_MODEL_POLICY)
     return await asyncio.get_event_loop().run_in_executor(
         None, envelope_json_response, data
     )

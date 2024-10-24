@@ -154,7 +154,7 @@ async def create_project(request: web.Request):
             ProjectCreateNew | ProjectCopyOverride | EmptyModel, request  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
         )
         predefined_project = (
-            project_create.dict(
+            project_create.model_dump(
                 exclude_unset=True,
                 by_alias=True,
                 exclude_none=True,

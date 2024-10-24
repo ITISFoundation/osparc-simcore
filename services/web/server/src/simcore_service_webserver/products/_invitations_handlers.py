@@ -67,4 +67,4 @@ async def generate_invitation(request: web.Request):
         created=generated.created,
         invitation_link=f"{invitation_link}",  # type: ignore[arg-type]
     )
-    return envelope_json_response(invitation.dict(exclude_none=True))
+    return envelope_json_response(invitation.model_dump(exclude_none=True))

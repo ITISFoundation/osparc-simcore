@@ -100,7 +100,7 @@ async def test_email(request: web.Request):
 
         return envelope_json_response(
             EmailTestPassed(
-                fixtures=body.dict(),
+                fixtures=body.model_dump(),
                 info={
                     "email-server": info,
                     "email-headers": message.items(),

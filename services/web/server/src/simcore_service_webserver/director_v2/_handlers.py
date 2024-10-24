@@ -254,7 +254,7 @@ async def get_computation(request: web.Request) -> web.Response:
             for c in list_computation_tasks
         )
         return web.json_response(
-            data={"data": list_computation_tasks[0].dict(by_alias=True)},
+            data={"data": list_computation_tasks[0].model_dump(by_alias=True)},
             dumps=json_dumps,
         )
     except DirectorServiceError as exc:

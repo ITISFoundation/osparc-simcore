@@ -245,4 +245,4 @@ async def get_project_state(request: web.Request) -> web.Response:
         include_state=True,
     )
     project_state = ProjectState(**validated_project["state"])
-    return envelope_json_response(project_state.dict())
+    return envelope_json_response(project_state.model_dump())

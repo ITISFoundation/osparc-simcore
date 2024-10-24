@@ -41,7 +41,7 @@ class HitSource(BaseModel):
 
     def flatten_dict(self) -> dict[str, Any]:
         """Used as an output"""
-        return {**self.item.dict(), **self.rrid.dict()}
+        return {**self.item.model_dump(), **self.rrid.model_dump()}
 
 
 class HitDetail(BaseModel):

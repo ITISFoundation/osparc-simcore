@@ -159,7 +159,7 @@ async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSetting
             },
             {"rid": "SCR_014398", "original_id": "SCR_014398", "name": "GNU Octave"},
         ]
-    ).dict()["__root__"]
+    ).model_dump()["__root__"]
 
     async with ClientSession() as client:
 
@@ -167,6 +167,6 @@ async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSetting
 
             resource_hits = await autocomplete_by_name("octave", client, settings)
 
-            hits = resource_hits.dict()["__root__"]
+            hits = resource_hits.model_dump()["__root__"]
 
             assert expected == hits, f"for {guess_name}"

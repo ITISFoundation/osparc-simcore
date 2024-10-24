@@ -122,7 +122,9 @@ async def get_user_default_wallet_with_available_credits(
     )
     if user_default_wallet_preference is None:
         raise UserDefaultWalletNotFoundError(uid=user_id)
-    default_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
+    default_wallet_id = TypeAdapter(WalletID).validate_python(
+        user_default_wallet_preference.value
+    )
     return await get_wallet_with_available_credits_by_user_and_wallet(
         app, user_id=user_id, wallet_id=default_wallet_id, product_name=product_name
     )
@@ -178,7 +180,7 @@ async def update_wallet(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.dict(
+            user_acces_rights_on_wallet=wallet.model_dump(
                 include={"read", "write", "delete"}
             ),
         )
@@ -212,7 +214,7 @@ async def delete_wallet(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.dict(
+            user_acces_rights_on_wallet=wallet.model_dump(
                 include={"read", "write", "delete"}
             ),
         )
@@ -235,7 +237,7 @@ async def get_wallet_by_user(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.dict(
+            user_acces_rights_on_wallet=wallet.model_dump(
                 include={"read", "write", "delete"}
             ),
         )

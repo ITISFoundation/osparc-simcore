@@ -117,7 +117,7 @@ async def search_users(request: web.Request) -> web.Response:
     )
 
     return envelope_json_response(
-        [_.dict(**_RESPONSE_MODEL_MINIMAL_POLICY) for _ in found]
+        [_.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY) for _ in found]
     )
 
 
@@ -134,7 +134,7 @@ async def pre_register_user(request: web.Request) -> web.Response:
             request.app, profile=pre_user_profile, creator_user_id=req_ctx.user_id
         )
         return envelope_json_response(
-            user_profile.dict(**_RESPONSE_MODEL_MINIMAL_POLICY)
+            user_profile.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
         )
     except AlreadyPreRegisteredError as err:
         raise web.HTTPConflict(reason=f"{err}") from err

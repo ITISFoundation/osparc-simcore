@@ -56,7 +56,7 @@ async def create_workspace_group(
         )
     )
     workspace_group_api: WorkspaceGroupGet = WorkspaceGroupGet(
-        **workspace_group_db.dict()
+        **workspace_group_db.model_dump()
     )
 
     return workspace_group_api
@@ -147,7 +147,9 @@ async def update_workspace_group(
         )
     )
 
-    workspace_api: WorkspaceGroupGet = WorkspaceGroupGet(**workspace_group_db.dict())
+    workspace_api: WorkspaceGroupGet = WorkspaceGroupGet(
+        **workspace_group_db.model_dump()
+    )
     return workspace_api
 
 

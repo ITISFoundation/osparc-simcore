@@ -262,7 +262,7 @@ async def test_iterators_workflow(
 
     response = await client.put(
         f"/v0/projects/{project_uuid}",
-        data=json_dumps(new_project.dict(**REQUEST_MODEL_POLICY)),
+        data=json_dumps(new_project.model_dump(**REQUEST_MODEL_POLICY)),
     )
     assert response.status == status.HTTP_200_OK, await response.text()
 

@@ -103,7 +103,7 @@ async def _log_message_parser(app: web.Application, data: bytes) -> bool:
         rabbit_message.user_id,
         message=SocketMessageDict(
             event_type=SOCKET_IO_LOG_EVENT,
-            data=rabbit_message.dict(exclude={"user_id", "channel_name"}),
+            data=rabbit_message.model_dump(exclude={"user_id", "channel_name"}),
         ),
         ignore_queue=True,
     )

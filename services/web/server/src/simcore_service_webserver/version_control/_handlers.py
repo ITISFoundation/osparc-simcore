@@ -121,7 +121,7 @@ async def _create_checkpoint_handler(request: web.Request):
     checkpoint: Checkpoint = await create_checkpoint(
         vc_repo,
         project_uuid=path_params.project_uuid,
-        **_body.dict(include={"tag", "message"}),
+        **_body.model_dump(include={"tag", "message"}),
     )
 
     data = CheckpointApiModel.model_validate(
@@ -131,7 +131,7 @@ async def _create_checkpoint_handler(request: web.Request):
                 project_uuid=path_params.project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **checkpoint.dict(),
+            **checkpoint.model_dump(),
         }
     )
     return envelope_json_response(data, status_cls=web.HTTPCreated)
@@ -170,7 +170,7 @@ async def _list_checkpoints_handler(request: web.Request):
                     project_uuid=path_params.project_uuid,
                     ref_id=checkpoint.id,
                 ),
-                **checkpoint.dict(),
+                **checkpoint.model_dump(),
             }
         )
         for checkpoint in checkpoints
@@ -218,7 +218,7 @@ async def _get_checkpoint_handler(request: web.Request):
                 project_uuid=path_params.project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **checkpoint.dict(**RESPONSE_MODEL_POLICY),
+            **checkpoint.model_dump(**RESPONSE_MODEL_POLICY),
         }
     )
     return envelope_json_response(data)
@@ -242,7 +242,7 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
         vc_repo,
         project_uuid=path_params.project_uuid,
         ref_id=path_params.ref_id,
-        **update.dict(include={"tag", "message"}, exclude_none=True),
+        **update.model_dump(include={"tag", "message"}, exclude_none=True),
     )
 
     data = CheckpointApiModel.model_validate(
@@ -252,7 +252,7 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
                 project_uuid=path_params.project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **checkpoint.dict(**RESPONSE_MODEL_POLICY),
+            **checkpoint.model_dump(**RESPONSE_MODEL_POLICY),
         }
     )
     return envelope_json_response(data)
@@ -284,7 +284,7 @@ async def _checkout_handler(request: web.Request):
                 project_uuid=path_params.project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **checkpoint.dict(**RESPONSE_MODEL_POLICY),
+            **checkpoint.model_dump(**RESPONSE_MODEL_POLICY),
         }
     )
     return envelope_json_response(data)
@@ -328,7 +328,7 @@ async def _view_project_workbench_handler(request: web.Request):
                 project_uuid=path_params.project_uuid,
                 ref_id=checkpoint.id,
             ),
-            **view.dict(**RESPONSE_MODEL_POLICY),
+            **view.model_dump(**RESPONSE_MODEL_POLICY),
         }
     )
 

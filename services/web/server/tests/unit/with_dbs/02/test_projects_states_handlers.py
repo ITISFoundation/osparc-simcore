@@ -225,7 +225,7 @@ async def _assert_project_state_updated(
                 jsonable_encoder(
                     {
                         "project_uuid": shared_project["uuid"],
-                        "data": p_state.dict(by_alias=True, exclude_unset=True),
+                        "data": p_state.model_dump(by_alias=True, exclude_unset=True),
                     }
                 )
             )

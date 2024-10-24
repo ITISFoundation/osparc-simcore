@@ -84,7 +84,9 @@ async def test_get_profile(
     # check enveloped
     e = Envelope[ProfileGet].model_validate(await resp.json())
     assert e.error == error
-    assert e.data.dict(**RESPONSE_MODEL_POLICY) == data if e.data else e.data == data
+    assert (
+        e.data.model_dump(**RESPONSE_MODEL_POLICY) == data if e.data else e.data == data
+    )
 
     if not error:
         profile = ProfileGet.model_validate(data)
@@ -105,7 +107,7 @@ async def test_get_profile(
         assert profile.role == user_role.name
         assert profile.groups
 
-        got_profile_groups = profile.groups.dict(**RESPONSE_MODEL_POLICY)
+        got_profile_groups = profile.groups.model_dump(**RESPONSE_MODEL_POLICY)
         assert got_profile_groups["me"] == primary_group
         assert got_profile_groups["all"] == all_group
 
@@ -294,7 +296,7 @@ async def test_search_and_pre_registration(
         "registered": True,
         "status": UserStatus.ACTIVE,
     }
-    assert got.dict(include=set(expected)) == expected
+    assert got.model_dump(include=set(expected)) == expected
 
     # NOT in `users` and ONLY `users_pre_registration_details`
 
@@ -309,7 +311,7 @@ async def test_search_and_pre_registration(
     assert len(found) == 1
     got = UserProfile(**found[0])
 
-    assert got.dict(include={"registered", "status"}) == {
+    assert got.model_dump(include={"registered", "status"}) == {
         "registered": False,
         "status": None,
     }
@@ -331,7 +333,7 @@ async def test_search_and_pre_registration(
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
     got = UserProfile(**found[0])
-    assert got.dict(include={"registered", "status"}) == {
+    assert got.model_dump(include={"registered", "status"}) == {
         "registered": True,
         "status": new_user["status"].name,
     }

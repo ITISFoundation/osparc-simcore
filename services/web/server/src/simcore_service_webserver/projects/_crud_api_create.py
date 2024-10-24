@@ -139,7 +139,7 @@ async def _copy_project_nodes_from_source_project(
             node_id=_mapped_node_id(node),
             **{
                 k: v
-                for k, v in node.dict().items()
+                for k, v in node.model_dump().items()
                 if k in ProjectNodeCreate.get_field_names(exclude={"node_id"})
             },
         )

@@ -116,7 +116,7 @@ async def pre_register_user(
     if found:
         raise AlreadyPreRegisteredError(num_found=len(found), email=profile.email)
 
-    details = profile.dict(
+    details = profile.model_dump(
         include={
             "first_name",
             "last_name",

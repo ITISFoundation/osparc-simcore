@@ -93,7 +93,7 @@ class FrontEndAppSettings(BaseCustomSettings):
     # NOTE: for the moment, None but left here for future use
 
     def to_statics(self) -> dict[str, Any]:
-        data = self.dict(
+        data = self.model_dump(
             exclude_none=True,
             by_alias=True,
         )

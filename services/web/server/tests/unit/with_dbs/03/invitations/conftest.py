@@ -121,7 +121,7 @@ def mock_invitations_service_http_api(
             "invitation"
         ]
         # if nothing is encoded in fake_code, just return fake_osparc_invitation
-        body = fake_osparc_invitation.dict()
+        body = fake_osparc_invitation.model_dump()
         with suppress(Exception):
             decoded = json.loads(binascii.unhexlify(fake_code).decode())
             body.update(decoded)

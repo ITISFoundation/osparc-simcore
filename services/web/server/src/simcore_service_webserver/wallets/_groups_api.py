@@ -45,7 +45,7 @@ async def create_wallet_group(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.dict(
+            user_acces_rights_on_wallet=wallet.model_dump(
                 include={"read", "write", "delete"}
             ),
         )
@@ -58,7 +58,7 @@ async def create_wallet_group(
         write=write,
         delete=delete,
     )
-    wallet_group_api: WalletGroupGet = WalletGroupGet(**wallet_group_db.dict())
+    wallet_group_api: WalletGroupGet = WalletGroupGet(**wallet_group_db.model_dump())
 
     return wallet_group_api
 
@@ -79,7 +79,7 @@ async def list_wallet_groups_by_user_and_wallet(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.dict(
+            user_acces_rights_on_wallet=wallet.model_dump(
                 include={"read", "write", "delete"}
             ),
         )
@@ -140,7 +140,7 @@ async def update_wallet_group(
                 user_id=user_id,
                 wallet_id=wallet_id,
                 product_name=product_name,
-                user_acces_rights_on_wallet=wallet.dict(
+                user_acces_rights_on_wallet=wallet.model_dump(
                     include={"read", "write", "delete"}
                 ),
             )
@@ -154,7 +154,7 @@ async def update_wallet_group(
         delete=delete,
     )
 
-    wallet_api: WalletGroupGet = WalletGroupGet(**wallet_group_db.dict())
+    wallet_api: WalletGroupGet = WalletGroupGet(**wallet_group_db.model_dump())
     return wallet_api
 
 

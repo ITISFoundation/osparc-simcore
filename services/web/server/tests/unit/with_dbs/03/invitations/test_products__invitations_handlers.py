@@ -92,7 +92,7 @@ async def test_product_owner_generates_invitation(
     # request
     response = await client.post(
         "/v0/invitation:generate",
-        json=request_model.dict(exclude_none=True),
+        json=request_model.model_dump(exclude_none=True),
     )
 
     # checks
@@ -102,9 +102,9 @@ async def test_product_owner_generates_invitation(
     got = InvitationGenerated.model_validate(data)
     expected = {
         "issuer": logged_user["email"][:_MAX_LEN],
-        **request_model.dict(exclude_none=True),
+        **request_model.model_dump(exclude_none=True),
     }
-    assert got.dict(include=set(expected), by_alias=False) == expected
+    assert got.model_dump(include=set(expected), by_alias=False) == expected
 
     product_base_url = f"{client.make_url('/')}"
     assert got.invitation_link.startswith(product_base_url)
@@ -150,7 +150,7 @@ async def test_pre_registration_and_invitation_workflow(
         guest=guest_email,
         trial_account_days=None,
         extra_credits_in_usd=10,
-    ).dict()
+    ).model_dump()
 
     # Search user -> nothing
     response = await client.get("/v0/users:search", params={"email": guest_email})

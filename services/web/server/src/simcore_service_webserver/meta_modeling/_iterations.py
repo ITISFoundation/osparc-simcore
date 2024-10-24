@@ -280,7 +280,7 @@ async def get_or_create_runnable_projects(
         project["workbench"].update(
             {
                 # converts model in dict patching first thumbnail
-                nid: n.copy(update={"thumbnail": n.thumbnail or ""}).dict(
+                nid: n.copy(update={"thumbnail": n.thumbnail or ""}).model_dump(
                     by_alias=True, exclude_unset=True
                 )
                 for nid, n in updated_nodes.items()

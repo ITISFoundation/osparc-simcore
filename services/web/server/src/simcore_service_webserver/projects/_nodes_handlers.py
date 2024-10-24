@@ -623,7 +623,7 @@ async def get_project_services_access_for_gid(
         inaccessible_services=project_inaccessible_services,
     )
 
-    return envelope_json_response(project_group_access.dict(exclude_none=True))
+    return envelope_json_response(project_group_access.model_dump(exclude_none=True))
 
 
 class _ProjectNodePreview(BaseModel):

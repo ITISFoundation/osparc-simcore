@@ -94,7 +94,10 @@ class LoginSettingsForProduct(LoginSettings):
         """
         For the LoginSettings, product-specific settings override app-specifics settings
         """
-        composed_settings = {**app_login_settings.dict(), **product_login_settings}
+        composed_settings = {
+            **app_login_settings.model_dump(),
+            **product_login_settings,
+        }
 
         if "two_factor_enabled" in composed_settings:
             # legacy safe

@@ -97,7 +97,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SIMCORE_VCS_RELEASE_URL: AnyHttpUrl | None = Field(
         default=None,
         description="URL to release notes",
-        examples=["https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_ResistanceIsFutile10"],
+        examples=[
+            "https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_ResistanceIsFutile10"
+        ],
     )
 
     SWARM_STACK_NAME: str | None = Field(
@@ -273,9 +275,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def build_vcs_release_url_if_unset(cls, v):
         release_url = v.SIMCORE_VCS_RELEASE_URL
 
-        if release_url is None and (
-            vsc_release_tag := v.SIMCORE_VCS_RELEASE_TAG
-        ):
+        if release_url is None and (vsc_release_tag := v.SIMCORE_VCS_RELEASE_TAG):
             if vsc_release_tag == "latest":
                 release_url = (
                     "https://github.com/ITISFoundation/osparc-simcore/commits/master/"
@@ -378,7 +378,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         def config_alias_generator(s):
             return s.lower()
 
-        data: dict[str, Any] = self.dict(**kwargs)
+        data: dict[str, Any] = self.model_dump(**kwargs)
         current_keys = list(data.keys())
 
         for key in current_keys:

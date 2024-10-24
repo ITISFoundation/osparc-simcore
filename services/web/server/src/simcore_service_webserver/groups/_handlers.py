@@ -374,7 +374,7 @@ async def add_scicrunch_resource(request: web.Request):
         # insert new or if exists, then update
         await repo.upsert(resource)
 
-    return envelope_json_response(resource.dict())
+    return envelope_json_response(resource.model_dump())
 
 
 @routes.get(

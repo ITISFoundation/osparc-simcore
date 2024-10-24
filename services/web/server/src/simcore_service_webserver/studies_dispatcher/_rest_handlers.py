@@ -8,7 +8,14 @@ from aiohttp import web
 from aiohttp.web import Request
 from models_library.services import ServiceKey
 from models_library.services_types import ServiceVersion
-from pydantic import TypeAdapter, field_validator, ConfigDict, BaseModel, Field, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    TypeAdapter,
+    ValidationError,
+    field_validator,
+)
 from pydantic.networks import HttpUrl
 
 from .._meta import API_VTAG
@@ -45,7 +52,7 @@ def _compose_service_only_dispatcher_prefix_url(
     params = ViewerQueryParams(
         viewer_key=ServiceKey(service_key),
         viewer_version=ServiceVersion(service_version),
-    ).dict(exclude_none=True, exclude_unset=True)
+    ).model_dump(exclude_none=True, exclude_unset=True)
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
     )
@@ -130,6 +137,7 @@ class ServiceGet(BaseModel):
         if v:
             return [ext.removeprefix(".") for ext in v]
         return v
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
@@ -176,7 +184,7 @@ async def list_viewers(request: Request):
     file_type: str | None = request.query.get("file_type", None)
 
     viewers = [
-        Viewer.create(request, viewer).dict()
+        Viewer.create(request, viewer).model_dump()
         for viewer in await list_viewers_info(request.app, file_type=file_type)
     ]
     return envelope_json_response(viewers)
@@ -188,7 +196,7 @@ async def list_default_viewers(request: Request):
     file_type: str | None = request.query.get("file_type", None)
 
     viewers = [
-        Viewer.create(request, viewer).dict()
+        Viewer.create(request, viewer).model_dump()
         for viewer in await list_viewers_info(
             request.app, file_type=file_type, only_default=True
         )
