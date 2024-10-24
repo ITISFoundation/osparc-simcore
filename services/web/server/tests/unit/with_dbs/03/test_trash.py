@@ -9,6 +9,7 @@ from uuid import UUID
 import arrow
 import pytest
 from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses
 from models_library.api_schemas_webserver.projects import ProjectGet, ProjectListItem
 from models_library.rest_pagination import Page
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -39,6 +40,7 @@ async def test_trash_projects(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mocked_catalog: None,
+    director_v2_service_mock: aioresponses,
 ):
     assert client.app
 
