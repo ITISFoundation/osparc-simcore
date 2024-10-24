@@ -8,7 +8,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel
 from servicelib.aiohttp import status
 
 from .._constants import APP_PUBLIC_CONFIG_PER_PRODUCT, APP_SETTINGS_KEY
@@ -104,7 +104,7 @@ async def get_scheduled_maintenance(request: web.Request):
 
     if maintenance_data := await redis_client.get(hash_key):
         assert (  # nosec
-            parse_obj_as(_ScheduledMaintenanceGet, maintenance_data) is not None
+            _ScheduledMaintenanceGet.model_validate(maintenance_data) is not None
         )
         return envelope_json_response(maintenance_data)
 

@@ -113,7 +113,7 @@ async def get_project_group(
             raise ProjectGroupNotFoundError(
                 reason=f"Project {project_id} group {group_id} not found"
             )
-        return parse_obj_as(ProjectGroupGetDB, row)
+        return ProjectGroupGetDB.model_validate(row)
 
 
 async def replace_project_group(
@@ -144,7 +144,7 @@ async def replace_project_group(
             raise ProjectGroupNotFoundError(
                 reason=f"Project {project_id} group {group_id} not found"
             )
-        return parse_obj_as(ProjectGroupGetDB, row)
+        return ProjectGroupGetDB.model_validate(row)
 
 
 async def update_or_insert_project_group(

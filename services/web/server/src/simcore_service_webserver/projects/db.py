@@ -32,7 +32,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletDB, WalletID
 from models_library.workspaces import WorkspaceID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
@@ -254,7 +254,9 @@ class ProjectDBAPI(BaseProjectDB):
         """
 
         # NOTE: tags are removed in convert_to_db_names so we keep it
-        project_tag_ids = parse_obj_as(list[int], project.get("tags", []).copy())
+        project_tag_ids = TypeAdapter(list[int]).validate_python(
+            project.get("tags", []).copy()
+        )
         insert_values = convert_to_db_names(project)
         insert_values.update(
             {
@@ -1353,7 +1355,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .where(projects_to_wallet.c.project_uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
-            return parse_obj_as(WalletDB, row) if row else None
+            return WalletDB.model_validate(row) if row else None
 
     async def connect_wallet_to_project(
         self,

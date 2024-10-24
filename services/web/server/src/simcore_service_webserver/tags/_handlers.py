@@ -1,7 +1,7 @@
 import functools
 
 from aiohttp import web
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -124,7 +124,7 @@ async def list_tag_groups(request: web.Request):
     path_params = parse_request_path_parameters_as(TagPathParams, request)
 
     assert path_params  # nosec
-    assert envelope_json_response(parse_obj_as(list[TagGroupGet], []))
+    assert envelope_json_response(TypeAdapter(list[TagGroupGet]).validate_python([]))
 
     raise NotImplementedError
 

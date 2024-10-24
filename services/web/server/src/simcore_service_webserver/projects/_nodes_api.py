@@ -14,13 +14,14 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
 from models_library.users import UserID
 from pydantic import (
-    model_validator, BaseModel,
+    BaseModel,
     Field,
     HttpUrl,
     NonNegativeFloat,
     NonNegativeInt,
     ValidationError,
-    parse_obj_as)
+    model_validator,
+)
 from servicelib.utils import logged_gather
 
 from ..application_settings import get_application_settings
@@ -171,7 +172,7 @@ async def __get_link(
     return __get_search_key(file_meta_data), await get_download_link(
         app,
         user_id,
-        parse_obj_as(SimCoreFileLink, {"store": "0", "path": file_meta_data.file_id}),
+        SimCoreFileLink.model_validate({"store": "0", "path": file_meta_data.file_id}),
     )
 
 
@@ -226,7 +227,7 @@ async def get_node_screenshots(
 
             assert node.outputs is not None  # nosec
 
-            filelink = parse_obj_as(SimCoreFileLink, node.outputs[KeyIDStr("outFile")])
+            filelink = SimCoreFileLink.model_validate(node.outputs[KeyIDStr("outFile")])
 
             file_url = await get_download_link(app, user_id, filelink)
             screenshots.append(

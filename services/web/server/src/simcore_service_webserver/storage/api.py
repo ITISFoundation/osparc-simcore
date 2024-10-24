@@ -20,7 +20,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimCoreFileLink
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize, HttpUrl, parse_obj_as
+from pydantic import ByteSize, HttpUrl, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.client import (
     LRTask,
@@ -97,7 +97,7 @@ async def get_project_total_size_simcore_s3(
                 file_metadata.file_size
                 for file_metadata in list_of_files_enveloped.data
             )
-        return parse_obj_as(ByteSize, project_size_bytes)
+        return TypeAdapter(ByteSize).validate_python(project_size_bytes)
 
 
 async def copy_data_folders_from_project(
@@ -207,7 +207,7 @@ async def get_download_link(
             Envelope[PresignedLink].model_validate(await response.json()).data
         )
         assert download is not None  # nosec
-        link: HttpUrl = parse_obj_as(HttpUrl, download.link)
+        link: HttpUrl = TypeAdapter(HttpUrl).validate_python(download.link)
         return link
 
 
