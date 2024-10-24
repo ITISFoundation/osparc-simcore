@@ -695,7 +695,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      if ("text" in requestParams) {
+      if (this.getCurrentContext() === "trash") {
+        return osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
+      } else if ("text" in requestParams) {
         return osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
       }
       return osparc.data.Resources.fetch("studies", "getPage", params, options);

@@ -119,6 +119,16 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user"
           },
+          getOne: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}"
+          },
+          getActive: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/active?client_session_id={tabId}"
+          },
           getPage: {
             useCache: false,
             method: "GET",
@@ -129,15 +139,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&tag_ids={tagIds}&order_by={orderBy}"
           },
-          getOne: {
+          getPageTrashed: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects/{studyId}"
-          },
-          getActive: {
-            useCache: false,
-            method: "GET",
-            url: statics.API + "/projects/active?client_session_id={tabId}"
+            url: statics.API + "/projects?filters={'trashed':true}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           postToTemplate: {
             method: "POST",
