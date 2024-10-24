@@ -864,6 +864,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studiesMoveButton = this.__createMoveStudiesButton(false);
       this._toolbar.add(studiesMoveButton);
 
+      const studiesTrashButton = this.__createTrashButton(false);
+      this._toolbar.add(studiesTrashButton);
+
       const studiesDeleteButton = this.__createDeleteButton(false);
       this._toolbar.add(studiesDeleteButton);
 
@@ -1105,6 +1108,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         moveStudyTo.addListener("cancel", () => win.close());
       }, this);
       return moveStudiesButton;
+    },
+
+    __createTrashButton: function() {
+      const trashButton = new qx.ui.form.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/14").set({
+        appearance: "danger-button",
+        visibility: "excluded"
+      });
+      osparc.utils.Utils.setIdToWidget(trashButton, "deleteStudiesBtn");
+      trashButton.addListener("execute", () => {
+        const selection = this._resourcesContainer.getSelection();
+        this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+      }, this);
+      return trashButton;
     },
 
     __createDeleteButton: function() {
@@ -1691,6 +1707,34 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       req.open("POST", "/v0/projects:import", true);
       req.send(body);
+    },
+
+    __trashStudy: function(studyData) {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const collabGids = Object.keys(studyData["accessRights"]);
+      const amICollaborator = collabGids.indexOf(myGid) > -1;
+
+      let operationPromise = null;
+      if (collabGids.length > 1 && amICollaborator) {
+        const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
+        // remove collaborator
+        delete arCopy[myGid];
+        operationPromise = osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
+      } else {
+        // trash study
+        operationPromise = osparc.store.Store.getInstance().trashStudy(studyData.uuid);
+      }
+      operationPromise
+        .then(() => this.__removeFromStudyList(studyData.uuid))
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+        })
+        .finally(() => this.resetSelection());
+    },
+
+    __trashStudies: function(studiesData) {
+      studiesData.forEach(studyData => this.__trashStudy(studyData));
     },
 
     __doDeleteStudy: function(studyData) {
