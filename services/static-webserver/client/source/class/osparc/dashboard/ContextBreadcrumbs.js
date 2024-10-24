@@ -27,7 +27,7 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
   },
 
   events: {
-    "contextChanged": "qx.event.type.Data",
+    "locationChanged": "qx.event.type.Data",
   },
 
   properties: {
@@ -94,7 +94,7 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
         currentWorkspaceId: workspaceId,
         currentFolderId: folderId,
       });
-      this.fireDataEvent("contextChanged", {
+      this.fireDataEvent("locationChanged", {
         workspaceId,
         folderId,
       });

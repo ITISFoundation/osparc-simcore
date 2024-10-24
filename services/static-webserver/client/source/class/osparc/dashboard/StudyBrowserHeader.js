@@ -42,7 +42,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   },
 
   events: {
-    "contextChanged": "qx.event.type.Data",
+    "locationChanged": "qx.event.type.Data",
     "workspaceUpdated": "qx.event.type.Data",
     "deleteWorkspaceRequested": "qx.event.type.Data"
   },
@@ -121,8 +121,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           this.bind("currentFolderId", control, "currentFolderId");
           control.bind("currentWorkspaceId", this, "currentWorkspaceId");
           control.bind("currentFolderId", this, "currentFolderId");
-          control.addListener("contextChanged", e => {
-            this.fireDataEvent("contextChanged", e.getData())
+          control.addListener("locationChanged", e => {
+            this.fireDataEvent("locationChanged", e.getData())
           });
           this._add(control);
           break;
@@ -213,7 +213,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         title.addListener("tap", () => {
           const folderId = null;
           this.setCurrentFolderId(folderId);
-          this.fireDataEvent("contextChanged", {
+          this.fireDataEvent("locationChanged", {
             workspaceId,
             folderId,
           });
