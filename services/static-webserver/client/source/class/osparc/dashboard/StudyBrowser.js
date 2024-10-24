@@ -389,7 +389,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _workspaceSelected: function(workspaceId) {
-      this.__changeContext("studiesAndWorkspaces", workspaceId, null);
+      this.__changeContext("studiesAndFolders", workspaceId, null);
     },
 
     _workspaceUpdated: function() {
@@ -449,7 +449,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _folderSelected: function(folderId) {
-      this.__changeContext("studiesAndWorkspaces", this.getCurrentWorkspaceId(), folderId);
+      this.__changeContext("studiesAndFolders", this.getCurrentWorkspaceId(), folderId);
     },
 
     _folderUpdated: function() {
@@ -911,7 +911,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         header.addListener("locationChanged", () => {
           const workspaceId = header.getCurrentWorkspaceId();
           const folderId = header.getCurrentFolderId();
-          this.__changeContext("studiesAndWorkspaces", workspaceId, folderId);
+          this.__changeContext("studiesAndFolders", workspaceId, folderId);
         }, this);
 
         const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
@@ -919,7 +919,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const context = e.getData();
           const workspaceId = context["workspaceId"];
           const folderId = context["folderId"];
-          this.__changeContext("studiesAndWorkspaces", workspaceId, folderId);
+          this.__changeContext("studiesAndFolders", workspaceId, folderId);
         }, this);
 
         this._resourceFilter.addListener("trashContext", () => {
@@ -932,13 +932,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this.__changeContext("search");
           } else {
             // Back to My Workspace
-            this.__changeContext("studiesAndWorkspaces", null, null);
+            this.__changeContext("studiesAndFolders", null, null);
           }
         });
       }
     },
 
-    __changeContext: function(context, workspaceId, folderId) {
+    __changeContext: function(context, workspaceId = null, folderId = null) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         if (
           context !== "search" && // reload studies for a new search

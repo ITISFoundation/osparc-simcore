@@ -202,7 +202,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       } else if (currentContext === "trash") {
         this.__setIcon("@FontAwesome5Solid/trash/24");
         title.set({
-          value: this.tr("asdfasdfasdfasfd"),
+          value: this.tr("Trash: Items in the bin will be permanently deleted after 30 days."),
           cursor: "auto",
         });
       } else if (currentContext === "workspaces") {
