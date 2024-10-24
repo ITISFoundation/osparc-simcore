@@ -1,10 +1,9 @@
 import datetime
 import logging
-from ast import TypeAlias
 from asyncio.log import logger
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Final
+from typing import Final, TypeAlias
 
 import redis
 import redis.exceptions
