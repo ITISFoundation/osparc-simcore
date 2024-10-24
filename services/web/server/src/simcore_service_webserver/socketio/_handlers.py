@@ -178,7 +178,7 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
                 f"{client_session_id=}",
             ):
                 with managed_resource(user_id, client_session_id, app) as user_session:
-                    await user_session.remove_socket_id()
+                    await user_session.remove_socket_id_after_disconnection()
                 # signal same user other clients if available
                 await emit(
                     app,
@@ -192,7 +192,7 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
         else:
             # this should not happen!!
             _logger.error(
-                "Unknown client diconnected sid: %s, session %s",
+                "Unknown client disconnected sid: %s, session %s",
                 socket_id,
                 f"{socketio_session}",
             )
