@@ -50,7 +50,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
   properties: {
     currentContext: {
-      check: ["studiesAndFolders", "workspaces", "search", "bin"],
+      check: ["studiesAndFolders", "workspaces", "search", "trash"],
       nullable: false,
       init: "studiesAndFolders",
       event: "changeCurrentContext"
@@ -389,7 +389,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _workspaceSelected: function(workspaceId) {
-      this.__changeContext(workspaceId, null);
+      this.__changeContext("studiesAndWorkspaces", workspaceId, null);
     },
 
     _workspaceUpdated: function() {
@@ -449,7 +449,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _folderSelected: function(folderId) {
-      this.__changeContext(this.getCurrentWorkspaceId(), folderId);
+      this.__changeContext("studiesAndWorkspaces", this.getCurrentWorkspaceId(), folderId);
     },
 
     _folderUpdated: function() {
@@ -911,7 +911,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         header.addListener("locationChanged", () => {
           const workspaceId = header.getCurrentWorkspaceId();
           const folderId = header.getCurrentFolderId();
-          this.__changeContext(workspaceId, folderId);
+          this.__changeContext("studiesAndWorkspaces", workspaceId, folderId);
         }, this);
 
         const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
@@ -919,38 +919,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const context = e.getData();
           const workspaceId = context["workspaceId"];
           const folderId = context["folderId"];
-          this.__changeContext(workspaceId, folderId);
+          this.__changeContext("studiesAndWorkspaces", workspaceId, folderId);
         }, this);
+
+        this._resourceFilter.addListener("trashContext", () => {
+          this.__changeContext("trash");
+        });
 
         this._searchBarFilter.addListener("filterChanged", e => {
           const filterData = e.getData();
           if (filterData.text) {
-            this.__changeContext(-2, null);
+            this.__changeContext("search");
           } else {
             // Back to My Workspace
-            this.__changeContext(null, null);
+            this.__changeContext("studiesAndWorkspaces", null, null);
           }
         });
       }
     },
 
-    __changeContext: function(workspaceId, folderId) {
+    __changeContext: function(context, workspaceId, folderId) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        let currentContext = null;
-        switch (workspaceId) {
-          case -2:
-            currentContext = "search";
-            break;
-          case -1:
-            currentContext = "workspaces";
-            break;
-          default:
-            currentContext = "studiesAndFolders";
-            break;
-        }
-
         if (
-          currentContext !== "search" && // reload studies for a new search
+          context !== "search" && // reload studies for a new search
           workspaceId === this.getCurrentWorkspaceId() &&
           folderId === this.getCurrentFolderId()
         ) {
@@ -961,20 +952,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.resetSelection();
         this.setMultiSelection(false);
         this.set({
-          currentContext,
+          currentContext: context,
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
         this.invalidateStudies();
         this._resourcesContainer.setResourcesToList([]);
 
-        if (currentContext === "search") {
+        if (context === "search") {
           this.__setFoldersToList([]);
           this.__reloadStudies();
-        } else if (currentContext === "workspaces") {
+        } else if (context === "workspaces") {
           this._searchBarFilter.resetFilters();
           this.__reloadWorkspaces();
-        } else if (currentContext === "studiesAndFolders") {
+        } else if (context === "studiesAndFolders") {
           this._searchBarFilter.resetFilters();
           this.__reloadFolders();
           this.__reloadStudies();
@@ -983,7 +974,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // notify header
         const header = this.__header;
         header.set({
-          currentContext,
+          currentContext: context,
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });

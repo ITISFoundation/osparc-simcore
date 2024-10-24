@@ -29,11 +29,12 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     this.__tagButtons = [];
     this.__serviceTypeButtons = [];
 
-    this._setLayout(new qx.ui.layout.VBox(30));
+    this._setLayout(new qx.ui.layout.VBox(20));
     this.__buildLayout();
   },
 
   events: {
+    "trashContext": "qx.event.type.Event",
     "changeSharedWith": "qx.event.type.Data",
     "changeSelectedTags": "qx.event.type.Data",
     "changeServiceType": "qx.event.type.Data"
@@ -42,6 +43,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
   members: {
     __resourceType: null,
     __workspacesAndFoldersTree: null,
+    __trashButton: null,
     __sharedWithButtons: null,
     __tagButtons: null,
     __serviceTypeButtons: null,
@@ -49,6 +51,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     __buildLayout: function() {
       if (this.__resourceType === "study" && osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         this._add(this.__createWorkspacesAndFoldersTree());
+        this._add(this.__createTrashBin());
       } else {
         this._add(this.__createSharedWithFilterLayout());
       }
@@ -62,15 +65,14 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       }
     },
 
-
     /* WORKSPACES AND FOLDERS */
     __createWorkspacesAndFoldersTree: function() {
       const workspacesAndFoldersTree = this.__workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();
       // Height needs to be calculated manually to make it flexible
       workspacesAndFoldersTree.set({
-        minHeight: 100,
+        minHeight: 60,
         maxHeight: 400,
-        height: 100,
+        height: 60,
       });
       workspacesAndFoldersTree.addListener("openChanged", () => {
         const rowConfig = workspacesAndFoldersTree.getPane().getRowConfig();
@@ -84,6 +86,23 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       return this.__workspacesAndFoldersTree;
     },
     /* /WORKSPACES AND FOLDERS */
+
+    /* TRASH BIN */
+    __createTrashBin: function() {
+      const trashButton = this.__trashButton = new qx.ui.toolbar.RadioButton().set({
+        appearance: "filter-toggle-button",
+        label: this.tr("Trash"),
+        icon: "@FontAwesome5Solid/trash/18",
+      });
+      trashButton.addListener("changeValue", e => {
+        const trashEnabled = e.getData();
+        if (trashEnabled) {
+          this.fireEvent("trashContext");
+        }
+      });
+      return trashButton;
+    },
+    /* /TRASH BIN */
 
     /* SHARED WITH */
     __createSharedWithFilterLayout: function() {

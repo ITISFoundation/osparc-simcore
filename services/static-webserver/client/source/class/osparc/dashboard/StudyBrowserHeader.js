@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
 
   properties: {
     currentContext: {
-      check: ["studiesAndFolders", "workspaces", "search", "bin"],
+      check: ["studiesAndFolders", "workspaces", "search", "trash"],
       nullable: false,
       init: "studiesAndFolders",
       event: "changeCurrentContext",
@@ -197,6 +197,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         this.__setIcon("@FontAwesome5Solid/search/24");
         title.set({
           value: this.tr("Search results"),
+          cursor: "auto",
+        });
+      } else if (currentContext === "trash") {
+        this.__setIcon("@FontAwesome5Solid/trash/24");
+        title.set({
+          value: this.tr("asdfasdfasdfasfd"),
           cursor: "auto",
         });
       } else if (currentContext === "workspaces") {
