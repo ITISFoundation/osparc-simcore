@@ -39,6 +39,9 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
 
     this.setIcon(osparc.dashboard.CardBase.NEW_ICON);
 
+    this.getChildControl("header").set({
+      opacity: 1
+    });
     this.getChildControl("footer").exclude();
   },
 
