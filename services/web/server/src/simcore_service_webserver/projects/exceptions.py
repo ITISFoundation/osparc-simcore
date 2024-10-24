@@ -78,6 +78,14 @@ class ProjectDeleteError(BaseProjectError):
         self.reason = reason
 
 
+class ProjectTrashError(BaseProjectError):
+    ...
+
+
+class StopProjectBeforeTrashError(ProjectTrashError):
+    msg_template = "Failed to  services in '{project_uuid}' before trashing"
+
+
 class NodeNotFoundError(BaseProjectError):
     msg_template = "Node '{node_uuid}' not found in project '{project_uuid}'"
 

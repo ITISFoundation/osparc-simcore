@@ -12,7 +12,7 @@ class CustomFilter(Filters):
 
 
 class CustomFilterStrict(CustomFilter):
-    class Config:
+    class Config(CustomFilter.Config):
         extra = Extra.forbid
 
 
