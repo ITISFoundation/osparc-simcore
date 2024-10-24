@@ -23,7 +23,7 @@ from typing import Any, Final, NamedTuple
 from uuid import UUID
 
 import orjson
-from pydantic import NameEmail, SecretBytes, SecretStr
+from pydantic import AnyUrl, NameEmail, SecretBytes, SecretStr
 from pydantic_extra_types.color import Color
 
 
@@ -85,6 +85,7 @@ ENCODERS_BY_TYPE: dict[type[Any], Callable[[Any], Any]] = {
     SecretStr: str,
     set: list,
     UUID: str,
+    AnyUrl: str,
 }
 
 
