@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections.abc import Callable
 from math import ceil
@@ -73,7 +72,7 @@ async def _request(
     except aiohttp.ClientResponseError as exc:
         raise _DatcoreAdapterResponseError(status=exc.status, reason=f"{exc}") from exc
 
-    except asyncio.TimeoutError as exc:
+    except TimeoutError as exc:
         msg = f"datcore-adapter server timed-out: {exc}"
         raise DatcoreAdapterTimeoutError(msg) from exc
 
@@ -122,7 +121,7 @@ async def check_service_health(app: web.Application) -> bool:
     session: ClientSession = get_client_session(app)
     try:
         await session.get(url, raise_for_status=True)
-    except (asyncio.TimeoutError, aiohttp.ClientError):
+    except (TimeoutError, aiohttp.ClientError):
         return False
     return True
 
@@ -187,7 +186,7 @@ async def list_all_files_metadatas_in_dataset(
         ),
     )
     return [
-        FileMetaData.construct(
+        FileMetaData.model_construct(
             file_uuid=d["path"],
             location_id=DATCORE_ID,
             location=DATCORE_STR,
