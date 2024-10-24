@@ -202,8 +202,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         });
       } else if (currentContext === "trash") {
         this.__setIcon("@FontAwesome5Solid/trash/24");
+        const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
         title.set({
-          value: this.tr("Trash: Items in the bin will be permanently deleted after 30 days."),
+          value: this.tr(`Trash: Items in the bin will be permanently deleted after ${trashDays} days.`),
           cursor: "auto",
         });
       } else if (currentContext === "workspaces") {
