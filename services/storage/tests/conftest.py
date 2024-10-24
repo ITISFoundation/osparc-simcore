@@ -174,12 +174,12 @@ def app_settings(
             monkeypatch.delenv("S3_ENDPOINT")
             setenvs_from_dict(
                 monkeypatch,
-                s3_settings.dict(exclude={"S3_ENDPOINT"}),
+                s3_settings.model_dump(exclude={"S3_ENDPOINT"}),
             )
         else:
             setenvs_from_dict(
                 monkeypatch,
-                s3_settings.dict(),
+                s3_settings.model_dump(),
             )
     test_app_settings = Settings.create_from_envs()
     print(f"{test_app_settings.model_dump_json(indent=2)=}")
@@ -463,7 +463,7 @@ async def create_empty_directory(
 
         directory_file_id = create_simcore_file_id(project_id, node_id, dir_name)
         directory_file_upload: FileUploadSchema = await create_upload_file_link_v2(
-            directory_file_id, link_type="s3", is_directory="true", file_size=-1
+            directory_file_id, link_type="s3", is_directory="true", file_size=0
         )
         # always returns a v2 link when dealing with directories
         assert isinstance(directory_file_upload, FileUploadSchema)

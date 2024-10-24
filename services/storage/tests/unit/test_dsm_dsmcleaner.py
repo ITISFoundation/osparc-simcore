@@ -3,7 +3,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-branches
-# pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
@@ -48,7 +47,7 @@ def disabled_dsm_cleaner_task(monkeypatch: pytest.MonkeyPatch):
 @pytest.fixture
 def simcore_directory_id(simcore_file_id: SimcoreS3FileID) -> SimcoreS3FileID:
     return TypeAdapter(SimcoreS3FileID).validate_python(
-        Path(SimcoreS3DirectoryID.from_simcore_s3_object(simcore_file_id))
+        SimcoreS3DirectoryID.from_simcore_s3_object(simcore_file_id)
     )
 
 
@@ -298,7 +297,7 @@ async def test_clean_expired_uploads_reverts_to_last_known_version_expired_pendi
     # check the entries were reverted
     async with aiopg_engine.acquire() as conn:
         reverted_fmd = await db_file_meta_data.get(conn, file_id)
-    assert original_fmd.dict(exclude={"created_at"}) == reverted_fmd.dict(
+    assert original_fmd.model_dump(exclude={"created_at"}) == reverted_fmd.model_dump(
         exclude={"created_at"}
     )
     # check the S3 content is the old file
