@@ -282,7 +282,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._addToLayout(resourcesContainer);
     },
 
-    _groupByChanged: function(groupBy) {
+    __groupByChanged: function(groupBy) {
       // if cards are grouped they need to be in grid mode
       this._resourcesContainer.setMode("grid");
       this.__viewModeLayout.setVisibility(groupBy ? "excluded" : "visible");
@@ -290,7 +290,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       this._reloadCards();
     },
 
-    _viewByChanged: function(viewMode) {
+    __viewModeChanged: function(viewMode) {
       this._resourcesContainer.setMode(viewMode);
       this._reloadCards();
 
@@ -314,14 +314,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       const dontGroup = new qx.ui.menu.RadioButton(this.tr("None"));
       osparc.utils.Utils.setIdToWidget(dontGroup, "groupByNone");
-      dontGroup.addListener("execute", () => this._groupByChanged(null));
+      dontGroup.addListener("execute", () => this.__groupByChanged(null));
 
       groupByMenu.add(dontGroup);
       groupOptions.add(dontGroup);
 
       if (this._resourceType === "template") {
         const tagByGroup = new qx.ui.menu.RadioButton(this.tr("Tags"));
-        tagByGroup.addListener("execute", () => this._groupByChanged("tags"));
+        tagByGroup.addListener("execute", () => this.__groupByChanged("tags"));
         groupByMenu.add(tagByGroup);
         groupOptions.add(tagByGroup);
         if (
@@ -334,7 +334,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
 
       const groupByShared = new qx.ui.menu.RadioButton(this.tr("Shared with"));
-      groupByShared.addListener("execute", () => this._groupByChanged("shared"));
+      groupByShared.addListener("execute", () => this.__groupByChanged("shared"));
       groupByMenu.add(groupByShared);
       groupOptions.add(groupByShared);
 
@@ -343,10 +343,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _addViewModeButton: function() {
       const gridBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/th/14", this.tr("Grid view"), "left");
-      gridBtn.addListener("execute", () => this._viewByChanged("grid"));
+      gridBtn.addListener("execute", () => this.__viewModeChanged("grid"));
 
       const listBtn = this.self().createToolbarRadioButton(null, "@FontAwesome5Solid/bars/14", this.tr("List view"), "right");
-      listBtn.addListener("execute", () => this._viewByChanged("list"));
+      listBtn.addListener("execute", () => this.__viewModeChanged("list"));
 
       const viewModeLayout = this.__viewModeLayout;
       const radioGroup = new qx.ui.form.RadioGroup();
