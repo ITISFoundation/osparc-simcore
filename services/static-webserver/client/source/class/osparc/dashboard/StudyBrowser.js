@@ -1143,8 +1143,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }))
       });
       this.bind("multiSelection", selectButton, "value");
-      this.bind("currentWorkspaceId", selectButton, "visibility", {
-        converter: currentWorkspaceId => [-2, -1].includes(currentWorkspaceId) ? "excluded" : "visible"
+      this.bind("currentContext", selectButton, "visibility", {
+        converter: currentContext => currentContext === "studiesAndFolders" ? "excluded" : "visible"
       });
       return selectButton;
     },
