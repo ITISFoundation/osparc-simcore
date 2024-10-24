@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def convert_db_to_model(x: FileMetaDataAtDB) -> FileMetaData:
     model: FileMetaData = FileMetaData.parse_obj(
-        x.dict()
+        x.model_dump()
         | {
             "file_uuid": x.file_id,
             "file_name": x.file_id.split("/")[-1],
