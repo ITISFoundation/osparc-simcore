@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from typing import Any, AsyncIterator
 
 import pytest
-import sqlalchemy
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
@@ -25,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 async def _delete_project(connection: SAConnection, project_uuid: uuid.UUID) -> None:
     result = await connection.execute(
-        sqlalchemy.delete(projects).where(projects.c.uuid == f"{project_uuid}")
+        sa.delete(projects).where(projects.c.uuid == f"{project_uuid}")
     )
     assert result.rowcount == 1
 
