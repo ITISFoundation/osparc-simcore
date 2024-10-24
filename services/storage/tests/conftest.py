@@ -39,7 +39,7 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
@@ -259,7 +259,7 @@ async def get_file_meta_data(
         data, error = await assert_status(response, status.HTTP_200_OK)
         assert not error
         assert data
-        received_fmd = parse_obj_as(FileMetaDataGet, data)
+        received_fmd = TypeAdapter(FileMetaDataGet).validate_python(data)
         assert received_fmd
         return received_fmd
 
@@ -291,7 +291,7 @@ async def create_upload_file_link_v2(
         data, error = await assert_status(response, status.HTTP_200_OK)
         assert not error
         assert data
-        received_file_upload = parse_obj_as(FileUploadSchema, data)
+        received_file_upload = TypeAdapter(FileUploadSchema).validate_python(data)
         assert received_file_upload
         file_params.append((user_id, location_id, file_id))
         return received_file_upload
@@ -430,7 +430,7 @@ def create_simcore_file_id(
         if file_base_path:
             s3_file_name = f"{file_base_path / file_name}"
         clean_path = Path(f"{project_id}/{node_id}/{s3_file_name}")
-        return SimcoreS3FileID(f"{clean_path}")
+        return TypeAdapter(SimcoreS3FileID).validate_python(f"{clean_path}")
 
     return _creator
 
@@ -470,7 +470,7 @@ async def create_empty_directory(
         assert len(directory_file_upload.urls) == 1
 
         # complete the upload
-        complete_url = URL(directory_file_upload.links.complete_upload).relative()
+        complete_url = URL(f"{directory_file_upload.links.complete_upload}").relative()
         response = await client.post(
             f"{complete_url}",
             json=jsonable_encoder(FileUploadCompletionBody(parts=[])),
@@ -480,7 +480,7 @@ async def create_empty_directory(
         assert not error
         assert data
         file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
-        state_url = URL(file_upload_complete_response.links.state).relative()
+        state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
         # check that it finished updating
         assert client.app
@@ -535,7 +535,9 @@ async def populate_directory(
             await storage_s3_client.upload_file(
                 bucket=storage_s3_bucket,
                 file=file,
-                object_key=SimcoreS3FileID(f"{clean_path}"),
+                object_key=TypeAdapter(SimcoreS3FileID).validate_python(
+                    f"{clean_path}"
+                ),
                 bytes_transfered_cb=None,
             )
 

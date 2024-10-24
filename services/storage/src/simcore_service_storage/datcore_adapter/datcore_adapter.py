@@ -9,7 +9,7 @@ from aiohttp import web
 from aiohttp.client import ClientSession
 from models_library.api_schemas_storage import DatCoreDatasetName
 from models_library.users import UserID
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
@@ -229,7 +229,7 @@ async def get_file_download_presigned_link(
         dict[str, Any],
         await _request(app, api_key, api_secret, "GET", f"/files/{file_id}"),
     )
-    url: AnyUrl = parse_obj_as(AnyUrl, file_download_data["link"])
+    url: AnyUrl = TypeAdapter(AnyUrl).validate_python(file_download_data["link"])
     return url
 
 

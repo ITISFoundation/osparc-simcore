@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from servicelib.aiohttp.long_running_tasks.server import (
     ProgressMessage,
     ProgressPercent,
@@ -55,7 +55,7 @@ class S3TransferDataCB:
     def copy_transfer_cb(self, total_bytes_copied: int, *, file_name: str) -> None:
         _logger.debug(
             "Copied %s of %s",
-            parse_obj_as(ByteSize, total_bytes_copied).human_readable(),
+            TypeAdapter(ByteSize).validate_python(total_bytes_copied).human_readable(),
             file_name,
         )
         self._file_total_bytes_copied[file_name] = total_bytes_copied
@@ -66,7 +66,7 @@ class S3TransferDataCB:
     def upload_transfer_cb(self, bytes_transferred: int, *, file_name: str) -> None:
         _logger.debug(
             "Uploaded %s of %s",
-            parse_obj_as(ByteSize, bytes_transferred).human_readable(),
+            TypeAdapter(ByteSize).validate_python(bytes_transferred).human_readable(),
             file_name,
         )
         self._file_total_bytes_copied[file_name] += bytes_transferred
