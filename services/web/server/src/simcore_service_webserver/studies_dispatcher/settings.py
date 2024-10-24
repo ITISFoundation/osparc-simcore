@@ -1,10 +1,10 @@
 from datetime import timedelta
-from typing import Any, ClassVar
 
 from aiohttp import web
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
-from pydantic import TypeAdapter, field_validator, ConfigDict, ByteSize, HttpUrl
+from pydantic import TypeAdapter, field_validator, ByteSize, HttpUrl
 from pydantic.fields import Field
+from pydantic_settings import SettingsConfigDict
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
 
@@ -54,7 +54,7 @@ class StudiesDispatcherSettings(BaseCustomSettings):
     _validate_studies_guest_account_lifetime = validate_numeric_string_as_timedelta(
         "STUDIES_GUEST_ACCOUNT_LIFETIME"
     )
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         json_schema_extra={
             "example": {
                 "STUDIES_GUEST_ACCOUNT_LIFETIME": "2 1:10:00",  # 2 days 1h and 10 mins

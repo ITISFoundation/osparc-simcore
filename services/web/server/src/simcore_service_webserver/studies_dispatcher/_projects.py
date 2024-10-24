@@ -18,7 +18,7 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
 from models_library.projects_ui import StudyUI
 from models_library.services import ServiceKey, ServiceVersion
-from pydantic import AnyUrl, HttpUrl, parse_obj_as
+from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 
 from ..projects.db import ProjectDBAPI
@@ -32,10 +32,10 @@ from ._users import UserInfo
 _logger = logging.getLogger(__name__)
 
 
-_FILE_PICKER_KEY: ServiceKey = parse_obj_as(
-    ServiceKey, "simcore/services/frontend/file-picker"
+_FILE_PICKER_KEY: ServiceKey = TypeAdapter(ServiceKey).validate_python(
+    "simcore/services/frontend/file-picker"
 )
-_FILE_PICKER_VERSION: ServiceVersion = parse_obj_as(ServiceVersion, "1.0.0")
+_FILE_PICKER_VERSION: ServiceVersion = TypeAdapter(ServiceVersion).validate_python("1.0.0")
 
 
 def _generate_nodeids(project_id: ProjectID) -> tuple[NodeID, NodeID]:
@@ -55,12 +55,12 @@ def _create_file_picker(download_link: str, output_label: str | None):
     # also to name the file in case it is downloaded
 
     data = {}
-    data["downloadLink"] = url = parse_obj_as(AnyUrl, download_link)
+    data["downloadLink"] = url = TypeAdapter(AnyUrl).validate_python(download_link)
     if output_label:
         data["label"] = Path(output_label).name
     elif url.path:
         data["label"] = Path(url.path).name
-    output = DownloadLink.parse_obj(data)
+    output = DownloadLink.model_validate(data)
 
     output_id = "outFile"
     node = Node(
@@ -69,7 +69,7 @@ def _create_file_picker(download_link: str, output_label: str | None):
         label="File Picker",
         inputs={},
         inputNodes=[],
-        outputs={output_id: output},  # type: ignore[dict-item]
+        outputs={output_id: output},
         progress=0,
     )
     return node, output_id
@@ -94,12 +94,12 @@ def _create_project(
         uuid=project_id,
         name=name,
         description=description,
-        thumbnail=thumbnail,  # type: ignore[arg-type]
+        thumbnail=thumbnail,
         prjOwner=owner.email,
         accessRights={owner.primary_gid: access_rights},  # type: ignore[dict-item]
         creationDate=DateTimeStr(now_str()),
         lastChangeDate=DateTimeStr(now_str()),
-        workbench=workbench,  # type: ignore[arg-type]
+        workbench=workbench,
         ui=StudyUI(workbench=workbench_ui),  # type: ignore[arg-type]
     )
 
@@ -153,7 +153,7 @@ def _create_project_with_filepicker_and_service(
         version=viewer_info.version,
         label=viewer_info.label,
         inputs={
-            viewer_info.input_port_key: PortLink(  # type: ignore[dict-item]
+            viewer_info.input_port_key: PortLink(
                 nodeUuid=file_picker_id,
                 output=file_picker_output_id,
             )
