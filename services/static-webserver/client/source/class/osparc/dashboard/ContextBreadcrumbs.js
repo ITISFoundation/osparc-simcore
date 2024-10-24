@@ -31,6 +31,14 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
   },
 
   properties: {
+    currentContext: {
+      check: ["studiesAndFolders", "workspaces", "search", "trash"],
+      nullable: false,
+      init: "studiesAndFolders",
+      event: "changeCurrentContext",
+      apply: "__rebuild"
+    },
+
     currentWorkspaceId: {
       check: "Number",
       nullable: true,
@@ -52,7 +60,7 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
     __rebuild: function() {
       this._removeAll();
 
-      if (this.getCurrentWorkspaceId() === -2) {
+      if (this.getCurrentContext() !== "studiesAndFolders") {
         return;
       }
 
