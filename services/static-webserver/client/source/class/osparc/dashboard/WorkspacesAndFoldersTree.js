@@ -83,7 +83,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
         const item = selection.getItem(0);
         const workspaceId = item.getWorkspaceId();
         const folderId = item.getFolderId();
-        this.fireDataEvent("contextChanged", {
+        this.fireDataEvent("locationChanged", {
           workspaceId,
           folderId,
         });
@@ -93,7 +93,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
 
   events: {
     "openChanged": "qx.event.type.Event",
-    "contextChanged": "qx.event.type.Data",
+    "locationChanged": "qx.event.type.Data",
   },
 
   properties: {

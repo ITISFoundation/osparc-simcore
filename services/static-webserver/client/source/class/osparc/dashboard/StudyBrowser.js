@@ -915,7 +915,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }, this);
 
         const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
-        workspacesAndFoldersTree.addListener("contextChanged", e => {
+        workspacesAndFoldersTree.addListener("locationChanged", e => {
           const context = e.getData();
           const workspaceId = context["workspaceId"];
           const folderId = context["folderId"];
