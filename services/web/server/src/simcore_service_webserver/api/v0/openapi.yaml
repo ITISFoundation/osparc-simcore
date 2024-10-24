@@ -4311,7 +4311,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -8457,15 +8457,6 @@ components:
           minimum: 0
         myAccessRights:
           $ref: '#/components/schemas/models_library__access_rights__AccessRights'
-        trashedAt:
-          title: Trashedat
-          type: string
-          format: date-time
-        trashedBy:
-          title: Trashedby
-          maxLength: 100
-          minLength: 1
-          type: string
     GenerateInvitation:
       title: GenerateInvitation
       required:
