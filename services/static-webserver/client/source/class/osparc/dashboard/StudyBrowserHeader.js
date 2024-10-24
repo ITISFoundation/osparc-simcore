@@ -49,7 +49,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
 
   properties: {
     currentContext: {
-      check: ["studiesAndFolders", "workspaces", "search", "trash"],
+      check: ["studiesAndFolders", "workspaces", "search"],
       nullable: false,
       init: "studiesAndFolders",
       event: "changeCurrentContext",
@@ -198,13 +198,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         this.__setIcon("@FontAwesome5Solid/search/24");
         title.set({
           value: this.tr("Search results"),
-          cursor: "auto",
-        });
-      } else if (currentContext === "trash") {
-        this.__setIcon("@FontAwesome5Solid/trash/20");
-        const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
-        title.set({
-          value: this.tr(`Trash: Items in the bin will be permanently deleted after ${trashDays} days.`),
           cursor: "auto",
         });
       } else if (currentContext === "workspaces") {

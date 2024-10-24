@@ -50,7 +50,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
   properties: {
     currentContext: {
-      check: ["studiesAndFolders", "workspaces", "search", "trash"],
+      check: ["studiesAndFolders", "workspaces", "search"],
       nullable: false,
       init: "studiesAndFolders",
       event: "changeCurrentContext"
@@ -931,10 +931,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this.__changeContext("studiesAndFolders", workspaceId, folderId);
           }
         }, this);
-
-        this._resourceFilter.addListener("trashContext", () => {
-          this.__changeContext("trash");
-        });
 
         this._searchBarFilter.addListener("filterChanged", e => {
           const filterData = e.getData();

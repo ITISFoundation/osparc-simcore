@@ -32,7 +32,7 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
 
   properties: {
     currentContext: {
-      check: ["studiesAndFolders", "workspaces", "search", "trash"],
+      check: ["studiesAndFolders", "workspaces", "search"],
       nullable: false,
       init: "studiesAndFolders",
       event: "changeCurrentContext",
