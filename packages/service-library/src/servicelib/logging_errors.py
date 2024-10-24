@@ -2,8 +2,8 @@ import logging
 from pprint import pformat
 from typing import Any, TypedDict
 
+from common_library.error_codes import ErrorCodeStr
 from common_library.errors_classes import OsparcErrorMixin
-from models_library.error_codes import ErrorCodeStr
 
 from .logging_utils import LogExtra, get_log_record_extra
 

@@ -41,7 +41,7 @@ from models_library.basic_types import EnvVarKey
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import BootMode
 from packaging import version
-from pydantic import AnyUrl, SecretStr, parse_obj_as
+from pydantic import AnyUrl, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
@@ -178,7 +178,9 @@ def integration_version(request: pytest.FixtureRequest) -> version.Version:
 
 @pytest.fixture
 def additional_envs(faker: Faker) -> dict[EnvVarKey, str]:
-    return parse_obj_as(dict[EnvVarKey, str], faker.pydict(allowed_types=(str,)))
+    return TypeAdapter(dict[EnvVarKey, str]).validate_python(
+        faker.pydict(allowed_types=(str,))
+    )
 
 
 @pytest.fixture
@@ -198,7 +200,7 @@ def sleeper_task(
     list_of_files = [file_on_s3_server() for _ in range(NUM_FILES)]
 
     # defines the inputs of the task
-    input_data = TaskInputData.parse_obj(
+    input_data = TaskInputData.model_validate(
         {
             "input_1": 23,
             "input_23": "a string input",
@@ -276,7 +278,7 @@ def sleeper_task(
         "pytest_bool": False,
     }
     output_file_url = s3_remote_file_url(file_path="output_file")
-    expected_output_keys = TaskOutputDataSchema.parse_obj(
+    expected_output_keys = TaskOutputDataSchema.model_validate(
         {
             **(
                 {k: {"required": True} for k in jsonable_outputs}
@@ -295,7 +297,7 @@ def sleeper_task(
             ),
         }
     )
-    expected_output_data = TaskOutputData.parse_obj(
+    expected_output_data = TaskOutputData.model_validate(
         {
             **(
                 jsonable_outputs
@@ -395,10 +397,10 @@ def sidecar_task(
             service_version="latest",
             command=command
             or ["/bin/bash", "-c", "echo 'hello I'm an empty ubuntu task!"],
-            input_data=TaskInputData.parse_obj({}),
-            output_data_keys=TaskOutputDataSchema.parse_obj({}),
+            input_data=TaskInputData.model_validate({}),
+            output_data_keys=TaskOutputDataSchema.model_validate({}),
             log_file_url=s3_remote_file_url(file_path="log.dat"),
-            expected_output_data=TaskOutputData.parse_obj({}),
+            expected_output_data=TaskOutputData.model_validate({}),
             expected_logs=[],
             integration_version=integration_version,
             task_envs={},
@@ -433,12 +435,16 @@ def caplog_info_level(
         yield caplog
 
 
+# from pydantic.json_schema import JsonDict
+
+
 @pytest.fixture
 def mocked_get_image_labels(
     integration_version: version.Version, mocker: MockerFixture
 ) -> mock.Mock:
-    labels: ImageLabels = parse_obj_as(
-        ImageLabels, ServiceMetaDataPublished.Config.schema_extra["examples"][0]
+    assert "json_schema_extra" in ServiceMetaDataPublished.model_config
+    labels: ImageLabels = TypeAdapter(ImageLabels).validate_python(
+        ServiceMetaDataPublished.model_config["json_schema_extra"]["examples"][0],
     )
     labels.integration_version = f"{integration_version}"
     return mocker.patch(
@@ -580,7 +586,8 @@ async def test_run_computational_sidecar_dask(
 
     # check that the task produces expected logs
     worker_progresses = [
-        TaskProgressEvent.parse_raw(msg).progress for msg in progress_sub.buffer
+        TaskProgressEvent.model_validate_json(msg).progress
+        for msg in progress_sub.buffer
     ]
     # check ordering
     assert worker_progresses == sorted(
@@ -588,7 +595,7 @@ async def test_run_computational_sidecar_dask(
     ), "ordering of progress values incorrectly sorted!"
     assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
-    worker_logs = [TaskLogEvent.parse_raw(msg).log for msg in log_sub.buffer]
+    worker_logs = [TaskLogEvent.model_validate_json(msg).log for msg in log_sub.buffer]
     print(f"<-- we got {len(worker_logs)} lines of logs")
 
     for log in sleeper_task.expected_logs:
@@ -649,7 +656,8 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
 
     # check that the task produces expected logs
     worker_progresses = [
-        TaskProgressEvent.parse_raw(msg).progress for msg in progress_sub.buffer
+        TaskProgressEvent.model_validate_json(msg).progress
+        for msg in progress_sub.buffer
     ]
     # check length
     assert len(worker_progresses) == len(
@@ -659,7 +667,7 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
     assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
 
-    worker_logs = [TaskLogEvent.parse_raw(msg).log for msg in log_sub.buffer]
+    worker_logs = [TaskLogEvent.model_validate_json(msg).log for msg in log_sub.buffer]
     # check all the awaited logs are in there
     filtered_worker_logs = filter(lambda log: "This is iteration" in log, worker_logs)
     assert len(list(filtered_worker_logs)) == NUMBER_OF_LOGS
