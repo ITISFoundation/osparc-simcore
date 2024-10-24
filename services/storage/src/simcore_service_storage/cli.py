@@ -27,7 +27,7 @@ def run():
     logging.root.setLevel(settings_obj.log_level)
     config_all_loggers(
         log_format_local_dev_enabled=settings_obj.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping={},
+        logger_filter_mapping=settings_obj.STORAGE_LOG_FILTER_MAPPING,
     )
 
     # keep mostly quiet noisy loggers

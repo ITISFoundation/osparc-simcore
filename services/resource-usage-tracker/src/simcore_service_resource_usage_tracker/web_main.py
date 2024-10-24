@@ -16,7 +16,7 @@ logging.basicConfig(level=the_settings.log_level)  # NOSONAR
 logging.root.setLevel(the_settings.log_level)
 config_all_loggers(
     log_format_local_dev_enabled=the_settings.RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED,
-    logger_filter_mapping={},
+    logger_filter_mapping=the_settings.RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING,
 )
 
 # SINGLETON FastAPI app

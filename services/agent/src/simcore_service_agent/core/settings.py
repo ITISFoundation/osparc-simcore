@@ -15,7 +15,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_BOOT_MODE: BootModeEnum | None
 
     AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        default=False,
+        default={},
         env=[
             "AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",

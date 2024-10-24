@@ -31,7 +31,7 @@ def _setup_logger(settings: ApplicationSettings):
     logging.root.setLevel(settings.LOGLEVEL.value)
     config_all_loggers(
         log_format_local_dev_enabled=settings.AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping={},
+        logger_filter_mapping=settings.AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED,
     )
 
 
