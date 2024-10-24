@@ -8,6 +8,7 @@ from typing import Any
 import rich
 import typer
 from common_library.serialization import model_dump_with_secrets
+from models_library.utils.json_serialization import json_dumps
 from pydantic import ValidationError
 from pydantic_core import to_jsonable_python
 from pydantic_settings import BaseSettings
@@ -88,7 +89,7 @@ def print_as_json(
 def create_settings_command(
     settings_cls: type[BaseCustomSettings],
     logger: logging.Logger | None = None,
-    json_serializer=json.dumps,
+    json_serializer=json_dumps,
 ) -> Callable:
     """Creates typer command function for settings"""
 
