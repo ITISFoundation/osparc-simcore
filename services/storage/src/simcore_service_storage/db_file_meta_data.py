@@ -32,7 +32,9 @@ async def upsert(
 ) -> FileMetaDataAtDB:
     # NOTE: upsert file_meta_data, if the file already exists, we update the whole row
     # so we get the correct time stamps
-    fmd_db = FileMetaDataAtDB.from_orm(fmd) if isinstance(fmd, FileMetaData) else fmd
+    fmd_db = (
+        FileMetaDataAtDB.model_validate(fmd) if isinstance(fmd, FileMetaData) else fmd
+    )
     insert_statement = pg_insert(file_meta_data).values(**jsonable_encoder(fmd_db))
     on_update_statement = insert_statement.on_conflict_do_update(
         index_elements=[file_meta_data.c.file_id], set_=jsonable_encoder(fmd_db)
@@ -40,11 +42,11 @@ async def upsert(
     result = await conn.execute(on_update_statement)
     row = await result.first()
     assert row  # nosec
-    return FileMetaDataAtDB.from_orm(row)
+    return FileMetaDataAtDB.model_validate(row)
 
 
 async def insert(conn: SAConnection, fmd: FileMetaData) -> FileMetaDataAtDB:
-    fmd_db = FileMetaDataAtDB.from_orm(fmd)
+    fmd_db = FileMetaDataAtDB.model_validate(fmd)
     result = await conn.execute(
         file_meta_data.insert()
         .values(jsonable_encoder(fmd_db))
@@ -52,7 +54,7 @@ async def insert(conn: SAConnection, fmd: FileMetaData) -> FileMetaDataAtDB:
     )
     row = await result.first()
     assert row  # nosec
-    return FileMetaDataAtDB.from_orm(row)
+    return FileMetaDataAtDB.model_validate(row)
 
 
 async def get(conn: SAConnection, file_id: SimcoreS3FileID) -> FileMetaDataAtDB:
@@ -60,7 +62,7 @@ async def get(conn: SAConnection, file_id: SimcoreS3FileID) -> FileMetaDataAtDB:
         query=sa.select(file_meta_data).where(file_meta_data.c.file_id == file_id)
     )
     if row := await result.first():
-        return FileMetaDataAtDB.from_orm(row)
+        return FileMetaDataAtDB.model_validate(row)
     raise FileMetaDataNotFoundError(file_id=file_id)
 
 
@@ -83,9 +85,11 @@ def _list_filter_with_partial_file_id_stmt(
         conditions.append(
             sa.or_(
                 file_meta_data.c.user_id == f"{user_id}",
-                file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids)
-                if project_ids
-                else False,
+                (
+                    file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids)
+                    if project_ids
+                    else False
+                ),
             )
         )
 
@@ -130,7 +134,9 @@ async def list_filter_with_partial_file_id(
         offset=offset,
     )
 
-    return [FileMetaDataAtDB.from_orm(row) async for row in await conn.execute(stmt)]
+    return [
+        FileMetaDataAtDB.model_validate(row) async for row in await conn.execute(stmt)
+    ]
 
 
 async def list_fmds(
@@ -158,7 +164,9 @@ async def list_fmds(
         )
     )
 
-    return [FileMetaDataAtDB.from_orm(row) async for row in await conn.execute(stmt)]
+    return [
+        FileMetaDataAtDB.model_validate(row) async for row in await conn.execute(stmt)
+    ]
 
 
 async def total(conn: SAConnection) -> int:
@@ -177,7 +185,7 @@ async def list_valid_uploads(
             file_meta_data.c.upload_expires_at == None  # lgtm [py/test-equals-none]
         )
     ):
-        fmd_at_db = FileMetaDataAtDB.from_orm(row)
+        fmd_at_db = FileMetaDataAtDB.model_validate(row)
         yield fmd_at_db
 
 
