@@ -76,7 +76,7 @@ qx.Class.define("osparc.store.StaticInfo", {
       if (key in wsStaticData) {
         return wsStaticData[key];
       }
-      return null;
+      return "unknown";
     },
 
     getAccountDeletionRetentionDays: function() {

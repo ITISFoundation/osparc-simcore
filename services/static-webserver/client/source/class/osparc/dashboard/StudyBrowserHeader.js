@@ -201,7 +201,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           cursor: "auto",
         });
       } else if (currentContext === "trash") {
-        this.__setIcon("@FontAwesome5Solid/trash/24");
+        this.__setIcon("@FontAwesome5Solid/trash/20");
         const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
         title.set({
           value: this.tr(`Trash: Items in the bin will be permanently deleted after ${trashDays} days.`),
