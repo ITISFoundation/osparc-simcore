@@ -14,7 +14,8 @@ _the_settings = ApplicationSettings.create_from_envs()
 logging.basicConfig(level=_the_settings.CATALOG_LOG_LEVEL.value)  # NOSONAR
 logging.root.setLevel(_the_settings.CATALOG_LOG_LEVEL.value)
 config_all_loggers(
-    log_format_local_dev_enabled=_the_settings.CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED
+    log_format_local_dev_enabled=_the_settings.CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED,
+    logger_filter_mapping=_the_settings.CATALOG_LOG_FILTER_MAPPING,
 )
 
 

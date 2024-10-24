@@ -267,6 +267,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
+    CLUSTERS_KEEPER_LOG_FILTER_MAPPING: dict = Field(
+        default={},
+        env=["CLUSTERS_KEEPER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+    )
 
     CLUSTERS_KEEPER_EC2_ACCESS: ClustersKeeperEC2Settings | None = Field(
         auto_default_from_env=True

@@ -34,6 +34,11 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
+    DYNAMIC_SCHEDULER_LOG_FILTER_MAPPING: dict = Field(
+        default={},
+        env=["DYNAMIC_SCHEDULER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+    )
 
     DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=60),

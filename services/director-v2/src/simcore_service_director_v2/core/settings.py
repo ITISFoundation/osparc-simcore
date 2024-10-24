@@ -131,6 +131,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
+    DIRECTOR_V2_LOG_FILTER_MAPPING: dict = Field(
+        default={},
+        env=["DIRECTOR_V2_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+    )
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
     DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED: bool = Field(

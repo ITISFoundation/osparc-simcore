@@ -13,7 +13,8 @@ the_settings = ApplicationSettings.create_from_envs()
 logging.basicConfig(level=the_settings.log_level)
 logging.root.setLevel(the_settings.log_level)
 config_all_loggers(
-    log_format_local_dev_enabled=the_settings.CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED
+    log_format_local_dev_enabled=the_settings.CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED,
+    logger_filter_mapping=the_settings.CLUSTERS_KEEPER_LOG_FILTER_MAPPING,
 )
 
 # SINGLETON FastAPI app

@@ -109,10 +109,15 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         # NOTE: suffix '_LOGLEVEL' is used overall
     )
 
-    WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        default=False,
+    WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: dict = Field(
+        default={},
         env=["WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
+    WEBSERVER_LOG_FILTER_MAPPING: dict = Field(
+        default={},
+        env=["WEBSERVER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
     # TODO: find a better name!?
     WEBSERVER_SERVER_HOST: str = Field(

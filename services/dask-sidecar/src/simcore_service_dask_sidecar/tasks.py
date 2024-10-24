@@ -63,7 +63,8 @@ async def dask_setup(worker: distributed.Worker) -> None:
     for handler in logging.getLogger("distributed").handlers:
         logging.getLogger("distributed").removeHandler(handler)
     config_all_loggers(
-        log_format_local_dev_enabled=settings.DASK_LOG_FORMAT_LOCAL_DEV_ENABLED
+        log_format_local_dev_enabled=settings.DASK_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=settings.DASK_LOG_FILTER_MAPPING,
     )
 
     logger.info("Setting up worker...")
