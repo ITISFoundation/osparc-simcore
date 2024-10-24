@@ -20,7 +20,7 @@
  *
  */
 
-qx.Class.define("osparc.dashboard.WorkspaceHeader", {
+qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -42,12 +42,20 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
   },
 
   events: {
-    "contextChanged": "qx.event.type.Data",
+    "locationChanged": "qx.event.type.Data",
     "workspaceUpdated": "qx.event.type.Data",
     "deleteWorkspaceRequested": "qx.event.type.Data"
   },
 
   properties: {
+    currentContext: {
+      check: ["studiesAndFolders", "workspaces", "search"],
+      nullable: false,
+      init: "studiesAndFolders",
+      event: "changeCurrentContext",
+      apply: "__buildLayout"
+    },
+
     currentWorkspaceId: {
       check: "Number",
       nullable: true,
@@ -111,10 +119,11 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
           control = new osparc.dashboard.ContextBreadcrumbs();
           this.bind("currentWorkspaceId", control, "currentWorkspaceId");
           this.bind("currentFolderId", control, "currentFolderId");
+          this.bind("currentContext", control, "currentContext");
           control.bind("currentWorkspaceId", this, "currentWorkspaceId");
           control.bind("currentFolderId", this, "currentFolderId");
-          control.addListener("contextChanged", e => {
-            this.fireDataEvent("contextChanged", e.getData())
+          control.addListener("locationChanged", e => {
+            this.fireDataEvent("locationChanged", e.getData())
           });
           this._add(control);
           break;
@@ -176,7 +185,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function(workspaceId) {
+    __buildLayout: function() {
       this.getChildControl("icon");
       const title = this.getChildControl("workspace-title");
       this.getChildControl("breadcrumbs");
@@ -184,26 +193,28 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       this.resetAccessRights();
       this.resetMyAccessRights();
 
-      if (workspaceId === -2) {
+      const currentContext = this.getCurrentContext();
+      if (currentContext === "search") {
         this.__setIcon("@FontAwesome5Solid/search/24");
         title.set({
           value: this.tr("Search results"),
           cursor: "auto",
         });
-      } else if (workspaceId === -1) {
+      } else if (currentContext === "workspaces") {
         this.__setIcon(osparc.store.Workspaces.iconPath(32));
         title.set({
           value: this.tr("Shared Workspaces"),
           cursor: "auto",
         })
-      } else {
+      } else if (currentContext === "studiesAndFolders") {
+        const workspaceId = this.getCurrentWorkspaceId();
         title.set({
           cursor: "pointer"
         });
         title.addListener("tap", () => {
           const folderId = null;
           this.setCurrentFolderId(folderId);
-          this.fireDataEvent("contextChanged", {
+          this.fireDataEvent("locationChanged", {
             workspaceId,
             folderId,
           });
@@ -332,7 +343,7 @@ qx.Class.define("osparc.dashboard.WorkspaceHeader", {
       const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 300, 200);
       permissionsView.addListener("workspaceUpdated", () => {
         win.close();
-        this.__buildLayout(this.getCurrentWorkspaceId());
+        this.__buildLayout();
       }, this);
     },
 
