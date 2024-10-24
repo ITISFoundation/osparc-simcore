@@ -30,7 +30,7 @@ from models_library.projects_nodes_io import (
     StorageFileID,
 )
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, NonNegativeInt, parse_obj_as
+from pydantic import AnyUrl, ByteSize, NonNegativeInt, TypeAdapter, parse_obj_as
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
@@ -279,7 +279,7 @@ class SimcoreS3DataManager(BaseDataManager):
             # there was a multipart upload in progress beforehand, it MUST be
             # cancelled to prevent unwanted costs in AWS
             await self._clean_pending_upload(
-                conn, parse_obj_as(SimcoreS3FileID, file_id)
+                conn, TypeAdapter(SimcoreS3FileID).validate_python(file_id)
             )
 
         if (
@@ -352,7 +352,7 @@ class SimcoreS3DataManager(BaseDataManager):
         # user wants just the s3 link
         s3_link = get_s3_client(self.app).compute_s3_url(
             bucket=self.simcore_bucket_name,
-            object_key=parse_obj_as(SimcoreS3FileID, file_id),
+            object_key=TypeAdapter(SimcoreS3FileID).validate_python(file_id),
         )
         return UploadLinks(
             [s3_link], file_size_bytes or MAX_LINK_CHUNK_BYTE_SIZE[link_type]
