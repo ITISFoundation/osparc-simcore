@@ -52,6 +52,7 @@ def test_publish_event(
     # hence the long time out
     message = dask_sub.get(timeout=DASK_TESTING_TIMEOUT_S)
     assert message is not None
+    assert isinstance(message, str)
     received_task_log_event = TaskLogEvent.model_validate_json(message)
     assert received_task_log_event == event_to_publish
 
