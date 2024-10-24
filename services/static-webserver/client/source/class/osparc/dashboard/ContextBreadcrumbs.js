@@ -73,12 +73,12 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
         if (parentFolder) {
           this._addAt(this.__createArrow(), 0);
           const upstreamButton = this.__createFolderButton(parentFolder);
-          this._addAt(upstreamButton, 0);
+          if (upstreamButton) {
+            this._addAt(upstreamButton, 0);
+          }
           this.__createUpstreamButtons(parentFolder);
         } else {
           this._addAt(this.__createArrow(), 0);
-          const homeButton = this.__createFolderButton();
-          this._addAt(homeButton, 0);
         }
       }
     },
@@ -100,33 +100,9 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
       });
     },
 
-    __createRootButton: function() {
-      const workspaceId = this.getCurrentWorkspaceId();
-      let rootButton = null;
-      if (workspaceId) {
-        if (workspaceId === -1) {
-          rootButton = new qx.ui.form.Button(this.tr("Shared Workspaces"), osparc.store.Workspaces.iconPath());
-        } else {
-          const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
-          rootButton = new qx.ui.form.Button(workspace.getName(), osparc.store.Workspaces.iconPath()).set({
-            maxWidth: 200
-          });
-          workspace.bind("name", rootButton, "label");
-        }
-      } else {
-        rootButton = new qx.ui.form.Button(this.tr("My Workspace"), "@FontAwesome5Solid/home/14");
-      }
-      rootButton.addListener("execute", () => {
-        const folderId = null;
-        this.__changeFolder(folderId);
-      });
-      return rootButton;
-    },
-
     __createFolderButton: function(folder) {
-      let folderButton = null;
       if (folder) {
-        folderButton = new qx.ui.form.Button(folder.getName()).set({
+        const folderButton = new qx.ui.form.Button(folder.getName()).set({
           maxWidth: 200
         });
         folder.bind("name", folderButton, "label");
@@ -134,19 +110,14 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
           const folderId = folder ? folder.getFolderId() : null;
           this.__changeFolder(folderId);
         }, this);
-      } else {
-        folderButton = this.__createRootButton();
-        // Do not show root folder
         folderButton.set({
-          visibility: "excluded"
+          backgroundColor: "transparent",
+          textColor: "text",
+          gap: 5
         });
+        return folderButton;
       }
-      folderButton.set({
-        backgroundColor: "transparent",
-        textColor: "text",
-        gap: 5
-      });
-      return folderButton;
+      return null;
     },
 
     __createArrow: function() {
