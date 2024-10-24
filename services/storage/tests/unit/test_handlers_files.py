@@ -1199,8 +1199,8 @@ async def test_copy_as_soft_link(
 
     # now let's try with whatever link id
     file, original_file_uuid = await upload_file(
-        TypeAdapter(ByteSize, "10Mib")
-    ).validate_python(faker.file_name())
+        TypeAdapter(ByteSize).validate_python("10Mib"), faker.file_name()
+    )
     url = (
         client.app.router["copy_as_soft_link"]
         .url_for(
@@ -1208,7 +1208,9 @@ async def test_copy_as_soft_link(
         )
         .with_query(user_id=user_id)
     )
-    link_id = SimcoreS3FileID(f"api/{node_id}/{faker.file_name()}")
+    link_id = TypeAdapter(SimcoreS3FileID).validate_python(
+        f"api/{node_id}/{faker.file_name()}"
+    )
     response = await client.post(
         f"{url}", json=jsonable_encoder(SoftCopyBody(link_id=link_id))
     )
@@ -1442,12 +1444,12 @@ async def test_listing_with_project_id_filter(
     project, src_projects_list = await random_project_with_files(
         num_nodes=1,
         file_sizes=(ByteSize(1),),
-        file_checksums=(SHA256Str(faker.sha256()),),
+        file_checksums=(TypeAdapter(SHA256Str).validate_python(faker.sha256()),),
     )
     _, _ = await random_project_with_files(
         num_nodes=1,
         file_sizes=(ByteSize(1),),
-        file_checksums=(SHA256Str(faker.sha256()),),
+        file_checksums=(TypeAdapter(SHA256Str).validate_python(faker.sha256()),),
     )
     assert len(src_projects_list.keys()) > 0
     node_id = next(iter(src_projects_list.keys()))
