@@ -31,8 +31,7 @@ async def raising_handler(
 
 @pytest.fixture
 def mock_request(mocker: MockerFixture) -> web.Request:
-    mock = mocker.patch("aiohttp.web.Request", autospec=True)
-    return mock
+    return mocker.patch("aiohttp.web.Request", autospec=True)
 
 
 class FakeErrorModel(BaseModel):
@@ -48,7 +47,10 @@ class FakeErrorModel(BaseModel):
         (ProjectNotFoundError(project_id="x"), web.HTTPNotFound),
         (FileAccessRightError(file_id="x", access_right="x"), web.HTTPForbidden),
         (ProjectAccessRightError(project_id="x", access_right="x"), web.HTTPForbidden),
-        (ValidationError(errors=[], model=FakeErrorModel), web.HTTPUnprocessableEntity),
+        (
+            ValidationError.from_exception_data(title="test", line_errors=[]),
+            web.HTTPUnprocessableEntity,
+        ),
         (DBAPIError, web.HTTPServiceUnavailable),
     ],
 )
