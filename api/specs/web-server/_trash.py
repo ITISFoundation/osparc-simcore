@@ -30,22 +30,22 @@ _extra_tags: list[str | Enum] = ["projects"]
 
 
 @router.post(
-    "/projects/{project_uuid}:trash",
+    "/projects/{project_id}:trash",
     tags=_extra_tags,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def trash_project(
-    project_uuid: ProjectID,
+    project_id: ProjectID,
 ):
     ...
 
 
 @router.post(
-    "/projects/{project_uuid}:untrash",
+    "/projects/{project_id}:untrash",
     tags=_extra_tags,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def untrash_project(
-    project_uuid: ProjectID,
+    project_id: ProjectID,
 ):
     ...
