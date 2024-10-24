@@ -32,7 +32,10 @@ def setup_logging(
 
     # root
     logging.root.setLevel(level)
-    config_all_loggers(log_format_local_dev_enabled=log_format_local_dev_enabled)
+    config_all_loggers(
+        log_format_local_dev_enabled=log_format_local_dev_enabled,
+        logger_filter_mapping={},
+    )
 
     # Enforces same log-level to aiohttp & gunicorn access loggers
     #

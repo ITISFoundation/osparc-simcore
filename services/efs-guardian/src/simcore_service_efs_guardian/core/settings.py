@@ -83,6 +83,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
+    EFS_GUARDIAN_LOG_FILTER_MAPPING: dict = Field(
+        default={},
+        env=["EFS_GUARDIAN_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+    )
 
     EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings = Field(auto_default_from_env=True)
     EFS_GUARDIAN_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)

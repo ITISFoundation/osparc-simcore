@@ -86,7 +86,9 @@ LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(fun
 # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg}
 
 
-def config_all_loggers(*, log_format_local_dev_enabled: bool) -> None:
+def config_all_loggers(
+    *, log_format_local_dev_enabled: bool, logger_filter_mapping: dict[str, list[str]]
+) -> None:
     """
     Applies common configuration to ALL registered loggers
     """
@@ -106,18 +108,7 @@ def config_all_loggers(*, log_format_local_dev_enabled: bool) -> None:
             logger, fmt=fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
         )
 
-    LOGGER_FILTER_MAPPING = {
-        "uvicorn.access": [
-            '"GET / HTTP/1.1" 200',
-            '"GET /metrics HTTP/1.1" 200',
-        ],
-        "gunicorn.access": [
-            '"GET /v0/ HTTP/1.1" 200',
-            '"GET /v0/health HTTP/1.1" 200',
-        ],
-    }
-    logger_mapping = LOGGER_FILTER_MAPPING
-    for logger_name, filtered_routes in logger_mapping.items():
+    for logger_name, filtered_routes in logger_filter_mapping.items():
         logger = logging.getLogger(logger_name)
         # Check if the logger has any handlers or is in active use
         if not logger.hasHandlers():

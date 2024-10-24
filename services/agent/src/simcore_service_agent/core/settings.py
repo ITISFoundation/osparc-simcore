@@ -25,6 +25,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "disabled if you want to have structured logs!"
         ),
     )
+    AGENT_VOLUMES_LOG_FILTER_MAPPING: dict = Field(
+        default={},
+        env=["AGENT_VOLUMES_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+    )
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
         ..., description="Exactly the same as director-v2's `SWARM_STACK_NAME` env var"
     )

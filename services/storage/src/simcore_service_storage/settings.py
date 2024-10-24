@@ -68,6 +68,11 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         env=["STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
+    STORAGE_LOG_FILTER_MAPPING: dict = Field(
+        default={},
+        env=["STORAGE_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+    )
 
     @validator("LOG_LEVEL")
     @classmethod

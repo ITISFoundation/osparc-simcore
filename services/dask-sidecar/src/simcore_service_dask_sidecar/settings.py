@@ -40,6 +40,11 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         env=["DASK_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
+    DASK_LOG_FILTER_MAPPING: dict = Field(
+        default={},
+        env=["DASK_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+    )
 
     def as_scheduler(self) -> bool:
         return bool(self.DASK_START_AS_SCHEDULER)
