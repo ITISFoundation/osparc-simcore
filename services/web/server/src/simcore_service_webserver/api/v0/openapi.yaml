@@ -5369,6 +5369,12 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '404':
+          description: Not such a project
+        '409':
+          description: Project is in use and cannot be trashed
+        '503':
+          description: Trash service error
   /v0/projects/{project_id}:untrash:
     post:
       tags:

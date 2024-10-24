@@ -35,6 +35,13 @@ _extra_tags: list[str | Enum] = ["projects"]
     "/projects/{project_id}:trash",
     tags=_extra_tags,
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Not such a project"},
+        status.HTTP_409_CONFLICT: {
+            "description": "Project is in use and cannot be trashed"
+        },
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Trash service error"},
+    },
 )
 def trash_project(
     _p: Annotated[ProjectPathParams, Depends()],
