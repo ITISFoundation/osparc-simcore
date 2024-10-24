@@ -569,8 +569,8 @@ def complex_file_name(faker: Faker) -> str:
     [
         (TypeAdapter(ByteSize).validate_python("1Mib")),
         (TypeAdapter(ByteSize).validate_python("500Mib")),
-        pytest.param(TypeAdapter(ByteSize, "7Gib")).validate_python(
-            marks=pytest.mark.heavy_load
+        pytest.param(
+            TypeAdapter(ByteSize).validate_python("7Gib"), marks=pytest.mark.heavy_load
         ),
     ],
     ids=byte_size_ids,
@@ -820,7 +820,10 @@ async def test_upload_real_file_with_s3_client(
 
 @pytest.mark.parametrize(
     "file_size",
-    [TypeAdapter(ByteSize, "160Mib"), TypeAdapter(ByteSize).validate_python("1Mib")],
+    [
+        TypeAdapter(ByteSize).validate_python("160Mib"),
+        TypeAdapter(ByteSize).validate_python("1Mib"),
+    ],
     ids=byte_size_ids,
 )
 async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
