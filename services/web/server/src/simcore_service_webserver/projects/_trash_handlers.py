@@ -39,7 +39,7 @@ async def trash_project(request: web.Request):
     product_name = get_product_name(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    await _trash_api.update_project(
+    await _trash_api.trash_project(
         request.app,
         product_name=product_name,
         user_id=user_id,
@@ -58,7 +58,7 @@ async def untrash_project(request: web.Request):
     product_name = get_product_name(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    await _trash_api.update_project(
+    await _trash_api.trash_project(
         request.app,
         product_name=product_name,
         user_id=user_id,
