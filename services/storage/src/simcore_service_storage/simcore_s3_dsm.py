@@ -20,7 +20,12 @@ from aws_library.s3 import (
     S3MetaData,
     UploadedBytesTransferredCallback,
 )
-from models_library.api_schemas_storage import LinkType, S3BucketName, UploadedPart
+from models_library.api_schemas_storage import (
+    UNDEFINED_SIZE_TYPE,
+    LinkType,
+    S3BucketName,
+    UploadedPart,
+)
 from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
@@ -371,7 +376,7 @@ class SimcoreS3DataManager(BaseDataManager):
                 raise FileAccessRightError(access_right="write/delete", file_id=file_id)
 
             fmd: FileMetaDataAtDB = await db_file_meta_data.get(
-                conn, parse_obj_as(SimcoreS3FileID, file_id)
+                conn, TypeAdapter(SimcoreS3FileID).validate_python(file_id)
             )
         if is_valid_managed_multipart_upload(fmd.upload_id):
             assert fmd.upload_id  # nosec
@@ -620,7 +625,9 @@ class SimcoreS3DataManager(BaseDataManager):
                 f"{len(src_project_files)} files",
                 log_duration=True,
             ):
-                sizes_and_num_files: list[tuple[ByteSize, int]] = await limited_gather(
+                sizes_and_num_files: list[
+                    tuple[ByteSize | UNDEFINED_SIZE_TYPE, int]
+                ] = await limited_gather(
                     *[self._get_size_and_num_files(fmd) for fmd in src_project_files],
                     limit=_MAX_PARALLEL_S3_CALLS,
                 )
@@ -693,7 +700,7 @@ class SimcoreS3DataManager(BaseDataManager):
 
     async def _get_size_and_num_files(
         self, fmd: FileMetaDataAtDB
-    ) -> tuple[ByteSize, int]:
+    ) -> tuple[ByteSize | UNDEFINED_SIZE_TYPE, int]:
         if not fmd.is_directory:
             return fmd.file_size, 1
 
@@ -977,7 +984,7 @@ class SimcoreS3DataManager(BaseDataManager):
         with tempfile.TemporaryDirectory() as tmpdir:
             local_file_path = Path(tmpdir) / filename
             # Downloads DATCore -> local
-            await download_to_file_or_raise(session, dc_link, local_file_path)
+            await download_to_file_or_raise(session, f"{dc_link}", local_file_path)
 
             # copying will happen using aioboto3, therefore multipart might happen
             async with self.engine.acquire() as conn:
