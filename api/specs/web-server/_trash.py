@@ -5,10 +5,14 @@
 
 
 from enum import Enum
+from typing import Annotated
 
-from fastapi import APIRouter, status
-from models_library.projects import ProjectID
+from fastapi import APIRouter, Depends, status
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.projects._trash_handlers import (
+    ProjectPathParams,
+    RemoveQueryParams,
+)
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -33,7 +37,8 @@ _extra_tags: list[str | Enum] = ["projects"]
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def trash_project(
-    project_id: ProjectID,
+    _p: Annotated[ProjectPathParams, Depends()],
+    _q: Annotated[RemoveQueryParams, Depends()],
 ):
     ...
 
@@ -44,6 +49,6 @@ def trash_project(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def untrash_project(
-    project_id: ProjectID,
+    _p: Annotated[ProjectPathParams, Depends()],
 ):
     ...
