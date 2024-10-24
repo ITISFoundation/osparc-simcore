@@ -8,7 +8,9 @@ from typing import Any
 import rich
 import typer
 from common_library.serialization import model_dump_with_secrets
+from models_library.utils.json_serialization import json_dumps
 from pydantic import ValidationError
+from pydantic_core import to_jsonable_python
 from pydantic_settings import BaseSettings
 
 from ._constants import HEADER_STR
@@ -87,7 +89,7 @@ def print_as_json(
 def create_settings_command(
     settings_cls: type[BaseCustomSettings],
     logger: logging.Logger | None = None,
-    json_serializer=json.dumps,
+    json_serializer=json_dumps,
 ) -> Callable:
     """Creates typer command function for settings"""
 
@@ -112,14 +114,24 @@ def create_settings_command(
         """Resolves settings and prints envfile"""
 
         if as_json_schema:
-            typer.echo(settings_cls.schema_json(indent=0 if compact else 2))
+            typer.echo(
+                json.dumps(
+                    settings_cls.model_json_schema(),
+                    default=to_jsonable_python,
+                    indent=0 if compact else 2,
+                )
+            )
             return
 
         try:
             settings_obj = settings_cls.create_from_envs()
 
         except ValidationError as err:
-            settings_schema = settings_cls.schema_json(indent=2)
+            settings_schema = json.dumps(
+                settings_cls.model_json_schema(),
+                default=to_jsonable_python,
+                indent=2,
+            )
 
             assert logger is not None  # nosec
             logger.error(  # noqa: TRY400

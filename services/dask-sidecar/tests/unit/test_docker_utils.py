@@ -91,7 +91,7 @@ async def test_create_container_config(
         envs=task_envs,
         labels=task_labels,
     )
-    assert container_config.dict(by_alias=True) == (
+    assert container_config.model_dump(by_alias=True) == (
         {
             "Env": [
                 "INPUT_FOLDER=/inputs",
@@ -221,7 +221,7 @@ async def test_managed_container_always_removes_container(
                         call()
                         .__aenter__()
                         .containers.create(
-                            container_config.dict(by_alias=True), name=None
+                            container_config.model_dump(by_alias=True), name=None
                         ),
                     ]
                 )

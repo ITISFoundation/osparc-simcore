@@ -8,7 +8,7 @@ import urllib.parse
 from typing import TypeAlias
 
 from aiohttp import web
-from models_library.error_codes import create_error_code
+from common_library.error_codes import create_error_code
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion

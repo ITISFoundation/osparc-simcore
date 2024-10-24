@@ -4,7 +4,7 @@ from asyncio import Queue
 from collections.abc import AsyncIterable
 from typing import Final
 
-from models_library.error_codes import create_error_code
+from common_library.error_codes import create_error_code
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import NonNegativeInt
@@ -123,7 +123,7 @@ class LogStreamer:
                         self._queue.get(), timeout=self._log_check_timeout
                     )
                     yield log.json() + _NEW_LINE
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     done = await self._project_done()
 
         except BaseBackEndError as exc:

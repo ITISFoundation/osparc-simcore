@@ -1,6 +1,7 @@
 """
     General utilities and helper functions
 """
+
 import asyncio
 import hashlib
 import logging
@@ -13,8 +14,8 @@ from pathlib import Path
 from typing import Any, cast
 
 import orjson
+from common_library.error_codes import ErrorCodeStr
 from models_library.basic_types import SHA1Str
-from models_library.error_codes import ErrorCodeStr
 from typing_extensions import TypedDict
 
 _CURRENT_DIR = (
@@ -81,7 +82,6 @@ def now_str() -> str:
 
 
 def to_datetime(snapshot: str) -> datetime:
-    #
     return datetime.strptime(snapshot, DATETIME_FORMAT)
 
 
