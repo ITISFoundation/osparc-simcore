@@ -144,7 +144,7 @@ from .exceptions import (
     ProjectTooManyProjectOpenedError,
 )
 from .lock import get_project_locked_state, is_project_locked, lock_project
-from .models import ProjectDict
+from .models import ProjectDict, ProjectPatchExtended
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
@@ -249,7 +249,7 @@ async def patch_project(
     *,
     user_id: UserID,
     project_uuid: ProjectID,
-    project_patch: ProjectPatch,
+    project_patch: ProjectPatch | ProjectPatchExtended,
     product_name: ProductName,
 ):
     _project_patch_exclude_unset: dict[str, Any] = jsonable_encoder(

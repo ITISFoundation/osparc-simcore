@@ -3,6 +3,9 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import set_parent_module_log_level
+from simcore_service_webserver.garbage_collector._tasks_trash import (
+    create_background_task_to_prune_trash,
+)
 
 from ..application_settings import get_application_settings
 from ..login.plugin import setup_login_storage
@@ -38,6 +41,8 @@ def setup_garbage_collector(app: web.Application) -> None:
         _logger.name, min(logging.INFO, get_application_settings(app).log_level)
     )
 
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/6592
+
     # NOTE: scaling web-servers will lead to having multiple tasks upgrading the db
     # not a huge deal. Instead this task runs in the GC.
     # If more tasks of this nature are needed, we should setup some sort of registration mechanism
@@ -48,3 +53,5 @@ def setup_garbage_collector(app: web.Application) -> None:
     # SEE https://github.com/ITISFoundation/osparc-issues/issues/705
     wait_period_s = settings.GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S
     app.cleanup_ctx.append(create_background_task_to_prune_api_keys(wait_period_s))
+
+    app.cleanup_ctx.append(create_background_task_to_prune_trash(wait_period_s))

@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Any, TypeAlias
 
 from aiopg.sa.result import RowProxy
+from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.basic_types import HttpUrlWithCustomMinLength
 from models_library.folders import FolderID
 from models_library.projects import ClassifierID, ProjectID
@@ -13,7 +14,7 @@ from models_library.utils.common_validators import (
     none_to_empty_str_pre_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Extra, validator
 from simcore_postgres_database.models.projects import ProjectType, projects
 
 ProjectDict: TypeAlias = dict[str, Any]
@@ -51,6 +52,7 @@ class ProjectDB(BaseModel):
     published: bool
     hidden: bool
     workspace_id: WorkspaceID | None
+    trashed_at: datetime | None
 
     class Config:
         orm_mode = True
@@ -95,6 +97,15 @@ class UserProjectAccessRightsWithWorkspace(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ProjectPatchExtended(ProjectPatch):
+    # Only used internally
+    trashed_at: datetime | None = None
+
+    class Config:
+        allow_population_by_field_name = True
+        extra = Extra.forbid
 
 
 __all__: tuple[str, ...] = (

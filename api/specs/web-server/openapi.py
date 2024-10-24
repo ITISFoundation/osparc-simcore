@@ -55,6 +55,7 @@ openapi_modules = [
         "_resource_usage",
         "_statics",
         "_storage",
+        "_trash",
         "_version_control",
         "_workspaces",
         # maintenance ----
