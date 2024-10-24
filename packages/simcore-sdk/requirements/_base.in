@@ -12,6 +12,7 @@ aiocache
 aiofiles
 aiohttp
 aiopg[sa]
+opentelemetry-instrumentation-aiopg
 packaging
 pint
 pydantic[email]
