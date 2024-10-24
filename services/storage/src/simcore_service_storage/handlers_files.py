@@ -72,7 +72,7 @@ async def get_files_metadata(request: web.Request) -> web.Response:
         project_id=query_params.project_id,
     )
     return web.json_response(
-        {"data": [jsonable_encoder(FileMetaDataGet.model_validate(d)) for d in data]},
+        {"data": [jsonable_encoder(FileMetaDataGet(**d.model_dump())) for d in data]},
         dumps=json_dumps,
     )
 
@@ -87,7 +87,7 @@ async def get_file_metadata(request: web.Request) -> web.Response:
     )
     path_params = parse_request_path_parameters_as(FilePathParams, request)
     log.debug(
-        "received call to get_files_metadata_dataset with %s",
+        "received call to get_file_metadata_dataset with %s",
         f"{path_params=}, {query_params=}",
     )
 
@@ -134,7 +134,10 @@ async def get_file_metadata(request: web.Request) -> web.Response:
             dumps=json_dumps,
         )
 
-    return jsonable_encoder(FileMetaDataGet.model_validate(data))  # type: ignore[no-any-return] # middleware takes care of enveloping
+    return web.json_response(
+        {"data": jsonable_encoder(FileMetaDataGet(**data.model_dump()))},
+        dumps=json_dumps,
+    )
 
 
 @routes.get(
@@ -408,4 +411,4 @@ async def copy_as_soft_link(request: web.Request):
         query_params.user_id, path_params.file_id, body.link_id
     )
 
-    return jsonable_encoder(FileMetaDataGet.model_validate(file_link))
+    return jsonable_encoder(FileMetaDataGet(**file_link.model_dump()))

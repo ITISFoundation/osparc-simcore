@@ -69,6 +69,6 @@ async def get_files_metadata_dataset(request: web.Request) -> web.Response:
         expand_dirs=query_params.expand_dirs,
     )
     return web.json_response(
-        {"data": [jsonable_encoder(FileMetaDataGet.model_validate(d)) for d in data]},
+        {"data": [jsonable_encoder(FileMetaDataGet(**d.model_dump())) for d in data]},
         dumps=json_dumps,
     )
