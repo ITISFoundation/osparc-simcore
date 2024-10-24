@@ -134,7 +134,9 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
             ClassUniqueReference, type[BaseDeferredHandler]
         ] = {}
 
-        self.broker: RabbitBroker = RabbitBroker(rabbit_settings.dsn)
+        self.broker: RabbitBroker = RabbitBroker(
+            rabbit_settings.dsn, log_level=logging.DEBUG
+        )
         self.router: RabbitRouter = RabbitRouter()
 
         # NOTE: do not move this to a function, must remain in constructor
