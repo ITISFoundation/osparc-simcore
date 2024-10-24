@@ -23,3 +23,9 @@ class ProjectPathParams(BaseModel):
     class Config:
         allow_population_by_field_name = True
         extra = Extra.forbid
+
+
+class RemoveQueryParams(BaseModel):
+    force: bool = Field(
+        default=True, description="Force removal (even if resource is active)"
+    )

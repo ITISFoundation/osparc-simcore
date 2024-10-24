@@ -50,12 +50,21 @@ async def trash_project(
     user_id: UserID,
     project_id: ProjectID,
     trashed: bool,
-    forced: bool = True,
+    forced: bool = False,
 ):
+    """_summary_
+
+    Keyword Arguments:
+        forced -- _description_ (default: {False})
+
+    Raises:
+        ProjectStopError: _description_
+        ProjectRunningConflictError: if
+    """
     if trashed:
-        # stop first
 
         if forced:
+            # stop first
             try:
                 await projects_api.remove_project_dynamic_services(
                     user_id=user_id,
@@ -76,11 +85,10 @@ async def trash_project(
                     from_err=exc,
                 ) from exc
         else:
-
+            # NOTE: must do here as well for dynamic services but needs refactoring!
             running = await director_v2_api.is_pipeline_running(
                 app=app, user_id=user_id, project_id=project_id
             )
-            # NOTE: must do here as well for dynamic services but needs refactoring!
             if running:
                 raise ProjectRunningConflictError(
                     project_uuid=project_id,
