@@ -7037,7 +7037,7 @@
             "title": "Modified"
           },
           "availableCredits": {
-            "type": "string",
+            "type": "number",
             "title": "Availablecredits"
           }
         },

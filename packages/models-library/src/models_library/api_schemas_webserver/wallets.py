@@ -1,8 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal, TypeAlias
+from typing import Annotated, Literal, TypeAlias
 
-from pydantic import ConfigDict, Field, HttpUrl, field_validator
+from pydantic import ConfigDict, Field, HttpUrl, PlainSerializer, field_validator
 
 from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
 from ..users import GroupID
@@ -27,7 +27,7 @@ class WalletGet(OutputSchema):
 
 
 class WalletGetWithAvailableCredits(WalletGet):
-    available_credits: Decimal
+    available_credits: Annotated[Decimal, PlainSerializer(float)]
 
 
 class WalletGetPermissions(WalletGet):
