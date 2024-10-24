@@ -14,9 +14,9 @@ from .modules.redis import get_redis_lock_client
 
 _logger = logging.getLogger(__name__)
 
-_SEC = 1000  # in ms
-_MIN = 60 * _SEC  # in ms
-_HOUR = 60 * _MIN  # in ms
+_SEC = 1  # in s
+_MIN = 60 * _SEC  # in s
+_HOUR = 60 * _MIN  # in s
 
 
 class EfsGuardianBackgroundTask(TypedDict):
