@@ -1,3 +1,6 @@
+import asyncio
+import logging
+
 import arrow
 from aiohttp import web
 from models_library.products import ProductName
@@ -6,11 +9,32 @@ from models_library.users import UserID
 
 from . import projects_api
 from .models import ProjectPatchExtended
+from .settings import get_plugin_settings
+
+_logger = logging.getLogger(__name__)
 
 
 async def empty_trash(app: web.Application, product_name: ProductName, user_id: UserID):
     # filter trashed=True and set them to False
+    _logger.debug(
+        "CODE PLACEHOLDER: all projects marked of trashed of %s in %s are deleted",
+        f"{user_id=}",
+        f"{product_name=}",
+    )
     raise NotImplementedError
+
+
+async def prune_all_trashes(app: web.Application) -> list[str]:
+    settings = get_plugin_settings(app)
+    threashold = arrow.utcnow().datetime + settings.PROJECTS_TRASH_RETENTION_DAYS
+
+    _logger.debug(
+        "CODE PLACEHOLDER: **ALL** projects marked as trashed with trashedAt>=%s days are deleted",
+        threashold,
+    )
+    await asyncio.sleep(5)
+
+    return []
 
 
 async def update_project(
