@@ -56,7 +56,7 @@ def _to_api_model(
 ) -> PaymentMethodGet:
     assert entry.completed_at  # nosec
 
-    return PaymentMethodGet.parse_obj(
+    return PaymentMethodGet.model_validate(
         {
             **payment_method_details_from_gateway,
             "idr": entry.payment_method_id,

@@ -58,7 +58,7 @@ routes = web.RouteTableDef()
 @_handle_tags_exceptions
 async def create_tag(request: web.Request):
     assert request.app  # nosec
-    req_ctx = TagRequestContext.parse_obj(request)
+    req_ctx = TagRequestContext.model_validate(request)
     new_tag = await parse_request_body_as(TagCreate, request)
 
     created = await _api.create_tag(
@@ -73,7 +73,7 @@ async def create_tag(request: web.Request):
 @_handle_tags_exceptions
 async def list_tags(request: web.Request):
 
-    req_ctx = TagRequestContext.parse_obj(request)
+    req_ctx = TagRequestContext.model_validate(request)
     got = await _api.list_tags(request.app, user_id=req_ctx.user_id)
     return envelope_json_response(got)
 
@@ -83,7 +83,7 @@ async def list_tags(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def update_tag(request: web.Request):
-    req_ctx = TagRequestContext.parse_obj(request)
+    req_ctx = TagRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
     tag_updates = await parse_request_body_as(TagUpdate, request)
 
@@ -101,7 +101,7 @@ async def update_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def delete_tag(request: web.Request):
-    req_ctx = TagRequestContext.parse_obj(request)
+    req_ctx = TagRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(TagPathParams, request)
 
     await _api.delete_tag(

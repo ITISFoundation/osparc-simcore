@@ -45,8 +45,8 @@ def test_can_connect_enums(unit_registry: UnitRegistry):
     }
 
     assert can_connect(
-        from_output=ServiceOutput.parse_obj(enum_port),
-        to_input=ServiceInput.parse_obj(enum_port),
+        from_output=ServiceOutput.model_validate(enum_port),
+        to_input=ServiceInput.model_validate(enum_port),
         units_registry=unit_registry,
     )
 
@@ -71,15 +71,15 @@ def test_can_connect_generic_data_types(unit_registry: UnitRegistry):
 
     # data:*/* -> data:text/plain
     assert can_connect(
-        from_output=ServiceOutput.parse_obj(file_picker_outfile),
-        to_input=ServiceInput.parse_obj(input_sleeper_input_1),
+        from_output=ServiceOutput.model_validate(file_picker_outfile),
+        to_input=ServiceInput.model_validate(input_sleeper_input_1),
         units_registry=unit_registry,
     )
 
     # data:text/plain  -> data:*/*
     assert can_connect(
-        from_output=ServiceOutput.parse_obj(input_sleeper_input_1),
-        to_input=ServiceInput.parse_obj(file_picker_outfile),
+        from_output=ServiceOutput.model_validate(input_sleeper_input_1),
+        to_input=ServiceInput.model_validate(file_picker_outfile),
         units_registry=unit_registry,
     )
 
@@ -127,15 +127,15 @@ def test_can_connect_no_units_with_units(
 ):
     # w/o -> w
     assert can_connect(
-        from_output=ServiceOutput.parse_obj(port_without_unit),
-        to_input=ServiceInput.parse_obj(port_with_unit),
+        from_output=ServiceOutput.model_validate(port_without_unit),
+        to_input=ServiceInput.model_validate(port_with_unit),
         units_registry=unit_registry,
     )
 
     # w -> w/o
     assert can_connect(
-        from_output=ServiceOutput.parse_obj(port_with_unit),
-        to_input=ServiceInput.parse_obj(port_without_unit),
+        from_output=ServiceOutput.model_validate(port_with_unit),
+        to_input=ServiceInput.model_validate(port_without_unit),
         units_registry=unit_registry,
     )
 
@@ -178,8 +178,8 @@ def test_units_compatible(
 
     assert (
         can_connect(
-            from_output=ServiceOutput.parse_obj(from_port),
-            to_input=ServiceInput.parse_obj(to_port),
+            from_output=ServiceOutput.model_validate(from_port),
+            to_input=ServiceInput.model_validate(to_port),
             units_registry=unit_registry,
         )
         == are_compatible

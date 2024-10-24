@@ -10,7 +10,7 @@ from typing import Any
 from aiohttp import ClientError, ClientSession, web
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.utils.pydantic_tools_extension import FieldNotRequired
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.utils import logged_gather
@@ -62,7 +62,7 @@ async def get_app_diagnostics(request: web.Request):
             top_tracemalloc=get_tracemalloc_info(top=query_params.top_tracemalloc)
         )
 
-    assert parse_obj_as(StatusDiagnosticsGet, data) is not None  # nosec
+    assert StatusDiagnosticsGet.model_validate(data) is not None  # nosec
     return envelope_json_response(data)
 
 
@@ -99,7 +99,7 @@ async def get_app_status(request: web.Request):
 
         return info
 
-    check = AppStatusCheck.parse_obj(
+    check = AppStatusCheck.model_validate(
         {
             "app_name": APP_NAME,
             "version": API_VERSION,
@@ -150,7 +150,7 @@ async def get_app_status(request: web.Request):
         reraise=False,
     )
 
-    return envelope_json_response(check.dict(exclude_unset=True))
+    return envelope_json_response(check.model_dump(exclude_unset=True))
 
 
 @routes.get(f"/{api_version_prefix}/status/{{service_name}}", name="get_service_status")

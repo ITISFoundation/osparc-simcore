@@ -299,7 +299,7 @@ async def check_and_consume_invitation(
     # database-type invitations
     if confirmation_token := await validate_confirmation_code(invitation_code, db, cfg):
         try:
-            invitation_data: InvitationData = _InvitationValidator.parse_obj(
+            invitation_data: InvitationData = _InvitationValidator.model_validate(
                 confirmation_token
             ).data
             return invitation_data

@@ -4,7 +4,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
 from models_library.users import UserID
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.request_keys import RQT_USERID_KEY
@@ -60,7 +60,7 @@ class _GetPricingPlanUnitPathParams(BaseModel):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def get_pricing_plan_unit(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _GetPricingPlanUnitPathParams, request
     )

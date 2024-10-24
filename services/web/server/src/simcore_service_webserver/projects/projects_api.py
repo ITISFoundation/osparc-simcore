@@ -219,7 +219,7 @@ async def get_project_for_user(
             gid: access.dict() for gid, access in workspace_db.access_rights.items()
         }
 
-    Project.parse_obj(project)  # NOTE: only validates
+    Project.model_validate(project)  # NOTE: only validates
     return project
 
 
@@ -798,7 +798,7 @@ async def add_project_node(
         ProjectNodeCreate(
             node_id=node_uuid, required_resources=jsonable_encoder(default_resources)
         ),
-        Node.parse_obj(
+        Node.model_validate(
             {
                 "key": service_key,
                 "version": service_version,

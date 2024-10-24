@@ -276,7 +276,7 @@ async def test_clone_project_and_set_inputs(
             data = await long_running_task.result()
 
     assert data is not None
-    cloned_project = ProjectGet.parse_obj(data)
+    cloned_project = ProjectGet.model_validate(data)
 
     assert parent_project_id != cloned_project.uuid
     assert user_project["description"] == cloned_project.description

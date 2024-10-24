@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from models_library.workspaces import WorkspaceID
-from pydantic import ConfigDict, BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
@@ -67,7 +67,7 @@ class _ProjectWorkspacesPathParams(BaseModel):
 @permission_required("project.workspaces.*")
 @_handle_projects_workspaces_exceptions
 async def replace_project_workspace(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectWorkspacesPathParams, request
     )

@@ -8,7 +8,7 @@ import logging
 from aiohttp import web
 from models_library.users import GroupID, UserID
 from models_library.wallets import WalletID
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -77,7 +77,7 @@ class _WalletsGroupsBodyParams(BaseModel):
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
 async def create_wallet_group(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_WalletsGroupsPathParams, request)
     body_params = await parse_request_body_as(_WalletsGroupsBodyParams, request)
 
@@ -100,7 +100,7 @@ async def create_wallet_group(request: web.Request):
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
 async def list_wallet_groups(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
     wallets: list[
@@ -123,7 +123,7 @@ async def list_wallet_groups(request: web.Request):
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
 async def update_wallet_group(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_WalletsGroupsPathParams, request)
     body_params = await parse_request_body_as(_WalletsGroupsBodyParams, request)
 
@@ -147,7 +147,7 @@ async def update_wallet_group(request: web.Request):
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
 async def delete_wallet_group(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_WalletsGroupsPathParams, request)
 
     await _groups_api.delete_wallet_group(

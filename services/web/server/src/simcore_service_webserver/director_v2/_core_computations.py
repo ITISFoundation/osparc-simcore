@@ -26,7 +26,7 @@ from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_decorator
@@ -182,7 +182,7 @@ async def get_computation_task(
         computation_task_out_dict = await request_director_v2(
             app, "GET", backend_url, expected_status=web.HTTPOk
         )
-        task_out = ComputationTask.parse_obj(computation_task_out_dict)
+        task_out = ComputationTask.model_validate(computation_task_out_dict)
         _logger.debug("found computation task: %s", f"{task_out=}")
         return task_out
     except DirectorServiceError as exc:
@@ -226,7 +226,7 @@ async def create_cluster(
         url=(settings.base_url / "clusters").update_query(user_id=int(user_id)),
         expected_status=web.HTTPCreated,
         data=json.loads(
-            new_cluster.json(
+            new_cluster.model_dump_json(
                 by_alias=True,
                 exclude_unset=True,
                 encoder=create_json_encoder_wo_secrets(ClusterCreate),
@@ -234,7 +234,7 @@ async def create_cluster(
         ),
     )
     assert isinstance(cluster, dict)  # nosec
-    assert parse_obj_as(ClusterGet, cluster) is not None  # nosec
+    assert ClusterGet.model_validate(cluster) is not None  # nosec
     return cluster
 
 
@@ -248,7 +248,7 @@ async def list_clusters(app: web.Application, user_id: UserID) -> list[DataType]
     )
 
     assert isinstance(clusters, list)  # nosec
-    assert parse_obj_as(list[ClusterGet], clusters) is not None  # nosec
+    assert TypeAdapter(list[ClusterGet]).validate_python(clusters) is not None  # nosec
     return clusters
 
 
@@ -276,7 +276,7 @@ async def get_cluster(
     )
 
     assert isinstance(cluster, dict)  # nosec
-    assert parse_obj_as(ClusterGet, cluster) is not None  # nosec
+    assert ClusterGet.model_validate(cluster) is not None  # nosec
     return cluster
 
 
@@ -304,7 +304,7 @@ async def get_cluster_details(
         },
     )
     assert isinstance(cluster, dict)  # nosec
-    assert parse_obj_as(ClusterDetails, cluster) is not None  # nosec
+    assert ClusterDetails.model_validate(cluster) is not None  # nosec
     return cluster
 
 
@@ -323,7 +323,7 @@ async def update_cluster(
         ),
         expected_status=web.HTTPOk,
         data=json.loads(
-            cluster_patch.json(
+            cluster_patch.model_dump_json(
                 by_alias=True,
                 exclude_unset=True,
                 encoder=create_json_encoder_wo_secrets(ClusterPatch),
@@ -342,7 +342,7 @@ async def update_cluster(
     )
 
     assert isinstance(cluster, dict)  # nosec
-    assert parse_obj_as(ClusterGet, cluster) is not None  # nosec
+    assert ClusterGet.model_validate(cluster) is not None  # nosec
     return cluster
 
 
@@ -378,7 +378,7 @@ async def ping_cluster(app: web.Application, cluster_ping: ClusterPing) -> None:
         url=settings.base_url / "clusters:ping",
         expected_status=web.HTTPNoContent,
         data=json.loads(
-            cluster_ping.json(
+            cluster_ping.model_dump_json(
                 by_alias=True,
                 exclude_unset=True,
                 encoder=create_json_encoder_wo_secrets(ClusterPing),

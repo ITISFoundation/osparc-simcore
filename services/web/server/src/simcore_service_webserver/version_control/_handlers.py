@@ -4,7 +4,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import field_validator, BaseModel
+from pydantic import BaseModel, field_validator
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -81,7 +81,7 @@ async def _list_repos_handler(request: web.Request):
 
     # parse and validate
     repos_list = [
-        RepoApiModel.parse_obj(
+        RepoApiModel.model_validate(
             {
                 "url": url_for("list_repos"),
                 **dict(row.items()),
@@ -90,7 +90,7 @@ async def _list_repos_handler(request: web.Request):
         for row in repos_rows
     ]
 
-    page = Page[RepoApiModel].parse_obj(
+    page = Page[RepoApiModel].model_validate(
         paginate_data(
             chunk=repos_list,
             request_url=request.url,
@@ -116,7 +116,7 @@ async def _create_checkpoint_handler(request: web.Request):
     vc_repo = VersionControlRepository.create_from_request(request)
 
     path_params = parse_request_path_parameters_as(_ProjectPathParam, request)
-    _body = CheckpointNew.parse_obj(await request.json())
+    _body = CheckpointNew.model_validate(await request.json())
 
     checkpoint: Checkpoint = await create_checkpoint(
         vc_repo,
@@ -124,7 +124,7 @@ async def _create_checkpoint_handler(request: web.Request):
         **_body.dict(include={"tag", "message"}),
     )
 
-    data = CheckpointApiModel.parse_obj(
+    data = CheckpointApiModel.model_validate(
         {
             "url": url_for(
                 "get_checkpoint",
@@ -163,7 +163,7 @@ async def _list_checkpoints_handler(request: web.Request):
 
     # parse and validate
     checkpoints_list = [
-        CheckpointApiModel.parse_obj(
+        CheckpointApiModel.model_validate(
             {
                 "url": url_for(
                     "get_checkpoint",
@@ -176,7 +176,7 @@ async def _list_checkpoints_handler(request: web.Request):
         for checkpoint in checkpoints
     ]
 
-    page = Page[CheckpointApiModel].parse_obj(
+    page = Page[CheckpointApiModel].model_validate(
         paginate_data(
             chunk=checkpoints_list,
             request_url=request.url,
@@ -211,7 +211,7 @@ async def _get_checkpoint_handler(request: web.Request):
         ref_id=path_params.ref_id,
     )
 
-    data = CheckpointApiModel.parse_obj(
+    data = CheckpointApiModel.model_validate(
         {
             "url": url_for(
                 "get_checkpoint",
@@ -245,7 +245,7 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
         **update.dict(include={"tag", "message"}, exclude_none=True),
     )
 
-    data = CheckpointApiModel.parse_obj(
+    data = CheckpointApiModel.model_validate(
         {
             "url": url_for(
                 "get_checkpoint",
@@ -277,7 +277,7 @@ async def _checkout_handler(request: web.Request):
         ref_id=path_params.ref_id,
     )
 
-    data = CheckpointApiModel.parse_obj(
+    data = CheckpointApiModel.model_validate(
         {
             "url": url_for(
                 "get_checkpoint",
@@ -315,7 +315,7 @@ async def _view_project_workbench_handler(request: web.Request):
         ref_id=checkpoint.id,
     )
 
-    data = WorkbenchViewApiModel.parse_obj(
+    data = WorkbenchViewApiModel.model_validate(
         {
             # = request.url??
             "url": url_for(

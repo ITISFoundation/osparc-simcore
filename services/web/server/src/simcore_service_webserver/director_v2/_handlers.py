@@ -190,7 +190,7 @@ async def start_computation(request: web.Request) -> web.Response:
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def stop_computation(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     computations = ComputationsApi(request.app)
     run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec

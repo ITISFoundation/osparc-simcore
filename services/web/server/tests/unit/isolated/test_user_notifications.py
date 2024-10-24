@@ -16,7 +16,7 @@ from simcore_service_webserver.users._notifications import (
     "raw_data", UserNotification.model_config["json_schema_extra"]["examples"]
 )
 def test_user_notification(raw_data: dict[str, Any]):
-    assert UserNotification.parse_obj(raw_data)
+    assert UserNotification.model_validate(raw_data)
 
 
 @pytest.mark.parametrize("user_id", [10])
@@ -87,7 +87,7 @@ def test_get_notification_key(user_id: UserID):
             id="category_from_string",
         ),
         pytest.param(
-            UserNotificationCreate.parse_obj(
+            UserNotificationCreate.model_validate(
                 {
                     "id": "some_id",
                     "user_id": "1",

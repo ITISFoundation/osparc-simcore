@@ -196,7 +196,7 @@ async def add_group_user(request: web.Request):
     """
     Adds a user in an organization group
     """
-    req_ctx = _GroupsRequestContext.parse_obj(request)
+    req_ctx = _GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
     new_user_in_group = await request.json()
 
