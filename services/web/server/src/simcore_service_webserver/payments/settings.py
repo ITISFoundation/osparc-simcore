@@ -9,6 +9,7 @@ from pydantic import (
     PositiveInt,
     SecretStr,
     TypeAdapter,
+    ValidationInfo,
     field_validator,
 )
 from settings_library.base import BaseCustomSettings
@@ -101,8 +102,8 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
 
     @field_validator("PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT")
     @classmethod
-    def _monthly_limit_greater_than_top_up(cls, v, values):
-        top_up = values["PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT"]
+    def _monthly_limit_greater_than_top_up(cls, v, info: ValidationInfo):
+        top_up = info.data["PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT"]
         if v < 2 * top_up:
             msg = "PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT (={v}) should be at least twice PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT ({top_up})"
             raise ValueError(msg)
