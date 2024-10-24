@@ -97,9 +97,8 @@ fastapi==0.115.3
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
-    #   fastapi-pagination
     #   prometheus-fastapi-instrumentator
-fastapi-pagination==0.12.21
+fastapi-pagination==0.12.31
     # via -r requirements/_base.in
 faststream==0.5.10
     # via -r requirements/../../../packages/service-library/requirements/_base.in
