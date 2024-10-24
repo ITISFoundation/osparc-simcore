@@ -43,7 +43,8 @@ async def list_project_comments(
         ProjectsCommentsDB
     ] = await db.list_project_comments(project_uuid, offset, limit)
     projects_comments_api_model = [
-        ProjectsCommentsAPI(**comment.dict()) for comment in projects_comments_db_model
+        ProjectsCommentsAPI(**comment.model_dump())
+        for comment in projects_comments_db_model
     ]
     return projects_comments_api_model
 
@@ -70,7 +71,7 @@ async def update_project_comment(
         comment_id, project_uuid, contents
     )
     projects_comments_api_model = ProjectsCommentsAPI(
-        **projects_comments_db_model.dict()
+        **projects_comments_db_model.model_dump()
     )
     return projects_comments_api_model
 
@@ -90,6 +91,6 @@ async def get_project_comment(
         comment_id
     )
     projects_comments_api_model = ProjectsCommentsAPI(
-        **projects_comments_db_model.dict()
+        **projects_comments_db_model.model_dump()
     )
     return projects_comments_api_model

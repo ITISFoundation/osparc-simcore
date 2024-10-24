@@ -44,7 +44,7 @@ def _handle_tokens_errors(handler: Handler):
 @_handle_tokens_errors
 @permission_required("user.tokens.*")
 async def list_tokens(request: web.Request) -> web.Response:
-    req_ctx = UsersRequestContext.parse_obj(request)
+    req_ctx = UsersRequestContext.model_validate(request)
     all_tokens = await _tokens.list_tokens(request.app, req_ctx.user_id)
     return envelope_json_response(all_tokens)
 
@@ -54,7 +54,7 @@ async def list_tokens(request: web.Request) -> web.Response:
 @_handle_tokens_errors
 @permission_required("user.tokens.*")
 async def create_token(request: web.Request) -> web.Response:
-    req_ctx = UsersRequestContext.parse_obj(request)
+    req_ctx = UsersRequestContext.model_validate(request)
     token_create = await parse_request_body_as(TokenCreate, request)
     await _tokens.create_token(request.app, req_ctx.user_id, token_create)
     return envelope_json_response(token_create, web.HTTPCreated)
@@ -69,7 +69,7 @@ class _TokenPathParams(BaseModel):
 @_handle_tokens_errors
 @permission_required("user.tokens.*")
 async def get_token(request: web.Request) -> web.Response:
-    req_ctx = UsersRequestContext.parse_obj(request)
+    req_ctx = UsersRequestContext.model_validate(request)
     req_path_params = parse_request_path_parameters_as(_TokenPathParams, request)
     token = await _tokens.get_token(
         request.app, req_ctx.user_id, req_path_params.service
@@ -82,7 +82,7 @@ async def get_token(request: web.Request) -> web.Response:
 @_handle_tokens_errors
 @permission_required("user.tokens.*")
 async def delete_token(request: web.Request) -> web.Response:
-    req_ctx = UsersRequestContext.parse_obj(request)
+    req_ctx = UsersRequestContext.model_validate(request)
     req_path_params = parse_request_path_parameters_as(_TokenPathParams, request)
     await _tokens.delete_token(request.app, req_ctx.user_id, req_path_params.service)
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

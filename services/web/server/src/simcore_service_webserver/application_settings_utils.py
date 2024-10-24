@@ -10,6 +10,7 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from common_library.pydantic_fields_extension import get_type, is_nullable
 from pydantic.types import SecretStr
 from servicelib.aiohttp.typing_extension import Handler
 
@@ -200,10 +201,10 @@ def convert_to_environ_vars(  # noqa: C901, PLR0915, PLR0912
     def _set_if_disabled(field_name, section):
         # Assumes that by default is enabled
         enabled = section.get("enabled", True)
-        field = ApplicationSettings.__fields__[field_name]
+        field = ApplicationSettings.model_fields[field_name]
         if not enabled:
-            envs[field_name] = "null" if field.allow_none else "0"
-        elif field.type_ == bool:
+            envs[field_name] = "null" if is_nullable(field) else "0"
+        elif get_type(field) == bool:
             envs[field_name] = "1"
 
     if main := cfg.get("main"):

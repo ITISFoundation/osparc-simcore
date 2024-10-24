@@ -2,7 +2,6 @@ from functools import cached_property
 
 from aiohttp import web
 from models_library.basic_types import PortInt, VersionTag
-from pydantic import parse_obj_as
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT, MixinServiceSettings
 from yarl import URL
@@ -12,8 +11,8 @@ from .._constants import APP_SETTINGS_KEY
 
 class StorageSettings(BaseCustomSettings, MixinServiceSettings):
     STORAGE_HOST: str = "storage"
-    STORAGE_PORT: PortInt = parse_obj_as(PortInt, DEFAULT_AIOHTTP_PORT)
-    STORAGE_VTAG: VersionTag = parse_obj_as(VersionTag, "v0")
+    STORAGE_PORT: PortInt = DEFAULT_AIOHTTP_PORT
+    STORAGE_VTAG: VersionTag = "v0"
 
     @cached_property
     def base_url(self) -> URL:

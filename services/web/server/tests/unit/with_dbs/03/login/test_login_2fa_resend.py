@@ -6,7 +6,6 @@
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from pydantic import parse_obj_as
 from pytest_mock import MockFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -29,7 +28,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
         },
     )
 
-    print(ApplicationSettings.create_from_envs().json(indent=2))
+    print(ApplicationSettings.create_from_envs().model_dump_json(indent=2))
 
     return {**app_environment, **envs_login}
 
@@ -106,7 +105,7 @@ async def test_resend_2fa_workflow(
         },
     )
     data, _ = await assert_status(response, status.HTTP_202_ACCEPTED)
-    next_page = parse_obj_as(NextPage[CodePageParams], data)
+    next_page = NextPage[CodePageParams].model_validate(data)
     assert next_page.name == CODE_2FA_SMS_CODE_REQUIRED
     assert next_page.parameters.expiration_2fa > 0
 

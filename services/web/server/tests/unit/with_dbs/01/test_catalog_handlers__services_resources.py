@@ -13,7 +13,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -32,9 +32,8 @@ def mock_catalog_service_api_responses(
 
     url_pattern = re.compile(f"^{settings.base_url}+/.+$")
 
-    service_resources = parse_obj_as(
-        ServiceResourcesDict,
-        ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
+    service_resources = TypeAdapter(ServiceResourcesDict).validate_python(
+        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
     )
     jsonable_service_resources = ServiceResourcesDictHelpers.create_jsonable(
         service_resources

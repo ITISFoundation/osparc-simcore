@@ -6,11 +6,12 @@
 """
 
 import json
-from typing import Literal, TypedDict
+from typing import Literal
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
+from typing_extensions import TypedDict
 
 from .base import metadata
 from .groups import groups

@@ -17,7 +17,7 @@ DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
 
 
 def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
-    # print( ApplicationSettings.create_from_envs().json(indent=1 )
+    # print( ApplicationSettings.create_from_envs().model_dump_json((indent=1 )
 
     return app_environment | setenvs_from_dict(
         monkeypatch,

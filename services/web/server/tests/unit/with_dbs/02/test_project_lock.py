@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from models_library.users import UserID
-from pydantic import parse_raw_as
+from pydantic import TypeAdapter
 from simcore_service_webserver.projects.exceptions import ProjectLockError
 from simcore_service_webserver.projects.lock import (
     PROJECT_REDIS_LOCK_KEY,
@@ -51,7 +51,7 @@ async def test_lock_project(
             PROJECT_REDIS_LOCK_KEY.format(project_uuid)
         )
         assert redis_value
-        lock_value = parse_raw_as(ProjectLocked, redis_value)
+        lock_value = TypeAdapter(ProjectLocked).validate_json(redis_value)
         assert lock_value == ProjectLocked(
             value=True,
             owner=Owner(user_id=user_id, **user_fullname),
@@ -137,7 +137,7 @@ async def test_is_project_locked(
     faker: Faker,
 ):
     assert client.app
-    assert await is_project_locked(client.app, project_uuid) == False
+    assert await is_project_locked(client.app, project_uuid) is False
     user_name: FullNameDict = {
         "first_name": faker.first_name(),
         "last_name": faker.last_name(),
@@ -149,7 +149,7 @@ async def test_is_project_locked(
         user_id=user_id,
         user_fullname=user_name,
     ):
-        assert await is_project_locked(client.app, project_uuid) == True
+        assert await is_project_locked(client.app, project_uuid) is True
 
 
 @pytest.mark.parametrize(
@@ -170,9 +170,9 @@ async def test_get_project_locked_state(
 ):
     assert client.app
     # no lock
-    assert await get_project_locked_state(client.app, project_uuid) == None
+    assert await get_project_locked_state(client.app, project_uuid) is None
 
-    assert await is_project_locked(client.app, project_uuid) == False
+    assert await is_project_locked(client.app, project_uuid) is False
     user_name: FullNameDict = {
         "first_name": faker.first_name(),
         "last_name": faker.last_name(),

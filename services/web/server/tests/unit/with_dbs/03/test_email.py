@@ -136,10 +136,10 @@ async def test_email_handlers(
         assert error is None
 
         with pytest.raises(ValidationError):
-            EmailTestFailed.parse_obj(data)
+            EmailTestFailed.model_validate(data)
 
-        passed = EmailTestPassed.parse_obj(data)
-        print(passed.json(indent=1))
+        passed = EmailTestPassed.model_validate(data)
+        print(passed.model_dump_json(indent=1))
 
 
 class IndexParser(HTMLParser):

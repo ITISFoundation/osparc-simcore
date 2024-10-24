@@ -106,7 +106,7 @@ async def test_add_new_project_from_model_instance(
             project_id=project_id,
             service_id=viewer_id,
             owner=user,
-            service_info=ServiceInfo.parse_obj(viewer_info),
+            service_info=ServiceInfo.model_validate(viewer_info),
         )
     else:
         project = _create_project_with_filepicker_and_service(

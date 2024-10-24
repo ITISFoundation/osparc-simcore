@@ -32,7 +32,7 @@ class _RequestContext(RequestParams):
 @login_required
 @permission_required("user.apikey.*")
 async def list_api_keys(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     api_keys_names = await _api.list_api_keys(
         request.app,
         user_id=req_ctx.user_id,
@@ -45,7 +45,7 @@ async def list_api_keys(request: web.Request):
 @login_required
 @permission_required("user.apikey.*")
 async def create_api_key(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     new = await parse_request_body_as(ApiKeyCreate, request)
     try:
         data = await _api.create_api_key(
@@ -67,7 +67,7 @@ async def create_api_key(request: web.Request):
 @login_required
 @permission_required("user.apikey.*")
 async def delete_api_key(request: web.Request):
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
 
     # NOTE: SEE https://github.com/ITISFoundation/osparc-simcore/issues/4920
     body = await request.json()

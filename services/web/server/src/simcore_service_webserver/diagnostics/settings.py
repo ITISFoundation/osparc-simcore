@@ -1,5 +1,12 @@
 from aiohttp.web import Application
-from pydantic import Field, NonNegativeFloat, PositiveFloat, validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    NonNegativeFloat,
+    PositiveFloat,
+    ValidationInfo,
+    field_validator,
+)
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
 
@@ -11,7 +18,9 @@ class DiagnosticsSettings(BaseCustomSettings):
             "Any task blocked more than slow_duration_secs is logged as WARNING"
             "Aims to identify possible blocking calls"
         ),
-        env=["DIAGNOSTICS_SLOW_DURATION_SECS", "AIODEBUG_SLOW_DURATION_SECS"],
+        validation_alias=AliasChoices(
+            "DIAGNOSTICS_SLOW_DURATION_SECS", "AIODEBUG_SLOW_DURATION_SECS"
+        ),
     )
 
     DIAGNOSTICS_HEALTHCHECK_ENABLED: bool = Field(
@@ -32,13 +41,13 @@ class DiagnosticsSettings(BaseCustomSettings):
 
     DIAGNOSTICS_START_SENSING_DELAY: NonNegativeFloat = 60.0
 
-    @validator("DIAGNOSTICS_MAX_TASK_DELAY", pre=True)
+    @field_validator("DIAGNOSTICS_MAX_TASK_DELAY", mode="before")
     @classmethod
-    def _validate_max_task_delay(cls, v, values):
+    def _validate_max_task_delay(cls, v, info: ValidationInfo):
         # Sets an upper threshold for blocking functions, i.e.
         # settings.DIAGNOSTICS_SLOW_DURATION_SECS  < settings.DIAGNOSTICS_MAX_TASK_DELAY
         #
-        slow_duration_secs = float(values["DIAGNOSTICS_SLOW_DURATION_SECS"])
+        slow_duration_secs = float(info.data["DIAGNOSTICS_SLOW_DURATION_SECS"])
         return max(
             10 * slow_duration_secs,
             float(v),

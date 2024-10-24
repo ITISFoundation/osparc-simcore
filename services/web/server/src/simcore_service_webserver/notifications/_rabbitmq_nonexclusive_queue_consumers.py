@@ -28,7 +28,7 @@ async def _instrumentation_message_parser(app: web.Application, data: bytes) -> 
         service_started(
             app,
             **{
-                key: rabbit_message.dict()[key]
+                key: rabbit_message.model_dump()[key]
                 for key in MONITOR_SERVICE_STARTED_LABELS
             },
         )
@@ -36,7 +36,7 @@ async def _instrumentation_message_parser(app: web.Application, data: bytes) -> 
         service_stopped(
             app,
             **{
-                key: rabbit_message.dict()[key]
+                key: rabbit_message.model_dump()[key]
                 for key in MONITOR_SERVICE_STOPPED_LABELS
             },
         )

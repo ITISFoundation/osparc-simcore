@@ -22,7 +22,7 @@ async def create_tag(
         read=True,
         write=True,
         delete=True,
-        **new_tag.dict(exclude_unset=True),
+        **new_tag.model_dump(exclude_unset=True),
     )
     return TagGet.from_db(tag)
 
@@ -46,7 +46,7 @@ async def update_tag(
     tag = await repo.update(
         user_id=user_id,
         tag_id=tag_id,
-        **tag_updates.dict(exclude_unset=True),
+        **tag_updates.model_dump(exclude_unset=True),
     )
     return TagGet.from_db(tag)
 

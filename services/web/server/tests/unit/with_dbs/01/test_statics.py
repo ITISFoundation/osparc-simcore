@@ -68,7 +68,7 @@ def client(
     app = create_safe_application(cfg)
 
     settings = setup_settings(app)
-    print(settings.json(indent=1))
+    print(settings.model_dump_json(indent=1))
 
     setup_rest(app)
     setup_db(app)

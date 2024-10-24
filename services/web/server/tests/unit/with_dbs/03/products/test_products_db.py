@@ -138,9 +138,9 @@ async def test_product_repository_get_product(
     }
 
     # check RowProxy -> pydantic's Product
-    product = Product.from_orm(product_row)
+    product = Product.model_validate(product_row)
 
-    print(product.json(indent=1))
+    print(product.model_dump_json(indent=1))
 
     # product repo
     assert product_repository.engine

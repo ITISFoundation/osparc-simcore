@@ -6,7 +6,7 @@ from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
 from models_library.payments import UserInvoiceAddress
 from models_library.users import UserBillingDetails, UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.users import UserStatus
 
 from ..db.plugin import get_database_engine
@@ -50,7 +50,7 @@ async def get_user_credentials(
     )
 
     return UserCredentialsTuple(
-        email=parse_obj_as(LowerCaseEmailStr, row.email),
+        email=TypeAdapter(LowerCaseEmailStr).validate_python(row.email),
         password_hash=row.password_hash,
         display_name=row.first_name or row.name.capitalize(),
     )
@@ -116,7 +116,7 @@ async def pre_register_user(
     if found:
         raise AlreadyPreRegisteredError(num_found=len(found), email=profile.email)
 
-    details = profile.dict(
+    details = profile.model_dump(
         include={
             "first_name",
             "last_name",

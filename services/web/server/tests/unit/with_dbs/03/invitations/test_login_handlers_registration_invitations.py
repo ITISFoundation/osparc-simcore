@@ -48,11 +48,11 @@ async def test_check_registration_invitation_when_not_required(
 
     response = await client.post(
         "/v0/auth/register/invitations:check",
-        json=InvitationCheck(invitation="*" * 100).dict(),
+        json=InvitationCheck(invitation="*" * 100).model_dump(),
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
 
-    invitation = InvitationInfo.parse_obj(data)
+    invitation = InvitationInfo.model_validate(data)
     assert invitation.email is None
 
 
@@ -70,11 +70,11 @@ async def test_check_registration_invitations_with_old_code(
 
     response = await client.post(
         "/v0/auth/register/invitations:check",
-        json=InvitationCheck(invitation="short-code").dict(),
+        json=InvitationCheck(invitation="short-code").model_dump(),
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
 
-    invitation = InvitationInfo.parse_obj(data)
+    invitation = InvitationInfo.model_validate(data)
     assert invitation.email is None
 
 
@@ -96,11 +96,11 @@ async def test_check_registration_invitation_and_get_email(
 
     response = await client.post(
         "/v0/auth/register/invitations:check",
-        json=InvitationCheck(invitation="*" * 105).dict(),
+        json=InvitationCheck(invitation="*" * 105).model_dump(),
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
 
-    invitation = InvitationInfo.parse_obj(data)
+    invitation = InvitationInfo.model_validate(data)
     assert invitation.email == fake_osparc_invitation.guest
 
 

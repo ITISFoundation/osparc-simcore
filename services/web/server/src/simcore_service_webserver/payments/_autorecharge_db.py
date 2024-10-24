@@ -6,7 +6,7 @@ from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.basic_types import NonNegativeDecimal
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, PositiveInt
+from pydantic import BaseModel, ConfigDict, PositiveInt
 from simcore_postgres_database.utils_payments_autorecharge import AutoRechargeStmts
 
 from ..db.plugin import get_database_engine
@@ -24,9 +24,7 @@ class PaymentsAutorechargeDB(BaseModel):
     primary_payment_method_id: PaymentMethodID
     top_up_amount_in_usd: NonNegativeDecimal
     monthly_limit_in_usd: NonNegativeDecimal | None
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 async def get_wallet_autorecharge(

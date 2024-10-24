@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
-from pydantic import BaseModel, Extra, validator
+from pydantic import ConfigDict, BaseModel, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
@@ -41,13 +41,11 @@ routes = web.RouteTableDef()
 class _ProjectsFoldersPathParams(BaseModel):
     project_id: ProjectID
     folder_id: FolderID | None
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     # validators
-    _null_or_none_str_to_none_validator = validator(
-        "folder_id", allow_reuse=True, pre=True
+    _null_or_none_str_to_none_validator = field_validator(
+        "folder_id", mode="before"
     )(null_or_none_str_to_none_validator)
 
 
@@ -59,7 +57,7 @@ class _ProjectsFoldersPathParams(BaseModel):
 @permission_required("project.folders.*")
 @_handle_projects_folders_exceptions
 async def replace_project_folder(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectsFoldersPathParams, request)
 
     await _folders_api.move_project_into_folder(

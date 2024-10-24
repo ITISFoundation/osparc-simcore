@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from models_library.workspaces import UserWorkspaceAccessRightsDB, WorkspaceID
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel
 
 from ..users import api as users_api
 from . import _groups_db as workspaces_groups_db
@@ -56,7 +56,7 @@ async def create_workspace_group(
         )
     )
     workspace_group_api: WorkspaceGroupGet = WorkspaceGroupGet(
-        **workspace_group_db.dict()
+        **workspace_group_db.model_dump()
     )
 
     return workspace_group_api
@@ -84,7 +84,7 @@ async def list_workspace_groups_by_user_and_workspace(
     )
 
     workspace_groups_api: list[WorkspaceGroupGet] = [
-        parse_obj_as(WorkspaceGroupGet, group) for group in workspace_groups_db
+        WorkspaceGroupGet.model_validate(group) for group in workspace_groups_db
     ]
 
     return workspace_groups_api
@@ -102,7 +102,7 @@ async def list_workspace_groups_with_read_access_by_workspace(
     )
 
     workspace_groups_api: list[WorkspaceGroupGet] = [
-        parse_obj_as(WorkspaceGroupGet, group)
+        WorkspaceGroupGet.model_validate(group)
         for group in workspace_groups_db
         if group.read is True
     ]
@@ -147,7 +147,9 @@ async def update_workspace_group(
         )
     )
 
-    workspace_api: WorkspaceGroupGet = WorkspaceGroupGet(**workspace_group_db.dict())
+    workspace_api: WorkspaceGroupGet = WorkspaceGroupGet(
+        **workspace_group_db.model_dump()
+    )
     return workspace_api
 
 

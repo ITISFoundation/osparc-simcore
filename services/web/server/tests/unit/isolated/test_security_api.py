@@ -17,7 +17,7 @@ from aiohttp.web import RouteTableDef
 from aiohttp_session import get_session
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
@@ -167,7 +167,7 @@ def app_routes(
     async def _login(request: web.Request):
         product_name = await _get_product_name(request)
         body = await request.json()
-        email = parse_obj_as(LowerCaseEmailStr, body["email"])
+        email = TypeAdapter(LowerCaseEmailStr).validate_python(body["email"])
 
         # Permission in this product: Has user access to product?
         if product_name not in registered_users[email]["registered_products"]:
@@ -219,7 +219,7 @@ def client(
 
     # mocks 'setup_session': patch to avoid setting up all ApplicationSettings
     session_settings = SessionSettings.create_from_envs()
-    print(session_settings.json(indent=1))
+    print(session_settings.model_dump_json(indent=1))
     mocker.patch(
         "simcore_service_webserver.session.plugin.get_plugin_settings",
         autospec=True,

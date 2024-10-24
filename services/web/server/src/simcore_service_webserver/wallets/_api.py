@@ -13,7 +13,7 @@ from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletDB, WalletID, WalletStatus
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from ..resource_usage.api import get_wallet_total_available_credits
 from ..users import api as users_api
@@ -42,7 +42,7 @@ async def create_wallet(
         thumbnail=thumbnail,
         product_name=product_name,
     )
-    wallet_api: WalletGet = parse_obj_as(WalletGet, wallet_db)
+    wallet_api: WalletGet = WalletGet.model_validate(wallet_db)
     return wallet_api
 
 
@@ -122,7 +122,9 @@ async def get_user_default_wallet_with_available_credits(
     )
     if user_default_wallet_preference is None:
         raise UserDefaultWalletNotFoundError(uid=user_id)
-    default_wallet_id = parse_obj_as(WalletID, user_default_wallet_preference.value)
+    default_wallet_id = TypeAdapter(WalletID).validate_python(
+        user_default_wallet_preference.value
+    )
     return await get_wallet_with_available_credits_by_user_and_wallet(
         app, user_id=user_id, wallet_id=default_wallet_id, product_name=product_name
     )
@@ -136,7 +138,7 @@ async def list_wallets_for_user(
     user_wallets: list[UserWalletDB] = await db.list_wallets_for_user(
         app=app, user_id=user_id, product_name=product_name
     )
-    return parse_obj_as(list[WalletGet], user_wallets)
+    return TypeAdapter(list[WalletGet]).validate_python(user_wallets)
 
 
 async def any_wallet_owned_by_user(
@@ -178,7 +180,7 @@ async def update_wallet(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.dict(
+            user_acces_rights_on_wallet=wallet.model_dump(
                 include={"read", "write", "delete"}
             ),
         )
@@ -193,7 +195,7 @@ async def update_wallet(
         product_name=product_name,
     )
 
-    wallet_api: WalletGet = parse_obj_as(WalletGet, wallet_db)
+    wallet_api: WalletGet = WalletGet.model_validate(wallet_db)
     return wallet_api
 
 
@@ -212,7 +214,7 @@ async def delete_wallet(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.dict(
+            user_acces_rights_on_wallet=wallet.model_dump(
                 include={"read", "write", "delete"}
             ),
         )
@@ -235,7 +237,7 @@ async def get_wallet_by_user(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.dict(
+            user_acces_rights_on_wallet=wallet.model_dump(
                 include={"read", "write", "delete"}
             ),
         )
@@ -263,5 +265,5 @@ async def get_wallet_with_permissions_by_user(
         app=app, user_id=user_id, wallet_id=wallet_id, product_name=product_name
     )
 
-    permissions: WalletGetPermissions = parse_obj_as(WalletGetPermissions, wallet)
+    permissions: WalletGetPermissions = WalletGetPermissions.model_validate(wallet)
     return permissions

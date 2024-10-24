@@ -45,7 +45,8 @@ async def add_tag(
             )
         )
         project["accessRights"] = {
-            gid: access.dict() for gid, access in workspace_db.access_rights.items()
+            gid: access.model_dump()
+            for gid, access in workspace_db.access_rights.items()
         }
 
     return project
@@ -79,7 +80,8 @@ async def remove_tag(
             )
         )
         project["accessRights"] = {
-            gid: access.dict() for gid, access in workspace_db.access_rights.items()
+            gid: access.model_dump()
+            for gid, access in workspace_db.access_rights.items()
         }
 
     return project

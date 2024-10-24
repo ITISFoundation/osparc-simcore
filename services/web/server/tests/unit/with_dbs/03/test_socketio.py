@@ -46,7 +46,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
         },
     )
 
-    print(ApplicationSettings.create_from_envs().json(indent=1))
+    print(ApplicationSettings.create_from_envs().model_dump_json(indent=1))
 
     return app_environment | overrides
 

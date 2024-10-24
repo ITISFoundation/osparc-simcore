@@ -11,7 +11,7 @@ from aiohttp import web
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
 from sqlalchemy import func, literal_column
 from sqlalchemy.sql import select
@@ -56,7 +56,7 @@ async def insert_project_to_folder(
             .returning(literal_column("*"))
         )
         row = await result.first()
-        return parse_obj_as(ProjectToFolderDB, row)
+        return ProjectToFolderDB.model_validate(row)
 
 
 async def get_project_to_folder(
@@ -81,7 +81,7 @@ async def get_project_to_folder(
         row = await result.first()
         if row is None:
             return None
-        return parse_obj_as(ProjectToFolderDB, row)
+        return ProjectToFolderDB.model_validate(row)
 
 
 async def delete_project_to_folder(

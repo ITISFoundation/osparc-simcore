@@ -6,7 +6,7 @@ from aiopg.sa.engine import Engine
 from models_library.api_schemas_webserver.projects_metadata import MetadataDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_postgres_database import utils_projects_metadata
 from simcore_postgres_database.utils_projects_metadata import (
     DBProjectInvalidAncestorsError,
@@ -84,7 +84,7 @@ async def get_project_custom_metadata(
             connection, project_uuid=project_uuid
         )
         # NOTE: if no metadata in table, it returns None  -- which converts here to --> {}
-        return parse_obj_as(MetadataDict, metadata.custom or {})
+        return TypeAdapter(MetadataDict).validate_python(metadata.custom or {})
 
 
 @_handle_projects_metadata_exceptions
@@ -104,7 +104,7 @@ async def set_project_custom_metadata(
             custom_metadata=custom_metadata,
         )
 
-        return parse_obj_as(MetadataDict, metadata.custom)
+        return TypeAdapter(MetadataDict).validate_python(metadata.custom)
 
 
 @_handle_projects_metadata_exceptions

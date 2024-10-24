@@ -38,7 +38,7 @@ from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.products import ProductName
 from models_library.services_enums import ServiceState
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -369,7 +369,7 @@ async def storage_subsystem_mock(mocker: MockerFixture) -> MockedStorageSubsyste
     mock3 = mocker.patch(
         "simcore_service_webserver.projects._crud_api_create.get_project_total_size_simcore_s3",
         autospec=True,
-        return_value=parse_obj_as(ByteSize, "1Gib"),
+        return_value=ByteSize("1Gib"),
     )
 
     return MockedStorageSubsystem(mock, mock1, mock2, mock3)

@@ -6,7 +6,7 @@ from typing import cast
 
 from aiohttp import ClientSession, ClientTimeout, web
 from models_library.basic_types import VersionTag
-from pydantic import Field, PositiveInt
+from pydantic import AliasChoices, Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_CLIENT_SESSION_KEY
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt
@@ -36,9 +36,9 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
     DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT: PositiveInt = Field(
         1 * _MINUTE,
         description="timeout of containers restart",
-        envs=[
+        validation_alias=AliasChoices(
             "DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT",
-        ],
+        ),
     )
 
     DIRECTOR_V2_STORAGE_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT: PositiveInt = Field(
@@ -49,9 +49,9 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
             "such payloads it is required to have long timeouts which "
             "allow the service to finish the operation."
         ),
-        envs=[
+        validation_alias=AliasChoices(
             "DIRECTOR_V2_DYNAMIC_SERVICE_DATA_UPLOAD_DOWNLOAD_TIMEOUT",
-        ],
+        ),
     )
 
     def get_service_retrieve_timeout(self) -> ClientTimeout:

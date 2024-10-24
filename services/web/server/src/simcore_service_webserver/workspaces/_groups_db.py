@@ -9,7 +9,7 @@ from datetime import datetime
 from aiohttp import web
 from models_library.users import GroupID
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,
 )
@@ -31,9 +31,7 @@ class WorkspaceGroupGetDB(BaseModel):
     delete: bool
     created: datetime
     modified: datetime
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 ## DB API

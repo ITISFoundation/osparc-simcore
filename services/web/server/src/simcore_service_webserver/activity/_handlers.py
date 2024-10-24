@@ -4,7 +4,7 @@ from collections import defaultdict
 import aiohttp
 import aiohttp.web
 from models_library.api_schemas_webserver.activity import ActivityStatusDict
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
@@ -73,5 +73,5 @@ async def get_activity_status(request: aiohttp.web.Request):
     if not res:
         raise aiohttp.web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
 
-    assert parse_obj_as(ActivityStatusDict, res) is not None  # nosec
+    assert TypeAdapter(ActivityStatusDict).validate_python(res) is not None  # nosec
     return dict(res)

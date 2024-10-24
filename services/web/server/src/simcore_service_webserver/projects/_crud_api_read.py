@@ -53,11 +53,11 @@ async def _append_fields(
     # replace project access rights (if project is in workspace)
     if workspace_access_rights:
         project["accessRights"] = {
-            gid: access.dict() for gid, access in workspace_access_rights.items()
+            gid: access.model_dump() for gid, access in workspace_access_rights.items()
         }
 
     # validate
-    return model_schema_cls.parse_obj(project).data(exclude_unset=True)
+    return model_schema_cls.model_validate(project).data(exclude_unset=True)
 
 
 async def list_projects(  # pylint: disable=too-many-arguments

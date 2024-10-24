@@ -7,7 +7,7 @@ import json
 import pytest
 from aiohttp import web
 from models_library.utils.json_serialization import json_dumps
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import HttpUrl, TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
@@ -25,7 +25,7 @@ def app_settings(
     # init and validation happens here
     settings = setup_settings(app)
     print("envs\n", json.dumps(mock_webserver_service_environment, indent=1))
-    print("settings:\n", settings.json(indent=1))
+    print("settings:\n", settings.model_dump_json(indent=1))
 
     assert APP_SETTINGS_KEY in app
     assert app[APP_SETTINGS_KEY] == settings
@@ -97,7 +97,7 @@ def test_settings_to_client_statics_plugins(
     )
 
     assert statics["vcsReleaseTag"]
-    assert parse_obj_as(HttpUrl, statics["vcsReleaseUrl"])
+    assert TypeAdapter(HttpUrl).validate_python(statics["vcsReleaseUrl"])
 
     assert set(statics["pluginsDisabled"]) == (disable_plugins | {"WEBSERVER_CLUSTERS"})
 

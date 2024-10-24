@@ -494,7 +494,7 @@ async def test_registraton_with_invitation_for_trial_account(
         url = client.app.router["get_my_profile"].url_for()
         response = await client.get(url.path)
         data, _ = await assert_status(response, status.HTTP_200_OK)
-        profile = ProfileGet.parse_obj(data)
+        profile = ProfileGet.model_validate(data)
 
         expected = invitation.user["created_at"] + timedelta(days=TRIAL_DAYS)
         assert profile.expiration_date

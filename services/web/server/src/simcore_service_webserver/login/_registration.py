@@ -19,9 +19,9 @@ from pydantic import (
     Field,
     Json,
     PositiveInt,
+    TypeAdapter,
     ValidationError,
-    parse_obj_as,
-    validator,
+    field_validator,
 )
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -78,7 +78,7 @@ class _InvitationValidator(BaseModel):
     action: ConfirmationAction
     data: Json[InvitationData]  # pylint: disable=unsubscriptable-object
 
-    @validator("action", pre=True)
+    @field_validator("action", mode="before")
     @classmethod
     def ensure_enum(cls, v):
         if isinstance(v, ConfirmationAction):
@@ -256,7 +256,7 @@ async def extract_email_from_invitation(
     """Returns associated email"""
     with _invitations_request_context(invitation_code=invitation_code) as url:
         content = await extract_invitation(app, invitation_url=f"{url}")
-        return parse_obj_as(LowerCaseEmailStr, content.guest)
+        return TypeAdapter(LowerCaseEmailStr).validate_python(content.guest)
 
 
 async def check_and_consume_invitation(
@@ -286,7 +286,8 @@ async def check_and_consume_invitation(
             )
 
             _logger.info(
-                "Consuming invitation from service:\n%s", content.json(indent=1)
+                "Consuming invitation from service:\n%s",
+                content.model_dump_json(indent=1),
             )
             return InvitationData(
                 issuer=content.issuer,
@@ -299,7 +300,7 @@ async def check_and_consume_invitation(
     # database-type invitations
     if confirmation_token := await validate_confirmation_code(invitation_code, db, cfg):
         try:
-            invitation_data: InvitationData = _InvitationValidator.parse_obj(
+            invitation_data: InvitationData = _InvitationValidator.model_validate(
                 confirmation_token
             ).data
             return invitation_data

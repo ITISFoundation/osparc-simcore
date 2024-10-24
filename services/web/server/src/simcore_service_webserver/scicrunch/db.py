@@ -53,12 +53,12 @@ class ResearchResourceRepository:
     async def get_resource(self, rrid: str) -> ResearchResource | None:
         resource: ResearchResourceAtdB | None = await self.get(rrid)
         if resource:
-            return ResearchResource(**resource.dict())
+            return ResearchResource(**resource.model_dump())
         return resource
 
     async def upsert(self, resource: ResearchResource):
         async with self._engine.acquire() as conn:
-            values = resource.dict(exclude_unset=True)
+            values = resource.model_dump(exclude_unset=True)
 
             stmt = (
                 sa_pg_insert(scicrunch_resources)

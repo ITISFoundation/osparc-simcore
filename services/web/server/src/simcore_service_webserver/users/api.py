@@ -16,7 +16,7 @@ from aiopg.sa.result import RowProxy
 from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
-from pydantic import EmailStr, ValidationError, parse_obj_as
+from pydantic import EmailStr, TypeAdapter, ValidationError
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesNotFoundError,
@@ -38,7 +38,7 @@ _logger = logging.getLogger(__name__)
 
 def _parse_as_user(user_id: Any) -> UserID:
     try:
-        return parse_obj_as(UserID, user_id)
+        return TypeAdapter(UserID).validate_python(user_id)
     except ValidationError as err:
         raise UserNotFoundError(uid=user_id) from err
 
@@ -159,7 +159,7 @@ async def update_user_profile(
     user_id = _parse_as_user(user_id)
 
     async with get_database_engine(app).acquire() as conn:
-        to_update = update.dict(
+        to_update = update.model_dump(
             include={
                 "first_name",
                 "last_name",

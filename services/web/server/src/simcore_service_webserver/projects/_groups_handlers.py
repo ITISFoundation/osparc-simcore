@@ -8,7 +8,7 @@ import logging
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import GroupID
-from pydantic import BaseModel, Extra
+from pydantic import ConfigDict, BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -53,18 +53,14 @@ routes = web.RouteTableDef()
 class _ProjectsGroupsPathParams(BaseModel):
     project_id: ProjectID
     group_id: GroupID
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class _ProjectsGroupsBodyParams(BaseModel):
     read: bool
     write: bool
     delete: bool
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.post(
@@ -74,7 +70,7 @@ class _ProjectsGroupsBodyParams(BaseModel):
 @permission_required("project.access_rights.update")
 @_handle_projects_groups_exceptions
 async def create_project_group(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
     body_params = await parse_request_body_as(_ProjectsGroupsBodyParams, request)
 
@@ -97,7 +93,7 @@ async def create_project_group(request: web.Request):
 @permission_required("project.read")
 @_handle_projects_groups_exceptions
 async def list_project_groups(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     project_groups: list[
@@ -120,7 +116,7 @@ async def list_project_groups(request: web.Request):
 @permission_required("project.access_rights.update")
 @_handle_projects_groups_exceptions
 async def replace_project_group(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
     body_params = await parse_request_body_as(_ProjectsGroupsBodyParams, request)
 
@@ -144,7 +140,7 @@ async def replace_project_group(request: web.Request):
 @permission_required("project.access_rights.update")
 @_handle_projects_groups_exceptions
 async def delete_project_group(request: web.Request):
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProjectsGroupsPathParams, request)
 
     await _groups_api.delete_project_group(

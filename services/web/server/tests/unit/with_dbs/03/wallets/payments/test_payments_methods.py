@@ -22,7 +22,7 @@ from models_library.api_schemas_webserver.wallets import (
 )
 from models_library.rest_pagination import Page
 from models_library.wallets import WalletID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
@@ -65,7 +65,7 @@ async def test_payment_method_worfklow(
     )
     data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
     assert error is None
-    inited = PaymentMethodInitiated.parse_obj(data)
+    inited = PaymentMethodInitiated.model_validate(data)
 
     assert inited.payment_method_id
     assert inited.payment_method_form_url.query
@@ -103,7 +103,7 @@ async def test_payment_method_worfklow(
     data, _ = await assert_status(response, status.HTTP_200_OK)
     assert mock_rpc_payments_service_api["list_payment_methods"].called
 
-    wallet_payments_methods = parse_obj_as(list[PaymentMethodGet], data)
+    wallet_payments_methods = TypeAdapter(list[PaymentMethodGet]).validate_python(data)
     assert wallet_payments_methods == [payment_method]
 
     # Delete
@@ -140,7 +140,7 @@ async def test_init_and_cancel_payment_method(
     )
     data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
     assert error is None
-    inited = PaymentMethodInitiated.parse_obj(data)
+    inited = PaymentMethodInitiated.model_validate(data)
 
     # cancel Create
     response = await client.post(
@@ -165,7 +165,7 @@ async def _add_payment_method(
     )
     data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
     assert error is None
-    inited = PaymentMethodInitiated.parse_obj(data)
+    inited = PaymentMethodInitiated.model_validate(data)
     await _ack_creation_of_wallet_payment_method(
         client.app,
         payment_method_id=inited.payment_method_id,
@@ -249,7 +249,7 @@ async def test_wallet_autorecharge(
     )
     data, error = await assert_status(response, expected_status)
     if not error:
-        updated_auto_recharge = GetWalletAutoRecharge.parse_obj(data)
+        updated_auto_recharge = GetWalletAutoRecharge.model_validate(data)
         assert updated_auto_recharge == GetWalletAutoRecharge(
             payment_method_id=payment_method_id,
             min_balance_in_credits=settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS,
@@ -263,12 +263,14 @@ async def test_wallet_autorecharge(
             f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
         )
         data, _ = await assert_status(response, status.HTTP_200_OK)
-        assert updated_auto_recharge == GetWalletAutoRecharge.parse_obj(data)
+        assert updated_auto_recharge == GetWalletAutoRecharge.model_validate(data)
 
         # payment-methods.auto_recharge
         response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
         data, _ = await assert_status(response, status.HTTP_200_OK)
-        wallet_payment_methods = parse_obj_as(list[PaymentMethodGet], data)
+        wallet_payment_methods = TypeAdapter(list[PaymentMethodGet]).validate_python(
+            data
+        )
 
         for payment_method in wallet_payment_methods:
             assert payment_method.auto_recharge == (
@@ -305,7 +307,7 @@ async def test_delete_primary_payment_method_in_autorecharge(
         },
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
-    auto_recharge = GetWalletAutoRecharge.parse_obj(data)
+    auto_recharge = GetWalletAutoRecharge.model_validate(data)
     assert auto_recharge.enabled is True
     assert auto_recharge.payment_method_id == payment_method_id
     assert auto_recharge.monthly_limit_in_usd == 123
@@ -321,7 +323,7 @@ async def test_delete_primary_payment_method_in_autorecharge(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
-    auto_recharge_after_delete = GetWalletAutoRecharge.parse_obj(data)
+    auto_recharge_after_delete = GetWalletAutoRecharge.model_validate(data)
 
     assert auto_recharge_after_delete.payment_method_id is None
     assert auto_recharge_after_delete.enabled is False
@@ -334,7 +336,7 @@ async def test_delete_primary_payment_method_in_autorecharge(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
-    auto_recharge = GetWalletAutoRecharge.parse_obj(data)
+    auto_recharge = GetWalletAutoRecharge.model_validate(data)
     assert auto_recharge.payment_method_id == new_payment_method_id
     assert auto_recharge.enabled is False
 
@@ -398,7 +400,7 @@ async def test_one_time_payment_with_payment_method(
     )
     data, error = await assert_status(response, expected_status)
     if not error:
-        payment = WalletPaymentInitiated.parse_obj(data)
+        payment = WalletPaymentInitiated.model_validate(data)
         assert mock_rpc_payments_service_api["pay_with_payment_method"].called
 
         assert payment.payment_id
@@ -417,7 +419,7 @@ async def test_one_time_payment_with_payment_method(
         response = await client.get("/v0/wallets/-/payments")
         data, error = await assert_status(response, status.HTTP_200_OK)
 
-        page = parse_obj_as(Page[PaymentTransaction], data)
+        page = Page[PaymentTransaction].model_validate(data)
 
         assert page.data
         assert page.meta.total == 1

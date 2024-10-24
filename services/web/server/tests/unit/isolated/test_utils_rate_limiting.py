@@ -10,8 +10,9 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aiohttp.web_exceptions import HTTPOk, HTTPTooManyRequests
-from pydantic import ValidationError, conint, parse_obj_as
+from pydantic import Field, TypeAdapter, ValidationError
 from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
+from typing_extensions import Annotated
 
 TOTAL_TEST_TIME = 1  # secs
 MAX_NUM_REQUESTS = 3
@@ -110,7 +111,7 @@ async def test_global_rate_limit_route(requests_per_second: float, client: TestC
     for t in tasks:
         if retry_after := t.result().headers.get("Retry-After"):
             try:
-                parse_obj_as(conint(ge=1), retry_after)
+                TypeAdapter(Annotated[int, Field(ge=1)]).validate_python(retry_after)
             except ValidationError as err:
                 failed.append((retry_after, f"{err}"))
     assert not failed

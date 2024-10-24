@@ -9,20 +9,19 @@
 """
 
 import logging
-import re
-from typing import Any, Final, Literal
+from typing import Annotated, Any, Final, Literal, TypeAlias
 
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
 from pydantic import (
     BaseModel,
-    ConstrainedStr,
     Field,
     HttpUrl,
+    StringConstraints,
+    TypeAdapter,
     ValidationError,
-    parse_obj_as,
-    validator,
+    field_validator,
 )
 from simcore_postgres_database.models.classifiers import group_classifiers
 
@@ -37,8 +36,11 @@ MAX_SIZE_SHORT_MSG: Final[int] = 100
 # DOMAIN MODELS ---
 
 
-class TreePath(ConstrainedStr):
-    regex = re.compile(r"[\w:]+")  # Examples 'a::b::c
+TreePath: TypeAlias = Annotated[
+    # Examples 'a::b::c
+    str,
+    StringConstraints(pattern=r"[\w:]+"),
+]
 
 
 class ClassifierItem(BaseModel):
@@ -50,10 +52,10 @@ class ClassifierItem(BaseModel):
     url: HttpUrl | None = Field(
         None,
         description="Link to more information",
-        example="https://scicrunch.org/resources/Any/search?q=osparc&l=osparc",
+        examples=["https://scicrunch.org/resources/Any/search?q=osparc&l=osparc"],
     )
 
-    @validator("short_description", pre=True)
+    @field_validator("short_description", mode="before")
     @classmethod
     def truncate_to_short(cls, v):
         if v and len(v) >= MAX_SIZE_SHORT_MSG:
@@ -91,7 +93,9 @@ class GroupClassifierRepository:
         if bundle:
             try:
                 # truncate bundle to what is needed and drop the rest
-                return Classifiers(**bundle).dict(exclude_unset=True, exclude_none=True)
+                return Classifiers(**bundle).model_dump(
+                    exclude_unset=True, exclude_none=True
+                )
             except ValidationError as err:
                 _logger.error(
                     "DB corrupt data in 'groups_classifiers' table. "
@@ -136,7 +140,9 @@ async def build_rrids_tree_view(
                 url=scicrunch.get_resolver_web_url(resource.rrid),
             )
 
-            node = parse_obj_as(TreePath, validated_item.display_name.replace(":", " "))
+            node = TypeAdapter(TreePath).validate_python(
+                validated_item.display_name.replace(":", " ")
+            )
             flat_tree_view[node] = validated_item
 
         except ValidationError as err:
@@ -144,4 +150,6 @@ async def build_rrids_tree_view(
                 "Cannot convert RRID into a classifier item. Skipping. Details: %s", err
             )
 
-    return Classifiers.construct(classifiers=flat_tree_view).dict(exclude_unset=True)
+    return Classifiers.model_construct(classifiers=flat_tree_view).model_dump(
+        exclude_unset=True
+    )

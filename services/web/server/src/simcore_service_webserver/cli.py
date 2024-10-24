@@ -67,7 +67,8 @@ async def app_factory() -> web.Application:
     assert app_settings.SC_BUILD_TARGET  # nosec
 
     _logger.info(
-        "Application settings: %s", app_settings.json(indent=2, sort_keys=True)
+        "Application settings: %s",
+        app_settings.model_dump_json(indent=2, sort_keys=True),
     )
 
     app, _ = _setup_app_from_settings(app_settings)

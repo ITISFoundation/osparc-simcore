@@ -32,7 +32,7 @@ async def list_all_user_groups(app: web.Application, user_id: UserID) -> list[Gr
     async with get_database_engine(app).acquire() as conn:
         groups_db = await _db.get_all_user_groups(conn, user_id=user_id)
 
-    return [Group.construct(**group.dict()) for group in groups_db]
+    return [Group.construct(**group.model_dump()) for group in groups_db]
 
 
 async def get_user_group(
@@ -199,5 +199,5 @@ async def get_group_from_gid(app: web.Application, gid: GroupID) -> Group | None
         group_db = await _db.get_group_from_gid(conn, gid=gid)
 
     if group_db:
-        return Group.construct(**group_db.dict())
+        return Group.construct(**group_db.model_dump())
     return None

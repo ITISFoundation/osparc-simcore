@@ -12,7 +12,7 @@ import logging
 from uuid import UUID
 
 from aiopg.sa.result import RowProxy
-from pydantic import NonNegativeInt, PositiveInt, validate_arguments
+from pydantic import NonNegativeInt, PositiveInt, validate_call
 
 from .db import VersionControlRepository
 from .errors import CleanRequiredError
@@ -136,7 +136,7 @@ async def get_workbench(
 
     # prefer actual project to snapshot
     content = await vc_repo.get_workbench_view(repo_id, commit_id)
-    return WorkbenchView.parse_obj(content)
+    return WorkbenchView.model_validate(content)
 
 
 #
@@ -146,10 +146,10 @@ async def get_workbench(
 _CONFIG = {"arbitrary_types_allowed": True}
 
 
-list_repos_safe = validate_arguments(list_repos, config=_CONFIG)  # type: ignore
-list_checkpoints_safe = validate_arguments(list_checkpoints, config=_CONFIG)  # type: ignore
-create_checkpoint_safe = validate_arguments(create_checkpoint, config=_CONFIG)  # type: ignore
-get_checkpoint_safe = validate_arguments(get_checkpoint, config=_CONFIG)  # type: ignore
-update_checkpoint_safe = validate_arguments(update_checkpoint, config=_CONFIG)  # type: ignore
-checkout_checkpoint_safe = validate_arguments(checkout_checkpoint, config=_CONFIG)  # type: ignore
-get_workbench_safe = validate_arguments(get_workbench, config=_CONFIG)  # type: ignore
+list_repos_safe = validate_call(list_repos, config=_CONFIG)  # type: ignore
+list_checkpoints_safe = validate_call(list_checkpoints, config=_CONFIG)  # type: ignore
+create_checkpoint_safe = validate_call(create_checkpoint, config=_CONFIG)  # type: ignore
+get_checkpoint_safe = validate_call(get_checkpoint, config=_CONFIG)  # type: ignore
+update_checkpoint_safe = validate_call(update_checkpoint, config=_CONFIG)  # type: ignore
+checkout_checkpoint_safe = validate_call(checkout_checkpoint, config=_CONFIG)  # type: ignore
+get_workbench_safe = validate_call(get_workbench, config=_CONFIG)  # type: ignore

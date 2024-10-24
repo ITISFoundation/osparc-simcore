@@ -100,7 +100,7 @@ async def test_email(request: web.Request):
 
         return envelope_json_response(
             EmailTestPassed(
-                fixtures=body.dict(),
+                fixtures=body.model_dump(),
                 info={
                     "email-server": info,
                     "email-headers": message.items(),
@@ -111,7 +111,7 @@ async def test_email(request: web.Request):
     except Exception as err:  # pylint: disable=broad-except
         logger.exception(
             "test_email failed for %s",
-            f"{settings.json(indent=1)}",
+            f"{settings.model_dump_json(indent=1)}",
         )
         return envelope_json_response(
             EmailTestFailed.create_from_exception(error=err, test_name="test_email")
