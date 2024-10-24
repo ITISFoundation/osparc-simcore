@@ -48,6 +48,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   },
 
   properties: {
+    currentContext: {
+      check: ["studiesAndFolders", "workspaces", "search", "bin"],
+      nullable: false,
+      init: "studiesAndFolders",
+      event: "changeCurrentContext"
+    },
+
     currentWorkspaceId: {
       check: "Number",
       nullable: true,

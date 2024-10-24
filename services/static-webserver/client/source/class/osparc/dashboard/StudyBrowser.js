@@ -936,17 +936,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __changeContext: function(workspaceId, folderId) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        if (
-          workspaceId !== -2 && // reload studies for a new search
-          workspaceId === this.getCurrentWorkspaceId() &&
-          folderId === this.getCurrentFolderId()
-        ) {
-          // didn't really change
-          return;
-        }
-
-        this.resetSelection();
-        this.setMultiSelection(false);
         let currentContext = null;
         switch (workspaceId) {
           case -2:
@@ -959,6 +948,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             currentContext = "studiesAndFolders";
             break;
         }
+
+        if (
+          currentContext !== "search" && // reload studies for a new search
+          workspaceId === this.getCurrentWorkspaceId() &&
+          folderId === this.getCurrentFolderId()
+        ) {
+          // didn't really change
+          return;
+        }
+
+        this.resetSelection();
+        this.setMultiSelection(false);
         this.set({
           currentContext,
           currentWorkspaceId: workspaceId,
@@ -982,6 +983,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // notify header
         const header = this.__header;
         header.set({
+          currentContext,
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
