@@ -742,7 +742,7 @@ async def test_create_single_presigned_upload_link(
     create_file_of_size: Callable[[ByteSize], Path],
     default_expiration_time_seconds: int,
     upload_to_presigned_link: Callable[
-        [Path, str, S3BucketName, S3ObjectKey], Awaitable[None]
+        [Path, AnyUrl, S3BucketName, S3ObjectKey], Awaitable[None]
     ],
 ):
     file = create_file_of_size(TypeAdapter(ByteSize).validate_python("1Mib"))
@@ -1289,12 +1289,16 @@ def test_is_multipart(file_size: ByteSize, expected_multipart: bool):
         (
             "some-bucket",
             "an/object/separate/by/slashes",
-            "s3://some-bucket/an/object/separate/by/slashes",
+            TypeAdapter(AnyUrl).validate_python(
+                "s3://some-bucket/an/object/separate/by/slashes"
+            ),
         ),
         (
             "some-bucket",
             "an/object/separate/by/slashes-?/3#$",
-            r"s3://some-bucket/an/object/separate/by/slashes-%3F/3%23%24",
+            TypeAdapter(AnyUrl).validate_python(
+                r"s3://some-bucket/an/object/separate/by/slashes-%3F/3%23%24"
+            ),
         ),
     ],
 )
@@ -1302,7 +1306,7 @@ def test_compute_s3_url(
     bucket: S3BucketName, object_key: S3ObjectKey, expected_s3_url: AnyUrl
 ):
     assert (
-        str(SimcoreS3API.compute_s3_url(bucket=bucket, object_key=object_key))
+        SimcoreS3API.compute_s3_url(bucket=bucket, object_key=object_key)
         == expected_s3_url
     )
 
