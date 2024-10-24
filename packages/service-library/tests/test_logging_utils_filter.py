@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+
 import logging
 
 import pytest
