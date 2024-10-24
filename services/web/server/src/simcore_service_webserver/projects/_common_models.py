@@ -27,5 +27,5 @@ class ProjectPathParams(BaseModel):
 
 class RemoveQueryParams(BaseModel):
     force: bool = Field(
-        default=True, description="Force removal (even if resource is active)"
+        default=False, description="Force removal (even if resource is active)"
     )
