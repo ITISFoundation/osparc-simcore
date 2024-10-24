@@ -50,7 +50,7 @@ async def trash_project(request: web.Request):
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-@routes.post(f"/{VTAG}/projects/{{project_uuid}}:untrash", name="untrash_project")
+@routes.post(f"/{VTAG}/projects/{{project_id}}:untrash", name="untrash_project")
 @login_required
 @permission_required("project.delete")
 async def untrash_project(request: web.Request):
