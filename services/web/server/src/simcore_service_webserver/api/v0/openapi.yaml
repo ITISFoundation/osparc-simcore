@@ -4338,7 +4338,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5390,7 +5390,7 @@ paths:
         schema:
           title: Force
           type: boolean
-          default: true
+          default: false
         name: force
         in: query
       responses:

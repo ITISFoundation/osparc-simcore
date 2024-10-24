@@ -37,7 +37,7 @@ class HttpErrorInfo(NamedTuple):
 _TO_HTTP_ERROR_MAP: dict[type[Exception], HttpErrorInfo] = {
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        "Current study is in use and cannot be trashed [{project_uuid}]",
+        "Current study is in use and cannot be trashed [{project_uuid}]. Please stop all services first and try again",
     ),
     ProjectStopError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
