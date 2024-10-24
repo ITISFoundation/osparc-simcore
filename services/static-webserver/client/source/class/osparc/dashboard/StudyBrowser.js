@@ -907,10 +907,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __connectContexts: function() {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const workspaceHeader = this.__header;
-        workspaceHeader.addListener("contextChanged", () => {
-          const workspaceId = workspaceHeader.getCurrentWorkspaceId();
-          const folderId = workspaceHeader.getCurrentFolderId();
+        const header = this.__header;
+        header.addListener("contextChanged", () => {
+          const workspaceId = header.getCurrentWorkspaceId();
+          const folderId = header.getCurrentFolderId();
           this.__changeContext(workspaceId, folderId);
         }, this);
 
