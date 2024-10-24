@@ -1124,7 +1124,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Utils.setIdToWidget(trashButton, "deleteStudiesBtn");
       trashButton.addListener("execute", () => {
         const selection = this._resourcesContainer.getSelection();
-        this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+        const preferencesSettings = osparc.Preferences.getInstance();
+        if (preferencesSettings.getConfirmDeleteStudy()) {
+          const win = this.__createConfirmTrashWindow(selection.map(button => button.getTitle()));
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+            }
+          }, this);
+        } else {
+          this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+        }
       }, this);
       return trashButton;
     },
@@ -1802,21 +1814,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studiesData.forEach(studyData => this.__doDeleteStudy(studyData));
     },
 
-    __deleteConfirmationWindow: function(msg, studyNames) {
-      const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
-      msg += (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText} ?` : ` <b>${studyNames[0]}</b>?`);
-      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
-        confirmText: this.tr("Trash"),
-        confirmAction: "delete"
-      });
-      osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
-      return confirmationWin;
-    },
-
     __createConfirmTrashWindow: function(studyNames) {
-      const rUSure = this.tr("Are you sure you want to move to the trash");
-      const confirmationWin = this.__deleteConfirmationWindow(rUSure, studyNames).set({
-        confirmText: this.tr("Trash"),
+      let msg = this.tr("Are you sure you want to move to the trash");
+      const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
+      msg += (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText}?` : ` <b>${studyNames[0]}</b>?`);
+      const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+      msg += "<br><br>" + this.tr(`They will be permanently deleted after ${trashDays} days.`);
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Move to Trash"),
         confirmAction: "delete"
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
@@ -1824,8 +1829,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createConfirmDeleteWindow: function(studyNames) {
-      const rUSure = this.tr("Are you sure you want to delete");
-      const confirmationWin = this.__deleteConfirmationWindow(rUSure, studyNames).set({
+      let msg = this.tr("Are you sure you want to delete");
+      const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
+      msg += (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText}?` : ` <b>${studyNames[0]}</b>?`);
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });
