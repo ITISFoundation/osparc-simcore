@@ -1,7 +1,7 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Final, Literal, NamedTuple
+from typing import Final, Literal, NamedTuple, Self
 from uuid import UUID
 
 from aws_library.s3 import UploadID
@@ -31,11 +31,12 @@ from pydantic import (
     AnyUrl,
     BaseModel,
     ByteSize,
-    Extra,
+    ConfigDict,
     Field,
+    field_validator,
+    model_validator,
     parse_obj_as,
-    root_validator,
-    validate_arguments,
+    validate_call,
     validator,
 )
 
@@ -72,10 +73,7 @@ class FileMetaDataAtDB(BaseModel):
     upload_expires_at: datetime.datetime | None = None
     is_directory: bool
     sha256_checksum: SHA256Str | None = None
-
-    class Config:
-        orm_mode = True
-        extra = Extra.forbid
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
 
 
 class FileMetaData(FileMetaDataGet):
@@ -91,7 +89,7 @@ class FileMetaData(FileMetaDataGet):
     sha256_checksum: SHA256Str | None
 
     @classmethod
-    @validate_arguments
+    @validate_call
     def from_simcore_node(
         cls,
         user_id: UserID,
@@ -139,10 +137,7 @@ class UploadLinks:
 
 class StorageQueryParamsBase(BaseModel):
     user_id: UserID
-
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
 
 class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
@@ -163,9 +158,9 @@ class SyncMetadataQueryParams(BaseModel):
 class FileDownloadQueryParams(StorageQueryParamsBase):
     link_type: LinkType = LinkType.PRESIGNED
 
-    @validator("link_type", pre=True)
+    @field_validator("link_type", mode="before")
     @classmethod
-    def convert_from_lower_case(cls, v):
+    def convert_from_lower_case(cls, v: str) -> str:
         if v is not None:
             return f"{v}".upper()
         return v
@@ -177,22 +172,21 @@ class FileUploadQueryParams(StorageQueryParamsBase):
     is_directory: bool = False
     sha256_checksum: SHA256Str | None = None
 
-    @validator("link_type", pre=True)
+    @field_validator("link_type", mode="before")
     @classmethod
-    def convert_from_lower_case(cls, v):
+    def convert_from_lower_case(cls, v: str) -> str:
         if v is not None:
             return f"{v}".upper()
         return v
 
-    @root_validator()
-    @classmethod
-    def when_directory_force_link_type_and_file_size(cls, values):
-        if values["is_directory"] is True:
+    @model_validator(mode="after")
+    def when_directory_force_link_type_and_file_size(self) -> Self:
+        if self.is_directory is True:
             # sets directory size by default to undefined
-            values["file_size"] = UNDEFINED_SIZE
+            self.file_size = UNDEFINED_SIZE
             # only 1 link will be returned manged by the uploader
-            values["link_type"] = LinkType.S3
-        return values
+            self.link_type = LinkType.S3
+        return self
 
 
 class DeleteFolderQueryParams(StorageQueryParamsBase):
@@ -218,10 +212,7 @@ class SearchFilesQueryParams(StorageQueryParamsBase):
 
 class LocationPathParams(BaseModel):
     location_id: LocationID
-
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
 
 class FilesMetadataDatasetPathParams(LocationPathParams):
@@ -231,9 +222,9 @@ class FilesMetadataDatasetPathParams(LocationPathParams):
 class FilePathParams(LocationPathParams):
     file_id: StorageFileID
 
-    @validator("file_id", pre=True)
+    @field_validator("file_id", mode="before")
     @classmethod
-    def unquote(cls, v):
+    def unquote(cls, v: str) -> str:
         if v is not None:
             return urllib.parse.unquote(f"{v}")
         return v
@@ -250,9 +241,9 @@ class SimcoreS3FoldersParams(BaseModel):
 class CopyAsSoftLinkParams(BaseModel):
     file_id: StorageFileID
 
-    @validator("file_id", pre=True)
+    @field_validator("file_id", mode="before")
     @classmethod
-    def unquote(cls, v):
+    def unquote(cls, v: str) -> str:
         if v is not None:
             return urllib.parse.unquote(f"{v}")
         return v
