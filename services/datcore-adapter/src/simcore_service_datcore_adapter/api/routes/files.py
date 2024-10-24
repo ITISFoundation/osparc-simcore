@@ -2,7 +2,7 @@ import logging
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header, Request
-from pydantic import AnyUrl, parse_obj_as
+from pydantic import AnyUrl, TypeAdapter
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from starlette import status
 
@@ -34,7 +34,9 @@ async def download_file(
         api_secret=x_datcore_api_secret,
         package_id=file_id,
     )
-    return FileDownloadOut(link=parse_obj_as(AnyUrl, f"{presigned_download_link}"))
+    return FileDownloadOut(
+        link=TypeAdapter(AnyUrl).validate_python(f"{presigned_download_link}")
+    )
 
 
 @router.delete(

@@ -1,7 +1,7 @@
 from functools import cached_property
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import AliasChoices, Field, field_validator, parse_obj_as
+from pydantic import AliasChoices, Field, TypeAdapter, field_validator
 from pydantic.networks import AnyUrl
 from settings_library.base import BaseCustomSettings
 from settings_library.tracing import TracingSettings
@@ -11,7 +11,9 @@ from settings_library.utils_logging import MixinLoggingSettings
 class PennsieveSettings(BaseCustomSettings):
     PENNSIEVE_ENABLED: bool = True
 
-    PENNSIEVE_API_URL: AnyUrl = parse_obj_as(AnyUrl, "https://api.pennsieve.io")
+    PENNSIEVE_API_URL: AnyUrl = TypeAdapter(AnyUrl).validate_python(
+        "https://api.pennsieve.io"
+    )
     PENNSIEVE_API_GENERAL_TIMEOUT: float = 20.0
     PENNSIEVE_HEALTCHCHECK_TIMEOUT: float = 1.0
 
