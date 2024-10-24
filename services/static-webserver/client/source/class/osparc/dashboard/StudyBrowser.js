@@ -49,6 +49,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   properties: {
+    currentContext: {
+      check: ["studiesAndFolders", "workspaces", "search", "trash"],
+      nullable: false,
+      init: "studiesAndFolders",
+      event: "changeCurrentContext"
+    },
+
     currentWorkspaceId: {
       check: "Number",
       nullable: true,
@@ -101,7 +108,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
   members: {
     __dontShowTutorial: null,
-    __workspaceHeader: null,
+    __header: null,
     __workspacesList: null,
     __foldersList: null,
     __loadingFolders: null,
@@ -174,17 +181,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
         !osparc.utils.DisabledPlugins.isFoldersEnabled() ||
-        this.__loadingFolders) {
-        return;
-      }
-      const workspaceId = this.getCurrentWorkspaceId();
-      if (workspaceId === -1 || workspaceId === -2) {
+        this.getCurrentContext() !== "studiesAndFolders" ||
+        this.__loadingFolders
+      ) {
         return;
       }
 
+      const workspaceId = this.getCurrentWorkspaceId();
+      const folderId = this.getCurrentFolderId();
       this.__loadingFolders = true;
       this.__setFoldersToList([]);
-      const folderId = this.getCurrentFolderId();
       osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId, this.getOrderBy())
         .then(folders => {
           this.__setFoldersToList(folders);
@@ -194,10 +200,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadStudies: function() {
-      const workspaceId = this.getCurrentWorkspaceId();
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
-        workspaceId === -1 || // listing workspaces
+        this.getCurrentContext() === "workspaces" ||
         this._loadingResourcesBtn.isFetching()
       ) {
         return;
@@ -388,7 +393,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _workspaceSelected: function(workspaceId) {
-      this.__changeContext(workspaceId, null);
+      this.__changeContext("studiesAndFolders", workspaceId, null);
     },
 
     _workspaceUpdated: function() {
@@ -418,7 +423,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addNewFolderButton: function() {
       const currentWorkspaceId = this.getCurrentWorkspaceId();
       if (currentWorkspaceId) {
-        if (currentWorkspaceId === -1 || currentWorkspaceId === -2) {
+        if (this.getCurrentContext() !== "studiesAndFolders") {
           return;
         }
         const currentWorkspace = osparc.store.Workspaces.getInstance().getWorkspace(this.getCurrentWorkspaceId());
@@ -448,7 +453,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _folderSelected: function(folderId) {
-      this.__changeContext(this.getCurrentWorkspaceId(), folderId);
+      this.__changeContext("studiesAndFolders", this.getCurrentWorkspaceId(), folderId);
     },
 
     _folderUpdated: function() {
@@ -690,7 +695,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      if ("text" in requestParams) {
+      if (this.getCurrentContext() === "trash") {
+        return osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
+      } else if ("text" in requestParams) {
         return osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
       }
       return osparc.data.Resources.fetch("studies", "getPage", params, options);
@@ -705,11 +712,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addNewStudyButtons: function() {
+      if (this.getCurrentContext() !== "studiesAndFolders") {
+        return;
+      }
       const currentWorkspaceId = this.getCurrentWorkspaceId();
       if (currentWorkspaceId) {
-        if (currentWorkspaceId === -2) {
-          return;
-        }
         const currentWorkspace = osparc.store.Workspaces.getInstance().getWorkspace(currentWorkspaceId);
         if (currentWorkspace && !currentWorkspace.getMyAccessRights()["write"]) {
           // If user can't write in workspace, do not show plus buttons
@@ -835,8 +842,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._createSearchBar();
 
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const workspaceHeader = this.__workspaceHeader = new osparc.dashboard.WorkspaceHeader();
-        this._addToLayout(workspaceHeader);
+        const header = this.__header = new osparc.dashboard.StudyBrowserHeader();
+        this._addToLayout(header);
       }
 
       this._createResourcesLayout();
@@ -856,6 +863,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const studiesMoveButton = this.__createMoveStudiesButton(false);
       this._toolbar.add(studiesMoveButton);
+
+      const studiesTrashButton = this.__createTrashButton(false);
+      this._toolbar.add(studiesTrashButton);
 
       const studiesDeleteButton = this.__createDeleteButton(false);
       this._toolbar.add(studiesDeleteButton);
@@ -888,15 +898,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
 
       this._resourcesContainer.addListener("changeSelection", e => {
+        const currentContext = this.getCurrentContext();
         const selection = e.getData();
 
         studiesMoveButton.set({
-          visibility: selection.length ? "visible" : "excluded",
+          visibility: selection.length && currentContext === "studiesAndFolders" ? "visible" : "excluded",
           label: selection.length > 1 ? this.tr("Move selected")+" ("+selection.length+")" : this.tr("Move")
         });
 
+        studiesTrashButton.set({
+          visibility: selection.length && currentContext === "studiesAndFolders" ? "visible" : "excluded",
+          label: selection.length > 1 ? this.tr("Trash selected")+" ("+selection.length+")" : this.tr("Trash")
+        });
+
         studiesDeleteButton.set({
-          visibility: selection.length ? "visible" : "excluded",
+          visibility: selection.length && currentContext === "trash" ? "visible" : "excluded",
           label: selection.length > 1 ? this.tr("Delete selected")+" ("+selection.length+")" : this.tr("Delete")
         });
       });
@@ -908,37 +924,46 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __connectContexts: function() {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const workspaceHeader = this.__workspaceHeader;
-        workspaceHeader.addListener("contextChanged", () => {
-          const workspaceId = workspaceHeader.getCurrentWorkspaceId();
-          const folderId = workspaceHeader.getCurrentFolderId();
-          this.__changeContext(workspaceId, folderId);
+        const header = this.__header;
+        header.addListener("locationChanged", () => {
+          const workspaceId = header.getCurrentWorkspaceId();
+          const folderId = header.getCurrentFolderId();
+          this.__changeContext("studiesAndFolders", workspaceId, folderId);
         }, this);
 
         const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
-        workspacesAndFoldersTree.addListener("contextChanged", e => {
+        workspacesAndFoldersTree.addListener("locationChanged", e => {
           const context = e.getData();
           const workspaceId = context["workspaceId"];
-          const folderId = context["folderId"];
-          this.__changeContext(workspaceId, folderId);
+          if (workspaceId === -1) {
+            this.__changeContext("workspaces");
+          } else {
+            const folderId = context["folderId"];
+            this.__changeContext("studiesAndFolders", workspaceId, folderId);
+          }
         }, this);
+
+        this._resourceFilter.addListener("trashContext", () => {
+          this.__changeContext("trash");
+        });
 
         this._searchBarFilter.addListener("filterChanged", e => {
           const filterData = e.getData();
           if (filterData.text) {
-            this.__changeContext(-2, null);
+            this.__changeContext("search");
           } else {
             // Back to My Workspace
-            this.__changeContext(null, null);
+            this.__changeContext("studiesAndFolders", null, null);
           }
         });
       }
     },
 
-    __changeContext: function(workspaceId, folderId) {
+    __changeContext: function(context, workspaceId = null, folderId = null) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         if (
-          workspaceId !== -2 && // reload studies for a new search
+          context !== "search" && // reload studies for a new search
+          context === this.getCurrentContext() &&
           workspaceId === this.getCurrentWorkspaceId() &&
           folderId === this.getCurrentFolderId()
         ) {
@@ -946,34 +971,33 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
 
-        this._loadingResourcesBtn.setFetching(false);
-        this.resetSelection();
-        this.setMultiSelection(false);
         this.set({
+          currentContext: context,
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
+        this._loadingResourcesBtn.setFetching(false);
+        this.resetSelection();
+        this.setMultiSelection(false);
         this.invalidateStudies();
         this._resourcesContainer.setResourcesToList([]);
 
-        if (workspaceId === -2) {
-          // Search result: no folders, just studies
+        if (context === "search") {
           this.__setFoldersToList([]);
           this.__reloadStudies();
-        } else if (workspaceId === -1) {
-          // Workspaces
+        } else if (context === "workspaces") {
           this._searchBarFilter.resetFilters();
           this.__reloadWorkspaces();
-        } else {
-          // Actual workspace
+        } else if (context === "studiesAndFolders") {
           this._searchBarFilter.resetFilters();
           this.__reloadFolders();
           this.__reloadStudies();
         }
 
-        // notify workspaceHeader
-        const workspaceHeader = this.__workspaceHeader;
-        workspaceHeader.set({
+        // notify header
+        const header = this.__header;
+        header.set({
+          currentContext: context,
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
@@ -984,7 +1008,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
-        workspacesAndFoldersTree.contextChanged(workspaceId, folderId);
+        workspacesAndFoldersTree.contextChanged(context);
       }
     },
 
@@ -1092,6 +1116,31 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return moveStudiesButton;
     },
 
+    __createTrashButton: function() {
+      const trashButton = new qx.ui.form.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/14").set({
+        appearance: "danger-button",
+        visibility: "excluded"
+      });
+      osparc.utils.Utils.setIdToWidget(trashButton, "deleteStudiesBtn");
+      trashButton.addListener("execute", () => {
+        const selection = this._resourcesContainer.getSelection();
+        const preferencesSettings = osparc.Preferences.getInstance();
+        if (preferencesSettings.getConfirmDeleteStudy()) {
+          const win = this.__createConfirmTrashWindow(selection.map(button => button.getTitle()));
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+            }
+          }, this);
+        } else {
+          this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+        }
+      }, this);
+      return trashButton;
+    },
+
     __createDeleteButton: function() {
       const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
         appearance: "danger-button",
@@ -1102,7 +1151,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const selection = this._resourcesContainer.getSelection();
         const preferencesSettings = osparc.Preferences.getInstance();
         if (preferencesSettings.getConfirmDeleteStudy()) {
-          const win = this.__createConfirmWindow(selection.map(button => button.getTitle()));
+          const win = this.__createConfirmDeleteWindow(selection.map(button => button.getTitle()));
           win.center();
           win.open();
           win.addListener("close", () => {
@@ -1130,8 +1179,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }))
       });
       this.bind("multiSelection", selectButton, "value");
-      this.bind("currentWorkspaceId", selectButton, "visibility", {
-        converter: currentWorkspaceId => [-2, -1].includes(currentWorkspaceId) ? "excluded" : "visible"
+      this.bind("currentContext", selectButton, "visibility", {
+        converter: currentContext => currentContext === "studiesAndFolders" ? "visible" : "excluded"
       });
       return selectButton;
     },
@@ -1497,13 +1546,33 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _deleteResourceRequested: function(studyId) {
-      this.__deleteStudyRequested(this.__getStudyData(studyId));
+      if (this.getCurrentContext() === "trash") {
+        this.__deleteStudyRequested(this.__getStudyData(studyId));
+      } else {
+        this.__trashStudyRequested(this.__getStudyData(studyId));
+      }
+    },
+
+    __trashStudyRequested: function(studyData) {
+      const preferencesSettings = osparc.Preferences.getInstance();
+      if (preferencesSettings.getConfirmDeleteStudy()) {
+        const win = this.__createConfirmTrashWindow([studyData.name]);
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__trashStudy(studyData);
+          }
+        }, this);
+      } else {
+        this.__trashStudy(studyData);
+      }
     },
 
     __deleteStudyRequested: function(studyData) {
       const preferencesSettings = osparc.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteStudy()) {
-        const win = this.__createConfirmWindow([studyData.name]);
+        const win = this.__createConfirmDeleteWindow([studyData.name]);
         win.center();
         win.open();
         win.addListener("close", () => {
@@ -1514,6 +1583,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         this.__doDeleteStudy(studyData);
       }
+    },
+
+    __getTrashStudyMenuButton: function(studyData) {
+      const trashButton = new qx.ui.menu.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/12");
+      trashButton["deleteButton"] = true;
+      trashButton.set({
+        appearance: "menu-button"
+      });
+      osparc.utils.Utils.setIdToWidget(trashButton, "studyItemMenuDelete");
+      trashButton.addListener("execute", () => this.__trashStudyRequested(studyData), this);
+      return trashButton;
     },
 
     __getDeleteStudyMenuButton: function(studyData) {
@@ -1678,6 +1758,34 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       req.send(body);
     },
 
+    __trashStudy: function(studyData) {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const collabGids = Object.keys(studyData["accessRights"]);
+      const amICollaborator = collabGids.indexOf(myGid) > -1;
+
+      let operationPromise = null;
+      if (collabGids.length > 1 && amICollaborator) {
+        const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
+        // remove collaborator
+        delete arCopy[myGid];
+        operationPromise = osparc.info.StudyUtils.patchStudyData(studyData, "accessRights", arCopy);
+      } else {
+        // trash study
+        operationPromise = osparc.store.Store.getInstance().trashStudy(studyData.uuid);
+      }
+      operationPromise
+        .then(() => this.__removeFromStudyList(studyData.uuid))
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+        })
+        .finally(() => this.resetSelection());
+    },
+
+    __trashStudies: function(studiesData) {
+      studiesData.forEach(studyData => this.__trashStudy(studyData));
+    },
+
     __doDeleteStudy: function(studyData) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const collabGids = Object.keys(studyData["accessRights"]);
@@ -1706,10 +1814,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studiesData.forEach(studyData => this.__doDeleteStudy(studyData));
     },
 
-    __createConfirmWindow: function(studyNames) {
-      const rUSure = this.tr("Are you sure you want to delete");
+    __createConfirmTrashWindow: function(studyNames) {
+      let msg = this.tr("Are you sure you want to move to the trash");
       const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
-      const msg = rUSure + (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText} ?` : ` <b>${studyNames[0]}</b>?`)
+      msg += (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText}?` : ` <b>${studyNames[0]}</b>?`);
+      const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+      msg += "<br><br>" + this.tr(`They will be permanently deleted after ${trashDays} days.`);
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Move to Trash"),
+        confirmAction: "delete"
+      });
+      osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
+      return confirmationWin;
+    },
+
+    __createConfirmDeleteWindow: function(studyNames) {
+      let msg = this.tr("Are you sure you want to delete");
+      const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
+      msg += (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText}?` : ` <b>${studyNames[0]}</b>?`);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
