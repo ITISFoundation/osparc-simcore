@@ -288,17 +288,18 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       }
     },
 
-    contextChanged: function() {
-      const workspaceId = this.getCurrentWorkspaceId();
-      const folderId = this.getCurrentFolderId();
-
+    contextChanged: function(context) {
       const selection = this.getSelection();
       if (selection) {
         selection.removeAll();
       }
-      const contextModel = this.__getModel(workspaceId, folderId);
-      if (contextModel) {
-        selection.push(contextModel);
+      if (context === "studiesAndFolders" || context === "workspaces") {
+        const workspaceId = context === "workspaces" ? -1 : this.getCurrentWorkspaceId();
+        const folderId = this.getCurrentFolderId();
+        const locationModel = this.__getModel(workspaceId, folderId);
+        if (locationModel) {
+          selection.push(locationModel);
+        }
       }
     },
   }
