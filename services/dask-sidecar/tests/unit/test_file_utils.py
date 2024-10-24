@@ -28,7 +28,6 @@ from simcore_service_dask_sidecar.file_utils import (
 
 @pytest.fixture()
 async def mocked_log_publishing_cb(
-    event_loop: asyncio.AbstractEventLoop,
     mocker: MockerFixture,
 ) -> AsyncIterable[mock.AsyncMock]:
     async with mocker.AsyncMock() as mocked_callback:
