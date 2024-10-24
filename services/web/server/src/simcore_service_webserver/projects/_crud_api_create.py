@@ -15,7 +15,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
 from models_library.workspaces import UserWorkspaceAccessRightsDB
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.utils_projects_nodes import (
@@ -157,7 +157,9 @@ async def _copy_files_from_source_project(
 ):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
     needs_lock_source_project: bool = (
-        await db.get_project_type(parse_obj_as(ProjectID, source_project["uuid"]))
+        await db.get_project_type(
+            TypeAdapter(ProjectID).validate_python(source_project["uuid"])
+        )
         != ProjectTypeDB.TEMPLATE
     )
 
@@ -178,8 +180,7 @@ async def _copy_files_from_source_project(
         ):
             task_progress.update(
                 message=long_running_task.progress.message,
-                percent=parse_obj_as(
-                    ProgressPercent,
+                percent=TypeAdapter(ProgressPercent).validate_python(
                     (
                         starting_value
                         + long_running_task.progress.percent * (1.0 - starting_value)
@@ -416,7 +417,8 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 )
             )
             new_project["accessRights"] = {
-                gid: access.dict() for gid, access in workspace_db.access_rights.items()
+                gid: access.model_dump()
+                for gid, access in workspace_db.access_rights.items()
             }
 
         # Ensures is like ProjectGet

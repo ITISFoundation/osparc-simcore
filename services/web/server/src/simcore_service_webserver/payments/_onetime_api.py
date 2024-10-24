@@ -15,7 +15,7 @@ from models_library.basic_types import IDStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import HttpUrl, parse_obj_as
+from pydantic import HttpUrl, TypeAdapter
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
@@ -128,7 +128,7 @@ async def _ack_creation_of_wallet_payment(
     assert transaction.completed_at is not None  # nosec
     assert transaction.initiated_at < transaction.completed_at  # nosec
 
-    _logger.info("Transaction completed: %s", transaction.json(indent=1))
+    _logger.info("Transaction completed: %s", transaction.model_dump_json(indent=1))
 
     payment = _to_api_model(transaction)
 
@@ -236,7 +236,10 @@ async def _fake_get_payment_invoice_url(
     assert wallet_id  # nosec
 
     return cast(
-        HttpUrl, parse_obj_as(HttpUrl, f"https://fake-invoice.com/?id={payment_id}")
+        HttpUrl,
+        TypeAdapter(HttpUrl).validate_python(
+            f"https://fake-invoice.com/?id={payment_id}"
+        ),
     )
 
 
