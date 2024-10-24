@@ -918,8 +918,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         workspacesAndFoldersTree.addListener("locationChanged", e => {
           const context = e.getData();
           const workspaceId = context["workspaceId"];
-          const folderId = context["folderId"];
-          this.__changeContext("studiesAndFolders", workspaceId, folderId);
+          if (workspaceId === -1) {
+            this.__changeContext("workspaces");
+          } else {
+            const folderId = context["folderId"];
+            this.__changeContext("studiesAndFolders", workspaceId, folderId);
+          }
         }, this);
 
         this._resourceFilter.addListener("trashContext", () => {
