@@ -6,7 +6,7 @@ from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.users import UserID
-from pydantic import ByteSize, TypeAdapter
+from pydantic import TypeAdapter
 from servicelib.archiving_utils import unarchive_dir
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
@@ -181,15 +181,6 @@ async def _delete_legacy_archive(
     owner_id = await DBManager().get_project_owner_user_id(project_id)
     await filemanager.delete_file(
         user_id=owner_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
-    )
-
-
-async def get_remote_size(
-    *, user_id: UserID, project_id: ProjectID, node_uuid: NodeID, source_path: Path
-) -> ByteSize:
-    s3_object = __create_s3_object_key(project_id, node_uuid, source_path)
-    return await filemanager.get_path_size(
-        user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
     )
 
 
