@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import timedelta
 
 import arrow
 from aiohttp import web
@@ -26,11 +27,11 @@ async def empty_trash(app: web.Application, product_name: ProductName, user_id: 
 
 async def prune_all_trashes(app: web.Application) -> list[str]:
     settings = get_plugin_settings(app)
-    threashold = arrow.utcnow().datetime + settings.PROJECTS_TRASH_RETENTION_DAYS
+    retention = timedelta(days=settings.PROJECTS_TRASH_RETENTION_DAYS)
 
     _logger.debug(
-        "CODE PLACEHOLDER: **ALL** projects marked as trashed with trashedAt>=%s days are deleted",
-        threashold,
+        "CODE PLACEHOLDER: **ALL** projects marked as trashed during %s days are deleted",
+        retention,
     )
     await asyncio.sleep(5)
 
