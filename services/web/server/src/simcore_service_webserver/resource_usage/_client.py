@@ -151,7 +151,7 @@ async def sum_total_available_credits_in_the_wallet(
         async with session.post(url) as response:
             response.raise_for_status()
             body: dict = await response.json()
-            return WalletTotalCredits.construct(**body)
+            return WalletTotalCredits.model_construct(**body)
 
 
 async def add_credits_to_wallet(

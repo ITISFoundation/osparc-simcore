@@ -100,7 +100,7 @@ async def _list_repos_handler(request: web.Request):
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
 
@@ -186,7 +186,7 @@ async def _list_checkpoints_handler(request: web.Request):
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
 

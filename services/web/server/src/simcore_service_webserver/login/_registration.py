@@ -286,7 +286,8 @@ async def check_and_consume_invitation(
             )
 
             _logger.info(
-                "Consuming invitation from service:\n%s", content.json(indent=1)
+                "Consuming invitation from service:\n%s",
+                content.model_dump_json(indent=1),
             )
             return InvitationData(
                 issuer=content.issuer,

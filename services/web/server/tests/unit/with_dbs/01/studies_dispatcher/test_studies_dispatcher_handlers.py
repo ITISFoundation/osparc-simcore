@@ -78,7 +78,9 @@ def web_server(redis_service: RedisSettings, web_server: TestServer) -> TestServ
     #
     # Extends web_server to start redis_service
     #
-    print("Redis service started with settings: ", redis_service.json(indent=1))
+    print(
+        "Redis service started with settings: ", redis_service.model_dump_json(indent=1)
+    )
     return web_server
 
 

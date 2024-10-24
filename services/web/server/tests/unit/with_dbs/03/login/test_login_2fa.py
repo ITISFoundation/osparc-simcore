@@ -50,7 +50,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "LOGIN_2FA_CODE_EXPIRATION_SEC": "60",
         },
     )
-    print(ApplicationSettings.create_from_envs().json(indent=1))
+    print(ApplicationSettings.create_from_envs().model_dump_json(indent=1))
 
     return {**app_environment, **envs_login}
 

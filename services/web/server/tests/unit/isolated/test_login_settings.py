@@ -129,7 +129,7 @@ def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
     cfg = settings.model_dump()
 
     config = LoginOptions(**cfg)
-    print(config.json(indent=1))
+    print(config.model_dump_json(indent=1))
 
     assert not hasattr(config, "SMTP_SENDER"), "was deprecated and now we use product"
 

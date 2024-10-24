@@ -239,7 +239,7 @@ async def get_node_screenshots(
         except (KeyError, ValidationError, ClientError) as err:
             _logger.warning(
                 "Skipping fake node. Unable to create link from file-picker %s: %s",
-                node.json(indent=1),
+                node.model_dump_json(indent=1),
                 err,
             )
 

@@ -1490,7 +1490,7 @@ async def add_project_states_for_user(
                 if prj_node is None:
                     continue
                 node_state_dict = json.loads(
-                    node_state.json(by_alias=True, exclude_unset=True)
+                    node_state.model_dump_json(by_alias=True, exclude_unset=True)
                 )
                 prj_node.setdefault("state", {}).update(node_state_dict)
                 prj_node_progress = node_state_dict.get("progress", None) or 0

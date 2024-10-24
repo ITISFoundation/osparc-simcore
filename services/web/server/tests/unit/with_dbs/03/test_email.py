@@ -139,7 +139,7 @@ async def test_email_handlers(
             EmailTestFailed.model_validate(data)
 
         passed = EmailTestPassed.model_validate(data)
-        print(passed.json(indent=1))
+        print(passed.model_dump_json(indent=1))
 
 
 class IndexParser(HTMLParser):

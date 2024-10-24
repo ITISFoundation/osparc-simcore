@@ -28,7 +28,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
         },
     )
 
-    print(ApplicationSettings.create_from_envs().json(indent=2))
+    print(ApplicationSettings.create_from_envs().model_dump_json(indent=2))
 
     return {**app_environment, **envs_login}
 

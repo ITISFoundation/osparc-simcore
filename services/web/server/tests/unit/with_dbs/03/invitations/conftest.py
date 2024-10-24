@@ -212,5 +212,5 @@ def app_environment(
     )
 
     # tests envs
-    print(ApplicationSettings.create_from_envs().json(indent=2))
+    print(ApplicationSettings.create_from_envs().model_dump_json(indent=2))
     return envs

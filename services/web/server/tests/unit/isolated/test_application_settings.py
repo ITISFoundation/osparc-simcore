@@ -25,7 +25,7 @@ def app_settings(
     # init and validation happens here
     settings = setup_settings(app)
     print("envs\n", json.dumps(mock_webserver_service_environment, indent=1))
-    print("settings:\n", settings.json(indent=1))
+    print("settings:\n", settings.model_dump_json(indent=1))
 
     assert APP_SETTINGS_KEY in app
     assert app[APP_SETTINGS_KEY] == settings

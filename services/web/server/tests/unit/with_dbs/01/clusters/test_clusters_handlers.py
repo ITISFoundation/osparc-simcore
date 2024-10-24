@@ -120,7 +120,9 @@ async def test_create_cluster(
     url = client.app.router["create_cluster"].url_for()
     rsp = await client.post(
         f"{url}",
-        json=json.loads(cluster_create.json(by_alias=True, exclude_unset=True)),
+        json=json.loads(
+            cluster_create.model_dump_json(by_alias=True, exclude_unset=True)
+        ),
     )
     data, error = await assert_status(
         rsp,

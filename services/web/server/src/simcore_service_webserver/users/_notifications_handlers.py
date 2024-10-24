@@ -80,7 +80,7 @@ async def create_user_notification(request: web.Request) -> web.Response:
     # insert at the head of the list and discard extra notifications
     redis_client = get_redis_user_notifications_client(request.app)
     async with redis_client.pipeline(transaction=True) as pipe:
-        pipe.lpush(key, user_notification.json())
+        pipe.lpush(key, user_notification.model_dump_json())
         pipe.ltrim(key, 0, MAX_NOTIFICATIONS_FOR_USER_TO_KEEP - 1)
         await pipe.execute()
 
@@ -113,7 +113,7 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
         if req_path_params.notification_id == user_notification.id:
             user_notification.read = body.read
             await handle_redis_returns_union_types(
-                redis_client.lset(key, k, user_notification.json())
+                redis_client.lset(key, k, user_notification.model_dump_json())
             )
             return web.json_response(status=status.HTTP_204_NO_CONTENT)
 

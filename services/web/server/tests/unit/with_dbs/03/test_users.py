@@ -360,7 +360,7 @@ def test_preuserprofile_parse_model_from_request_form_data(
     # pre-processors
     pre_user_profile = PreUserProfile(**data)
 
-    print(pre_user_profile.json(indent=1))
+    print(pre_user_profile.model_dump_json(indent=1))
 
     # institution aliases
     assert pre_user_profile.institution == account_request_form["company"]
@@ -405,6 +405,6 @@ def test_preuserprofile_pre_given_names(
     account_request_form["lastName"] = given_name
 
     pre_user_profile = PreUserProfile(**account_request_form)
-    print(pre_user_profile.json(indent=1))
+    print(pre_user_profile.model_dump_json(indent=1))
     assert pre_user_profile.first_name in ["Pedro-Luis", "Pedro Luis"]
     assert pre_user_profile.first_name == pre_user_profile.last_name

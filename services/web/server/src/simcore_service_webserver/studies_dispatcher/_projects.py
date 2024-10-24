@@ -35,7 +35,9 @@ _logger = logging.getLogger(__name__)
 _FILE_PICKER_KEY: ServiceKey = TypeAdapter(ServiceKey).validate_python(
     "simcore/services/frontend/file-picker"
 )
-_FILE_PICKER_VERSION: ServiceVersion = TypeAdapter(ServiceVersion).validate_python("1.0.0")
+_FILE_PICKER_VERSION: ServiceVersion = TypeAdapter(ServiceVersion).validate_python(
+    "1.0.0"
+)
 
 
 def _generate_nodeids(project_id: ProjectID) -> tuple[NodeID, NodeID]:
@@ -194,7 +196,9 @@ async def _add_new_project(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # validated project is transform in dict via json to use only primitive types
-    project_in: dict = json.loads(project.json(exclude_none=True, by_alias=True))
+    project_in: dict = json.loads(
+        project.model_dump_json(exclude_none=True, by_alias=True)
+    )
 
     # update metadata (uuid, timestamps, ownership) and save
     _project_db: dict = await db.insert_project(

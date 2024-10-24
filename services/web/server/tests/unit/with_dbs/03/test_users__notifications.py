@@ -104,7 +104,7 @@ async def _create_notifications(
     redis_key = get_notification_key(user_id)
     if user_notifications:
         for notification in user_notifications:
-            await redis_client.lpush(redis_key, notification.json())
+            await redis_client.lpush(redis_key, notification.model_dump_json())
 
     yield user_notifications
 

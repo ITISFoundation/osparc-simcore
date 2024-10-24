@@ -302,7 +302,7 @@ async def list_project_iterations(request: web.Request) -> web.Response:
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
 
@@ -405,6 +405,6 @@ async def list_project_iterations_results(
         )
     )
     return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
