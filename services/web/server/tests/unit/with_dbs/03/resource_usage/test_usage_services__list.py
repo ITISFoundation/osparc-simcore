@@ -45,6 +45,8 @@ _SERVICE_RUN_GET = ServiceRunPage(
                 "started_at": "2023-08-26T14:18:17.600493+00:00",
                 "stopped_at": "2023-08-26T14:18:19.358355+00:00",
                 "service_run_status": "SUCCESS",
+                "credit_cost": None,
+                "transaction_status": None
             }
         )
     ],

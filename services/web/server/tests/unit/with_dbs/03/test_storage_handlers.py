@@ -69,7 +69,7 @@ def mock_request_storage(mocker: MockerFixture, expected_response: Any) -> None:
 
 
 MOCK_FILE_UPLOAD_SCHEMA = FileUploadSchema(
-    chunk_size=ByteSize("5GiB"),
+    chunk_size=TypeAdapter(ByteSize).validate_python("5GiB"),
     urls=[TypeAdapter(AnyUrl).validate_python("s3://file_id")],
     links=FileUploadLinks(
         abort_upload=TypeAdapter(AnyUrl).validate_python(
