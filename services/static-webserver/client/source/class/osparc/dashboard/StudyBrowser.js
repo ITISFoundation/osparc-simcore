@@ -1819,7 +1819,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
       msg += (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText}?` : ` <b>${studyNames[0]}</b>?`);
       const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
-      msg += "<br><br>" + this.tr(`They will be permanently deleted after ${trashDays} days.`);
+      msg += "<br><br>" + (studyNames.length > 1 ? "It" : "They") + this.tr(` will be permanently deleted after ${trashDays} days.`);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         confirmText: this.tr("Move to Trash"),
         confirmAction: "delete"
