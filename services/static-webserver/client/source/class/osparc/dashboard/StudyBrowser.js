@@ -287,10 +287,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __resetStudiesList: function() {
       this._resourcesList = [];
-      if (this._resourcesContainer.getFlatList()) {
-        this._resourcesContainer.getFlatList().nextRequest = null;
-      }
-
       // It will remove the study cards
       this._reloadCards();
     },
@@ -702,6 +698,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     invalidateStudies: function() {
       osparc.store.Store.getInstance().invalidate("studies");
       this.__resetStudiesList();
+      if (this._resourcesContainer.getFlatList()) {
+        this._resourcesContainer.getFlatList().nextRequest = null;
+      }
+
     },
 
     __addNewStudyButtons: function() {
