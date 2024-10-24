@@ -5344,7 +5344,7 @@ paths:
       responses:
         '204':
           description: Successful Response
-  /v0/projects/{project_uuid}:trash:
+  /v0/projects/{project_id}:trash:
     post:
       tags:
       - trash
@@ -5354,15 +5354,22 @@ paths:
       parameters:
       - required: true
         schema:
-          title: Project Uuid
+          title: Project Id
           type: string
           format: uuid
-        name: project_uuid
+        name: project_id
         in: path
+      - required: false
+        schema:
+          title: Force
+          type: boolean
+          default: true
+        name: force
+        in: query
       responses:
         '204':
           description: Successful Response
-  /v0/projects/{project_uuid}:untrash:
+  /v0/projects/{project_id}:untrash:
     post:
       tags:
       - trash
@@ -5372,10 +5379,10 @@ paths:
       parameters:
       - required: true
         schema:
-          title: Project Uuid
+          title: Project Id
           type: string
           format: uuid
-        name: project_uuid
+        name: project_id
         in: path
       responses:
         '204':
