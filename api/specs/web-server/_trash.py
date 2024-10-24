@@ -24,8 +24,6 @@ def empty_trash():
     ...
 
 
-### Projects
-
 _extra_tags: list[str | Enum] = ["projects"]
 
 
