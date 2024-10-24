@@ -145,7 +145,7 @@ projects = sa.Table(
         "trashed_at",
         sa.DateTime(timezone=True),
         nullable=True,
-        doc="If set, it determines the time in which this project was sent to the trash bin.",
+        doc="Timestamp indicating when the project was marked as trashed, or null otherwise.",
     ),
     sa.Column(
         "workspace_id",
