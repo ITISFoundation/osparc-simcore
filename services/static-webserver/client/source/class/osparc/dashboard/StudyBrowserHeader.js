@@ -52,7 +52,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       check: ["studiesAndFolders", "workspaces", "search", "bin"],
       nullable: false,
       init: "studiesAndFolders",
-      event: "changeCurrentContext"
+      event: "changeCurrentContext",
+      apply: "__buildLayout"
     },
 
     currentWorkspaceId: {
@@ -183,7 +184,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function(workspaceId) {
+    __buildLayout: function() {
       this.getChildControl("icon");
       const title = this.getChildControl("workspace-title");
       this.getChildControl("breadcrumbs");
@@ -191,19 +192,21 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       this.resetAccessRights();
       this.resetMyAccessRights();
 
-      if (workspaceId === -2) {
+      const currentContext = this.getCurrentContext();
+      if (currentContext === "search") {
         this.__setIcon("@FontAwesome5Solid/search/24");
         title.set({
           value: this.tr("Search results"),
           cursor: "auto",
         });
-      } else if (workspaceId === -1) {
+      } else if (currentContext === "workspaces") {
         this.__setIcon(osparc.store.Workspaces.iconPath(32));
         title.set({
           value: this.tr("Shared Workspaces"),
           cursor: "auto",
         })
-      } else {
+      } else if (currentContext === "studiesAndFolders") {
+        const workspaceId = this.getCurrentWorkspaceId();
         title.set({
           cursor: "pointer"
         });
@@ -339,7 +342,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 300, 200);
       permissionsView.addListener("workspaceUpdated", () => {
         win.close();
-        this.__buildLayout(this.getCurrentWorkspaceId());
+        this.__buildLayout();
       }, this);
     },
 
