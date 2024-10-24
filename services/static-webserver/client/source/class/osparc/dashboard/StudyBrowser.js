@@ -200,10 +200,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadStudies: function() {
-      const workspaceId = this.getCurrentWorkspaceId();
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
-        workspaceId === -1 || // listing workspaces
+        this.getCurrentContext() === "workspaces" ||
         this._loadingResourcesBtn.isFetching()
       ) {
         return;
@@ -953,6 +952,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         if (
           context !== "search" && // reload studies for a new search
+          context === this.getCurrentContext() &&
           workspaceId === this.getCurrentWorkspaceId() &&
           folderId === this.getCurrentFolderId()
         ) {
@@ -960,14 +960,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
 
-        this._loadingResourcesBtn.setFetching(false);
-        this.resetSelection();
-        this.setMultiSelection(false);
         this.set({
           currentContext: context,
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
+        this._loadingResourcesBtn.setFetching(false);
+        this.resetSelection();
+        this.setMultiSelection(false);
         this.invalidateStudies();
         this._resourcesContainer.setResourcesToList([]);
 
