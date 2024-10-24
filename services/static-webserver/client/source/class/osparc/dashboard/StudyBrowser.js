@@ -104,6 +104,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __workspaceHeader: null,
     __workspacesList: null,
     __foldersList: null,
+    __loadingFolders: null,
 
     // overridden
     initResources: function() {
@@ -170,23 +171,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadFolders: function() {
-      if (!osparc.auth.Manager.getInstance().isLoggedIn()) {
+      if (
+        !osparc.auth.Manager.getInstance().isLoggedIn() ||
+        !osparc.utils.DisabledPlugins.isFoldersEnabled() ||
+        this.__loadingFolders) {
+        return;
+      }
+      const workspaceId = this.getCurrentWorkspaceId();
+      if (workspaceId === -1 || workspaceId === -2) {
         return;
       }
 
-      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const folderId = this.getCurrentFolderId();
-        const workspaceId = this.getCurrentWorkspaceId();
-        if (workspaceId === -1 || workspaceId === -2) {
-          return;
-        }
-        this.__setFoldersToList([]);
-        osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId, this.getOrderBy())
-          .then(folders => {
-            this.__setFoldersToList(folders);
-          })
-          .catch(console.error);
-      }
+      this.__loadingFolders = true;
+      this.__setFoldersToList([]);
+      const folderId = this.getCurrentFolderId();
+      osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId, this.getOrderBy())
+        .then(folders => {
+          this.__setFoldersToList(folders);
+        })
+        .catch(console.error)
+        .finally(() => this.__loadingFolders = null);
     },
 
     __reloadStudies: function() {
