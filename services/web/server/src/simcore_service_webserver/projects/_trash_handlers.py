@@ -20,6 +20,10 @@ from .exceptions import ProjectRunningConflictError, ProjectStopError, ProjectTr
 
 _logger = logging.getLogger(__name__)
 
+#
+# EXCEPTIONS HANDLING
+#
+
 
 class HttpErrorInfo(NamedTuple):
     status_code: int
@@ -53,7 +57,7 @@ def _handle_request_exceptions(handler: Handler):
             for exc_cls, http_error_info in _TO_HTTP_ERROR_MAP.items():
                 if isinstance(exc, exc_cls):
 
-                    # safe formatting
+                    # safe formatting, i.e. does not raise
                     user_msg = http_error_info.msg_template.format_map(
                         _DefaultDict(getattr(exc, "__dict__", {}))
                     )
@@ -81,6 +85,10 @@ def _handle_request_exceptions(handler: Handler):
 
     return _wrapper
 
+
+#
+# ROUTES
+#
 
 routes = web.RouteTableDef()
 

@@ -12,6 +12,7 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.api_schemas_webserver.projects import ProjectGet, ProjectListItem
 from models_library.rest_pagination import Page
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
@@ -41,8 +42,23 @@ async def test_trash_projects(
     user_project: ProjectDict,
     mocked_catalog: None,
     director_v2_service_mock: aioresponses,
+    mocker: MockerFixture,
 ):
     assert client.app
+
+    mocker.patch(
+        "simcore_service_webserver.projects._trash_api.projects_api.remove_project_dynamic_services",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._trash_api.director_v2_api.delete_pipeline",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._trash_api.director_v2_api.is_pipeline_running",
+        returns=False,
+        autospec=True,
+    )
 
     project_uuid = UUID(user_project["uuid"])
 
