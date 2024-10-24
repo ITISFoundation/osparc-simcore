@@ -33,14 +33,14 @@ from pydantic import (
     ByteSize,
     ConfigDict,
     Field,
+    TypeAdapter,
     field_validator,
     model_validator,
-    parse_obj_as,
     validate_call,
     validator,
 )
 
-UNDEFINED_SIZE: Final[ByteSize] = parse_obj_as(ByteSize, -1)
+UNDEFINED_SIZE: Final[ByteSize] = ByteSize(-1)
 
 
 class DatasetMetaData(DatasetMetaDataGet):
@@ -111,9 +111,15 @@ class FileMetaData(FileMetaDataGet):
             "file_name": parts[-1],
             "user_id": user_id,
             "project_id": (
-                parse_obj_as(ProjectID, parts[0]) if is_uuid(parts[0]) else None
+                TypeAdapter(ProjectID).validate_python(parts[0])
+                if is_uuid(parts[0])
+                else None
             ),
-            "node_id": parse_obj_as(NodeID, parts[1]) if is_uuid(parts[1]) else None,
+            "node_id": (
+                TypeAdapter(NodeID).validate_python(parts[1])
+                if is_uuid(parts[1])
+                else None
+            ),
             "file_id": file_id,
             "created_at": now,
             "last_modified": now,
