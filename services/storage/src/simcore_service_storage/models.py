@@ -1,11 +1,14 @@
 import datetime
 import urllib.parse
 from dataclasses import dataclass
-from typing import Final, Literal, NamedTuple, Self
+from typing import Literal, NamedTuple, Self
 from uuid import UUID
 
+import arrow
 from aws_library.s3 import UploadID
 from models_library.api_schemas_storage import (
+    UNDEFINED_SIZE,
+    UNDEFINED_SIZE_TYPE,
     DatasetMetaDataGet,
     ETag,
     FileMetaDataGet,
@@ -40,8 +43,6 @@ from pydantic import (
     validator,
 )
 
-UNDEFINED_SIZE: Final[ByteSize] = ByteSize(-1)
-
 
 class DatasetMetaData(DatasetMetaDataGet):
     ...
@@ -65,7 +66,7 @@ class FileMetaDataAtDB(BaseModel):
     user_id: UserID
     created_at: datetime.datetime
     file_id: SimcoreS3FileID
-    file_size: ByteSize
+    file_size: UNDEFINED_SIZE_TYPE | ByteSize
     last_modified: datetime.datetime
     entity_tag: ETag | None = None
     is_soft_link: bool
@@ -73,6 +74,7 @@ class FileMetaDataAtDB(BaseModel):
     upload_expires_at: datetime.datetime | None = None
     is_directory: bool
     sha256_checksum: SHA256Str | None = None
+
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
 
@@ -101,7 +103,7 @@ class FileMetaData(FileMetaDataGet):
         **file_meta_data_kwargs,
     ):
         parts = file_id.split("/")
-        now = datetime.datetime.utcnow()
+        now = arrow.utcnow().datetime
         fmd_kwargs = {
             "file_uuid": file_id,
             "location_id": location_id,
@@ -132,7 +134,7 @@ class FileMetaData(FileMetaDataGet):
             "is_directory": False,
         }
         fmd_kwargs.update(**file_meta_data_kwargs)
-        return cls.parse_obj(fmd_kwargs)
+        return cls.model_validate(fmd_kwargs)
 
 
 @dataclass
@@ -174,7 +176,7 @@ class FileDownloadQueryParams(StorageQueryParamsBase):
 
 class FileUploadQueryParams(StorageQueryParamsBase):
     link_type: LinkType = LinkType.PRESIGNED
-    file_size: ByteSize | None
+    file_size: ByteSize | None = None  # NOTE: in old legacy services this might happen
     is_directory: bool = False
     sha256_checksum: SHA256Str | None = None
 
@@ -189,10 +191,20 @@ class FileUploadQueryParams(StorageQueryParamsBase):
     def when_directory_force_link_type_and_file_size(self) -> Self:
         if self.is_directory is True:
             # sets directory size by default to undefined
-            self.file_size = UNDEFINED_SIZE
+            self.file_size = None
             # only 1 link will be returned manged by the uploader
             self.link_type = LinkType.S3
         return self
+
+    @property
+    def is_v1_upload(self) -> bool:
+        """This returns True if the query params are missing the file_size query parameter, which was the case in the legacy services that have an old version of simcore-sdk
+        v1 rationale:
+        - client calls this handler, which returns a single link (either direct S3 or presigned) to the S3 backend
+        - client uploads the file
+        - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data, or if the dsm_cleaner goes over it after the upload time is expired)
+        """
+        return self.file_size is None and self.is_directory is False
 
 
 class DeleteFolderQueryParams(StorageQueryParamsBase):
