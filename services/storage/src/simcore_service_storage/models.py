@@ -40,7 +40,6 @@ from pydantic import (
     field_validator,
     model_validator,
     validate_call,
-    validator,
 )
 
 
@@ -223,7 +222,7 @@ class SearchFilesQueryParams(StorageQueryParamsBase):
     )
     offset: int = Field(default=0, ge=0, description="Page offset")
 
-    _empty_is_none = validator("startswith", allow_reuse=True, pre=True)(
+    _empty_is_none = field_validator("startswith", mode="before")(
         empty_str_to_none_pre_validator
     )
 

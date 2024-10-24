@@ -353,7 +353,7 @@ def upload_file(
             file, file_upload_link
         )
         # complete the upload
-        complete_url = URL(file_upload_link.links.complete_upload).relative()
+        complete_url = URL(f"{file_upload_link.links.complete_upload}").relative()
         with log_context(logging.INFO, f"completing upload of {file=}"):
             response = await client.post(
                 f"{complete_url}",
@@ -364,7 +364,7 @@ def upload_file(
             assert not error
             assert data
             file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
-            state_url = URL(file_upload_complete_response.links.state).relative()
+            state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
             completion_etag = None
             async for attempt in AsyncRetrying(

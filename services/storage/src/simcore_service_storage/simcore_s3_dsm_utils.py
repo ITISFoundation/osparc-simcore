@@ -1,6 +1,5 @@
 from contextlib import suppress
 from pathlib import Path
-from typing import cast
 
 from aiopg.sa.connection import SAConnection
 from aws_library.s3 import S3MetaData, SimcoreS3API
@@ -10,7 +9,7 @@ from models_library.projects_nodes_io import (
     SimcoreS3FileID,
     StorageFileID,
 )
-from pydantic import ByteSize, NonNegativeInt, parse_obj_as
+from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.utils import ensure_ends_with
 
 from . import db_file_meta_data
@@ -56,7 +55,7 @@ async def expand_directory(
                 location_id=fmd.location_id,
                 location=fmd.location,
                 bucket_name=fmd.bucket_name,
-                object_name=cast(SimcoreS3FileID, x.object_key),
+                object_name=x.object_key,
                 user_id=fmd.user_id,
                 # NOTE: to ensure users have a consistent experience the
                 # `created_at` field is inherited from the last_modified
@@ -64,8 +63,8 @@ async def expand_directory(
                 # creation of the directory, the file's creation date
                 # will not be 1 month in the passed.
                 created_at=x.last_modified,
-                file_id=cast(SimcoreS3FileID, x.object_key),
-                file_size=parse_obj_as(ByteSize, x.size),
+                file_id=x.object_key,
+                file_size=TypeAdapter(ByteSize).validate_python(x.size),
                 last_modified=x.last_modified,
                 entity_tag=x.e_tag,
                 is_soft_link=False,
@@ -100,7 +99,7 @@ async def get_directory_file_id(
     ) -> FileMetaDataAtDB | None:
         with suppress(FileMetaDataNotFoundError):
             return await db_file_meta_data.get(
-                conn, parse_obj_as(SimcoreS3FileID, s3_file_id)
+                conn, TypeAdapter(SimcoreS3FileID).validate_python(s3_file_id)
             )
         return None
 
@@ -114,7 +113,9 @@ async def get_directory_file_id(
         # could not extract a directory name from the provided path
         return None
 
-    directory_file_id = parse_obj_as(SimcoreS3FileID, directory_file_id_str)
+    directory_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
+        directory_file_id_str
+    )
     directory_file_id_fmd = await _get_fmd(conn, directory_file_id)
 
     return directory_file_id if directory_file_id_fmd else None
