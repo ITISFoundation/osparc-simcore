@@ -270,11 +270,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     @model_validator(mode="after")
     @classmethod
-    def build_vcs_release_url_if_unset(cls, values):
-        release_url = values.get("SIMCORE_VCS_RELEASE_URL")
+    def build_vcs_release_url_if_unset(cls, v):
+        release_url = v.SIMCORE_VCS_RELEASE_URL
 
         if release_url is None and (
-            vsc_release_tag := values.get("SIMCORE_VCS_RELEASE_TAG")
+            vsc_release_tag := v.SIMCORE_VCS_RELEASE_TAG
         ):
             if vsc_release_tag == "latest":
                 release_url = (
@@ -282,9 +282,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 )
             else:
                 release_url = f"https://github.com/ITISFoundation/osparc-simcore/releases/tag/{vsc_release_tag}"
-            values["SIMCORE_VCS_RELEASE_URL"] = release_url
+            v.SIMCORE_VCS_RELEASE_URL = release_url
 
-        return values
+        return v
 
     @field_validator(
         # List of plugins under-development (keep up-to-date)
