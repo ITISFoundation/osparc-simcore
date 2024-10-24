@@ -8,7 +8,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 from uuid import UUID
 
 from pydantic import (
@@ -107,6 +107,10 @@ class DatasetMetaDataGet(BaseModel):
     )
 
 
+UNDEFINED_SIZE_TYPE: TypeAlias = Literal[-1]
+UNDEFINED_SIZE: UNDEFINED_SIZE_TYPE = -1
+
+
 # /locations/{location_id}/files/metadata:
 # /locations/{location_id}/files/{file_id}/metadata:
 class FileMetaDataGet(BaseModel):
@@ -130,8 +134,8 @@ class FileMetaDataGet(BaseModel):
     )
     created_at: datetime
     last_modified: datetime
-    file_size: ByteSize | int = Field(
-        default=-1, description="File size in bytes (-1 means invalid)"
+    file_size: UNDEFINED_SIZE_TYPE | ByteSize = Field(
+        default=UNDEFINED_SIZE, description="File size in bytes (-1 means invalid)"
     )
     entity_tag: ETag | None = Field(
         default=None,
