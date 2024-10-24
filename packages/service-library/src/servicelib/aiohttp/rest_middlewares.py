@@ -12,7 +12,7 @@ from typing import Any, Union
 from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
-from models_library.error_codes import create_error_code
+from common_library.error_codes import create_error_code
 from models_library.utils.json_serialization import json_dumps
 
 from ..logging_errors import create_troubleshotting_log_kwargs

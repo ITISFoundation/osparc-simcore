@@ -4,8 +4,8 @@ from typing import Any, ClassVar, Literal
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from common_library.error_codes import create_error_code
 from models_library.emails import LowerCaseEmailStr
-from models_library.error_codes import create_error_code
 from pydantic import BaseModel, Field, PositiveInt, SecretStr, validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
