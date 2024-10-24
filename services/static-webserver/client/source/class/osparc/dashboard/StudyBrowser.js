@@ -182,7 +182,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
         !osparc.utils.DisabledPlugins.isFoldersEnabled() ||
         this.getCurrentContext() !== "studiesAndFolders" ||
-        this.__loadingFolders ||
+        this.__loadingFolders
       ) {
         return;
       }
@@ -191,7 +191,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const folderId = this.getCurrentFolderId();
       this.__loadingFolders = true;
       this.__setFoldersToList([]);
-      const folderId = this.getCurrentFolderId();
       osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId, this.getOrderBy())
         .then(folders => {
           this.__setFoldersToList(folders);
