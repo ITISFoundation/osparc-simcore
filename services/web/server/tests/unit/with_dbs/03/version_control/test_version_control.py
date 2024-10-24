@@ -4,13 +4,12 @@
 
 
 from models_library.projects import NodesDict
-from pydantic import ConfigDict, BaseModel
+from pydantic import ConfigDict, RootModel
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.version_control.db import compute_workbench_checksum
 
 
-class WorkbenchModel(BaseModel):
-    __root__: NodesDict
+class WorkbenchModel(RootModel[NodesDict]):
     model_config = ConfigDict(populate_by_name=True)
 
 
