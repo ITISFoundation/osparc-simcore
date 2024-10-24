@@ -161,7 +161,7 @@ def app_environment(
     assert "API_SERVER_POSTGRES" not in envs
 
     # Should be sufficient to create settings
-    print(PostgresSettings.create_from_envs().json(indent=1))
+    print(PostgresSettings.create_from_envs().model_dump_json(indent=1))
 
     return envs
 
@@ -260,7 +260,7 @@ async def create_fake_api_keys(
             row = await result.fetchone()
             assert row
             _generate_fake_api_key.row_ids.append(row.id)
-            yield ApiKeyInDB.from_orm(row)
+            yield ApiKeyInDB.model_validate(row)
 
     _generate_fake_api_key.row_ids = []
     yield _generate_fake_api_key

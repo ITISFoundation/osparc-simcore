@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from httpx import HTTPStatusError
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from pydantic import ValidationError
-from pydantic.errors import PydanticValueError
 
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
@@ -230,7 +229,6 @@ async def get_solver_release(
         IndexError,
         ValidationError,
         HTTPStatusError,
-        PydanticValueError,
     ) as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -259,7 +257,7 @@ async def list_solver_ports(
         product_name=product_name,
     )
 
-    return OnePage[SolverPort](items=ports)
+    return OnePage[SolverPort].model_validate(dict(items=ports))
 
 
 @router.get(

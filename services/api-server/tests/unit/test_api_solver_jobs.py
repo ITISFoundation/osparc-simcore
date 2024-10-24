@@ -17,7 +17,7 @@ from httpx import AsyncClient
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
 from models_library.generics import Envelope
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
@@ -182,7 +182,7 @@ async def test_get_solver_job_pricing_unit(
     )
     if capture_file == "get_job_pricing_unit_success.json":
         assert response.status_code == status.HTTP_200_OK
-        _ = parse_obj_as(PricingUnitGet, response.json())
+        _ = TypeAdapter(PricingUnitGet).validate_python(response.json())
     elif capture_file == "get_job_pricing_unit_invalid_job.json":
         assert response.status_code == status.HTTP_404_NOT_FOUND
     elif capture_file == "get_job_pricing_unit_invalid_solver.json":
@@ -342,7 +342,7 @@ async def test_start_solver_job_conflict(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    job_status = JobStatus.parse_obj(response.json())
+    job_status = JobStatus.model_validate(response.json())
     assert f"{job_status.job_id}" == _job_id
 
 
@@ -364,7 +364,7 @@ async def test_stop_job(
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:
-        task = ComputationTaskGet.parse_obj(capture.response_body)
+        task = ComputationTaskGet.model_validate(capture.response_body)
         task.id = UUID(_job_id)
 
         return jsonable_encoder(task)
@@ -384,7 +384,7 @@ async def test_stop_job(
     )
 
     assert response.status_code == status.HTTP_200_OK
-    status_ = JobStatus.parse_obj(response.json())
+    status_ = JobStatus.model_validate(response.json())
     assert status_.job_id == UUID(_job_id)
 
 
@@ -416,9 +416,11 @@ async def test_get_solver_job_outputs(
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ):
-        wallet = parse_obj_as(
-            Envelope[WalletGetWithAvailableCredits], capture.response_body
-        ).data
+        wallet = (
+            TypeAdapter(Envelope[WalletGetWithAvailableCredits])
+            .validate_python(capture.response_body)
+            .data
+        )
         assert wallet is not None
         wallet.available_credits = (
             Decimal(10.0) if sufficient_credits else Decimal(-10.0)

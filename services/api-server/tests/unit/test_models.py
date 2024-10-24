@@ -21,7 +21,7 @@ from simcore_service_api_server.models.schemas.profiles import UserRoleEnum
 def test_api_server_model_examples(
     model_cls: type[BaseModel], example_name: int, example_data: Any
 ):
-    assert model_cls.parse_obj(
+    assert model_cls.model_validate(
         example_data
     ), f"Failed {example_name} : {json.dumps(example_data)}"
 

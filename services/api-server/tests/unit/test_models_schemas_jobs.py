@@ -46,8 +46,8 @@ def test_job_io_checksums(repeat: int):
         return deepcopy(src)
 
     shuffled_raw = _deepcopy_and_shuffle(raw)
-    inputs1 = JobInputs.parse_obj(raw)
-    inputs2 = JobInputs.parse_obj(shuffled_raw)
+    inputs1 = JobInputs.model_validate(raw)
+    inputs2 = JobInputs.model_validate(shuffled_raw)
 
     print(inputs1)
     print(inputs2)
@@ -87,7 +87,7 @@ def test_job_resouce_names_has_associated_url(app: FastAPI):
 def test_parsing_job_custom_metadata(job_id: JobID, faker: Faker):
     job_name = faker.name()
 
-    got = Envelope[ProjectMetadataGet].parse_raw(
+    got = Envelope[ProjectMetadataGet].model_validate_json(
         textwrap.dedent(
             f"""
         {{

@@ -14,7 +14,7 @@ import httpx
 import jsonref
 import pytest
 import respx
-from pydantic import parse_file_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from pytest_simcore.helpers.httpx_calls_capture_openapi import _determine_path
 from pytest_simcore.helpers.httpx_calls_capture_parameters import (
@@ -86,9 +86,9 @@ def test_openapion_capture_mock(
     assert mock_capture_path.exists()
     assert mock_capture_path.name.endswith(".json")
 
-    captures = parse_file_as(
-        list[HttpApiCallCaptureModel] | HttpApiCallCaptureModel, mock_capture_path
-    )
+    captures = TypeAdapter(
+        list[HttpApiCallCaptureModel] | HttpApiCallCaptureModel
+    ).validate_json(mock_capture_path.read_text())
 
     if not isinstance(captures, list):
         captures = [

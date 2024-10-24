@@ -8,13 +8,13 @@ from .httpx_calls_capture_errors import OpenApiSpecError
 class CapturedParameterSchema(BaseModel):
     title: str | None = None
     type_: Literal["str", "int", "float", "bool"] | None = Field(None, alias="type")
-    pattern: str | None
+    pattern: str | None = None
     format_: Literal["uuid"] | None = Field(None, alias="format")
-    exclusiveMinimum: bool | None
-    minimum: int | None
-    anyOf: list["CapturedParameterSchema"] | None
-    allOf: list["CapturedParameterSchema"] | None
-    oneOf: list["CapturedParameterSchema"] | None
+    exclusiveMinimum: bool | None = None
+    minimum: int | float | None = None
+    anyOf: list["CapturedParameterSchema"] | None = None
+    allOf: list["CapturedParameterSchema"] | None = None
+    oneOf: list["CapturedParameterSchema"] | None = None
 
     class Config:
         validate_always = True
@@ -34,15 +34,15 @@ class CapturedParameterSchema(BaseModel):
     @model_validator(mode="after")
     @classmethod
     def check_compatibility(cls, values):
-        type_ = values.get("type_")
-        pattern = values.get("pattern")
-        format_ = values.get("format_")
-        anyOf = values.get("anyOf")
-        allOf = values.get("allOf")
-        oneOf = values.get("oneOf")
+        type_ = values.type_
+        pattern = values.pattern
+        format_ = values.format_
+        anyOf = values.anyOf
+        allOf = values.allOf
+        oneOf = values.oneOf
         if not any([type_, oneOf, anyOf, allOf]):
             type_ = "str"  # this default is introduced because we have started using json query params in the webserver
-            values["type_"] = type_
+            values.type_ = type_
         if type_ != "str" and any([pattern, format_]):
             msg = f"For {type_=} both {pattern=} and {format_=} must be None"
             raise ValueError(msg)

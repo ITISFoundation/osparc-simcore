@@ -39,7 +39,7 @@ async def test_list_solvers(
 
     for item in data:
         solver = Solver(**item)
-        print(solver.json(indent=1, exclude_unset=True))
+        print(solver.model_dump_json(indent=1, exclude_unset=True))
 
         # use link to get the same solver
         assert solver.url

@@ -9,7 +9,7 @@ from typing import Any, Literal, TypeAlias
 
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
-from pydantic import Field, HttpUrl, field_validator
+from pydantic import ConfigDict, Field, HttpUrl, field_validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import LongTruncatedStr, ShortTruncatedStr
@@ -78,12 +78,16 @@ class ProjectGet(OutputSchema):
     ui: EmptyModel | StudyUI | None = None
     quality: dict[str, Any] = {}
     dev: dict | None = None
-    permalink: ProjectPermalink = FieldNotRequired()
-    workspace_id: WorkspaceID | None
-    folder_id: FolderID | None
+    permalink: ProjectPermalink | None = FieldNotRequired()
+    workspace_id: WorkspaceID | None = None
+    folder_id: FolderID | None = None
 
     _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator
+    )
+
+    model_config = ConfigDict(
+        frozen=False
     )
 
 

@@ -29,7 +29,7 @@ _COMMON_ERROR_RESPONSES: Final[dict] = {
 
 def _create_study_from_project(project: ProjectGet) -> Study:
     assert isinstance(project, ProjectGet)  # nosec
-    return Study.construct(
+    return Study.model_construct(
         uid=project.uuid,
         title=project.name,
         description=project.description,

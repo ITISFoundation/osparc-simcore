@@ -14,7 +14,7 @@ from fastapi import UploadFile
 from models_library.api_schemas_storage import FileMetaDataGet as StorageFileMetaData
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import StorageFileID
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.services.storage import to_file_api_model
 
@@ -34,8 +34,8 @@ def expected_sha256sum() -> SHA256Str:
     # $ echo -n "This is a test" | md5sum -
     # ce114e4501d2f4e2dcea3e17b546f339  -
     #
-    _sha256sum: SHA256Str = parse_obj_as(
-        SHA256Str, "c7be1ed902fb8dd4d48997c6452f5d7e509fbcdbe2808b16bcf4edce4c07d14e"
+    _sha256sum: SHA256Str = TypeAdapter(SHA256Str).validate_python(
+        "c7be1ed902fb8dd4d48997c6452f5d7e509fbcdbe2808b16bcf4edce4c07d14e"
     )
     assert hashlib.sha256(FILE_CONTENT.encode()).hexdigest() == _sha256sum
     return _sha256sum
@@ -81,10 +81,10 @@ async def test_create_filemetadata_from_starlette_uploadfile(
 
 def test_convert_between_file_models():
     storage_file_meta = StorageFileMetaData(
-        **StorageFileMetaData.Config.schema_extra["examples"][1]
+        **StorageFileMetaData.model_config["json_schema_extra"]["examples"][1]
     )
-    storage_file_meta.file_id = parse_obj_as(
-        StorageFileID, f"api/{uuid4()}/extensionless"
+    storage_file_meta.file_id = TypeAdapter(StorageFileID).validate_python(
+        f"api/{uuid4()}/extensionless"
     )
     apiserver_file_meta = to_file_api_model(storage_file_meta)
 
@@ -94,11 +94,13 @@ def test_convert_between_file_models():
     assert apiserver_file_meta.e_tag == storage_file_meta.entity_tag
 
     with pytest.raises(ValueError):
-        storage_file_meta.file_id = parse_obj_as(
-            StorageFileID, f"{uuid4()}/{uuid4()}/foo.txt"
+        storage_file_meta.file_id = TypeAdapter(StorageFileID).validate_python(
+            f"{uuid4()}/{uuid4()}/foo.txt"
         )
         to_file_api_model(storage_file_meta)
 
     with pytest.raises(ValidationError):
-        storage_file_meta.file_id = parse_obj_as(StorageFileID, "api/NOTUUID/foo.txt")
+        storage_file_meta.file_id = TypeAdapter(StorageFileID).validate_python(
+            "api/NOTUUID/foo.txt"
+        )
         to_file_api_model(storage_file_meta)
