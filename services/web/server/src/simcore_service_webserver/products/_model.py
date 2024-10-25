@@ -267,7 +267,7 @@ class Product(BaseModel):
         """Checks for field marked with 'x_template_name' that fits the argument"""
         template_name = filename.removesuffix(".jinja2")
         for name, field in self.model_fields.items():
-            if field.json_schema_extra.get("x_template_name") == template_name:
+            if field.json_schema_extra and field.json_schema_extra.get("x_template_name") == template_name:
                 template_name_attribute: str = getattr(self, name)
                 return template_name_attribute
         return None

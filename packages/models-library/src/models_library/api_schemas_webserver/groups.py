@@ -1,6 +1,7 @@
 from contextlib import suppress
 
 from pydantic import (
+    AnyHttpUrl,
     AnyUrl,
     BaseModel,
     ConfigDict,
@@ -90,7 +91,7 @@ class UsersGroup(BaseModel):
         if v:
             # Enforces null if thumbnail is not valid URL or empty
             with suppress(ValidationError):
-                return TypeAdapter(AnyUrl).validate_python(v)
+                return TypeAdapter(AnyHttpUrl).validate_python(v)
         return None
 
 
