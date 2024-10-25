@@ -847,6 +847,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         const header = this.__header = new osparc.dashboard.StudyBrowserHeader();
+        this.__header.addListener("emptyTrashRequested", () => this.__emptyTrash(), this);
         this._addToLayout(header);
       }
 
@@ -1168,6 +1169,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }, this);
       return deleteButton;
+    },
+
+    __emptyTrash: function() {
+      const win = this.__createConfirmEmptyTrashWindow();
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          osparc.data.Resources.fetch("trash", "delete")
+            .then(() => {
+              this.__resetStudiesList();
+            });
+        }
+      }, this);
     },
 
     __createSelectButton: function() {
@@ -1841,6 +1856,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         confirmAction: "delete"
       });
       osparc.utils.Utils.setIdToWidget(confirmationWin.getConfirmButton(), "confirmDeleteStudyBtn");
+      return confirmationWin;
+    },
+
+    __createConfirmEmptyTrashWindow: function() {
+      const msg = this.tr("Items in the bin will be permanently deleted");
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        confirmText: this.tr("Delete forever"),
+        confirmAction: "delete"
+      });
       return confirmationWin;
     },
 

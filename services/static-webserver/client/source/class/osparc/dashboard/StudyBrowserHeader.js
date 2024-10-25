@@ -44,7 +44,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   events: {
     "locationChanged": "qx.event.type.Data",
     "workspaceUpdated": "qx.event.type.Data",
-    "deleteWorkspaceRequested": "qx.event.type.Data"
+    "deleteWorkspaceRequested": "qx.event.type.Data",
+    "emptyTrashRequested": "qx.event.type.Event",
   },
 
   properties: {
@@ -203,7 +204,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
             appearance: "danger-button",
             allowGrowY: false,
           });
-          control.addListener("execute", () => console.log("Empty trash"));
+          control.addListener("execute", () => this.fireEvent("emptyTrashRequested"));
           this._addAt(control, this.self().POS.EMPTY_TRASH_BUTTON);
           break;
         }
