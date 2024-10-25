@@ -18,11 +18,15 @@ const expectedStatics = {
     "isPaymentEnabled": true
   },
   "s4llite": {
-    "displayName": "<i>S4L<sup>lite</sup></i>",
+    "displayName": "Sim4Life.lite",
     "isPaymentEnabled": false
   },
   "tis": {
     "displayName": "TI Planning Tool",
+    "isPaymentEnabled": true
+  },
+  "tiplite": {
+    "displayName": "TIP.lite",
     "isPaymentEnabled": true
   },
 };
