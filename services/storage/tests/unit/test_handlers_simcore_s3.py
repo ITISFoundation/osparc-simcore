@@ -82,7 +82,7 @@ async def test_simcore_s3_access_returns_default(client: TestClient):
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
     assert data
-    received_settings = S3Settings.parse_obj(data)
+    received_settings = S3Settings.model_validate(data)
     assert received_settings
 
 

@@ -363,7 +363,9 @@ def upload_file(
             data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
             assert not error
             assert data
-            file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
+            file_upload_complete_response = FileUploadCompleteResponse.model_validate(
+                data
+            )
             state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
             completion_etag = None
@@ -382,7 +384,7 @@ def upload_file(
                     data, error = await assert_status(response, status.HTTP_200_OK)
                     assert not error
                     assert data
-                    future = FileUploadCompleteFutureResponse.parse_obj(data)
+                    future = FileUploadCompleteFutureResponse.model_validate(data)
                     if future.state == FileUploadCompleteState.NOK:
                         msg = f"{data=}"
                         raise ValueError(msg)
@@ -479,7 +481,7 @@ async def create_empty_directory(
         data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
         assert not error
         assert data
-        file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
+        file_upload_complete_response = FileUploadCompleteResponse.model_validate(data)
         state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
         # check that it finished updating
@@ -500,7 +502,7 @@ async def create_empty_directory(
                 data, error = await assert_status(response, status.HTTP_200_OK)
                 assert not error
                 assert data
-                future = FileUploadCompleteFutureResponse.parse_obj(data)
+                future = FileUploadCompleteFutureResponse.model_validate(data)
                 assert future.state == FileUploadCompleteState.OK
                 assert future.e_tag is None
                 ctx.logger.info(

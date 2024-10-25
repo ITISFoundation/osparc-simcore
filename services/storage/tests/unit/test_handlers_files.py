@@ -631,7 +631,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
     data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
     assert not error
     assert data
-    file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
+    file_upload_complete_response = FileUploadCompleteResponse.model_validate(data)
     state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
     # here we do not check now for the state completion. instead we simulate a restart where the tasks disappear
@@ -652,7 +652,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
             data, error = await assert_status(response, status.HTTP_200_OK)
             assert not error
             assert data
-            future = FileUploadCompleteFutureResponse.parse_obj(data)
+            future = FileUploadCompleteFutureResponse.model_validate(data)
             assert future.state == FileUploadCompleteState.OK
             assert future.e_tag is not None
             completion_etag = future.e_tag
@@ -769,7 +769,7 @@ async def test_upload_real_file_with_s3_client(
         data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
         assert not error
         assert data
-        file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
+        file_upload_complete_response = FileUploadCompleteResponse.model_validate(data)
         state_url = URL(f"{file_upload_complete_response.links.state}").relative()
         completion_etag = None
         async for attempt in AsyncRetrying(
@@ -787,7 +787,7 @@ async def test_upload_real_file_with_s3_client(
                 data, error = await assert_status(response, status.HTTP_200_OK)
                 assert not error
                 assert data
-                future = FileUploadCompleteFutureResponse.parse_obj(data)
+                future = FileUploadCompleteFutureResponse.model_validate(data)
                 if future.state != FileUploadCompleteState.OK:
                     msg = f"{data=}"
                     raise ValueError(msg)
