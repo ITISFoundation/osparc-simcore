@@ -443,6 +443,39 @@ qx.Class.define("osparc.data.model.Study", {
       });
     },
 
+    __getFoldersPath: function(childId, foldersPath = []) {
+      foldersPath.unshift(childId);
+      const childFolder = osparc.store.Folders.getInstance().getFolder(childId);
+      if (childFolder) {
+        const parentFolder = osparc.store.Folders.getInstance().getFolder(childFolder.getParentFolderId());
+        if (parentFolder) {
+          this.__getFoldersPath(parentFolder.getFolderId(), foldersPath);
+        }
+      }
+      return foldersPath;
+    },
+
+    getLocationString: function() {
+      const location = [];
+
+      if (this.getWorkspaceId()) {
+        const workspace = osparc.store.Workspaces.getInstance().getWorkspace(this.getWorkspaceId());
+        location.push(workspace.getName());
+      } else {
+        location.push(qx.locale.Manager.tr("My Workspace"));
+      }
+
+      const foldersPathIds = this.__getFoldersPath(this.getFolderId());
+      foldersPathIds.forEach(folderId => {
+        const folder = osparc.store.Folders.getInstance().getFolder(folderId);
+        if (folder) {
+          location.push(folder.getName());
+        }
+      });
+
+      return location.join(" / ");
+    },
+
     // Used for updating some node data through the "nodeUpdated" websocket event
     nodeUpdated: function(nodeUpdatedData) {
       const studyId = nodeUpdatedData["project_id"];
