@@ -119,7 +119,7 @@ def client(
 
     @routes.get(r"/slow")
     async def blocking_slow(request: web.Request):
-        time.sleep(SLOW_HANDLER_DELAY_SECS * 1.1)
+        await asyncio.sleep(SLOW_HANDLER_DELAY_SECS * 1.1)
         return web.json_response({"data": True, "error": None})
 
     @routes.get(r"/cancel")
