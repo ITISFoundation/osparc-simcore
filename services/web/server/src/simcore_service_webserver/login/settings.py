@@ -36,7 +36,7 @@ class LoginSettings(BaseCustomSettings):
     )
 
     LOGIN_TWILIO: TwilioSettings | None = Field(
-        auto_default_from_env=True,
+        json_schema_extra={"auto_default_from_env": True},
         description="Twilio service settings. Used to send SMS for 2FA",
     )
 
