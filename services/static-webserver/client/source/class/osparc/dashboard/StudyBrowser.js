@@ -880,13 +880,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const selectStudiesButton = this.__createSelectButton();
       this._toolbar.add(selectStudiesButton);
 
-      const studiesMoveButton = this.__createMoveStudiesButton(false);
+      const studiesMoveButton = this.__createMoveStudiesButton();
       this._toolbar.add(studiesMoveButton);
 
-      const studiesTrashButton = this.__createTrashButton(false);
+      const studiesTrashButton = this.__createTrashButton();
       this._toolbar.add(studiesTrashButton);
 
-      const studiesDeleteButton = this.__createDeleteButton(false);
+      const studiesDeleteButton = this.__createDeleteButton();
       this._toolbar.add(studiesDeleteButton);
 
       this._toolbar.add(new qx.ui.core.Spacer(), {
@@ -1396,11 +1396,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       if (deleteAccess) {
-        const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
-        if (deleteButton) {
-          menu.addSeparator();
-          menu.add(deleteButton);
-        }
+        const deleteButton = this.getCurrentContext() === "trash" ? this.__getDeleteStudyMenuButton(studyData, false) : this.__getTrashStudyMenuButton(studyData, false);
+        menu.addSeparator();
+        menu.add(deleteButton);
       }
 
       card.evaluateMenuButtons();
