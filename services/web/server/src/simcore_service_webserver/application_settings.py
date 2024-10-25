@@ -22,6 +22,7 @@ from pydantic import (
 )
 from pydantic.fields import Field
 from pydantic.types import PositiveInt
+from pydantic_settings import SettingsConfigDict
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
@@ -268,6 +269,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default=True,
         description="This is a place-holder for future settings."
         "Currently this is a system plugin and cannot be disabled",
+    )
+
+    model_config = SettingsConfigDict(
+        frozen=False
     )
 
     @model_validator(mode="after")
