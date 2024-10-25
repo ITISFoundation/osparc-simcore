@@ -37,7 +37,7 @@ test.describe.serial(`User Menu Windows: ${product}`, () => {
   test(`Organizations window`, async () => {
     // open user menu
     await page.getByTestId("userMenuBtn").click();
-    // open Organization
+    // open Organization window
     await page.getByTestId("userMenuOrganizationsBtn").click();
 
     // make sure the window opens
@@ -47,5 +47,8 @@ test.describe.serial(`User Menu Windows: ${product}`, () => {
     const organizationListItems = page.getByTestId("organizationListItem");
     const count = await organizationListItems.count();
     expect(count > 0).toBeTruthy();
+
+    // close window
+    await page.getByTestId("organizationsWindowCloseBtn").click();
   });
 });
