@@ -23,12 +23,15 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
 
-  cd services/autoscaling || exit 1
-  pip install uv
-  uv pip --quiet --no-cache-dir install -r requirements/dev.txt
-  cd - || exit 1
-  echo "$INFO" "PIP :"
-  uv pip list | sed 's/^/    /'
+  cd services/autoscaling
+  uv pip --quiet --no-cache-dir sync requirements/dev.txt
+  cd -
+  uv pip list
+fi
+
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
+  # NOTE: production does NOT pre-installs debugpy
+  uv pip install --no-cache-dir debugpy
 fi
 
 #
