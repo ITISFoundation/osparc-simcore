@@ -6,7 +6,6 @@
 
 import asyncio
 import logging
-import time
 from collections.abc import Callable, Coroutine
 
 import pytest
