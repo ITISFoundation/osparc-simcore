@@ -16,7 +16,7 @@ FilterT = TypeVar("FilterT", bound=Filters)
 
 
 class FiltersQueryParameters(GenericModel, Generic[FilterT]):
-    filters: Json[FilterT] | None = Field(
+    filters: Json[FilterT] | None = Field(  # pylint: disable=unsubscriptable-object
         default=None,
         description="Custom filter query parameter encoded as JSON",
     )
