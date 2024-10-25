@@ -81,7 +81,7 @@ async def _fake_init_payment(
     # get_form_payment_url
     settings: PaymentsSettings = get_plugin_settings(app)
     external_form_link = (
-        URL(settings.PAYMENTS_FAKE_GATEWAY_URL)
+        URL(f"{settings.PAYMENTS_FAKE_GATEWAY_URL}")
         .with_path("/pay")
         .with_query(id=payment_id)
     )
