@@ -4,12 +4,12 @@ Wraps interactions to the director-v2 service
 
 """
 
-import json
 import logging
 from typing import Any
 from uuid import UUID
 
 from aiohttp import web
+from common_library.serialization import model_dump_with_secrets
 from models_library.api_schemas_directorv2.clusters import (
     ClusterCreate,
     ClusterDetails,
@@ -30,7 +30,6 @@ from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.logging_utils import log_decorator
-from settings_library.utils_encoders import create_json_encoder_wo_secrets
 
 from ..products.api import get_product
 from ._api_utils import get_wallet_info
@@ -225,12 +224,8 @@ async def create_cluster(
         "POST",
         url=(settings.base_url / "clusters").update_query(user_id=int(user_id)),
         expected_status=web.HTTPCreated,
-        data=json.loads(
-            new_cluster.model_dump_json(
-                by_alias=True,
-                exclude_unset=True,
-                encoder=create_json_encoder_wo_secrets(ClusterCreate),
-            )
+        data=model_dump_with_secrets(
+            new_cluster, show_secrets=True, by_alias=True, exclude_unset=True
         ),
     )
     assert isinstance(cluster, dict)  # nosec
@@ -322,12 +317,8 @@ async def update_cluster(
             user_id=int(user_id)
         ),
         expected_status=web.HTTPOk,
-        data=json.loads(
-            cluster_patch.model_dump_json(
-                by_alias=True,
-                exclude_unset=True,
-                encoder=create_json_encoder_wo_secrets(ClusterPatch),
-            )
+        data=model_dump_with_secrets(
+            cluster_patch, show_secrets=True, by_alias=True, exclude_none=True
         ),
         on_error={
             status.HTTP_404_NOT_FOUND: (
@@ -377,12 +368,11 @@ async def ping_cluster(app: web.Application, cluster_ping: ClusterPing) -> None:
         "POST",
         url=settings.base_url / "clusters:ping",
         expected_status=web.HTTPNoContent,
-        data=json.loads(
-            cluster_ping.model_dump_json(
-                by_alias=True,
-                exclude_unset=True,
-                encoder=create_json_encoder_wo_secrets(ClusterPing),
-            )
+        data=model_dump_with_secrets(
+            cluster_ping,
+            show_secrets=True,
+            by_alias=True,
+            exclude_unset=True,
         ),
         on_error={
             status.HTTP_422_UNPROCESSABLE_ENTITY: (
