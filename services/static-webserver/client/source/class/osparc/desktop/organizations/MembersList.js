@@ -567,6 +567,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           }
           rUSure += "<br><br>" + this.tr("If you Leave, the page will be reloaded.");
           const confirmationWin = new osparc.ui.window.Confirmation(rUSure).set({
+            caption: this.tr("Leave Organization"),
             confirmText: this.tr("Leave"),
             confirmAction: "delete"
           });

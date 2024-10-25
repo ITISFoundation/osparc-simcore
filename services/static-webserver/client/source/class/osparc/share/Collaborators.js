@@ -370,6 +370,7 @@ qx.Class.define("osparc.share.Collaborators", {
             msg += this.tr("If you remove yourself, there won't be any other Owners.");
           }
           const win = new osparc.ui.window.Confirmation(msg).set({
+            caption: this.tr("Leave"),
             confirmText: this.tr("Leave"),
             confirmAction: "delete"
           });

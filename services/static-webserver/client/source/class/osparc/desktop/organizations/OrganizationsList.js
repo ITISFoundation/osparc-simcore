@@ -236,6 +236,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       const name = org.getLabel();
       const msg = this.tr("Are you sure you want to delete ") + name + "?";
       const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete Organization"),
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });

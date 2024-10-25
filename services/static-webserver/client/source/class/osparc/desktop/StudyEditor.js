@@ -598,6 +598,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.getStudyLogger().info(null, "The pipeline is up-to-date");
           const msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
           const win = new osparc.ui.window.Confirmation(msg).set({
+            caption: this.tr("Re-run"),
             confirmText: this.tr("Run"),
             confirmAction: "create"
           });
