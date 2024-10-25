@@ -207,7 +207,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
       }
       const parts = value.split("/");
       const id = parts.pop();
-      osparc.utils.Utils.setIdToWidget(this, "serviceBrowserListItem_"+id);
+      osparc.utils.Utils.setIdToWidget(this, "listItem_"+id);
     },
 
     _applyThumbnail: function(value) {
