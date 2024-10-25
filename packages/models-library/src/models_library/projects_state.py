@@ -4,7 +4,14 @@
 
 from enum import Enum, unique
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from .projects_access import Owner
 
@@ -56,12 +63,12 @@ class ProjectStatus(str, Enum):
 
 class ProjectLocked(BaseModel):
     value: bool = Field(..., description="True if the project is locked")
+    status: ProjectStatus = Field(..., description="The status of the project")
     owner: Owner | None = Field(
         default=None,
         description="If locked, the user that owns the lock",
         validate_default=True,
     )
-    status: ProjectStatus = Field(..., description="The status of the project")
     model_config = ConfigDict(
         extra="forbid",
         use_enum_values=True,
@@ -81,15 +88,7 @@ class ProjectLocked(BaseModel):
         },
     )
 
-    @field_validator("owner", mode="before")
-    @classmethod
-    def check_not_null(cls, v, info: ValidationInfo):
-        if info.data["value"] is True and v is None:
-            msg = "value cannot be None when project is locked"
-            raise ValueError(msg)
-        return v
-
-    @field_validator("status")
+    @field_validator("status", mode="after")
     @classmethod
     def check_status_compatible(cls, v, info: ValidationInfo):
         if info.data["value"] is False and v not in ["CLOSED", "OPENED"]:
@@ -99,6 +98,23 @@ class ProjectLocked(BaseModel):
             msg = f"status is set to {v} and lock is set to {info.data['value']}!"
             raise ValueError(msg)
         return v
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_owner_compatible(cls, values):
+        if (
+            values["value"] is True
+            and values.get("owner") is None
+            and values["status"]
+            in [
+                status.value
+                for status in ProjectStatus
+                if status != ProjectStatus.MAINTAINING
+            ]
+        ):
+            msg = "Owner must be specified when the project is not in the 'MAINTAINING' status."
+            raise ValueError(msg)
+        return values
 
 
 class ProjectRunningState(BaseModel):

@@ -9,6 +9,9 @@
 #
 #
 ARG PYTHON_VERSION="3.11.9"
+ARG UV_VERSION="0.4"
+FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
+# we docker image is built based on debian
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
 ENV VIRTUAL_ENV=/home/scu/.venv
@@ -24,24 +27,21 @@ RUN --mount=type=cache,target=/var/cache/apt,mode=0755,sharing=private \
   && apt-get clean -y
 
 
-# NOTE: install https://github.com/astral-sh/uv ultra-fast rust-based pip replacement
-RUN --mount=type=cache,mode=0755,target=/root/.cache/pip \
-  pip install uv~=0.2
+# install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=uv_build /uv /uvx /bin/
 
 RUN uv venv "${VIRTUAL_ENV}"
 
-RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv \
   uv pip install --upgrade  \
-  pip~=24.0  \
   wheel \
   setuptools
 
 
 
 # devenv
-RUN --mount=type=cache,mode=0755,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv \
   uv pip install \
-  pip-tools \
   pipreqs \
   pipdeptree && \
   uv pip list -vv

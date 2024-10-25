@@ -299,7 +299,12 @@ qx.Class.define("osparc.info.StudyUtils", {
           inline: true,
           column: 0,
           row: 6,
-        }
+        },
+        LOCATION: {
+          inline: true,
+          column: 0,
+          row: 7,
+        },
       };
 
       const grid = new qx.ui.layout.Grid(15, 5);

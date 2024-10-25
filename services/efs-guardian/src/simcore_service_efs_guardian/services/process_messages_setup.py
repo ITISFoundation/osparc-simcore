@@ -39,7 +39,7 @@ async def _subscribe_to_rabbitmq(app) -> str:
 def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         with log_context(
-            _logger, logging.INFO, msg="setup resource tracker"
+            _logger, logging.INFO, msg="setup efs guardian process messages"
         ), log_catch(_logger, reraise=False):
             app_settings: ApplicationSettings = app.state.settings
             app.state.efs_guardian_rabbitmq_consumer = None

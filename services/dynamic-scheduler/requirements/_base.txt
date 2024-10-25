@@ -102,7 +102,8 @@ fastapi==0.115.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
-faststream==0.5.27
+    #   prometheus-fastapi-instrumentator
+faststream==0.5.28
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.4.1
     # via

@@ -18,22 +18,27 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   echo "$INFO" "Python :"
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
-  cd services/osparc-gateway-server || exit 1
-  pip install --no-cache-dir -r requirements/dev.txt
-  cd - || exit 1
+  cd services/osparc-gateway-server
+  uv pip install --no-cache-dir -r requirements/dev.txt
+  cd -
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'
 fi
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
+  # NOTE: production does NOT pre-installs debugpy
+  uv pip install --no-cache-dir debugpy
+fi
+
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
   exec python -m debugpy --listen 0.0.0.0:"${OSPARC_GATEWAY_SERVER_DEBUGGING_PORT}" -m watchmedo auto-restart \
-      --recursive \
-      --pattern="*.py;*/src/*" \
-      --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
-      --ignore-directories -- \
-      osparc-gateway-server \
-      --config "${GATEWAY_SERVER_CONFIG_FILE_CONTAINER}" \
-      --debug
+    --recursive \
+    --pattern="*.py;*/src/*" \
+    --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
+    --ignore-directories -- \
+    osparc-gateway-server \
+    --config "${GATEWAY_SERVER_CONFIG_FILE_CONTAINER}" \
+    --debug
 else
   exec osparc-gateway-server \
     --config "${GATEWAY_SERVER_CONFIG_FILE_CONTAINER}"

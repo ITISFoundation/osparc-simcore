@@ -15,74 +15,62 @@ ERROR="ERROR: [$(basename "$0")] "
 #   *runs* as non-root user [scu]
 #
 echo "$INFO" "Entrypoint for stage ${SC_BUILD_TARGET} ..."
-echo   User    :"$(id "$(whoami)")"
-echo   Workdir :"$(pwd)"
-echo   scuUser :"$(id scu)"
+echo User :"$(id "$(whoami)")"
+echo Workdir :"$(pwd)"
+echo scuUser :"$(id scu)"
 
+if [ "${SC_BUILD_TARGET}" = "development" ]; then
+  echo "$INFO" "development mode detected..."
+  # NOTE: expects docker run ... -v $(pwd):/devel/services/osparc-gateway-server
+  DEVEL_MOUNT=${DEVEL_MOUNT:="/devel/services/osparc-gateway-server"}
 
-if [ "${SC_BUILD_TARGET}" = "development" ]
-then
-    echo "$INFO" "development mode detected..."
-    # NOTE: expects docker run ... -v $(pwd):/devel/services/osparc-gateway-server
-    DEVEL_MOUNT=${DEVEL_MOUNT:="/devel/services/osparc-gateway-server"}
+  stat $DEVEL_MOUNT >/dev/null 2>&1 ||
+    (echo "$ERROR" "You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1)
 
-    stat $DEVEL_MOUNT > /dev/null 2>&1 || \
-        (echo "$ERROR" "You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1)
-
-    echo "setting correct user id/group id..."
-    HOST_USERID=$(stat --format=%u "${DEVEL_MOUNT}")
-    HOST_GROUPID=$(stat --format=%g "${DEVEL_MOUNT}")
-    CONT_GROUPNAME=$(getent group "${HOST_GROUPID}" | cut --delimiter=: --fields=1)
-    if [ "$HOST_USERID" -eq 0 ]
-    then
-        echo "Warning: Folder mounted owned by root user... adding $SC_USER_NAME to root..."
-        adduser "$SC_USER_NAME" root
+  echo "setting correct user id/group id..."
+  HOST_USERID=$(stat --format=%u "${DEVEL_MOUNT}")
+  HOST_GROUPID=$(stat --format=%g "${DEVEL_MOUNT}")
+  CONT_GROUPNAME=$(getent group "${HOST_GROUPID}" | cut --delimiter=: --fields=1)
+  if [ "$HOST_USERID" -eq 0 ]; then
+    echo "Warning: Folder mounted owned by root user... adding $SC_USER_NAME to root..."
+    adduser "$SC_USER_NAME" root
+  else
+    echo "Folder mounted owned by user $HOST_USERID:$HOST_GROUPID-'$CONT_GROUPNAME'..."
+    # take host's credentials in $SC_USER_NAME
+    if [ -z "$CONT_GROUPNAME" ]; then
+      echo "Creating new group my$SC_USER_NAME"
+      CONT_GROUPNAME=my$SC_USER_NAME
+      addgroup --gid "$HOST_GROUPID" "$CONT_GROUPNAME"
     else
-        echo "Folder mounted owned by user $HOST_USERID:$HOST_GROUPID-'$CONT_GROUPNAME'..."
-        # take host's credentials in $SC_USER_NAME
-        if [ -z "$CONT_GROUPNAME" ]
-        then
-            echo "Creating new group my$SC_USER_NAME"
-            CONT_GROUPNAME=my$SC_USER_NAME
-            addgroup --gid "$HOST_GROUPID" "$CONT_GROUPNAME"
-        else
-            echo "group already exists"
-        fi
-        echo "adding $SC_USER_NAME to group $CONT_GROUPNAME..."
-        adduser "$SC_USER_NAME" "$CONT_GROUPNAME"
-
-        echo "changing $SC_USER_NAME:$SC_USER_NAME ($SC_USER_ID:$SC_USER_ID) to $SC_USER_NAME:$CONT_GROUPNAME ($HOST_USERID:$HOST_GROUPID)"
-        usermod --uid "$HOST_USERID" --gid "$HOST_GROUPID" "$SC_USER_NAME"
-
-        echo "Changing group properties of files around from $SC_USER_ID to group $CONT_GROUPNAME"
-        find / -path /proc -prune -o -group "$SC_USER_ID" -exec chgrp --no-dereference "$CONT_GROUPNAME" {} \;
-        # change user property of files already around
-        echo "Changing ownership properties of files around from $SC_USER_ID to group $CONT_GROUPNAME"
-        find / -path /proc -prune -o -user "$SC_USER_ID" -exec chown --no-dereference "$SC_USER_NAME" {} \;
+      echo "group already exists"
     fi
-fi
+    echo "adding $SC_USER_NAME to group $CONT_GROUPNAME..."
+    adduser "$SC_USER_NAME" "$CONT_GROUPNAME"
 
+    echo "changing $SC_USER_NAME:$SC_USER_NAME ($SC_USER_ID:$SC_USER_ID) to $SC_USER_NAME:$CONT_GROUPNAME ($HOST_USERID:$HOST_GROUPID)"
+    usermod --uid "$HOST_USERID" --gid "$HOST_GROUPID" "$SC_USER_NAME"
 
-if [ "${SC_BOOT_MODE}" = "debug" ]
-then
-  # NOTE: production does NOT pre-installs debugpy
-  pip install --no-cache-dir debugpy
+    echo "Changing group properties of files around from $SC_USER_ID to group $CONT_GROUPNAME"
+    find / -path /proc -prune -o -group "$SC_USER_ID" -exec chgrp --no-dereference "$CONT_GROUPNAME" {} \;
+    # change user property of files already around
+    echo "Changing ownership properties of files around from $SC_USER_ID to group $CONT_GROUPNAME"
+    find / -path /proc -prune -o -user "$SC_USER_ID" -exec chown --no-dereference "$SC_USER_NAME" {} \;
+  fi
 fi
 
 DOCKER_MOUNT=/var/run/docker.sock
 if stat $DOCKER_MOUNT >/dev/null 2>&1; then
-    echo "$INFO detected docker socket is mounted, adding user to group..."
-    GROUPID=$(stat --format=%g $DOCKER_MOUNT)
-    GROUPNAME=scdocker
+  echo "$INFO detected docker socket is mounted, adding user to group..."
+  GROUPID=$(stat --format=%g $DOCKER_MOUNT)
+  GROUPNAME=scdocker
 
-    if ! addgroup --gid "$GROUPID" $GROUPNAME > /dev/null 2>&1
-    then
-        echo "$WARNING docker group with $GROUPID already exists, getting group name..."
-        # if group already exists in container, then reuse name
-        GROUPNAME=$(getent group "${GROUPID}" | cut --delimiter=: --fields=1)
-        echo "$WARNING docker group with $GROUPID has name $GROUPNAME"
-    fi
-    adduser "$SC_USER_NAME" "$GROUPNAME"
+  if ! addgroup --gid "$GROUPID" $GROUPNAME >/dev/null 2>&1; then
+    echo "$WARNING docker group with $GROUPID already exists, getting group name..."
+    # if group already exists in container, then reuse name
+    GROUPNAME=$(getent group "${GROUPID}" | cut --delimiter=: --fields=1)
+    echo "$WARNING docker group with $GROUPID has name $GROUPNAME"
+  fi
+  adduser "$SC_USER_NAME" "$GROUPNAME"
 fi
 
 echo "$INFO Starting osparc-gateway-server ..."
