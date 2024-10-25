@@ -29,6 +29,7 @@ const expectedElements = {
     "notifications": true,
     "help": true,
     "credits": false,
+    "userMenu": true,
   },
   "s4l": {
     "poweredByOsparc": true,
@@ -50,6 +51,7 @@ const expectedElements = {
     "notifications": true,
     "help": true,
     "credits": true,
+    "userMenu": true,
   },
   "s4lacad": {
     "poweredByOsparc": true,
@@ -71,6 +73,7 @@ const expectedElements = {
     "notifications": true,
     "help": true,
     "credits": true,
+    "userMenu": true,
   },
   "s4llite": {
     "poweredByOsparc": true,
@@ -91,6 +94,7 @@ const expectedElements = {
     "notifications": true,
     "help": true,
     "credits": false,
+    "userMenu": true,
   },
   "tis": {
     "poweredByOsparc": true,
@@ -110,6 +114,7 @@ const expectedElements = {
     "notifications": true,
     "help": true,
     "credits": true,
+    "userMenu": true,
   },
   "tiplite": {
     "poweredByOsparc": true,
@@ -129,6 +134,7 @@ const expectedElements = {
     "notifications": true,
     "help": true,
     "credits": true,
+    "userMenu": true,
   },
 };
 
@@ -243,8 +249,17 @@ for (const product in products) {
           }
         });
 
-        
-        
+        test(`Check User Menu button`, async () => {
+          expect(expectedElements[product]["userMenu"]).toBeDefined();
+
+          const isVisible = expectedElements[product]["userMenu"];
+          const button = page.getByTestId("userMenuBtn");
+          if (isVisible) {
+            await expect(button).toBeVisible();
+          } else {
+            await expect(button).toHaveCount(0);
+          }
+        });
       });
     }
   }
