@@ -31,12 +31,11 @@ async def get_health(request: web.Request) -> web.Response:
     assert request  # nosec
     return web.json_response(
         {
-            "data": HealthCheck.model_validate(
-                {
-                    "name": PROJECT_NAME,
-                    "version": f"{VERSION}",
-                    "api_version": API_VERSION,
-                }
+            "data": HealthCheck(
+                name=PROJECT_NAME,
+                version=f"{VERSION}",
+                api_version=API_VERSION,
+                status=None,
             ).model_dump(**RESPONSE_MODEL_POLICY)
         },
         dumps=json_dumps,
