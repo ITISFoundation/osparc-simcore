@@ -191,7 +191,7 @@ class BaseProjectDB:
             assert isinstance(row, RowProxy)  # nosec
             try:
                 await asyncio.get_event_loop().run_in_executor(
-                    None, ProjectAtDB.from_orm, row
+                    None, ProjectAtDB.model_validate, row
                 )
 
             except ProjectInvalidRightsError:

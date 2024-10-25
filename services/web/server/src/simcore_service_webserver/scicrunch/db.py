@@ -39,7 +39,7 @@ class ResearchResourceRepository:
             )
             res: ResultProxy = await conn.execute(stmt)
             rows: list[RowProxy] = await res.fetchall()
-            return [ResearchResource.from_orm(row) for row in rows] if rows else []
+            return [ResearchResource.model_validate(row) for row in rows] if rows else []
 
     async def get(self, rrid: str) -> ResearchResourceAtdB | None:
         async with self._engine.acquire() as conn:

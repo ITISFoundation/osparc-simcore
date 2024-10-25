@@ -105,7 +105,7 @@ async def get_successful_payment_method(
         if row is None:
             raise PaymentMethodNotFoundError(payment_method_id=payment_method_id)
 
-        return PaymentsMethodsDB.from_orm(row)
+        return PaymentsMethodsDB.model_validate(row)
 
 
 async def get_pending_payment_methods_ids(

@@ -61,7 +61,7 @@ async def create_workspace_group(
             .returning(literal_column("*"))
         )
         row = await result.first()
-        return WorkspaceGroupGetDB.from_orm(row)
+        return WorkspaceGroupGetDB.model_validate(row)
 
 
 async def list_workspace_groups(
@@ -84,7 +84,7 @@ async def list_workspace_groups(
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(stmt)
         rows = await result.fetchall() or []
-        return [WorkspaceGroupGetDB.from_orm(row) for row in rows]
+        return [WorkspaceGroupGetDB.model_validate(row) for row in rows]
 
 
 async def get_workspace_group(
@@ -115,7 +115,7 @@ async def get_workspace_group(
             raise WorkspaceGroupNotFoundError(
                 workspace_id=workspace_id, group_id=group_id
             )
-        return WorkspaceGroupGetDB.from_orm(row)
+        return WorkspaceGroupGetDB.model_validate(row)
 
 
 async def update_workspace_group(
@@ -146,7 +146,7 @@ async def update_workspace_group(
             raise WorkspaceGroupNotFoundError(
                 workspace_id=workspace_id, group_id=group_id
             )
-        return WorkspaceGroupGetDB.from_orm(row)
+        return WorkspaceGroupGetDB.model_validate(row)
 
 
 async def delete_workspace_group(

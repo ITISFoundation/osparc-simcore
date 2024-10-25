@@ -36,7 +36,7 @@ async def get_wallet_autorecharge(
         stmt = AutoRechargeStmts.get_wallet_autorecharge(wallet_id)
         result = await conn.execute(stmt)
         row = await result.first()
-        return PaymentsAutorechargeDB.from_orm(row) if row else None
+        return PaymentsAutorechargeDB.model_validate(row) if row else None
 
 
 async def replace_wallet_autorecharge(
@@ -73,4 +73,4 @@ async def replace_wallet_autorecharge(
         result = await conn.execute(stmt)
         row = await result.first()
         assert row  # nosec
-        return PaymentsAutorechargeDB.from_orm(row)
+        return PaymentsAutorechargeDB.model_validate(row)
