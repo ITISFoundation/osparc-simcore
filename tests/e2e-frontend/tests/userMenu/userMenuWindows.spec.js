@@ -46,6 +46,6 @@ test.describe.serial(`User Menu Windows: ${product}`, () => {
     // check there is at least one organization listed
     const organizationListItems = page.getByTestId("organizationListItem");
     const count = await organizationListItems.count();
-    expect(count).toBeTruthy();
+    expect(count > 0).toBeTruthy();
   });
 });
