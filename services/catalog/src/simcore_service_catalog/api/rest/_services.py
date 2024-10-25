@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from models_library.api_schemas_catalog.services import ServiceGet, ServiceUpdate
 from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_metadata_published import ServiceMetaDataPublished
+from opentelemetry import trace
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
@@ -32,6 +33,8 @@ from ..dependencies.services import get_service_from_manifest
 _logger = logging.getLogger(__name__)
 
 ServicesSelection: TypeAlias = set[tuple[str, str]]
+# Obtain the tracer from the global tracer provider
+_tracer = trace.get_tracer(__name__)
 
 
 def _compose_service_details(
@@ -105,56 +108,67 @@ async def list_services(
         )
 
     # now get the executable or writable services
-    services_in_db = {
-        (s.key, s.version): s
-        for s in await services_repo.list_services(
-            gids=[group.gid for group in user_groups],
-            execute_access=True,
-            write_access=True,
-            combine_access_with_and=False,
-            product_name=x_simcore_products_name,
-        )
-    }
+    with _tracer.start_as_current_span("services_repo.list_services") as span:
+        span.set_attribute("osparc-gids", f"{[group.gid for group in user_groups]}")
+        span.set_attribute("osparc-productname", f"{x_simcore_products_name}")
+        services_in_db = {
+            (s.key, s.version): s
+            for s in await services_repo.list_services(
+                gids=[group.gid for group in user_groups],
+                execute_access=True,
+                write_access=True,
+                combine_access_with_and=False,
+                product_name=x_simcore_products_name,
+            )
+        }
     # Non-detailed views from the services_repo database
     if not details:
         # only return a stripped down version
         # NOTE: here validation is not necessary since key,version were already validated
         # in terms of time, this takes the most
-        return [
-            ServiceGet.construct(
-                key=key,
-                version=version,
-                name="nodetails",
-                description="nodetails",
-                type=ServiceType.COMPUTATIONAL,
-                authors=[{"name": "nodetails", "email": "nodetails@nodetails.com"}],
-                contact="nodetails@nodetails.com",
-                inputs={},
-                outputs={},
-                deprecated=services_in_db[(key, version)].deprecated,
-            )
-            for key, version in services_in_db
-        ]
+        returned_list = []
+        with _tracer.start_as_current_span("return-non-detailed-view") as span:
+            span.set_attribute("osparc-gids", f"{[group.gid for group in user_groups]}")
+            span.set_attribute("osparc-productname", f"{x_simcore_products_name}")
+            returned_list = [
+                ServiceGet.construct(
+                    key=key,
+                    version=version,
+                    name="nodetails",
+                    description="nodetails",
+                    type=ServiceType.COMPUTATIONAL,
+                    authors=[{"name": "nodetails", "email": "nodetails@nodetails.com"}],
+                    contact="nodetails@nodetails.com",
+                    inputs={},
+                    outputs={},
+                    deprecated=services_in_db[(key, version)].deprecated,
+                )
+                for key, version in services_in_db
+            ]
+            return returned_list
 
     # caching this steps brings down the time to generate it at the expense of being sometimes a bit out of date
     @cached(ttl=DIRECTOR_CACHING_TTL)
     async def cached_registry_services() -> dict[str, Any]:
         return cast(dict[str, Any], await director_client.get("/services"))
 
-    (
-        services_in_registry,
-        services_access_rights,
-        services_owner_emails,
-    ) = await asyncio.gather(
-        cached_registry_services(),
-        services_repo.list_services_access_rights(
-            key_versions=services_in_db,
-            product_name=x_simcore_products_name,
-        ),
-        groups_repository.list_user_emails_from_gids(
-            {s.owner for s in services_in_db.values() if s.owner}
-        ),
-    )
+    with _tracer.start_as_current_span("list_services_access_rights") as span:
+        span.set_attribute("osparc-gids", f"{[group.gid for group in user_groups]}")
+        span.set_attribute("osparc-productname", f"{x_simcore_products_name}")
+        (
+            services_in_registry,
+            services_access_rights,
+            services_owner_emails,
+        ) = await asyncio.gather(
+            cached_registry_services(),
+            services_repo.list_services_access_rights(
+                key_versions=services_in_db,
+                product_name=x_simcore_products_name,
+            ),
+            groups_repository.list_user_emails_from_gids(
+                {s.owner for s in services_in_db.values() if s.owner}
+            ),
+        )
 
     # NOTE: for the details of the services:
     # 1. we get all the services from the director-v0 (TODO: move the registry to the catalog)
