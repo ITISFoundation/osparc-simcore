@@ -39,7 +39,8 @@ def mocked_catalog(
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/pull/6579"
 )
-@pytest.mark.parametrize("is_trash_service_running", [False, True])
+@pytest.mark.parametrize("force", [False, True])
+@pytest.mark.parametrize("is_project_running", [False, True])
 async def test_trash_projects(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -47,22 +48,28 @@ async def test_trash_projects(
     mocked_catalog: None,
     director_v2_service_mock: aioresponses,
     mocker: MockerFixture,
-    is_trash_service_running: bool,
+    force: bool,
+    is_project_running: bool,
 ):
     assert client.app
 
     # this test should have no errors stopping services
-    mocker.patch(
+    mock_remove_dynamic_services = mocker.patch(
         "simcore_service_webserver.projects._trash_api.projects_api.remove_project_dynamic_services",
         autospec=True,
     )
-    mocker.patch(
-        "simcore_service_webserver.projects._trash_api.director_v2_api.delete_pipeline",
+    mock_stop_pipeline = mocker.patch(
+        "simcore_service_webserver.projects._trash_api.director_v2_api.stop_pipeline",
         autospec=True,
     )
     mocker.patch(
         "simcore_service_webserver.projects._trash_api.director_v2_api.is_pipeline_running",
-        return_value=is_trash_service_running,
+        return_value=is_project_running,
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.projects._trash_api.director_v2_api.list_dynamic_services",
+        return_value=[mocker.MagicMock()] if is_project_running else [],
         autospec=True,
     )
 
@@ -91,15 +98,17 @@ async def test_trash_projects(
 
     # TRASH
     trashing_at = arrow.utcnow().datetime
-    resp = await client.post(f"/v0/projects/{project_uuid}:trash")
+    resp = await client.post(
+        f"/v0/projects/{project_uuid}:trash", params={"force": f"{force}"}
+    )
     _, error = await assert_status(
         resp,
         status.HTTP_409_CONFLICT
-        if is_trash_service_running
+        if (is_project_running and not force)
         else status.HTTP_204_NO_CONTENT,
     )
 
-    could_not_trash = is_trash_service_running
+    could_not_trash = is_project_running and not force
 
     if could_not_trash:
         assert error["status"] == status.HTTP_409_CONFLICT
@@ -140,3 +149,7 @@ async def test_trash_projects(
 
         assert got.uuid == project_uuid
         assert got.trashed_at is None
+
+    if is_project_running and force:
+        mock_remove_dynamic_services.assert_any_await()
+        mock_stop_pipeline.assert_any_await()

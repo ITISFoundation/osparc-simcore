@@ -52,12 +52,10 @@ async def _is_project_running(
     project_id: ProjectID,
 ) -> bool:
     return bool(
-        # computational
         await director_v2_api.is_pipeline_running(
             app, user_id=user_id, project_id=project_id
         )
     ) or bool(
-        # dynamic
         await director_v2_api.list_dynamic_services(
             app, user_id=user_id, project_id=f"{project_id}"
         )
@@ -87,26 +85,28 @@ async def trash_project(
     )
 
     if force_stop_first:
-        # NOTE: schedules stop-project
 
-        stop_project_task = asyncio.gather(
-            director_v2_api.stop_pipeline(app, user_id=user_id, project_id=project_id),
-            projects_api.remove_project_dynamic_services(
-                user_id=user_id,
-                project_uuid=f"{project_id}",
-                app=app,
-                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                notify_users=False,
-            ),
-        )
+        async def _schedule():
+            await asyncio.gather(
+                director_v2_api.stop_pipeline(
+                    app, user_id=user_id, project_id=project_id
+                ),
+                projects_api.remove_project_dynamic_services(
+                    user_id=user_id,
+                    project_uuid=f"{project_id}",
+                    app=app,
+                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    notify_users=False,
+                ),
+            )
 
         fire_and_forget_task(
-            stop_project_task,
-            task_suffix_name=f"trash_project_stop_project_{user_id=}_{project_id=}",
+            _schedule(),
+            task_suffix_name=f"trash_project_force_stop_first_{user_id=}_{project_id=}",
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
         )
 
-    elif _is_project_running(app, user_id=user_id, project_id=project_id):
+    elif await _is_project_running(app, user_id=user_id, project_id=project_id):
         raise ProjectRunningConflictError(
             project_uuid=project_id,
             user_id=user_id,
