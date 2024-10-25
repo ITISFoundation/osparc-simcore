@@ -36,6 +36,7 @@ def mocked_catalog(
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/pull/6579"
 )
+@pytest.mark.parametrize("is_trash_service_running", [False, True])
 async def test_trash_projects(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -43,6 +44,7 @@ async def test_trash_projects(
     mocked_catalog: None,
     director_v2_service_mock: aioresponses,
     mocker: MockerFixture,
+    is_trash_service_running: bool,
 ):
     assert client.app
 
@@ -57,7 +59,7 @@ async def test_trash_projects(
     )
     mocker.patch(
         "simcore_service_webserver.projects._trash_api.director_v2_api.is_pipeline_running",
-        returns=False,
+        return_value=is_trash_service_running,
         autospec=True,
     )
 
@@ -87,7 +89,18 @@ async def test_trash_projects(
     # TRASH
     trashing_at = arrow.utcnow().datetime
     resp = await client.post(f"/v0/projects/{project_uuid}:trash")
-    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+    _, error = await assert_status(
+        resp,
+        status.HTTP_409_CONFLICT
+        if is_trash_service_running
+        else status.HTTP_204_NO_CONTENT,
+    )
+
+    could_not_trash = is_trash_service_running
+
+    if could_not_trash:
+        assert error["status"] == status.HTTP_409_CONFLICT
+        assert "Current study is in use" in error["message"]
 
     # GET
     resp = await client.get(f"/v0/projects/{project_uuid}")
@@ -95,26 +108,32 @@ async def test_trash_projects(
     got = ProjectGet.parse_obj(data)
     assert got.uuid == project_uuid
 
-    assert got.trashed_at
-    assert trashing_at < got.trashed_at
-    assert got.trashed_at < arrow.utcnow().datetime
+    if could_not_trash:
+        assert got.trashed_at is None
+    else:
+        assert got.trashed_at
+        assert trashing_at < got.trashed_at
+        assert got.trashed_at < arrow.utcnow().datetime
 
     # LIST trashed
     resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
     await assert_status(resp, status.HTTP_200_OK)
 
     page = Page[ProjectListItem].parse_obj(await resp.json())
-    assert page.meta.total == 1
-    assert page.data[0].uuid == project_uuid
+    if could_not_trash:
+        assert page.meta.total == 0
+    else:
+        assert page.meta.total == 1
+        assert page.data[0].uuid == project_uuid
 
-    # UNTRASH
-    resp = await client.post(f"/v0/projects/{project_uuid}:untrash")
-    data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
+        # UNTRASH
+        resp = await client.post(f"/v0/projects/{project_uuid}:untrash")
+        data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # GET
-    resp = await client.get(f"/v0/projects/{project_uuid}")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-    got = ProjectGet.parse_obj(data)
+        # GET
+        resp = await client.get(f"/v0/projects/{project_uuid}")
+        data, _ = await assert_status(resp, status.HTTP_200_OK)
+        got = ProjectGet.parse_obj(data)
 
-    assert got.uuid == project_uuid
-    assert got.trashed_at is None
+        assert got.uuid == project_uuid
+        assert got.trashed_at is None
