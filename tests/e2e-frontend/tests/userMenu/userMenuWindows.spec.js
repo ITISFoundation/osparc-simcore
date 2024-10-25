@@ -7,11 +7,11 @@ import { LoginPage } from '../fixtures/loginPage';
 import products from '../products.json';
 import users from '../users.json';
 
-const product = "s4l";
+const product = "osparc";
 const productUrl = products[product];
 const user = users[product];
 
-test.describe.serial(`Navigation Bar: ${product}`, () => {
+test.describe.serial(`User Menu Windows: ${product}`, () => {
   let page = null;
   let loginPageFixture = null;
 
