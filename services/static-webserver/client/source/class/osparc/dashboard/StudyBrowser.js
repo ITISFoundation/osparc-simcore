@@ -467,6 +467,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __showMoveToWorkspaceWarningMessage: function() {
       const msg = this.tr("The permissions will be taken from the new workspace.");
       const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Move"),
         confirmText: this.tr("Move"),
       });
       win.open();
@@ -1846,8 +1847,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
       msg += (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText}?` : ` <b>${studyNames[0]}</b>?`);
       const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
-      msg += "<br><br>" + (studyNames.length > 1 ? "It" : "They") + this.tr(` will be permanently deleted after ${trashDays} days.`);
+      msg += "<br><br>" + (studyNames.length > 1 ? "They" : "It") + this.tr(` will be permanently deleted after ${trashDays} days.`);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Move to Trash"),
         confirmText: this.tr("Move to Trash"),
         confirmAction: "delete"
       });
@@ -1860,6 +1862,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
       msg += (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText}?` : ` <b>${studyNames[0]}</b>?`);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete"),
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });
@@ -1870,6 +1873,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createConfirmEmptyTrashWindow: function() {
       const msg = this.tr("Items in the bin will be permanently deleted");
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete"),
         confirmText: this.tr("Delete forever"),
         confirmAction: "delete"
       });
