@@ -4,7 +4,7 @@ const { test, expect } = require('@playwright/test');
 
 import products from '../products.json';
 
-const expectations = {
+const expectedLogin = {
   "osparc": {
     "label": "Request Account",
     "afterClicking": "registrationSubmitBtn",
@@ -33,9 +33,9 @@ const expectations = {
 
 for (const product in products) {
   test(`Invitation required text in ${product}`, async ({ page }) => {
-    expect(expectations[product]["label"]).toBeDefined();
+    expect(expectedLogin[product]["label"]).toBeDefined();
 
-    const expectedLabel = expectations[product]["label"];
+    const expectedLabel = expectedLogin[product]["label"];
     await page.goto(products[product]);
 
     const button = page.getByTestId("loginCreateAccountBtn");
@@ -44,14 +44,14 @@ for (const product in products) {
   });
 
   test(`Callback action on Create Account ${product}`, async ({ page }) => {
-    expect(expectedActionOnCreateAccount[product]["afterClicking"]).toBeDefined();
+    expect(expectedLogin[product]["afterClicking"]).toBeDefined();
 
     await page.goto(products[product]);
 
     const button = page.getByTestId("loginCreateAccountBtn");
     button.click();
 
-    const expectedWidget = page.getByTestId(expectedActionOnCreateAccount[product]["afterClicking"]);
+    const expectedWidget = page.getByTestId(expectedLogin[product]["afterClicking"]);
     await expect(expectedWidget).toBeVisible();
   });
 }
