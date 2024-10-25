@@ -7,26 +7,110 @@ import { LoginPage } from '../fixtures/loginPage';
 import products from '../products.json';
 import users from '../users.json';
 
-const userMenuButtonsPerRole = {
-  "USER": {
-    "My Account": true,
-    "PO Center": false,
-    "Admin Center": false,
+const expectedElements = {
+  "osparc": {
+    "poweredByOsparc": false,
+    "studies": {
+      "visible": true,
+      "label": "STUDIES",
+    },
+    "templates": {
+      "visible": true,
+      "label": "TEMPLATES",
+    },
+    "services": {
+      "visible": true,
+      "label": "SERVICES",
+    },
+    "data": {
+      "visible": true,
+      "label": "DATA",
+    },
   },
-  "TESTER": {
-    "My Account": true,
-    "PO Center": false,
-    "Admin Center": false,
+  "s4l": {
+    "poweredByOsparc": true,
+    "studies": {
+      "visible": true,
+      "label": "PROJECTS",
+    },
+    "templates": {
+      "visible": true,
+      "label": "TUTORIALS",
+    },
+    "services": {
+      "visible": true,
+      "label": "SERVICES",
+    },
+    "data": {
+      "visible": false,
+    },
   },
-  "PRODUCT_OWNER": {
-    "My Account": true,
-    "PO Center": true,
-    "Admin Center": false,
+  "s4lacad": {
+    "poweredByOsparc": true,
+    "studies": {
+      "visible": true,
+      "label": "PROJECTS",
+    },
+    "templates": {
+      "visible": true,
+      "label": "TUTORIALS",
+    },
+    "services": {
+      "visible": true,
+      "label": "SERVICES",
+    },
+    "data": {
+      "visible": false,
+    },
   },
-  "ADMIN": {
-    "My Account": true,
-    "PO Center": true,
-    "Admin Center": true,
+  "s4llite": {
+    "poweredByOsparc": true,
+    "studies": {
+      "visible": true,
+      "label": "PROJECTS",
+    },
+    "templates": {
+      "visible": true,
+      "label": "TUTORIALS",
+    },
+    "services": {
+      "visible": false,
+    },
+    "data": {
+      "visible": false,
+    },
+  },
+  "tis": {
+    "poweredByOsparc": true,
+    "studies": {
+      "visible": true,
+      "label": "STUDIES",
+    },
+    "templates": {
+      "visible": false,
+    },
+    "services": {
+      "visible": false,
+    },
+    "data": {
+      "visible": false,
+    },
+  },
+  "tiplite": {
+    "poweredByOsparc": true,
+    "studies": {
+      "visible": true,
+      "label": "STUDIES",
+    },
+    "templates": {
+      "visible": false,
+    },
+    "services": {
+      "visible": false,
+    },
+    "data": {
+      "visible": false,
+    },
   },
 };
 
