@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_sidecar.telemetry import (
@@ -17,7 +18,6 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import (
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import RunID
 from models_library.users import UserID
-from models_library.utils.json_serialization import json_dumps
 from psutil._common import sdiskusage
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture

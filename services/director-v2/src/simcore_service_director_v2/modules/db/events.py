@@ -2,8 +2,8 @@ import logging
 
 from aiopg.sa import Engine, create_engine
 from aiopg.sa.engine import get_dialect
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
-from models_library.utils.json_serialization import json_dumps
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.utils_aiopg import (

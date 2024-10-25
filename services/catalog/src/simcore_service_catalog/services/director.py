@@ -7,10 +7,10 @@ from contextlib import suppress
 from typing import Any
 
 import httpx
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, HTTPException
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
-from models_library.utils.json_serialization import json_dumps
 from servicelib.logging_utils import log_context
 from starlette import status
 from tenacity.asyncio import AsyncRetrying

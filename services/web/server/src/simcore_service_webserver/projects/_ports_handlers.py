@@ -9,6 +9,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any, Literal
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputGet,
     ProjectInputUpdate,
@@ -20,7 +21,6 @@ from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import json_dumps
 from models_library.utils.services_io import JsonSchemaDict
 from pydantic import BaseModel, Field, parse_obj_as
 from servicelib.aiohttp.requests_validation import (

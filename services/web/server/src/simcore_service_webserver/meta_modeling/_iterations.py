@@ -10,13 +10,13 @@ from copy import deepcopy
 from typing import Any, Literal, Optional
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from models_library.basic_types import KeyIDStr, SHA1Str
 from models_library.function_services_catalog import is_iterator_service
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, OutputID, OutputTypes
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceMetaDataPublished
-from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 from pydantic.types import PositiveInt

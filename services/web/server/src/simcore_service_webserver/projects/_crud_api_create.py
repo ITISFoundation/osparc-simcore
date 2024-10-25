@@ -5,6 +5,7 @@ from contextlib import AsyncExitStack
 from typing import Any, TypeAlias
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.api_schemas_webserver.projects import ProjectGet
@@ -13,7 +14,6 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import ProjectStatus
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import json_dumps
 from models_library.workspaces import UserWorkspaceAccessRightsDB
 from pydantic import parse_obj_as
 from servicelib.aiohttp.long_running_tasks.server import TaskProgress

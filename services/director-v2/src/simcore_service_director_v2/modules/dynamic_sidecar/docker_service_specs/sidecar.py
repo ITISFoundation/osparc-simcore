@@ -2,6 +2,7 @@ import logging
 from copy import deepcopy
 from typing import Any, NamedTuple
 
+from common_library.json_serialization import json_dumps
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
@@ -14,7 +15,6 @@ from models_library.docker import (
 )
 from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
-from models_library.utils.json_serialization import json_dumps
 from pydantic import ByteSize, parse_obj_as
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.efs_guardian import efs_manager

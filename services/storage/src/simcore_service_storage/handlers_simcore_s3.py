@@ -3,10 +3,10 @@ from typing import cast
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_storage import FileMetaDataGet, FoldersBody
 from models_library.projects import ProjectID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
     TaskProgress,

@@ -5,7 +5,7 @@ from math import ceil
 from typing import Callable, NamedTuple
 
 from aiohttp.web_exceptions import HTTPTooManyRequests
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 
 
 class RateLimitSetup(NamedTuple):

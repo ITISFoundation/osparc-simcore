@@ -5,8 +5,8 @@ from pprint import pformat
 from typing import Any
 
 import pydantic
+from common_library.json_serialization import json_dumps
 from models_library.projects_nodes_io import NodeID
-from models_library.utils.json_serialization import json_dumps
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
 from settings_library.aws_s3_cli import AwsS3CliSettings

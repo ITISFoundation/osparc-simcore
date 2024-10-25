@@ -9,15 +9,15 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
-from faker import Faker
-from models_library.api_schemas_long_running_tasks.base import ProgressPercent
-from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import (
+from common_library.json_serialization import (
     JsonNamespace,
     SeparatorTuple,
     json_dumps,
     json_loads,
 )
+from faker import Faker
+from models_library.api_schemas_long_running_tasks.base import ProgressPercent
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic.json import pydantic_encoder
 
 

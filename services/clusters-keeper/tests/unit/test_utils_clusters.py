@@ -15,6 +15,7 @@ from aws_library.ec2 import (
     EC2InstanceBootSpecific,
     EC2InstanceData,
 )
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.api_schemas_clusters_keeper.clusters import ClusterState
 from models_library.clusters import (
@@ -22,7 +23,6 @@ from models_library.clusters import (
     NoAuthentication,
     TLSAuthentication,
 )
-from models_library.utils.json_serialization import json_dumps
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings

@@ -8,8 +8,8 @@ from typing import Any
 
 import rich
 import typer
+from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
-from models_library.utils.json_serialization import json_dumps
 from pydantic import ValidationError
 from pydantic_core import to_jsonable_python
 from pydantic_settings import BaseSettings

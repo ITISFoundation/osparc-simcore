@@ -22,6 +22,7 @@ from typing import Any, Final, cast
 from uuid import UUID, uuid4
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
@@ -60,7 +61,6 @@ from models_library.services_resources import (
 from models_library.socketio import SocketMessageDict
 from models_library.users import GroupID, UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import json_dumps
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from models_library.workspaces import UserWorkspaceAccessRightsDB
 from pydantic import ByteSize, parse_obj_as

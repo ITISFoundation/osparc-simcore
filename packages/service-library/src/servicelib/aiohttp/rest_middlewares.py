@@ -13,7 +13,7 @@ from aiohttp import web
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 from common_library.error_codes import create_error_code
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 
 from ..logging_errors import create_troubleshotting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON

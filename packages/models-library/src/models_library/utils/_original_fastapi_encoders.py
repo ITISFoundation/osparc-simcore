@@ -10,7 +10,7 @@ from pathlib import PurePath
 from types import GeneratorType
 from typing import Any, Callable, Union
 
-from models_library.utils.json_serialization import ENCODERS_BY_TYPE
+from common_library.json_serialization import ENCODERS_BY_TYPE
 from pydantic import BaseModel
 from pydantic_core import PydanticUndefined, PydanticUndefinedType
 from typing_extensions import Annotated, Doc

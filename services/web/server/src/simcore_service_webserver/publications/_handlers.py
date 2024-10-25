@@ -1,8 +1,8 @@
 import logging
 
 from aiohttp import MultipartReader, hdrs, web
+from common_library.json_serialization import json_dumps
 from json2html import json2html  # type: ignore[import-untyped]
-from models_library.utils.json_serialization import json_dumps
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import (
     MIMETYPE_APPLICATION_JSON,
