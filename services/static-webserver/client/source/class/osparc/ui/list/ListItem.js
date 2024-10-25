@@ -207,7 +207,9 @@ qx.Class.define("osparc.ui.list.ListItem", {
       }
       const parts = value.split("/");
       const id = parts.pop();
-      osparc.utils.Utils.setIdToWidget(this, "listItem_"+id);
+      if (osparc.utils.Utils.getIdFromWidget(this) === null) {
+        osparc.utils.Utils.setIdToWidget(this, "listItem_"+id);
+      }
     },
 
     _applyThumbnail: function(value) {

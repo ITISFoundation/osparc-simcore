@@ -102,7 +102,7 @@ for (const product in products) {
     for (const user of productUsers) {
       const role = user.role;
 
-      test.describe.serial(`Navigation Bar: ${product}`, () => {
+      test.describe.serial(`User Menu: ${product}`, () => {
         let page = null;
         let loginPageFixture = null;
 
