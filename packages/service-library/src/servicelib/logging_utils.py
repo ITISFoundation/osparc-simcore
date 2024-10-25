@@ -113,7 +113,7 @@ def config_all_loggers(
         # Check if the logger has any handlers or is in active use
         if not logger.hasHandlers():
             _logger.warning(
-                f"Logger %s does not have any handlers. Filter will not be added.",
+                "Logger %s does not have any handlers. Filter will not be added.",
                 logger_name,
             )
             continue
