@@ -145,7 +145,6 @@ for (const product in products) {
           // close user menu
           await page.getByTestId("userMenuBtn").click();
         });
-        userMenuButtons
 
         test(`Dedicated Centers per Role in User Menu ${role}`, async () => {
           expect(dedicatedCentersPerRole[role]).toBeDefined();
