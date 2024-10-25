@@ -93,9 +93,9 @@ def mock_environment(
                 "DIAGNOSTICS_MAX_AVG_LATENCY": "2.0",
                 "DIAGNOSTICS_MAX_TASK_DELAY": f"{SLOW_HANDLER_DELAY_SECS}",
                 "DIAGNOSTICS_START_SENSING_DELAY": f"{0}",
+                "DIAGNOSTICS_HEALTHCHECK_ENABLED": "1",
             }),
             "SC_HEALTHCHECK_TIMEOUT": "2m",
-            "DIAGNOSTICS_HEALTHCHECK_ENABLED": "1",
         },
     )
 
