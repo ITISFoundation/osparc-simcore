@@ -11,7 +11,6 @@ import pytest
 from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableCredits
-from pydantic import parse_obj_as
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
@@ -53,8 +52,8 @@ async def test_get_wallet(
     response = await client.get(f"{API_VTAG}/wallets/{wallet_id}", auth=auth)
     if "success" in capture:
         assert response.status_code == 200
-        wallet: WalletGetWithAvailableCredits = parse_obj_as(
-            WalletGetWithAvailableCredits, response.json()
+        wallet: WalletGetWithAvailableCredits = (
+            WalletGetWithAvailableCredits.model_validate(response.json())
         )
         assert wallet.wallet_id == wallet_id
     elif "failure" in capture:
@@ -78,4 +77,4 @@ async def test_get_default_wallet(
 
     response = await client.get(f"{API_VTAG}/wallets/default", auth=auth)
     assert response.status_code == status.HTTP_200_OK
-    _ = parse_obj_as(WalletGetWithAvailableCredits, response.json())
+    _ = WalletGetWithAvailableCredits.model_validate(response.json())

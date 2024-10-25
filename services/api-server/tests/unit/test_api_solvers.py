@@ -10,7 +10,6 @@ import pytest
 from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
-from pydantic import parse_obj_as
 from pytest_simcore.helpers.httpx_calls_capture_models import CreateRespxMockCallback
 from simcore_service_api_server._meta import API_VTAG
 
@@ -50,4 +49,4 @@ async def test_get_solver_pricing_plan(
     )
     assert expected_status_code == response.status_code
     if response.status_code == status.HTTP_200_OK:
-        _ = parse_obj_as(ServicePricingPlanGet, response.json())
+        _ = ServicePricingPlanGet.model_validate(response.json())

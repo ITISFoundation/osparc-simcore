@@ -12,7 +12,7 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import status
-from pydantic import parse_file_as, parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from respx import MockRouter
 from servicelib.common_headers import (
@@ -40,8 +40,8 @@ def mocked_backend(
 
     captures = {
         c.name: c
-        for c in parse_file_as(
-            list[HttpApiCallCaptureModel], project_tests_dir / "mocks" / mock_name
+        for c in TypeAdapter(list[HttpApiCallCaptureModel]).validate_json(
+            Path(project_tests_dir / "mocks" / mock_name).read_text()
         )
     }
 
@@ -84,7 +84,7 @@ async def test_studies_read_workflow(
     resp = await client.get(f"/{API_VTAG}/studies", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
-    studies = parse_obj_as(list[Study], resp.json()["items"])
+    studies = TypeAdapter(list[Study]).validate_python(resp.json()["items"])
     assert len(studies) == 1
     assert studies[0].uid == study_id
 
@@ -96,28 +96,28 @@ async def test_studies_read_workflow(
     resp = await client.get(f"/{API_VTAG}/studies/{study_id}", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
-    study = parse_obj_as(Study, resp.json())
+    study = TypeAdapter(Study).validate_python(resp.json())
     assert study.uid == study_id
 
     # get ports
     resp = await client.get(f"/{API_VTAG}/studies/{study_id}/ports", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
-    ports = parse_obj_as(list[StudyPort], resp.json()["items"])
+    ports = TypeAdapter(list[StudyPort]).validate_python(resp.json()["items"])
     assert len(ports) == (resp.json()["total"])
 
     # get_study with non-existing uuid
     inexistent_study_id = StudyID("15531b1a-2565-11ee-ab43-02420a000031")
     resp = await client.get(f"/{API_VTAG}/studies/{inexistent_study_id}", auth=auth)
     assert resp.status_code == status.HTTP_404_NOT_FOUND
-    error = parse_obj_as(ErrorGet, resp.json())
+    error = TypeAdapter(ErrorGet).validate_python(resp.json())
     assert f"{inexistent_study_id}" in error.errors[0]
 
     resp = await client.get(
         f"/{API_VTAG}/studies/{inexistent_study_id}/ports", auth=auth
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND
-    error = parse_obj_as(ErrorGet, resp.json())
+    error = TypeAdapter(ErrorGet).validate_python(resp.json())
     assert f"{inexistent_study_id}" in error.errors[0]
 
 
