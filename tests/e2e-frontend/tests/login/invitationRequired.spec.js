@@ -9,7 +9,8 @@ const expectedCreateAccountLabel = {
   "s4l": "Request Account",
   "s4lacad": "Request Account",
   "s4llite": "Request Account",
-  "tis": "Request Account"
+  "tis": "Request Account",
+  "tiplite": "Request Account",
 };
 
 const expectedActionOnCreateAccount = {
@@ -17,7 +18,8 @@ const expectedActionOnCreateAccount = {
   "s4l": "registrationSubmitBtn",
   "s4lacad": "registrationSubmitBtn",
   "s4llite": "createAccountWindow",
-  "tis": "createAccountWindow"
+  "tis": "registrationSubmitBtn",
+  "tiplite": "registrationSubmitBtn",
 };
 
 for (const product in products) {
