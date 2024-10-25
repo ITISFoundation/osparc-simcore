@@ -252,6 +252,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           this.__addStudiesToList(studies);
 
+          if (this.getCurrentContext() === "trash") {
+            this.__header.getChildControl("empty-trash-button").setVisibility(this._resourcesList.length ? "visible" : "excluded");
+          }
+
           // Show Quick Start if there are no studies in the root folder of the personal workspace
           const quickStartInfo = osparc.product.quickStart.Utils.getQuickStart();
           if (quickStartInfo) {

@@ -89,7 +89,17 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
   },
 
   statics: {
-    HEIGHT: 36
+    HEIGHT: 36,
+    POS: {
+      ICON: 0,
+      TITLE: 1,
+      BREADCRUMBS: 2,
+      EDIT_BUTTON: 3,
+      SHARE_LAYOUT: 4,
+      ROLE_LAYOUT: 5,
+      DESCRIPTION: 2,
+      EMPTY_TRASH_BUTTON: 3,
+    }
   },
 
   members: {
@@ -106,14 +116,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
             allowGrowY: true,
             decorator: "rounded",
           });
-          this._add(control);
+          this._addAt(control, this.self().POS.ICON);
           break;
-        case "workspace-title":
+        case "title":
           control = new qx.ui.basic.Label().set({
             font: "text-16",
             alignY: "middle",
           });
-          this._add(control);
+          this._addAt(control, this.self().POS.TITLE);
           break;
         case "breadcrumbs":
           control = new osparc.dashboard.ContextBreadcrumbs();
@@ -125,7 +135,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           control.addListener("locationChanged", e => {
             this.fireDataEvent("locationChanged", e.getData())
           });
-          this._add(control);
+          this._addAt(control, this.self().POS.BREADCRUMBS);
           break;
         case "edit-button":
           control = new qx.ui.form.MenuButton().set({
@@ -142,14 +152,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           control.getContentElement().setStyles({
             "border-radius": `${22 / 2}px`
           });
-          this._add(control);
+          this._addAt(control, this.self().POS.EDIT_BUTTON);
           break;
         case "share-layout":
           this.__addSpacer();
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignY: "middle"
           }));
-          this._add(control);
+          this._addAt(control, this.self().POS.SHARE_LAYOUT);
           break;
         case "share-text": {
           control = new qx.ui.basic.Label().set({
@@ -164,7 +174,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignY: "middle"
           }));
-          this._add(control);
+          this._addAt(control, this.self().POS.ROLE_LAYOUT);
           break;
         case "role-text": {
           control = new qx.ui.basic.Label().set({
@@ -180,6 +190,23 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           layout.addAt(control, 1);
           break;
         }
+        case "description": {
+          control = new qx.ui.basic.Label().set({
+            font: "text-14",
+            alignY: "middle",
+          });
+          this._addAt(control, this.self().POS.DESCRIPTION);
+          break;
+        }
+        case "empty-trash-button": {
+          control = new qx.ui.form.Button(this.tr("Empty Trash"), "@FontAwesome5Solid/trash/14").set({
+            appearance: "danger-button",
+            allowGrowY: false,
+          });
+          control.addListener("execute", () => console.log("Empty trash"));
+          this._addAt(control, this.self().POS.EMPTY_TRASH_BUTTON);
+          break;
+        }
       }
 
       return control || this.base(arguments, id);
@@ -187,11 +214,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
 
     __buildLayout: function() {
       this.getChildControl("icon");
-      const title = this.getChildControl("workspace-title");
+      const title = this.getChildControl("title");
       this.getChildControl("breadcrumbs");
       this.getChildControl("edit-button").exclude();
       this.resetAccessRights();
       this.resetMyAccessRights();
+      const description = this.getChildControl("description");
+      description.resetValue();
+      this.getChildControl("empty-trash-button").exclude();
 
       const currentContext = this.getCurrentContext();
       if (currentContext === "search") {
@@ -204,8 +234,11 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         this.__setIcon("@FontAwesome5Solid/trash/20");
         const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
         title.set({
-          value: this.tr(`Trash: Items in the bin will be permanently deleted after ${trashDays} days.`),
+          value: this.tr("Trash:"),
           cursor: "auto",
+        });
+        description.set({
+          value: this.tr(`Items in the bin will be permanently deleted after ${trashDays} days.`)
         });
       } else if (currentContext === "workspaces") {
         this.__setIcon(osparc.store.Workspaces.iconPath(32));
