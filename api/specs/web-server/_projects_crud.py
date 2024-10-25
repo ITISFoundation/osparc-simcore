@@ -106,7 +106,8 @@ async def get_project(project_id: ProjectID):
 
 @router.put(
     "/projects/{project_id}",
-    response_model=Envelope[ProjectGet],
+    response_model=None,
+    status_code=status.HTTP_410_GONE,  # Deprecated endpoint
 )
 async def replace_project(project_id: ProjectID, _replace: ProjectReplace):
     """Replaces (i.e. full update) a project resource"""

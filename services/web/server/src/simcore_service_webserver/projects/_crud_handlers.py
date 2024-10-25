@@ -394,28 +394,11 @@ async def get_project_inactivity(request: web.Request):
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def replace_project(request: web.Request):
     """
-    In a PUT request, the enclosed entity is considered to be a modified version of
-    the resource stored on the origin server, and the client is requesting that the
-    stored version be replaced.
-
-    With PATCH, however, the enclosed entity contains a set of instructions describing how a
-    resource currently residing on the origin server should be modified to produce a new version.
-
-    Also, another difference is that when you want to update a resource with PUT request, you have to send
-    the full payload as the request whereas with PATCH, you only send the parameters which you want to update.
-
-    Raises:
-       web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
-       web.HTTPBadRequest: invalid body encoding
-       web.HTTPConflict: Cannot replace while pipeline is running
-       web.HTTPBadRequest: jsonschema validatio error
-       web.HTTPForbidden: Not enough access rights to replace this project
-       web.HTTPNotFound: This project was not found
+    Deprecated -> PATCH project OR dedicated /nodes (workbench) endpoints should be used instead
     """
 
     assert request  # nosec
-    msg = "Not supported anymore"
-    raise ValueError(msg)
+    return web.json_response(data="Deprecated endpoint", status=status.HTTP_410_GONE)
 
 
 @routes.patch(f"/{VTAG}/projects/{{project_id}}", name="patch_project")

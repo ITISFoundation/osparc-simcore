@@ -3242,12 +3242,11 @@ paths:
               $ref: '#/components/schemas/ProjectReplace'
         required: true
       responses:
-        '200':
+        '410':
           description: Successful Response
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectGet_'
+              schema: {}
     delete:
       tags:
       - projects
@@ -10603,15 +10602,15 @@ components:
           title: Value
           type: boolean
           description: True if the project is locked
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ProjectStatus'
+          description: The status of the project
         owner:
           title: Owner
           allOf:
           - $ref: '#/components/schemas/Owner'
           description: If locked, the user that owns the lock
-        status:
-          allOf:
-          - $ref: '#/components/schemas/ProjectStatus'
-          description: The status of the project
       additionalProperties: false
     ProjectMetadataGet:
       title: ProjectMetadataGet
@@ -10841,6 +10840,7 @@ components:
       - EXPORTING
       - OPENING
       - OPENED
+      - MAINTAINING
       type: string
       description: An enumeration.
     ProjectTypeAPI:
