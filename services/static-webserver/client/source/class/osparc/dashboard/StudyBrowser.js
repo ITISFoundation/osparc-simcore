@@ -664,17 +664,23 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const requestParams = {};
       requestParams.orderBy = JSON.stringify(this.getOrderBy());
 
-      const filterData = this._searchBarFilter.getFilterData();
-      // Use the ``search`` functionality only if the user types some text
-      // tags should only be used to filter the current context (search context ot workspace/folder context)
-      if (filterData.text) {
-        requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
-        requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
-        return requestParams;
+      switch (this.getCurrentContext()) {
+        case "studiesAndFolders":
+          requestParams.workspaceId = this.getCurrentWorkspaceId();
+          requestParams.folderId = this.getCurrentFolderId();
+          break;
+        case "search": {
+          // Use the ``search`` functionality only if the user types some text
+          // tags should only be used to filter the current context (search context ot workspace/folder context)
+          const filterData = this._searchBarFilter.getFilterData();
+          if (filterData.text) {
+            requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
+            requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
+          }
+          break;
+        }
       }
 
-      requestParams.workspaceId = this.getCurrentWorkspaceId();
-      requestParams.folderId = this.getCurrentFolderId();
       return requestParams;
     },
 
@@ -699,12 +705,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      if (this.getCurrentContext() === "trash") {
-        return osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
-      } else if ("text" in requestParams) {
-        return osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
+      let request = null;
+      switch (this.getCurrentContext()) {
+        case "trash":
+          request = osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
+          break;
+        case "search":
+          request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
+          break;
+        case "studiesAndFolders":
+          request = osparc.data.Resources.fetch("studies", "getPage", params, options);
+          break;
       }
-      return osparc.data.Resources.fetch("studies", "getPage", params, options);
+      return request;
     },
 
     invalidateStudies: function() {
