@@ -176,23 +176,6 @@ async def _assert_get_same_project(
         assert folder_id is None
 
 
-async def _replace_project(
-    client: TestClient, project_update: dict, expected: HTTPStatus
-) -> dict:
-    assert client.app
-
-    # PUT /v0/projects/{project_id}
-    url = client.app.router["replace_project"].url_for(  # <- MD: check this
-        project_id=project_update["uuid"]
-    )
-    assert str(url) == f"{API_PREFIX}/projects/{project_update['uuid']}"
-    resp = await client.put(f"{url}", json=project_update)
-    data, error = await assert_status(resp, expected)
-    if not error:
-        assert_replaced(current_project=data, update_data=project_update)
-    return data
-
-
 @pytest.mark.parametrize(
     "user_role,expected",
     [

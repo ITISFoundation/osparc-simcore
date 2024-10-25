@@ -145,14 +145,6 @@ async def test_iterators_workflow(
     project_data.update({key: modifications[key] for key in ("workbench", "ui")})
     project_data["ui"].setdefault("currentNodeId", project_uuid)
 
-    # response = await client.patch(
-    #     f"/v0/projects/{project_data['uuid']}",
-    #     json=project_data,
-    # )
-    # assert (
-    #     response.status == status.HTTP_204_NO_CONTENT
-    # ), await response.text()
-
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(client.app)
     project_data.pop("state")
     await db.replace_project(
@@ -270,12 +262,6 @@ async def test_iterators_workflow(
     assert node.inputs
     node.inputs["linspace_stop"] = 4
 
-    # response = await client.patch(
-    #     f"/v0/projects/{project_uuid}",
-    #     data=json_dumps(new_project.dict(**REQUEST_MODEL_POLICY)),
-    # )
-    # assert response.status == status.HTTP_204_NO_CONTENT, await response.text()
-    # db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(client.app)
     _new_project_data = new_project.dict(**REQUEST_MODEL_POLICY)
     _new_project_data.pop("state")
     await db.replace_project(
