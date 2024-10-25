@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 from collections.abc import Callable, Coroutine
+import time
 
 import pytest
 import simcore_service_webserver
@@ -121,7 +122,7 @@ def client(
 
     @routes.get(r"/slow")
     async def blocking_slow(request: web.Request):
-        await asyncio.sleep(SLOW_HANDLER_DELAY_SECS * 1.1)
+        time.sleep(SLOW_HANDLER_DELAY_SECS * 1.1)
         return web.json_response({"data": True, "error": None})
 
     @routes.get(r"/cancel")
