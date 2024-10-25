@@ -120,7 +120,9 @@ async def trash_project(request: web.Request):
     user_id = get_user_id(request)
     product_name = get_product_name(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    query_params = parse_request_query_parameters_as(RemoveQueryParams, request)
+    query_params: RemoveQueryParams = parse_request_query_parameters_as(
+        RemoveQueryParams, request
+    )
 
     await _trash_api.trash_project(
         request.app,
