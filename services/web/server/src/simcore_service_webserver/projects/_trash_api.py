@@ -49,52 +49,48 @@ async def trash_project(
     product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
-    trashed: bool,
-    forced: bool = False,
+    forced: bool,
 ):
-    """_summary_
-
-    Keyword Arguments:
-        forced -- _description_ (default: {False})
-
-    Raises:
-        ProjectStopError: _description_
-        ProjectRunningConflictError: if
     """
-    if trashed:
+    Raises:
+        ProjectStopError:
+        ProjectRunningConflictError:
+    """
 
-        if forced:
-            # stop first
-            try:
-                await projects_api.remove_project_dynamic_services(
-                    user_id=user_id,
-                    project_uuid=f"{project_id}",
-                    app=app,
-                    simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                    notify_users=False,
-                )
-
-                await director_v2_api.delete_pipeline(
-                    app, user_id=user_id, project_id=project_id
-                )
-            except (DirectorServiceError, ProjectLockError) as exc:
-                raise ProjectStopError(
-                    project_uuid=project_id,
-                    user_id=user_id,
-                    product_name=product_name,
-                    from_err=exc,
-                ) from exc
-        else:
-            # NOTE: must do here as well for dynamic services but needs refactoring!
-            running = await director_v2_api.is_pipeline_running(
-                app=app, user_id=user_id, project_id=project_id
+    if forced:
+        # SCHEDULE stop!
+        try:
+            await projects_api.remove_project_dynamic_services(
+                user_id=user_id,
+                project_uuid=f"{project_id}",
+                app=app,
+                simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                notify_users=False,
             )
-            if running:
-                raise ProjectRunningConflictError(
-                    project_uuid=project_id,
-                    user_id=user_id,
-                    product_name=product_name,
-                )
+
+            await director_v2_api.delete_pipeline(
+                app, user_id=user_id, project_id=project_id, force=forced
+            )
+
+        except (DirectorServiceError, ProjectLockError) as exc:
+            raise ProjectStopError(
+                project_uuid=project_id,
+                user_id=user_id,
+                product_name=product_name,
+                from_err=exc,
+            ) from exc
+
+    else:
+        # NOTE: must do here as well for dynamic services but needs refactoring!
+        running = await director_v2_api.is_pipeline_running(
+            app=app, user_id=user_id, project_id=project_id
+        )
+        if running:
+            raise ProjectRunningConflictError(
+                project_uuid=project_id,
+                user_id=user_id,
+                product_name=product_name,
+            )
 
     # mark as trash
     await projects_api.patch_project(
@@ -102,7 +98,21 @@ async def trash_project(
         user_id=user_id,
         product_name=product_name,
         project_uuid=project_id,
-        project_patch=ProjectPatchExtended(
-            trashed_at=arrow.utcnow().datetime if trashed else None
-        ),
+        project_patch=ProjectPatchExtended(trashed_at=arrow.utcnow().datetime),
+    )
+
+
+async def untrash_project(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+):
+    await projects_api.patch_project(
+        app,
+        user_id=user_id,
+        product_name=product_name,
+        project_uuid=project_id,
+        project_patch=ProjectPatchExtended(trashed_at=None),
     )
