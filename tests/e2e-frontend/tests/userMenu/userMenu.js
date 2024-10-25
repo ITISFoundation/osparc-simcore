@@ -7,24 +7,89 @@ import { LoginPage } from '../fixtures/loginPage';
 import products from '../products.json';
 import users from '../users.json';
 
-const userMenuButtonsPerRole = {
+const userMenuButtons = {
+  "osparc": {
+    "userMenuMyAccountBtn": true,
+    "userMenuBillingCenterBtn": false,
+    "userMenuPreferencesBtn": true,
+    "userMenuOrganizationsBtn": true,
+    "userMenuThemeSwitcherBtn": true,
+    "userMenuAboutBtn": true,
+    "userMenuAboutProductBtn": true,
+    "userMenuAccessTIPBtn": false,
+    "userMenuLogoutBtn": true,
+  },
+  "s4l": {
+    "userMenuMyAccountBtn": true,
+    "userMenuBillingCenterBtn": true,
+    "userMenuPreferencesBtn": true,
+    "userMenuOrganizationsBtn": true,
+    "userMenuThemeSwitcherBtn": true,
+    "userMenuAboutBtn": true,
+    "userMenuAboutProductBtn": true,
+    "userMenuAccessTIPBtn": false,
+    "userMenuLogoutBtn": true,
+  },
+  "s4lacad": {
+    "userMenuMyAccountBtn": true,
+    "userMenuBillingCenterBtn": true,
+    "userMenuPreferencesBtn": true,
+    "userMenuOrganizationsBtn": true,
+    "userMenuThemeSwitcherBtn": true,
+    "userMenuAboutBtn": true,
+    "userMenuAboutProductBtn": true,
+    "userMenuAccessTIPBtn": false,
+    "userMenuLogoutBtn": true,
+  },
+  "s4llite": {
+    "userMenuMyAccountBtn": true,
+    "userMenuBillingCenterBtn": true,
+    "userMenuPreferencesBtn": true,
+    "userMenuOrganizationsBtn": true,
+    "userMenuThemeSwitcherBtn": true,
+    "userMenuAboutBtn": true,
+    "userMenuAboutProductBtn": true,
+    "userMenuAccessTIPBtn": false,
+    "userMenuLogoutBtn": true,
+  },
+  "tis": {
+    "userMenuMyAccountBtn": true,
+    "userMenuBillingCenterBtn": true,
+    "userMenuPreferencesBtn": true,
+    "userMenuOrganizationsBtn": true,
+    "userMenuThemeSwitcherBtn": true,
+    "userMenuAboutBtn": true,
+    "userMenuAboutProductBtn": true,
+    "userMenuAccessTIPBtn": false,
+    "userMenuLogoutBtn": true,
+  },
+  "tiplite": {
+    "userMenuMyAccountBtn": true,
+    "userMenuBillingCenterBtn": true,
+    "userMenuPreferencesBtn": true,
+    "userMenuOrganizationsBtn": true,
+    "userMenuThemeSwitcherBtn": true,
+    "userMenuAboutBtn": true,
+    "userMenuAboutProductBtn": true,
+    "userMenuAccessTIPBtn": true,
+    "userMenuLogoutBtn": true,
+  },
+};
+
+const dedicatedCentersPerRole = {
   "USER": {
-    "My Account": true,
     "PO Center": false,
     "Admin Center": false,
   },
   "TESTER": {
-    "My Account": true,
     "PO Center": false,
     "Admin Center": false,
   },
   "PRODUCT_OWNER": {
-    "My Account": true,
     "PO Center": true,
     "Admin Center": false,
   },
   "ADMIN": {
-    "My Account": true,
     "PO Center": true,
     "Admin Center": true,
   },
@@ -60,13 +125,35 @@ for (const product in products) {
           await browser.close();
         });
 
-        test(`Options per Role in User Menu ${role}`, async () => {
-          expect(userMenuButtonsPerRole[role]).toBeDefined();
+        test(`User Menu buttons per ${product}`, async () => {
+          expect(userMenuButtons[product]).toBeDefined();
 
           // open user menu
           await page.getByTestId("userMenuBtn").click();
 
-          const buttons = userMenuButtonsPerRole[role];
+          const buttons = userMenuButtons[product];
+          for (const buttonId in buttons) {
+            const menuButton = page.getByTestId(buttonId);
+            const isVisible = buttons[buttonId];
+            if (isVisible) {
+              await expect(menuButton).toBeVisible();
+            } else {
+              await expect(menuButton).toHaveCount(0);
+            }
+          }
+
+          // close user menu
+          await page.getByTestId("userMenuBtn").click();
+        });
+        userMenuButtons
+
+        test(`Dedicated Centers per Role in User Menu ${role}`, async () => {
+          expect(dedicatedCentersPerRole[role]).toBeDefined();
+
+          // open user menu
+          await page.getByTestId("userMenuBtn").click();
+
+          const buttons = dedicatedCentersPerRole[role];
           for (const buttonText in buttons) {
             const expected = buttons[buttonText];
             const isVisible = await page.getByText(buttonText).isVisible();
