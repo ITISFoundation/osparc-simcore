@@ -26,6 +26,9 @@ const expectedElements = {
       "visible": true,
       "label": "DATA",
     },
+    "notifications": true,
+    "help": true,
+    "credits": false,
   },
   "s4l": {
     "poweredByOsparc": true,
@@ -44,6 +47,9 @@ const expectedElements = {
     "data": {
       "visible": false,
     },
+    "notifications": true,
+    "help": true,
+    "credits": true,
   },
   "s4lacad": {
     "poweredByOsparc": true,
@@ -62,6 +68,9 @@ const expectedElements = {
     "data": {
       "visible": false,
     },
+    "notifications": true,
+    "help": true,
+    "credits": true,
   },
   "s4llite": {
     "poweredByOsparc": true,
@@ -79,6 +88,9 @@ const expectedElements = {
     "data": {
       "visible": false,
     },
+    "notifications": true,
+    "help": true,
+    "credits": false,
   },
   "tis": {
     "poweredByOsparc": true,
@@ -95,6 +107,9 @@ const expectedElements = {
     "data": {
       "visible": false,
     },
+    "notifications": true,
+    "help": true,
+    "credits": true,
   },
   "tiplite": {
     "poweredByOsparc": true,
@@ -111,6 +126,9 @@ const expectedElements = {
     "data": {
       "visible": false,
     },
+    "notifications": true,
+    "help": true,
+    "credits": true,
   },
 };
 
@@ -188,6 +206,45 @@ for (const product in products) {
           await checkButton("servicesTabBtn", isServicesVisible, servicesLabel);
           await checkButton("dataTabBtn", isDataVisible, dataLabel);
         });
+
+        test(`Check Notifications button`, async () => {
+          expect(expectedElements[product]["notifications"]).toBeDefined();
+
+          const isVisible = expectedElements[product]["notifications"];
+          const button = page.getByTestId("notificationsButton");
+          if (isVisible) {
+            await expect(button).toBeVisible();
+          } else {
+            await expect(button).toHaveCount(0);
+          }
+        });
+
+        test(`Check Help button`, async () => {
+          expect(expectedElements[product]["help"]).toBeDefined();
+
+          const isVisible = expectedElements[product]["help"];
+          const button = page.getByTestId("helpNavigationBtn");
+          if (isVisible) {
+            await expect(button).toBeVisible();
+          } else {
+            await expect(button).toHaveCount(0);
+          }
+        });
+
+        test(`Check Credits button`, async () => {
+          expect(expectedElements[product]["credits"]).toBeDefined();
+
+          const isVisible = expectedElements[product]["credits"];
+          const button = page.getByTestId("creditsIndicatorButton");
+          if (isVisible) {
+            await expect(button).toBeVisible();
+          } else {
+            await expect(button).toHaveCount(0);
+          }
+        });
+
+        
+        
       });
     }
   }
