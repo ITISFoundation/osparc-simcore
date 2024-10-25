@@ -22,9 +22,10 @@ def app_settings(
 ) -> ApplicationSettings:
     app = web.Application()
 
+    print("envs\n", json.dumps(mock_webserver_service_environment, indent=1))
+
     # init and validation happens here
     settings = setup_settings(app)
-    print("envs\n", json.dumps(mock_webserver_service_environment, indent=1))
     print("settings:\n", settings.model_dump_json(indent=1))
 
     assert APP_SETTINGS_KEY in app

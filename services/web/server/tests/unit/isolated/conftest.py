@@ -178,6 +178,7 @@ def mock_webserver_service_environment(
     mock_env_devel_environment: EnvVarsDict,  # pylint: disable=redefined-outer-name
     mock_env_dockerfile_build: EnvVarsDict,  # pylint: disable=redefined-outer-name
     mock_env_deployer_pipeline: EnvVarsDict,  # pylint: disable=redefined-outer-name
+    faker: Faker
 ) -> EnvVarsDict:
     """
     Mocks environment produce in the docker compose config with a .env (.env-devel)
@@ -219,6 +220,24 @@ def mock_webserver_service_environment(
             "SWARM_STACK_NAME": os.environ.get("SWARM_STACK_NAME", "simcore"),
             "WEBSERVER_LOGLEVEL": os.environ.get("LOG_LEVEL", "WARNING"),
             "SESSION_COOKIE_MAX_AGE": str(7 * 24 * 60 * 60),
+            "WEBSERVER_EMAIL": json.dumps({
+                "SMTP_HOST": faker.url(),
+                "SMTP_PORT": faker.port_number()
+            }),
+            "WEBSERVER_LOGIN": json.dumps({
+                "LOGIN_REGISTRATION_INVITATION_REQUIRED": True
+            }),
+            "WEBSERVER_PAYMENTS": json.dumps({
+                "PAYMENTS_USERNAME": faker.user_name(),
+                "PAYMENTS_PASSWORD": faker.password()
+            }),
+            "WEBSERVER_SCICRUNCH": json.dumps({
+                "SCICRUNCH_API_KEY": faker.pystr()
+            }),
+            "WEBSERVER_TRACING": json.dumps({
+                "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": faker.url(),
+                "TRACING_OPENTELEMETRY_COLLECTOR_PORT": faker.port_number()
+            })
         },
     )
 
