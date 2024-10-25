@@ -11,12 +11,12 @@ import filecmp
 import json
 import logging
 import urllib.parse
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from pathlib import Path
 from random import choice
-from typing import Any, AsyncIterator, Literal
+from typing import Any, Literal
 from uuid import uuid4
 
 import pytest
@@ -43,7 +43,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyHttpUrl, ByteSize, HttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, ByteSize, HttpUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
@@ -112,7 +112,7 @@ class SingleLinkParam:
                 {},
                 "http",
                 _HTTP_PRESIGNED_LINK_QUERY_KEYS,
-                parse_obj_as(ByteSize, "5GiB"),
+                TypeAdapter(ByteSize).validate_python("5GiB"),
             ),
             id="default_returns_single_presigned",
         ),
@@ -121,13 +121,16 @@ class SingleLinkParam:
                 {"link_type": "presigned"},
                 "http",
                 _HTTP_PRESIGNED_LINK_QUERY_KEYS,
-                parse_obj_as(ByteSize, "5GiB"),
+                TypeAdapter(ByteSize).validate_python("5GiB"),
             ),
             id="presigned_returns_single_presigned",
         ),
         pytest.param(
             SingleLinkParam(
-                {"link_type": "s3"}, "s3", [], parse_obj_as(ByteSize, "5TiB")
+                {"link_type": "s3"},
+                "s3",
+                [],
+                TypeAdapter(ByteSize).validate_python("5TiB"),
             ),
             id="s3_returns_single_s3_link",
         ),
@@ -207,7 +210,7 @@ async def create_upload_file_link_v1(
         data, error = await assert_status(response, status.HTTP_200_OK)
         assert not error
         assert data
-        received_file_upload_link = parse_obj_as(PresignedLink, data)
+        received_file_upload_link = TypeAdapter(PresignedLink).validate_python(data)
         assert received_file_upload_link
         file_params.append((user_id, location_id, file_id))
         return received_file_upload_link
@@ -238,7 +241,7 @@ async def create_upload_file_link_v1(
                 {},
                 "http",
                 _HTTP_PRESIGNED_LINK_QUERY_KEYS,
-                parse_obj_as(ByteSize, "5GiB"),
+                TypeAdapter(ByteSize).validate_python("5GiB"),
             ),
             id="default_returns_single_presigned",
         ),
@@ -247,13 +250,16 @@ async def create_upload_file_link_v1(
                 {"link_type": "presigned"},
                 "http",
                 _HTTP_PRESIGNED_LINK_QUERY_KEYS,
-                parse_obj_as(ByteSize, "5GiB"),
+                TypeAdapter(ByteSize).validate_python("5GiB"),
             ),
             id="presigned_returns_single_presigned",
         ),
         pytest.param(
             SingleLinkParam(
-                {"link_type": "s3"}, "s3", [], parse_obj_as(ByteSize, "5TiB")
+                {"link_type": "s3"},
+                "s3",
+                [],
+                TypeAdapter(ByteSize).validate_python("5TiB"),
             ),
             id="s3_returns_single_s3_link",
         ),
@@ -314,50 +320,50 @@ class MultiPartParam:
         pytest.param(
             MultiPartParam(
                 link_type=LinkType.PRESIGNED,
-                file_size=parse_obj_as(ByteSize, "10MiB"),
+                file_size=TypeAdapter(ByteSize).validate_python("10MiB"),
                 expected_response=status.HTTP_200_OK,
                 expected_num_links=1,
-                expected_chunk_size=parse_obj_as(ByteSize, "10MiB"),
+                expected_chunk_size=TypeAdapter(ByteSize).validate_python("10MiB"),
             ),
             id="10MiB file,presigned",
         ),
         pytest.param(
             MultiPartParam(
                 link_type=LinkType.PRESIGNED,
-                file_size=parse_obj_as(ByteSize, "100MiB"),
+                file_size=TypeAdapter(ByteSize).validate_python("100MiB"),
                 expected_response=status.HTTP_200_OK,
                 expected_num_links=10,
-                expected_chunk_size=parse_obj_as(ByteSize, "10MiB"),
+                expected_chunk_size=TypeAdapter(ByteSize).validate_python("10MiB"),
             ),
             id="100MiB file,presigned",
         ),
         pytest.param(
             MultiPartParam(
                 link_type=LinkType.PRESIGNED,
-                file_size=parse_obj_as(ByteSize, "5TiB"),
+                file_size=TypeAdapter(ByteSize).validate_python("5TiB"),
                 expected_response=status.HTTP_200_OK,
                 expected_num_links=8739,
-                expected_chunk_size=parse_obj_as(ByteSize, "600MiB"),
+                expected_chunk_size=TypeAdapter(ByteSize).validate_python("600MiB"),
             ),
             id="5TiB file,presigned",
         ),
         pytest.param(
             MultiPartParam(
                 link_type=LinkType.PRESIGNED,
-                file_size=parse_obj_as(ByteSize, "9431773844"),
+                file_size=TypeAdapter(ByteSize).validate_python("9431773844"),
                 expected_response=status.HTTP_200_OK,
                 expected_num_links=900,
-                expected_chunk_size=parse_obj_as(ByteSize, "10MiB"),
+                expected_chunk_size=TypeAdapter(ByteSize).validate_python("10MiB"),
             ),
             id="9431773844B (8.8Gib) file,presigned",
         ),
         pytest.param(
             MultiPartParam(
                 link_type=LinkType.S3,
-                file_size=parse_obj_as(ByteSize, "255GiB"),
+                file_size=TypeAdapter(ByteSize).validate_python("255GiB"),
                 expected_response=status.HTTP_200_OK,
                 expected_num_links=1,
-                expected_chunk_size=parse_obj_as(ByteSize, "255GiB"),
+                expected_chunk_size=TypeAdapter(ByteSize).validate_python("255GiB"),
             ),
             id="5TiB file,s3",
         ),
@@ -409,8 +415,8 @@ async def test_create_upload_file_presigned_with_file_size_returns_multipart_lin
 @pytest.mark.parametrize(
     "link_type, file_size",
     [
-        (LinkType.PRESIGNED, parse_obj_as(ByteSize, "1000Mib")),
-        (LinkType.S3, parse_obj_as(ByteSize, "1000Mib")),
+        (LinkType.PRESIGNED, TypeAdapter(ByteSize).validate_python("1000Mib")),
+        (LinkType.S3, TypeAdapter(ByteSize).validate_python("1000Mib")),
     ],
     ids=byte_size_ids,
 )
@@ -449,7 +455,7 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
         expected_upload_ids=([upload_id] if upload_id else None),
     )
     # delete/abort file upload
-    abort_url = URL(upload_link.links.abort_upload).relative()
+    abort_url = URL(f"{upload_link.links.abort_upload}").relative()
     response = await client.post(f"{abort_url}")
     await assert_status(response, status.HTTP_204_NO_CONTENT)
 
@@ -474,10 +480,10 @@ async def test_delete_unuploaded_file_correctly_cleans_up_db_and_s3(
 @pytest.mark.parametrize(
     "link_type, file_size",
     [
-        (LinkType.PRESIGNED, parse_obj_as(ByteSize, "10Mib")),
-        (LinkType.PRESIGNED, parse_obj_as(ByteSize, "1000Mib")),
-        (LinkType.S3, parse_obj_as(ByteSize, "10Mib")),
-        (LinkType.S3, parse_obj_as(ByteSize, "1000Mib")),
+        (LinkType.PRESIGNED, TypeAdapter(ByteSize).validate_python("10Mib")),
+        (LinkType.PRESIGNED, TypeAdapter(ByteSize).validate_python("1000Mib")),
+        (LinkType.S3, TypeAdapter(ByteSize).validate_python("10Mib")),
+        (LinkType.S3, TypeAdapter(ByteSize).validate_python("1000Mib")),
     ],
     ids=byte_size_ids,
 )
@@ -561,9 +567,11 @@ def complex_file_name(faker: Faker) -> str:
 @pytest.mark.parametrize(
     "file_size",
     [
-        (parse_obj_as(ByteSize, "1Mib")),
-        (parse_obj_as(ByteSize, "500Mib")),
-        pytest.param(parse_obj_as(ByteSize, "7Gib"), marks=pytest.mark.heavy_load),
+        (TypeAdapter(ByteSize).validate_python("1Mib")),
+        (TypeAdapter(ByteSize).validate_python("500Mib")),
+        pytest.param(
+            TypeAdapter(ByteSize).validate_python("5Gib"), marks=pytest.mark.heavy_load
+        ),
     ],
     ids=byte_size_ids,
 )
@@ -578,8 +586,8 @@ async def test_upload_real_file(
 @pytest.mark.parametrize(
     "file_size",
     [
-        (parse_obj_as(ByteSize, "1Mib")),
-        (parse_obj_as(ByteSize, "117Mib")),
+        (TypeAdapter(ByteSize).validate_python("1Mib")),
+        (TypeAdapter(ByteSize).validate_python("117Mib")),
     ],
     ids=byte_size_ids,
 )
@@ -614,7 +622,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
         file, file_upload_link
     )
     # complete the upload
-    complete_url = URL(file_upload_link.links.complete_upload).relative()
+    complete_url = URL(f"{file_upload_link.links.complete_upload}").relative()
     response = await client.post(
         f"{complete_url}",
         json=jsonable_encoder(FileUploadCompletionBody(parts=part_to_etag)),
@@ -623,8 +631,8 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
     data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
     assert not error
     assert data
-    file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
-    state_url = URL(file_upload_complete_response.links.state).relative()
+    file_upload_complete_response = FileUploadCompleteResponse.model_validate(data)
+    state_url = URL(f"{file_upload_complete_response.links.state}").relative()
 
     # here we do not check now for the state completion. instead we simulate a restart where the tasks disappear
     client.app[UPLOAD_TASKS_KEY].clear()
@@ -644,7 +652,7 @@ async def test_upload_real_file_with_emulated_storage_restart_after_completion_w
             data, error = await assert_status(response, status.HTTP_200_OK)
             assert not error
             assert data
-            future = FileUploadCompleteFutureResponse.parse_obj(data)
+            future = FileUploadCompleteFutureResponse.model_validate(data)
             assert future.state == FileUploadCompleteState.OK
             assert future.e_tag is not None
             completion_etag = future.e_tag
@@ -686,7 +694,7 @@ async def test_upload_of_single_presigned_link_lazily_update_database_on_get(
     s3_client: S3Client,
 ):
     assert client.app
-    file_size = parse_obj_as(ByteSize, "500Mib")
+    file_size = TypeAdapter(ByteSize).validate_python("500Mib")
     file_name = faker.file_name()
     # create a file
     file = create_file_of_size(file_size, file_name)
@@ -729,7 +737,7 @@ async def test_upload_real_file_with_s3_client(
     s3_client: S3Client,
 ):
     assert client.app
-    file_size = parse_obj_as(ByteSize, "500Mib")
+    file_size = TypeAdapter(ByteSize).validate_python("500Mib")
     file_name = faker.file_name()
     # create a file
     file = create_file_of_size(file_size, file_name)
@@ -754,15 +762,15 @@ async def test_upload_real_file_with_s3_client(
     assert s3_metadata.e_tag == upload_e_tag
 
     # complete the upload
-    complete_url = URL(file_upload_link.links.complete_upload).relative()
+    complete_url = URL(f"{file_upload_link.links.complete_upload}").relative()
     with log_context(logging.INFO, f"completing upload of {file=}"):
         response = await client.post(f"{complete_url}", json={"parts": []})
         response.raise_for_status()
         data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
         assert not error
         assert data
-        file_upload_complete_response = FileUploadCompleteResponse.parse_obj(data)
-        state_url = URL(file_upload_complete_response.links.state).relative()
+        file_upload_complete_response = FileUploadCompleteResponse.model_validate(data)
+        state_url = URL(f"{file_upload_complete_response.links.state}").relative()
         completion_etag = None
         async for attempt in AsyncRetrying(
             reraise=True,
@@ -779,7 +787,7 @@ async def test_upload_real_file_with_s3_client(
                 data, error = await assert_status(response, status.HTTP_200_OK)
                 assert not error
                 assert data
-                future = FileUploadCompleteFutureResponse.parse_obj(data)
+                future = FileUploadCompleteFutureResponse.model_validate(data)
                 if future.state != FileUploadCompleteState.OK:
                     msg = f"{data=}"
                     raise ValueError(msg)
@@ -812,7 +820,10 @@ async def test_upload_real_file_with_s3_client(
 
 @pytest.mark.parametrize(
     "file_size",
-    [parse_obj_as(ByteSize, "160Mib"), parse_obj_as(ByteSize, "1Mib")],
+    [
+        TypeAdapter(ByteSize).validate_python("160Mib"),
+        TypeAdapter(ByteSize).validate_python("1Mib"),
+    ],
     ids=byte_size_ids,
 )
 async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
@@ -865,7 +876,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
             )
 
     # 4. abort file upload
-    abort_url = URL(upload_link.links.abort_upload).relative()
+    abort_url = URL(f"{upload_link.links.abort_upload}").relative()
     response = await client.post(f"{abort_url}")
     await assert_status(response, status.HTTP_204_NO_CONTENT)
 
@@ -888,7 +899,7 @@ async def test_upload_twice_and_fail_second_time_shall_keep_first_version(
 
 @pytest.fixture
 def file_size() -> ByteSize:
-    return parse_obj_as(ByteSize, "1Mib")
+    return TypeAdapter(ByteSize).validate_python("1Mib")
 
 
 async def _assert_file_downloaded(
@@ -896,7 +907,7 @@ async def _assert_file_downloaded(
 ):
     dest_file = tmp_path / faker.file_name()
     async with ClientSession() as session:
-        response = await session.get(link)
+        response = await session.get(f"{link}")
         response.raise_for_status()
         with dest_file.open("wb") as fp:
             fp.write(await response.read())
@@ -916,7 +927,9 @@ async def test_download_file_no_file_was_uploaded(
 ):
     assert client.app
 
-    missing_file = parse_obj_as(SimcoreS3FileID, f"{project_id}/{node_id}/missing.file")
+    missing_file = TypeAdapter(SimcoreS3FileID).validate_python(
+        f"{project_id}/{node_id}/missing.file"
+    )
     assert (
         await storage_s3_client.object_exists(
             bucket=storage_s3_bucket, object_key=missing_file
@@ -975,7 +988,7 @@ async def test_download_file_1_to_1_with_file_meta_data(
     assert not error
     assert data
     assert "link" in data
-    assert parse_obj_as(AnyHttpUrl, data["link"])
+    assert TypeAdapter(AnyHttpUrl).validate_python(data["link"])
     await _assert_file_downloaded(
         faker, tmp_path, link=data["link"], uploaded_file=uploaded_file
     )
@@ -1006,7 +1019,9 @@ async def test_download_file_from_inside_a_directory(
     file_name = "meta_data_entry_is_dir.file"
     file_to_upload_in_dir = create_file_of_size(file_size, file_name)
 
-    s3_file_id = parse_obj_as(SimcoreS3FileID, f"{dir_path_in_s3}/{file_name}")
+    s3_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
+        f"{dir_path_in_s3}/{file_name}"
+    )
     await storage_s3_client.upload_file(
         bucket=storage_s3_bucket,
         file=file_to_upload_in_dir,
@@ -1034,7 +1049,7 @@ async def test_download_file_from_inside_a_directory(
     assert not error
     assert data
     assert "link" in data
-    assert parse_obj_as(AnyHttpUrl, data["link"])
+    assert TypeAdapter(AnyHttpUrl).validate_python(data["link"])
     await _assert_file_downloaded(
         faker, tmp_path, link=data["link"], uploaded_file=file_to_upload_in_dir
     )
@@ -1055,8 +1070,8 @@ async def test_download_file_the_file_is_missing_from_the_directory(
     assert directory_file_upload.urls[0].path
     dir_path_in_s3 = directory_file_upload.urls[0].path.strip("/")
 
-    missing_s3_file_id = parse_obj_as(
-        SimcoreS3FileID, f"{dir_path_in_s3}/missing_inside_dir.file"
+    missing_s3_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
+        f"{dir_path_in_s3}/missing_inside_dir.file"
     )
     download_url = (
         client.app.router["download_file"]
@@ -1083,8 +1098,8 @@ async def test_download_file_access_rights(
     assert client.app
 
     # project_id does not exist
-    missing_file = parse_obj_as(
-        SimcoreS3FileID, f"{faker.uuid4()}/{faker.uuid4()}/project_id_is_missing"
+    missing_file = TypeAdapter(SimcoreS3FileID).validate_python(
+        f"{faker.uuid4()}/{faker.uuid4()}/project_id_is_missing"
     )
     assert (
         await storage_s3_client.object_exists(
@@ -1110,7 +1125,7 @@ async def test_download_file_access_rights(
 @pytest.mark.parametrize(
     "file_size",
     [
-        pytest.param(parse_obj_as(ByteSize, "1Mib")),
+        pytest.param(TypeAdapter(ByteSize).validate_python("1Mib")),
     ],
     ids=byte_size_ids,
 )
@@ -1184,7 +1199,7 @@ async def test_copy_as_soft_link(
 
     # now let's try with whatever link id
     file, original_file_uuid = await upload_file(
-        parse_obj_as(ByteSize, "10Mib"), faker.file_name()
+        TypeAdapter(ByteSize).validate_python("10Mib"), faker.file_name()
     )
     url = (
         client.app.router["copy_as_soft_link"]
@@ -1193,13 +1208,15 @@ async def test_copy_as_soft_link(
         )
         .with_query(user_id=user_id)
     )
-    link_id = SimcoreS3FileID(f"api/{node_id}/{faker.file_name()}")
+    link_id = TypeAdapter(SimcoreS3FileID).validate_python(
+        f"api/{node_id}/{faker.file_name()}"
+    )
     response = await client.post(
         f"{url}", json=jsonable_encoder(SoftCopyBody(link_id=link_id))
     )
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
-    fmd = parse_obj_as(FileMetaDataGet, data)
+    fmd = TypeAdapter(FileMetaDataGet).validate_python(data)
     assert fmd.file_id == link_id
 
 
@@ -1223,7 +1240,7 @@ async def __list_files(
     response = await client.get(f"{get_url}")
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert not error
-    return parse_obj_as(list[FileMetaDataGet], data)
+    return TypeAdapter(list[FileMetaDataGet]).validate_python(data)
 
 
 async def _list_files_legacy(
@@ -1257,9 +1274,9 @@ async def _list_files_and_directories(
 @pytest.mark.parametrize(
     "file_size",
     [
-        parse_obj_as(ByteSize, "-1"),
-        parse_obj_as(ByteSize, "0"),
-        parse_obj_as(ByteSize, "1TB"),
+        ByteSize(-1),
+        TypeAdapter(ByteSize).validate_python("0"),
+        TypeAdapter(ByteSize).validate_python("1TB"),
     ],
 )
 async def test_is_directory_link_forces_link_type_and_size(
@@ -1329,7 +1346,7 @@ async def test_upload_file_is_directory_and_remove_content(
     location_id: LocationID,
     user_id: UserID,
 ):
-    FILE_SIZE_IN_DIR = parse_obj_as(ByteSize, "1Mib")
+    FILE_SIZE_IN_DIR = TypeAdapter(ByteSize).validate_python("1Mib")
     DIR_NAME = "some-dir"
     SUBDIR_COUNT = 4
     FILE_COUNT = 5
@@ -1396,7 +1413,7 @@ async def test_listing_more_than_1000_objects_in_bucket(
 ):
     async with create_directory_with_files(
         dir_name="some-random",
-        file_size_in_dir=parse_obj_as(ByteSize, "1"),
+        file_size_in_dir=TypeAdapter(ByteSize).validate_python("1"),
         subdir_count=1,
         file_count=files_in_dir,
     ) as directory_file_upload:
@@ -1427,19 +1444,19 @@ async def test_listing_with_project_id_filter(
     project, src_projects_list = await random_project_with_files(
         num_nodes=1,
         file_sizes=(ByteSize(1),),
-        file_checksums=(SHA256Str(faker.sha256()),),
+        file_checksums=(TypeAdapter(SHA256Str).validate_python(faker.sha256()),),
     )
     _, _ = await random_project_with_files(
         num_nodes=1,
         file_sizes=(ByteSize(1),),
-        file_checksums=(SHA256Str(faker.sha256()),),
+        file_checksums=(TypeAdapter(SHA256Str).validate_python(faker.sha256()),),
     )
     assert len(src_projects_list.keys()) > 0
-    node_id = list(src_projects_list.keys())[0]
+    node_id = next(iter(src_projects_list.keys()))
     project_files_in_db = set(src_projects_list[node_id])
     assert len(project_files_in_db) > 0
     project_id = project["uuid"]
-    project_file_name = Path(choice(list(project_files_in_db))).name
+    project_file_name = Path(choice(list(project_files_in_db))).name  # noqa: S311
 
     assert client.app
     query = {
@@ -1456,7 +1473,7 @@ async def test_listing_with_project_id_filter(
     response = await client.get(f"{url}")
     data, _ = await assert_status(response, status.HTTP_200_OK)
 
-    list_of_files = parse_obj_as(list[FileMetaDataGet], data)
+    list_of_files = TypeAdapter(list[FileMetaDataGet]).validate_python(data)
 
     if uuid_filter:
         assert len(list_of_files) == 1

@@ -31,13 +31,12 @@ async def get_health(request: web.Request) -> web.Response:
     assert request  # nosec
     return web.json_response(
         {
-            "data": HealthCheck.parse_obj(
-                {
-                    "name": PROJECT_NAME,
-                    "version": f"{VERSION}",
-                    "api_version": API_VERSION,
-                }
-            ).dict(**RESPONSE_MODEL_POLICY)
+            "data": HealthCheck(
+                name=PROJECT_NAME,
+                version=f"{VERSION}",
+                api_version=API_VERSION,
+                status=None,
+            ).model_dump(**RESPONSE_MODEL_POLICY)
         },
         dumps=json_dumps,
     )
@@ -69,7 +68,7 @@ async def get_status(request: web.Request) -> web.Response:
             "connected" if await is_pg_responsive(request.app) else "failed"
         )
 
-    status = AppStatusCheck.parse_obj(
+    status = AppStatusCheck.model_validate(
         {
             "app_name": PROJECT_NAME,
             "version": f"{VERSION}",
@@ -84,5 +83,5 @@ async def get_status(request: web.Request) -> web.Response:
     )
 
     return web.json_response(
-        {"data": status.dict(exclude_unset=True)}, dumps=json_dumps
+        {"data": status.model_dump(exclude_unset=True)}, dumps=json_dumps
     )
