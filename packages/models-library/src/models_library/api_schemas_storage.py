@@ -8,7 +8,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, Self, TypeAlias
 from uuid import UUID
 
 from pydantic import (
@@ -316,19 +316,18 @@ class FoldersBody(BaseModel):
     nodes_map: dict[NodeID, NodeID] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    @classmethod
-    def ensure_consistent_entries(cls, values):
-        source_node_keys = (NodeID(n) for n in values["source"].get("workbench", {}))
-        if set(source_node_keys) != set(values["nodes_map"].keys()):
+    def ensure_consistent_entries(self) -> Self:
+        source_node_keys = (NodeID(n) for n in self.source.get("workbench", {}))
+        if set(source_node_keys) != set(self.nodes_map.keys()):
             msg = "source project nodes do not fit with nodes_map entries"
             raise ValueError(msg)
         destination_node_keys = (
-            NodeID(n) for n in values["destination"].get("workbench", {})
+            NodeID(n) for n in self.destination.get("workbench", {})
         )
-        if set(destination_node_keys) != set(values["nodes_map"].values()):
+        if set(destination_node_keys) != set(self.nodes_map.values()):
             msg = "destination project nodes do not fit with nodes_map values"
             raise ValueError(msg)
-        return values
+        return self
 
 
 class SoftCopyBody(BaseModel):

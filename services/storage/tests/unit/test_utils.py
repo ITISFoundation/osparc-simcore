@@ -14,6 +14,7 @@ from uuid import uuid4
 import pytest
 from aiohttp import ClientSession
 from faker import Faker
+from models_library.api_schemas_storage import UNDEFINED_SIZE_TYPE
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import ByteSize, HttpUrl, TypeAdapter
@@ -46,24 +47,30 @@ async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
     [
         (-1, None, None, None, False),
         (0, None, None, None, False),
-        (random.randint(1, 1000000), None, None, None, False),
+        (random.randint(1, 1000000), None, None, None, False),  # noqa: S311
         (-1, "some_valid_entity_tag", None, None, False),
         (0, "some_valid_entity_tag", None, None, False),
         (
-            random.randint(1, 1000000),
+            random.randint(1, 1000000),  # noqa: S311
             "some_valid_entity_tag",
             "som_upload_id",
             None,
             False,
         ),
         (
-            random.randint(1, 1000000),
+            random.randint(1, 1000000),  # noqa: S311
             "some_valid_entity_tag",
             None,
             datetime.datetime.now(datetime.UTC),
             False,
         ),
-        (random.randint(1, 1000000), "some_valid_entity_tag", None, None, True),
+        (
+            random.randint(1, 1000000),  # noqa: S311
+            "some_valid_entity_tag",
+            None,
+            None,
+            True,
+        ),
     ],
 )
 def test_file_entry_valid(
@@ -84,7 +91,9 @@ def test_file_entry_valid(
         location_name=SimcoreS3DataManager.get_location_name(),
         sha256_checksum=None,
     )
-    fmd.file_size = TypeAdapter(ByteSize).validate_python(file_size)
+    fmd.file_size = TypeAdapter(UNDEFINED_SIZE_TYPE | ByteSize).validate_python(
+        file_size
+    )
     fmd.entity_tag = entity_tag
     fmd.upload_id = upload_id
     fmd.upload_expires_at = upload_expires_at
