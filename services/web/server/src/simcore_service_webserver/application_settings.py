@@ -110,7 +110,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: dict = Field(
-        default={},
+        default=False,
         env=["WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
