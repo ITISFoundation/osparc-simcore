@@ -82,7 +82,7 @@ class ProjectTrashError(BaseProjectError):
     ...
 
 
-class ProjectStopError(ProjectTrashError):
+class ProjectStoppingError(ProjectTrashError):
     msg_template = "Failed to  services in '{project_uuid}' before trashing"
 
 

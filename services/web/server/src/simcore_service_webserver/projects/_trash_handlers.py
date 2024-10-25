@@ -20,7 +20,11 @@ from ..projects._common_models import ProjectPathParams
 from ..security.decorators import permission_required
 from . import _trash_api
 from ._common_models import RemoveQueryParams
-from .exceptions import ProjectRunningConflictError, ProjectStopError, ProjectTrashError
+from .exceptions import (
+    ProjectRunningConflictError,
+    ProjectStoppingError,
+    ProjectTrashError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -39,7 +43,7 @@ _TO_HTTP_ERROR_MAP: dict[type[Exception], HttpErrorInfo] = {
         status.HTTP_409_CONFLICT,
         "Current study is in use and cannot be trashed [{project_uuid}]. Please stop all services first and try again",
     ),
-    ProjectStopError: HttpErrorInfo(
+    ProjectStoppingError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         "Something went wrong while stopping services before trashing. Aborting trash.",
     ),
@@ -129,7 +133,7 @@ async def trash_project(request: web.Request):
         product_name=product_name,
         user_id=user_id,
         project_id=path_params.project_id,
-        forced=query_params.force,
+        force_stop_first=query_params.force,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
