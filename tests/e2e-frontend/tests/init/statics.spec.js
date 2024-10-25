@@ -26,7 +26,7 @@ const expectedStatics = {
     "isPaymentEnabled": true
   },
   "tiplite": {
-    "displayName": "TIP.lite",
+    "displayName": "TI Planning Tool lite",
     "isPaymentEnabled": true
   },
 };
