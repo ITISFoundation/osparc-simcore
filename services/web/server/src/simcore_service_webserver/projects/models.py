@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Any, TypeAlias
 
 from aiopg.sa.result import RowProxy
-from models_library.basic_types import HttpUrlWithCustomMinLength
 from models_library.folders import FolderID
 from models_library.projects import ClassifierID, ProjectID
 from models_library.projects_ui import StudyUI
@@ -13,7 +12,7 @@ from models_library.utils.common_validators import (
     none_to_empty_str_pre_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import ConfigDict, BaseModel, field_validator
+from pydantic import ConfigDict, BaseModel, HttpUrl, field_validator
 from simcore_postgres_database.models.projects import ProjectType, projects
 
 ProjectDict: TypeAlias = dict[str, Any]
@@ -40,7 +39,7 @@ class ProjectDB(BaseModel):
     uuid: ProjectID
     name: str
     description: str
-    thumbnail: HttpUrlWithCustomMinLength | None = None
+    thumbnail: HttpUrl | None = None
     prj_owner: UserID
     creation_date: datetime
     last_change_date: datetime
