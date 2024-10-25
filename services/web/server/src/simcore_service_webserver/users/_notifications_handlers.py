@@ -106,7 +106,7 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
     # NOTE: only the user's notifications can be patched
     key = get_notification_key(req_ctx.user_id)
     all_user_notifications: list[UserNotification] = [
-        UserNotification.parse_raw(x)
+        UserNotification.model_validate_json(x)
         for x in await handle_redis_returns_union_types(redis_client.lrange(key, 0, -1))
     ]
     for k, user_notification in enumerate(all_user_notifications):
@@ -130,7 +130,9 @@ async def list_user_permissions(request: web.Request) -> web.Response:
     )
     return envelope_json_response(
         [
-            PermissionGet.construct(_fields_set=p.__fields_set__, **p.model_dump())
+            PermissionGet.model_construct(
+                _fields_set=p.model_fields_set, **p.model_dump()
+            )
             for p in list_permissions
         ]
     )

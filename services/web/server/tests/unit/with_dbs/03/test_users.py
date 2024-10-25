@@ -149,7 +149,7 @@ async def test_update_profile(
         data, _ = await assert_status(resp, status.HTTP_200_OK)
 
         # This is a PUT! i.e. full replace of profile variable fields!
-        assert data["first_name"] == ProfileUpdate.__fields__["first_name"].default
+        assert data["first_name"] == ProfileUpdate.model_fields["first_name"].default
         assert data["last_name"] == "Foo"
         assert data["role"] == user_role.name
 
@@ -381,7 +381,7 @@ def test_preuserprofile_parse_model_without_extras(
     account_request_form: dict[str, Any]
 ):
     required = {
-        f.alias or f.name for f in PreUserProfile.__fields__.values() if f.required
+        f.alias or f.name for f in PreUserProfile.model_fields.values() if f.required
     }
     data = {k: account_request_form[k] for k in required}
     assert not PreUserProfile(**data).extras

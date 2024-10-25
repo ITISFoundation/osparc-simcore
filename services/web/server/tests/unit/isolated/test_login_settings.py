@@ -137,6 +137,6 @@ def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
 def test_product_login_settings_in_plugin_settings():
     # pylint: disable=no-member
     customizable_attributes = set(ProductLoginSettingsDict.__annotations__.keys())
-    settings_atrributes = set(LoginSettingsForProduct.__fields__.keys())
+    settings_atrributes = set(LoginSettingsForProduct.model_fields.keys())
 
     assert customizable_attributes.issubset(settings_atrributes)

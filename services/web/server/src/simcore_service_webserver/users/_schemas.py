@@ -12,7 +12,7 @@ import pycountry
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from pydantic import ConfigDict, field_validator, model_validator, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 from simcore_postgres_database.models.users import UserStatus
 
 
@@ -74,10 +74,7 @@ class PreUserProfile(InputSchema):
         description="Keeps extra information provided in the request form. At most MAX_NUM_EXTRAS fields",
     )
 
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        str_max_length=200
-    )
+    model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 
     @model_validator(mode="before")
     @classmethod
@@ -93,8 +90,8 @@ class PreUserProfile(InputSchema):
         # collect extras
         extra_fields = {}
         field_names_and_aliases = (
-            set(cls.__fields__.keys())
-            | {f.alias for f in cls.__fields__.values() if f.alias}
+            set(cls.model_fields.keys())
+            | {f.alias for f in cls.model_fields.values() if f.alias}
             | set(alias_by_priority)
         )
         for key, value in values.items():
