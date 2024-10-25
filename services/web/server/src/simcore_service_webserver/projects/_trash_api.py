@@ -7,12 +7,14 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from simcore_service_webserver.director_v2.exceptions import DirectorServiceError
+from servicelib.utils import fire_and_forget_task
 
 from ..director_v2 import api as director_v2_api
 from . import projects_api
-from .exceptions import ProjectLockError, ProjectRunningConflictError, ProjectStopError
+from ._access_rights_api import check_user_project_permission
+from .exceptions import ProjectRunningConflictError
 from .models import ProjectPatchExtended
 from .settings import get_plugin_settings
 
@@ -43,54 +45,73 @@ async def prune_all_trashes(app: web.Application) -> list[str]:
     return []
 
 
+async def _is_project_running(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_id: ProjectID,
+) -> bool:
+    return bool(
+        # computational
+        await director_v2_api.is_pipeline_running(
+            app, user_id=user_id, project_id=project_id
+        )
+    ) or bool(
+        # dynamic
+        await director_v2_api.list_dynamic_services(
+            app, user_id=user_id, project_id=f"{project_id}"
+        )
+    )
+
+
 async def trash_project(
     app: web.Application,
     *,
     product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
-    forced: bool,
+    force_stop_first: bool,
 ):
     """
+
     Raises:
         ProjectStopError:
         ProjectRunningConflictError:
     """
+    await check_user_project_permission(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        product_name=product_name,
+        permission="write",
+    )
 
-    if forced:
-        # SCHEDULE stop!
-        try:
-            await projects_api.remove_project_dynamic_services(
+    if force_stop_first:
+        # NOTE: schedules stop-project
+
+        stop_project_task = asyncio.gather(
+            director_v2_api.stop_pipeline(app, user_id=user_id, project_id=project_id),
+            projects_api.remove_project_dynamic_services(
                 user_id=user_id,
                 project_uuid=f"{project_id}",
                 app=app,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 notify_users=False,
-            )
-
-            await director_v2_api.delete_pipeline(
-                app, user_id=user_id, project_id=project_id, force=forced
-            )
-
-        except (DirectorServiceError, ProjectLockError) as exc:
-            raise ProjectStopError(
-                project_uuid=project_id,
-                user_id=user_id,
-                product_name=product_name,
-                from_err=exc,
-            ) from exc
-
-    else:
-        # NOTE: must do here as well for dynamic services but needs refactoring!
-        running = await director_v2_api.is_pipeline_running(
-            app=app, user_id=user_id, project_id=project_id
+            ),
         )
-        if running:
-            raise ProjectRunningConflictError(
-                project_uuid=project_id,
-                user_id=user_id,
-                product_name=product_name,
-            )
+
+        fire_and_forget_task(
+            stop_project_task,
+            task_suffix_name=f"trash_project_stop_project_{user_id=}_{project_id=}",
+            fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        )
+
+    elif _is_project_running(app, user_id=user_id, project_id=project_id):
+        raise ProjectRunningConflictError(
+            project_uuid=project_id,
+            user_id=user_id,
+            product_name=product_name,
+        )
 
     # mark as trash
     await projects_api.patch_project(
@@ -109,6 +130,7 @@ async def untrash_project(
     user_id: UserID,
     project_id: ProjectID,
 ):
+    # NOTE: check_user_project_permission is inside projects_api.patch_project
     await projects_api.patch_project(
         app,
         user_id=user_id,
