@@ -24,9 +24,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
     this.set({
       indent: 12, // defaults to 19,
       decorator: "rounded",
-    });
-
-    this.set({
+      padding: 2,
       maxWidth: osparc.dashboard.ResourceBrowserBase.SIDE_SPACER_WIDTH - 12
     });
 
