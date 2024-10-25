@@ -6,6 +6,7 @@
 # pylint: disable=unused-variable
 
 
+import asyncio
 from collections.abc import Callable
 from uuid import UUID
 
@@ -36,17 +37,22 @@ def mocked_catalog(
     catalog_subsystem_mock([user_project])
 
 
+@pytest.fixture
+def mocked_director_v2(director_v2_service_mock: aioresponses):
+    ...
+
+
 @pytest.mark.acceptance_test(
     "For https://github.com/ITISFoundation/osparc-simcore/pull/6579"
 )
 @pytest.mark.parametrize("force", [False, True])
 @pytest.mark.parametrize("is_project_running", [False, True])
-async def test_trash_projects(
+async def test_trash_projects(  # noqa: PLR0915
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     mocked_catalog: None,
-    director_v2_service_mock: aioresponses,
+    mocked_director_v2: None,
     mocker: MockerFixture,
     force: bool,
     is_project_running: bool,
@@ -77,6 +83,8 @@ async def test_trash_projects(
 
     url = client.app.router["list_projects"].url_for()
     assert f"{url}" == "/v0/projects"
+
+    # ---------------------------------------------------------------------
 
     # LIST NOT trashed
     resp = await client.get("/v0/projects")
@@ -151,5 +159,7 @@ async def test_trash_projects(
         assert got.trashed_at is None
 
     if is_project_running and force:
-        mock_remove_dynamic_services.assert_any_await()
-        mock_stop_pipeline.assert_any_await()
+        # checks fire&forget calls
+        await asyncio.sleep(0.1)
+        mock_stop_pipeline.assert_awaited()
+        mock_remove_dynamic_services.assert_awaited()
