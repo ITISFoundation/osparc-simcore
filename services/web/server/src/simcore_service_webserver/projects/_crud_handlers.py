@@ -101,7 +101,7 @@ def _handle_projects_exceptions(handler: Handler):
             FolderAccessForbiddenError,
             WorkspaceAccessForbiddenError,
         ) as exc:
-            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
+            raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return _wrapper
 

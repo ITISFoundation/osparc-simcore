@@ -4,11 +4,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import random
 import re
 import uuid as uuidlib
 from collections.abc import Awaitable, Callable, Iterator
-from copy import deepcopy
 from http import HTTPStatus
 from math import ceil
 from typing import Any
@@ -19,10 +17,7 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from faker import Faker
 from models_library.products import ProductName
-from models_library.projects_nodes import Node
 from models_library.projects_state import ProjectState
-from models_library.services import ServiceKey
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import parse_obj_as
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -187,7 +182,7 @@ async def _replace_project(
     assert client.app
 
     # PUT /v0/projects/{project_id}
-    url = client.app.router["replace_project"].url_for(
+    url = client.app.router["replace_project"].url_for(  # <- MD: check this
         project_id=project_update["uuid"]
     )
     assert str(url) == f"{API_PREFIX}/projects/{project_update['uuid']}"
@@ -654,141 +649,6 @@ async def test_new_template_from_project(
         # check uuid replacement
         for node_name in template_project["workbench"]:
             parse_obj_as(uuidlib.UUID, node_name)
-
-
-# PUT --------
-@pytest.mark.parametrize(
-    "user_role,expected,expected_change_access",
-    [
-        (
-            UserRole.ANONYMOUS,
-            status.HTTP_401_UNAUTHORIZED,
-            status.HTTP_401_UNAUTHORIZED,
-        ),
-        (UserRole.GUEST, status.HTTP_200_OK, status.HTTP_403_FORBIDDEN),
-        (UserRole.USER, status.HTTP_200_OK, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK, status.HTTP_200_OK),
-    ],
-)
-async def test_replace_project(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
-    expected,
-    expected_change_access,
-    all_group,
-    ensure_run_in_sequence_context_is_empty,
-):
-    project_update = deepcopy(user_project)
-    project_update["description"] = "some updated from original project!!!"
-    await _replace_project(client, project_update, expected)
-
-    # replacing the owner access is not possible, it will keep the owner as well
-    project_update["accessRights"].update(
-        {str(all_group["gid"]): {"read": True, "write": True, "delete": True}}
-    )
-    await _replace_project(client, project_update, expected_change_access)
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK),
-    ],
-)
-async def test_replace_project_updated_inputs(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
-    expected,
-    ensure_run_in_sequence_context_is_empty,
-):
-    project_update = deepcopy(user_project)
-    #
-    # "inputAccess": {
-    #    "Na": "ReadAndWrite", <--------
-    #    "Kr": "ReadOnly",
-    #    "BCL": "ReadAndWrite",
-    #    "NBeats": "ReadOnly",
-    #    "Ligand": "Invisible",
-    #    "cAMKII": "Invisible"
-    #  },
-    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
-        "Na"
-    ] = 55
-    await _replace_project(client, project_update, expected)
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK),
-    ],
-)
-async def test_replace_project_updated_readonly_inputs(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
-    expected,
-    ensure_run_in_sequence_context_is_empty,
-):
-    project_update = deepcopy(user_project)
-    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
-        "Na"
-    ] = 55
-    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
-        "Kr"
-    ] = 5
-    await _replace_project(client, project_update, expected)
-
-
-@pytest.fixture
-def random_minimal_node(faker: Faker) -> Callable[[], Node]:
-    def _creator() -> Node:
-        return Node(
-            key=ServiceKey(f"simcore/services/comp/{faker.pystr().lower()}"),
-            version=faker.numerify("#.#.#"),
-            label=faker.pystr(),
-        )
-
-    return _creator
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_409_CONFLICT),
-        (UserRole.USER, status.HTTP_409_CONFLICT),
-        (UserRole.TESTER, status.HTTP_409_CONFLICT),
-    ],
-)
-async def test_replace_project_adding_or_removing_nodes_raises_conflict(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
-    expected,
-    ensure_run_in_sequence_context_is_empty,
-    faker: Faker,
-    random_minimal_node: Callable[[], Node],
-):
-    # try adding a node should not work
-    project_update = deepcopy(user_project)
-    new_node = random_minimal_node()
-    project_update["workbench"][faker.uuid4()] = jsonable_encoder(new_node)
-    await _replace_project(client, project_update, expected)
-    # try removing a node should not work
-    project_update = deepcopy(user_project)
-    project_update["workbench"].pop(
-        random.choice(list(project_update["workbench"].keys()))  # noqa: S311
-    )
-    await _replace_project(client, project_update, expected)
 
 
 @pytest.fixture

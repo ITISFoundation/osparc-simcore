@@ -121,18 +121,6 @@ class ProjectReplace(InputSchema):
     )
 
 
-class ProjectUpdate(InputSchema):
-    name: ShortTruncatedStr = FieldNotRequired()
-    description: LongTruncatedStr = FieldNotRequired()
-    thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
-    workbench: NodesDict = FieldNotRequired()
-    access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
-    tags: list[int] = FieldNotRequired()
-    classifiers: list[ClassifierID] = FieldNotRequired()
-    ui: StudyUI | None = None
-    quality: dict[str, Any] = FieldNotRequired()
-
-
 class ProjectPatch(InputSchema):
     name: ShortTruncatedStr = FieldNotRequired()
     description: LongTruncatedStr = FieldNotRequired()
@@ -143,6 +131,10 @@ class ProjectPatch(InputSchema):
     ui: StudyUI | None = FieldNotRequired()
     quality: dict[str, Any] = FieldNotRequired()
 
+    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )
+
 
 __all__: tuple[str, ...] = (
     "EmptyModel",
@@ -151,6 +143,5 @@ __all__: tuple[str, ...] = (
     "ProjectGet",
     "ProjectListItem",
     "ProjectReplace",
-    "ProjectUpdate",
     "TaskProjectGet",
 )
