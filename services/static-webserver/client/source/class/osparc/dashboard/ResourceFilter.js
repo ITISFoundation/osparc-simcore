@@ -65,6 +65,16 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       }
     },
 
+    contextChanged: function(context, workspaceId, folderId) {
+      this.__workspacesAndFoldersTree.set({
+        currentWorkspaceId: workspaceId,
+        currentFolderId: folderId,
+      });
+      this.__workspacesAndFoldersTree.contextChanged(context);
+
+      this.__trashButton.setValue(context === "trash");
+    },
+
     /* WORKSPACES AND FOLDERS */
     __createWorkspacesAndFoldersTree: function() {
       const workspacesAndFoldersTree = this.__workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();

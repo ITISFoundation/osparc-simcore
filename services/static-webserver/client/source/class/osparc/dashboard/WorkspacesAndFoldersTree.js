@@ -46,7 +46,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     this.__initTree();
 
     // preselect "My Workspace"
-    this.contextChanged(null, null);
+    this.contextChanged("studiesAndFolders");
 
     osparc.store.Folders.getInstance().addListener("folderAdded", e => {
       const folder = e.getData();

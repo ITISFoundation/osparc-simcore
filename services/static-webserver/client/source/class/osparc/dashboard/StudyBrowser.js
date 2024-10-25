@@ -1007,13 +1007,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           currentFolderId: folderId,
         });
 
-        // notify workspacesAndFoldersTree
-        const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
-        workspacesAndFoldersTree.set({
-          currentWorkspaceId: workspaceId,
-          currentFolderId: folderId,
-        });
-        workspacesAndFoldersTree.contextChanged(context);
+        // notify Filters on the left
+        this._resourceFilter.contextChanged(context, workspaceId, folderId);
       }
     },
 
