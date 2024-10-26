@@ -388,19 +388,6 @@ async def get_project_inactivity(request: web.Request):
 #
 
 
-@routes.put(f"/{VTAG}/projects/{{project_id}}", name="replace_project")
-@login_required
-@permission_required("project.update")
-@permission_required("services.pipeline.*")  # due to update_pipeline_db
-async def replace_project(request: web.Request):
-    """
-    Deprecated -> PATCH project OR dedicated /nodes (workbench) endpoints should be used instead
-    """
-
-    assert request  # nosec
-    return web.json_response(data="Deprecated endpoint", status=status.HTTP_410_GONE)
-
-
 @routes.patch(f"/{VTAG}/projects/{{project_id}}", name="patch_project")
 @login_required
 @permission_required("project.update")

@@ -22,7 +22,6 @@ from models_library.api_schemas_webserver.projects import (
     ProjectGet,
     ProjectListItem,
     ProjectPatch,
-    ProjectReplace,
 )
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -102,15 +101,6 @@ async def get_active_project(client_session_id: str):
 )
 async def get_project(project_id: ProjectID):
     ...
-
-
-@router.put(
-    "/projects/{project_id}",
-    response_model=None,
-    status_code=status.HTTP_410_GONE,  # Deprecated endpoint
-)
-async def replace_project(project_id: ProjectID, _replace: ProjectReplace):
-    """Replaces (i.e. full update) a project resource"""
 
 
 @router.patch(
