@@ -14,13 +14,16 @@ flag_management:
 
 
 component_management:
-  default_rules:	# Dict. rules inherited by all components that don't define a tag for themselves.
+  default_rules:
     statuses:
-      - type: project # in this case every component that doens't have a status defined will have a project type one
+      - type: project
         target: auto
         branches:
           - "!master"
-  individual_components:  # List. These are the actual components.
+  individual_components:
+    - component_id: api
+      paths:
+        - api/**
     - component_id: pkg_aws_library
       paths:
         - packages/aws-library/**
