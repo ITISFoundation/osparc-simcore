@@ -1,6 +1,8 @@
 codecov:
-  require_ci_to_pass: true
+  require_ci_to_pass: false
   branch: master
+github_checks:
+  annotations: false
 
 flag_management:
   default_rules:
@@ -113,43 +115,14 @@ component_management:
         - services/web/server/**
 
 coverage:
-  precision: 1
-  round: down
-  range: "70...100"
-
   status:
     project:
       default:
         informational: true
-        threshold: 1%
-        paths:
-          - api
-          - packages
-          - services
-      api:
-        informational: true
-        threshold: 1%
-        paths:
-          - api
-      packages:
-        informational: true
-        threshold: 1%
-        paths:
-          - packages
-      services:
-        informational: true
-        threshold: 1%
-        paths:
-          - services
 
     patch:
       default:
         informational: true
-        threshold: 1%
-        paths:
-          - api
-          - packages
-          - services
 
 comment:
   layout: "header,diff,flags,components,footer"
