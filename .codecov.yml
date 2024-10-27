@@ -50,6 +50,12 @@ parsers:
       macro: no
 
 comment:
-  layout: "reach,diff,flags,tree"
+  layout: "header,diff,flags,components"
   behavior: default
   require_changes: false
+
+
+ignore:
+  - "test_*.py"
+  - "**/generated_models/*.py"
+  - "**/generated_code/*.py"

@@ -42,6 +42,7 @@ tests-unit-ci: ## runs unit tests with ci parameters
 		--cov-config=../../.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
+		--junitxml=junit.xml -o junit_family=legacy \
 		--cov=simcore_sdk \
 		--durations=10 \
 		--keep-docker-up \
@@ -61,6 +62,7 @@ tests-integration: ## runs integration tests against local+production images
 		--cov-config=../../.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
+		--junitxml=junit.xml -o junit_family=legacy \
 		--cov=simcore_sdk \
 		--durations=10 \
 		--exitfirst \
@@ -80,6 +82,7 @@ tests-integration-ci: ## runs integration tests against local+production images 
 		--cov-config=../../.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
+		--junitxml=junit.xml -o junit_family=legacy \
 		--cov=simcore_sdk \
 		--durations=10 \
 		--keep-docker-up \
