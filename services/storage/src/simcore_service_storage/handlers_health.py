@@ -8,9 +8,9 @@ import logging
 
 from aiohttp import web
 from aws_library.s3 import S3AccessError
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_storage import HealthCheck, S3BucketName
 from models_library.app_diagnostics import AppStatusCheck
-from models_library.utils.json_serialization import json_dumps
 from pydantic import TypeAdapter
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 

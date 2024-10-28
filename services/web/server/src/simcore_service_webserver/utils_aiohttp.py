@@ -6,8 +6,8 @@ from typing import Any, Generic, Literal, TypeAlias, TypeVar
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
 from aiohttp.web_routedef import RouteDef, RouteTableDef
+from common_library.json_serialization import json_dumps
 from models_library.generics import Envelope
-from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field
 from pydantic.generics import GenericModel
 from servicelib.common_headers import X_FORWARDED_PROTO

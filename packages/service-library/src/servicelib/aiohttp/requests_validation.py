@@ -13,7 +13,7 @@ from contextlib import contextmanager
 from typing import TypeAlias, TypeVar, Union
 
 from aiohttp import web
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 from pydantic import BaseModel, ConfigDict, TypeAdapter, ValidationError
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON

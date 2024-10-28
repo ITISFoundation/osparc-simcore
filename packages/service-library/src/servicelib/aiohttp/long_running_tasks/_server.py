@@ -5,8 +5,8 @@ from functools import wraps
 from typing import Any
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
-from models_library.utils.json_serialization import json_dumps
 from pydantic import PositiveFloat, TypeAdapter
 
 from ...aiohttp import status

@@ -132,8 +132,9 @@ def test_construct(monkeypatch):
     # from __init__
     settings_from_init = Settings(
         VALUE=1,
-        VALUE_ALSO_REQUIRED=10,
         VALUE_NULLABLE_REQUIRED=None,
+        VALUE_NULLABLE_REQUIRED_AS_WELL=None,
+        VALUE_REQUIRED_AS_WELL=32,
     )
 
     print(settings_from_init.model_dump_json(exclude_unset=True, indent=1))
@@ -145,6 +146,8 @@ def test_construct(monkeypatch):
             "VALUE": "1",
             "VALUE_ALSO_REQUIRED": "10",
             "VALUE_NULLABLE_REQUIRED": "null",
+            "VALUE_NULLABLE_REQUIRED_AS_WELL": "null",
+            "VALUE_REQUIRED_AS_WELL": "32",
         },
     )  # WARNING: set this env to None would not work w/o ``parse_none`` validator! bug???
 

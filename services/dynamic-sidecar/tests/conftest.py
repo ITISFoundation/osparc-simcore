@@ -14,13 +14,13 @@ from unittest.mock import AsyncMock
 
 import pytest
 import simcore_service_dynamic_sidecar
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import RunID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.users import UserID
-from models_library.utils.json_serialization import json_dumps
 from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import (

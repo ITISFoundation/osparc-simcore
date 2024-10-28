@@ -3,6 +3,7 @@
 import logging
 from typing import Any, Final
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
@@ -17,7 +18,6 @@ from models_library.rabbitmq_messages import (
 )
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.services import RunID
-from models_library.utils.json_serialization import json_dumps
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from simcore_postgres_database.models.comp_tasks import NodeClass
 

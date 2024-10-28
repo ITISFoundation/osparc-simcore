@@ -6,7 +6,7 @@ import json
 
 import pytest
 from aiohttp import web
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 from pydantic import HttpUrl, parse_obj_as
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.application_settings import (

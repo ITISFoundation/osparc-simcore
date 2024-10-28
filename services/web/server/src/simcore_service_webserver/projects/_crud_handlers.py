@@ -9,6 +9,7 @@ import json
 import logging
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.api_schemas_webserver.projects import (
     EmptyModel,
@@ -24,7 +25,6 @@ from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import json_dumps
 from pydantic import parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
