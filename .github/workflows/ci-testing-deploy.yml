@@ -588,6 +588,16 @@ jobs:
         run: ./ci/github/unit-testing/api.bash install
       - name: test
         run: ./ci/github/unit-testing/api.bash test
+      - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-api-server:
     needs: changes
