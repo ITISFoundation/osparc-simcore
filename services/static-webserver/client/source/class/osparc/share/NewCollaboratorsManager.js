@@ -82,7 +82,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "right"
       }));
-      const orgsButton = this.__orgsButton = new qx.ui.form.Button(this.tr("Check Organizations...")).set({
+      // Quick access for users that still don't belong to any organization
+      const orgsButton = this.__orgsButton = new qx.ui.form.Button(this.tr("My Organizations...")).set({
         appearance: "form-button",
         visibility: "excluded",
       });
