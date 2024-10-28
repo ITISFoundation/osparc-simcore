@@ -59,9 +59,9 @@ def _create_file_picker(download_link: str, output_label: str | None):
     data = {}
     data["downloadLink"] = url = TypeAdapter(AnyUrl).validate_python(download_link)
     if output_label:
-        data["label"] = Path(output_label).name
+        data["label"] = Path(output_label).name # type: ignore[assignment]
     elif url.path:
-        data["label"] = Path(url.path).name
+        data["label"] = Path(url.path).name # type: ignore[assignment]
     output = DownloadLink.model_validate(data)
 
     output_id = "outFile"

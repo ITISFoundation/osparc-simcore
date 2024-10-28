@@ -65,9 +65,9 @@ class ClusterCreate(BaseCluster):
                         "password": "somepassword",
                     },
                     "access_rights": {
-                        154: CLUSTER_ADMIN_RIGHTS,
-                        12: CLUSTER_MANAGER_RIGHTS,
-                        7899: CLUSTER_USER_RIGHTS,
+                        154: CLUSTER_ADMIN_RIGHTS,  # type: ignore
+                        12: CLUSTER_MANAGER_RIGHTS, # type: ignore
+                        7899: CLUSTER_USER_RIGHTS,  # type: ignore
                     },
                 },
             ]
