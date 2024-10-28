@@ -19,7 +19,7 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd api/tests
-  mate test-ci
+  make test-ci
   popd
 }
 
