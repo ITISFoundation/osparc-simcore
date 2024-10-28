@@ -1445,7 +1445,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/ci/helpers/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1929,7 +1929,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1992,7 +1992,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2055,7 +2055,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2122,7 +2122,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2187,7 +2187,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2251,7 +2251,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/osparc-gateway-server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2328,7 +2328,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2415,7 +2415,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/public-api/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2475,7 +2475,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2546,7 +2546,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/e2e/requirements/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -2609,7 +2609,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
@@ -2671,7 +2671,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: ""
+          cache-dependency-glob: "**/environment-setup/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
