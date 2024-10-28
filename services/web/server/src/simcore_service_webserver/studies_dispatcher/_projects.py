@@ -98,7 +98,7 @@ def _create_project(
         description=description,
         thumbnail=thumbnail,
         prjOwner=owner.email,
-        accessRights={owner.primary_gid: access_rights},  # type: ignore[dict-item]
+        accessRights={f"{owner.primary_gid}": access_rights},
         creationDate=DateTimeStr(now_str()),
         lastChangeDate=DateTimeStr(now_str()),
         workbench=workbench,

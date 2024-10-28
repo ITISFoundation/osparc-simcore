@@ -51,9 +51,7 @@ def test_studies_dispatcher_settings_invalid_lifetime(
         StudiesDispatcherSettings.create_from_envs()
 
     validation_error: ErrorDict = exc_info.value.errors()[0]
+    assert validation_error["loc"] == ("STUDIES_GUEST_ACCOUNT_LIFETIME",)
     assert "-2" in validation_error["msg"]
-    assert validation_error == {
-        "loc": ("STUDIES_GUEST_ACCOUNT_LIFETIME",),
-        "type": "value_error",
-        "msg": validation_error["msg"],
-    }
+    assert validation_error["msg"] == validation_error["msg"]
+    assert validation_error["type"] == "value_error"
