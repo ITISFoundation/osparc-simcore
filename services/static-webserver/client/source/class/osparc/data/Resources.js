@@ -1249,6 +1249,12 @@ qx.Class.define("osparc.data.Resources", {
      * @param {Object} options Collections of options (pollTask, resolveWResponse, timeout, timeoutRetries)
      */
     fetch: function(resource, endpoint, params = {}, options = {}) {
+      if (params === null) {
+        params = {};
+      }
+      if (options === null) {
+        options = {};
+      }
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));

@@ -354,8 +354,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-webserver-02:
     needs: changes
@@ -393,8 +400,15 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-webserver-03:
     needs: changes
@@ -432,8 +446,15 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-storage:
     needs: changes
@@ -474,8 +495,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/storage.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-agent:
     needs: changes
@@ -518,8 +546,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/agent.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-api:
     needs: changes
@@ -599,8 +634,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/api-server.bash openapi-diff
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-autoscaling:
     needs: changes
@@ -641,8 +683,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/autoscaling.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-catalog:
     needs: changes
@@ -689,8 +738,15 @@ jobs:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-clusters-keeper:
     needs: changes
@@ -742,8 +798,15 @@ jobs:
           pushd services/clusters-keeper && \
           make test-ci-unit
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-datcore-adapter:
     needs: changes
@@ -790,8 +853,15 @@ jobs:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-director:
     needs: changes
@@ -825,8 +895,15 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/director.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-director-v2:
     needs: changes
@@ -873,8 +950,15 @@ jobs:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-aws-library:
     needs: changes
@@ -915,8 +999,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/aws-library.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-dask-task-models-library:
     needs: changes
@@ -957,8 +1048,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-dask-sidecar:
     needs: changes
@@ -999,8 +1097,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/dask-sidecar.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-osparc-gateway-server:
     needs: changes
@@ -1051,8 +1156,15 @@ jobs:
           pushd services/osparc-gateway-server && \
           make test-ci-unit
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-payments:
     needs: changes
@@ -1093,8 +1205,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/payments.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-dynamic-scheduler:
     needs: changes
@@ -1135,8 +1254,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/dynamic-scheduler.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-resource-usage-tracker:
     needs: changes
@@ -1187,8 +1313,15 @@ jobs:
           pushd services/resource-usage-tracker && \
           make test-ci-unit
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-dynamic-sidecar:
     needs: changes
@@ -1229,8 +1362,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-efs-guardian:
     needs: changes
@@ -1282,8 +1422,15 @@ jobs:
           pushd services/efs-guardian && \
           make test-ci-unit
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-frontend:
     needs: changes
@@ -1396,8 +1543,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/postgres-database.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-invitations:
     needs: changes
@@ -1438,8 +1592,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/invitations.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-service-integration:
     needs: changes
@@ -1480,8 +1641,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/service-integration.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-service-library:
     needs: changes
@@ -1522,8 +1690,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/service-library.bash test_all
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-settings-library:
     needs: changes
@@ -1564,8 +1739,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/settings-library.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-models-library:
     needs: changes
@@ -1605,8 +1787,15 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-common-library:
     needs: changes
@@ -1692,8 +1881,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/notifications-library.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-simcore-sdk:
     needs: changes
@@ -1736,8 +1932,15 @@ jobs:
         if: always()
         run: ./ci/github/unit-testing/simcore-sdk.bash test
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-tests:
     # NOTE: this is a github required status check!
@@ -1846,6 +2049,8 @@ jobs:
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests #optional
 
@@ -1908,6 +2113,8 @@ jobs:
         if: always()
         run: ./ci/github/integration-testing/webserver.bash clean_up
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests #optional
 
@@ -1970,6 +2177,8 @@ jobs:
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests #optional
 
@@ -2036,6 +2245,8 @@ jobs:
         if: always()
         run: ./ci/github/integration-testing/director-v2.bash clean_up
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests #optional
 
@@ -2100,6 +2311,8 @@ jobs:
         if: always()
         run: ./ci/github/integration-testing/dynamic-sidecar.bash clean_up
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests #optional
 
@@ -2177,6 +2390,8 @@ jobs:
           pushd services/osparc-gateway-server && \
           make down
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests #optional
 
@@ -2239,6 +2454,8 @@ jobs:
         if: always()
         run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
       - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: integrationtests
 
