@@ -70,7 +70,7 @@ async def _get_product(request: web.Request):
     except KeyError as err:
         raise web.HTTPNotFound(reason=f"{product_name=} not found") from err
 
-    assert GetProduct.model_config.extra == "ignore"  # nosec
+    assert GetProduct.model_config["extra"] == "ignore"  # nosec
     data = GetProduct(**product.model_dump(), templates=[])
     return envelope_json_response(data)
 

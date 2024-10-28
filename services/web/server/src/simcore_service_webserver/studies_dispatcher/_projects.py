@@ -147,7 +147,7 @@ def _create_project_with_filepicker_and_service(
     viewer_info: ViewerInfo,
 ) -> Project:
     file_picker, file_picker_output_id = _create_file_picker(
-        download_link, output_label=None
+        f"{download_link}", output_label=None
     )
 
     viewer_service = Node(
@@ -348,7 +348,7 @@ async def get_or_create_project_with_file(
     ):
         # nodes
         file_picker, _ = _create_file_picker(
-            file_params.download_link, output_label=file_params.file_name
+            f"{file_params.download_link}", output_label=file_params.file_name
         )
 
         # project

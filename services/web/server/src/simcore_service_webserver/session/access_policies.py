@@ -7,7 +7,7 @@ from typing import Final, TypedDict
 
 from aiohttp import web
 from aiohttp_session import Session
-from pydantic import PositiveInt, validate_arguments
+from pydantic import PositiveInt, validate_call
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 
@@ -64,7 +64,7 @@ def _access_tokens_cleanup_ctx(session: Session) -> Iterator[dict[str, _AccessTo
         session[_SESSION_GRANTED_ACCESS_TOKENS_KEY] = pruned_access_tokens
 
 
-@validate_arguments
+@validate_call
 def on_success_grant_session_access_to(
     name: str,
     *,
