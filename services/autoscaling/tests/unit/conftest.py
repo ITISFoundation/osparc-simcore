@@ -367,6 +367,13 @@ def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) 
 
 
 @pytest.fixture
+def disabled_opentelemetry(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("AUTOSCALING_TRACING", "null")
+
+
+@pytest.fixture
 def disabled_ssm(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AUTOSCALING_SSM_ACCESS", "null")
 
