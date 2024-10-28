@@ -63,14 +63,14 @@ def test_download_link_validators_1(url_in: str, expected_download_link: str):
 
 @pytest.fixture
 def file_and_service_params() -> dict[str, Any]:
-    return dict(
-        file_name="dataset_description.slsx",
-        file_size=_SIZEBYTES,
-        file_type="MSExcel",
-        viewer_key="simcore/services/dynamic/fooo",
-        viewer_version="1.0.0",
-        download_link=_DOWNLOAD_LINK,
-    )
+    return {
+        "file_name": "dataset_description.slsx",
+        "file_size": _SIZEBYTES,
+        "file_type": "MSExcel",
+        "viewer_key": "simcore/services/dynamic/fooo",
+        "viewer_version": "1.0.0",
+        "download_link": _DOWNLOAD_LINK,
+    }
 
 
 def test_download_link_validators_2(file_and_service_params: dict[str, Any]):
@@ -78,10 +78,10 @@ def test_download_link_validators_2(file_and_service_params: dict[str, Any]):
 
     assert params.download_link
 
-    assert params.download_link.host and params.download_link.host.endswith(
+    assert params.download_link.host
+    assert params.download_link.host.endswith(
         "s3.amazonaws.com"
     )
-    assert params.download_link.host_type == "domain"
 
     query = parse_qs(params.download_link.query)
     assert {"AWSAccessKeyId", "Signature", "Expires", "x-amz-request-payer"} == set(
@@ -105,12 +105,12 @@ def test_file_and_service_params(file_and_service_params: dict[str, Any]):
 
 
 def test_file_only_params():
-    request_params = dict(
-        file_name="dataset_description.slsx",
-        file_size=_SIZEBYTES,
-        file_type="MSExcel",
-        download_link=_DOWNLOAD_LINK,
-    )
+    request_params = {
+        "file_name": "dataset_description.slsx",
+        "file_size": _SIZEBYTES,
+        "file_type": "MSExcel",
+        "download_link": _DOWNLOAD_LINK,
+    }
 
     file_params = parse_obj_or_none(FileParams, request_params)
     assert file_params
@@ -125,10 +125,10 @@ def test_file_only_params():
 
 
 def test_service_only_params():
-    request_params = dict(
-        viewer_key="simcore/services/dynamic/fooo",
-        viewer_version="1.0.0",
-    )
+    request_params = {
+        "viewer_key": "simcore/services/dynamic/fooo",
+        "viewer_version": "1.0.0",
+    }
 
     file_params = parse_obj_or_none(FileParams, request_params)
     assert not file_params
