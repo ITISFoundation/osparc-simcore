@@ -504,6 +504,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }, this);
         }
       });
+      moveFolderTo.addListener("cancel", () => win.close());
     },
 
     __moveFolderToWorkspace: function(folderId, destWorkspaceId) {
