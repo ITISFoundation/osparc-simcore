@@ -1,59 +1,138 @@
 codecov:
-  require_ci_to_pass: true
+  require_ci_to_pass: false
   branch: master
+github_checks:
+  annotations: false
+
+flag_management:
+  default_rules:
+    carryforward: true
+    statuses:
+    - type: project
+      target: auto
+      threshold: 1%
+    - type: patch
+      target: auto
+
+
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        branches:
+          - "!master"
+  individual_components:
+    - component_id: api
+      paths:
+        - api/**
+    - component_id: pkg_aws_library
+      paths:
+        - packages/aws-library/**
+    - component_id: pkg_dask_task_models_library
+      paths:
+        - packages/dask-task-library/**
+    - component_id: pkg_models_library
+      paths:
+        - packages/models-library/**
+    - component_id: pkg_notifications_library
+      paths:
+        - packages/notifications-library/**
+    - component_id: pkg_postgres_database
+      paths:
+        - packages/postgres-database/**
+    - component_id: pkg_service_integration
+      paths:
+        - packages/service-integration/**
+    - component_id: pkg_service_library
+      paths:
+        - packages/service-library/**
+    - component_id: pkg_settings_library
+      paths:
+        - packages/settings-library/**
+    - component_id: pkg_simcore_sdk
+      paths:
+        - packages/simcore-sdk/**
+    - component_id: agent
+      paths:
+        - services/agent/**
+    - component_id: api_server
+      paths:
+        - services/api-server/**
+    - component_id: autoscaling
+      paths:
+        - services/autoscaling/**
+    - component_id: catalog
+      paths:
+        - services/catalog/**
+    - component_id: clusters_keeper
+      paths:
+        - services/clusters-keeper/**
+    - component_id: dask_sidecar
+      paths:
+        - services/dask-sidecar/**
+    - component_id: datcore_adapter
+      paths:
+        - services/datcore-adapter/**
+    - component_id: director
+      paths:
+        - services/director/**
+    - component_id: director_v2
+      paths:
+        - services/director-v2/**
+    - component_id: dynamic_scheduler
+      paths:
+        - services/dynamic-scheduler/**
+    - component_id: dynamic_sidecar
+      paths:
+        - services/dynamic-sidecar/**
+    - component_id: efs_guardian
+      paths:
+        - services/efs-guardian/**
+    - component_id: invitations
+      paths:
+        - services/invitations/**
+    - component_id: migration
+      paths:
+        - services/migration/**
+    - component_id: osparc_gateway_server
+      paths:
+        - services/osparc-gateway-server/**
+    - component_id: payments
+      paths:
+        - services/payments/**
+    - component_id: resource_usage_tracker
+      paths:
+        - services/resource-usage-tracker/**
+    - component_id: storage
+      paths:
+        - services/storage/**
+    - component_id: webclient
+      paths:
+        - services/static-webserver/client/**
+    - component_id: webserver
+      paths:
+        - services/web/server/**
 
 coverage:
-  precision: 1
-  round: down
-  range: "70...100"
-
   status:
     project:
       default:
         informational: true
-        threshold: 1%
-        paths:
-          - api
-          - packages
-          - services
-        carryforward: true
-      api:
-        informational: true
-        threshold: 1%
-        paths:
-          - api
-        carryforward: true
-      packages:
-        informational: true
-        threshold: 1%
-        paths:
-          - packages
-        carryforward: true
-      services:
-        informational: true
-        threshold: 1%
-        paths:
-          - services
-        carryforward: true
 
     patch:
       default:
         informational: true
-        threshold: 1%
-        paths:
-          - api
-          - packages
-          - services
-
-parsers:
-  gcov:
-    branch_detection:
-      conditional: yes
-      loop: yes
-      method: no
-      macro: no
 
 comment:
-  layout: "reach,diff,flags,tree"
+  layout: "header,diff,flags,components,footer"
   behavior: default
   require_changes: false
+  show_carryforward_flags: true
+
+
+ignore:
+  - "test_*.py"
+  - "**/generated_models/*.py"
+  - "**/generated_code/*.py"
+  - "**/node_modules/**"
