@@ -26,6 +26,25 @@ test-dev: _check_venv_active ## runs all tests [DEV]
 	# running unit tests
 	pytest -vv --exitfirst --failed-first  --durations=10 --pdb $(CURDIR)
 
+.PHONY: test-ci
+test-ci: _check_venv_active ## runs all tests [DEV]
+	# running unit tests
+	pytest \
+		--asyncio-mode=auto \
+		--color=yes \
+		--cov-append \
+		--cov-config=.coveragerc \
+		--cov-report=term-missing \
+		--cov-report=xml \
+		--junitxml=junit.xml -o junit_family=legacy \
+		--cov=api \
+		--durations=10 \
+		--log-date-format="%Y-%m-%d %H:%M:%S" \
+    --log-format="%(asctime)s %(levelname)s %(message)s" \
+		--verbose \
+		-m "not heavy_load" \
+		$(PYTEST_ADDITIONAL_PARAMETERS) \
+		$(TEST_TARGET)
 
 
 .PHONY: help
