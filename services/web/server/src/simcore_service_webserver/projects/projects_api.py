@@ -293,11 +293,6 @@ async def patch_project(
         new_partial_project_data=_project_patch_exclude_unset,
     )
 
-    # 5. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
-    await director_v2_api.create_or_update_pipeline(
-        app, user_id, project_uuid, product_name=product_name
-    )
-
 
 #
 # DELETE project -----------------------------------------------------
