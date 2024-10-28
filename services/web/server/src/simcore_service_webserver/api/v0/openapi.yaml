@@ -3221,33 +3221,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ProjectGet_'
-    put:
-      tags:
-      - projects
-      summary: Replace Project
-      description: Replaces (i.e. full update) a project resource
-      operationId: replace_project
-      parameters:
-      - required: true
-        schema:
-          title: Project Id
-          type: string
-          format: uuid
-        name: project_id
-        in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProjectReplace'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectGet_'
     delete:
       tags:
       - projects
@@ -4331,7 +4304,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -10603,15 +10576,15 @@ components:
           title: Value
           type: boolean
           description: True if the project is locked
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ProjectStatus'
+          description: The status of the project
         owner:
           title: Owner
           allOf:
           - $ref: '#/components/schemas/Owner'
           description: If locked, the user that owns the lock
-        status:
-          allOf:
-          - $ref: '#/components/schemas/ProjectStatus'
-          description: The status of the project
       additionalProperties: false
     ProjectMetadataGet:
       title: ProjectMetadataGet
@@ -10741,68 +10714,6 @@ components:
         is_public:
           title: Is Public
           type: boolean
-    ProjectReplace:
-      title: ProjectReplace
-      required:
-      - uuid
-      - name
-      - description
-      - creationDate
-      - lastChangeDate
-      - workbench
-      - accessRights
-      type: object
-      properties:
-        uuid:
-          title: Uuid
-          type: string
-          format: uuid
-        name:
-          title: Name
-          type: string
-        description:
-          title: Description
-          type: string
-        thumbnail:
-          title: Thumbnail
-          maxLength: 2083
-          minLength: 0
-          type: string
-          format: uri
-        creationDate:
-          title: Creationdate
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          type: string
-        lastChangeDate:
-          title: Lastchangedate
-          pattern: \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-          type: string
-        workbench:
-          title: Workbench
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Node'
-        accessRights:
-          title: Accessrights
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/models_library__projects_access__AccessRights'
-        tags:
-          title: Tags
-          type: array
-          items:
-            type: integer
-          default: []
-        classifiers:
-          title: Classifiers
-          type: array
-          items:
-            type: string
-        ui:
-          $ref: '#/components/schemas/StudyUI'
-        quality:
-          title: Quality
-          type: object
     ProjectRunningState:
       title: ProjectRunningState
       required:
@@ -10841,6 +10752,7 @@ components:
       - EXPORTING
       - OPENING
       - OPENED
+      - MAINTAINING
       type: string
       description: An enumeration.
     ProjectTypeAPI:
