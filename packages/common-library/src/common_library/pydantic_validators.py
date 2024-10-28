@@ -6,7 +6,7 @@ from datetime import timedelta
 from pydantic import TypeAdapter, field_validator
 
 
-def validate_legacy_timedelta_str(time_str: str | timedelta) -> str | timedelta:
+def _validate_legacy_timedelta_str(time_str: str | timedelta) -> str | timedelta:
     if not isinstance(time_str, str):
         return time_str
 
@@ -54,7 +54,7 @@ def validate_numeric_string_as_timedelta(field: str):
                 return converted_value
             except ValueError:
                 # returns format like "1:00:00"
-                return v
+                return _validate_legacy_timedelta_str(v)
         return v
 
     return field_validator(field, mode="before")(_numeric_string_as_timedelta)
