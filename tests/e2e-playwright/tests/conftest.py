@@ -584,7 +584,7 @@ def find_and_start_service_in_dashboard(
             _textbox = page.get_by_test_id("searchBarFilter-textField-service")
             _textbox.fill(service_name)
             _textbox.press("Enter")
-            test_id = f"listItem_simcore/services/{'dynamic' if service_type is ServiceType.DYNAMIC else 'comp'}"
+            test_id = f"serviceBrowserListItem_simcore/services/{'dynamic' if service_type is ServiceType.DYNAMIC else 'comp'}"
             if service_key_prefix:
                 test_id = f"{test_id}/{service_key_prefix}"
             test_id = f"{test_id}/{service_name}"
