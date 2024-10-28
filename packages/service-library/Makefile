@@ -34,6 +34,7 @@ test-dev: ## runs unit tests in w/o extras
 		--cov-config=$(CURDIR)/../../.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
+		--junitxml=junit.xml -o junit_family=legacy \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
 		--exitfirst \
@@ -55,6 +56,7 @@ test-dev[aiohttp]: ## runs unit common tests and aiohttp extras
 		--cov-config=$(CURDIR)/../../.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
+		--junitxml=junit.xml -o junit_family=legacy \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
 		--exitfirst \
@@ -74,6 +76,7 @@ test-dev[fastapi]: ## runs unit common tests and fastapi extras
 		--cov-config=$(CURDIR)/../../.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
+		--junitxml=junit.xml -o junit_family=legacy \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
 		--exitfirst \
@@ -92,6 +95,7 @@ test-dev[all]: ## runs unit tests  w/ all extras
 		--cov-config=$(CURDIR)/../../.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
+		--junitxml=junit.xml -o junit_family=legacy \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
 		--exitfirst \
@@ -111,6 +115,7 @@ test-ci[all]: ## runs unit tests  w/ all extras
 		--cov-config=$(CURDIR)/../../.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
+		--junitxml=junit.xml -o junit_family=legacy \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
 		--keep-docker-up \
