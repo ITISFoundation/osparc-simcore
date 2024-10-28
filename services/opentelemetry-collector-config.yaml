@@ -13,6 +13,7 @@ service:
     traces:
       receivers: [otlp]
       exporters: [otlphttp]
+      processors: [batch,probabilistic_sampler]
 processors:
   batch:
     timeout: 5s
