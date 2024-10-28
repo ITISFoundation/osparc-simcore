@@ -481,7 +481,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const destWorkspaceId = data["workspaceId"];
         const destFolderId = data["folderId"];
         if (destWorkspaceId !== currentWorkspaceId) {
-          const msg = this.tr("Coming soon");
+          const msg = this.tr("Moving folders to Shared Workspaces are coming soon");
           osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
           return;
         }
