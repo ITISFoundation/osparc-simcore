@@ -119,7 +119,7 @@
   "s4l": {
     "linkedResource": "services",
     "resources": [{
-      "expectedKey": "simcore/services/dynamic/s4l-ui",
+      "expectedKey": "simcore/services/dynamic/sim4life-8-0-0-dy",
       "title": "Start Sim4Life",
       "description": "New Sim4Life project",
       "newStudyLabel": "New S4L project",
@@ -129,7 +129,7 @@
   "s4lacad": {
     "linkedResource": "services",
     "resources": [{
-      "expectedKey": "simcore/services/dynamic/s4l-ui",
+      "expectedKey": "simcore/services/dynamic/sim4life-8-0-0-dy",
       "title": "Start Sim4Life",
       "description": "New Sim4Life project",
       "newStudyLabel": "New S4L project",
@@ -139,7 +139,7 @@
   "s4llite": {
     "linkedResource": "services",
     "resources": [{
-      "expectedKey": "simcore/services/dynamic/s4l-ui-lite",
+      "expectedKey": "simcore/services/dynamic/sim4life-lite",
       "title": "Start ${replace_me_product_name}",
       "description": "New project",
       "newStudyLabel": "New project",
