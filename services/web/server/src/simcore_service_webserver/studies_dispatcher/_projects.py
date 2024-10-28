@@ -13,7 +13,7 @@ from typing import NamedTuple
 
 from aiohttp import web
 from models_library.projects import DateTimeStr, Project, ProjectID
-from models_library.projects_access import AccessRights
+from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import DownloadLink, NodeID, PortLink
 from models_library.projects_ui import StudyUI
@@ -98,7 +98,7 @@ def _create_project(
         description=description,
         thumbnail=thumbnail,
         prjOwner=owner.email,
-        accessRights={f"{owner.primary_gid}": access_rights},
+        accessRights={GroupIDStr(owner.primary_gid): access_rights},
         creationDate=DateTimeStr(now_str()),
         lastChangeDate=DateTimeStr(now_str()),
         workbench=workbench,
