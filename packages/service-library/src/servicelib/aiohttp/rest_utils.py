@@ -2,7 +2,7 @@ from dataclasses import asdict
 
 from aiohttp import web
 from aiohttp.web import RouteDef, RouteTableDef
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 
 
 class EnvelopeFactory:

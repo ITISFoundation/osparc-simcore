@@ -3,4 +3,6 @@
 #
 --constraint ../../../requirements/constraints.txt
 
+orjson
 pydantic
+pydantic-extra-types

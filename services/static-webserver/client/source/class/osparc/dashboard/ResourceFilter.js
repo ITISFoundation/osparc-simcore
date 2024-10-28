@@ -29,7 +29,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     this.__tagButtons = [];
     this.__serviceTypeButtons = [];
 
-    this._setLayout(new qx.ui.layout.VBox(30));
+    this._setLayout(new qx.ui.layout.VBox(20));
     this.__buildLayout();
   },
 
@@ -62,15 +62,14 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       }
     },
 
-
     /* WORKSPACES AND FOLDERS */
     __createWorkspacesAndFoldersTree: function() {
       const workspacesAndFoldersTree = this.__workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();
       // Height needs to be calculated manually to make it flexible
       workspacesAndFoldersTree.set({
-        minHeight: 100,
+        minHeight: 60,
         maxHeight: 400,
-        height: 100,
+        height: 60,
       });
       workspacesAndFoldersTree.addListener("openChanged", () => {
         const rowConfig = workspacesAndFoldersTree.getPane().getRowConfig();

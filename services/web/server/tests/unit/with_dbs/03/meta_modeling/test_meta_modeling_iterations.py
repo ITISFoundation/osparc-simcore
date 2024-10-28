@@ -7,11 +7,11 @@ from collections.abc import Awaitable, Callable
 import pytest
 from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.projects import Project
 from models_library.projects_nodes import Node
 from models_library.services_resources import ServiceResourcesDict
-from models_library.utils.json_serialization import json_dumps
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict

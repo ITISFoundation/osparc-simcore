@@ -5,6 +5,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Literal, TypeAlias
 
+from common_library.json_serialization import json_dumps
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -23,7 +24,6 @@ from .callbacks_mapping import CallbacksMapping
 from .generics import ListModel
 from .service_settings_nat_rule import NATRule
 from .services_resources import DEFAULT_SINGLE_SERVICE_NAME
-from .utils.json_serialization import json_dumps
 
 _BaseConfig = ConfigDict(
     extra="forbid", arbitrary_types_allowed=True, ignored_types=(cached_property,)

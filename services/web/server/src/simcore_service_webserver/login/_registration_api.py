@@ -5,9 +5,9 @@ from typing import Any
 
 from aiohttp import web
 from captcha.image import ImageCaptcha
+from common_library.json_serialization import json_dumps
 from models_library.emails import LowerCaseEmailStr
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from models_library.utils.json_serialization import json_dumps
 from PIL.Image import Image
 from pydantic import EmailStr, PositiveInt, TypeAdapter, ValidationError
 from servicelib.utils_secrets import generate_passcode

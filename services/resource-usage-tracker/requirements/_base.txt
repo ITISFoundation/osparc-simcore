@@ -135,7 +135,7 @@ fastapi==0.115.0
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   prometheus-fastapi-instrumentator
-faststream==0.5.10
+faststream==0.5.28
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -545,7 +545,6 @@ typer==0.12.3
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
-    #   faststream
 types-aiobotocore==2.12.1
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 types-aiobotocore-ec2==2.12.1

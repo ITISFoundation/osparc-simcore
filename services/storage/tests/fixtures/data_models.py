@@ -18,7 +18,7 @@ from models_library.basic_types import SHA256Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.faker_factories import random_project, random_user
 from servicelib.utils import limited_gather
 from simcore_postgres_database.models.project_to_groups import project_to_groups
@@ -45,7 +45,7 @@ async def _user_context(aiopg_engine: Engine, *, name: str) -> AsyncIterator[Use
     assert isinstance(row.id, int)
 
     try:
-        yield UserID(row.id)
+        yield TypeAdapter(UserID).validate_python(row.id)
     finally:
         async with aiopg_engine.acquire() as conn:
             await conn.execute(users.delete().where(users.c.id == row.id))
@@ -149,7 +149,7 @@ async def project_id(
 async def collaborator_id(aiopg_engine: Engine) -> AsyncIterator[UserID]:
 
     async with _user_context(aiopg_engine, name="collaborator") as new_user_id:
-        yield UserID(new_user_id)
+        yield TypeAdapter(UserID).validate_python(new_user_id)
 
 
 @pytest.fixture
@@ -177,7 +177,7 @@ def share_with_collaborator(
             )
             row = await result.fetchone()
             assert row
-            access_rights: dict[str, Any] = row[projects.c.access_rights]
+            access_rights: dict[str | int, Any] = row[projects.c.access_rights]
 
             access_rights[await _get_user_group(conn, user_id)] = {
                 "read": True,
@@ -279,22 +279,19 @@ async def random_project_with_files(
     async def _creator(
         num_nodes: int = 12,
         file_sizes: tuple[ByteSize, ...] = (
-            parse_obj_as(ByteSize, "7Mib"),
-            parse_obj_as(ByteSize, "110Mib"),
-            parse_obj_as(ByteSize, "1Mib"),
+            TypeAdapter(ByteSize).validate_python("7Mib"),
+            TypeAdapter(ByteSize).validate_python("110Mib"),
+            TypeAdapter(ByteSize).validate_python("1Mib"),
         ),
         file_checksums: tuple[SHA256Str, ...] = (
-            parse_obj_as(
-                SHA256Str,
-                "311e2e130d83cfea9c3b7560699c221b0b7f9e5d58b02870bd52b695d8b4aabd",
+            TypeAdapter(SHA256Str).validate_python(
+                "311e2e130d83cfea9c3b7560699c221b0b7f9e5d58b02870bd52b695d8b4aabd"
             ),
-            parse_obj_as(
-                SHA256Str,
-                "08e297db979d3c84f6b072c2a1e269e8aa04e82714ca7b295933a0c9c0f62b2e",
+            TypeAdapter(SHA256Str).validate_python(
+                "08e297db979d3c84f6b072c2a1e269e8aa04e82714ca7b295933a0c9c0f62b2e"
             ),
-            parse_obj_as(
-                SHA256Str,
-                "488f3b57932803bbf644593bd46d95599b1d4da1d63bc020d7ebe6f1c255f7f3",
+            TypeAdapter(SHA256Str).validate_python(
+                "488f3b57932803bbf644593bd46d95599b1d4da1d63bc020d7ebe6f1c255f7f3"
             ),
         ),
     ) -> tuple[

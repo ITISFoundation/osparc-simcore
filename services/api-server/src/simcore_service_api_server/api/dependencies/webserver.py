@@ -1,10 +1,10 @@
 import time
 from typing import Annotated
 
+from common_library.json_serialization import json_dumps
 from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.requests import Request
-from models_library.utils.json_serialization import json_dumps
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 
 from ..._constants import MSG_BACKEND_SERVICE_UNAVAILABLE

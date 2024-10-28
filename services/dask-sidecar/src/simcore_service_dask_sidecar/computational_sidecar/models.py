@@ -1,4 +1,5 @@
 import re
+from typing import Self
 
 from models_library.basic_regex import SIMPLE_VERSION_RE
 from models_library.services import ServiceMetaDataPublished
@@ -49,7 +50,7 @@ class ContainerHostConfig(BaseModel):
     )
 
     @model_validator(mode="after")
-    def ensure_memory_swap_is_not_unlimited(self) -> "ContainerHostConfig":
+    def ensure_memory_swap_is_not_unlimited(self) -> Self:
         if self.memory_swap is None:
             self.memory_swap = self.memory
 

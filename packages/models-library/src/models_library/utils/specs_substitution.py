@@ -1,10 +1,9 @@
 from typing import Any, NamedTuple, TypeAlias, cast
 
 from common_library.errors_classes import OsparcErrorMixin
-
+from common_library.json_serialization import json_dumps, json_loads
 from pydantic import StrictBool, StrictFloat, StrictInt
 
-from .json_serialization import json_dumps, json_loads
 from .string_substitution import (
     SubstitutionsDict,
     TextTemplate,

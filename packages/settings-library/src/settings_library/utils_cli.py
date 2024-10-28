@@ -2,13 +2,14 @@ import json
 import logging
 import os
 from collections.abc import Callable
+from enum import Enum
 from pprint import pformat
 from typing import Any
 
 import rich
 import typer
+from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
-from models_library.utils.json_serialization import json_dumps
 from pydantic import ValidationError
 from pydantic_core import to_jsonable_python
 from pydantic_settings import BaseSettings
@@ -64,7 +65,8 @@ def print_as_envfile(
 
         if verbose and field.description:
             typer.echo(f"# {field.description}")
-
+        if isinstance(value, Enum):
+            value = value.value
         typer.echo(f"{name}={value}")
 
 

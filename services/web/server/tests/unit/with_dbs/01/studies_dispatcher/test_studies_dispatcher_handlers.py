@@ -16,8 +16,8 @@ import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
+from common_library.json_serialization import json_dumps
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status

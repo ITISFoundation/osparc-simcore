@@ -1,7 +1,7 @@
 import logging
 
 from aiohttp import web
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 
 from ...long_running_tasks._errors import (
     TaskCancelledError,

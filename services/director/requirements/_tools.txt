@@ -25,7 +25,7 @@ pyyaml==5.4
     #   watchdog
 regex==2022.1.18
     # via black
-setuptools==75.1.0
+setuptools==75.2.0
     # via pip-tools
 toml==0.10.2
     # via

@@ -25,10 +25,15 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
 
   # NOTE: uv does not like this requirement file...
   cd /devel/services/dynamic-sidecar
-  pip --quiet --no-cache-dir install -r requirements/dev.txt
-  cd - || exit 1
+  uv pip --quiet --no-cache-dir sync requirements/dev.txt
+  cd -
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'
+fi
+
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
+  # NOTE: production does NOT pre-installs debugpy
+  uv pip install --no-cache-dir debugpy
 fi
 
 #

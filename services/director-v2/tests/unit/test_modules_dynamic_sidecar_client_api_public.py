@@ -6,11 +6,11 @@ from typing import Any, AsyncIterable, Callable, Iterator
 from unittest.mock import AsyncMock
 
 import pytest
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
-from models_library.utils.json_serialization import json_dumps
 from pydantic import AnyHttpUrl, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict

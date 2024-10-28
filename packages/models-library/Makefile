@@ -40,6 +40,7 @@ tests-ci: ## runs unit tests [ci-mode]
 		--cov-config=../../.coveragerc \
 		--cov-report=term-missing \
 		--cov-report=xml \
+		--junitxml=junit.xml -o junit_family=legacy \
 		--cov=models_library \
 		--durations=10 \
 		--log-date-format="%Y-%m-%d %H:%M:%S" \

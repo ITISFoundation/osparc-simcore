@@ -49,6 +49,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   properties: {
+    currentContext: {
+      check: ["studiesAndFolders", "workspaces", "search"],
+      nullable: false,
+      init: "studiesAndFolders",
+      event: "changeCurrentContext"
+    },
+
     currentWorkspaceId: {
       check: "Number",
       nullable: true,
@@ -101,9 +108,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
   members: {
     __dontShowTutorial: null,
-    __workspaceHeader: null,
+    __header: null,
     __workspacesList: null,
     __foldersList: null,
+    __loadingFolders: null,
 
     // overridden
     initResources: function() {
@@ -170,27 +178,33 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __reloadFolders: function() {
-      if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const folderId = this.getCurrentFolderId();
-        const workspaceId = this.getCurrentWorkspaceId();
-        if (workspaceId === -1 || workspaceId === -2) {
-          return;
-        }
-        this.__setFoldersToList([]);
-        osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId, this.getOrderBy())
-          .then(folders => {
-            this.__setFoldersToList(folders);
-          })
-          .catch(console.error);
+      if (
+        !osparc.auth.Manager.getInstance().isLoggedIn() ||
+        !osparc.utils.DisabledPlugins.isFoldersEnabled() ||
+        this.getCurrentContext() !== "studiesAndFolders" ||
+        this.__loadingFolders
+      ) {
+        return;
       }
+
+      const workspaceId = this.getCurrentWorkspaceId();
+      const folderId = this.getCurrentFolderId();
+      this.__loadingFolders = true;
+      this.__setFoldersToList([]);
+      osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId, this.getOrderBy())
+        .then(folders => {
+          this.__setFoldersToList(folders);
+        })
+        .catch(console.error)
+        .finally(() => this.__loadingFolders = null);
     },
 
     __reloadStudies: function() {
-      if (this._loadingResourcesBtn.isFetching()) {
-        return;
-      }
-      const workspaceId = this.getCurrentWorkspaceId();
-      if (workspaceId === -1) { // shared workspace listing
+      if (
+        !osparc.auth.Manager.getInstance().isLoggedIn() ||
+        this.getCurrentContext() === "workspaces" ||
+        this._loadingResourcesBtn.isFetching()
+      ) {
         return;
       }
 
@@ -279,6 +293,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __resetStudiesList: function() {
       this._resourcesList = [];
+      // It will remove the study cards
       this._reloadCards();
     },
 
@@ -378,7 +393,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _workspaceSelected: function(workspaceId) {
-      this.__changeContext(workspaceId, null);
+      this.__changeContext("studiesAndFolders", workspaceId, null);
     },
 
     _workspaceUpdated: function() {
@@ -408,7 +423,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addNewFolderButton: function() {
       const currentWorkspaceId = this.getCurrentWorkspaceId();
       if (currentWorkspaceId) {
-        if (currentWorkspaceId === -1 || currentWorkspaceId === -2) {
+        if (this.getCurrentContext() !== "studiesAndFolders") {
           return;
         }
         const currentWorkspace = osparc.store.Workspaces.getInstance().getWorkspace(this.getCurrentWorkspaceId());
@@ -438,7 +453,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _folderSelected: function(folderId) {
-      this.__changeContext(this.getCurrentWorkspaceId(), folderId);
+      this.__changeContext("studiesAndFolders", this.getCurrentWorkspaceId(), folderId);
     },
 
     _folderUpdated: function() {
@@ -689,15 +704,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     invalidateStudies: function() {
       osparc.store.Store.getInstance().invalidate("studies");
       this.__resetStudiesList();
-      this._resourcesContainer.getFlatList().nextRequest = null;
+      if (this._resourcesContainer.getFlatList()) {
+        this._resourcesContainer.getFlatList().nextRequest = null;
+      }
     },
 
     __addNewStudyButtons: function() {
+      if (this.getCurrentContext() !== "studiesAndFolders") {
+        return;
+      }
       const currentWorkspaceId = this.getCurrentWorkspaceId();
       if (currentWorkspaceId) {
-        if (currentWorkspaceId === -2) {
-          return;
-        }
         const currentWorkspace = osparc.store.Workspaces.getInstance().getWorkspace(currentWorkspaceId);
         if (currentWorkspace && !currentWorkspace.getMyAccessRights()["write"]) {
           // If user can't write in workspace, do not show plus buttons
@@ -823,8 +840,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._createSearchBar();
 
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const workspaceHeader = this.__workspaceHeader = new osparc.dashboard.WorkspaceHeader();
-        this._addToLayout(workspaceHeader);
+        const header = this.__header = new osparc.dashboard.StudyBrowserHeader();
+        this._addToLayout(header);
       }
 
       this._createResourcesLayout();
@@ -896,37 +913,42 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __connectContexts: function() {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        const workspaceHeader = this.__workspaceHeader;
-        workspaceHeader.addListener("contextChanged", () => {
-          const workspaceId = workspaceHeader.getCurrentWorkspaceId();
-          const folderId = workspaceHeader.getCurrentFolderId();
-          this.__changeContext(workspaceId, folderId);
+        const header = this.__header;
+        header.addListener("locationChanged", () => {
+          const workspaceId = header.getCurrentWorkspaceId();
+          const folderId = header.getCurrentFolderId();
+          this.__changeContext("studiesAndFolders", workspaceId, folderId);
         }, this);
 
         const workspacesAndFoldersTree = this._resourceFilter.getWorkspacesAndFoldersTree();
-        workspacesAndFoldersTree.addListener("contextChanged", e => {
+        workspacesAndFoldersTree.addListener("locationChanged", e => {
           const context = e.getData();
           const workspaceId = context["workspaceId"];
-          const folderId = context["folderId"];
-          this.__changeContext(workspaceId, folderId);
+          if (workspaceId === -1) {
+            this.__changeContext("workspaces");
+          } else {
+            const folderId = context["folderId"];
+            this.__changeContext("studiesAndFolders", workspaceId, folderId);
+          }
         }, this);
 
         this._searchBarFilter.addListener("filterChanged", e => {
           const filterData = e.getData();
           if (filterData.text) {
-            this.__changeContext(-2, null);
+            this.__changeContext("search");
           } else {
             // Back to My Workspace
-            this.__changeContext(null, null);
+            this.__changeContext("studiesAndFolders", null, null);
           }
         });
       }
     },
 
-    __changeContext: function(workspaceId, folderId) {
+    __changeContext: function(context, workspaceId = null, folderId = null) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         if (
-          workspaceId !== -2 && // reload studies for a new search
+          context !== "search" && // reload studies for a new search
+          context === this.getCurrentContext() &&
           workspaceId === this.getCurrentWorkspaceId() &&
           folderId === this.getCurrentFolderId()
         ) {
@@ -934,33 +956,33 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
 
-        this.resetSelection();
-        this.setMultiSelection(false);
         this.set({
+          currentContext: context,
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
+        this._loadingResourcesBtn.setFetching(false);
+        this.resetSelection();
+        this.setMultiSelection(false);
         this.invalidateStudies();
         this._resourcesContainer.setResourcesToList([]);
 
-        if (workspaceId === -2) {
-          // Search result: no folders, just studies
+        if (context === "search") {
           this.__setFoldersToList([]);
           this.__reloadStudies();
-        } else if (workspaceId === -1) {
-          // Workspaces
+        } else if (context === "workspaces") {
           this._searchBarFilter.resetFilters();
           this.__reloadWorkspaces();
-        } else {
-          // Actual workspace
+        } else if (context === "studiesAndFolders") {
           this._searchBarFilter.resetFilters();
           this.__reloadFolders();
           this.__reloadStudies();
         }
 
-        // notify workspaceHeader
-        const workspaceHeader = this.__workspaceHeader;
-        workspaceHeader.set({
+        // notify header
+        const header = this.__header;
+        header.set({
+          currentContext: context,
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
@@ -971,7 +993,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           currentWorkspaceId: workspaceId,
           currentFolderId: folderId,
         });
-        workspacesAndFoldersTree.contextChanged(workspaceId, folderId);
+        workspacesAndFoldersTree.contextChanged(context);
       }
     },
 
@@ -1117,8 +1139,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }))
       });
       this.bind("multiSelection", selectButton, "value");
-      this.bind("currentWorkspaceId", selectButton, "visibility", {
-        converter: currentWorkspaceId => [-2, -1].includes(currentWorkspaceId) ? "excluded" : "visible"
+      this.bind("currentContext", selectButton, "visibility", {
+        converter: currentContext => currentContext === "studiesAndFolders" ? "visible" : "excluded"
       });
       return selectButton;
     },
@@ -1229,6 +1251,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         this._resourcesList[index] = studyData;
       }
+      // it will render the studies in the right order
       this._reloadCards();
     },
 

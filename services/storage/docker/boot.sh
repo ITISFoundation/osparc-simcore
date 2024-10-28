@@ -18,18 +18,22 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
 
-  cd services/storage || exit 1
-  pip install uv
-  uv pip --quiet --no-cache-dir install -r requirements/dev.txt
-  cd - || exit 1
+  cd services/storage
+  uv pip --quiet --no-cache-dir sync requirements/dev.txt
+  cd -
   echo "$INFO" "PIP :"
-  uv pip list | sed 's/^/    /'
+  uv pip list
 
   echo "$INFO" "Setting entrypoint to use watchmedo autorestart..."
   entrypoint='watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories --'
 
 elif [ "${SC_BUILD_TARGET}" = "production" ]; then
   entrypoint=""
+fi
+
+if [ "${SC_BOOT_MODE}" = "debug" ]; then
+  # NOTE: production does NOT pre-installs debugpy
+  uv pip install --no-cache-dir debugpy
 fi
 
 APP_LOG_LEVEL=${STORAGE_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}

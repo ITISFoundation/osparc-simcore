@@ -2,6 +2,7 @@ from datetime import date
 from typing import Any, ClassVar, Literal
 from uuid import UUID
 
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_webserver._base import OutputSchema
 from models_library.api_schemas_webserver.groups import AllUsersGroups
 from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences

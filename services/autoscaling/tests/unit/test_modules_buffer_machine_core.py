@@ -17,11 +17,11 @@ from unittest import mock
 import pytest
 import tenacity
 from aws_library.ec2 import AWSTagKey, EC2InstanceBootSpecific
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.docker import DockerGenericTag
-from models_library.utils.json_serialization import json_dumps
 from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.aws_ec2 import (

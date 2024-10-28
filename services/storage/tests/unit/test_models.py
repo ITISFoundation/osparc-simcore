@@ -43,7 +43,7 @@ def test_file_id(file_id: str):
     assert parsed_file_id == file_id
 
 
-def test_fmd_build():
+def test_fmd_build_api():
     file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"api/{uuid.uuid4()}/xx.dat")
     fmd = FileMetaData.from_simcore_node(
         user_id=12,
@@ -64,6 +64,8 @@ def test_fmd_build():
     assert fmd.location_id == SimcoreS3DataManager.get_location_id()
     assert fmd.bucket_name == "test-bucket"
 
+
+def test_fmd_build_webapi():
     file_id = TypeAdapter(SimcoreS3FileID).validate_python(
         f"{uuid.uuid4()}/{uuid.uuid4()}/xx.dat"
     )

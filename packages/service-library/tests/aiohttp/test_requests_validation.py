@@ -9,8 +9,8 @@ from uuid import UUID
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from common_library.json_serialization import json_dumps
 from faker import Faker
-from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, ConfigDict, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (

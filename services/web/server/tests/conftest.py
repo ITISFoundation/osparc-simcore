@@ -16,11 +16,11 @@ from urllib.parse import urlparse
 import pytest
 import simcore_service_webserver
 from aiohttp.test_utils import TestClient
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
-from models_library.utils.json_serialization import json_dumps
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.dict_tools import ConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict

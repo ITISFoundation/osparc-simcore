@@ -6,14 +6,14 @@
 import urllib.parse
 import uuid
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import lru_cache
 
 import arrow
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.basic_types import KeyIDStr
 from models_library.projects_nodes import InputID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from ..models.basic_types import VersionStr
 from ..models.domain.projects import InputTypes, Node, SimCoreFileLink, StudyUI
@@ -45,7 +45,7 @@ def format_datetime(snapshot: datetime) -> str:
 
 def now_str() -> str:
     # NOTE: backend MUST use UTC
-    return format_datetime(datetime.utcnow())
+    return format_datetime(datetime.now(timezone.utc))
 
 
 # CONVERTERS --------------
@@ -62,14 +62,14 @@ def create_node_inputs_from_job_inputs(
 
     node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
-        assert parse_obj_as(ArgumentTypes, value) == value  # type: ignore # nosec
-        assert parse_obj_as(KeyIDStr, name) is not None  # nosec
+        assert TypeAdapter(ArgumentTypes).validate_python(value) == value  # type: ignore # nosec
+        assert TypeAdapter(KeyIDStr).validate_python(name) is not None  # nosec
 
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy
             node_inputs[KeyIDStr(name)] = SimCoreFileLink(
                 store=0,
-                path=f"api/{value.id}/{value.filename}",  # type: ignore[arg-type]
+                path=f"api/{value.id}/{value.filename}",
                 label=value.filename,
                 eTag=value.e_tag,
             )
@@ -88,10 +88,8 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
     """
     input_values: dict[str, ArgumentTypes] = {}
     for name, value in inputs.items():
-        assert parse_obj_as(InputID, name) == name  # nosec
-        assert (  # nosec
-            parse_obj_as(InputTypes, value) == value  # type: ignore[arg-type]
-        )
+        assert TypeAdapter(InputID).validate_python(name) == name  # nosec
+        assert TypeAdapter(InputTypes).validate_python(value) == value  # nosec
 
         if isinstance(value, SimCoreFileLink):
             # FIXME: ensure this aligns with storage policy
@@ -141,15 +139,15 @@ def create_new_project_for_job(
     )
 
     solver_service = Node(
-        key=solver.id,  # type: ignore[arg-type]
-        version=solver.version,  # type: ignore[arg-type]
+        key=solver.id,
+        version=solver.version,
         label=solver.title,
         inputs=solver_inputs,
         inputsUnits={},
     )
 
     # Ensembles project model so it can be used as input for create_project
-    job_info = job.json(
+    job_info = job.model_dump_json(
         include={"id", "name", "inputs_checksum", "created_at"}, indent=2
     )
 
@@ -158,7 +156,7 @@ def create_new_project_for_job(
         name=job.name,  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
         description=f"Study associated to solver job:\n{job_info}",
         thumbnail="https://via.placeholder.com/170x120.png",  # type: ignore[arg-type]
-        workbench={solver_id: solver_service},  # type: ignore[dict-item]
+        workbench={solver_id: solver_service},
         ui=StudyUI(
             workbench={
                 f"{solver_id}": {  # type: ignore[dict-item]
@@ -208,10 +206,10 @@ def create_job_from_project(
 
     job = Job(
         id=job_id,
-        name=project.name,  # type: ignore[arg-type]
+        name=project.name,
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=project.creation_date,  # type: ignore[arg-type]
-        runner_name=solver_name,  # type: ignore
+        runner_name=solver_name,
         url=url_for(
             "get_job",
             solver_key=solver_key,
@@ -231,7 +229,9 @@ def create_job_from_project(
         ),
     )
 
-    assert all(getattr(job, f) for f in job.__fields__ if f.endswith("url"))  # nosec
+    assert all(
+        getattr(job, f) for f in job.model_fields.keys() if f.endswith("url")
+    )  # nosec
 
     return job
 

@@ -8,6 +8,7 @@ from uuid import uuid4
 import dask_gateway  # type: ignore[import-untyped]
 import distributed
 from aiopg.sa.engine import Engine
+from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     PortValue,
@@ -29,7 +30,6 @@ from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from models_library.utils.json_serialization import json_dumps
 from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2

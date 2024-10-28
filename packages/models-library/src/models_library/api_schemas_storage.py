@@ -8,7 +8,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any, Literal, Self, TypeAlias
 from uuid import UUID
 
 from pydantic import (
@@ -107,6 +107,10 @@ class DatasetMetaDataGet(BaseModel):
     )
 
 
+UNDEFINED_SIZE_TYPE: TypeAlias = Literal[-1]
+UNDEFINED_SIZE: UNDEFINED_SIZE_TYPE = -1
+
+
 # /locations/{location_id}/files/metadata:
 # /locations/{location_id}/files/{file_id}/metadata:
 class FileMetaDataGet(BaseModel):
@@ -130,8 +134,8 @@ class FileMetaDataGet(BaseModel):
     )
     created_at: datetime
     last_modified: datetime
-    file_size: ByteSize | int = Field(
-        default=-1, description="File size in bytes (-1 means invalid)"
+    file_size: UNDEFINED_SIZE_TYPE | ByteSize = Field(
+        default=UNDEFINED_SIZE, description="File size in bytes (-1 means invalid)"
     )
     entity_tag: ETag | None = Field(
         default=None,
@@ -149,7 +153,7 @@ class FileMetaDataGet(BaseModel):
     )
 
     model_config = ConfigDict(
-        extra="forbid",
+        extra="ignore",
         from_attributes=True,
         json_schema_extra={
             "examples": [
@@ -312,19 +316,18 @@ class FoldersBody(BaseModel):
     nodes_map: dict[NodeID, NodeID] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    @classmethod
-    def ensure_consistent_entries(cls, values):
-        source_node_keys = (NodeID(n) for n in values["source"].get("workbench", {}))
-        if set(source_node_keys) != set(values["nodes_map"].keys()):
+    def ensure_consistent_entries(self) -> Self:
+        source_node_keys = (NodeID(n) for n in self.source.get("workbench", {}))
+        if set(source_node_keys) != set(self.nodes_map.keys()):
             msg = "source project nodes do not fit with nodes_map entries"
             raise ValueError(msg)
         destination_node_keys = (
-            NodeID(n) for n in values["destination"].get("workbench", {})
+            NodeID(n) for n in self.destination.get("workbench", {})
         )
-        if set(destination_node_keys) != set(values["nodes_map"].values()):
+        if set(destination_node_keys) != set(self.nodes_map.values()):
             msg = "destination project nodes do not fit with nodes_map values"
             raise ValueError(msg)
-        return values
+        return self
 
 
 class SoftCopyBody(BaseModel):

@@ -3,9 +3,9 @@ from operator import itemgetter
 from typing import Final
 
 from aws_library.ec2 import AWS_TAG_VALUE_MAX_LENGTH, AWSTagKey, AWSTagValue, EC2Tags
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
-from models_library.utils.json_serialization import json_dumps
 from pydantic import TypeAdapter
 
 from ..constants import (

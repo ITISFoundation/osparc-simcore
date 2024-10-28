@@ -10,6 +10,7 @@ from unittest.mock import Mock
 
 import pytest
 import respx
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -25,7 +26,6 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import RunID, ServiceKeyVersion
-from models_library.utils.json_serialization import json_dumps
 from models_library.wallets import WalletInfo
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict

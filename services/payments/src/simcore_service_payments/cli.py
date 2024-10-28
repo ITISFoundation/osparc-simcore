@@ -3,7 +3,7 @@ import logging
 import os
 
 import typer
-from models_library.utils.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps
 from servicelib.utils_secrets import generate_password, generate_token_secret_key
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings

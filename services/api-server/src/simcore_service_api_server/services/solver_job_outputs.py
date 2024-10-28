@@ -4,7 +4,7 @@ from typing import Any, TypeAlias
 import aiopg
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import BaseFileLink, NodeID, NodeIDStr
-from pydantic import StrictBool, StrictFloat, StrictInt, parse_obj_as
+from pydantic import StrictBool, StrictFloat, StrictInt, TypeAdapter
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports
 from simcore_service_api_server.exceptions.backend_errors import (
@@ -44,7 +44,7 @@ async def get_solver_output_results(
                 port.property_type,
                 port.value,
             )
-            assert parse_obj_as(ResultsTypes, port.value) == port.value  # type: ignore  # nosec
+            assert TypeAdapter(ResultsTypes).validate_python(port.value) == port.value  # type: ignore  # nosec
 
             solver_output_results[port.key] = port.value
 
