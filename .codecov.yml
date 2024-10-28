@@ -13,6 +13,7 @@ flag_management:
       threshold: 1%
     - type: patch
       target: auto
+      threshold: 1%
 
 
 component_management:
@@ -116,10 +117,12 @@ coverage:
     project:
       default:
         informational: true
+        threshold: 1%
 
     patch:
       default:
         informational: true
+        threshold: 1%
 
 comment:
   layout: "header,diff,flags,components,footer"
