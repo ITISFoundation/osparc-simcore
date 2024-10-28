@@ -55,13 +55,13 @@ async def generate_invitation(request: web.Request):
     assert generated.product == req_ctx.product_name  # nosec
     assert generated.guest == body.guest  # nosec
 
-    url = URL(generated.invitation_url)
+    url = URL(f"{generated.invitation_url}")
     invitation_link = request.url.with_path(url.path).with_fragment(url.raw_fragment)
 
     invitation = InvitationGenerated(
         product_name=generated.product,
         issuer=generated.issuer,
-        guest=generated.guest,  # type: ignore[arg-type]
+        guest=generated.guest,
         trial_account_days=generated.trial_account_days,
         extra_credits_in_usd=generated.extra_credits_in_usd,
         created=generated.created,

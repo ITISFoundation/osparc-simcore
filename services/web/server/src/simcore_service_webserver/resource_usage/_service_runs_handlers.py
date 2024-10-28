@@ -165,7 +165,7 @@ async def list_resource_usage_services(request: web.Request):
         offset=query_params.offset,
         limit=query_params.limit,
         order_by=OrderBy.model_validate(query_params.order_by),
-        filters=TypeAdapter(ServiceResourceUsagesFilters | None).validate_python(query_params.filters),  # type: ignore[arg-type] # from pydantic v2 --> https://github.com/pydantic/pydantic/discussions/4950
+        filters=TypeAdapter(ServiceResourceUsagesFilters | None).validate_python(query_params.filters),
     )
 
     page = Page[dict[str, Any]].model_validate(
