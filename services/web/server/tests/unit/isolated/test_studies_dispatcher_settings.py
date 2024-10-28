@@ -37,8 +37,9 @@ def test_studies_dispatcher_settings(environment: EnvVarsDict):
     assert not settings.is_login_required()
 
     # 2 days 1h and 10 mins
-    assert settings.STUDIES_GUEST_ACCOUNT_LIFETIME == timedelta(
-        days=2, hours=1, minutes=10
+    assert (
+        timedelta(days=2, hours=1, minutes=10)
+        == settings.STUDIES_GUEST_ACCOUNT_LIFETIME
     )
 
 

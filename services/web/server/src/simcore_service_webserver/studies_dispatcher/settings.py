@@ -1,8 +1,9 @@
 from datetime import timedelta
+from typing import Annotated
 
 from aiohttp import web
-from common_library.pydantic_validators import validate_numeric_string_as_timedelta
-from pydantic import TypeAdapter, field_validator, ByteSize, HttpUrl
+from common_library.pydantic_validators import validate_legacy_timedelta_str
+from pydantic import BeforeValidator, ByteSize, HttpUrl, TypeAdapter, field_validator
 from pydantic.fields import Field
 from pydantic_settings import SettingsConfigDict
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
@@ -15,19 +16,25 @@ class StudiesDispatcherSettings(BaseCustomSettings):
         description="If enabled, the study links are accessible to anonymous users",
     )
 
-    STUDIES_GUEST_ACCOUNT_LIFETIME: timedelta = Field(
+    STUDIES_GUEST_ACCOUNT_LIFETIME: Annotated[
+        timedelta, BeforeValidator(validate_legacy_timedelta_str)
+    ] = Field(
         default=timedelta(minutes=15),
         description="Sets lifetime of a guest user until it is logged out "
         " and removed by the GC",
     )
 
     STUDIES_DEFAULT_SERVICE_THUMBNAIL: HttpUrl = Field(
-        default=TypeAdapter(HttpUrl).validate_python("https://via.placeholder.com/170x120.png"),
+        default=TypeAdapter(HttpUrl).validate_python(
+            "https://via.placeholder.com/170x120.png"
+        ),
         description="Default thumbnail for services or dispatch project with a service",
     )
 
     STUDIES_DEFAULT_FILE_THUMBNAIL: HttpUrl = Field(
-        default=TypeAdapter(HttpUrl).validate_python("https://via.placeholder.com/170x120.png"),
+        default=TypeAdapter(HttpUrl).validate_python(
+            "https://via.placeholder.com/170x120.png"
+        ),
         description="Default thumbnail for dispatch projects with only data (i.e. file-picker)",
     )
 
@@ -51,9 +58,6 @@ class StudiesDispatcherSettings(BaseCustomSettings):
         """
         return not self.STUDIES_ACCESS_ANONYMOUS_ALLOWED
 
-    _validate_studies_guest_account_lifetime = validate_numeric_string_as_timedelta(
-        "STUDIES_GUEST_ACCOUNT_LIFETIME"
-    )
     model_config = SettingsConfigDict(
         json_schema_extra={
             "example": {
