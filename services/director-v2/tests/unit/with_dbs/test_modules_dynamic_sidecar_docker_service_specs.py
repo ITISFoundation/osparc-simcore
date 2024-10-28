@@ -49,7 +49,9 @@ from simcore_service_director_v2.utils.dict_utils import nested_update
 
 @pytest.fixture
 def mock_s3_settings() -> S3Settings:
-    return S3Settings.parse_obj(S3Settings.Config.schema_extra["examples"][0])
+    return S3Settings.parse_obj(
+        S3Settings.model_config["json_schema_extra"]["examples"][0]
+    )
 
 
 @pytest.fixture
@@ -116,13 +118,15 @@ def swarm_network_id() -> str:
 def simcore_service_labels() -> SimcoreServiceLabels:
     # overwrites global fixture
     return SimcoreServiceLabels.parse_obj(
-        SimcoreServiceLabels.Config.schema_extra["examples"][2]
+        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][2]
     )
 
 
 @pytest.fixture
 def hardware_info() -> HardwareInfo:
-    return HardwareInfo.parse_obj(HardwareInfo.Config.schema_extra["examples"][0])
+    return HardwareInfo.parse_obj(
+        HardwareInfo.model_config["json_schema_extra"]["examples"][0]
+    )
 
 
 @pytest.fixture
@@ -180,9 +184,9 @@ def expected_dynamic_sidecar_spec(
                         "state_exclude": ["/tmp/strip_me/*", "*.py"],  # noqa: S108
                         "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108
                     },
-                    "callbacks_mapping": CallbacksMapping.Config.schema_extra[
-                        "examples"
-                    ][3],
+                    "callbacks_mapping": CallbacksMapping.model_config[
+                        "json_schema_extra"
+                    ]["examples"][3],
                     "product_name": osparc_product_name,
                     "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                     "proxy_service_name": "dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
@@ -190,8 +194,12 @@ def expected_dynamic_sidecar_spec(
                     "request_scheme": "http",
                     "request_simcore_user_agent": request_simcore_user_agent,
                     "restart_policy": "on-inputs-downloaded",
-                    "wallet_info": WalletInfo.Config.schema_extra["examples"][0],
-                    "pricing_info": PricingInfo.Config.schema_extra["examples"][0],
+                    "wallet_info": WalletInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
+                    "pricing_info": PricingInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
                     "hardware_info": hardware_info,
                     "service_name": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "service_port": 65534,

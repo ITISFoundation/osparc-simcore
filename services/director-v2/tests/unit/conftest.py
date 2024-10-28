@@ -53,7 +53,7 @@ def simcore_services_network_name() -> str:
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
     simcore_service_labels = SimcoreServiceLabels.parse_obj(
-        SimcoreServiceLabels.Config.schema_extra["examples"][1]
+        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][1]
     )
     simcore_service_labels.callbacks_mapping = parse_obj_as(CallbacksMapping, {})
     return simcore_service_labels
@@ -62,7 +62,7 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 @pytest.fixture
 def dynamic_service_create() -> DynamicServiceCreate:
     return DynamicServiceCreate.parse_obj(
-        DynamicServiceCreate.Config.schema_extra["example"]
+        DynamicServiceCreate.model_config["json_schema_extra"]["example"]
     )
 
 

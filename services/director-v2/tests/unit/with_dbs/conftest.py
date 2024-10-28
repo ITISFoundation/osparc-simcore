@@ -223,7 +223,7 @@ def cluster(
     created_cluster_ids: list[str] = []
 
     def creator(user: dict[str, Any], **cluster_kwargs) -> Cluster:
-        cluster_config = Cluster.Config.schema_extra["examples"][1]
+        cluster_config = Cluster.model_config["json_schema_extra"]["examples"][1]
         cluster_config["owner"] = user["primary_gid"]
         cluster_config.update(**cluster_kwargs)
         new_cluster = Cluster.parse_obj(cluster_config)

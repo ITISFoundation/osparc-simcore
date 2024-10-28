@@ -494,7 +494,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
 
 
 @pytest.mark.parametrize(
-    "req_example", NodeRequirements.Config.schema_extra["examples"]
+    "req_example", NodeRequirements.model_config["json_schema_extra"]["examples"]
 )
 def test_node_requirements_correctly_convert_to_dask_resources(
     req_example: dict[str, Any]

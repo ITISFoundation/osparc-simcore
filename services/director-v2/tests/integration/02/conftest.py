@@ -74,7 +74,7 @@ def mock_projects_networks_repository(mocker: MockerFixture) -> None:
 def service_resources() -> ServiceResourcesDict:
     return parse_obj_as(
         ServiceResourcesDict,
-        ServiceResourcesDictHelpers.Config.schema_extra["examples"][0],
+        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
     )
 
 
@@ -82,7 +82,7 @@ def service_resources() -> ServiceResourcesDict:
 def mock_resource_usage_tracker(mocker: MockerFixture) -> None:
     base_module = "simcore_service_director_v2.modules.resource_usage_tracker_client"
     service_pricing_plan = PricingPlanGet.parse_obj(
-        PricingPlanGet.Config.schema_extra["examples"][1]
+        PricingPlanGet.model_config["json_schema_extra"]["examples"][1]
     )
     for unit in service_pricing_plan.pricing_units:
         unit.specific_info.aws_ec2_instances.clear()

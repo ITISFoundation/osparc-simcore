@@ -79,7 +79,9 @@ class Image(BaseModel):
                     "tag": "1.3.1",
                     "node_requirements": node_req_example,
                 }
-                for node_req_example in NodeRequirements.Config.schema_extra["examples"]
+                for node_req_example in NodeRequirements.model_config[
+                    "json_schema_extra"
+                ]["examples"]
             ]
             +
             # old version
@@ -234,9 +236,11 @@ class CompTaskAtDB(BaseModel):
                         "pricing_unit_id": 1,
                         "pricing_unit_cost_id": 1,
                     },
-                    "hardware_info": HardwareInfo.Config.schema_extra["examples"][0],
+                    "hardware_info": HardwareInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
                 }
-                for image_example in Image.Config.schema_extra["examples"]
+                for image_example in Image.model_config["json_schema_extra"]["examples"]
             ]
         },
     )

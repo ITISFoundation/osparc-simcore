@@ -79,7 +79,7 @@ def test_get_resource_tracking_run_id(
     "task",
     [
         CompTaskAtDB.parse_obj(example)
-        for example in CompTaskAtDB.Config.schema_extra["examples"]
+        for example in CompTaskAtDB.model_config["json_schema_extra"]["examples"]
     ],
     ids=str,
 )

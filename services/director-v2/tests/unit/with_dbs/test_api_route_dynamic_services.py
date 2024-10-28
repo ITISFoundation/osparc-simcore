@@ -163,11 +163,17 @@ async def mock_retrieve_features(
     ) as respx_mock:
         if is_legacy:
             service_details = RunningDynamicServiceDetails.parse_obj(
-                RunningDynamicServiceDetails.Config.schema_extra["examples"][0]
+                RunningDynamicServiceDetails.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
             )
             respx_mock.post(
                 f"{service_details.legacy_service_url}/retrieve", name="retrieve"
-            ).respond(json=RetrieveDataOutEnveloped.Config.schema_extra["examples"][0])
+            ).respond(
+                json=RetrieveDataOutEnveloped.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
+            )
 
             yield respx_mock
             # no cleanup required
@@ -230,7 +236,9 @@ def mocked_director_v0_service_api(
             name="running interactive service",
         ).respond(
             json={
-                "data": RunningDynamicServiceDetails.Config.schema_extra["examples"][0]
+                "data": RunningDynamicServiceDetails.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
             }
         )
 
@@ -247,7 +255,9 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
             raise DynamicSidecarNotFoundError(node_uuid)
 
         return RunningDynamicServiceDetails.parse_obj(
-            RunningDynamicServiceDetails.Config.schema_extra["examples"][0]
+            RunningDynamicServiceDetails.model_config["json_schema_extra"]["examples"][
+                0
+            ]
         )
 
     module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
@@ -279,8 +289,12 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     [
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][0],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][0],
                 exp_status_code=status.HTTP_307_TEMPORARY_REDIRECT,
                 is_legacy=True,
             ),
@@ -288,8 +302,12 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         ),
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][1],
                 exp_status_code=status.HTTP_201_CREATED,
                 is_legacy=False,
             ),
@@ -297,8 +315,12 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         ),
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][2],
                 exp_status_code=status.HTTP_201_CREATED,
                 is_legacy=False,
             ),
@@ -351,8 +373,12 @@ def test_create_dynamic_services(
     [
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][0],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][0],
                 exp_status_code=status.HTTP_307_TEMPORARY_REDIRECT,
                 is_legacy=True,
             ),
@@ -360,8 +386,12 @@ def test_create_dynamic_services(
         ),
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][1],
                 exp_status_code=status.HTTP_200_OK,
                 is_legacy=False,
             ),
@@ -369,8 +399,12 @@ def test_create_dynamic_services(
         ),
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][2],
                 exp_status_code=status.HTTP_200_OK,
                 is_legacy=False,
             ),
@@ -409,8 +443,12 @@ def test_get_service_status(
     [
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][0],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][0],
                 exp_status_code=status.HTTP_307_TEMPORARY_REDIRECT,
                 is_legacy=True,
             ),
@@ -418,8 +456,12 @@ def test_get_service_status(
         ),
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][1],
                 exp_status_code=status.HTTP_204_NO_CONTENT,
                 is_legacy=False,
             ),
@@ -427,8 +469,12 @@ def test_get_service_status(
         ),
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][2],
                 exp_status_code=status.HTTP_204_NO_CONTENT,
                 is_legacy=False,
             ),
@@ -481,8 +527,12 @@ def dynamic_sidecar_scheduler(minimal_app: FastAPI) -> DynamicSidecarsScheduler:
     [
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][1],
                 exp_status_code=status.HTTP_201_CREATED,
                 is_legacy=False,
             )
@@ -528,8 +578,12 @@ def test_delete_service_waiting_for_manual_intervention(
     [
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][0],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][0],
                 exp_status_code=status.HTTP_200_OK,
                 is_legacy=True,
             ),
@@ -537,8 +591,12 @@ def test_delete_service_waiting_for_manual_intervention(
         ),
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][1],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][1],
                 exp_status_code=status.HTTP_200_OK,
                 is_legacy=False,
             ),
@@ -546,8 +604,12 @@ def test_delete_service_waiting_for_manual_intervention(
         ),
         pytest.param(
             *ServiceParams(
-                service=DynamicServiceCreate.Config.schema_extra["example"],
-                service_labels=SimcoreServiceLabels.Config.schema_extra["examples"][2],
+                service=DynamicServiceCreate.model_config["json_schema_extra"][
+                    "example"
+                ],
+                service_labels=SimcoreServiceLabels.model_config["json_schema_extra"][
+                    "examples"
+                ][2],
                 exp_status_code=status.HTTP_200_OK,
                 is_legacy=False,
             ),
@@ -571,7 +633,8 @@ def test_retrieve(
         response.status_code == exp_status_code
     ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
     assert (
-        response.json() == RetrieveDataOutEnveloped.Config.schema_extra["examples"][0]
+        response.json()
+        == RetrieveDataOutEnveloped.model_config["json_schema_extra"]["examples"][0]
     )
 
 

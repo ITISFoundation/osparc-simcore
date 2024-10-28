@@ -1,6 +1,5 @@
 import datetime
 from contextlib import suppress
-from typing import TypedDict
 
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
@@ -9,6 +8,7 @@ from models_library.projects_state import RunningState
 from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, PositiveInt, field_validator
 from simcore_postgres_database.models.comp_pipeline import StateType
+from typing_extensions import TypedDict
 
 from ..utils.db import DB_TO_RUNNING_STATE
 
