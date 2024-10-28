@@ -53,6 +53,7 @@ qx.Class.define("osparc.share.PublishTemplate", {
         value: this.tr("Make the ") + osparc.product.Utils.getTemplateAlias() + this.tr(" also accessible to:"),
         font: "text-14"
       });
+      addCollaborators.getChildControl("share-with").setLabel(this.tr("Publish for..."));
       this._add(addCollaborators);
 
       this._add(this.__selectedCollabs);
