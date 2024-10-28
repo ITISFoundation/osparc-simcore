@@ -52,22 +52,31 @@ qx.Class.define("osparc.share.AddCollaborators", {
           control = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
           this._add(control);
           break;
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+          this._add(control);
+          break;
         case "share-with":
           control = new qx.ui.form.Button(this.tr("Share with...")).set({
             appearance: "form-button",
             alignX: "left",
             allowGrowX: false
           });
-          this._add(control);
+          this.getChildControl("buttons-layout").add(control);
+          this.getChildControl("buttons-layout").add(new qx.ui.core.Spacer(), {
+            flex: 1
+          });
           break;
         case "my-organizations":
           control = new qx.ui.form.Button(this.tr("My Organizations...")).set({
             appearance: "form-button-outlined",
             allowGrowY: false,
             allowGrowX: false,
+            alignX: "right",
             icon: osparc.dashboard.CardBase.SHARED_ORGS
           });
-          this._add(control);
+          this.getChildControl("buttons-layout").add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
