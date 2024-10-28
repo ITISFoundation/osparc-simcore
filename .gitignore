@@ -50,6 +50,7 @@ pip-delete-this-directory.txt
 cov.xml
 coverage.xml
 htmlcov/
+junit.xml
 locust_report/
 nosetests.xml
 test_failures/
