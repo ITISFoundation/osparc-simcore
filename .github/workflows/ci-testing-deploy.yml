@@ -575,7 +575,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: "api/requirements.txt"
+          cache-dependency-glob: "**/api/tests/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install api
@@ -1030,7 +1030,7 @@ jobs:
         with:
           version: "0.4.x"
           enable-cache: true
-          cache-dependency-glob: "**/dastk-task-models-library/requirements/ci.txt"
+          cache-dependency-glob: "**/dask-task-models-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
