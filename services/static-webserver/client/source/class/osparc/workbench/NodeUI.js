@@ -517,7 +517,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
                 font: "link-label-12"
               });
               const chipContainer = this.getChildControl("chips");
-              chipContainer.remove(label);
+              if (chipContainer.getChildren().indexOf(label) > -1) {
+                chipContainer.remove(label);
+              }
               chipContainer.add(linkLabel);
             }
           });
