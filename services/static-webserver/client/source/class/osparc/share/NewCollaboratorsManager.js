@@ -185,9 +185,6 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       });
     },
 
-    __openOrganization: function() {
-    },
-
     __shareClicked: function() {
       this.__collabButtonsContainer.setEnabled(false);
       this.__shareButton.setFetching(true);

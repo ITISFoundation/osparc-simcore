@@ -27,11 +27,13 @@ qx.Class.define("osparc.share.AddCollaborators", {
 
   /**
     * @param serializedDataCopy {Object} Object containing the Serialized Data
+    * @param publishingTemplate {Boolean} Wether the widget needs to be initialized for publishing template
     */
-  construct: function(serializedDataCopy) {
+  construct: function(serializedDataCopy, publishingTemplate = false) {
     this.base(arguments);
 
-    this.setSerializedData(serializedDataCopy);
+    this.__serializedDataCopy = serializedDataCopy;
+    this.__publishingTemplate = publishingTemplate;
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
@@ -44,6 +46,7 @@ qx.Class.define("osparc.share.AddCollaborators", {
 
   members: {
     __serializedDataCopy: null,
+    __publishingTemplate: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -91,6 +94,9 @@ qx.Class.define("osparc.share.AddCollaborators", {
       const addCollaboratorBtn = this.getChildControl("share-with");
       addCollaboratorBtn.addListener("execute", () => {
         const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this.__serializedDataCopy);
+        if (this.__publishingTemplate) {
+          collaboratorsManager.getActionButton().setLabel(this.tr("Publish for"));
+        }
         collaboratorsManager.addListener("addCollaborators", e => {
           collaboratorsManager.close();
           this.fireDataEvent("addCollaborators", e.getData());
