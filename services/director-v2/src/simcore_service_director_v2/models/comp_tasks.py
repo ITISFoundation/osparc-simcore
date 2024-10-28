@@ -1,6 +1,6 @@
 import datetime
 from contextlib import suppress
-from typing import Any, ClassVar
+from typing import Any
 
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
 from models_library.api_schemas_directorv2.services import NodeRequirements
@@ -17,11 +17,11 @@ from models_library.services_resources import BootMode
 from pydantic import (
     BaseModel,
     ByteSize,
-    Extra,
+    ConfigDict,
     Field,
     PositiveInt,
+    field_validator,
     parse_obj_as,
-    validator,
 )
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -30,8 +30,8 @@ from ..utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
 
 
 class Image(BaseModel):
-    name: str = Field(..., regex=SERVICE_KEY_RE.pattern)
-    tag: str = Field(..., regex=SIMPLE_VERSION_RE)
+    name: str = Field(..., pattern=SERVICE_KEY_RE.pattern)
+    tag: str = Field(..., pattern=SIMPLE_VERSION_RE)
 
     requires_gpu: bool | None = Field(
         default=None, deprecated=True, description="Use instead node_requirements"
@@ -40,7 +40,9 @@ class Image(BaseModel):
         default=None, deprecated=True, description="Use instead node_requirements"
     )
     node_requirements: NodeRequirements | None = Field(
-        default=None, description="the requirements for the service to run on a node"
+        default=None,
+        description="the requirements for the service to run on a node",
+        validate_default=True,
     )
     boot_mode: BootMode = BootMode.CPU
     command: list[str] = Field(
@@ -53,7 +55,7 @@ class Image(BaseModel):
         default_factory=dict, description="The environment to use to run the service"
     )
 
-    @validator("node_requirements", pre=True, always=True)
+    @field_validator("node_requirements", mode="before")
     @classmethod
     def migrate_from_requirements(cls, v, values):
         if v is None:
@@ -68,9 +70,9 @@ class Image(BaseModel):
             )
         return v
 
-    class Config:
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "examples": [
                 {
                     "name": "simcore/services/dynamic/jupyter-octave-python-math",
@@ -89,14 +91,14 @@ class Image(BaseModel):
                     "requires_mpi": False,
                 }
             ]
-        }
+        },
+    )
 
 
-# NOTE: for a long time defaultValue field was added to ServiceOutput wrongly in the DB.
-# this flags allows parsing of the outputs without error. This MUST not leave the director-v2!
 class _ServiceOutputOverride(ServiceOutput):
-    class Config(ServiceOutput.Config):
-        extra = Extra.ignore
+    # NOTE: for a long time defaultValue field was added to ServiceOutput wrongly in the DB.
+    # this flags allows parsing of the outputs without error. This MUST not leave the director-v2!
+    model_config = ConfigDict(extra="ignore")
 
 
 _ServiceOutputsOverride = dict[ServicePortKey, _ServiceOutputOverride]
@@ -105,10 +107,7 @@ _ServiceOutputsOverride = dict[ServicePortKey, _ServiceOutputOverride]
 class NodeSchema(BaseModel):
     inputs: ServiceInputsDict = Field(..., description="the inputs scheam")
     outputs: _ServiceOutputsOverride = Field(..., description="the outputs schema")
-
-    class Config:
-        extra = Extra.forbid
-        orm_mode = True
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
 
 class CompTaskAtDB(BaseModel):
@@ -145,10 +144,10 @@ class CompTaskAtDB(BaseModel):
     created: datetime.datetime
     modified: datetime.datetime
     # Additional information about price and hardware (ex. AWS EC2 instance type)
-    pricing_info: dict | None
+    pricing_info: dict | None = None
     hardware_info: HardwareInfo
 
-    @validator("state", pre=True)
+    @field_validator("state", mode="before")
     @classmethod
     def convert_state_from_state_type_enum_if_needed(cls, v):
         if isinstance(v, str):
@@ -160,14 +159,14 @@ class CompTaskAtDB(BaseModel):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
         return v
 
-    @validator("start", "end", "submit")
+    @field_validator("start", "end", "submit")
     @classmethod
     def ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
         if v is not None and v.tzinfo is None:
-            v = v.replace(tzinfo=datetime.timezone.utc)
+            v = v.replace(tzinfo=datetime.UTC)
         return v
 
-    @validator("hardware_info", pre=True)
+    @field_validator("hardware_info", mode="before")
     @classmethod
     def backward_compatible_null_value(cls, v: HardwareInfo | None) -> HardwareInfo:
         if v is None:
@@ -180,10 +179,10 @@ class CompTaskAtDB(BaseModel):
             comp_task_dict["state"] = RUNNING_STATE_TO_DB[comp_task_dict["state"]].value
         return comp_task_dict
 
-    class Config:
-        extra = Extra.forbid
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        extra="forbid",
+        from_attributes=True,
+        json_schema_extra={
             "examples": [
                 # DB model
                 {
@@ -239,4 +238,5 @@ class CompTaskAtDB(BaseModel):
                 }
                 for image_example in Image.Config.schema_extra["examples"]
             ]
-        }
+        },
+    )

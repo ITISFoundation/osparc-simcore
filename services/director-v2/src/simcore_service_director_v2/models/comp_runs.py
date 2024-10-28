@@ -1,13 +1,13 @@
 import datetime
 from contextlib import suppress
-from typing import Any, ClassVar, TypedDict
+from typing import TypedDict
 
 from models_library.clusters import DEFAULT_CLUSTER_ID, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pydantic import BaseModel, PositiveInt, validator
+from pydantic import BaseModel, ConfigDict, PositiveInt, field_validator
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ..utils.db import DB_TO_RUNNING_STATE
@@ -39,17 +39,17 @@ class CompRunsAtDB(BaseModel):
     run_id: PositiveInt
     project_uuid: ProjectID
     user_id: UserID
-    cluster_id: ClusterID | None
+    cluster_id: ClusterID | None = None
     iteration: PositiveInt
     result: RunningState
     created: datetime.datetime
     modified: datetime.datetime
-    started: datetime.datetime | None
-    ended: datetime.datetime | None
+    started: datetime.datetime | None = None
+    ended: datetime.datetime | None = None
     metadata: RunMetadataDict = RunMetadataDict()
     use_on_demand_clusters: bool
 
-    @validator("result", pre=True)
+    @field_validator("result", mode="before")
     @classmethod
     def convert_result_from_state_type_enum_if_needed(cls, v):
         if isinstance(v, str):
@@ -61,30 +61,30 @@ class CompRunsAtDB(BaseModel):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
         return v
 
-    @validator("cluster_id", pre=True)
+    @field_validator("cluster_id", mode="before")
     @classmethod
     def convert_null_to_default_cluster_id(cls, v):
         if v is None:
             v = DEFAULT_CLUSTER_ID
         return v
 
-    @validator("created", "modified", "started", "ended")
+    @field_validator("created", "modified", "started", "ended")
     @classmethod
     def ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
         if v is not None and v.tzinfo is None:
-            v = v.replace(tzinfo=datetime.timezone.utc)
+            v = v.replace(tzinfo=datetime.UTC)
         return v
 
-    @validator("metadata", pre=True)
+    @field_validator("metadata", mode="before")
     @classmethod
     def convert_null_to_empty_metadata(cls, v):
         if v is None:
             v = RunMetadataDict()
         return v
 
-    class Config:
-        orm_mode = True
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
             "examples": [
                 # DB model
                 {
@@ -119,4 +119,5 @@ class CompRunsAtDB(BaseModel):
                     "use_on_demand_clusters": False,
                 },
             ]
-        }
+        },
+    )
