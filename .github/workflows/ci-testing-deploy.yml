@@ -333,11 +333,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -385,11 +387,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -431,11 +435,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -477,11 +483,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -528,11 +536,13 @@ jobs:
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -577,11 +587,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install api
@@ -623,11 +635,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -675,11 +689,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -724,11 +740,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -779,11 +797,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -839,11 +859,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -936,11 +958,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -991,11 +1015,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1040,11 +1066,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1089,11 +1117,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1138,11 +1168,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1197,11 +1229,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1246,11 +1280,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1295,11 +1331,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1354,11 +1392,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1403,11 +1443,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1463,11 +1505,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1499,11 +1543,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1548,11 +1594,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1597,11 +1645,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1646,11 +1696,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1695,11 +1747,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1744,11 +1798,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1796,11 +1852,13 @@ jobs:
           cache-dependency-path: "packages/notifications-library/requirements/ci.txt"
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1847,11 +1905,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1956,11 +2016,13 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2020,11 +2082,13 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2084,11 +2148,13 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2152,11 +2218,13 @@ jobs:
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2218,11 +2286,13 @@ jobs:
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2283,11 +2353,13 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2361,11 +2433,13 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2449,11 +2523,13 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2510,11 +2586,13 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2582,11 +2660,13 @@ jobs:
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -2646,11 +2726,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
@@ -2709,11 +2791,13 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: install uv
         uses: yezz123/setup-uv@v4
+        with:
+          uv-version: "0.4"
       - uses: actions/cache@v4
         id: cache-uv
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          key: ${{ runner.os }}-python-${{ matrix.python }}-uv
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
