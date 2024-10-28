@@ -60,8 +60,8 @@ qx.Class.define("osparc.share.AddCollaborators", {
           });
           this._add(control);
           break;
-        case "check-organizations":
-          control = new qx.ui.form.Button(this.tr("Check Organizations...")).set({
+        case "my-organizations":
+          control = new qx.ui.form.Button(this.tr("My Organizations...")).set({
             appearance: "form-button-outlined",
             allowGrowY: false,
             allowGrowX: false,
@@ -88,7 +88,7 @@ qx.Class.define("osparc.share.AddCollaborators", {
         }, this);
       }, this);
 
-      const organizations = this.getChildControl("check-organizations");
+      const organizations = this.getChildControl("my-organizations");
       organizations.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
     }
   }
