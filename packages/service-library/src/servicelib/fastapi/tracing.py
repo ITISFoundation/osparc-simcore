@@ -26,14 +26,6 @@ try:
     HAS_ASYNCPG = True
 except ImportError:
     HAS_ASYNCPG = False
-
-try:
-    from opentelemetry.instrumentation.aio_pika import AioPikaInstrumentor
-
-    HAS_AIOPIKA = True
-except ImportError:
-    HAS_AIOPIKA = False
-
 try:
     from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
 
@@ -100,13 +92,6 @@ def setup_tracing(
             msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
         ):
             AsyncPGInstrumentor().instrument()
-    if HAS_AIOPIKA:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg="Attempting to add aio-pika opentelemetry autoinstrumentation...",
-        ):
-            AioPikaInstrumentor().instrument()
     if HAS_REDIS:
         with log_context(
             _logger,

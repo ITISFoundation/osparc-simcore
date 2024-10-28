@@ -18,7 +18,6 @@ faststream
 opentelemetry-api
 opentelemetry-exporter-otlp
 opentelemetry-instrumentation-requests
-opentelemetry-instrumentation-aio-pika
 opentelemetry-instrumentation-redis
 opentelemetry-sdk
 psutil
