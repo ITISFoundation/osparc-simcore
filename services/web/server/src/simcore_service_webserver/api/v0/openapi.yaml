@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.43.1
+  version: 0.44.0
 servers:
 - url: ''
   description: webserver
@@ -3041,6 +3041,13 @@ paths:
         in: query
       - required: false
         schema:
+          title: Filters
+          type: string
+          format: json-string
+        name: filters
+        in: query
+      - required: false
+        schema:
           title: Limit
           exclusiveMaximum: true
           minimum: 1
@@ -5328,6 +5335,64 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
+  /v0/trash:
+    delete:
+      tags:
+      - trash
+      summary: Empty Trash
+      operationId: empty_trash
+      responses:
+        '204':
+          description: Successful Response
+  /v0/projects/{project_id}:trash:
+    post:
+      tags:
+      - trash
+      - projects
+      summary: Trash Project
+      operationId: trash_project
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      - required: false
+        schema:
+          title: Force
+          type: boolean
+          default: false
+        name: force
+        in: query
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          description: Not such a project
+        '409':
+          description: Project is in use and cannot be trashed
+        '503':
+          description: Trash service error
+  /v0/projects/{project_id}:untrash:
+    post:
+      tags:
+      - trash
+      - projects
+      summary: Untrash Project
+      operationId: untrash_project
+      parameters:
+      - required: true
+        schema:
+          title: Project Id
+          type: string
+          format: uuid
+        name: project_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/repos/projects:
     get:
       tags:
@@ -10294,6 +10359,10 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+        trashedAt:
+          title: Trashedat
+          type: string
+          format: date-time
     ProjectGroupGet:
       title: ProjectGroupGet
       required:
@@ -10565,6 +10634,10 @@ components:
           exclusiveMinimum: true
           type: integer
           minimum: 0
+        trashedAt:
+          title: Trashedat
+          type: string
+          format: date-time
     ProjectLocked:
       title: ProjectLocked
       required:

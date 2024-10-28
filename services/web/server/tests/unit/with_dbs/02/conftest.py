@@ -107,7 +107,11 @@ def mock_catalog_api(
 
 @pytest.fixture
 async def user_project(
-    client, fake_project, logged_user, tests_data_dir: Path, osparc_product_name: str
+    client: TestClient,
+    fake_project,
+    logged_user,
+    tests_data_dir: Path,
+    osparc_product_name: str,
 ) -> AsyncIterator[ProjectDict]:
     async with NewProject(
         fake_project,
