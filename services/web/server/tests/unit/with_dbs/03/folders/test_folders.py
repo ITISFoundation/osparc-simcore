@@ -313,7 +313,7 @@ async def test_project_listing_inside_of_private_folder(
         resp = await client.get(url)
         _, errors = await assert_status(
             resp,
-            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN,
         )
         assert errors
 
