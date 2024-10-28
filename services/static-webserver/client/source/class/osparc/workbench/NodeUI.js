@@ -474,15 +474,15 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const width = 150;
       this.__setNodeUIWidth(width);
 
-      const label = new qx.ui.basic.Label().set({
+      const linkLabel = new osparc.ui.basic.LinkLabel().set({
         paddingLeft: 5,
-        font: "text-18"
+        font: "text-12"
       });
       const chipContainer = this.getChildControl("chips");
-      chipContainer.add(label);
+      chipContainer.add(linkLabel);
 
-      this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(label), this);
-      this.__setProbeValue(label);
+      this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(linkLabel), this);
+      this.__setProbeValue(linkLabel);
     },
 
     __checkTurnIntoIteratorUI: function() {
@@ -504,23 +504,19 @@ qx.Class.define("osparc.workbench.NodeUI", {
       }
     },
 
-    __setProbeValue: function(label) {
-      const replaceByLinkLabel = val => {
+    __setProbeValue: function(linkLabel) {
+      const populateLinkLabel = linkInfo => {
         const download = true;
-        const locationId = val.store;
-        const fileId = val.path;
+        const locationId = linkInfo.store;
+        const fileId = linkInfo.path;
         osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
           .then(presignedLinkData => {
             if ("resp" in presignedLinkData && presignedLinkData.resp) {
-              const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
-              const linkLabel = new osparc.ui.basic.LinkLabel(filename, presignedLinkData.resp.link).set({
-                font: "link-label-12"
+              const filename = linkInfo.filename || osparc.file.FilePicker.getFilenameFromPath(linkInfo);
+              linkLabel.set({
+                value: filename,
+                url: presignedLinkData.resp.link
               });
-              const chipContainer = this.getChildControl("chips");
-              if (chipContainer.getChildren().indexOf(label) > -1) {
-                chipContainer.remove(label);
-              }
-              chipContainer.add(linkLabel);
             }
           });
       }
@@ -531,7 +527,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
         const portKey = link["output"];
         const inputNode = this.getNode().getWorkbench().getNode(inputNodeId);
         if (inputNode) {
-          inputNode.bind("outputs", label, "value", {
+          inputNode.bind("outputs", linkLabel, "value", {
             converter: outputs => {
               if (portKey in outputs && "value" in outputs[portKey]) {
                 const val = outputs[portKey]["value"];
@@ -539,11 +535,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
                   return "[" + val.join(",") + "]";
                 } else if (this.getNode().getMetaData()["key"].includes("probe/file")) {
                   const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
-                  label.set({
-                    font: "text-12",
-                    rich: true
-                  });
-                  replaceByLinkLabel(val);
+                  populateLinkLabel(val);
                   return filename;
                 }
                 return String(val);
@@ -553,7 +545,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           });
         }
       } else {
-        label.setValue("");
+        linkLabel.setValue("");
       }
     },
 
