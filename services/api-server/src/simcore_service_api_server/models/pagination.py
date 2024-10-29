@@ -17,10 +17,10 @@ from models_library.rest_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE,
 )
-from models_library.utils.pydantic_tools_extension import FieldNotRequired
 from pydantic import (
     BaseModel,
     ConfigDict,
+    Field,
     NonNegativeInt,
     ValidationInfo,
     field_validator,
@@ -56,7 +56,7 @@ class OnePage(BaseModel, Generic[T]):
     """
 
     items: Sequence[T]
-    total: NonNegativeInt = FieldNotRequired(validate_default=True)
+    total: NonNegativeInt | None = Field(default=None, validate_default=True)
 
     @field_validator("total", mode="before")
     @classmethod

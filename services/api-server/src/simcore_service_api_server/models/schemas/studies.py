@@ -1,7 +1,6 @@
 from typing import TypeAlias
 
 from models_library import projects, projects_nodes_io
-from models_library.utils import pydantic_tools_extension
 from pydantic import AnyUrl, BaseModel, Field
 
 from .. import api_resources
@@ -14,8 +13,8 @@ DownloadLink: TypeAlias = AnyUrl
 
 class Study(BaseModel):
     uid: StudyID
-    title: str = pydantic_tools_extension.FieldNotRequired()
-    description: str = pydantic_tools_extension.FieldNotRequired()
+    title: str | None = None
+    description: str | None = None
 
     @classmethod
     def compose_resource_name(cls, study_key) -> api_resources.RelativeResourceName:
