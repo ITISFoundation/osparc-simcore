@@ -27,11 +27,13 @@ qx.Class.define("osparc.share.AddCollaborators", {
 
   /**
     * @param serializedDataCopy {Object} Object containing the Serialized Data
+    * @param publishingTemplate {Boolean} Wether the widget needs to be initialized for publishing template
     */
-  construct: function(serializedDataCopy) {
+  construct: function(serializedDataCopy, publishingTemplate = false) {
     this.base(arguments);
 
-    this.setSerializedData(serializedDataCopy);
+    this.__serializedDataCopy = serializedDataCopy;
+    this.__publishingTemplate = publishingTemplate;
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
@@ -44,6 +46,7 @@ qx.Class.define("osparc.share.AddCollaborators", {
 
   members: {
     __serializedDataCopy: null,
+    __publishingTemplate: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -52,22 +55,31 @@ qx.Class.define("osparc.share.AddCollaborators", {
           control = new qx.ui.basic.Label(this.tr("Select from the list below and click Share"));
           this._add(control);
           break;
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+          this._add(control);
+          break;
         case "share-with":
           control = new qx.ui.form.Button(this.tr("Share with...")).set({
             appearance: "form-button",
             alignX: "left",
             allowGrowX: false
           });
-          this._add(control);
+          this.getChildControl("buttons-layout").add(control);
+          this.getChildControl("buttons-layout").add(new qx.ui.core.Spacer(), {
+            flex: 1
+          });
           break;
-        case "check-organizations":
-          control = new qx.ui.form.Button(this.tr("Check Organizations...")).set({
+        case "my-organizations":
+          control = new qx.ui.form.Button(this.tr("My Organizations...")).set({
             appearance: "form-button-outlined",
             allowGrowY: false,
             allowGrowX: false,
+            alignX: "right",
             icon: osparc.dashboard.CardBase.SHARED_ORGS
           });
-          this._add(control);
+          this.getChildControl("buttons-layout").add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -82,13 +94,16 @@ qx.Class.define("osparc.share.AddCollaborators", {
       const addCollaboratorBtn = this.getChildControl("share-with");
       addCollaboratorBtn.addListener("execute", () => {
         const collaboratorsManager = new osparc.share.NewCollaboratorsManager(this.__serializedDataCopy);
+        if (this.__publishingTemplate) {
+          collaboratorsManager.getActionButton().setLabel(this.tr("Publish for"));
+        }
         collaboratorsManager.addListener("addCollaborators", e => {
           collaboratorsManager.close();
           this.fireDataEvent("addCollaborators", e.getData());
         }, this);
       }, this);
 
-      const organizations = this.getChildControl("check-organizations");
+      const organizations = this.getChildControl("my-organizations");
       organizations.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
     }
   }
