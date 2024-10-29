@@ -10,7 +10,7 @@ from .._constants import APP_SETTINGS_KEY
 
 class ProjectsSettings(BaseCustomSettings):
     PROJECTS_MAX_COPY_SIZE_BYTES: ByteSize = Field(
-        parse_obj_as(ByteSize, "30Gib"),
+        default=parse_obj_as(ByteSize, "30Gib"),
         description="defines the maximum authorized project data size"
         " when copying a project (disable with 0)",
     )
@@ -20,12 +20,15 @@ class ProjectsSettings(BaseCustomSettings):
     )
 
     PROJECTS_INACTIVITY_INTERVAL: timedelta = Field(
-        timedelta(seconds=20),
+        default=timedelta(seconds=20),
         description="interval after which services need to be idle in order to be considered inactive",
     )
 
     _validate_projects_inactivity_interval = validate_numeric_string_as_timedelta(
         "PROJECTS_INACTIVITY_INTERVAL"
+    )
+    PROJECTS_TRASH_RETENTION_DAYS: NonNegativeInt = Field(
+        default=7, description="Trashed items will be deleted after this time"
     )
 
 

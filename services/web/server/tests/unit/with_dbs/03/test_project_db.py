@@ -91,29 +91,30 @@ def _assert_added_project(
     added_project: dict[str, Any],
     exp_overrides: dict[str, Any],
 ):
-    original_prj = deepcopy(exp_project)
+    expected_prj = deepcopy(exp_project)
     added_prj = deepcopy(added_project)
-    # no user so the project owner has a pre-defined value
     _DIFFERENT_KEYS = [
         "creationDate",
         "lastChangeDate",
         "accessRights",  # NOTE: access rights were moved away from the projects table
+        "trashedAt",
     ]
-    assert {k: v for k, v in original_prj.items() if k in _DIFFERENT_KEYS} != {
+    assert {k: v for k, v in expected_prj.items() if k in _DIFFERENT_KEYS} != {
         k: v for k, v in added_prj.items() if k in _DIFFERENT_KEYS
     }
     assert to_datetime(added_prj["creationDate"]) > to_datetime(
-        exp_project["creationDate"]
+        expected_prj["creationDate"]
     )
     assert to_datetime(added_prj["creationDate"]) <= to_datetime(
         added_prj["lastChangeDate"]
     )
-    original_prj.update(exp_overrides)
+    expected_prj.update(exp_overrides)
     for k in _DIFFERENT_KEYS:
-        added_prj.pop(k)
-        original_prj.pop(k)
+        added_prj.pop(k, None)
+        expected_prj.pop(k, None)
+
     # the rest of the keys shall be the same as the original
-    assert added_prj == original_prj
+    assert added_prj == expected_prj
 
 
 def _assert_projects_to_product_db_row(

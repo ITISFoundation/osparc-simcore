@@ -227,6 +227,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             "prjOwner": None,
             "workspaceId": None,
             "folderId": None,
+            "trashedAt": None,
         }
         if from_study:
             # access rights are replaced

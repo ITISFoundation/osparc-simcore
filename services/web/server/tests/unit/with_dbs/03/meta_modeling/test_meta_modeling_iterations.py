@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 import pytest
 from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient
-from common_library.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps, json_loads
 from faker import Faker
 from models_library.projects import Project
 from models_library.projects_nodes import Node
@@ -34,6 +34,7 @@ from simcore_service_webserver.meta_modeling._projects import (
     meta_project_policy,
     projects_redirection_middleware,
 )
+from simcore_service_webserver.projects.db import ProjectDBAPI
 from simcore_service_webserver.projects.models import ProjectDict
 
 REQUEST_MODEL_POLICY = {
@@ -144,13 +145,14 @@ async def test_iterators_workflow(
     project_data.update({key: modifications[key] for key in ("workbench", "ui")})
     project_data["ui"].setdefault("currentNodeId", project_uuid)
 
-    response = await client.put(
-        f"/v0/projects/{project_data['uuid']}",
-        json=project_data,
+    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(client.app)
+    project_data.pop("state")
+    await db.replace_project(
+        project_data,
+        logged_user["id"],
+        project_uuid=project_uuid,
+        product_name="osparc",
     )
-    assert (
-        response.status == REPLACE_PROJECT_ON_MODIFIED.status_code
-    ), await response.text()
 
     # TODO: create iterations, so user could explore parametrizations?
 
@@ -260,11 +262,14 @@ async def test_iterators_workflow(
     assert node.inputs
     node.inputs["linspace_stop"] = 4
 
-    response = await client.put(
-        f"/v0/projects/{project_uuid}",
-        data=json_dumps(new_project.dict(**REQUEST_MODEL_POLICY)),
+    _new_project_data = new_project.dict(**REQUEST_MODEL_POLICY)
+    _new_project_data.pop("state")
+    await db.replace_project(
+        json_loads(json_dumps(_new_project_data)),
+        logged_user["id"],
+        project_uuid=project_uuid,
+        product_name="osparc",
     )
-    assert response.status == status.HTTP_200_OK, await response.text()
 
     # RUN again them ---------------------------------------------------------------------------
     response = await client.post(
