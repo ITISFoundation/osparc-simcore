@@ -8,8 +8,6 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 from datetime import datetime
 from typing import Any, Literal, TypeAlias
 
-from models_library.folders import FolderID
-from models_library.workspaces import WorkspaceID
 from pydantic import ConfigDict, Field, HttpUrl, field_validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
@@ -26,7 +24,9 @@ from ..utils.common_validators import (
 )
 from ..utils.pydantic_tools_extension import FieldNotRequired
 from ._base import EmptyModel, InputSchema, OutputSchema
+from .folders import FolderID
 from .permalinks import ProjectPermalink
+from .workspaces import WorkspaceID
 
 
 class ProjectCreateNew(InputSchema):
@@ -131,7 +131,7 @@ class ProjectPatch(InputSchema):
     ui: StudyUI | None = FieldNotRequired()
     quality: dict[str, Any] = FieldNotRequired()
 
-    _empty_is_none = field_validator("thumbnail", allow_reuse=True, pre=True)(
+    _empty_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )
 
