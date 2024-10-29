@@ -22,7 +22,6 @@ from ..utils.common_validators import (
     none_to_empty_str_pre_validator,
     null_or_none_str_to_none_validator,
 )
-from ..utils.pydantic_tools_extension import FieldNotRequired
 from ._base import EmptyModel, InputSchema, OutputSchema
 from .folders import FolderID
 from .permalinks import ProjectPermalink
@@ -128,14 +127,14 @@ class ProjectReplace(InputSchema):
 
 
 class ProjectPatch(InputSchema):
-    name: ShortTruncatedStr = FieldNotRequired()
-    description: LongTruncatedStr = FieldNotRequired()
-    thumbnail: HttpUrl = FieldNotRequired()
-    access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
-    classifiers: list[ClassifierID] = FieldNotRequired()
-    dev: dict | None = FieldNotRequired()
-    ui: StudyUI | None = FieldNotRequired()
-    quality: dict[str, Any] = FieldNotRequired()
+    name: ShortTruncatedStr | None = Field(default=None)
+    description: LongTruncatedStr | None = Field(default=None)
+    thumbnail: HttpUrl | None = Field(default=None)
+    access_rights: dict[GroupIDStr, AccessRights] | None = Field(default=None)
+    classifiers: list[ClassifierID] | None = Field(default=None)
+    dev: dict | None = Field(default=None)
+    ui: StudyUI | None = Field(default=None)
+    quality: dict[str, Any] | None = Field(default=None)
 
     _empty_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator

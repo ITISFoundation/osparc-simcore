@@ -1,7 +1,4 @@
-from models_library.utils.pydantic_tools_extension import (
-    FieldNotRequired,
-    parse_obj_or_none,
-)
+from models_library.utils.pydantic_tools_extension import parse_obj_or_none
 from pydantic import BaseModel, Field, StrictInt
 
 
@@ -10,7 +7,7 @@ class MyModel(BaseModel):
     b: int | None = Field(...)
     c: int = 42
     d: int | None = None
-    e: int = FieldNotRequired(description="optional non-nullable")
+    e: int = Field(default=324, description="optional non-nullable")
 
 
 def test_schema():
@@ -27,7 +24,7 @@ def test_schema():
                 "title": "D",
             },
             "e": {
-                "default": None,
+                "default": 324,
                 "title": "E",
                 "type": "integer",
                 "description": "optional non-nullable",
@@ -39,7 +36,7 @@ def test_schema():
 
 def test_only_required():
     model = MyModel(a=1, b=2)
-    assert model.model_dump() == {"a": 1, "b": 2, "c": 42, "d": None, "e": None}
+    assert model.model_dump() == {"a": 1, "b": 2, "c": 42, "d": None, "e": 324}
     assert model.model_dump(exclude_unset=True) == {"a": 1, "b": 2}
 
 
