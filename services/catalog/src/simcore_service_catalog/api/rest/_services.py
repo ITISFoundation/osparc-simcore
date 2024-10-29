@@ -132,6 +132,8 @@ async def list_services(
                 inputs={},
                 outputs={},
                 deprecated=services_in_db[(key, version)].deprecated,
+                classifiers=[],
+                owner=None,
             )
             for key, version in services_in_db
         ]
