@@ -5,9 +5,10 @@ from typing import Final
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
-from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
+from models_library.basic_types import LogLevel
 from models_library.services_resources import ResourcesDict, ResourceValue
 from pydantic import AliasChoices, ByteSize, Field, PositiveInt, TypeAdapter
+from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
@@ -41,10 +42,7 @@ _DEFAULT_SERVICE_SPECIFICATIONS: Final[
 ] = ServiceSpecifications.model_validate({})
 
 
-class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
-    # docker environs
-    SC_BOOT_MODE: BootModeEnum | None
-    SC_BOOT_TARGET: BuildTargetEnum | None
+class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     CATALOG_LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
