@@ -1,7 +1,7 @@
 from datetime import timedelta
 from decimal import Decimal
 from enum import auto
-from typing import Final
+from typing import Any, Callable, Final
 from uuid import UUID
 
 import arrow
@@ -15,14 +15,23 @@ from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field
 from servicelib.deferred_tasks import TaskUID
 
-_PACKB_EXT_HANDLERS: Final[dict] = {
-    UUID: lambda obj: umsgpack.Ext(0x30, obj.bytes),
-    Decimal: lambda obj: umsgpack.Ext(0x40, f"{obj}".encode()),
+# `umsgpack.Ext`` extension types are part of the msgpack specification
+# allows to define serialization and deserialization rules for custom types
+# see https://github.com/msgpack/msgpack/blob/master/spec.md#extension-types
+
+_UUID_TYPE: Final[int] = 0x00
+_DECIMAL_TYPE: Final[int] = 0x01
+
+_PACKB_EXTENSION_TYPES: Final[dict[type[Any], Callable[[Any], umsgpack.Ext]]] = {
+    # helpers to serialize an object to bytes
+    UUID: lambda obj: umsgpack.Ext(_UUID_TYPE, obj.bytes),
+    Decimal: lambda obj: umsgpack.Ext(_DECIMAL_TYPE, f"{obj}".encode()),
 }
 
-_UNPACKB_EXT_HANDLERS: Final[dict] = {
-    0x30: lambda ext: UUID(bytes=ext.data),
-    0x40: lambda ext: Decimal(ext.data.decode()),
+_UNPACKB_EXTENSION_TYPES: Final[dict[int, Callable[[umsgpack.Ext], Any]]] = {
+    # helpers to deserialize an object from bytes
+    _UUID_TYPE: lambda ext: UUID(bytes=ext.data),
+    _DECIMAL_TYPE: lambda ext: Decimal(ext.data.decode()),
 }
 
 
@@ -122,10 +131,10 @@ class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attrib
     #####################
 
     def to_bytes(self) -> bytes:
-        result: bytes = umsgpack.packb(self.dict(), ext_handlers=_PACKB_EXT_HANDLERS)
+        result: bytes = umsgpack.packb(self.dict(), ext_handlers=_PACKB_EXTENSION_TYPES)
         return result
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "TrackedServiceModel":
-        unpacked_data = umsgpack.unpackb(data, ext_handlers=_UNPACKB_EXT_HANDLERS)
+        unpacked_data = umsgpack.unpackb(data, ext_handlers=_UNPACKB_EXTENSION_TYPES)
         return cls(**unpacked_data)
