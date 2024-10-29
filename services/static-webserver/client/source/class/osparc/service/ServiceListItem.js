@@ -57,7 +57,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
     LATEST: "latest",
     ITEM_WIDTH: 550,
     ITEM_HEIGHT: 35,
-    SERVICE_ICON: "@FontAwesome5Solid/paw/24"
+    SERVICE_ICON: osparc.product.Utils.getProductThumbUrl()
   },
 
   members: {
