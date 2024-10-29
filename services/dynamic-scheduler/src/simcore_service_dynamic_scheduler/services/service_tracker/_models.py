@@ -132,10 +132,28 @@ class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
     ### SERIALIZATION ###
     #####################
 
+    def to_dict(self) -> dict:
+        data = asdict(self)
+        if self.project_id:
+            data["project_id"] = f"{self.project_id}"
+        if self.dynamic_service_start:
+            data["dynamic_service_start"] = self.dynamic_service_start.json()
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "TrackedServiceModel":
+        if project_id := data.get("project_id"):
+            data["project_id"] = ProjectID(project_id)
+        if dynamic_service_start := data.get("dynamic_service_start"):
+            data["dynamic_service_start"] = DynamicServiceStart.parse_raw(
+                dynamic_service_start
+            )
+        return cls(**data)
+
     def to_bytes(self) -> bytes:
-        return umsgpack.packb(asdict(self))
+        return umsgpack.packb(self.to_dict())
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "TrackedServiceModel":
         unpacked_data = umsgpack.unpackb(data)
-        return cls(**unpacked_data)
+        return cls.from_dict(unpacked_data)

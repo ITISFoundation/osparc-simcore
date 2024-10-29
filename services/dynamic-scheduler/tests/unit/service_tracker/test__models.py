@@ -1,9 +1,16 @@
+# pylint: disable=redefined-outer-name
+
 from datetime import timedelta
 from pathlib import Path
+from uuid import uuid4
 
 import arrow
 import pytest
 from faker import Faker
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStart,
+)
+from models_library.projects import ProjectID
 from servicelib.deferred_tasks import TaskUID
 from simcore_service_dynamic_scheduler.services.service_tracker._models import (
     SchedulerServiceState,
@@ -39,11 +46,23 @@ def test_serialization(
     assert TrackedServiceModel.from_bytes(as_bytes) == tracked_model
 
 
-async def test_set_check_status_after_to():
+@pytest.mark.parametrize(
+    "dynamic_service_start",
+    [
+        None,
+        DynamicServiceStart.parse_obj(
+            DynamicServiceStart.Config.schema_extra["example"]
+        ),
+    ],
+)
+@pytest.mark.parametrize("project_id", [None, uuid4()])
+async def test_set_check_status_after_to(
+    dynamic_service_start: DynamicServiceStart | None, project_id: ProjectID | None
+):
     model = TrackedServiceModel(
-        dynamic_service_start=None,
+        dynamic_service_start=dynamic_service_start,
         user_id=None,
-        project_id=None,
+        project_id=project_id,
         requested_state=UserRequestedState.RUNNING,
     )
     assert model.check_status_after < arrow.utcnow().timestamp()
