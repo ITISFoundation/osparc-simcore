@@ -9,7 +9,7 @@ import users from '../users.json';
 
 const product = "osparc";
 const productUrl = products[product];
-const user = users[product];
+const user = users[product][0];
 
 test.describe.serial(`User Menu Windows: ${product}`, () => {
   let page = null;
@@ -44,5 +44,20 @@ test.describe.serial(`User Menu Windows: ${product}`, () => {
 
     // close window
     await page.getByTestId("organizationsWindowCloseBtn").click();
+  });
+
+  test(`License pop up`, async () => {
+    // open user menu
+    await page.getByTestId("userMenuBtn").click();
+
+    // open license in new tab
+    const newTabPromise = page.waitForEvent("popup");
+    const newTab = await newTabPromise;
+    await newTab.waitForLoadState();
+    await page.getByTestId("userMenuLicenseBtn").click();
+
+    // make sure the window opens
+    expect(newTab).toBeTruthy();
+    // close tab
   });
 });
