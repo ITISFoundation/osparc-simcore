@@ -88,7 +88,7 @@ class DynamiSidecarMetrics(MetricsBase):
             "time to pull docker images",
             labelnames=_INSTRUMENTATION_LABELS,
             namespace=_METRICS_NAMESPACE,
-            buckets=_RATE_BPS_BUCKETS,
+            buckets=_BUCKETS_TIME_S,  # SAN: the previous version was wrong, am I correct?
             subsystem=self.subsystem,
             registry=self.registry,
         )

@@ -7,4 +7,4 @@ def test_track_duration():
     with track_duration() as duration:
         time.sleep(0.1)
 
-    assert duration.to_flaot() > 0.1
+    assert duration.to_float() > 0.1
