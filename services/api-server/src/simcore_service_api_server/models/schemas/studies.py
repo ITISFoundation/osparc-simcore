@@ -1,22 +1,20 @@
 from typing import TypeAlias
 
-from common_library.pydantic_networks_extension import AnyUrlLegacy
 from models_library import projects, projects_nodes_io
-from models_library.utils import pydantic_tools_extension
-from pydantic import BaseModel, Field
+from pydantic import AnyUrl, BaseModel, Field
 
 from .. import api_resources
 from . import solvers
 
 StudyID: TypeAlias = projects.ProjectID
 NodeName: TypeAlias = str
-DownloadLink: TypeAlias = AnyUrlLegacy
+DownloadLink: TypeAlias = AnyUrl
 
 
 class Study(BaseModel):
     uid: StudyID
-    title: str = pydantic_tools_extension.FieldNotRequired()
-    description: str = pydantic_tools_extension.FieldNotRequired()
+    title: str | None = None
+    description: str | None = None
 
     @classmethod
     def compose_resource_name(cls, study_key) -> api_resources.RelativeResourceName:

@@ -8,7 +8,7 @@
     class MyModel(BaseModel):
        thumbnail: str | None
 
-       _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+       _empty_is_none = validator("thumbnail", mode="before")(
            empty_str_to_none_pre_validator
        )
 

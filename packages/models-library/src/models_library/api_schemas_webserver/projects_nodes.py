@@ -10,7 +10,6 @@ from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
 from ..services_resources import ServiceResourcesDict
-from ..utils.pydantic_tools_extension import FieldNotRequired
 from ._base import InputSchemaWithoutCamelCase, OutputSchema
 
 assert ServiceResourcesDict  # nosec
@@ -27,19 +26,19 @@ BootOptions: TypeAlias = dict
 
 
 class NodePatch(InputSchemaWithoutCamelCase):
-    service_key: ServiceKey = FieldNotRequired(alias="key")
-    service_version: ServiceVersion = FieldNotRequired(alias="version")
-    label: str = FieldNotRequired()
-    inputs: InputsDict = FieldNotRequired()
-    inputs_required: list[InputID] = FieldNotRequired(alias="inputsRequired")
-    input_nodes: list[NodeID] = FieldNotRequired(alias="inputNodes")
-    progress: float | None = FieldNotRequired(
-        ge=0, le=100
+    service_key: ServiceKey | None = Field(default=None, alias="key")
+    service_version: ServiceVersion | None = Field(default=None, alias="version")
+    label: str | None = Field(default=None)
+    inputs: InputsDict = Field(default=None)
+    inputs_required: list[InputID] | None = Field(default=None, alias="inputsRequired")
+    input_nodes: list[NodeID] | None = Field(default=None, alias="inputNodes")
+    progress: float | None = Field(
+        default=None, ge=0, le=100
     )  # NOTE: it is used by frontend for File Picker progress
-    boot_options: BootOptions = FieldNotRequired(alias="bootOptions")
-    outputs: dict[
-        str, Any
-    ] = FieldNotRequired()  # NOTE: it is used by frontend for File Picker
+    boot_options: BootOptions | None = Field(default=None, alias="bootOptions")
+    outputs: dict[str, Any] | None = Field(
+        default=None
+    )  # NOTE: it is used by frontend for File Picker
 
 
 class NodeCreated(OutputSchema):

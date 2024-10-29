@@ -1,7 +1,6 @@
 import datetime
 
 from pydantic import AliasChoices, Field, TypeAdapter, field_validator
-from pydantic_settings import SettingsConfigDict
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
 from settings_library.director_v2 import DirectorV2Settings
@@ -50,8 +49,6 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     @classmethod
     def _validate_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
-
-    model_config = SettingsConfigDict(extra="allow")
 
 
 class ApplicationSettings(_BaseApplicationSettings):
