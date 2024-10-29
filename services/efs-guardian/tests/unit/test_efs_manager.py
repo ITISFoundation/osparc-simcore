@@ -91,10 +91,10 @@ async def test_remove_write_access_rights(
         is False
     )
 
-    project_node_state_names = await efs_manager.list_project_node_state_names(
-        project_id=project_id, node_id=node_id
-    )
-    assert project_node_state_names == []
+    with pytest.raises(FileNotFoundError):
+        await efs_manager.list_project_node_state_names(
+            project_id=project_id, node_id=node_id
+        )
 
     with patch(
         "simcore_service_efs_guardian.services.efs_manager.os.chown"
