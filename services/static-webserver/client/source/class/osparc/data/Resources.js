@@ -142,7 +142,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageTrashed: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects?filters={'trashed':true}&offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/projects?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           postToTemplate: {
             method: "POST",

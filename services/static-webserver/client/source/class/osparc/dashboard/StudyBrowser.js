@@ -1005,6 +1005,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (context === "search") {
           this.__setFoldersToList([]);
           this.__reloadStudies();
+        } else if (context === "trash") {
+          // for now, studies only
+          this.__setFoldersToList([]);
+          this.__reloadStudies();
         } else if (context === "workspaces") {
           this._searchBarFilter.resetFilters();
           this.__reloadWorkspaces();
