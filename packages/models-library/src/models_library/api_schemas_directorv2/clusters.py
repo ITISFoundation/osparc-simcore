@@ -168,15 +168,15 @@ class ClusterCreate(BaseCluster):
 
 
 class ClusterPatch(BaseCluster):
-    name: str | None  # type: ignore[assignment]
-    description: str | None
-    type: ClusterTypeInModel | None  # type: ignore[assignment]
-    owner: GroupID | None  # type: ignore[assignment]
-    thumbnail: HttpUrl | None
-    endpoint: AnyUrl | None  # type: ignore[assignment]
-    authentication: ExternalClusterAuthentication | None  # type: ignore[assignment]
+    name: str | None = None  # type: ignore[assignment]
+    description: str | None = None
+    type: ClusterTypeInModel | None = None  # type: ignore[assignment]
+    owner: GroupID | None = None  # type: ignore[assignment]
+    thumbnail: HttpUrl | None = None
+    endpoint: AnyUrl | None = None  # type: ignore[assignment]
+    authentication: ExternalClusterAuthentication | None = None  # type: ignore[assignment]
     access_rights: dict[GroupID, ClusterAccessRights] | None = Field(  # type: ignore[assignment]
-        alias="accessRights"
+        None, alias="accessRights"
     )
 
     model_config = ConfigDict(

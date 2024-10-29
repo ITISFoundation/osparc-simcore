@@ -12,6 +12,7 @@ from http import HTTPStatus
 from typing import Any
 
 import hypothesis
+import hypothesis.provisional
 import pytest
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -21,7 +22,14 @@ from models_library.api_schemas_webserver.clusters import (
     ClusterPatch,
     ClusterPing,
 )
-from models_library.clusters import CLUSTER_ADMIN_RIGHTS, Cluster, SimpleAuthentication
+from models_library.clusters import (
+    CLUSTER_ADMIN_RIGHTS,
+    Cluster,
+    ClusterTypeInModel,
+    SimpleAuthentication,
+)
+from pydantic import HttpUrl, TypeAdapter
+from pydantic_core import Url
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_parametrizations import (  # nopycln: import
@@ -37,6 +45,29 @@ from simcore_service_webserver.director_v2.exceptions import (
     ClusterPingError,
     DirectorServiceError,
 )
+
+
+@st.composite
+def http_url_strategy(draw):
+    return TypeAdapter(HttpUrl).validate_python(draw(hypothesis.provisional.urls()))
+
+
+@st.composite
+def cluster_patch_strategy(draw):
+    return ClusterPatch(
+        name=draw(st.text()),
+        description=draw(st.text()),
+        owner=draw(st.integers(min_value=1)),
+        type=draw(st.sampled_from(ClusterTypeInModel)),
+        thumbnail=draw(http_url_strategy()),
+        endpoint=draw(http_url_strategy()),
+        authentication=None,
+        accessRights={},
+    )
+
+
+st.register_type_strategy(ClusterPatch, cluster_patch_strategy())
+st.register_type_strategy(Url, http_url_strategy())
 
 
 @pytest.fixture
@@ -262,7 +293,9 @@ async def test_ping_cluster(
     print(f"--> pinging {cluster_ping=!r}")
     assert client.app
     url = client.app.router["ping_cluster"].url_for()
-    rsp = await client.post(f"{url}", json=json.loads(cluster_ping.json(by_alias=True)))
+    rsp = await client.post(
+        f"{url}", json=json.loads(cluster_ping.model_dump_json(by_alias=True))
+    )
     data, error = await assert_status(rsp, expected.no_content)
     if not error:
         assert data is None
@@ -310,7 +343,9 @@ async def test_create_cluster_with_error(
     url = client.app.router["create_cluster"].url_for()
     rsp = await client.post(
         f"{url}",
-        json=json.loads(cluster_create.json(by_alias=True, exclude_unset=True)),
+        json=json.loads(
+            cluster_create.model_dump_json(by_alias=True, exclude_unset=True)
+        ),
     )
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
@@ -411,7 +446,7 @@ async def test_update_cluster_with_error(
     url = client.app.router["update_cluster"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
         f"{url}",
-        json=json.loads(ClusterPatch().json(**_PATCH_EXPORT)),
+        json=json.loads(ClusterPatch().model_dump_json(**_PATCH_EXPORT)),
     )
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
