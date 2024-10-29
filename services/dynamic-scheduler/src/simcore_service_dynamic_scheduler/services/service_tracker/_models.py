@@ -1,8 +1,11 @@
 from datetime import timedelta
+from decimal import Decimal
 from enum import auto
+from typing import Final
+from uuid import UUID
 
 import arrow
-import msgpack  # type: ignore[import-untyped]
+import umsgpack  # type: ignore[import-untyped]
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
 )
@@ -11,6 +14,16 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, Field
 from servicelib.deferred_tasks import TaskUID
+
+_PACKB_EXT_HANDLERS: Final[dict] = {
+    UUID: lambda obj: umsgpack.Ext(0x30, obj.bytes),
+    Decimal: lambda obj: umsgpack.Ext(0x40, f"{obj}".encode()),
+}
+
+_UNPACKB_EXT_HANDLERS: Final[dict] = {
+    0x30: lambda ext: UUID(bytes=ext.data),
+    0x40: lambda ext: Decimal(ext.data.decode()),
+}
 
 
 class UserRequestedState(StrAutoEnum):
@@ -55,22 +68,15 @@ class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attrib
         description=("status of the service desidered by the user RUNNING or STOPPED")
     )
 
-    _current_state: SchedulerServiceState = Field(
+    current_state: SchedulerServiceState = Field(
         default=SchedulerServiceState.UNKNOWN,
         description="to set after parsing the incoming state via the API calls",
     )
 
-    @property
-    def current_state(self) -> SchedulerServiceState:
-        return self._current_state
-
-    @current_state.setter
-    def current_state(self, new_value: SchedulerServiceState) -> None:
-        if new_value == self._current_state:
-            return  # no action is taken if the value is the same
-
-        self._current_state = new_value
-        self.last_state_change = arrow.utcnow().timestamp()
+    def __setattr__(self, name, value):
+        if name == "current_state" and value != self.current_state:
+            self.last_state_change = arrow.utcnow().timestamp()
+        super().__setattr__(name, value)
 
     last_state_change: float = Field(
         default_factory=lambda: arrow.utcnow().timestamp(),
@@ -116,10 +122,10 @@ class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attrib
     #####################
 
     def to_bytes(self) -> bytes:
-        result: bytes = msgpack.packb(self.dict())
+        result: bytes = umsgpack.packb(self.dict(), ext_handlers=_PACKB_EXT_HANDLERS)
         return result
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "TrackedServiceModel":
-        unpacked_data = msgpack.unpackb(data)
+        unpacked_data = umsgpack.unpackb(data, ext_handlers=_UNPACKB_EXT_HANDLERS)
         return cls(**unpacked_data)

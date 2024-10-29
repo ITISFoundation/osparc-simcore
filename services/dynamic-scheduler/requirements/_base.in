@@ -20,5 +20,5 @@ httpx
 packaging
 python-socketio
 typer[all]
-msgpack
+u-msgpack-python
 uvicorn[standard]

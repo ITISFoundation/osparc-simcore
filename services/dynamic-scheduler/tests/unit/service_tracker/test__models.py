@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 
+from copy import deepcopy
 from datetime import timedelta
 from pathlib import Path
 from uuid import uuid4
@@ -35,7 +36,7 @@ def test_serialization(
         user_id=None,
         project_id=None,
         requested_state=requested_state,
-        _current_state=current_state,
+        current_state=current_state,
         service_status=faker.pystr(),
         check_status_after=check_status_after,
         service_status_task_uid=service_status_task_uid,
@@ -96,3 +97,22 @@ async def test_legacy_format_compatibility(project_slug_dir: Path):
     )
 
     assert model_from_disk == model
+
+
+def test_current_state_changes_updates_last_state_change():
+    model = TrackedServiceModel(
+        dynamic_service_start=None,
+        user_id=None,
+        project_id=None,
+        requested_state=UserRequestedState.RUNNING,
+    )
+
+    last_changed = deepcopy(model.last_state_change)
+    model.current_state = SchedulerServiceState.IDLE
+    assert last_changed != model.last_state_change
+
+    last_changed_2 = deepcopy(model.last_state_change)
+    model.current_state = SchedulerServiceState.IDLE
+    assert last_changed_2 == model.last_state_change
+
+    assert last_changed != last_changed_2
