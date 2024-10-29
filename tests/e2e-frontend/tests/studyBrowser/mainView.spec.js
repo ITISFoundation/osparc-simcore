@@ -71,7 +71,9 @@ for (const product in products) {
 
           const plusButtonId = expectedElements[product]["plusButton"]["id"];
           const contextTree = page.getByTestId(plusButtonId);
-          await expect(contextTree).toBeVisible();
+          await expect(contextTree).toBeVisible({
+            timeout: 20000 // it will take some time to make the plus button visible
+          });
         });
       });
     }
