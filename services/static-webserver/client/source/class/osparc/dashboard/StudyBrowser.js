@@ -1644,7 +1644,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getUntrashStudyMenuButton: function(studyData) {
-      const trashButton = new qx.ui.menu.Button(this.tr("Restore"), "@FontAwesome5Solid/trash/12");
+      const trashButton = new qx.ui.menu.Button(this.tr("Restore"), "@MaterialIcons/restore_from_trash/16");
       trashButton["untrashButton"] = true;
       trashButton.set({
         appearance: "menu-button"
