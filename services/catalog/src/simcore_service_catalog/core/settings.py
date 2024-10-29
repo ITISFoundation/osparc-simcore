@@ -6,8 +6,8 @@ from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
 from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
-from models_library.services_resources import ResourcesDict
-from pydantic import AliasChoices, ByteSize, Field, PositiveInt, parse_obj_as
+from models_library.services_resources import ResourcesDict, ResourceValue
+from pydantic import AliasChoices, ByteSize, Field, PositiveInt, TypeAdapter
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
@@ -28,24 +28,17 @@ class DirectorSettings(BaseCustomSettings):
         return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"
 
 
-_DEFAULT_RESOURCES: Final[ResourcesDict] = parse_obj_as(
-    ResourcesDict,
-    {
-        "CPU": {
-            "limit": 0.1,
-            "reservation": 0.1,
-        },
-        "RAM": {
-            "limit": parse_obj_as(ByteSize, "2Gib"),
-            "reservation": parse_obj_as(ByteSize, "2Gib"),
-        },
-    },
+_in_bytes = TypeAdapter(ByteSize).validate_python
+
+_DEFAULT_RESOURCES: Final[ResourcesDict] = ResourcesDict(
+    CPU=ResourceValue(limit=0.1, reservation=0.1),
+    RAM=ResourceValue(limit=_in_bytes("2Gib"), reservation=_in_bytes("2Gib")),
 )
 
 
 _DEFAULT_SERVICE_SPECIFICATIONS: Final[
     ServiceSpecifications
-] = ServiceSpecifications.parse_obj({})
+] = ServiceSpecifications.model_validate({})
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):

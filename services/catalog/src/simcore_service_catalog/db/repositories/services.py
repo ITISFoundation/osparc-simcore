@@ -15,7 +15,7 @@ from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import GroupID, UserID
 from psycopg2.errors import ForeignKeyViolation
-from pydantic import PositiveInt, ValidationError, parse_obj_as
+from pydantic import PositiveInt, TypeAdapter, ValidationError
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -441,7 +441,11 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(stmt_history)
             row = result.one_or_none()
 
-        return parse_obj_as(list[ReleaseFromDB], row.history) if row else None
+        return (
+            TypeAdapter(list[ReleaseFromDB]).validate_python(row.history)
+            if row
+            else None
+        )
 
     # Service Access Rights ----
 
@@ -617,5 +621,5 @@ class ServicesRepository(BaseRepository):
         if merged_specifications := _merge_specs(
             everyone_specs, teams_specs, primary_specs
         ):
-            return ServiceSpecifications.parse_obj(merged_specifications)
+            return ServiceSpecifications.model_validate(merged_specifications)
         return None  # mypy

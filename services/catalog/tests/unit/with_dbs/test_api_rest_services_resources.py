@@ -21,7 +21,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter, parse_obj_as
 from respx.models import Route
 from simcore_service_catalog.core.settings import _DEFAULT_RESOURCES
 from starlette.testclient import TestClient
@@ -241,9 +241,10 @@ def create_mock_director_service_labels(
                 },
                 "sym-server": {"simcore.service.settings": "[]"},
             },
-            parse_obj_as(
-                ServiceResourcesDict,
-                ServiceResourcesDictHelpers.Config.schema_extra["examples"][1],
+            TypeAdapter(ServiceResourcesDict).validate_python(
+                ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][1]
             ),
             "simcore/services/dynamic/sim4life-dy",
             "3.0.0",

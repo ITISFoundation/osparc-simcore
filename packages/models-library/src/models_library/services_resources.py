@@ -59,7 +59,7 @@ class ResourceValue(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
 
-ResourcesDict = dict[ResourceName, ResourceValue]
+ResourcesDict: TypeAlias = dict[ResourceName, ResourceValue]
 
 
 class BootMode(StrAutoEnum):

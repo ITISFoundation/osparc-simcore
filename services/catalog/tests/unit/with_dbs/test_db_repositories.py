@@ -109,9 +109,9 @@ async def test_create_services(
     )
 
     # validation
-    service = ServiceMetaDataAtDB.parse_obj(fake_service)
+    service = ServiceMetaDataAtDB.model_validate(fake_service)
     service_access_rights = [
-        ServiceAccessRightsAtDB.parse_obj(a) for a in fake_access_rights
+        ServiceAccessRightsAtDB.model_validate(a) for a in fake_access_rights
     ]
 
     new_service = await services_repo.create_or_update_service(

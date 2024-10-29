@@ -347,7 +347,7 @@ async def service_metadata_faker(faker: Faker) -> Callable:
         data = deepcopy(template)
         data.update(**overrides)
 
-        assert ServiceMetaDataPublished.parse_obj(
+        assert ServiceMetaDataPublished.model_validate(
             data
         ), "Invalid fake data. Out of sync!"
         return data
@@ -462,7 +462,7 @@ def create_director_list_services_from() -> (
     ):
         return [
             jsonable_encoder(
-                _Loader.parse_obj(
+                _Loader.model_validate(
                     {
                         **next(itertools.cycle(expected_director_list_services)),
                         **data[0],  # service, **access_rights = data
