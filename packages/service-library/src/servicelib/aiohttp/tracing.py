@@ -32,7 +32,9 @@ try:
 except ImportError:
     HAS_BOTOCORE = False
 try:
-    from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
+    from opentelemetry.instrumentation.aiopg import (
+        AiopgInstrumentor,  # type: ignore[import-not-found]
+    )
 
     HAS_AIOPG = True
 except ImportError:
