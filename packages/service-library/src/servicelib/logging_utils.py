@@ -16,6 +16,7 @@ from inspect import getframeinfo, stack
 from pathlib import Path
 from typing import Any, NotRequired, TypeAlias, TypedDict, TypeVar
 
+from .logging_utils_filtering import GeneralLogFilter, LoggerName, MessageSubstring
 from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
@@ -87,7 +88,9 @@ LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(fun
 
 
 def config_all_loggers(
-    *, log_format_local_dev_enabled: bool, logger_filter_mapping: dict[str, list[str]]
+    *,
+    log_format_local_dev_enabled: bool,
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
 ) -> None:
     """
     Applies common configuration to ALL registered loggers
@@ -133,20 +136,6 @@ def _set_logging_handler(
             CustomFormatter(
                 fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
             )
-        )
-
-
-class GeneralLogFilter(logging.Filter):
-    def __init__(self, filtered_routes):
-        super().__init__()
-        self.filtered_routes: list[str] = filtered_routes
-
-    def filter(self, record):
-        msg = record.getMessage()
-
-        # Check if the filtered routes exists in the message
-        return not any(
-            filter_criteria in msg for filter_criteria in self.filtered_routes
         )
 
 

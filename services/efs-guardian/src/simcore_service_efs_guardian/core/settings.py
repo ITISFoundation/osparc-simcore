@@ -10,6 +10,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.postgres import PostgresSettings
@@ -83,8 +84,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
-    EFS_GUARDIAN_LOG_FILTER_MAPPING: dict = Field(
-        default={},
+    EFS_GUARDIAN_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
+        default_factory=dict,
         env=["EFS_GUARDIAN_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )

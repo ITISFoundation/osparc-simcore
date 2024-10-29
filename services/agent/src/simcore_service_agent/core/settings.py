@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AnyHttpUrl, Field, validator
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.rabbit import RabbitSettings
@@ -25,8 +26,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "disabled if you want to have structured logs!"
         ),
     )
-    AGENT_VOLUMES_LOG_FILTER_MAPPING: dict = Field(
-        default={},
+    AGENT_VOLUMES_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
+        default_factory=dict,
         env=["AGENT_VOLUMES_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )

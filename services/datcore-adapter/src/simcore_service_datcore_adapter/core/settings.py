@@ -3,6 +3,7 @@ from functools import cached_property
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, parse_obj_as, validator
 from pydantic.networks import AnyUrl
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -40,8 +41,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
-    DATCORE_ADAPTER_LOG_FILTER_MAPPING: dict = Field(
-        default={},
+    DATCORE_ADAPTER_LOG_FILTER_MAPPING: dict[
+        LoggerName, list[MessageSubstring]
+    ] = Field(
+        default_factory=dict,
         env=["DATCORE_ADAPTER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )

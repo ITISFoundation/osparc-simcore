@@ -365,7 +365,7 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
             )
 
 
-@pytest.mark.parametrize(*standard_role_response(), ids=str)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)  # <- use just USER
 async def test_start_stop_computation(
     client: TestClient,
     sleeper_service: dict[str, str],

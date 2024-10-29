@@ -3,6 +3,7 @@ from functools import cached_property
 
 from models_library.basic_types import BootModeEnum
 from pydantic import Field, PositiveInt, validator
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.postgres import PostgresSettings
@@ -59,8 +60,10 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
-    RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING: dict = Field(
-        default={},
+    RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING: dict[
+        LoggerName, list[MessageSubstring]
+    ] = Field(
+        default_factory=dict,
         env=["RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )

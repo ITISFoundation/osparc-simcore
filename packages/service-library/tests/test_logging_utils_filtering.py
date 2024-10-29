@@ -1,13 +1,14 @@
 # pylint: disable=redefined-outer-name
 
 import logging
+from typing import Generator
 
 import pytest
-from servicelib.logging_utils import GeneralLogFilter
+from servicelib.logging_utils_filtering import GeneralLogFilter
 
 
 @pytest.fixture
-def logger_with_filter():
+def logger_with_filter() -> Generator[tuple[logging.Logger, list[str]], None, None]:
     # Set up a logger for testing
     logger = logging.getLogger("uvicorn.access")
     logger.setLevel(logging.DEBUG)
@@ -41,7 +42,7 @@ def logger_with_filter():
     logger.filters.clear()
 
 
-def test_log_filtered_out(logger_with_filter):
+def test_log_filtered_out(logger_with_filter: tuple[logging.Logger, list[str]]):
     logger, log_capture = logger_with_filter
 
     # Create a log record that should be filtered out (matches the filter criteria)
