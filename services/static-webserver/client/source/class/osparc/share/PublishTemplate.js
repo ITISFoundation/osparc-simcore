@@ -48,11 +48,12 @@ qx.Class.define("osparc.share.PublishTemplate", {
     __buildLayout: function() {
       // mark it us template, so that testers can share it with product everyone
       this.__potentialTemplateData["resourceType"] = "template";
-      const addCollaborators = new osparc.share.AddCollaborators(this.__potentialTemplateData);
+      const addCollaborators = new osparc.share.AddCollaborators(this.__potentialTemplateData, true);
       addCollaborators.getChildControl("intro-text").set({
         value: this.tr("Make the ") + osparc.product.Utils.getTemplateAlias() + this.tr(" also accessible to:"),
         font: "text-14"
       });
+      addCollaborators.getChildControl("share-with").setLabel(this.tr("Publish for..."));
       this._add(addCollaborators);
 
       this._add(this.__selectedCollabs);
