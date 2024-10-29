@@ -4,27 +4,38 @@ const { test, expect } = require('@playwright/test');
 
 import products from '../products.json';
 
-const expectedCreateAccountLabel = {
-  "osparc": "Create Account",
-  "s4l": "Request Account",
-  "s4lacad": "Request Account",
-  "s4llite": "Request Account",
-  "tis": "Request Account"
-};
-
-const expectedActionOnCreateAccount = {
-  "osparc": "registrationSubmitBtn",
-  "s4l": "registrationSubmitBtn",
-  "s4lacad": "registrationSubmitBtn",
-  "s4llite": "createAccountWindow",
-  "tis": "createAccountWindow"
+const expectedLogin = {
+  "osparc": {
+    "label": "Request Account",
+    "afterClicking": "registrationSubmitBtn",
+  },
+  "s4l": {
+    "label": "Request Account",
+    "afterClicking": "registrationSubmitBtn",
+  },
+  "s4lacad": {
+    "label": "Request Account",
+    "afterClicking": "registrationSubmitBtn",
+  },
+  "s4llite": {
+    "label": "Request Account",
+    "afterClicking": "createAccountWindow",
+  },
+  "tis": {
+    "label": "Request Account",
+    "afterClicking": "registrationSubmitBtn",
+  },
+  "tiplite": {
+    "label": "Request Account",
+    "afterClicking": "registrationSubmitBtn",
+  },
 };
 
 for (const product in products) {
   test(`Invitation required text in ${product}`, async ({ page }) => {
-    expect(expectedCreateAccountLabel[product]).toBeDefined();
+    expect(expectedLogin[product]["label"]).toBeDefined();
 
-    const expectedLabel = expectedCreateAccountLabel[product];
+    const expectedLabel = expectedLogin[product]["label"];
     await page.goto(products[product]);
 
     const button = page.getByTestId("loginCreateAccountBtn");
@@ -33,14 +44,14 @@ for (const product in products) {
   });
 
   test(`Callback action on Create Account ${product}`, async ({ page }) => {
-    expect(expectedActionOnCreateAccount[product]).toBeDefined();
+    expect(expectedLogin[product]["afterClicking"]).toBeDefined();
 
     await page.goto(products[product]);
 
     const button = page.getByTestId("loginCreateAccountBtn");
     button.click();
 
-    const expectedWidget = page.getByTestId(expectedActionOnCreateAccount[product]);
+    const expectedWidget = page.getByTestId(expectedLogin[product]["afterClicking"]);
     await expect(expectedWidget).toBeVisible();
   });
 }
