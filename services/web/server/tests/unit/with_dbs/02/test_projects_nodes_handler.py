@@ -75,12 +75,13 @@ async def test_get_node_resources(
             node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert (
-                node_resources
-                == ServiceResourcesDictHelpers.model_config["json_schema_extra"][
-                    "examples"
-                ][0]
-            )
+            assert {k: v.model_dump() for k, v in node_resources.items()} == next(
+                iter(
+                    ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                        "examples"
+                    ]
+                )
+            )  # type: ignore
         else:
             assert not data
             assert error
