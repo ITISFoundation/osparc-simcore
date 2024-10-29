@@ -37,6 +37,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           break;
         case "theme-switcher":
           control = new osparc.ui.switch.ThemeSwitcherMenuBtn();
+          osparc.utils.Utils.setIdToWidget(control, "userMenuThemeSwitcherBtn");
           this.add(control);
           break;
         case "log-in":
@@ -46,6 +47,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           break;
         case "user-center":
           control = new qx.ui.menu.Button(this.tr("My Account"));
+          osparc.utils.Utils.setIdToWidget(control, "userMenuMyAccountBtn");
           control.addListener("execute", () => osparc.desktop.account.MyAccountWindow.openWindow(), this);
           this.add(control);
           break;
@@ -80,6 +82,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control = new qx.ui.menu.Button(this.tr("Organizations")).set({
             visibility: osparc.data.Permissions.getInstance().canDo("user.organizations.create") ? "visible" :"excluded"
           });
+          osparc.utils.Utils.setIdToWidget(control, "userMenuOrganizationsBtn");
           control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
           this.add(control);
           break;
@@ -97,12 +100,13 @@ qx.Class.define("osparc.navigation.UserMenu", {
           break;
         case "about":
           control = new qx.ui.menu.Button(this.tr("About oSPARC"));
-          control.addListener("execute", () => osparc.About.getInstance().open());
           osparc.utils.Utils.setIdToWidget(control, "userMenuAboutBtn");
+          control.addListener("execute", () => osparc.About.getInstance().open());
           this.add(control);
           break;
         case "about-product": {
           control = new qx.ui.menu.Button(this.tr("About Product"));
+          osparc.utils.Utils.setIdToWidget(control, "userMenuAboutProductBtn");
           const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
           control.getChildControl("label").setRich(true);
           control.setLabel(this.tr("About ") + displayName);
