@@ -6,13 +6,13 @@ import urllib.parse
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from random import choice, randint
 from typing import Any
 
 import httpx
 import pytest
 import respx
 from faker import Faker
+from fastapi.encoders import jsonable_encoder
 from models_library.docker import DockerGenericTag
 from models_library.services_resources import (
     BootMode,
@@ -58,13 +58,15 @@ def service_labels(faker: Faker) -> Callable[..., dict[str, Any]]:
 
 
 @pytest.fixture
-def service_key() -> str:
-    return f"simcore/services/{choice(['comp', 'dynamic','frontend'])}/jupyter-math"
+def service_key(faker: Faker) -> str:
+    return f"simcore/services/{faker.random_element(['comp', 'dynamic','frontend'])}/jupyter-math"
 
 
 @pytest.fixture
-def service_version() -> str:
-    return f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
+def service_version(faker: Faker) -> str:
+    return (
+        f"{faker.random_int(0,100)}.{faker.random_int(0,100)}.{faker.random_int(0,100)}"
+    )
 
 
 @pytest.fixture
@@ -189,9 +191,10 @@ async def test_get_service_resources(
     mocked_director_service_labels: Route,
     client: TestClient,
     params: _ServiceResourceParams,
+    service_key: str,
+    service_version: str,
 ) -> None:
-    service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/jupyter-math"
-    service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
+
     mocked_director_service_labels.respond(json={"data": params.simcore_service_label})
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")
     response = client.get(f"{url}")
@@ -208,7 +211,7 @@ async def test_get_service_resources(
         boot_modes=params.expected_boot_modes,
     )
     assert isinstance(expected_service_resources, dict)
-    assert received_resources == expected_service_resources
+    assert received_resources == jsonable_encoder(expected_service_resources)
 
 
 @pytest.fixture
@@ -320,10 +323,10 @@ async def test_get_service_resources_raises_errors(
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_service_labels: Route,
     client: TestClient,
+    service_key: str,
+    service_version: str,
 ) -> None:
 
-    service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/jupyter-math"
-    service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
     url = URL(f"/v0/services/{service_key}/{service_version}/resources")
     # simulate a communication error
     mocked_director_service_labels.side_effect = httpx.HTTPError
