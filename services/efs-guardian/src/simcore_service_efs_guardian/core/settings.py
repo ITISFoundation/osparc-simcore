@@ -9,7 +9,14 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from pydantic import AliasChoices, ByteSize, Field, PositiveInt, field_validator
+from pydantic import (
+    AliasChoices,
+    ByteSize,
+    Field,
+    PositiveInt,
+    TypeAdapter,
+    field_validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.postgres import PostgresSettings
@@ -61,7 +68,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Linux group name that the EFS and Simcore linux users are part of"
     )
     EFS_DEFAULT_USER_SERVICE_SIZE_BYTES: ByteSize = Field(
-        default=parse_obj_as(ByteSize, "500GiB")
+        default=TypeAdapter(ByteSize).validate_python("500GiB")
     )
     EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA: datetime.timedelta = Field(
         default=datetime.timedelta(days=10),
