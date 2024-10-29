@@ -36,6 +36,6 @@ pydantic
 python-magic # file type identification library. See 'magic.from_file(...)' NOTE: requires `libmagic`` installed
 python-socketio
 PyYAML
-u-msgpack-python
+msgpack
 uvicorn
 watchdog
