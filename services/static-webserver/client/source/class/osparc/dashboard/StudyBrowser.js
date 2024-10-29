@@ -1276,6 +1276,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(openButton);
       }
 
+      if (this.getCurrentContext() === "search") {
+        const renameStudyButton = this.__getOpenLocationMenuButton(studyData);
+        menu.add(renameStudyButton);
+      }
+
       if (writeAccess) {
         const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
         menu.add(renameStudyButton);
@@ -1337,6 +1342,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       card.evaluateMenuButtons();
+    },
+
+    __getOpenLocationMenuButton: function(studyData) {
+      const openLocationButton = new qx.ui.menu.Button(this.tr("Open location"), "@FontAwesome5Solid/external-link-alt/12");
+      openLocationButton.addListener("execute", () => {
+        this.__changeContext("studiesAndFolders", studyData["workspaceId"], studyData["folderId"]);
+      }, this);
+      return openLocationButton;
     },
 
     __getRenameStudyMenuButton: function(studyData) {
