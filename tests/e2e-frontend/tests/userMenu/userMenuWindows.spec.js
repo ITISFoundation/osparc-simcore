@@ -51,13 +51,12 @@ test.describe.serial(`User Menu Windows: ${product}`, () => {
     await page.getByTestId("userMenuBtn").click();
 
     // open license in new tab
+    await page.getByTestId("userMenuLicenseBtn").click();
     const newTabPromise = page.waitForEvent("popup");
     const newTab = await newTabPromise;
     await newTab.waitForLoadState();
-    await page.getByTestId("userMenuLicenseBtn").click();
 
-    // make sure the window opens
-    expect(newTab).toBeTruthy();
     // close tab
+    await newTab.close();
   });
 });
