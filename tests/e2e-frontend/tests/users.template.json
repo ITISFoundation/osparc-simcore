@@ -8,5 +8,25 @@
         "email": "email.s4l@domain.com",
         "password": "my-password",
         "role": "USER"
+    }],
+    "s4lacad": [{
+        "email": "email.s4l-acad@domain.com",
+        "password": "my-password",
+        "role": "USER"
+    }],
+    "s4llite": [{
+        "email": "email.s4l-lite@domain.com",
+        "password": "my-password",
+        "role": "USER"
+    }],
+    "tis": [{
+        "email": "email.tip@domain.com",
+        "password": "my-password",
+        "role": "USER"
+    }],
+    "tiplite": [{
+        "email": "email.tip-lite@domain.com",
+        "password": "my-password",
+        "role": "USER"
     }]
 }

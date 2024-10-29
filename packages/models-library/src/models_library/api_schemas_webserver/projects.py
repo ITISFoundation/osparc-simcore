@@ -5,6 +5,7 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 
 """
 
+from datetime import datetime
 from typing import Any, Literal, TypeAlias
 
 from models_library.folders import FolderID
@@ -85,6 +86,7 @@ class ProjectGet(OutputSchema):
     permalink: ProjectPermalink = FieldNotRequired()
     workspace_id: WorkspaceID | None
     folder_id: FolderID | None
+    trashed_at: datetime | None
 
     _empty_description = validator("description", allow_reuse=True, pre=True)(
         none_to_empty_str_pre_validator
@@ -121,18 +123,6 @@ class ProjectReplace(InputSchema):
     )
 
 
-class ProjectUpdate(InputSchema):
-    name: ShortTruncatedStr = FieldNotRequired()
-    description: LongTruncatedStr = FieldNotRequired()
-    thumbnail: HttpUrlWithCustomMinLength = FieldNotRequired()
-    workbench: NodesDict = FieldNotRequired()
-    access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
-    tags: list[int] = FieldNotRequired()
-    classifiers: list[ClassifierID] = FieldNotRequired()
-    ui: StudyUI | None = None
-    quality: dict[str, Any] = FieldNotRequired()
-
-
 class ProjectPatch(InputSchema):
     name: ShortTruncatedStr = FieldNotRequired()
     description: LongTruncatedStr = FieldNotRequired()
@@ -143,6 +133,10 @@ class ProjectPatch(InputSchema):
     ui: StudyUI | None = FieldNotRequired()
     quality: dict[str, Any] = FieldNotRequired()
 
+    _empty_is_none = validator("thumbnail", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )
+
 
 __all__: tuple[str, ...] = (
     "EmptyModel",
@@ -151,6 +145,5 @@ __all__: tuple[str, ...] = (
     "ProjectGet",
     "ProjectListItem",
     "ProjectReplace",
-    "ProjectUpdate",
     "TaskProjectGet",
 )

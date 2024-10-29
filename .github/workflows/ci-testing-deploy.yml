@@ -332,12 +332,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -345,10 +344,10 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/webserver.bash typecheck
       - name: test isolated
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/webserver.bash test_isolated
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -384,12 +383,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -430,12 +428,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -476,12 +473,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/storage/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -489,7 +485,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/storage.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/storage.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -527,12 +523,11 @@ jobs:
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/agent/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -540,7 +535,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/agent.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/agent.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -576,18 +571,27 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/api/tests/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install api
         run: ./ci/github/unit-testing/api.bash install
       - name: test
         run: ./ci/github/unit-testing/api.bash test
+      - uses: codecov/codecov-action@v4.6.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   unit-test-api-server:
     needs: changes
@@ -612,12 +616,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/api-server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -625,10 +628,10 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/api-server.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/api-server.bash test
       - name: OAS backwards compatibility check
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/api-server.bash openapi-diff
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -664,12 +667,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -677,7 +679,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/autoscaling.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/autoscaling.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -713,12 +715,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/catalog/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -726,10 +727,10 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/catalog.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/catalog.bash test
       - name: upload failed tests logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -768,12 +769,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/clusters-keeper/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -789,7 +789,7 @@ jobs:
           pushd services/clusters-keeper && \
           make mypy
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           source .venv/bin/activate && \
           pushd services/clusters-keeper && \
@@ -828,12 +828,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -841,10 +840,10 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/datcore-adapter.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -925,12 +924,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -938,10 +936,10 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/director-v2.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/director-v2.bash test
       - name: upload failed tests logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
@@ -980,12 +978,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/aws-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -993,7 +990,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/aws-library.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/aws-library.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1029,12 +1026,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/dask-task-models-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1042,7 +1038,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/dask-task-models-library.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1078,12 +1074,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/dask-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1091,7 +1086,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/dask-sidecar.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dask-sidecar.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1127,12 +1122,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/osparc-gateway-server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1147,7 +1141,7 @@ jobs:
           pushd services/osparc-gateway-server && \
           make mypy
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           source .venv/bin/activate && \
           pushd services/osparc-gateway-server && \
@@ -1186,12 +1180,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/payments/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1199,7 +1192,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/payments.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/payments.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1235,12 +1228,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/dynamic-scheduler/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1248,7 +1240,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/dynamic-scheduler.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dynamic-scheduler.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1284,12 +1276,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/resource-usage-tracker/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1304,7 +1295,7 @@ jobs:
           pushd services/resource-usage-tracker && \
           make mypy
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           source .venv/bin/activate && \
           pushd services/resource-usage-tracker && \
@@ -1343,12 +1334,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1356,7 +1346,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/dynamic-sidecar.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1392,12 +1382,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/efs-guardian/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1413,7 +1402,7 @@ jobs:
           pushd services/efs-guardian && \
           make mypy
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           source .venv/bin/activate && \
           pushd services/efs-guardian && \
@@ -1428,42 +1417,6 @@ jobs:
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-
-  unit-test-frontend:
-    needs: changes
-    if: ${{ needs.changes.outputs.static-webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] frontend"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        node: [14]
-        os: [ubuntu-22.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - uses: actions/setup-node@v4.0.4
-        with:
-          node-version: ${{ matrix.node }}
-          cache: "npm"
-      - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
-        with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/frontend.bash install
-      - name: test
-        run: ./ci/github/unit-testing/frontend.bash test
 
   unit-test-python-linting:
     needs: changes
@@ -1488,12 +1441,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/ci/helpers/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1524,12 +1476,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/postgres-database/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1537,7 +1488,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/postgres-database.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/postgres-database.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1573,12 +1524,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1586,7 +1536,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/invitations.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/invitations.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1622,12 +1572,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/service-integration/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1635,7 +1584,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/service-integration.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/service-integration.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1671,12 +1620,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/service-library/requirements/ci*.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1684,7 +1632,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/service-library.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/service-library.bash test_all
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1720,12 +1668,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/settings-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1733,7 +1680,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/settings-library.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/settings-library.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1769,12 +1716,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/models-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1821,12 +1767,11 @@ jobs:
           cache: "pip"
           cache-dependency-path: "packages/notifications-library/requirements/ci.txt"
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1834,7 +1779,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/notifications-library.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/notifications-library.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1872,12 +1817,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1885,7 +1829,7 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/simcore-sdk.bash typecheck
       - name: test
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/simcore-sdk.bash test
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -1917,7 +1861,6 @@ jobs:
         unit-test-director,
         unit-test-dynamic-sidecar,
         unit-test-efs-guardian,
-        unit-test-frontend,
         unit-test-models-library,
         unit-test-notifications-library,
         unit-test-osparc-gateway-server,
@@ -1982,12 +1925,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1995,13 +1937,13 @@ jobs:
       - name: test
         run: ./ci/github/integration-testing/webserver.bash test 01
       - name: upload failed tests logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
       - name: cleanup
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/webserver.bash clean_up
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -2046,12 +1988,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2059,13 +2000,13 @@ jobs:
       - name: test
         run: ./ci/github/integration-testing/webserver.bash test 02
       - name: upload failed tests logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
       - name: cleanup
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/webserver.bash clean_up
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -2110,12 +2051,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2123,13 +2063,13 @@ jobs:
       - name: test
         run: ./ci/github/integration-testing/director-v2.bash test 01
       - name: upload failed tests logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
       - name: cleanup
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/director-v2.bash clean_up
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -2178,12 +2118,11 @@ jobs:
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2191,13 +2130,13 @@ jobs:
       - name: test
         run: ./ci/github/integration-testing/director-v2.bash test 02
       - name: upload failed tests logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
       - name: cleanup
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/director-v2.bash clean_up
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -2244,12 +2183,11 @@ jobs:
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2257,13 +2195,13 @@ jobs:
       - name: test
         run: ./ci/github/integration-testing/dynamic-sidecar.bash test 01
       - name: upload failed tests logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/dynamic-sidecar/test_failures
       - name: cleanup
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/dynamic-sidecar.bash clean_up
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -2309,12 +2247,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/osparc-gateway-server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2334,13 +2271,13 @@ jobs:
           pushd services/osparc-gateway-server && \
           make test-system
       - name: upload failed tests logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
       - name: cleanup
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           pushd services/osparc-gateway-server && \
           make down
@@ -2387,12 +2324,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2400,13 +2336,13 @@ jobs:
       - name: test
         run: ./ci/github/integration-testing/simcore-sdk.bash test
       - name: upload failed tests logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./packages/simcore-sdk/test_failures
       - name: cleanup
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
       - uses: codecov/codecov-action@v4.6.0
         env:
@@ -2416,7 +2352,7 @@ jobs:
 
   integration-tests:
     # NOTE: this is a github required status check!
-    if: always()
+    if: ${{ !cancelled() }}
     needs:
       [
         integration-test-director-v2-01,
@@ -2475,12 +2411,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/public-api/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2490,13 +2425,13 @@ jobs:
       - name: test
         run: ./ci/github/system-testing/public-api.bash test
       - name: upload failed tests logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
       - name: cleanup
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/system-testing/public-api.bash clean_up
 
   system-test-swarm-deploy:
@@ -2536,12 +2471,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2556,13 +2490,13 @@ jobs:
           name: ${{ github.job }}_services_settings_schemas
           path: ./services/**/settings-schema.json
       - name: upload failed tests logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
       - name: cleanup
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
@@ -2588,7 +2522,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - uses: actions/setup-node@v4.0.4
+      - uses: actions/setup-node@v4.1.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -2608,12 +2542,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/e2e/requirements/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -2622,28 +2555,28 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash test
       - name: dump docker logs
         id: docker_logs_dump
-        if: failure()
+        if: ${{ !cancelled() }}
         run: ./ci/github/system-testing/e2e.bash dump_docker_logs
       - name: upload docker logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e/test_failures
       - name: upload screenshots
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_screenshots
           path: tests/e2e/screenshots
       - name: upload e2e logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_logs
           path: tests/e2e/logs
       - name: cleanup
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/system-testing/e2e.bash clean_up
 
   system-test-e2e-playwright:
@@ -2672,12 +2605,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
@@ -2699,16 +2631,16 @@ jobs:
           ./ci/github/system-testing/e2e-playwright.bash test
       - name: dump docker logs
         id: docker_logs_dump
-        if: failure()
+        if: ${{ !cancelled() }}
         run: ./ci/github/system-testing/e2e-playwright.bash dump_docker_logs
       - name: upload docker logs
-        if: failure()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e-playwright/test_failures
       - name: upload tracing if failed
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_tracing
@@ -2735,12 +2667,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/environment-setup/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2748,12 +2679,12 @@ jobs:
       - name: test
         run: ./ci/github/system-testing/environment-setup.bash test
       - name: cleanup
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./ci/github/system-testing/environment-setup.bash clean_up
 
   system-tests:
     # NOTE: this is a github required status check!
-    if: always()
+    if: ${{ !cancelled() }}
     needs:
       [
         system-test-e2e,
