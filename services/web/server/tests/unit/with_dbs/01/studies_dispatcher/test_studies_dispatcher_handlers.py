@@ -352,7 +352,7 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
     if redirect_type == "service_and_file":
         query = {
             "file_name": "users.csv",
-            "file_size": ByteSize("100KB"),
+            "file_size": TypeAdapter(ByteSize).validate_python("100KB"),
             "file_type": "CSV",
             "viewer_key": "simcore/services/dynamic/raw-graphs",
             "viewer_version": "2.11.1",
@@ -368,7 +368,7 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
     elif redirect_type == "file_only":
         query = {
             "file_name": "users.csv",
-            "file_size": ByteSize("1MiB"),
+            "file_size": TypeAdapter(ByteSize).validate_python("1MiB"),
             "file_type": "CSV",
             "download_link": URL(
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
