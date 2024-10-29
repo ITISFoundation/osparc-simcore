@@ -31,10 +31,20 @@ test.describe.serial(`User Menu Windows: ${product}`, () => {
   test(`Context items`, async () => {
     const contextTree = page.getByTestId("contextTree");
     await expect(contextTree).toBeVisible();
+
+    const workspacesAndFoldersTreeItems = page.getByTestId("workspacesAndFoldersTreeItem");
+    const count = await workspacesAndFoldersTreeItems.count();
+    // at least two: My Workspace and Shared Workspaces
+    expect(count > 1).toBeTruthy();
   });
 
   test(`Tags`, async () => {
-    const contextTree = page.getByTestId("tagsFilter");
-    await expect(contextTree).toBeVisible();
+    const tagsFilter = page.getByTestId("tagsFilter");
+    await expect(tagsFilter).toBeVisible();
+
+    const tagFilterItems = page.getByTestId("tagFilterItem");
+    const count = await tagFilterItems.count();
+    // at least two and less than 6 (max five are shown)
+    expect(count > 1 && count < 6).toBeTruthy();
   });
 });
