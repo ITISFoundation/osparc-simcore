@@ -131,7 +131,7 @@ class ProjectPatch(InputSchema):
     ui: StudyUI | None = FieldNotRequired()
     quality: dict[str, Any] = FieldNotRequired()
 
-    _empty_is_none = field_validator("thumbnail", allow_reuse=True, pre=True)(
+    _empty_is_none = field_validator("thumbnail", mode="before")(
         empty_str_to_none_pre_validator
     )
 

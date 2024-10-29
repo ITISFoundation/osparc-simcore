@@ -4,7 +4,6 @@ from typing import Any, TypeAlias
 
 from aiopg.sa.result import RowProxy
 from models_library.api_schemas_webserver.projects import ProjectPatch
-from models_library.basic_types import HttpUrlWithCustomMinLength
 from models_library.folders import FolderID
 from models_library.projects import ClassifierID, ProjectID
 from models_library.projects_ui import StudyUI
@@ -14,7 +13,7 @@ from models_library.utils.common_validators import (
     none_to_empty_str_pre_validator,
 )
 from models_library.workspaces import WorkspaceID
-from pydantic import ConfigDict, BaseModel, HttpUrl, field_validator
+from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
 from simcore_postgres_database.models.projects import ProjectType, projects
 
 ProjectDict: TypeAlias = dict[str, Any]
@@ -96,9 +95,7 @@ class ProjectPatchExtended(ProjectPatch):
     # Only used internally
     trashed_at: datetime | None = None
 
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.forbid
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
 
 __all__: tuple[str, ...] = (
