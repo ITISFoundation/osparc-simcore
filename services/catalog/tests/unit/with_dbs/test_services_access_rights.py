@@ -41,10 +41,10 @@ def test_reduce_access_rights():
     # fixture with overrides and with other products
     reduced = reduce_access_rights(
         [
-            sample.copy(deep=True),
-            sample.copy(deep=True),
-            sample.copy(update={"execute_access": False}, deep=True),
-            sample.copy(update={"product_name": "s4l"}, deep=True),
+            sample.model_copy(deep=True),
+            sample.model_copy(deep=True),
+            sample.model_copy(update={"execute_access": False}, deep=True),
+            sample.model_copy(update={"product_name": "s4l"}, deep=True),
         ]
     )
 
@@ -62,8 +62,8 @@ def test_reduce_access_rights():
     # two gids with the different falgs
     reduced = reduce_access_rights(
         [
-            sample.copy(deep=True),
-            sample.copy(
+            sample.model_copy(deep=True),
+            sample.model_copy(
                 update={"gid": 1, "execute_access": True, "write_access": False},
                 deep=True,
             ),

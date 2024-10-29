@@ -390,7 +390,7 @@ async def test_get_and_update_service_meta_data(
     )
     updated = await services_repo.get_service(service_key, service_version)
 
-    assert got.copy(update={"name": "foo"}) == updated
+    assert got.model_copy(update={"name": "foo"}) == updated
 
     assert await services_repo.get_service(service_key, service_version) == updated
 
