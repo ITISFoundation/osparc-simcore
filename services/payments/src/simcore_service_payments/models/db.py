@@ -28,6 +28,8 @@ _EXAMPLE_AFTER_INIT: dict[str, Any] = {
     "invoice_pdf_url": None,
     "initiated_at": "2023-09-27T10:00:00",
     "state": PaymentTransactionState.PENDING,
+    "completed_at": None,
+    "state_message": None,
 }
 
 
@@ -51,11 +53,7 @@ class PaymentsTransactionsDB(BaseModel):
         from_attributes=True,
         json_schema_extra={
             "examples": [
-                {
-                    **_EXAMPLE_AFTER_INIT,
-                    "completed_at": None,
-                    "state_message": None,
-                },
+                _EXAMPLE_AFTER_INIT,
                 # successful completion
                 {
                     **_EXAMPLE_AFTER_INIT,
@@ -78,6 +76,8 @@ _EXAMPLE_AFTER_INIT_PAYMENT_METHOD = {
     "wallet_id": _EXAMPLE_AFTER_INIT["wallet_id"],
     "initiated_at": _EXAMPLE_AFTER_INIT["initiated_at"],
     "state": InitPromptAckFlowState.PENDING,
+    "completed_at": None,
+    "state_message": None,
 }
 
 
@@ -94,11 +94,7 @@ class PaymentsMethodsDB(BaseModel):
         from_attributes=True,
         json_schema_extra={
             "examples": [
-                {
-                    **_EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
-                    "completed_at": None,
-                    "state_message": None,
-                },
+                _EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
                 # successful completion
                 {
                     **_EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
