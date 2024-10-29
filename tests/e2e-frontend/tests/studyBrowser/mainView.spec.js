@@ -72,7 +72,7 @@ for (const product in products) {
           const plusButtonId = expectedElements[product]["plusButton"]["id"];
           const plusButton = page.getByTestId(plusButtonId);
           await expect(plusButton).toBeVisible({
-            timeout: 30000 // it will take some time to make the plus button visible
+            timeout: 30000 // it will take some time to load the Study Browser
           });
         });
       });
