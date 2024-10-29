@@ -54,13 +54,16 @@ qx.Class.define("osparc.ui.basic.LinkLabel", {
 
   members: {
     __applyUrl: function(url) {
-      this.set({
-        url,
-        cursor: "pointer",
-        font: "link-label-12"
-      });
-
-      this.addListener("click", this.__onClick);
+      if (url) {
+        this.set({
+          cursor: "pointer",
+          font: "link-label-12",
+        });
+        this.addListener("click", this.__onClick);
+      } else {
+        this.resetCursor();
+        this.resetFont();
+      }
     },
 
     __onClick: function() {
