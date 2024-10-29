@@ -94,6 +94,7 @@ def cluster_create(faker: Faker) -> ClusterCreate:
         name=faker.name(),
         endpoint=faker.uri(),
         type=random.choice(list(ClusterType)),
+        owner=faker.pyint(),
         authentication=SimpleAuthentication(
             username=faker.user_name(), password=faker.password()
         ),

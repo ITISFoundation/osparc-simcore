@@ -80,7 +80,7 @@ async def list_project_groups_by_user_and_project(
     ] = await projects_groups_db.list_project_groups(app=app, project_id=project_id)
 
     project_groups_api: list[ProjectGroupGet] = [
-        ProjectGroupGet.model_validate(group) for group in project_groups_db
+        ProjectGroupGet.model_validate(group.model_dump()) for group in project_groups_db
     ]
 
     return project_groups_api

@@ -7,6 +7,7 @@ from pydantic import (
     Field,
     HttpUrl,
     NonNegativeFloat,
+    ValidationInfo,
     field_validator,
     model_validator,
 )
@@ -112,7 +113,7 @@ class ClusterDetailsGet(ClusterDetails):
 
 
 class ClusterCreate(BaseCluster):
-    owner: GroupID | None  # type: ignore[assignment]
+    owner: GroupID | None
     authentication: ExternalClusterAuthentication
     access_rights: dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
@@ -154,9 +155,9 @@ class ClusterCreate(BaseCluster):
 
     @field_validator("thumbnail", mode="before")
     @classmethod
-    def set_default_thumbnail_if_empty(cls, v, values):
+    def set_default_thumbnail_if_empty(cls, v, info: ValidationInfo):
         if v is None:
-            cluster_type = values["type"]
+            cluster_type = info.data["type"]
             default_thumbnails = {
                 ClusterTypeInModel.AWS.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/250px-Amazon_Web_Services_Logo.svg.png",
                 ClusterTypeInModel.ON_PREMISE.value: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Crystal_Clear_app_network_local.png/120px-Crystal_Clear_app_network_local.png",
