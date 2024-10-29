@@ -90,22 +90,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     }
   },
 
-  statics: {
-    sortFoldersList: function(foldersList, propKey) {
-      const sortByProperty = prop => {
-        return function(a, b) {
-          const upKey = qx.lang.String.firstUp(prop);
-          const getter = "get" + upKey;
-          if (getter in a && getter in b) {
-            return b[getter]() - a[getter]();
-          }
-          return 0;
-        };
-      };
-      foldersList.sort(sortByProperty(propKey || "lastModified"));
-    }
-  },
-
   members: {
     __dontShowTutorial: null,
     __header: null,
