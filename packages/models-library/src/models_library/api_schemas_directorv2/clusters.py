@@ -96,7 +96,7 @@ class ClusterGet(Cluster):
         alias="accessRights", default_factory=dict
     )
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     @model_validator(mode="before")
     @classmethod
