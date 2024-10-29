@@ -1,4 +1,3 @@
-from dataclasses import asdict, dataclass, field
 from datetime import timedelta
 from enum import auto
 
@@ -10,6 +9,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
+from pydantic import BaseModel, Field
 from servicelib.deferred_tasks import TaskUID
 
 
@@ -35,42 +35,29 @@ class SchedulerServiceState(StrAutoEnum):
     UNKNOWN = auto()
 
 
-@dataclass
-class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
+class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attributes
 
-    dynamic_service_start: DynamicServiceStart | None = field(
-        metadata={
-            "description": (
-                "used to create the service in any given moment if the requested_state is RUNNING"
-                "can be set to None only when stopping the service"
-            )
-        }
+    dynamic_service_start: DynamicServiceStart | None = Field(
+        description=(
+            "used to create the service in any given moment if the requested_state is RUNNING"
+            "can be set to None only when stopping the service"
+        )
     )
 
-    user_id: UserID | None = field(
-        metadata={
-            "description": "required for propagating status changes to the frontend"
-        }
+    user_id: UserID | None = Field(
+        description="required for propagating status changes to the frontend"
     )
-    project_id: ProjectID | None = field(
-        metadata={
-            "description": "required for propagating status changes to the frontend"
-        }
+    project_id: ProjectID | None = Field(
+        description="required for propagating status changes to the frontend"
     )
 
-    requested_state: UserRequestedState = field(
-        metadata={
-            "description": (
-                "status of the service desidered by the user RUNNING or STOPPED"
-            )
-        }
+    requested_state: UserRequestedState = Field(
+        description=("status of the service desidered by the user RUNNING or STOPPED")
     )
 
-    _current_state: SchedulerServiceState = field(
+    _current_state: SchedulerServiceState = Field(
         default=SchedulerServiceState.UNKNOWN,
-        metadata={
-            "description": "to set after parsing the incoming state via the API calls"
-        },
+        description="to set after parsing the incoming state via the API calls",
     )
 
     @property
@@ -85,7 +72,7 @@ class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
         self._current_state = new_value
         self.last_state_change = arrow.utcnow().timestamp()
 
-    last_state_change: float = field(
+    last_state_change: float = Field(
         default_factory=lambda: arrow.utcnow().timestamp(),
         metadata={"description": "keeps track when the current_state was last updated"},
     )
@@ -94,32 +81,28 @@ class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
     ### SERVICE STATUS UPDATE ###
     #############################
 
-    scheduled_to_run: bool = field(
+    scheduled_to_run: bool = Field(
         default=False,
-        metadata={"description": "set when a job will be immediately scheduled"},
+        description="set when a job will be immediately scheduled",
     )
 
-    service_status: str = field(
+    service_status: str = Field(
         default="",
-        metadata={
-            "description": "stored for debug mainly this is used to compute ``current_state``"
-        },
+        description="stored for debug mainly this is used to compute ``current_state``",
     )
-    service_status_task_uid: TaskUID | None = field(
+    service_status_task_uid: TaskUID | None = Field(
         default=None,
-        metadata={"description": "uid of the job currently fetching the status"},
+        description="uid of the job currently fetching the status",
     )
 
-    check_status_after: float = field(
+    check_status_after: float = Field(
         default_factory=lambda: arrow.utcnow().timestamp(),
-        metadata={"description": "used to determine when to poll the status again"},
+        description="used to determine when to poll the status again",
     )
 
-    last_status_notification: float = field(
+    last_status_notification: float = Field(
         default=0,
-        metadata={
-            "description": "used to determine when was the last time the status was notified"
-        },
+        description="used to determine when was the last time the status was notified",
     )
 
     def set_check_status_after_to(self, delay_from_now: timedelta) -> None:
@@ -132,28 +115,10 @@ class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
     ### SERIALIZATION ###
     #####################
 
-    def to_dict(self) -> dict:
-        data = asdict(self)
-        if self.project_id:
-            data["project_id"] = f"{self.project_id}"
-        if self.dynamic_service_start:
-            data["dynamic_service_start"] = self.dynamic_service_start.json()
-        return data
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "TrackedServiceModel":
-        if project_id := data.get("project_id"):
-            data["project_id"] = ProjectID(project_id)
-        if dynamic_service_start := data.get("dynamic_service_start"):
-            data["dynamic_service_start"] = DynamicServiceStart.parse_raw(
-                dynamic_service_start
-            )
-        return cls(**data)
-
     def to_bytes(self) -> bytes:
-        return umsgpack.packb(self.to_dict())
+        return umsgpack.packb(self.dict())
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "TrackedServiceModel":
         unpacked_data = umsgpack.unpackb(data)
-        return cls.from_dict(unpacked_data)
+        return cls(**unpacked_data)
