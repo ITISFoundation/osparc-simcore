@@ -42,8 +42,8 @@ def merge_service_resources_with_user_specs(
     service_resources: ResourcesDict, user_specific_spec: ServiceSpec
 ) -> ResourcesDict:
     if (
-        not user_specific_spec.TaskTemplate
-        or not user_specific_spec.TaskTemplate.Resources
+        not user_specific_spec.task_template
+        or not user_specific_spec.task_template.resources
     ):
         return service_resources
     user_specific_resources = user_specific_spec.model_dump(

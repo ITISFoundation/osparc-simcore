@@ -15,7 +15,7 @@ class GroupsRepository(BaseRepository):
     async def list_user_groups(self, user_id: int) -> list[GroupAtDB]:
         async with self.db_engine.connect() as conn:
             return [
-                GroupAtDB.from_orm(row)
+                GroupAtDB.model_validate(row)
                 async for row in await conn.stream(
                     sa.select(groups)
                     .select_from(

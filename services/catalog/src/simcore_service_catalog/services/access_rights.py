@@ -144,7 +144,6 @@ async def evaluate_auto_upgrade_policy(
 
         service_access_rights = [
             access.model_copy(
-                exclude={"created", "modified"},
                 update={"version": service_metadata.version},
                 deep=True,
             )
