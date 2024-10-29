@@ -249,8 +249,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
 
           const studies = resp["data"];
-          this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
           this.__addStudiesToList(studies);
+          this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
 
           // Show Quick Start if there are no studies in the root folder of the personal workspace
           const quickStartInfo = osparc.product.quickStart.Utils.getQuickStart();
