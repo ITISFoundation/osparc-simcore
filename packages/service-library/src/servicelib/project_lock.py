@@ -3,7 +3,7 @@ import logging
 from asyncio.log import logger
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Final
+from typing import Final, TypeAlias
 
 import redis
 import redis.exceptions
@@ -21,7 +21,7 @@ PROJECT_REDIS_LOCK_KEY: str = "project_lock:{}"
 PROJECT_LOCK_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
 ProjectLock = Lock
 
-ProjectLockError = redis.exceptions.LockError
+ProjectLockError: TypeAlias = redis.exceptions.LockError
 
 
 async def _auto_extend_project_lock(project_lock: Lock) -> None:

@@ -54,6 +54,7 @@ from ._crud_handlers_models import (
     ProjectActiveParams,
     ProjectCreateHeaders,
     ProjectCreateParams,
+    ProjectFilters,
     ProjectListFullSearchWithJsonStrParams,
     ProjectListWithJsonStrParams,
 )
@@ -191,12 +192,18 @@ async def list_projects(request: web.Request):
         ProjectListWithJsonStrParams, request
     )
 
+    if not query_params.filters:
+        query_params.filters = ProjectFilters()
+
+    assert query_params.filters  # nosec
+
     projects, total_number_of_projects = await _crud_api_read.list_projects(
         request,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         project_type=query_params.project_type,
         show_hidden=query_params.show_hidden,
+        trashed=query_params.filters.trashed,
         limit=query_params.limit,
         offset=query_params.offset,
         search=query_params.search,

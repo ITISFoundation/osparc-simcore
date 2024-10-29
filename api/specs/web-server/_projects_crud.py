@@ -83,6 +83,7 @@ async def list_projects(
             example='{"field": "last_change_date", "direction": "desc"}',
         ),
     ] = '{"field": "last_change_date", "direction": "desc"}',
+    filters: Annotated[Json | None, Query()] = None,
 ):
     ...
 

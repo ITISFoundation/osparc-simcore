@@ -332,12 +332,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -384,12 +383,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -430,12 +428,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
@@ -476,12 +473,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/storage/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -527,12 +523,11 @@ jobs:
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/agent/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -576,12 +571,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/api/tests/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install api
@@ -622,12 +616,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/api-server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -674,12 +667,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -723,12 +715,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/catalog/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -778,12 +769,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/clusters-keeper/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -838,12 +828,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -935,12 +924,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -990,12 +978,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/aws-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1039,12 +1026,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/dask-task-models-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1088,12 +1074,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/dask-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1137,12 +1122,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/osparc-gateway-server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1196,12 +1180,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/payments/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1245,12 +1228,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/dynamic-scheduler/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1294,12 +1276,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/resource-usage-tracker/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1353,12 +1334,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1402,12 +1382,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/efs-guardian/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1462,12 +1441,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/ci/helpers/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1498,12 +1476,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/postgres-database/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1547,12 +1524,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1596,12 +1572,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/service-integration/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1645,12 +1620,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/service-library/requirements/ci*.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1694,12 +1668,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/settings-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1743,12 +1716,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/models-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1795,12 +1767,11 @@ jobs:
           cache: "pip"
           cache-dependency-path: "packages/notifications-library/requirements/ci.txt"
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1846,12 +1817,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1955,12 +1925,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2019,12 +1988,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2083,12 +2051,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2151,12 +2118,11 @@ jobs:
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2217,12 +2183,11 @@ jobs:
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2282,12 +2247,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/osparc-gateway-server/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2360,12 +2324,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2448,12 +2411,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/public-api/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2509,12 +2471,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -2581,12 +2542,11 @@ jobs:
       - name: load docker images
         run: make load-images local-src=/${{ runner.temp }}/build
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/e2e/requirements/requirements.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: setup
@@ -2645,12 +2605,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
       - name: expose github runtime for buildx
         uses: crazy-max/ghaction-github-runtime@v3
       - name: download docker images
@@ -2708,12 +2667,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
-      - uses: actions/cache@v4
-        id: cache-uv
+        uses: astral-sh/setup-uv@v3
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-${{ github.job }}-python-${{ matrix.python }}-uv
+          version: "0.4.x"
+          enable-cache: true
+          cache-dependency-glob: "**/environment-setup/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install

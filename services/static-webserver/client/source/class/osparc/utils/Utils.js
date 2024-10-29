@@ -1026,6 +1026,13 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    getIdFromWidget: qWidget => {
+      if (qWidget.getContentElement) {
+        return qWidget.getContentElement().getAttribute("osparc-test-id");
+      }
+      return null;
+    },
+
     setMoreToWidget: (qWidget, id) => {
       if (qWidget.getContentElement) {
         qWidget.getContentElement().setAttribute("osparc-test-more", id);
