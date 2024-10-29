@@ -79,6 +79,9 @@ class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
 
     @current_state.setter
     def current_state(self, new_value: SchedulerServiceState) -> None:
+        if new_value == self._current_state:
+            return  # no action is taken if the value is the same
+
         self._current_state = new_value
         self.last_state_change = arrow.utcnow().timestamp()
 
