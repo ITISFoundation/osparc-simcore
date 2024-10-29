@@ -121,7 +121,7 @@ async def list_services(
         # NOTE: here validation is not necessary since key,version were already validated
         # in terms of time, this takes the most
         return [
-            ServiceGet.construct(
+            ServiceGet.model_construct(
                 key=key,
                 version=version,
                 name="nodetails",
