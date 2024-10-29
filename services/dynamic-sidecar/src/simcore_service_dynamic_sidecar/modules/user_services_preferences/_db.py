@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import umsgpack  # type: ignore[import-untyped]
+import msgpack  # type: ignore[import-untyped]
 from models_library.products import ProductName
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.user_preferences import PreferenceName
@@ -48,7 +48,7 @@ async def save_preferences(
             preference_name=_get_db_preference_name(
                 preference_class.get_preference_name(), service_version
             ),
-            payload=umsgpack.packb(preference.to_db()),
+            payload=msgpack.packb(preference.to_db()),
         )
 
 
@@ -73,5 +73,5 @@ async def load_preferences(
     if payload is None:
         return
 
-    preference = parse_obj_as(preference_class, umsgpack.unpackb(payload))
+    preference = parse_obj_as(preference_class, msgpack.unpackb(payload))
     await dir_from_bytes(preference.value, user_preferences_path)

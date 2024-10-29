@@ -2,7 +2,7 @@ from datetime import timedelta
 from enum import auto
 
 import arrow
-import umsgpack  # type: ignore[import-untyped]
+import msgpack  # type: ignore[import-untyped]
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
 )
@@ -116,9 +116,10 @@ class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attrib
     #####################
 
     def to_bytes(self) -> bytes:
-        return umsgpack.packb(self.dict())
+        result: bytes = msgpack.packb(self.dict())
+        return result
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "TrackedServiceModel":
-        unpacked_data = umsgpack.unpackb(data)
+        unpacked_data = msgpack.unpackb(data)
         return cls(**unpacked_data)
