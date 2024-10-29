@@ -107,7 +107,7 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
 
     __applyStudy: function(study) {
       const label = this.getChildControl("label");
-      osparc.utils.Utils.setMoreToWidget(label, "root");
+      osparc.utils.Utils.setKeyToWidget(label, "root");
 
       study.bind("name", this, "toolTipText");
 
@@ -116,7 +116,7 @@ qx.Class.define("osparc.widget.NodeTreeItem", {
 
     __applyNode: function(node) {
       const label = this.getChildControl("label");
-      osparc.utils.Utils.setMoreToWidget(label, node.getNodeId());
+      osparc.utils.Utils.setKeyToWidget(label, node.getNodeId());
 
       node.bind("label", this, "toolTipText");
 

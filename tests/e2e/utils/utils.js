@@ -231,7 +231,7 @@ async function getNodeTreeItemIDs(page) {
     const children = [];
     const nodeTreeItems = document.querySelectorAll(selector);
     nodeTreeItems.forEach(nodeTreeItem => {
-      const nodeId = nodeTreeItem.getAttribute("osparc-test-more")
+      const nodeId = nodeTreeItem.getAttribute("osparc-test-key")
       if (nodeId !== "root") {
         children.push(nodeId);
       }

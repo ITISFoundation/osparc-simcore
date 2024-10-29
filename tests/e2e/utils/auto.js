@@ -334,7 +334,7 @@ async function openNode(page, pos) {
   }
 
   const nodeId = children[pos];
-  const childId = '[osparc-test-more="' + nodeId + '"]';
+  const childId = '[osparc-test-key="' + nodeId + '"]';
   await utils.waitAndClick(page, childId);
 
   return nodeId;
