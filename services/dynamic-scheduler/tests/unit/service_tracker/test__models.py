@@ -1,4 +1,5 @@
 from datetime import timedelta
+from pathlib import Path
 
 import arrow
 import pytest
@@ -27,7 +28,7 @@ def test_serialization(
         user_id=None,
         project_id=None,
         requested_state=requested_state,
-        current_state=current_state,
+        _current_state=current_state,
         service_status=faker.pystr(),
         check_status_after=check_status_after,
         service_status_task_uid=service_status_task_uid,
@@ -55,3 +56,24 @@ async def test_set_check_status_after_to():
 
     assert model.check_status_after
     assert before < model.check_status_after < after
+
+
+async def test_legacy_format_compatibility(project_slug_dir: Path):
+    legacy_format_path = (
+        project_slug_dir / "tests" / "assets" / "legacy_tracked_service_model.bin"
+    )
+    assert legacy_format_path.exists()
+
+    model_from_disk = TrackedServiceModel.from_bytes(legacy_format_path.read_bytes())
+
+    model = TrackedServiceModel(
+        dynamic_service_start=None,
+        user_id=None,
+        project_id=None,
+        requested_state=UserRequestedState.RUNNING,
+        # assume same dates are coming in
+        check_status_after=model_from_disk.check_status_after,
+        last_state_change=model_from_disk.last_state_change,
+    )
+
+    assert model_from_disk == model

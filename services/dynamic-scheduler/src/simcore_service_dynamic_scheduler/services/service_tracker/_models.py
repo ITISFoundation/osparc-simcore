@@ -1,9 +1,9 @@
-import pickle
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import timedelta
 from enum import auto
 
 import arrow
+import umsgpack  # type: ignore[import-untyped]
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
 )
@@ -66,11 +66,25 @@ class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
         }
     )
 
-    current_state: SchedulerServiceState = field(
+    _current_state: SchedulerServiceState = field(
         default=SchedulerServiceState.UNKNOWN,
         metadata={
             "description": "to set after parsing the incoming state via the API calls"
         },
+    )
+
+    @property
+    def current_state(self) -> SchedulerServiceState:
+        return self._current_state
+
+    @current_state.setter
+    def current_state(self, new_value: SchedulerServiceState) -> None:
+        self._current_state = new_value
+        self.last_state_change = arrow.utcnow().timestamp()
+
+    last_state_change: float = field(
+        default_factory=lambda: arrow.utcnow().timestamp(),
+        metadata={"description": "keeps track when the current_state was last updated"},
     )
 
     #############################
@@ -116,8 +130,9 @@ class TrackedServiceModel:  # pylint:disable=too-many-instance-attributes
     #####################
 
     def to_bytes(self) -> bytes:
-        return pickle.dumps(self)
+        return umsgpack.packb(asdict(self))
 
     @classmethod
     def from_bytes(cls, data: bytes) -> "TrackedServiceModel":
-        return pickle.loads(data)  # type: ignore # noqa: S301
+        unpacked_data = umsgpack.unpackb(data)
+        return cls(**unpacked_data)
