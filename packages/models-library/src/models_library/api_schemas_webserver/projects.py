@@ -84,7 +84,7 @@ class ProjectGet(OutputSchema):
     dev: dict | None
     permalink: ProjectPermalink | None = None
     workspace_id: WorkspaceID | None
-    folder_id: FolderID | None = None
+    folder_id: FolderID | None
     trashed_at: datetime | None
 
     _empty_description = field_validator("description", mode="before")(
