@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from models_library.groups import GroupAtDB
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished, ServiceVersion
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import ServiceAccessRightsAtDB
 from simcore_service_catalog.services.access_rights import (
@@ -114,7 +114,7 @@ async def test_auto_upgrade_policy(
     new_service_metadata = ServiceMetaDataPublished.model_validate(
         ServiceMetaDataPublished.Config.schema_extra["examples"][MOST_UPDATED_EXAMPLE]
     )
-    new_service_metadata.version = parse_obj_as(ServiceVersion, "1.0.11")
+    new_service_metadata.version = TypeAdapter(ServiceVersion).validate_python("1.0.11")
 
     # we have three versions of the service in the database for which the sorting matters: (1.0.11 should inherit from 1.0.10 not 1.0.9)
     await services_db_tables_injector(

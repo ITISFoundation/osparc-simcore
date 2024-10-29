@@ -21,7 +21,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import ByteSize, TypeAdapter, parse_obj_as
+from pydantic import ByteSize, TypeAdapter
 from respx.models import Route
 from simcore_service_catalog.core.settings import _DEFAULT_RESOURCES
 from starlette.testclient import TestClient
@@ -197,11 +197,13 @@ async def test_get_service_resources(
     response = client.get(f"{url}")
     assert response.status_code == 200, f"{response.text}"
     data = response.json()
-    received_resources: ServiceResourcesDict = parse_obj_as(ServiceResourcesDict, data)
+    received_resources: ServiceResourcesDict = ServiceResourcesDict(**data)
     assert isinstance(received_resources, dict)
 
     expected_service_resources = ServiceResourcesDictHelpers.create_from_single_service(
-        parse_obj_as(DockerGenericTag, f"{service_key}:{service_version}"),
+        TypeAdapter(DockerGenericTag).validate_python(
+            f"{service_key}:{service_version}"
+        ),
         params.expected_resources,
         boot_modes=params.expected_boot_modes,
     )
@@ -258,16 +260,17 @@ def create_mock_director_service_labels(
                 },
                 "busybox": {"simcore.service.settings": "[]"},
             },
-            parse_obj_as(
-                ServiceResourcesDict,
+            TypeAdapter(ServiceResourcesDict).validate_python(
                 {
                     "jupyter-math": {
                         "image": "simcore/services/dynamic/jupyter-math:2.0.5",
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": parse_obj_as(ByteSize, "2Gib"),
-                                "reservation": parse_obj_as(ByteSize, "2Gib"),
+                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
+                                "reservation": TypeAdapter(ByteSize).validate_python(
+                                    "2Gib"
+                                ),
                             },
                         },
                     },
@@ -276,8 +279,10 @@ def create_mock_director_service_labels(
                         "resources": {
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
-                                "limit": parse_obj_as(ByteSize, "2Gib"),
-                                "reservation": parse_obj_as(ByteSize, "2Gib"),
+                                "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
+                                "reservation": TypeAdapter(ByteSize).validate_python(
+                                    "2Gib"
+                                ),
                             },
                         },
                     },
@@ -305,7 +310,7 @@ async def test_get_service_resources_sim4life_case(
     response = client.get(f"{url}")
     assert response.status_code == 200, f"{response.text}"
     data = response.json()
-    received_service_resources = parse_obj_as(ServiceResourcesDict, data)
+    received_service_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
 
     assert received_service_resources == expected_service_resources
 

@@ -10,7 +10,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from packaging import version
 from packaging.version import Version
-from pydantic import EmailStr, parse_obj_as
+from pydantic import EmailStr, TypeAdapter
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsAtDB,
@@ -347,7 +347,9 @@ async def test_list_all_services_and_history_with_pagination(
     for service in services_items:
         assert len(service.history) == num_versions_per_service
 
-        assert parse_obj_as(EmailStr, service.owner_email), "resolved own'es email"
+        assert TypeAdapter(EmailStr).validate_python(
+            service.owner_email
+        ), "resolved own'es email"
 
         expected_latest_version = service.history[0].version  # latest service is first
         assert service.version == expected_latest_version

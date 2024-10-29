@@ -18,7 +18,7 @@ from fastapi.encoders import jsonable_encoder
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
-from pydantic import ConfigDict, parse_obj_as
+from pydantic import ConfigDict, TypeAdapter
 from pytest_simcore.helpers.faker_factories import (
     random_service_access_rights,
     random_service_meta_data,
@@ -122,13 +122,13 @@ async def product(
 
 @pytest.fixture
 def target_product(product: dict[str, Any], product_name: ProductName) -> ProductName:
-    assert product_name == parse_obj_as(ProductName, product["name"])
+    assert product_name == TypeAdapter(ProductName).validate_python(product["name"])
     return product_name
 
 
 @pytest.fixture
 def other_product(product: dict[str, Any]) -> ProductName:
-    other = parse_obj_as(ProductName, "osparc")
+    other = TypeAdapter(ProductName).validate_python("osparc")
     assert other != product["name"]
     return other
 
