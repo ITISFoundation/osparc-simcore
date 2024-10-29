@@ -542,8 +542,6 @@ def postgres_db(
 
 @pytest.fixture
 async def aiopg_engine(postgres_db: sa.engine.Engine) -> AsyncIterator[aiopg.sa.Engine]:
-    from aiopg.sa import create_engine
-
     engine = await create_engine(f"{postgres_db.url}")
     assert engine
 
