@@ -254,11 +254,9 @@ async def get_service(
         )
 
     # access is allowed, override some of the values with what is in the db
-    service_in_manifest = service_in_manifest.model_copy(
-        update=service_in_db.model_dump(exclude_unset=True, exclude={"owner"})
-    )
     service_data.update(
         service_in_manifest.model_dump(exclude_unset=True, by_alias=True)
+        | service_in_db.model_dump(exclude_unset=True, exclude={"owner"})
     )
     return service_data
 
