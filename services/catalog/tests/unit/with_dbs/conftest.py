@@ -18,7 +18,7 @@ from fastapi.encoders import jsonable_encoder
 from models_library.products import ProductName
 from models_library.services import ServiceMetaDataPublished
 from models_library.users import UserID
-from pydantic import Extra, parse_obj_as
+from pydantic import ConfigDict, parse_obj_as
 from pytest_simcore.helpers.faker_factories import (
     random_service_access_rights,
     random_service_meta_data,
@@ -454,9 +454,7 @@ def create_director_list_services_from() -> (
     """
 
     class _Loader(ServiceMetaDataPublished):
-        class Config:
-            extra = Extra.ignore
-            allow_population_by_field_name = True
+        model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     def _(
         expected_director_list_services: list[dict[str, Any]],
