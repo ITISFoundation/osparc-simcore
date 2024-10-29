@@ -98,7 +98,7 @@ async def test_auto_upgrade_policy(
         return_value=False,
     )
     # Avoids creating a users + user_to_group table
-    data = GroupAtDB.Config.schema_extra["example"]
+    data = GroupAtDB.model_config["json_schema_extra"]["example"]
     data["gid"] = everyone_gid
     mocker.patch(
         "simcore_service_catalog.services.access_rights.GroupsRepository.get_everyone_group",
@@ -112,7 +112,9 @@ async def test_auto_upgrade_policy(
     # SETUP ---
     MOST_UPDATED_EXAMPLE = -1
     new_service_metadata = ServiceMetaDataPublished.model_validate(
-        ServiceMetaDataPublished.Config.schema_extra["examples"][MOST_UPDATED_EXAMPLE]
+        ServiceMetaDataPublished.model_config["json_schema_extra"]["examples"][
+            MOST_UPDATED_EXAMPLE
+        ]
     )
     new_service_metadata.version = TypeAdapter(ServiceVersion).validate_python("1.0.11")
 
