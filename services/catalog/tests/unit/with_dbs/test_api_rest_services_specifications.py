@@ -1,13 +1,11 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
-# pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
 
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
-from random import choice, randint
 from typing import Any
 
 import pytest
@@ -104,7 +102,7 @@ def create_service_specifications(
                     NanoCPUs=faker.pyint(),
                     MemoryBytes=faker.pyint(),
                     GenericResources=GenericResources(
-                        __root__=[
+                        root=[
                             GenericResource(
                                 NamedResourceSpec=NamedResourceSpec(
                                     Kind=faker.pystr(), Value=faker.pystr()
@@ -128,9 +126,14 @@ async def test_get_service_specifications_returns_403_if_user_does_not_exist(
     rabbitmq_and_rpc_setup_disabled: None,
     client: TestClient,
     user_id: UserID,
+    faker: Faker,
 ):
-    service_key = f"simcore/services/{choice(['comp', 'dynamic'])}/jupyter-math"
-    service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
+    service_key = (
+        f"simcore/services/{faker.random_element(['comp', 'dynamic'])}/jupyter-math"
+    )
+    service_version = (
+        f"{faker.random_int(0,100)}.{faker.random_int(0,100)}.{faker.random_int(0,100)}"
+    )
     url = URL(
         f"/v0/services/{service_key}/{service_version}/specifications"
     ).with_query(user_id=user_id)
@@ -147,10 +150,10 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
     user: dict[str, Any],
     faker: Faker,
 ):
-    service_key = (
-        f"simcore/services/{choice(['comp', 'dynamic'])}/{faker.pystr().lower()}"
+    service_key = f"simcore/services/{faker.random_element(['comp', 'dynamic'])}/{faker.pystr().lower()}"
+    service_version = (
+        f"{faker.random_int(0,100)}.{faker.random_int(0,100)}.{faker.random_int(0,100)}"
     )
-    service_version = f"{randint(0,100)}.{randint(0,100)}.{randint(0,100)}"
     url = URL(
         f"/v0/services/{service_key}/{service_version}/specifications"
     ).with_query(user_id=user_id)
