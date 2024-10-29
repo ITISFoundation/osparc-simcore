@@ -1,5 +1,6 @@
 import datetime
 from decimal import Decimal
+from typing import Any
 
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from models_library.emails import LowerCaseEmailStr
@@ -13,7 +14,7 @@ from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
 
-_EXAMPLE_AFTER_INIT = {
+_EXAMPLE_AFTER_INIT: dict[str, Any] = {
     "payment_id": "12345",
     "price_dollars": 10.99,
     "osparc_credits": 5.0,
@@ -50,10 +51,10 @@ class PaymentsTransactionsDB(BaseModel):
         from_attributes=True,
         json_schema_extra={
             "examples": [
-                _EXAMPLE_AFTER_INIT,  # type:ignore[list-item]
+                _EXAMPLE_AFTER_INIT,
                 # successful completion
                 {
-                    **_EXAMPLE_AFTER_INIT,  # type:ignore[dict-item]
+                    **_EXAMPLE_AFTER_INIT,
                     "invoice_url": "https://my-fake-pdf-link.com",
                     "stripe_invoice_id": "12345",
                     "invoice_pdf_url": "https://my-fake-pdf-link.com",
@@ -89,10 +90,10 @@ class PaymentsMethodsDB(BaseModel):
         from_attributes=True,
         json_schema_extra={
             "examples": [
-                _EXAMPLE_AFTER_INIT_PAYMENT_METHOD,  # type:ignore[list-item]
+                _EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
                 # successful completion
                 {
-                    **_EXAMPLE_AFTER_INIT_PAYMENT_METHOD,  # type:ignore[dict-item]
+                    **_EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
                     "completed_at": "2023-09-27T10:00:15",
                     "state": "SUCCESS",
                     "state_message": "Payment method completed successfully",
