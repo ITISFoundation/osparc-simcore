@@ -66,7 +66,7 @@ class GroupsRepository(BaseRepository):
             email = await conn.scalar(
                 sa.select(users.c.email).where(users.c.primary_gid == gid)
             )
-            return cast(LowerCaseEmailStr, f"{email}") if email else None
+            return email or None
 
     async def list_user_emails_from_gids(
         self, gids: set[PositiveInt]

@@ -8,7 +8,7 @@ from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt
+from pydantic import HttpUrl, NonNegativeInt
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
@@ -40,7 +40,7 @@ def _db_to_api_model(
         key=service_db.key,
         version=service_db.version,
         name=service_db.name,
-        thumbnail=service_db.thumbnail if service_db.thumbnail else None,
+        thumbnail=HttpUrl(service_db.thumbnail) if service_db.thumbnail else None,
         description=service_db.description,
         description_ui=service_db.description_ui,
         version_display=service_db.version_display,
