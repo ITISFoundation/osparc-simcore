@@ -46,7 +46,7 @@ def merge_service_resources_with_user_specs(
         or not user_specific_spec.TaskTemplate.Resources
     ):
         return service_resources
-    user_specific_resources = user_specific_spec.dict(
+    user_specific_resources = user_specific_spec.model_dump(
         include={"TaskTemplate": {"Resources"}}
     )["TaskTemplate"]["Resources"]
 

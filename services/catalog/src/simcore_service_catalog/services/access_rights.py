@@ -170,7 +170,7 @@ def reduce_access_rights(
 
     def _get_flags(access: ServiceAccessRightsAtDB) -> dict[str, bool]:
         """Extracts only"""
-        flags = access.dict(include={"execute_access", "write_access"})
+        flags = access.model_dump(include={"execute_access", "write_access"})
         return cast(dict[str, bool], flags)
 
     access_flags_map: dict[tuple[str | int, ...], dict[str, bool]] = {}

@@ -50,11 +50,11 @@ def test_reduce_access_rights():
 
     # two products with the same flags
     assert len(reduced) == 2
-    assert reduced[0].dict(include={"execute_access", "write_access"}) == {
+    assert reduced[0].model_dump(include={"execute_access", "write_access"}) == {
         "execute_access": True,
         "write_access": True,
     }
-    assert reduced[1].dict(include={"execute_access", "write_access"}) == {
+    assert reduced[1].model_dump(include={"execute_access", "write_access"}) == {
         "execute_access": True,
         "write_access": True,
     }
@@ -71,11 +71,11 @@ def test_reduce_access_rights():
     )
 
     assert len(reduced) == 2
-    assert reduced[0].dict(include={"execute_access", "write_access"}) == {
+    assert reduced[0].model_dump(include={"execute_access", "write_access"}) == {
         "execute_access": True,
         "write_access": True,
     }
-    assert reduced[1].dict(include={"execute_access", "write_access"}) == {
+    assert reduced[1].model_dump(include={"execute_access", "write_access"}) == {
         "execute_access": True,
         "write_access": False,
     }
@@ -169,7 +169,7 @@ async def test_auto_upgrade_policy(
     assert owner_gid == user_gid
     assert len(service_access_rights) == 1
     assert {a.gid for a in service_access_rights} == {owner_gid}
-    assert service_access_rights[0].dict() == {
+    assert service_access_rights[0].model_dump() == {
         "key": new_service_metadata.key,
         "version": new_service_metadata.version,
         "gid": user_gid,

@@ -61,7 +61,7 @@ def _compute_service_available_boot_modes(
         if not isinstance(entry.value, dict):
             _logger.warning(
                 "resource %s for %s got invalid type",
-                f"{entry.dict()!r}",
+                f"{entry.model_dump()!r}",
                 f"{service_key}:{service_version}",
             )
             continue
@@ -99,7 +99,7 @@ def _resources_from_settings(
         if not isinstance(entry.value, dict):
             _logger.warning(
                 "resource %s for %s got invalid type",
-                f"{entry.dict()!r}",
+                f"{entry.model_dump()!r}",
                 f"{service_key}:{service_version}",
             )
             continue

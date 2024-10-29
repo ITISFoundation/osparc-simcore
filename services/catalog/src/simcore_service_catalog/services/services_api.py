@@ -242,7 +242,7 @@ async def update_service(
         ServiceMetaDataAtDB(
             key=service_key,
             version=service_version,
-            **update.dict(exclude_unset=True),
+            **update.model_dump(exclude_unset=True),
         )
     )
 

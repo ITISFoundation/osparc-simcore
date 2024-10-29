@@ -43,7 +43,7 @@ def _compose_service_details(
     # compose service from registry and DB
     service = service_in_registry
     service.update(
-        service_in_db.dict(exclude_unset=True, exclude={"owner"}),
+        service_in_db.model_dump(exclude_unset=True, exclude={"owner"}),
         access_rights={rights.gid: rights for rights in service_access_rights_in_db},
         owner=service_owner if service_owner else None,
     )
@@ -255,9 +255,11 @@ async def get_service(
 
     # access is allowed, override some of the values with what is in the db
     service_in_manifest = service_in_manifest.model_copy(
-        update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
+        update=service_in_db.model_dump(exclude_unset=True, exclude={"owner"})
     )
-    service_data.update(service_in_manifest.dict(exclude_unset=True, by_alias=True))
+    service_data.update(
+        service_in_manifest.model_dump(exclude_unset=True, by_alias=True)
+    )
     return service_data
 
 
@@ -322,7 +324,7 @@ async def update_service(
         ServiceMetaDataAtDB(
             key=service_key,
             version=service_version,
-            **updated_service.dict(exclude_unset=True),
+            **updated_service.model_dump(exclude_unset=True),
         )
     )
     # let's modify the service access rights (they can be added/removed/modified)

@@ -62,7 +62,7 @@ def _merge_specs(
     merged_spec = {}
     for spec in itertools.chain([everyone_spec], team_specs.values(), [user_spec]):
         if spec is not None:
-            merged_spec.update(spec.dict(include={"sidecar", "service"}))
+            merged_spec.update(spec.model_dump(include={"sidecar", "service"}))
     return merged_spec
 
 
@@ -229,7 +229,7 @@ class ServicesRepository(BaseRepository):
             result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 services_meta_data.insert()
-                .values(**new_service.dict(by_alias=True))
+                .values(**new_service.model_dump(by_alias=True))
                 .returning(literal_column("*"))
             )
             row = result.first()
@@ -252,7 +252,7 @@ class ServicesRepository(BaseRepository):
                 & (services_meta_data.c.version == patched_service.version)
             )
             .values(
-                **patched_service.dict(
+                **patched_service.model_dump(
                     by_alias=True,
                     exclude_unset=True,
                     exclude={"key", "version"},
@@ -504,7 +504,7 @@ class ServicesRepository(BaseRepository):
         # update the services_access_rights table (some might be added/removed/modified)
         for rights in new_access_rights:
             insert_stmt = pg_insert(services_access_rights).values(
-                **rights.dict(by_alias=True)
+                **rights.model_dump(by_alias=True)
             )
             on_update_stmt = insert_stmt.on_conflict_do_update(
                 index_elements=[
@@ -513,7 +513,7 @@ class ServicesRepository(BaseRepository):
                     services_access_rights.c.gid,
                     services_access_rights.c.product_name,
                 ],
-                set_=rights.dict(
+                set_=rights.model_dump(
                     by_alias=True,
                     exclude_unset=True,
                     exclude={"key", "version", "gid", "product_name"},

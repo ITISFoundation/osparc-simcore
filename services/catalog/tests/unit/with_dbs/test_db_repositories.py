@@ -118,7 +118,9 @@ async def test_create_services(
         service, service_access_rights
     )
 
-    assert new_service.dict(include=set(fake_service.keys())) == service.dict()
+    assert (
+        new_service.model_dump(include=set(fake_service.keys())) == service.model_dump()
+    )
 
 
 async def test_read_services(
@@ -177,7 +179,7 @@ async def test_read_services(
     assert service
 
     access_rights = await services_repo.get_service_access_rights(
-        product_name=target_product, **service.dict(include={"key", "version"})
+        product_name=target_product, **service.model_dump(include={"key", "version"})
     )
     assert {
         user_gid,
@@ -190,7 +192,7 @@ async def test_read_services(
     assert service
 
     access_rights = await services_repo.get_service_access_rights(
-        product_name=target_product, **service.dict(include={"key", "version"})
+        product_name=target_product, **service.model_dump(include={"key", "version"})
     )
     assert {user_gid, team_gid} == {a.gid for a in access_rights}
 

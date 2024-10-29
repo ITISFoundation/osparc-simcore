@@ -219,7 +219,7 @@ async def test_get_service_specifications(
     service_specs = ServiceSpecificationsGet.model_validate(response.json())
     assert service_specs
     assert service_specs == ServiceSpecifications.model_validate(
-        everyone_service_specs.dict()
+        everyone_service_specs.model_dump()
     )
 
     # let's inject some rights in a standard group, user is not part of that group yet, so it should still return only everyone
@@ -232,7 +232,7 @@ async def test_get_service_specifications(
     service_specs = ServiceSpecificationsGet.model_validate(response.json())
     assert service_specs
     assert service_specs == ServiceSpecifications.model_validate(
-        everyone_service_specs.dict()
+        everyone_service_specs.model_dump()
     )
 
     # put the user in that group now and try again
@@ -243,7 +243,7 @@ async def test_get_service_specifications(
     service_specs = ServiceSpecificationsGet.model_validate(response.json())
     assert service_specs
     assert service_specs == ServiceSpecifications.model_validate(
-        standard_group_service_specs.dict()
+        standard_group_service_specs.model_dump()
     )
 
     # now add some other spec in the primary gid, this takes precedence
@@ -256,7 +256,7 @@ async def test_get_service_specifications(
     service_specs = ServiceSpecificationsGet.model_validate(response.json())
     assert service_specs
     assert service_specs == ServiceSpecifications.model_validate(
-        user_group_service_specs.dict()
+        user_group_service_specs.model_dump()
     )
 
 
@@ -347,7 +347,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         service_specs = ServiceSpecificationsGet.model_validate(response.json())
         assert service_specs
         assert service_specs == ServiceSpecifications.model_validate(
-            version_speced[0].dict()
+            version_speced[0].model_dump()
         ), f"specifications for {version=} are not passed down from {sorted_versions[INDEX_FIRST_SERVICE_VERSION_WITH_SPEC]}"
 
     # check version from second to last use the second version
@@ -360,7 +360,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         service_specs = ServiceSpecificationsGet.model_validate(response.json())
         assert service_specs
         assert service_specs == ServiceSpecifications.model_validate(
-            version_speced[1].dict()
+            version_speced[1].model_dump()
         ), f"specifications for {version=} are not passed down from {sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC]}"
 
     # if we call with the strict parameter set to true, then we should only get the specs for the one that were specified
