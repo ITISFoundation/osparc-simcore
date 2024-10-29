@@ -9,9 +9,8 @@ install() {
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  bash ci/helpers/ensure_python_pip.bash
   bash ci/helpers/install_pylint.bash
-  pip freeze
+  uv pip freeze
 }
 
 test() {
