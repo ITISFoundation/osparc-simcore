@@ -76,6 +76,7 @@ async-timeout==4.0.3
     # via
     #   aiopg
     #   asyncpg
+    #   redis
 asyncpg==0.29.0
     # via sqlalchemy
 attrs==23.2.0

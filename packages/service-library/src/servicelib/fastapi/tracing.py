@@ -26,6 +26,7 @@ try:
     HAS_ASYNCPG = True
 except ImportError:
     HAS_ASYNCPG = False
+
 try:
     from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
 
