@@ -1,16 +1,14 @@
 from typing import TypeAlias
 
-from common_library.pydantic_networks_extension import AnyUrlLegacy
 from models_library import projects, projects_nodes_io
 from models_library.utils import pydantic_tools_extension
-from pydantic import BaseModel, Field
+from pydantic import AnyUrl, BaseModel, Field
 
 from .. import api_resources
 from . import solvers
 
 StudyID: TypeAlias = projects.ProjectID
 NodeName: TypeAlias = str
-DownloadLink: TypeAlias = AnyUrlLegacy
 
 
 class Study(BaseModel):
@@ -34,7 +32,7 @@ class StudyPort(solvers.SolverPort):
 
 class LogLink(BaseModel):
     node_name: NodeName
-    download_link: DownloadLink
+    download_link: AnyUrl
 
 
 class JobLogsMap(BaseModel):
