@@ -22,6 +22,7 @@ from ._core_computations import (
     list_clusters,
     ping_cluster,
     ping_specific_cluster,
+    stop_pipeline,
     update_cluster,
 )
 from ._core_dynamic_services import (
@@ -65,6 +66,7 @@ __all__: tuple[str, ...] = (
     "restart_dynamic_service",
     "retrieve",
     "set_project_run_policy",
+    "stop_pipeline",
     "update_cluster",
     "update_dynamic_service_networks_in_project",
 )

@@ -1,7 +1,9 @@
 import functools
 import inspect
+from typing import cast
 
 from aiohttp import web
+from models_library.users import UserID
 from servicelib.aiohttp.typing_extension import HandlerAnyReturn
 from servicelib.request_keys import RQT_USERID_KEY
 
@@ -69,3 +71,7 @@ def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
         return await handler(request)
 
     return _wrapper
+
+
+def get_user_id(request: web.Request) -> UserID:
+    return cast(UserID, request[RQT_USERID_KEY])
