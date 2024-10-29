@@ -288,7 +288,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__listenToNoMoreCreditsEvents();
       this.__listenToEvent();
       this.__listenToServiceStatus();
-      this.__listenToStateInputPorts();
+      this.__listenToStatePorts();
     },
 
     __listenToLogger: function() {
@@ -436,7 +436,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __listenToStateInputPorts: function() {
+    __listenToStatePorts: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
       if (!socket.slotExists("stateInputPorts")) {
         socket.on("stateInputPorts", data => {

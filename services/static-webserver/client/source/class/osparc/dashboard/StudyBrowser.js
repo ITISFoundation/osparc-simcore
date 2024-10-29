@@ -476,7 +476,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _moveFolderToRequested: function(folderId) {
       const currentWorkspaceId = this.getCurrentWorkspaceId();
-      const currentFolderId = this.getCurrentWorkspaceId();
+      const currentFolderId = this.getCurrentFolderId();
       const moveFolderTo = new osparc.dashboard.MoveResourceTo(currentWorkspaceId, currentFolderId);
       const title = this.tr("Move to...");
       const win = osparc.ui.window.Window.popUpInWindow(moveFolderTo, title, 400, 400);
@@ -486,7 +486,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const destWorkspaceId = data["workspaceId"];
         const destFolderId = data["folderId"];
         if (destWorkspaceId !== currentWorkspaceId) {
-          const msg = this.tr("Coming soon");
+          const msg = this.tr("Moving folders to Shared Workspaces are coming soon");
           osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
           return;
         }
@@ -509,6 +509,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }, this);
         }
       });
+      moveFolderTo.addListener("cancel", () => win.close());
     },
 
     __moveFolderToWorkspace: function(folderId, destWorkspaceId) {
@@ -1481,7 +1482,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       moveToButton["moveToButton"] = true;
       moveToButton.addListener("tap", () => {
         const currentWorkspaceId = this.getCurrentWorkspaceId();
-        const currentFolderId = this.getCurrentWorkspaceId();
+        const currentFolderId = this.getCurrentFolderId();
         const moveStudyTo = new osparc.dashboard.MoveResourceTo(currentWorkspaceId, currentFolderId);
         const title = this.tr("Move to...");
         const win = osparc.ui.window.Window.popUpInWindow(moveStudyTo, title, 400, 400);
