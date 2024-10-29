@@ -20,7 +20,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.docker_compose import replace_env_vars_in_compose_spec
-from pydantic import parse_obj_as, parse_raw_as
+from pydantic import TypeAdapter
 
 from ..._constants import RESPONSE_MODEL_POLICY, SIMCORE_SERVICE_SETTINGS_LABELS
 from ...db.repositories.services import ServicesRepository
@@ -156,8 +156,7 @@ async def _get_service_labels(
 def _get_service_settings(
     labels: dict[str, Any]
 ) -> list[SimcoreServiceSettingLabelEntry]:
-    service_settings = parse_raw_as(
-        list[SimcoreServiceSettingLabelEntry],
+    service_settings = TypeAdapter(list[SimcoreServiceSettingLabelEntry]).validate_json(
         labels.get(SIMCORE_SERVICE_SETTINGS_LABELS, "[]"),
     )
     _logger.debug("received %s", f"{service_settings=}")
@@ -181,7 +180,9 @@ async def get_service_resources(
     ],
     user_groups: Annotated[list[GroupAtDB], Depends(list_user_groups)],
 ) -> ServiceResourcesDict:
-    image_version = parse_obj_as(DockerGenericTag, f"{service_key}:{service_version}")
+    image_version = TypeAdapter(DockerGenericTag).validate_python(
+        f"{service_key}:{service_version}"
+    )
     if is_function_service(service_key):
         return ServiceResourcesDictHelpers.create_from_single_service(
             image_version, default_service_resources
@@ -196,10 +197,9 @@ async def get_service_resources(
             image_version, default_service_resources
         )
 
-    service_spec: ComposeSpecLabelDict | None = parse_raw_as(
-        ComposeSpecLabelDict | None,  # type: ignore[arg-type]
-        service_labels.get(SIMCORE_SERVICE_COMPOSE_SPEC_LABEL, "null"),
-    )
+    service_spec: ComposeSpecLabelDict | None = TypeAdapter(
+        ComposeSpecLabelDict | None
+    ).validate_json(service_labels.get(SIMCORE_SERVICE_COMPOSE_SPEC_LABEL, "null"))
     _logger.debug("received %s", f"{service_spec=}")
 
     if service_spec is None:
@@ -235,7 +235,9 @@ async def get_service_resources(
     )
     full_service_spec: ComposeSpecLabelDict = yaml.safe_load(stringified_service_spec)
 
-    service_to_resources: ServiceResourcesDict = parse_obj_as(ServiceResourcesDict, {})
+    service_to_resources: ServiceResourcesDict = TypeAdapter(
+        ServiceResourcesDict
+    ).validate_python({})
 
     for spec_key, spec_data in full_service_spec["services"].items():
         # image can be:
