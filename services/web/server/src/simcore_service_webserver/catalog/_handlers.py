@@ -26,7 +26,7 @@ from models_library.services_resources import (
     ServiceResourcesDict,
     ServiceResourcesDictHelpers,
 )
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -388,5 +388,5 @@ async def get_service_pricing_plan(request: Request):
         )
 
     return envelope_json_response(
-        TypeAdapter(PricingPlanGet).validate_python(pricing_plan)
+        PricingPlanGet.model_validate(pricing_plan.model_dump())
     )
