@@ -103,7 +103,7 @@ async def complete_payment_transaction(
             payment_id=payment_id,
             completion_state=completion_state,
             state_message=state_message,
-            **optional_kwargs,
+            **optional_kwargs,  # type: ignore[arg-type]
         )
 
         if isinstance(row, PaymentNotFound):

@@ -274,7 +274,7 @@ class Product(BaseModel):
         for name, field in self.model_fields.items():
             if (
                 field.json_schema_extra
-                and field.json_schema_extra.get("x_template_name") == template_name
+                and field.json_schema_extra.get("x_template_name") == template_name  # type: ignore[union-attr]
             ):
                 template_name_attribute: str = getattr(self, name)
                 return template_name_attribute
