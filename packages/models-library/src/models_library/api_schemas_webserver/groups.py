@@ -144,12 +144,14 @@ class AllUsersGroups(BaseModel):
 
 
 class GroupUserGet(BaseModel):
-    id: str | None = Field(None, description="the user id")
+    id: str | None = Field(None, description="the user id", coerce_numbers_to_str=True)
     login: LowerCaseEmailStr | None = Field(None, description="the user login email")
     first_name: str | None = Field(None, description="the user first name")
     last_name: str | None = Field(None, description="the user last name")
     gravatar_id: str | None = Field(None, description="the user gravatar id hash")
-    gid: str | None = Field(None, description="the user primary gid")
+    gid: str | None = Field(
+        None, description="the user primary gid", coerce_numbers_to_str=True
+    )
     access_rights: GroupAccessRights = Field(..., alias="accessRights")
 
     model_config = ConfigDict(
