@@ -9,6 +9,7 @@ from . import solvers
 
 StudyID: TypeAlias = projects.ProjectID
 NodeName: TypeAlias = str
+DownloadLink: TypeAlias = AnyUrl
 
 
 class Study(BaseModel):
@@ -32,7 +33,7 @@ class StudyPort(solvers.SolverPort):
 
 class LogLink(BaseModel):
     node_name: NodeName
-    download_link: AnyUrl
+    download_link: DownloadLink
 
 
 class JobLogsMap(BaseModel):
