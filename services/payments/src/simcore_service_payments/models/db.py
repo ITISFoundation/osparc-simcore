@@ -51,7 +51,11 @@ class PaymentsTransactionsDB(BaseModel):
         from_attributes=True,
         json_schema_extra={
             "examples": [
-                {**_EXAMPLE_AFTER_INIT, "completed_at": None, "state_message": None},
+                {
+                    **_EXAMPLE_AFTER_INIT,
+                    "completed_at": None,
+                    "state_message": None,
+                },
                 # successful completion
                 {
                     **_EXAMPLE_AFTER_INIT,
