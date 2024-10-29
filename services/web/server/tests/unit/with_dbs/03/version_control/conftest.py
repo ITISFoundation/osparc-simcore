@@ -32,6 +32,7 @@ from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.db.plugin import APP_AIOPG_ENGINE_KEY
 from simcore_service_webserver.log import setup_logging
+from simcore_service_webserver.projects.db import ProjectDBAPI
 from simcore_service_webserver.projects.models import ProjectDict
 from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
@@ -231,9 +232,15 @@ def request_update_project(
         )
         assert response.status == status.HTTP_201_CREATED
         project["workbench"] = {node_id: jsonable_encoder(node)}
-        resp = await client.put(f"{VX}/projects/{project_uuid}", json=project)
-        body = await resp.json()
-        assert resp.status == 200, str(body)
+
+        db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(client.app)
+        project.pop("state")
+        await db.replace_project(
+            project,
+            logged_user["id"],
+            project_uuid=project["uuid"],
+            product_name="osparc",
+        )
 
     return _go
 

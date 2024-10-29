@@ -186,6 +186,11 @@ class Project(BaseProjectModel):
         alias="folderId",
     )
 
+    trashed_at: datetime | None = Field(
+        default=None,
+        alias="trashedAt",
+    )
+
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"
         title = "osparc-simcore project"

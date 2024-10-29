@@ -13,6 +13,7 @@ flag_management:
       threshold: 1%
     - type: patch
       target: auto
+      threshold: 1%
 
 
 component_management:
@@ -31,7 +32,7 @@ component_management:
         - packages/aws-library/**
     - component_id: pkg_dask_task_models_library
       paths:
-        - packages/dask-task-library/**
+        - packages/dask-task-models-library/**
     - component_id: pkg_models_library
       paths:
         - packages/models-library/**
@@ -92,9 +93,6 @@ component_management:
     - component_id: invitations
       paths:
         - services/invitations/**
-    - component_id: migration
-      paths:
-        - services/migration/**
     - component_id: osparc_gateway_server
       paths:
         - services/osparc-gateway-server/**
@@ -119,10 +117,12 @@ coverage:
     project:
       default:
         informational: true
+        threshold: 1%
 
     patch:
       default:
         informational: true
+        threshold: 1%
 
 comment:
   layout: "header,diff,flags,components,footer"
