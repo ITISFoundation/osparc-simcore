@@ -90,7 +90,11 @@ class PaymentsMethodsDB(BaseModel):
         from_attributes=True,
         json_schema_extra={
             "examples": [
-                _EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
+                {
+                    **_EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
+                    "completed_at": None,
+                    "state_message": None,
+                },
                 # successful completion
                 {
                     **_EXAMPLE_AFTER_INIT_PAYMENT_METHOD,
