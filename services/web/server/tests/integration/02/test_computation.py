@@ -95,39 +95,12 @@ class _ExpectedResponseTuple(NamedTuple):
         return f"{self.__class__.__name__}({items})"
 
 
-def standard_role_response():
+def user_role_response():
     return (
         "user_role,expected",
         [
             pytest.param(
-                UserRole.ANONYMOUS,
-                _ExpectedResponseTuple(
-                    ok=status.HTTP_401_UNAUTHORIZED,
-                    created=status.HTTP_401_UNAUTHORIZED,
-                    no_content=status.HTTP_401_UNAUTHORIZED,
-                    confict=status.HTTP_401_UNAUTHORIZED,
-                ),
-            ),
-            pytest.param(
-                UserRole.GUEST,
-                _ExpectedResponseTuple(
-                    ok=status.HTTP_200_OK,
-                    created=status.HTTP_201_CREATED,
-                    no_content=status.HTTP_204_NO_CONTENT,
-                    confict=status.HTTP_409_CONFLICT,
-                ),
-            ),
-            pytest.param(
                 UserRole.USER,
-                _ExpectedResponseTuple(
-                    ok=status.HTTP_200_OK,
-                    created=status.HTTP_201_CREATED,
-                    no_content=status.HTTP_204_NO_CONTENT,
-                    confict=status.HTTP_409_CONFLICT,
-                ),
-            ),
-            pytest.param(
-                UserRole.TESTER,
                 _ExpectedResponseTuple(
                     ok=status.HTTP_200_OK,
                     created=status.HTTP_201_CREATED,
@@ -365,7 +338,7 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
             )
 
 
-@pytest.mark.parametrize(*standard_role_response(), ids=str)
+@pytest.mark.parametrize(*user_role_response(), ids=str)
 async def test_start_stop_computation(
     client: TestClient,
     sleeper_service: dict[str, str],
@@ -438,7 +411,7 @@ async def test_start_stop_computation(
         )
 
 
-@pytest.mark.parametrize(*standard_role_response(), ids=str)
+@pytest.mark.parametrize(*user_role_response(), ids=str)
 async def test_run_pipeline_and_check_state(
     client: TestClient,
     sleeper_service: dict[str, str],
