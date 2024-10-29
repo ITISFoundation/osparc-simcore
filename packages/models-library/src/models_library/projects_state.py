@@ -5,7 +5,7 @@
 from enum import Enum, unique
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, root_validator, validator
 
 from .projects_access import Owner
 
@@ -52,14 +52,15 @@ class ProjectStatus(str, Enum):
     EXPORTING = "EXPORTING"
     OPENING = "OPENING"
     OPENED = "OPENED"
+    MAINTAINING = "MAINTAINING"
 
 
 class ProjectLocked(BaseModel):
     value: bool = Field(..., description="True if the project is locked")
+    status: ProjectStatus = Field(..., description="The status of the project")
     owner: Owner | None = Field(
         default=None, description="If locked, the user that owns the lock"
     )
-    status: ProjectStatus = Field(..., description="The status of the project")
 
     class Config:
         extra = Extra.forbid
@@ -79,14 +80,6 @@ class ProjectLocked(BaseModel):
             ]
         }
 
-    @validator("owner", pre=True, always=True)
-    @classmethod
-    def check_not_null(cls, v, values):
-        if values["value"] is True and v is None:
-            msg = "value cannot be None when project is locked"
-            raise ValueError(msg)
-        return v
-
     @validator("status", always=True)
     @classmethod
     def check_status_compatible(cls, v, values):
@@ -97,6 +90,23 @@ class ProjectLocked(BaseModel):
             msg = f"status is set to {v} and lock is set to {values['value']}!"
             raise ValueError(msg)
         return v
+
+    @root_validator(pre=True)
+    @classmethod
+    def check_owner_compatible(cls, values):
+        if (
+            values["value"] is True
+            and values.get("owner") is None
+            and values["status"]
+            in [
+                status.value
+                for status in ProjectStatus
+                if status != ProjectStatus.MAINTAINING
+            ]
+        ):
+            msg = "Owner must be specified when the project is not in the 'MAINTAINING' status."
+            raise ValueError(msg)
+        return values
 
 
 class ProjectRunningState(BaseModel):

@@ -287,9 +287,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         level: int = getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
         return level
 
-    @validator("WEBSERVER_LOGLEVEL")
+    @validator("WEBSERVER_LOGLEVEL", pre=True)
     @classmethod
-    def valid_log_level(cls, value):
+    def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
 
     @validator("SC_HEALTHCHECK_TIMEOUT", pre=True)
@@ -387,7 +387,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SIMCORE_VCS_RELEASE_TAG": True,
                 "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
-                "WEBSERVER_PROJECTS": {"PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES"},
+                "WEBSERVER_PROJECTS": {
+                    "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES",
+                    "PROJECTS_TRASH_RETENTION_DAYS",
+                },
                 "WEBSERVER_LOGIN": {
                     "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
                     "LOGIN_2FA_REQUIRED",

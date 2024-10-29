@@ -41,13 +41,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     this._add(foldersContainer);
     foldersContainer.setVisibility(osparc.utils.DisabledPlugins.isFoldersEnabled() ? "visible" : "excluded");
 
-    const nonGroupedContainer = this.__nonGroupedContainer = new osparc.dashboard.ToggleButtonContainer();
-    [
-      "changeSelection",
-      "changeVisibility"
-    ].forEach(signalName => {
-      nonGroupedContainer.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
-    });
+    const nonGroupedContainer = this.__nonGroupedContainer = this.__createFlatList();
     this._add(nonGroupedContainer);
 
     const groupedContainers = this.__groupedContainers = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
@@ -59,8 +53,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       check: ["grid", "list"],
       init: "grid",
       nullable: false,
-      event: "changeMode",
-      apply: "__reloadCards"
+      event: "changeMode"
     },
 
     groupBy: {
@@ -277,10 +270,6 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this._removeAll();
     },
 
-    __reloadCards: function(mode) {
-      this.reloadCards();
-    },
-
     __addFoldersContainer: function() {
       // add foldersContainer dynamically
       [
@@ -301,7 +290,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       });
     },
 
-    reloadCards: function(resourceType) {
+    __rebuildLayout: function(resourceType) {
       this.__cleanAll();
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
         this.__addFoldersContainer();
@@ -311,23 +300,36 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         this.__groupedContainers.add(noGroupContainer);
         this._add(this.__groupedContainers);
       } else {
-        const flatList = this.__nonGroupedContainer = new osparc.dashboard.ToggleButtonContainer();
+        const flatList = this.__nonGroupedContainer = this.__createFlatList();
         osparc.utils.Utils.setIdToWidget(flatList, resourceType + "List");
-        [
-          "changeSelection",
-          "changeVisibility"
-        ].forEach(signalName => {
-          flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
-        });
+        this._add(flatList);
+      }
+    },
+
+    __createFlatList: function() {
+      const flatList = new osparc.dashboard.ToggleButtonContainer();
+      const setContainerSpacing = () => {
         const spacing = this.getMode() === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
-        this.__nonGroupedContainer.getLayout().set({
+        flatList.getLayout().set({
           spacingX: spacing,
           spacingY: spacing
         });
-        this._add(this.__nonGroupedContainer);
-      }
+      };
+      setContainerSpacing();
+      this.addListener("changeMode", () => setContainerSpacing());
+      [
+        "changeSelection",
+        "changeVisibility"
+      ].forEach(signalName => {
+        flatList.addListener(signalName, e => this.fireDataEvent(signalName, e.getData()), this);
+      });
+      return flatList;
+    },
 
-      let cards = [];
+    reloadCards: function(resourceType) {
+      this.__rebuildLayout(resourceType);
+
+      const cards = [];
       this.__resourcesList.forEach(resourceData => {
         Array.prototype.push.apply(cards, this.__resourceToCards(resourceData));
       });

@@ -804,11 +804,10 @@ qx.Class.define("osparc.utils.Utils", {
               loadedCb();
             }
             const blob = new Blob([xhr.response]);
-            const urlBlob = window.URL.createObjectURL(blob);
             if (!fileName) {
               fileName = this.self().filenameFromContentDisposition(xhr);
             }
-            this.self().downloadContent(urlBlob, fileName);
+            this.self().downloadBlobContent(blob, fileName);
             resolve();
           } else {
             reject(xhr);
@@ -820,9 +819,9 @@ qx.Class.define("osparc.utils.Utils", {
       });
     },
 
-    downloadContent: function(content, filename = "file") {
+    downloadBlobContent: function(blob, filename = "file") {
       let downloadAnchorNode = document.createElement("a");
-      downloadAnchorNode.setAttribute("href", content);
+      downloadAnchorNode.setAttribute("href", window.URL.createObjectURL(blob));
       downloadAnchorNode.setAttribute("download", filename);
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
@@ -1010,18 +1009,28 @@ qx.Class.define("osparc.utils.Utils", {
     isUrl: url => /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/gm.test(url),
 
     snakeToCamel: str => {
-      return str.toLowerCase().replace(/([-_][a-z])/g, group =>
-        group
-          .toUpperCase()
-          .replace("-", "")
-          .replace("_", "")
-      );
+      if (str.includes("_")) {
+        return str.toLowerCase().replace(/([-_][a-z])/g, group =>
+          group
+            .toUpperCase()
+            .replace("-", "")
+            .replace("_", "")
+        );
+      }
+      return str;
     },
 
     setIdToWidget: (qWidget, id) => {
       if (qWidget.getContentElement) {
         qWidget.getContentElement().setAttribute("osparc-test-id", id);
       }
+    },
+
+    getIdFromWidget: qWidget => {
+      if (qWidget.getContentElement) {
+        return qWidget.getContentElement().getAttribute("osparc-test-id");
+      }
+      return null;
     },
 
     setMoreToWidget: (qWidget, id) => {

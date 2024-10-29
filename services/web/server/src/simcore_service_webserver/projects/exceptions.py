@@ -1,10 +1,10 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
-
+# mypy: disable-error-code=truthy-function
 from typing import Any
 
-import redis.exceptions
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from servicelib.project_lock import ProjectLockError
 
 from ..errors import WebServerBaseError
 
@@ -78,6 +78,20 @@ class ProjectDeleteError(BaseProjectError):
         self.reason = reason
 
 
+class ProjectTrashError(BaseProjectError):
+    ...
+
+
+class ProjectStoppingError(ProjectTrashError):
+    msg_template = "Failed to  services in '{project_uuid}' before trashing"
+
+
+class ProjectRunningConflictError(ProjectTrashError):
+    msg_template = (
+        "Cannot trash running project '{project_uuid}' except if forced option is on"
+    )
+
+
 class NodeNotFoundError(BaseProjectError):
     msg_template = "Node '{node_uuid}' not found in project '{project_uuid}'"
 
@@ -102,9 +116,6 @@ class ParentProjectNotFoundError(BaseProjectError):
     def __init__(self, *, project_uuid: str | None, **ctx):
         super().__init__(**ctx)
         self.project_uuid = project_uuid
-
-
-ProjectLockError = redis.exceptions.LockError
 
 
 class ProjectStartsTooManyDynamicNodesError(BaseProjectError):
@@ -224,3 +235,7 @@ class InvalidInputValue(WebServerBaseError):
 
 class ProjectGroupNotFoundError(BaseProjectError):
     msg_template = "Project group not found. {reason}"
+
+
+assert ProjectLockError  # nosec
+__all__: tuple[str, ...] = ("ProjectLockError",)

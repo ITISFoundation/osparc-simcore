@@ -127,8 +127,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&order_by={orderBy}"
-            // url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&tags={tags}&order_by={orderBy}"
+            url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&tag_ids={tagIds}&order_by={orderBy}"
           },
           getOne: {
             useCache: false,
@@ -300,7 +299,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPage: {
             method: "GET",
-            url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}"
+            url: statics.API + "/folders?workspace_id={workspaceId}&folder_id={folderId}&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           getOne: {
             method: "GET",
@@ -1250,6 +1249,12 @@ qx.Class.define("osparc.data.Resources", {
      * @param {Object} options Collections of options (pollTask, resolveWResponse, timeout, timeoutRetries)
      */
     fetch: function(resource, endpoint, params = {}, options = {}) {
+      if (params === null) {
+        params = {};
+      }
+      if (options === null) {
+        options = {};
+      }
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
@@ -1371,7 +1376,7 @@ qx.Class.define("osparc.data.Resources", {
           params["url"] = {};
         }
         params["url"]["offset"] = offset;
-        params["url"]["limit"] = 20;
+        params["url"]["limit"] = 10;
         const endpoint = "getPage";
         const options = {
           resolveWResponse: true

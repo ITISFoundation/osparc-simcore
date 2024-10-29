@@ -14,6 +14,10 @@ from .modules.redis import get_redis_lock_client
 
 _logger = logging.getLogger(__name__)
 
+_SEC = 1  # in s
+_MIN = 60 * _SEC  # in s
+_HOUR = 60 * _MIN  # in s
+
 
 class EfsGuardianBackgroundTask(TypedDict):
     name: str
@@ -39,8 +43,8 @@ def _on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
                 exclusive_task = start_exclusive_periodic_task(
                     get_redis_lock_client(app),
                     task["task_func"],
-                    task_period=timedelta(seconds=60),  # 1 minute
-                    retry_after=timedelta(seconds=300),  # 5 minutes
+                    task_period=timedelta(seconds=1 * _HOUR),
+                    retry_after=timedelta(seconds=5 * _MIN),
                     task_name=task["name"],
                     app=app,
                 )

@@ -2,6 +2,7 @@ import functools
 
 from aiohttp import web
 from pydantic import parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
@@ -107,7 +108,7 @@ async def delete_tag(request: web.Request):
         request.app, user_id=req_ctx.user_id, tag_id=path_params.tag_id
     )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #

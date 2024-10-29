@@ -144,7 +144,7 @@ from .exceptions import (
     ProjectTooManyProjectOpenedError,
 )
 from .lock import get_project_locked_state, is_project_locked, lock_project
-from .models import ProjectDict
+from .models import ProjectDict, ProjectPatchExtended
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
@@ -249,7 +249,7 @@ async def patch_project(
     *,
     user_id: UserID,
     project_uuid: ProjectID,
-    project_patch: ProjectPatch,
+    project_patch: ProjectPatch | ProjectPatchExtended,
     product_name: ProductName,
 ):
     _project_patch_exclude_unset: dict[str, Any] = jsonable_encoder(
@@ -291,11 +291,6 @@ async def patch_project(
     await db.patch_project(
         project_uuid=project_uuid,
         new_partial_project_data=_project_patch_exclude_unset,
-    )
-
-    # 5. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
-    await director_v2_api.create_or_update_pipeline(
-        app, user_id, project_uuid, product_name=product_name
     )
 
 

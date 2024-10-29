@@ -9,6 +9,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar.disk_usage import (
     update_disk_usage,
 )
+from servicelib.utils import fire_and_forget_task
 
 from ..core.settings import get_application_settings
 from ..services.efs_manager import EfsManager
@@ -67,11 +68,11 @@ async def process_dynamic_service_running_message(app: FastAPI, data: bytes) -> 
             used=_used, total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES
         )
 
-    # usage = {
-    #     ".data_assets": DiskUsage.from_efs_guardian(used=_used, total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES),
-    #     "home_user_workspace": DiskUsage.from_efs_guardian(used=_used, total=settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES)
-    # }
-    await update_disk_usage(rpc_client, usage=usage)
+    fire_and_forget_task(
+        update_disk_usage(rpc_client, node_id=rabbit_message.node_id, usage=usage),
+        task_suffix_name=f"update_disk_usage_efs_user_id{rabbit_message.user_id}_node_id{rabbit_message.node_id}",
+        fire_and_forget_tasks_collection=app.state.efs_guardian_fire_and_forget_tasks,
+    )
 
     if size > settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES:
         msg = f"Removing write permissions inside of EFS starts for project ID: {rabbit_message.project_id}, node ID: {rabbit_message.node_id}, current user: {rabbit_message.user_id}, size: {size}, upper limit: {settings.EFS_DEFAULT_USER_SERVICE_SIZE_BYTES}"

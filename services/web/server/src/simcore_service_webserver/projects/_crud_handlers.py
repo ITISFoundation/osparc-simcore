@@ -5,11 +5,9 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 """
 
 import functools
-import json
 import logging
 
 from aiohttp import web
-from jsonschema import ValidationError as JsonSchemaValidationError
 from models_library.api_schemas_webserver.projects import (
     EmptyModel,
     ProjectCopyOverride,
@@ -18,7 +16,6 @@ from models_library.api_schemas_webserver.projects import (
     ProjectPatch,
 )
 from models_library.generics import Envelope
-from models_library.projects import Project
 from models_library.projects_state import ProjectLocked
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
@@ -26,6 +23,7 @@ from models_library.rest_pagination_utils import paginate_data
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.json_serialization import json_dumps
 from pydantic import parse_obj_as
+from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -43,7 +41,6 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG
 from ..catalog.client import get_services_for_user_in_product
-from ..director_v2 import api
 from ..folders.errors import FolderAccessForbiddenError, FolderNotFoundError
 from ..login.decorators import login_required
 from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
@@ -52,33 +49,26 @@ from ..security.decorators import permission_required
 from ..users.api import get_user_fullname
 from ..workspaces.errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
 from . import _crud_api_create, _crud_api_read, projects_api
-from ._access_rights_api import check_user_project_permission
 from ._common_models import ProjectPathParams, RequestContext
 from ._crud_handlers_models import (
     ProjectActiveParams,
     ProjectCreateHeaders,
     ProjectCreateParams,
+    ProjectFilters,
     ProjectListFullSearchWithJsonStrParams,
     ProjectListWithJsonStrParams,
 )
 from ._permalink_api import update_or_pop_permalink_in_project
-from .db import ProjectDBAPI
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
-    ProjectInvalidUsageError,
     ProjectNotFoundError,
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     WrongTagIdsInQueryError,
 )
 from .lock import get_project_locked_state
 from .models import ProjectDict
-from .nodes_utils import update_frontend_outputs
-from .utils import (
-    any_node_inputs_changed,
-    get_project_unavailable_services,
-    project_uses_available_services,
-)
+from .utils import get_project_unavailable_services, project_uses_available_services
 
 # When the user requests a project with a repo, the working copy might differ from
 # the repo project. A middleware in the meta module (if active) will resolve
@@ -112,7 +102,7 @@ def _handle_projects_exceptions(handler: Handler):
             FolderAccessForbiddenError,
             WorkspaceAccessForbiddenError,
         ) as exc:
-            raise web.HTTPUnauthorized(reason=f"{exc}") from exc
+            raise web.HTTPForbidden(reason=f"{exc}") from exc
 
     return _wrapper
 
@@ -202,12 +192,18 @@ async def list_projects(request: web.Request):
         ProjectListWithJsonStrParams, request
     )
 
+    if not query_params.filters:
+        query_params.filters = ProjectFilters()
+
+    assert query_params.filters  # nosec
+
     projects, total_number_of_projects = await _crud_api_read.list_projects(
         request,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         project_type=query_params.project_type,
         show_hidden=query_params.show_hidden,
+        trashed=query_params.filters.trashed,
         limit=query_params.limit,
         offset=query_params.offset,
         search=query_params.search,
@@ -399,165 +395,6 @@ async def get_project_inactivity(request: web.Request):
 #
 
 
-@routes.put(f"/{VTAG}/projects/{{project_id}}", name="replace_project")
-@login_required
-@permission_required("project.update")
-@permission_required("services.pipeline.*")  # due to update_pipeline_db
-async def replace_project(request: web.Request):
-    """
-    In a PUT request, the enclosed entity is considered to be a modified version of
-    the resource stored on the origin server, and the client is requesting that the
-    stored version be replaced.
-
-    With PATCH, however, the enclosed entity contains a set of instructions describing how a
-    resource currently residing on the origin server should be modified to produce a new version.
-
-    Also, another difference is that when you want to update a resource with PUT request, you have to send
-    the full payload as the request whereas with PATCH, you only send the parameters which you want to update.
-
-    Raises:
-       web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
-       web.HTTPBadRequest: invalid body encoding
-       web.HTTPConflict: Cannot replace while pipeline is running
-       web.HTTPBadRequest: jsonschema validatio error
-       web.HTTPForbidden: Not enough access rights to replace this project
-       web.HTTPNotFound: This project was not found
-    """
-
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    req_ctx = RequestContext.parse_obj(request)
-    path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-
-    try:
-        new_project = await request.json()
-        # NOTE: this is a temporary fix until proper Model is introduced in ProjectReplace
-        # Prune state field (just in case)
-        new_project.pop("state", None)
-        new_project.pop("permalink", None)
-
-    except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason="Invalid request body") from exc
-
-    await check_user_permission(
-        request,
-        "project.update | project.workbench.node.inputs.update",
-        context={
-            "dbapi": db,
-            "app": request.app,
-            "project_id": f"{path_params.project_id}",
-            "user_id": req_ctx.user_id,
-            "new_data": new_project,
-        },
-    )
-
-    try:
-        Project.parse_obj(new_project)  # validate
-
-        current_project = await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=f"{path_params.project_id}",
-            user_id=req_ctx.user_id,
-            include_state=True,
-        )
-
-        if current_project["accessRights"] != new_project["accessRights"]:
-            await check_user_permission(request, "project.access_rights.update")
-
-        if await api.is_pipeline_running(
-            request.app, req_ctx.user_id, path_params.project_id
-        ) and any_node_inputs_changed(new_project, current_project):
-            # NOTE:  This is a conservative measure that we take
-            #  until nodeports logic is re-designed to tackle with this
-            #  particular state.
-            #
-            # This measure avoid having a state with different node *links* in the
-            # comp-tasks table and the project's workbench column.
-            # The limitation is that nodeports only "sees" those in the comptask
-            # and this table does not add the new ones since it remains "blocked"
-            # for modification from that project while the pipeline runs. Therefore
-            # any extra link created while the pipeline is running can not
-            # be managed by nodeports because it basically "cannot see it"
-            #
-            # Responds https://httpstatuses.com/409:
-            #  The request could not be completed due to a conflict with the current
-            #  state of the target resource (i.e. pipeline is running). This code is used in
-            #  situations where the user might be able to resolve the conflict
-            #  and resubmit the request  (front-end will show a pop-up with message below)
-            #
-            raise web.HTTPConflict(
-                reason=f"Project {path_params.project_id} cannot be modified while pipeline is still running."
-            )
-
-        user_project_permission = await check_user_project_permission(
-            request.app,
-            project_id=path_params.project_id,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            permission="write",
-        )
-
-        new_project = await db.replace_project(
-            new_project,
-            req_ctx.user_id,
-            project_uuid=f"{path_params.project_id}",
-            product_name=req_ctx.product_name,
-        )
-
-        await update_frontend_outputs(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            project_uuid=path_params.project_id,
-            old_project=current_project,
-            new_project=new_project,
-        )
-
-        await api.update_dynamic_service_networks_in_project(
-            request.app, path_params.project_id
-        )
-        await api.create_or_update_pipeline(
-            request.app,
-            req_ctx.user_id,
-            path_params.project_id,
-            product_name=req_ctx.product_name,
-        )
-        # Appends state
-        data = await projects_api.add_project_states_for_user(
-            user_id=req_ctx.user_id,
-            project=new_project,
-            is_template=False,
-            app=request.app,
-        )
-        # Appends folder ID
-        user_specific_project_data_db = await db.get_user_specific_project_data_db(
-            project_uuid=path_params.project_id,
-            private_workspace_user_id_or_none=(
-                req_ctx.user_id
-                if user_project_permission.workspace_id is None
-                else None
-            ),
-        )
-        data["folderId"] = user_specific_project_data_db.folder_id
-
-        return web.json_response({"data": data}, dumps=json_dumps)
-
-    except JsonSchemaValidationError as exc:
-        raise web.HTTPBadRequest(
-            reason=f"Invalid project update: {exc.message}"
-        ) from exc
-
-    except ProjectInvalidRightsError as exc:
-        raise web.HTTPForbidden(
-            reason="You do not have sufficient rights to replace the project"
-        ) from exc
-    except ProjectInvalidUsageError as exc:
-        raise web.HTTPConflict(
-            reason="You may not add or remove nodes in the workbench using this entrypoint. TIP: use dedicated add/remove node entrypoints"
-        ) from exc
-
-    except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound from exc
-
-
 @routes.patch(f"/{VTAG}/projects/{{project_id}}", name="patch_project")
 @login_required
 @permission_required("project.update")
@@ -576,7 +413,7 @@ async def patch_project(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #
@@ -661,7 +498,7 @@ async def delete_project(request: web.Request):
     except ProjectDeleteError as err:
         raise web.HTTPConflict(reason=f"{err}") from err
 
-    raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #

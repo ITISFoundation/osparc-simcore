@@ -6,20 +6,21 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
-  bash ci/helpers/ensure_python_pip.bash
-  pip3 install --requirement api/tests/requirements.txt
+  make devenv
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd api/tests
+  make install
+  popd
   uv pip list
 }
 
 test() {
-  pytest \
-    --color=yes \
-    --durations=10 \
-    --log-date-format="%Y-%m-%d %H:%M:%S" \
-    --log-format="%(asctime)s %(levelname)s %(message)s" \
-    --verbose \
-    -m "not heavy_load" \
-    api/tests
+  # shellcheck source=/dev/null
+  source .venv/bin/activate
+  pushd api/tests
+  make test-ci
+  popd
 }
 
 # Check if the function exists (bash specific)

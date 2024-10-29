@@ -106,9 +106,9 @@ dnspython==2.6.1
     # via email-validator
 email-validator==2.1.1
     # via pydantic
-fast-depends==2.4.2
+fast-depends==2.4.12
     # via faststream
-faststream==0.5.10
+faststream==0.5.28
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.4.1
     # via
@@ -325,7 +325,9 @@ referencing==0.29.3
     #   jsonschema
     #   jsonschema-specifications
 repro-zipfile==0.3.1
-    # via -r requirements/../../../packages/service-library/requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 requests==2.32.3
     # via opentelemetry-exporter-otlp-proto-http
 rich==13.7.1
@@ -372,7 +374,6 @@ typer==0.12.3
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
-    #   faststream
 types-python-dateutil==2.9.0.20240316
     # via arrow
 typing-extensions==4.11.0

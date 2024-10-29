@@ -10,16 +10,13 @@ from models_library.users import UserID
 from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Field, ValidationError, parse_obj_as
 from pydantic.types import NonNegativeInt
-from servicelib.aiohttp.rest_responses import (
-    create_http_error,
-    exception_to_response,
-    get_http_error,
-)
+from servicelib.aiohttp import status
+from servicelib.aiohttp.rest_responses import create_http_error, exception_to_response
+from servicelib.aiohttp.web_exceptions_extension import get_http_error_class_or_none
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
@@ -170,7 +167,8 @@ async def start_computation(request: web.Request) -> web.Response:
             create_http_error(
                 exc,
                 reason=exc.reason,
-                http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+                http_error_cls=get_http_error_class_or_none(exc.status)
+                or web.HTTPServiceUnavailable,
             )
         )
     except UserDefaultWalletNotFoundError as exc:
@@ -204,19 +202,14 @@ async def stop_computation(request: web.Request) -> web.Response:
         await asyncio.gather(
             *[computations.stop(pid, req_ctx.user_id) for pid in project_ids]
         )
-
-        # NOTE: our middleware has this issue
-        #
-        #  if 'return web.HTTPNoContent()' then 'await response.json()' raises ContentTypeError
-        #  if 'raise web.HTTPNoContent()' then 'await response.json() == None'
-        #
-        raise web.HTTPNoContent(content_type=MIMETYPE_APPLICATION_JSON)
+        return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
     except DirectorServiceError as exc:
         return create_http_error(
             exc,
             reason=exc.reason,
-            http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+            http_error_cls=get_http_error_class_or_none(exc.status)
+            or web.HTTPServiceUnavailable,
         )
 
 
@@ -265,7 +258,8 @@ async def get_computation(request: web.Request) -> web.Response:
         return create_http_error(
             exc,
             reason=exc.reason,
-            http_error_cls=get_http_error(exc.status) or web.HTTPServiceUnavailable,
+            http_error_cls=get_http_error_class_or_none(exc.status)
+            or web.HTTPServiceUnavailable,
         )
     except ValidationError as exc:
         return create_http_error(exc, http_error_cls=web.HTTPInternalServerError)

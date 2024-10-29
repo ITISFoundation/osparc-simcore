@@ -29,6 +29,8 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,
+    with_disabled_redis_and_background_tasks: None,
+    with_disabled_postgres: None,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
@@ -44,9 +46,8 @@ def app_environment(
 async def test_process_msg(
     mock_update_disk_usage,
     faker: Faker,
-    mocked_redis_server: None,
     app: FastAPI,
-    cleanup: None,
+    efs_cleanup: None,
     project_id: ProjectID,
     node_id: NodeID,
     user_id: UserID,
@@ -89,9 +90,8 @@ async def test_process_msg(
 
 
 async def test_process_msg__dir_not_exists(
-    mocked_redis_server: None,
     app: FastAPI,
-    cleanup: None,
+    efs_cleanup: None,
     project_id: ProjectID,
     node_id: NodeID,
     user_id: UserID,

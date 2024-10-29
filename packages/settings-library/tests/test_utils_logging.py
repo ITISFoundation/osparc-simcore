@@ -25,11 +25,13 @@ def test_mixin_logging(monkeypatch):
             ],
         )
 
-        APPNAME_DEBUG: bool = Field(False, description="Starts app in debug mode")
+        APPNAME_DEBUG: bool = Field(
+            default=False, description="Starts app in debug mode"
+        )
 
-        @validator("LOG_LEVEL")
+        @validator("LOG_LEVEL", pre=True)
         @classmethod
-        def _v(cls, value) -> str:
+        def _v(cls, value: str) -> str:
             return cls.validate_log_level(value)
 
     # -----------------------------------------------------------
