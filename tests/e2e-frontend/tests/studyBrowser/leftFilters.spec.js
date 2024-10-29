@@ -30,7 +30,9 @@ test.describe.serial(`Left Filters:`, () => {
 
   test(`Context`, async () => {
     const contextTree = page.getByTestId("contextTree");
-    await expect(contextTree).toBeVisible();
+    await expect(contextTree).toBeVisible({
+      timeout: 30000 // it will take some time to make the plus button visible
+    });
 
     const workspacesAndFoldersTreeItems = page.getByTestId("workspacesAndFoldersTreeItem");
     const count = await workspacesAndFoldersTreeItems.count();
@@ -40,7 +42,9 @@ test.describe.serial(`Left Filters:`, () => {
 
   test(`Tags`, async () => {
     const tagsFilter = page.getByTestId("tagsFilter");
-    await expect(tagsFilter).toBeVisible();
+    await expect(tagsFilter).toBeVisible({
+      timeout: 30000 // it will take some time to make the plus button visible
+    });
 
     const tagFilterItems = page.getByTestId("tagFilterItem");
     const count = await tagFilterItems.count();

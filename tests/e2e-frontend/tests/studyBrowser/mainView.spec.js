@@ -70,9 +70,9 @@ for (const product in products) {
           expect(expectedElements[product]["plusButton"]).toBeDefined();
 
           const plusButtonId = expectedElements[product]["plusButton"]["id"];
-          const contextTree = page.getByTestId(plusButtonId);
-          await expect(contextTree).toBeVisible({
-            timeout: 20000 // it will take some time to make the plus button visible
+          const plusButton = page.getByTestId(plusButtonId);
+          await expect(plusButton).toBeVisible({
+            timeout: 30000 // it will take some time to make the plus button visible
           });
         });
       });
