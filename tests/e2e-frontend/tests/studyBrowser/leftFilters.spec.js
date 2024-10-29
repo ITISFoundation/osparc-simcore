@@ -11,7 +11,7 @@ const product = "osparc";
 const productUrl = products[product];
 const user = users[product][0];
 
-test.describe.serial(`User Menu Windows: ${product}`, () => {
+test.describe.serial(`Left Filters:`, () => {
   let page = null;
   let loginPageFixture = null;
 
@@ -28,7 +28,7 @@ test.describe.serial(`User Menu Windows: ${product}`, () => {
     await browser.close();
   });
 
-  test(`Context items`, async () => {
+  test(`Context`, async () => {
     const contextTree = page.getByTestId("contextTree");
     await expect(contextTree).toBeVisible();
 
