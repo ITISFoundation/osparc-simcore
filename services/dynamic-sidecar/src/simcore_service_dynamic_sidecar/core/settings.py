@@ -12,6 +12,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import DynamicServiceKey, RunID, ServiceVersion
 from models_library.users import UserID
 from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -133,7 +134,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         env=["DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
-    DY_SIDECAR_LOG_FILTER_MAPPING: dict = Field(
+    DY_SIDECAR_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default={},
         env=["DY_SIDECAR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
