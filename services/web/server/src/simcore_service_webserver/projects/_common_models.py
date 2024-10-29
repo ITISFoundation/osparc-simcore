@@ -20,3 +20,8 @@ class RequestContext(BaseModel):
 class ProjectPathParams(BaseModel):
     project_id: ProjectID
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+class RemoveQueryParams(BaseModel):
+    force: bool = Field(
+        default=False, description="Force removal (even if resource is active)"
+    )

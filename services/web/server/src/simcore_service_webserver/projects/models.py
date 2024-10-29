@@ -3,6 +3,8 @@ from enum import Enum
 from typing import Any, TypeAlias
 
 from aiopg.sa.result import RowProxy
+from models_library.api_schemas_webserver.projects import ProjectPatch
+from models_library.basic_types import HttpUrlWithCustomMinLength
 from models_library.folders import FolderID
 from models_library.projects import ClassifierID, ProjectID
 from models_library.projects_ui import StudyUI
@@ -50,6 +52,8 @@ class ProjectDB(BaseModel):
     published: bool
     hidden: bool
     workspace_id: WorkspaceID | None = None
+    trashed_at: datetime | None
+
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
     # validators
@@ -86,6 +90,15 @@ class UserProjectAccessRightsWithWorkspace(BaseModel):
     write: bool
     delete: bool
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProjectPatchExtended(ProjectPatch):
+    # Only used internally
+    trashed_at: datetime | None = None
+
+    class Config:
+        allow_population_by_field_name = True
+        extra = Extra.forbid
 
 
 __all__: tuple[str, ...] = (

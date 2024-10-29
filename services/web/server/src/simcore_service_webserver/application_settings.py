@@ -422,7 +422,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "SIMCORE_VCS_RELEASE_TAG": True,
                 "SIMCORE_VCS_RELEASE_URL": True,
                 "SWARM_STACK_NAME": True,
-                "WEBSERVER_PROJECTS": {"PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES"},
+                "WEBSERVER_PROJECTS": {
+                    "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES",
+                    "PROJECTS_TRASH_RETENTION_DAYS",
+                },
                 "WEBSERVER_LOGIN": {
                     "LOGIN_ACCOUNT_DELETION_RETENTION_DAYS",
                     "LOGIN_2FA_REQUIRED",

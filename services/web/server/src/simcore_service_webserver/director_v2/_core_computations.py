@@ -195,17 +195,37 @@ async def get_computation_task(
 
 
 @log_decorator(logger=_logger)
+async def stop_pipeline(
+    app: web.Application, *, user_id: PositiveInt, project_id: ProjectID
+):
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    await request_director_v2(
+        app,
+        "POST",
+        url=settings.base_url / f"computations/{project_id}:stop",
+        expected_status=web.HTTPAccepted,
+        data={"user_id": user_id},
+    )
+
+
+@log_decorator(logger=_logger)
 async def delete_pipeline(
-    app: web.Application, user_id: PositiveInt, project_id: UUID
+    app: web.Application,
+    user_id: PositiveInt,
+    project_id: ProjectID,
+    *,
+    force: bool = True,
 ) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
-
-    backend_url = settings.base_url / f"computations/{project_id}"
-    body = {"user_id": user_id, "force": True}
-
-    # request to director-v2
     await request_director_v2(
-        app, "DELETE", backend_url, expected_status=web.HTTPNoContent, data=body
+        app,
+        "DELETE",
+        url=settings.base_url / f"computations/{project_id}",
+        expected_status=web.HTTPNoContent,
+        data={
+            "user_id": user_id,
+            "force": force,
+        },
     )
 
 

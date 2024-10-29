@@ -126,6 +126,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         height: 150,
         width: 150
       });
+      osparc.utils.Utils.setIdToWidget(orgsUIList, "organizationsList");
       orgsUIList.addListener("changeSelection", e => this.__organizationSelected(e.getData()), this);
 
       const orgsModel = this.__orgsModel = new qx.data.Array();
@@ -143,6 +144,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("organizationsList");
+          osparc.utils.Utils.setIdToWidget(item, "organizationListItem");
           const thumbnail = item.getChildControl("thumbnail");
           thumbnail.getContentElement()
             .setStyles({

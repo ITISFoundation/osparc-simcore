@@ -113,15 +113,18 @@ async def _replace_project(
 ) -> ProjectDict:
     assert client.app
 
-    # PUT /v0/projects/{project_id}
-    url = client.app.router["replace_project"].url_for(
-        project_id=project_update["uuid"]
-    )
+    # PATCH /v0/projects/{project_id}
+    url = client.app.router["patch_project"].url_for(project_id=project_update["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project_update['uuid']}"
-    resp = await client.put(f"{url}", json=project_update)
+    resp = await client.patch(f"{url}", json=project_update)
     data, error = await assert_status(resp, expected)
     if not error:
-        assert_replaced(current_project=data, update_data=project_update)
+        url = client.app.router["get_project"].url_for(
+            project_id=project_update["uuid"]
+        )
+        resp = await client.get(f"{url}")
+        get_data, _ = await assert_status(resp, HTTPStatus.OK)
+        assert_replaced(current_project=get_data, update_data=project_update)
     return data
 
 
@@ -308,10 +311,11 @@ async def test_share_project(
         # user 2 can update the project if user 2 has write access
         project_update = deepcopy(new_project)
         project_update["name"] = "my super name"
+        project_update.pop("accessRights")
         await _replace_project(
             client,
             project_update,
-            expected.ok if share_rights["write"] else expected.forbidden,
+            expected.no_content if share_rights["write"] else expected.forbidden,
         )
 
         # user 2 can delete projects if user 2 has delete access

@@ -10,6 +10,7 @@ from models_library.basic_types import IDStr
 from models_library.folders import FolderID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.rest_filters import Filters, FiltersQueryParameters
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
 from models_library.utils.common_validators import (
@@ -93,6 +94,13 @@ class ProjectCreateParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class ProjectFilters(Filters):
+    trashed: bool | None = Field(
+        default=False,
+        description="Set to true to list trashed, false to list non-trashed (default), None to list all",
+    )
+
+
 class ProjectListParams(PageQueryParameters):
     project_type: ProjectTypeAPI = Field(default=ProjectTypeAPI.all, alias="type")
     show_hidden: bool = Field(
@@ -129,7 +137,7 @@ class ProjectListParams(PageQueryParameters):
     )(null_or_none_str_to_none_validator)
 
 
-class ProjectListWithOrderByParams(BaseModel):
+class ProjectListSortParams(BaseModel):
     order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
         default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
@@ -156,7 +164,9 @@ class ProjectListWithOrderByParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class ProjectListWithJsonStrParams(ProjectListParams, ProjectListWithOrderByParams):
+class ProjectListWithJsonStrParams(
+    ProjectListParams, ProjectListSortParams, FiltersQueryParameters[ProjectFilters]
+):
     ...
 
 
@@ -183,7 +193,7 @@ class ProjectListFullSearchParams(PageQueryParameters):
 
 
 class ProjectListFullSearchWithJsonStrParams(
-    ProjectListFullSearchParams, ProjectListWithOrderByParams
+    ProjectListFullSearchParams, ProjectListSortParams
 ):
     def tag_ids_list(self) -> list[int]:
         try:

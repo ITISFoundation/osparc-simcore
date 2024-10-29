@@ -93,7 +93,7 @@ markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   mako
-multidict==6.0.2
+multidict==6.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
