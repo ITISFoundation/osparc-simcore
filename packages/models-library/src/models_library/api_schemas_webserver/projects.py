@@ -13,6 +13,7 @@ from pydantic import ConfigDict, Field, HttpUrl, field_validator
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import LongTruncatedStr, ShortTruncatedStr
 from ..emails import LowerCaseEmailStr
+from ..folders import FolderID
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
 from ..projects_state import ProjectState
@@ -22,10 +23,9 @@ from ..utils.common_validators import (
     none_to_empty_str_pre_validator,
     null_or_none_str_to_none_validator,
 )
+from ..workspaces import WorkspaceID
 from ._base import EmptyModel, InputSchema, OutputSchema
-from .folders import FolderID
 from .permalinks import ProjectPermalink
-from .workspaces import WorkspaceID
 
 
 class ProjectCreateNew(InputSchema):
