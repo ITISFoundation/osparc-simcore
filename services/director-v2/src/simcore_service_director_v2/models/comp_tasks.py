@@ -20,8 +20,9 @@ from pydantic import (
     ConfigDict,
     Field,
     PositiveInt,
+    TypeAdapter,
+    ValidationInfo,
     field_validator,
-    parse_obj_as,
 )
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
@@ -57,7 +58,7 @@ class Image(BaseModel):
 
     @field_validator("node_requirements", mode="before")
     @classmethod
-    def migrate_from_requirements(cls, v, values):
+    def migrate_from_requirements(cls, v, info: ValidationInfo):
         if v is None:
             # NOTE: 'node_requirements' field's default=None although is NOT declared as nullable.
             # Then this validator with `pre=True, always=True` is used to create a default
@@ -65,8 +66,8 @@ class Image(BaseModel):
             # This strategy guarantees backwards compatibility
             v = NodeRequirements(
                 CPU=1.0,
-                GPU=1 if values.get("requires_gpu") else 0,
-                RAM=parse_obj_as(ByteSize, "128 MiB"),
+                GPU=1 if info.data.get("requires_gpu") else 0,
+                RAM=TypeAdapter(ByteSize).validate_python("128 MiB"),
             )
         return v
 
@@ -176,7 +177,7 @@ class CompTaskAtDB(BaseModel):
         return v
 
     def to_db_model(self, **exclusion_rules) -> dict[str, Any]:
-        comp_task_dict = self.dict(by_alias=True, exclude_unset=True, **exclusion_rules)
+        comp_task_dict = self.model_dump(by_alias=True, exclude_unset=True, **exclusion_rules)
         if "state" in comp_task_dict:
             comp_task_dict["state"] = RUNNING_STATE_TO_DB[comp_task_dict["state"]].value
         return comp_task_dict

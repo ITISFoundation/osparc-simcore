@@ -4,8 +4,8 @@ import json
 from copy import deepcopy
 from pathlib import Path
 
+from pydantic import TypeAdapter
 import pytest
-from pydantic import parse_file_as
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 
 
@@ -35,4 +35,4 @@ def test_ensure_legacy_format_compatibility(legacy_scheduler_data_format: Path):
 
     # PRs applying changes to the legacy format:
     # - https://github.com/ITISFoundation/osparc-simcore/pull/3610
-    assert parse_file_as(list[SchedulerData], legacy_scheduler_data_format)
+    assert TypeAdapter(list[SchedulerData]).validate_json(legacy_scheduler_data_format.read_text())

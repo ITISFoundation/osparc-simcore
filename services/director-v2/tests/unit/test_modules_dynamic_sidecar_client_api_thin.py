@@ -11,7 +11,7 @@ from fastapi import FastAPI, status
 from httpx import Response
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter, Route
 from respx.types import SideEffectTypes
@@ -63,7 +63,7 @@ async def thin_client(mocked_app: FastAPI) -> AsyncIterable[ThinSidecarsClient]:
 
 @pytest.fixture
 def dynamic_sidecar_endpoint() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://missing-host:1111")
+    return TypeAdapter(AnyHttpUrl).validate_python("http://missing-host:1111")
 
 
 @pytest.fixture
