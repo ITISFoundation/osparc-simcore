@@ -1340,8 +1340,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const menu = card.getMenu();
       const studyData = card.getResourceData();
 
+      const trashed = Boolean(studyData["trashedAt"]);
       const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
       const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
+
+      if (this.getCurrentContext() === "trash") {
+        if (trashed) {
+          if (writeAccess) {
+            const untrashButton = this.__getUntrashStudyMenuButton(studyData);
+            menu.add(untrashButton);
+          }
+          if (deleteAccess) {
+            const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
+            menu.addSeparator();
+            menu.add(deleteButton);
+          }
+        }
+        return;
+      }
 
       const openButton = this._getOpenMenuButton(studyData);
       if (openButton) {
@@ -1401,9 +1417,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       if (deleteAccess) {
-        const deleteButton = this.getCurrentContext() === "trash" ? this.__getDeleteStudyMenuButton(studyData, false) : this.__getTrashStudyMenuButton(studyData, false);
+        const trashButton = this.__getTrashStudyMenuButton(studyData, false);
         menu.addSeparator();
-        menu.add(deleteButton);
+        menu.add(trashButton);
       }
 
       card.evaluateMenuButtons();
@@ -1618,12 +1634,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getTrashStudyMenuButton: function(studyData) {
       const trashButton = new qx.ui.menu.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/12");
-      trashButton["deleteButton"] = true;
+      trashButton["trashButton"] = true;
       trashButton.set({
         appearance: "menu-button"
       });
       osparc.utils.Utils.setIdToWidget(trashButton, "studyItemMenuDelete");
       trashButton.addListener("execute", () => this.__trashStudyRequested(studyData), this);
+      return trashButton;
+    },
+
+    __getUntrashStudyMenuButton: function(studyData) {
+      const trashButton = new qx.ui.menu.Button(this.tr("Restore"), "@FontAwesome5Solid/trash/12");
+      trashButton["untrashButton"] = true;
+      trashButton.set({
+        appearance: "menu-button"
+      });
+      trashButton.addListener("execute", () => this.__untrashStudy(studyData), this);
       return trashButton;
     },
 
@@ -1787,6 +1813,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       req.open("POST", "/v0/projects:import", true);
       req.send(body);
+    },
+
+    __untrashStudy: function(studyData) {
+      osparc.store.Store.getInstance().untrashStudy(studyData.uuid)
+        .then(() => this.__removeFromStudyList(studyData.uuid))
+        .catch(err => {
+          console.error(err);
+          osparc.FlashMessenger.getInstance().logAs(err, "ERROR");
+        })
+        .finally(() => this.resetSelection());
     },
 
     __trashStudy: function(studyData) {
