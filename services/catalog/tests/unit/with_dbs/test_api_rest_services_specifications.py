@@ -163,8 +163,8 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
     assert service_specs
 
     assert (
-        service_specs
-        == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+        service_specs.model_dump()
+        == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS.model_dump()
     )
 
 
@@ -207,8 +207,8 @@ async def test_get_service_specifications(
     service_specs = ServiceSpecificationsGet.model_validate(response.json())
     assert service_specs
     assert (
-        service_specs
-        == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+        service_specs.model_dump()
+        == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS.model_dump()
     )
 
     everyone_gid, user_gid, team_gid = user_groups_ids
