@@ -106,7 +106,7 @@ def setup_tracing(
         with log_context(
             _logger,
             logging.INFO,
-            msg="Attempting to add aio-pika opentelemetry autoinstrumentation...",
+            msg="Attempting to add aio-pg opentelemetry autoinstrumentation...",
         ):
             AiopgInstrumentor().instrument()
     if HAS_BOTOCORE:
