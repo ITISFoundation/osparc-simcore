@@ -45,19 +45,19 @@ def mocked_director_v2_api(mocker: MockerFixture):
         "simcore_service_webserver.clusters._handlers.director_v2_api", autospec=True
     )
 
-    mocked_director_v2_api.create_cluster.return_value = Cluster.model_validate(
-        random.choice(Cluster.model_config["json_schema_extra"]["examples"])
+    mocked_director_v2_api.create_cluster.return_value = random.choice(
+        Cluster.model_config["json_schema_extra"]["examples"]
     )
     mocked_director_v2_api.list_clusters.return_value = []
-    mocked_director_v2_api.get_cluster.return_value = Cluster.model_validate(
-        random.choice(Cluster.model_config["json_schema_extra"]["examples"])
+    mocked_director_v2_api.get_cluster.return_value = random.choice(
+        Cluster.model_config["json_schema_extra"]["examples"]
     )
     mocked_director_v2_api.get_cluster_details.return_value = {
         "scheduler": {"status": "running"},
         "dashboardLink": "https://link.to.dashboard",
     }
-    mocked_director_v2_api.update_cluster.return_value = Cluster.model_validate(
-        random.choice(Cluster.model_config["json_schema_extra"]["examples"])
+    mocked_director_v2_api.update_cluster.return_value = random.choice(
+        Cluster.model_config["json_schema_extra"]["examples"]
     )
     mocked_director_v2_api.delete_cluster.return_value = None
     mocked_director_v2_api.ping_cluster.return_value = None

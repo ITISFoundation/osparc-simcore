@@ -8,7 +8,7 @@ from ._base import InputSchema, OutputSchema
 class ClusterPathParams(BaseModel):
     cluster_id: ClusterID
     model_config = ConfigDict(
-        populate_by_name=True, 
+        populate_by_name=True,
         extra="forbid",
     )
 
