@@ -31,6 +31,10 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsWindow", {
       appearance: "service-window"
     });
 
+    osparc.utils.Utils.setIdToWidget(this, "organizationsWindow");
+    const closeBtn = this.getChildControl("close-button");
+    osparc.utils.Utils.setIdToWidget(closeBtn, "organizationsWindowCloseBtn");
+
     this.__buildLayout();
   },
 

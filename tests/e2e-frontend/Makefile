@@ -10,5 +10,5 @@ run-tests-headed: install-dev ## run tests headed (you can see what's going on)
 	npx playwright test --headed
 
 .PHONY: run-tests-ui
-run-tests-ui: install-dev ## run tests headed with an assistance GUI
+run-tests-ui: install-dev ## starts a GUI where tests can be launched
 	npx playwright test --ui

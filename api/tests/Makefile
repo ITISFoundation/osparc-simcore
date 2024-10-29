@@ -37,7 +37,7 @@ test-ci: _check_venv_active ## runs all tests [DEV]
 		--cov-report=term-missing \
 		--cov-report=xml \
 		--junitxml=junit.xml -o junit_family=legacy \
-		--cov=api \
+		--cov=. \
 		--durations=10 \
 		--log-date-format="%Y-%m-%d %H:%M:%S" \
     --log-format="%(asctime)s %(levelname)s %(message)s" \
