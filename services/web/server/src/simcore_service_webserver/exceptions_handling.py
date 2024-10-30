@@ -28,6 +28,7 @@ def create_http_error_from_map(
     request: web.Request, exc: BaseException, to_http_error_map: ExceptionToHttpErrorMap
 ) -> web.HTTPError | None:
     for exc_cls, http_error_info in to_http_error_map.items():
+        # FIXME: there can be multiple matches if exc_cls is base class
         if isinstance(exc, exc_cls):
 
             # safe formatting, i.e. does not raise
