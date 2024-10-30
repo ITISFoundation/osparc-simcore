@@ -142,6 +142,7 @@ class PaymentMethodGet(OutputSchema):
     )
 
     model_config = ConfigDict(
+        frozen=False,
         json_schema_extra={
             "examples": [
                 {
