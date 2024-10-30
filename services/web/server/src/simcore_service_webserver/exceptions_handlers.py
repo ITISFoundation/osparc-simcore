@@ -15,7 +15,7 @@ _logger = logging.getLogger(__name__)
 
 class WebApiExceptionHandler(Protocol):
     def __call__(
-        self, request: web.Request, exception: BaseException
+        self, exception: BaseException, request: web.Request
     ) -> web.HTTPError | BaseException | None:
         """
         Callback to process an exception raised during a web request, allowing custom handling.
@@ -24,8 +24,8 @@ class WebApiExceptionHandler(Protocol):
         into an `web.HTTPError` (i.e.the errors specified in the web-api)
 
         Arguments:
-            request -- current request
             exception -- exception raised in web handler during this request
+            request -- current request
 
         Returns:
             - None: to suppress `exception`
@@ -64,10 +64,6 @@ def create_exception_handlers_decorator(
     def _decorator(handler: Handler):
         @functools.wraps(handler)
         async def _wrapper(request: web.Request) -> web.StreamResponse:
-            # NOTE: this could als be dynamically extended with other
-            #  customizations of error handlers [(exception_types,exception_handler ), ...]
-            #  then we can use contextlib.ExitStack() to nest them.
-            #  In that case, the order will be important
             with _handled_exception_context(
                 exception_types,
                 exception_handler,
@@ -99,12 +95,12 @@ class _DefaultDict(dict):
 
 
 def _sort_exceptions_by_specificity(
-    exceptions: list[type[BaseException]],
+    exceptions: list[type[BaseException]], *, concrete_first: bool = True
 ) -> list[type[BaseException]]:
     return sorted(
         exceptions,
         key=lambda exc: sum(issubclass(e, exc) for e in exceptions if e is not exc),
-        reverse=True,
+        reverse=not concrete_first,
     )
 
 
@@ -130,8 +126,8 @@ def create__http_error_map_handler(
     )
 
     def _handler(
-        request: web.Request,
         exception: BaseException,
+        request: web.Request,
     ) -> web.HTTPError | BaseException | None:
         if exc_cls := next((_ for _ in included if isinstance(exception, _)), None):
             http_error_info = to_http_error_map[exc_cls]
