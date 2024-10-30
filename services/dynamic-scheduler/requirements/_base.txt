@@ -368,6 +368,8 @@ typing-extensions==4.10.0
     #   opentelemetry-sdk
     #   pydantic
     #   typer
+u-msgpack-python==2.8.0
+    # via -r requirements/_base.in
 urllib3==2.2.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
