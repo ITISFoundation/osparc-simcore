@@ -197,11 +197,11 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
 
     __populateList: function() {
       this.__servicesLatest = [];
-      osparc.store.Services.getServicesLatest()
-        .then(servicesLatest => {
-          Object.keys(servicesLatest).forEach(key => {
-            this.__servicesLatest.push(servicesLatest[key]);
-          });
+      const excludeFrontend = false;
+      const excludeDeprecated = true;
+      osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
+        .then(servicesList => {
+          this.__servicesLatest = servicesList;
           this.__updateList();
         });
     },
