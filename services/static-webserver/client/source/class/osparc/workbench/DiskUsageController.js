@@ -96,6 +96,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
 
       let prevDiskUsageState = this.__prevDiskUsageStateList.find(isMatchingNodeId);
       if (prevDiskUsageState === undefined) {
+        // Initialize it
         this.__prevDiskUsageStateList.push({
           nodeId: id,
           state: "NORMAL"
@@ -115,11 +116,17 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       }
 
       const diskHostUsage = data.usage["HOST"]
-      const diskVolsUsage = "STATE_VOLUMES" in data.usage ? data.usage["STATE_VOLUMES"] : null;
-      let message;
-      const freeSpace = osparc.utils.Utils.bytesToSize(diskHostUsage.free);
-      const warningLevel = this.__getWarningLevel(diskHostUsage.free);
+      let freeSpace = osparc.utils.Utils.bytesToSize(diskHostUsage.free);
+      let warningLevel = this.__getWarningLevel(diskHostUsage.free);
+
+      if ("STATE_VOLUMES" in data.usage) {
+        const diskVolsUsage = data.usage["STATE_VOLUMES"];
+        const freeVolsSpace = osparc.utils.Utils.bytesToSize(diskVolsUsage.free);
+        const volsWarningLevel = this.__getWarningLevel(diskVolsUsage.free);
+      }
+
       const objIndex = this.__prevDiskUsageStateList.findIndex((obj => obj.nodeId === id));
+      let message;
       switch (warningLevel) {
         case "CRITICAL":
           if (shouldDisplayMessage(prevDiskUsageState, warningLevel)) {
