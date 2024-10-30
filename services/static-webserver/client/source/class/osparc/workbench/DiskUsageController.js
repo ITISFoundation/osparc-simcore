@@ -34,7 +34,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
     this.__socket.on("serviceDiskUsage", data => {
       if (data["node_id"] && this.__callbacks[data["node_id"]]) {
         //  notify
-        this.setDiskUsageNotificationToUI(data);
+        this.__evaluateDisplayMessage(data);
         this.__callbacks[data["node_id"]].forEach(cb => {
           cb(data);
         })
@@ -81,7 +81,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       return warningLevel
     },
 
-    setDiskUsageNotificationToUI: function(data) {
+    __evaluateDisplayMessage: function(data) {
       const id = data["node_id"];
       if (!this.__callbacks[id]) {
         return;
@@ -121,8 +121,11 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
 
       if ("STATE_VOLUMES" in data.usage) {
         const diskVolsUsage = data.usage["STATE_VOLUMES"];
-        const freeVolsSpace = osparc.utils.Utils.bytesToSize(diskVolsUsage.free);
-        const volsWarningLevel = this.__getWarningLevel(diskVolsUsage.free);
+        if (diskVolsUsage["used_percent"] > diskHostUsage["used_percent"]) {
+          // "STATE_VOLUMES" is more critical so it takes over
+          freeSpace = osparc.utils.Utils.bytesToSize(diskVolsUsage.free);
+          warningLevel = this.__getWarningLevel(diskVolsUsage.free);
+        }
       }
 
       const objIndex = this.__prevDiskUsageStateList.findIndex((obj => obj.nodeId === id));
