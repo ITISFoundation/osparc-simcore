@@ -13,7 +13,7 @@ from pydantic import (
 
 from ..emails import LowerCaseEmailStr
 from ..users import UserID
-from ..utils.common_validators import create__only_one_is_set__root_validator
+from ..utils.common_validators import create__check_only_one_is_set__root_validator
 from ._base import InputSchema, OutputSchema
 
 
@@ -184,17 +184,13 @@ class GroupUserAdd(InputSchema):
     email: LowerCaseEmailStr | None = None
 
     _check_uid_or_email = root_validator(allow_reuse=True)(
-        create__only_one_is_set__root_validator(["uid", "email"])
+        create__check_only_one_is_set__root_validator(["uid", "email"])
     )
-    # @root_validator
-    # @classmethod
-    # def _check_uid_or_email(cls, values):
-    #     uid, email = values.get("uid"), values.get("email")
-    #     # Ensure exactly one of uid or email is set
-    #     if not (bool(uid is not None) ^ bool(email is not None)):
-    #         msg = f"Either 'uid' or 'email' must be set, but not both. Got {uid=} and {email=}"
-    #         raise ValueError(msg)
-    #     return values
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "examples": [{"uid": 42}, {"email": "foo@email.com"}]
+        }
 
 
 class GroupUserUpdate(InputSchema):

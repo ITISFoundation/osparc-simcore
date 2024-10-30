@@ -73,7 +73,7 @@ def null_or_none_str_to_none_validator(value: Any):
     return value
 
 
-def create__only_one_is_set__root_validator(alternative_field_names: list[str]):
+def create__check_only_one_is_set__root_validator(alternative_field_names: list[str]):
     """Ensure exactly one and only one of the alternatives is set
 
     This is useful when you want to give the client alternative
