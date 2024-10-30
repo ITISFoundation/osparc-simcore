@@ -48,6 +48,31 @@ qx.Class.define("osparc.store.Services", {
       });
     },
 
+    getServicesLatestList: function(excludeFrontend = true, excludeDeprecated = true) {
+      return new Promise(resolve => {
+        const servicesList = [];
+        this.getServicesLatest()
+          .then(servicesLatest => {
+            Object.keys(servicesLatest).forEach(key => {
+              const serviceLatest = servicesLatest[key];
+              if (excludeFrontend && key.includes("simcore/services/frontend/")) {
+                // do not add frontend services
+                return;
+              }
+              if (excludeDeprecated && servicesLatest[key]["retired"]) {
+                // do not add retired services
+                return;
+              }
+              servicesList.push(serviceLatest);
+            });
+          })
+          .catch(err => {
+            console.error(err);
+          })
+          .finally(() => resolve(servicesList));
+      });
+    },
+
     getService: function(key, version, useCache = true) {
       return new Promise(resolve => {
         if (useCache && this.__isInCache(key, version)) {
