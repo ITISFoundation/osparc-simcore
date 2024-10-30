@@ -22,6 +22,7 @@ class WalletGet(OutputSchema):
     modified: datetime
 
     model_config = ConfigDict(
+        from_attributes=True,
         frozen=False
     )
 
