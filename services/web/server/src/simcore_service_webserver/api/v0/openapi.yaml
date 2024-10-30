@@ -485,6 +485,7 @@ paths:
       tags:
       - groups
       summary: Get Group
+      description: Creates organization groups
       operationId: get_group
       parameters:
       - required: true
@@ -506,6 +507,7 @@ paths:
       tags:
       - groups
       summary: Delete Group
+      description: Deletes organization groups
       operationId: delete_group
       parameters:
       - required: true
@@ -523,6 +525,7 @@ paths:
       tags:
       - groups
       summary: Update Group
+      description: Updates organization groups
       operationId: update_group
       parameters:
       - required: true
@@ -551,6 +554,7 @@ paths:
       tags:
       - groups
       summary: Get Group Users
+      description: Gets users in organization groups
       operationId: get_group_users
       parameters:
       - required: true
@@ -572,6 +576,7 @@ paths:
       tags:
       - groups
       summary: Add Group User
+      description: Adds a user to an organization group
       operationId: add_group_user
       parameters:
       - required: true
@@ -596,6 +601,7 @@ paths:
       tags:
       - groups
       summary: Get Group User
+      description: Gets specific user in an organization group
       operationId: get_group_user
       parameters:
       - required: true
@@ -650,6 +656,7 @@ paths:
       tags:
       - groups
       summary: Update Group User
+      description: Updates user (access) to an organization group
       operationId: update_group_user
       parameters:
       - required: true
