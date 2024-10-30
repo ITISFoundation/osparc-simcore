@@ -107,7 +107,7 @@ async def test_product_owner_generates_invitation(
     assert got.model_dump(include=set(expected), by_alias=False) == expected
 
     product_base_url = f"{client.make_url('/')}"
-    assert got.invitation_link.startswith(product_base_url)
+    assert f"{got.invitation_link}".startswith(product_base_url)
     assert before_dt < got.created
     assert got.created < datetime.now(tz=timezone.utc)
 
