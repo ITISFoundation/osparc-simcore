@@ -1,4 +1,3 @@
-import functools
 import logging
 
 from aiohttp import web
@@ -18,7 +17,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
@@ -26,52 +24,16 @@ from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
-from ..workspaces.errors import (
-    WorkspaceAccessForbiddenError,
-    WorkspaceFolderInconsistencyError,
-    WorkspaceNotFoundError,
-)
 from . import _folders_api
+from ._exceptions_handlers import handle_plugin_requests_exceptions
 from ._models import (
     FolderListWithJsonStrQueryParams,
     FoldersPathParams,
     FoldersRequestContext,
 )
-from .errors import (
-    FolderAccessForbiddenError,
-    FolderNotFoundError,
-    FoldersValueError,
-    FolderValueNotPermittedError,
-)
 
 _logger = logging.getLogger(__name__)
 
-
-def handle_folders_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except (FolderNotFoundError, WorkspaceNotFoundError) as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-
-        except (
-            FolderAccessForbiddenError,
-            WorkspaceAccessForbiddenError,
-            WorkspaceFolderInconsistencyError,
-        ) as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
-
-        except (FolderValueNotPermittedError, FoldersValueError) as exc:
-            raise web.HTTPBadRequest(reason=f"{exc}") from exc
-
-    return wrapper
-
-
-#
-# folders COLLECTION -------------------------
-#
 
 routes = web.RouteTableDef()
 
@@ -79,7 +41,7 @@ routes = web.RouteTableDef()
 @routes.post(f"/{VTAG}/folders", name="create_folder")
 @login_required
 @permission_required("folder.create")
-@handle_folders_exceptions
+@handle_plugin_requests_exceptions
 async def create_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     body_params = await parse_request_body_as(CreateFolderBodyParams, request)
@@ -99,7 +61,7 @@ async def create_folder(request: web.Request):
 @routes.get(f"/{VTAG}/folders", name="list_folders")
 @login_required
 @permission_required("folder.read")
-@handle_folders_exceptions
+@handle_plugin_requests_exceptions
 async def list_folders(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     query_params: FolderListWithJsonStrQueryParams = parse_request_query_parameters_as(
@@ -135,7 +97,7 @@ async def list_folders(request: web.Request):
 @routes.get(f"/{VTAG}/folders/{{folder_id}}", name="get_folder")
 @login_required
 @permission_required("folder.read")
-@handle_folders_exceptions
+@handle_plugin_requests_exceptions
 async def get_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
@@ -156,7 +118,7 @@ async def get_folder(request: web.Request):
 )
 @login_required
 @permission_required("folder.update")
-@handle_folders_exceptions
+@handle_plugin_requests_exceptions
 async def replace_folder(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
@@ -179,7 +141,7 @@ async def replace_folder(request: web.Request):
 )
 @login_required
 @permission_required("folder.delete")
-@handle_folders_exceptions
+@handle_plugin_requests_exceptions
 async def delete_folder_group(request: web.Request):
     req_ctx = FoldersRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
