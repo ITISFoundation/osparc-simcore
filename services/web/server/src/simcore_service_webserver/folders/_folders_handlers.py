@@ -8,29 +8,20 @@ from models_library.api_schemas_webserver.folders_v2 import (
     FolderGetPage,
     PutFolderBodyParams,
 )
-from models_library.basic_types import IDStr
-from models_library.folders import FolderID
-from models_library.rest_ordering import OrderBy, OrderDirection
-from models_library.rest_pagination import Page, PageQueryParameters
+from models_library.rest_ordering import OrderBy
+from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from models_library.users import UserID
-from models_library.utils.common_validators import null_or_none_str_to_none_validator
-from models_library.workspaces import WorkspaceID
-from pydantic import Extra, Field, Json, parse_obj_as, validator
+from pydantic import parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
-    RequestParams,
-    StrictRequestParams,
     parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
@@ -41,6 +32,11 @@ from ..workspaces.errors import (
     WorkspaceNotFoundError,
 )
 from . import _folders_api
+from ._models import (
+    FolderListWithJsonStrQueryParams,
+    FoldersPathParams,
+    FoldersRequestContext,
+)
 from .errors import (
     FolderAccessForbiddenError,
     FolderNotFoundError,
@@ -78,59 +74,6 @@ def handle_folders_exceptions(handler: Handler):
 #
 
 routes = web.RouteTableDef()
-
-
-class FoldersRequestContext(RequestParams):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
-
-
-class FoldersPathParams(StrictRequestParams):
-    folder_id: FolderID
-
-
-class FolderListWithJsonStrQueryParams(PageQueryParameters):
-    # pylint: disable=unsubscriptable-object
-    order_by: Json[OrderBy] = Field(
-        default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
-        description="Order by field (modified_at|name|description) and direction (asc|desc). The default sorting order is ascending.",
-        example='{"field": "name", "direction": "desc"}',
-        alias="order_by",
-    )
-    folder_id: FolderID | None = Field(
-        default=None,
-        description="List the subfolders of this folder. By default, list the subfolders of the root directory (Folder ID is None).",
-    )
-    workspace_id: WorkspaceID | None = Field(
-        default=None,
-        description="List folders in specific workspace. By default, list in the user private workspace",
-    )
-
-    @validator("order_by", check_fields=False)
-    @classmethod
-    def validate_order_by_field(cls, v):
-        if v.field not in {
-            "modified_at",
-            "name",
-            "description",
-        }:
-            msg = f"We do not support ordering by provided field {v.field}"
-            raise ValueError(msg)
-        if v.field == "modified_at":
-            v.field = "modified"
-        return v
-
-    class Config:
-        extra = Extra.forbid
-
-    # validators
-    _null_or_none_str_to_none_validator = validator(
-        "folder_id", allow_reuse=True, pre=True
-    )(null_or_none_str_to_none_validator)
-
-    _null_or_none_str_to_none_validator2 = validator(
-        "workspace_id", allow_reuse=True, pre=True
-    )(null_or_none_str_to_none_validator)
 
 
 @routes.post(f"/{VTAG}/folders", name="create_folder")
