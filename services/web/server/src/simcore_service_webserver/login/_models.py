@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Callable
 
 from pydantic import BaseModel, ConfigDict, SecretStr, ValidationInfo
 
@@ -15,7 +15,7 @@ class InputSchema(BaseModel):
 
 def create_password_match_validator(
     reference_field: str,
-) -> Callable[[SecretStr, dict[str, Any]], SecretStr]:
+) -> Callable[[SecretStr, ValidationInfo], SecretStr]:
     def _check(v: SecretStr, info: ValidationInfo):
         if (
             v is not None
