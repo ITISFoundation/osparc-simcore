@@ -9,7 +9,7 @@ import asyncio
 import time
 from collections.abc import Awaitable, Callable, Iterator
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from typing import Any
 from unittest import mock
@@ -716,7 +716,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     mock_catalog_api["get_service"].return_value["deprecated"] = (
-        datetime.utcnow() - timedelta(days=1)
+        datetime.now(UTC) - timedelta(days=1)
     ).isoformat()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_session_id_factory())

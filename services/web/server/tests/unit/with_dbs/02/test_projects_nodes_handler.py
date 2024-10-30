@@ -202,7 +202,7 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
             assert (
-                node_resources
+                {k: v.model_dump() for k, v in node_resources.items()}
                 == ServiceResourcesDictHelpers.model_config["json_schema_extra"][
                     "examples"
                 ][0]
