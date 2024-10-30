@@ -74,8 +74,11 @@ def create_handle_request_exceptions_decorator(
                 web.HTTPError: 4XX and 5XX http errors
             """
             try:
+
                 return await handler(request)
+
             except exception_types as exc:
+                # NOTE: this part here has to be configurable
                 if http_err := create_http_error_from_map(
                     request, exc, to_http_error_map
                 ):
