@@ -7,7 +7,7 @@ from models_library.rest_pagination import PageQueryParameters
 from models_library.users import UserID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from models_library.workspaces import WorkspaceID
-from pydantic import Extra, Field, Json, validator
+from pydantic import BaseModel, Extra, Field, Json, validator
 from servicelib.aiohttp.requests_validation import RequestParams, StrictRequestParams
 from servicelib.request_keys import RQT_USERID_KEY
 
@@ -67,3 +67,9 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
     _null_or_none_str_to_none_validator2 = validator(
         "workspace_id", allow_reuse=True, pre=True
     )(null_or_none_str_to_none_validator)
+
+
+class RemoveQueryParams(BaseModel):
+    force: bool = Field(
+        default=False, description="Force removal (even if resource is active)"
+    )
