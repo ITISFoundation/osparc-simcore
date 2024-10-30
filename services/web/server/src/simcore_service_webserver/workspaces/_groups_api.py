@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from models_library.workspaces import UserWorkspaceAccessRightsDB, WorkspaceID
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from ..users import api as users_api
 from . import _groups_db as workspaces_groups_db
@@ -24,6 +24,10 @@ class WorkspaceGroupGet(BaseModel):
     delete: bool
     created: datetime
     modified: datetime
+    
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
 async def create_workspace_group(

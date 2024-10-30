@@ -41,10 +41,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_VERSION_CONTROL": "0",
             "WEBSERVER_WALLETS": "1",
-            "WEBSERVER_EMAIL": json.dumps({"SMTP_HOST": "smtp.fake.com", "SMTP_PORT": 25}),
-            "WEBSERVER_LOGIN": json.dumps({"LOGIN_REGISTRATION_INVITATION_REQUIRED": "True"}),
-            "WEBSERVER_PAYMENTS": json.dumps({"PAYMENTS_USERNAME": "somebody", "PAYMENTS_PASSWORD": faker.password(length=10)}),
-            "WEBSERVER_SCICRUNCH": "null",
             "WEBSERVER_TRACING": "null"
         },
     )
