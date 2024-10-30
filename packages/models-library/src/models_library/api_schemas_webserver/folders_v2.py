@@ -45,7 +45,7 @@ class CreateFolderBodyParams(InputSchema):
 
 class PutFolderBodyParams(InputSchema):
     name: IDStr
-    parent_folder_id: FolderID | None
+    parent_folder_id: FolderID | None = None
     model_config = ConfigDict(extra="forbid")
 
     _null_or_none_str_to_none_validator = field_validator(
