@@ -6,11 +6,11 @@ SEE rationale in https://fastapi.tiangolo.com/tutorial/extra-models/#multiple-mo
 """
 
 from datetime import datetime
-from typing import Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from models_library.folders import FolderID
 from models_library.workspaces import WorkspaceID
-from pydantic import ConfigDict, Field, HttpUrl, field_validator
+from pydantic import BeforeValidator, ConfigDict, Field, HttpUrl, field_validator
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import LongTruncatedStr, ShortTruncatedStr
@@ -122,19 +122,15 @@ class ProjectReplace(InputSchema):
 
 
 class ProjectPatch(InputSchema):
-    name: ShortTruncatedStr = FieldNotRequired()
-    description: LongTruncatedStr = FieldNotRequired()
-    thumbnail: HttpUrl = FieldNotRequired()
-    access_rights: dict[GroupIDStr, AccessRights] = FieldNotRequired()
-    classifiers: list[ClassifierID] = FieldNotRequired()
-    dev: dict | None = FieldNotRequired()
-    ui: StudyUI | None = FieldNotRequired()
-    quality: dict[str, Any] = FieldNotRequired()
-
-    _empty_is_none = field_validator("thumbnail", mode="before")(
-        empty_str_to_none_pre_validator
-    )
-
+    name: ShortTruncatedStr | None = Field(default=None)
+    description: LongTruncatedStr | None = Field(default=None)
+    thumbnail: Annotated[HttpUrl, BeforeValidator(empty_str_to_none_pre_validator)] | None = Field(default=None)
+    access_rights: dict[GroupIDStr, AccessRights] | None = Field(default=None)
+    classifiers: list[ClassifierID] | None = Field(default=None)
+    dev: dict | None = Field(default=None)
+    ui: StudyUI | None = Field(default=None)
+    quality: dict[str, Any] | None = Field(default=None)
+    
 
 __all__: tuple[str, ...] = (
     "EmptyModel",
