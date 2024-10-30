@@ -2,10 +2,12 @@
 # pylint:disable=too-many-positional-arguments
 # pylint:disable=unused-argument
 
+import itertools
 import json
 import re
 from collections.abc import AsyncIterable, Callable
 from copy import deepcopy
+from datetime import timedelta
 from typing import Any
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -32,11 +34,19 @@ from simcore_service_dynamic_scheduler.services.service_tracker import (
     set_request_as_running,
     set_request_as_stopped,
 )
+from simcore_service_dynamic_scheduler.services.service_tracker._models import (
+    SchedulerServiceState,
+    TrackedServiceModel,
+    UserRequestedState,
+)
 from simcore_service_dynamic_scheduler.services.status_monitor import _monitor
 from simcore_service_dynamic_scheduler.services.status_monitor._deferred_get_status import (
     DeferredGetStatus,
 )
-from simcore_service_dynamic_scheduler.services.status_monitor._monitor import Monitor
+from simcore_service_dynamic_scheduler.services.status_monitor._monitor import (
+    Monitor,
+    _can_be_removed,
+)
 from simcore_service_dynamic_scheduler.services.status_monitor._setup import get_monitor
 from tenacity import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -414,3 +424,72 @@ async def test_expected_calls_to_notify_frontend(  # pylint:disable=too-many-arg
             # pylint:disable=protected-access
             await monitor._worker_start_get_status_requests()  # noqa: SLF001
             assert remove_tracked_spy.call_count == remove_tracked_count
+
+
+@pytest.fixture
+def mock_tracker_remove_after_idle_for(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_scheduler.services.status_monitor._monitor._REMOVE_AFTER_IDLE_FOR",
+        timedelta(seconds=0.1),
+    )
+
+
+@pytest.mark.parametrize(
+    "requested_state, current_state, immediate_can_be_removed, can_be_removed",
+    [
+        pytest.param(
+            UserRequestedState.RUNNING,
+            SchedulerServiceState.IDLE,
+            False,
+            True,
+            id="can_remove_after_an_interval",
+        ),
+        pytest.param(
+            UserRequestedState.STOPPED,
+            SchedulerServiceState.IDLE,
+            True,
+            True,
+            id="can_remove_no_interval",
+        ),
+        *[
+            pytest.param(
+                requested_state,
+                service_state,
+                False,
+                False,
+                id=f"not_removed_{requested_state=}_{service_state=}",
+            )
+            for requested_state, service_state in itertools.product(
+                set(UserRequestedState),
+                {x for x in SchedulerServiceState if x != SchedulerServiceState.IDLE},
+            )
+        ],
+    ],
+)
+async def test__can_be_removed(
+    mock_tracker_remove_after_idle_for: None,
+    requested_state: UserRequestedState,
+    current_state: SchedulerServiceState,
+    immediate_can_be_removed: bool,
+    can_be_removed: bool,
+):
+    model = TrackedServiceModel(
+        dynamic_service_start=None,
+        user_id=None,
+        project_id=None,
+        requested_state=requested_state,
+    )
+
+    # This also triggers the setter and updates the last state change timer
+    model.current_state = current_state
+
+    assert _can_be_removed(model) is immediate_can_be_removed
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(2),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert _can_be_removed(model) is can_be_removed
