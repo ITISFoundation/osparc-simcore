@@ -12,7 +12,8 @@ from ..application_settings_utils import requires_dev_feature_enabled
 from ..exceptions_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    create_handle_request_exceptions_decorator,
+    create__http_error_map_handler,
+    create_exception_handlers_decorator,
 )
 from ..login.decorators import get_user_id, login_required
 from ..products.api import get_product_name
@@ -45,8 +46,8 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-_handle_request_exceptions = create_handle_request_exceptions_decorator(
-    _TO_HTTP_ERROR_MAP, ProjectTrashError
+_handle_exceptions = create_exception_handlers_decorator(
+    create__http_error_map_handler(_TO_HTTP_ERROR_MAP), ProjectTrashError
 )
 
 #
@@ -60,7 +61,7 @@ routes = web.RouteTableDef()
 @requires_dev_feature_enabled
 @login_required
 @permission_required("project.delete")
-@_handle_request_exceptions
+@_handle_exceptions
 async def empty_trash(request: web.Request):
     user_id = get_user_id(request)
     product_name = get_product_name(request)
@@ -76,7 +77,7 @@ async def empty_trash(request: web.Request):
 @requires_dev_feature_enabled
 @login_required
 @permission_required("project.delete")
-@_handle_request_exceptions
+@_handle_exceptions
 async def trash_project(request: web.Request):
     user_id = get_user_id(request)
     product_name = get_product_name(request)
@@ -100,7 +101,7 @@ async def trash_project(request: web.Request):
 @requires_dev_feature_enabled
 @login_required
 @permission_required("project.delete")
-@_handle_request_exceptions
+@_handle_exceptions
 async def untrash_project(request: web.Request):
     user_id = get_user_id(request)
     product_name = get_product_name(request)
