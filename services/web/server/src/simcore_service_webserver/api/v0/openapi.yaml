@@ -454,6 +454,8 @@ paths:
       tags:
       - groups
       summary: List Groups
+      description: List all possible groups (organizations, primary, everyone and
+        products)
       operationId: list_groups
       responses:
         '200':
@@ -466,6 +468,7 @@ paths:
       tags:
       - groups
       summary: Create Group
+      description: Creates an organization group
       operationId: create_group
       requestBody:
         content:
@@ -485,7 +488,7 @@ paths:
       tags:
       - groups
       summary: Get Group
-      description: Creates organization groups
+      description: Get an organization group
       operationId: get_group
       parameters:
       - required: true
@@ -631,6 +634,7 @@ paths:
       tags:
       - groups
       summary: Delete Group User
+      description: Removes a user from an organization group
       operationId: delete_group_user
       parameters:
       - required: true
@@ -656,7 +660,7 @@ paths:
       tags:
       - groups
       summary: Update Group User
-      description: Updates user (access) to an organization group
+      description: Updates user (access-rights) to an organization group
       operationId: update_group_user
       parameters:
       - required: true
@@ -4324,7 +4328,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':

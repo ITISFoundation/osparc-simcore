@@ -38,7 +38,9 @@ router = APIRouter(
     response_model=Envelope[AllUsersGroups],
 )
 async def list_groups():
-    ...
+    """
+    List all possible groups (organizations, primary, everyone and products)
+    """
 
 
 @router.post(
@@ -47,7 +49,9 @@ async def list_groups():
     status_code=status.HTTP_201_CREATED,
 )
 async def create_group(_b: GroupCreate):
-    ...
+    """
+    Creates an organization group
+    """
 
 
 @router.get(
@@ -55,7 +59,9 @@ async def create_group(_b: GroupCreate):
     response_model=Envelope[GroupGet],
 )
 async def get_group(_p: Annotated[_GroupPathParams, Depends()]):
-    """Creates organization groups"""
+    """
+    Get an organization group
+    """
 
 
 @router.patch(
@@ -66,7 +72,9 @@ async def update_group(
     _p: Annotated[_GroupPathParams, Depends()],
     _b: GroupUpdate,
 ):
-    """Updates organization groups"""
+    """
+    Updates organization groups
+    """
 
 
 @router.delete(
@@ -74,7 +82,9 @@ async def update_group(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_group(_p: Annotated[_GroupPathParams, Depends()]):
-    """Deletes organization groups"""
+    """
+    Deletes organization groups
+    """
 
 
 @router.get(
@@ -82,7 +92,9 @@ async def delete_group(_p: Annotated[_GroupPathParams, Depends()]):
     response_model=Envelope[list[GroupUserGet]],
 )
 async def get_group_users(_p: Annotated[_GroupPathParams, Depends()]):
-    """Gets users in organization groups"""
+    """
+    Gets users in organization groups
+    """
 
 
 @router.post(
@@ -119,7 +131,7 @@ async def update_group_user(
     _b: GroupUserUpdate,
 ):
     """
-    Updates user (access) to an organization group
+    Updates user (access-rights) to an organization group
     """
 
 
@@ -130,7 +142,9 @@ async def update_group_user(
 async def delete_group_user(
     _p: Annotated[_GroupUserPathParams, Depends()],
 ):
-    ...
+    """
+    Removes a user from an organization group
+    """
 
 
 @router.get(
