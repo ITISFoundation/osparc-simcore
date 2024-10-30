@@ -3,7 +3,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-
+import json
 import time
 from collections.abc import Callable
 from random import randint
@@ -12,10 +12,12 @@ from uuid import uuid4
 import pytest
 import redis.asyncio as aioredis
 from aiohttp import web
+from faker import Faker
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.payments._methods_api import Faker
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     _ALIVE_SUFFIX,
@@ -33,10 +35,17 @@ from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 
 @pytest.fixture
 def mock_env_devel_environment(
-    mock_env_devel_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
+    mock_env_devel_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch, faker: Faker
 ):
     return mock_env_devel_environment | setenvs_from_dict(
-        monkeypatch, {"RESOURCE_MANAGER_RESOURCE_TTL_S": "3"}
+        monkeypatch, {
+            "RESOURCE_MANAGER_RESOURCE_TTL_S": "3",
+            "WEBSERVER_EMAIL": json.dumps({"SMTP_HOST": "smtp.fake.com", "SMTP_PORT": 25}),
+            "WEBSERVER_LOGIN": json.dumps({"LOGIN_REGISTRATION_INVITATION_REQUIRED": "True"}),
+            "WEBSERVER_PAYMENTS": json.dumps({"PAYMENTS_USERNAME": "somebody", "PAYMENTS_PASSWORD": faker.password(length=10)}),
+            "WEBSERVER_SCICRUNCH": "null",
+            "WEBSERVER_TRACING": "null"
+        }
     )
 
 
