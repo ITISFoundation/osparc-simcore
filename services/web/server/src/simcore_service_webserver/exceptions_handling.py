@@ -61,8 +61,10 @@ def create_handle_request_exceptions_decorator(
     exception_types: type[BaseException] | tuple[type[BaseException], ...] = Exception,
 ):
     """
-    Creates a handle_request_exceptions decorator
+    Creates a function to decorate routes handlers functions
+    that can catch and handle exceptions raised in the decorated functions
     """
+    assert all(issubclass(cls, exception_types) for cls in to_http_error_map)  # nosec
 
     def _decorator(handler: Handler):
         @functools.wraps(handler)
@@ -73,7 +75,6 @@ def create_handle_request_exceptions_decorator(
             """
             try:
                 return await handler(request)
-
             except exception_types as exc:
                 if http_err := create_http_error_from_map(
                     request, exc, to_http_error_map
