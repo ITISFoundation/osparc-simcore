@@ -17,10 +17,11 @@ class WebApiExceptionHandler(Protocol):
     def __call__(
         self, request: web.Request, exception: BaseException
     ) -> web.HTTPError | BaseException | None:
-        """Callable to handle an `exception` raised during `request`
+        """
+        Callback to process an exception raised during a web request, allowing custom handling.
 
-        Provides a way to handle or transform exceptions raised during a request
-        (coming from lower API) into http errors (at web-API)
+        This function can be implemented to  suppress, reraise, or transform the exception
+        into an `web.HTTPError` (i.e.the errors specified in the web-api)
 
         Arguments:
             request -- current request
@@ -80,7 +81,7 @@ def create_exception_handlers_decorator(
 
 
 #
-# Customizations
+# Http Error Map Handler Customization
 #
 
 
@@ -110,9 +111,19 @@ def _sort_exceptions_by_specificity(
 def create__http_error_map_handler(
     to_http_error_map: ExceptionToHttpErrorMap,
 ) -> WebApiExceptionHandler:
-    """Factor to implement a customization of WebApiExceptionHandler
+    """
+    Creates a custom `WebApiExceptionHandler` that maps specific exceptions to HTTP errors.
 
-    ExceptionToHttpErrorMap:  maps exceptions to an http status code and message
+    Given an `ExceptionToHttpErrorMap`, this function returns a handler that checks if an exception
+    matches one in the map, returning an HTTP error with the mapped status code and message.
+    Server errors (5xx) include additional logging with request context. Unmapped exceptions are
+    returned as-is for re-raising.
+
+    Arguments:
+        to_http_error_map -- Maps exceptions to HTTP status codes and messages.
+
+    Returns:
+        A web api exception handler
     """
     included: list[type[BaseException]] = _sort_exceptions_by_specificity(
         list(to_http_error_map.keys())
@@ -147,6 +158,7 @@ def create__http_error_map_handler(
                     )
                 )
             return http_error_cls(reason=user_msg)
+        # NOTE: not in my list, return so it gets reraised
         return exception
 
     return _handler
