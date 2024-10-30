@@ -187,7 +187,7 @@ class GroupUserAdd(InputSchema):
     def _check_uid_or_email(cls, values):
         uid, email = values.get("uid"), values.get("email")
         # Ensure exactly one of uid or email is set
-        if bool(uid is not None) ^ bool(email is not None):
+        if not (bool(uid is not None) ^ bool(email is not None)):
             msg = f"Either 'uid' or 'email' must be set, but not both. Got {uid=} and {email=}"
             raise ValueError(msg)
         return values
