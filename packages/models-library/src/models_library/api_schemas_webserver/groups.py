@@ -87,7 +87,13 @@ class GroupGet(OutputSchema):
         }
 
 
-class GroupPatch(InputSchema):
+class GroupCreate(InputSchema):
+    label: str
+    description: str
+    thumbnail: AnyUrl | None = None
+
+
+class GroupUpdate(InputSchema):
     label: str | None = None
     description: str | None = None
     thumbnail: AnyUrl | None = None
@@ -167,7 +173,7 @@ class GroupUserGet(BaseModel):
         }
 
 
-class GroupUserPatch(InputSchema):
+class GroupUserUpdate(InputSchema):
     access_rights: GroupAccessRights | None = None
 
     class Config:

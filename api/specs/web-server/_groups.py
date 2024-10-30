@@ -9,15 +9,16 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.groups import (
     AllUsersGroups,
+    GroupCreate,
     GroupGet,
-    GroupPatch,
+    GroupUpdate,
     GroupUserGet,
 )
 from models_library.generics import Envelope
 from models_library.users import GroupID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.groups._handlers import (
-    GroupUserPatch,
+    GroupUserUpdate,
     _ClassifiersQuery,
     _GroupPathParams,
     _GroupUserPathParams,
@@ -45,7 +46,7 @@ async def list_groups():
     response_model=Envelope[GroupGet],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_group():
+async def create_group(_b: GroupCreate):
     ...
 
 
@@ -63,7 +64,7 @@ async def get_group(_p: Annotated[_GroupPathParams, Depends()]):
 )
 async def update_group(
     _p: Annotated[_GroupPathParams, Depends()],
-    _b: GroupPatch,
+    _b: GroupUpdate,
 ):
     ...
 
@@ -111,7 +112,7 @@ async def get_group_user(
 )
 async def update_group_user(
     _p: Annotated[_GroupUserPathParams, Depends()],
-    _b: GroupUserPatch,
+    _b: GroupUserUpdate,
 ):
     ...
 
