@@ -15,6 +15,7 @@ from pydantic import BeforeValidator, ConfigDict, Field, HttpUrl, field_validato
 from ..api_schemas_long_running_tasks.tasks import TaskGet
 from ..basic_types import LongTruncatedStr, ShortTruncatedStr
 from ..emails import LowerCaseEmailStr
+from ..folders import FolderID
 from ..projects import ClassifierID, DateTimeStr, NodesDict, ProjectID
 from ..projects_access import AccessRights, GroupIDStr
 from ..projects_state import ProjectState
@@ -24,7 +25,7 @@ from ..utils.common_validators import (
     none_to_empty_str_pre_validator,
     null_or_none_str_to_none_validator,
 )
-from ..utils.pydantic_tools_extension import FieldNotRequired
+from ..workspaces import WorkspaceID
 from ._base import EmptyModel, InputSchema, OutputSchema
 from .permalinks import ProjectPermalink
 
@@ -74,12 +75,16 @@ class ProjectGet(OutputSchema):
     prj_owner: LowerCaseEmailStr
     access_rights: dict[GroupIDStr, AccessRights]
     tags: list[int]
-    classifiers: list[ClassifierID] = []
+    classifiers: list[ClassifierID] = Field(
+        default_factory=list, json_schema_extra={"default": []}
+    )
     state: ProjectState | None = None
     ui: EmptyModel | StudyUI | None = None
-    quality: dict[str, Any] = {}
+    quality: dict[str, Any] = Field(
+        default_factory=dict, json_schema_extra={"default": {}}
+    )
     dev: dict | None
-    permalink: ProjectPermalink = FieldNotRequired()
+    permalink: ProjectPermalink | None = None
     workspace_id: WorkspaceID | None
     folder_id: FolderID | None
     trashed_at: datetime | None
@@ -107,13 +112,15 @@ class ProjectReplace(InputSchema):
     last_change_date: DateTimeStr
     workbench: NodesDict
     access_rights: dict[GroupIDStr, AccessRights]
-    tags: list[int] | None = []
+    tags: list[int] | None = Field(
+        default_factory=list, json_schema_extra={"default": []}
+    )
     classifiers: list[ClassifierID] | None = Field(
-        default_factory=list,
+        default_factory=list, json_schema_extra={"default": []}
     )
     ui: StudyUI | None = None
     quality: dict[str, Any] = Field(
-        default_factory=dict,
+        default_factory=dict, json_schema_extra={"default": {}}
     )
 
     _empty_is_none = field_validator("thumbnail", mode="before")(

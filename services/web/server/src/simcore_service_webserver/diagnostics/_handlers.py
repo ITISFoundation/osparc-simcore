@@ -9,8 +9,7 @@ from typing import Any
 
 from aiohttp import ClientError, ClientSession, web
 from models_library.app_diagnostics import AppStatusCheck
-from models_library.utils.pydantic_tools_extension import FieldNotRequired
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.utils import logged_gather
@@ -32,7 +31,7 @@ routes = web.RouteTableDef()
 
 
 class StatusDiagnosticsQueryParam(BaseModel):
-    top_tracemalloc: int = FieldNotRequired()
+    top_tracemalloc: int | None = Field(default=None)
 
 
 class StatusDiagnosticsGet(BaseModel):

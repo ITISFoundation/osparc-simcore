@@ -6,7 +6,6 @@ from pydantic import ConfigDict, Field, HttpUrl, PlainSerializer, ValidationInfo
 
 from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
 from ..users import GroupID
-from ..utils.pydantic_tools_extension import FieldNotRequired
 from ..wallets import WalletID, WalletStatus
 from ._base import InputSchema, OutputSchema
 
@@ -61,7 +60,7 @@ PaymentMethodID: TypeAlias = IDStr
 
 class CreateWalletPayment(InputSchema):
     price_dollars: AmountDecimal
-    comment: str = FieldNotRequired(max_length=100)
+    comment: str | None = Field(default=None, max_length=100)
 
 
 class WalletPaymentInitiated(OutputSchema):
@@ -78,15 +77,15 @@ class PaymentTransaction(OutputSchema):
     price_dollars: Decimal
     wallet_id: WalletID
     osparc_credits: Decimal
-    comment: str = FieldNotRequired()
+    comment: str | None = Field(default=None)
     created_at: datetime
     completed_at: datetime | None
     # SEE PaymentTransactionState enum
     state: Literal["PENDING", "SUCCESS", "FAILED", "CANCELED"] = Field(
         ..., alias="completedStatus"
     )
-    state_message: str = FieldNotRequired()
-    invoice_url: HttpUrl = FieldNotRequired()
+    state_message: str | None = Field(default=None)
+    invoice_url: HttpUrl | None = Field(default=None)
 
 
 class PaymentMethodInitiated(OutputSchema):

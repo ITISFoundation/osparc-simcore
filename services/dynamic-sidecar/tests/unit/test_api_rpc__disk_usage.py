@@ -17,6 +17,7 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar import disk_usage
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_sidecar.core.application import create_app
+from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 from simcore_service_dynamic_sidecar.modules.system_monitor._disk_usage import (
     get_disk_usage_monitor,
 )
@@ -69,8 +70,11 @@ async def test_get_state(app: FastAPI, rpc_client: RabbitMQRPCClient):
             total=ByteSize(0), used=ByteSize(0), free=ByteSize(0), used_percent=0
         )
     }
+    settings: ApplicationSettings = app.state.settings
 
-    result = await disk_usage.update_disk_usage(rpc_client, usage=usage)
+    result = await disk_usage.update_disk_usage(
+        rpc_client, node_id=settings.DY_SIDECAR_NODE_ID, usage=usage
+    )
     assert result is None
 
     assert get_disk_usage_monitor(app)._usage_overwrite == usage  # noqa: SLF001
