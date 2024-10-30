@@ -4,7 +4,7 @@ from typing import Any, ClassVar
 from pydantic import AnyUrl, BaseModel, Field, ValidationError, parse_obj_as, validator
 
 from ..emails import LowerCaseEmailStr
-from ._base import InputSchema
+from ._base import InputSchema, OutputSchema
 
 #
 # GROUPS MODELS defined in OPENAPI specs
@@ -30,7 +30,7 @@ class GroupAccessRights(BaseModel):
         }
 
 
-class UsersGroup(BaseModel):
+class GroupGet(OutputSchema):
     gid: int = Field(..., description="the group ID")
     label: str = Field(..., description="the group name")
     description: str = Field(..., description="the group description")
@@ -46,7 +46,7 @@ class UsersGroup(BaseModel):
 
     @validator("thumbnail", pre=True)
     @classmethod
-    def sanitize_legacy_data(cls, v):
+    def _sanitize_legacy_data(cls, v):
         if v:
             # Enforces null if thumbnail is not valid URL or empty
             with suppress(ValidationError):
@@ -88,10 +88,10 @@ class UsersGroup(BaseModel):
 
 
 class AllUsersGroups(BaseModel):
-    me: UsersGroup | None = None
-    organizations: list[UsersGroup] | None = None
-    all: UsersGroup | None = None
-    product: UsersGroup | None = None
+    me: GroupGet | None = None
+    organizations: list[GroupGet] | None = None
+    all: GroupGet | None = None
+    product: GroupGet | None = None
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {

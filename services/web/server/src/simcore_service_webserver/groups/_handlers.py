@@ -6,9 +6,9 @@ from typing import Literal
 from aiohttp import web
 from models_library.api_schemas_webserver.groups import (
     AllUsersGroups,
+    GroupGet,
     GroupUserGet,
     GroupUserPatch,
-    UsersGroup,
 )
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import GroupID, UserID
@@ -127,7 +127,7 @@ async def get_group(request: web.Request):
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
 
     group = await api.get_user_group(request.app, req_ctx.user_id, path_params.gid)
-    assert parse_obj_as(UsersGroup, group) is not None  # nosec
+    assert parse_obj_as(GroupGet, group) is not None  # nosec
     return group
 
 
@@ -141,7 +141,7 @@ async def create_group(request: web.Request):
     new_group = await request.json()
 
     created_group = await api.create_user_group(request.app, req_ctx.user_id, new_group)
-    assert parse_obj_as(UsersGroup, created_group) is not None  # nosec
+    assert parse_obj_as(GroupGet, created_group) is not None  # nosec
     raise web.HTTPCreated(
         text=json_dumps({"data": created_group}), content_type=MIMETYPE_APPLICATION_JSON
     )
@@ -159,7 +159,7 @@ async def update_group(request: web.Request):
     updated_group = await api.update_user_group(
         request.app, req_ctx.user_id, path_params.gid, new_group_values
     )
-    assert parse_obj_as(UsersGroup, updated_group) is not None  # nosec
+    assert parse_obj_as(GroupGet, updated_group) is not None  # nosec
     return envelope_json_response(updated_group)
 
 
