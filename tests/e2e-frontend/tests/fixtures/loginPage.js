@@ -17,6 +17,8 @@ export class LoginPage {
    * @param {string} password
    */
   async login(email, password) {
+    await this.page.goto(this.productUrl);
+
     const usernameField = this.page.getByTestId("loginUserEmailFld");
     const passwordField = this.page.getByTestId("loginPasswordFld");
     const submitButton = this.page.getByTestId("loginSubmitBtn");
@@ -24,6 +26,10 @@ export class LoginPage {
     await usernameField.fill(email);
     await passwordField.fill(password);
     await submitButton.click();
+
+    const response = await this.page.waitForResponse('**/me');
+    const meData = await response.json();
+    return meData["data"]["role"];
   }
 
   async logout() {
