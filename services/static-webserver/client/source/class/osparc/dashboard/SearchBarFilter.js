@@ -349,7 +349,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
-    resetFilters: function(silent = false) {
+    resetFilters: function() {
       this.__removeChips();
       this.getChildControl("text-field").resetValue();
     },
