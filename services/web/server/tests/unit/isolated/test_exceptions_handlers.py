@@ -16,6 +16,7 @@ from simcore_service_webserver.exceptions_handlers import (
     _handled_exception_context,
     _sort_exceptions_by_specificity,
     create__http_error_map_handler,
+    create_exception_handlers_decorator,
 )
 
 
@@ -98,15 +99,50 @@ def test_handled_exception_context(fake_request: web.Request):
         ), "only BasePluginError exceptions should call this handler"
         return None  # noqa: RET501, PLR1711
 
-    def _rest_handler(exc_cls):
+    def _fun(raises):
         with _handled_exception_context(
             BasePluginError, _suppress_handler, request=fake_request
         ):
-            raise exc_cls
+            raise raises
 
     # checks
-    _rest_handler(OneError)
-    _rest_handler(OtherError)
+    _fun(raises=OneError)
+    _fun(raises=OtherError)
 
     with pytest.raises(ArithmeticError):
-        _rest_handler(ArithmeticError)
+        _fun(raises=ArithmeticError)
+
+
+async def test_exception_handlers_decorator():
+    def _suppress_handler(exception, request):
+        assert isinstance(
+            exception, BasePluginError
+        ), "only BasePluginError exceptions should call this handler"
+        return None  # noqa: RET501, PLR1711
+
+    _handle_exceptons = create_exception_handlers_decorator(
+        _suppress_handler, BasePluginError
+    )
+
+    @_handle_exceptons
+    async def _rest_handler(request: web.Request):
+        if request.query.get("raise") == "OneError":
+            raise OneError
+        if request.query.get("raise") == "ArithmeticError":
+            raise ArithmeticError
+
+        return web.Response(text="all good")
+
+    # emulates call
+    resp = await _rest_handler(make_mocked_request("GET", "/foo"))
+    assert resp.status == status.HTTP_200_OK
+
+    # OMG! not good!?
+    resp = await _rest_handler(make_mocked_request("GET", "/foo?raise=OneError"))
+    assert resp is None
+
+    # typically capture by last
+    with pytest.raises(ArithmeticError):
+        resp = await _rest_handler(
+            make_mocked_request("GET", "/foo?raise=ArithmeticError")
+        )
