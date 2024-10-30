@@ -556,9 +556,9 @@ paths:
     get:
       tags:
       - groups
-      summary: Get Group Users
+      summary: Get All Group Users
       description: Gets users in organization groups
-      operationId: get_group_users
+      operationId: get_all_group_users
       parameters:
       - required: true
         schema:
@@ -4328,7 +4328,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':

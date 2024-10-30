@@ -1,7 +1,16 @@
 from contextlib import suppress
 from typing import Any, ClassVar
 
-from pydantic import AnyUrl, BaseModel, Field, ValidationError, parse_obj_as, validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    Field,
+    ValidationError,
+    parse_obj_as,
+    root_validator,
+    validator,
+)
+from simcore_service_webserver.db.base_repository import UserID
 
 from ..emails import LowerCaseEmailStr
 from ._base import InputSchema, OutputSchema
@@ -171,6 +180,21 @@ class GroupUserGet(BaseModel):
                 },
             }
         }
+
+
+class GroupUserAdd(InputSchema):
+    uid: UserID | None = None
+    email: LowerCaseEmailStr | None = None
+
+    @root_validator
+    @classmethod
+    def _check_uid_or_email(cls, values):
+        uid, email = values.get("uid"), values.get("email")
+        # Ensure exactly one of uid or email is set
+        if bool(uid is not None) ^ bool(email is not None):
+            msg = f"Either 'uid' or 'email' must be set, but not both. Got {uid=} and {email=}"
+            raise ValueError(msg)
+        return values
 
 
 class GroupUserUpdate(InputSchema):

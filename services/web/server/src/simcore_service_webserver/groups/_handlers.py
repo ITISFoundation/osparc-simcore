@@ -8,11 +8,11 @@ from models_library.api_schemas_webserver.groups import (
     GroupCreate,
     GroupGet,
     GroupUpdate,
+    GroupUserAdd,
     GroupUserGet,
     GroupUserUpdate,
     MyGroupsGet,
 )
-from models_library.emails import LowerCaseEmailStr
 from models_library.users import GroupID, UserID
 from pydantic import BaseModel, Extra, Field, parse_obj_as
 from servicelib.aiohttp import status
@@ -182,15 +182,15 @@ async def delete_group(request: web.Request):
 
 
 #
-# Users in organization groups
+# Users in organization groups (i.e. members of an organization)
 #
 
 
-@routes.get(f"/{API_VTAG}/groups/{{gid}}/users", name="get_group_users")
+@routes.get(f"/{API_VTAG}/groups/{{gid}}/users", name="get_all_group_users")
 @login_required
 @permission_required("groups.*")
 @_handle_groups_exceptions
-async def get_group_users(request: web.Request):
+async def get_all_group_users(request: web.Request):
     """Gets users in organization groups"""
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
@@ -212,23 +212,14 @@ async def add_group_user(request: web.Request):
     """
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
-    new_user_in_group = await request.json()
-
-    assert "uid" in new_user_in_group or "email" in new_user_in_group  # nosec
-
-    new_user_id = new_user_in_group.get("uid", None)
-    new_user_email = (
-        parse_obj_as(LowerCaseEmailStr, new_user_in_group["email"])
-        if "email" in new_user_in_group
-        else None
-    )
+    added: GroupUserAdd = await parse_request_body_as(GroupUserAdd, request)
 
     await api.add_user_in_group(
         request.app,
         req_ctx.user_id,
         path_params.gid,
-        new_user_id=new_user_id,
-        new_user_email=new_user_email,
+        new_user_id=added.uid,
+        new_user_email=added.email,
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 

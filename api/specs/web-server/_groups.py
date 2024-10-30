@@ -18,6 +18,7 @@ from models_library.generics import Envelope
 from models_library.users import GroupID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.groups._handlers import (
+    GroupUserAdd,
     GroupUserUpdate,
     _ClassifiersQuery,
     _GroupPathParams,
@@ -91,7 +92,7 @@ async def delete_group(_p: Annotated[_GroupPathParams, Depends()]):
     "/groups/{gid}/users",
     response_model=Envelope[list[GroupUserGet]],
 )
-async def get_group_users(_p: Annotated[_GroupPathParams, Depends()]):
+async def get_all_group_users(_p: Annotated[_GroupPathParams, Depends()]):
     """
     Gets users in organization groups
     """
@@ -103,7 +104,7 @@ async def get_group_users(_p: Annotated[_GroupPathParams, Depends()]):
 )
 async def add_group_user(
     _p: Annotated[_GroupPathParams, Depends()],
-    _new: GroupUserGet,
+    _b: GroupUserAdd,
 ):
     """
     Adds a user to an organization group
