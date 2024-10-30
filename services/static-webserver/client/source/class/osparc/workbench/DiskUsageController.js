@@ -87,13 +87,15 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
         return;
       }
 
-      const diskUsage = data.usage["HOST"]
       function isMatchingNodeId({nodeId}) {
         return nodeId === id;
       }
       function shouldDisplayMessage(prevDiskUsageState, warningLevel) {
         return prevDiskUsageState && prevDiskUsageState.nodeId === id && prevDiskUsageState.state !== warningLevel
       }
+
+      const diskHostUsage = data.usage["HOST"]
+      const diskVolsUsage = "STATE_VOLUMES" in data.usage ? data.usage["STATE_VOLUMES"] : null;
 
       let prevDiskUsageState = this.__prevDiskUsageStateList.find(isMatchingNodeId);
       if (prevDiskUsageState === undefined) {
@@ -102,7 +104,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
           state: "NORMAL"
         })
       }
-      const freeSpace = osparc.utils.Utils.bytesToSize(diskUsage.free);
+      const freeSpace = osparc.utils.Utils.bytesToSize(diskHostUsage.free);
 
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
