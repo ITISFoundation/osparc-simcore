@@ -169,7 +169,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           // check if the eTag changed before requesting the presigned link again
           const eTag = value["eTag"];
           const valueField = this.__getValueField(i);
-          if (valueField && eTag && valueField.eTag && eTag === valueField.eTag) {
+          if (eTag && valueField && valueField.eTag && eTag === valueField.eTag) {
             continue;
           }
         }
