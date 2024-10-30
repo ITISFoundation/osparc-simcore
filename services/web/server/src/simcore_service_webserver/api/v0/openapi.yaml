@@ -594,7 +594,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupUserGet'
+              $ref: '#/components/schemas/GroupUserAdd'
         required: true
       responses:
         '204':
@@ -4328,7 +4328,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -8697,6 +8697,19 @@ components:
           minLength: 1
           type: string
           format: uri
+    GroupUserAdd:
+      title: GroupUserAdd
+      type: object
+      properties:
+        uid:
+          title: Uid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        email:
+          title: Email
+          type: string
+          format: email
     GroupUserGet:
       title: GroupUserGet
       required:
