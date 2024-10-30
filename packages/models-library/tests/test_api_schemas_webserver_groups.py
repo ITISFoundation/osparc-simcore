@@ -16,10 +16,10 @@ def test_uid_or_email_are_set(uid: Any, email: Any):
     if email != unset:
         kwargs["email"] = email
 
-    none_are_set = kwargs.get("uid") is None and kwargs.get("email") is None
-    both_are_set = kwargs.get("uid") is not None and kwargs.get("email") is not None
+    none_are_defined = kwargs.get("uid") is None and kwargs.get("email") is None
+    both_are_defined = kwargs.get("uid") is not None and kwargs.get("email") is not None
 
-    if none_are_set or both_are_set:
+    if none_are_defined or both_are_defined:
         with pytest.raises(ValidationError, match="not both"):
             GroupUserAdd(**kwargs)
     else:

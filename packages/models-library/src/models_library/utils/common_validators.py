@@ -76,6 +76,9 @@ def null_or_none_str_to_none_validator(value: Any):
 def create__check_only_one_is_set__root_validator(alternative_field_names: list[str]):
     """Ensure exactly one and only one of the alternatives is set
 
+    NOTE: a field is considered here `unset` when it is `not None`. When None
+    is used to indicate something else, please do not use this validator.
+
     This is useful when you want to give the client alternative
     ways to set the same thing e.g. set the user by email or id or username
     and each of those has a different field
