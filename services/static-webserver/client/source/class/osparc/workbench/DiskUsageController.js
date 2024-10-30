@@ -65,7 +65,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       }
     },
 
-    getDiskUsage: function(freeSpace) {
+    __getWarningLevel: function(freeSpace) {
       const lowDiskSpacePreferencesSettings = osparc.Preferences.getInstance();
       this.__lowDiskThreshold = lowDiskSpacePreferencesSettings.getLowDiskSpaceThreshold();
       const warningSize = osparc.utils.Utils.gBToBytes(this.__lowDiskThreshold); // 5 GB Default
@@ -96,8 +96,6 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       }
 
       let prevDiskUsageState = this.__prevDiskUsageStateList.find(isMatchingNodeId);
-
-      const warningLevel = this.getDiskUsage(diskUsage.free);
       if (prevDiskUsageState === undefined) {
         this.__prevDiskUsageStateList.push({
           nodeId: id,
@@ -119,7 +117,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       }
 
       let message;
-
+      const warningLevel = this.__getWarningLevel(diskHostUsage.free);
       const objIndex = this.__prevDiskUsageStateList.findIndex((obj => obj.nodeId === id));
       switch (warningLevel) {
         case "CRITICAL":
