@@ -168,8 +168,8 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           // it's a file in storage.
           // check if the eTag changed before requesting the presigned link again
           const eTag = value["eTag"];
-          const valueField = this.__getValueField(i);
-          if (eTag && valueField && valueField.eTag && eTag === valueField.eTag) {
+          const valueWidget = this.__getValueWidget(i);
+          if (eTag && valueWidget && valueWidget.eTag && eTag === valueWidget.eTag) {
             continue;
           }
         }
@@ -177,10 +177,10 @@ qx.Class.define("osparc.widget.NodeOutputs", {
       }
     },
 
-    __getValueField: function(row) {
-      let children = this.__gridLayout.getChildren();
+    __getValueWidget: function(row) {
+      const children = this.__gridLayout.getChildren();
       for (let i=0; i<children.length; i++) {
-        let child = children[i];
+        const child = children[i];
         const layoutProps = child.getLayoutProperties();
         if (
           layoutProps.row === row &&
