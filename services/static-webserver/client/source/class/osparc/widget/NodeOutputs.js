@@ -49,7 +49,14 @@ qx.Class.define("osparc.widget.NodeOutputs", {
       ports: node.getMetaData().outputs
     });
 
-    node.addListener("changeOutputs", () => this.__outputsChanged(), this);
+    node.addListener("changeOutputs", e => {
+      const currentOutputs = e.getData();
+      const oldOutputs = e.getOldData();
+      if (JSON.stringify(currentOutputs) !== JSON.stringify(oldOutputs)) {
+        console.log("changeOutputs");
+        this.__outputsChanged();
+      }
+    }, this);
 
     this.addListener("appear", () => this.__makeLabelsResponsive(), this);
     this.addListener("resize", () => this.__makeLabelsResponsive(), this);
@@ -164,8 +171,29 @@ qx.Class.define("osparc.widget.NodeOutputs", {
       for (let i=0; i<portKeys.length; i++) {
         const portKey = portKeys[i];
         const value = (portKey in outputs && "value" in outputs[portKey]) ? outputs[portKey]["value"] : null;
+        if (value && typeof value === "object" && "store" in value) {
+          // it's a file in storage check etag changed
+          console.log("eTag", value["eTag"]);
+          const valueField = this.__getValueField(i);
+          console.log("valueField", valueField)
+        }
         this.__valueToGrid(value, i);
       }
+    },
+
+    __getValueField: function(row) {
+      let children = this.__gridLayout.getChildren();
+      for (let i=0; i<children.length; i++) {
+        let child = children[i];
+        const layoutProps = child.getLayoutProperties();
+        if (
+          layoutProps.row === row &&
+          layoutProps.column === this.self().POS.VALUE
+        ) {
+          return child;
+        }
+      }
+      return null;
     },
 
     __valueToGrid: function(value, row) {
@@ -179,6 +207,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           const fileId = value.path;
           const filename = value.filename || osparc.file.FilePicker.getFilenameFromPath(value);
           valueWidget.setValue(filename);
+          valueWidget.eTag = value["eTag"];
           osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
             .then(presignedLinkData => {
               if ("resp" in presignedLinkData && presignedLinkData.resp) {
