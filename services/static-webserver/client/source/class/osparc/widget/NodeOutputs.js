@@ -49,14 +49,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
       ports: node.getMetaData().outputs
     });
 
-    node.addListener("changeOutputs", e => {
-      const currentOutputs = e.getData();
-      const oldOutputs = e.getOldData();
-      if (JSON.stringify(currentOutputs) !== JSON.stringify(oldOutputs)) {
-        console.log("changeOutputs");
-        this.__outputsChanged();
-      }
-    }, this);
+    node.addListener("changeOutputs", () => this.__outputsChanged(), this);
 
     this.addListener("appear", () => this.__makeLabelsResponsive(), this);
     this.addListener("resize", () => this.__makeLabelsResponsive(), this);
@@ -176,7 +169,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
           // check if the eTag changed before requesting the presigned link again
           const eTag = value["eTag"];
           const valueField = this.__getValueField(i);
-          if (eTag && valueField.eTag && eTag === valueField.eTag) {
+          if (valueField && eTag && valueField.eTag && eTag === valueField.eTag) {
             continue;
           }
         }
