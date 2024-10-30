@@ -161,6 +161,20 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
+    __textFiledValueChanged: function() {
+      this.__filter();
+    },
+
+    __listenToTextFiledChanges: function() {
+      const textField = this.getChildControl("text-field");
+      textField.addListener("changeValue", this.__textFiledValueChanged, this);
+    },
+
+    __unlistenToTextFiledChanges: function() {
+      const textField = this.getChildControl("text-field");
+      textField.removeListener("changeValue", this.__textFiledValueChanged, this);
+    },
+
     __attachEventHandlers: function() {
       const textField = this.getChildControl("text-field");
       textField.addListener("tap", () => this.__showFilterMenu(), this);
@@ -172,7 +186,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           this.__hideFilterMenu();
         }
       }, this);
-      textField.addListener("changeValue", () => this.__filter(), this);
+      this.__listenToTextFiledChanges();
 
       const resetButton = this.getChildControl("reset-button");
       resetButton.addListener("execute", () => this.__resetFilters(), this);
@@ -349,9 +363,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
-    resetFilters: function() {
+    resetFilters: function(silent = true) {
       this.__removeChips();
+
+      if (silent) {
+        this.__unlistenToTextFiledChanges();
+      }
       this.getChildControl("text-field").resetValue();
+      if (silent) {
+        this.__listenToTextFiledChanges();
+      }
     },
 
     __resetFilters: function() {
