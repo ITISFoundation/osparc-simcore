@@ -467,6 +467,12 @@ paths:
       - groups
       summary: Create Group
       operationId: create_group
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupCreate'
+        required: true
       responses:
         '201':
           description: Successful Response
@@ -531,7 +537,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupPatch'
+              $ref: '#/components/schemas/GroupUpdate'
         required: true
       responses:
         '200':
@@ -666,7 +672,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupUserPatch'
+              $ref: '#/components/schemas/GroupUserUpdate'
         required: true
       responses:
         '200':
@@ -8657,6 +8663,25 @@ components:
           title: Delete
           type: boolean
       description: defines acesss rights for the user
+    GroupCreate:
+      title: GroupCreate
+      required:
+      - label
+      - description
+      type: object
+      properties:
+        label:
+          title: Label
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
     GroupGet:
       title: GroupGet
       required:
@@ -8693,8 +8718,8 @@ components:
           additionalProperties:
             type: string
           description: Maps user's column and regular expression
-    GroupPatch:
-      title: GroupPatch
+    GroupUpdate:
+      title: GroupUpdate
       type: object
       properties:
         label:
@@ -8753,8 +8778,8 @@ components:
           read: true
           write: false
           delete: false
-    GroupUserPatch:
-      title: GroupUserPatch
+    GroupUserUpdate:
+      title: GroupUserUpdate
       type: object
       properties:
         accessRights:
