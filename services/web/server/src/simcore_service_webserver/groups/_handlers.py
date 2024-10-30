@@ -7,6 +7,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver.groups import (
     AllUsersGroups,
     GroupUserGet,
+    GroupUserPatch,
     UsersGroup,
 )
 from models_library.emails import LowerCaseEmailStr
@@ -15,6 +16,7 @@ from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Extra, Field, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
+    parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
@@ -249,18 +251,15 @@ async def get_group_user(request: web.Request):
 @permission_required("groups.*")
 @_handle_groups_exceptions
 async def update_group_user(request: web.Request):
-    """
-    Modify specific user in group
-    """
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupUserPathParams, request)
-    new_values_for_user_in_group = await request.json()
+    update: GroupUserPatch = await parse_request_body_as(GroupUserPatch, request)
     user = await api.update_user_in_group(
         request.app,
         req_ctx.user_id,
         path_params.gid,
         path_params.uid,
-        new_values_for_user_in_group,
+        update.dict(exclude_unset=True),
     )
     assert parse_obj_as(GroupUserGet, user) is not None  # nosec
     return envelope_json_response(user)

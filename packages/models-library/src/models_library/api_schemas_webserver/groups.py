@@ -4,6 +4,7 @@ from typing import Any, ClassVar
 from pydantic import AnyUrl, BaseModel, Field, ValidationError, parse_obj_as, validator
 
 from ..emails import LowerCaseEmailStr
+from ._base import InputSchema
 
 #
 # GROUPS MODELS defined in OPENAPI specs
@@ -151,6 +152,21 @@ class GroupUserGet(BaseModel):
                 "last_name": "Smith",
                 "gravatar_id": "a1af5c6ecc38e81f29695f01d6ceb540",
                 "gid": "3",
+                "accessRights": {
+                    "read": True,
+                    "write": False,
+                    "delete": False,
+                },
+            }
+        }
+
+
+class GroupUserPatch(InputSchema):
+    access_rights: GroupAccessRights | None = None
+
+    class Config:
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
                 "accessRights": {
                     "read": True,
                     "write": False,

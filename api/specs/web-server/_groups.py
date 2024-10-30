@@ -13,9 +13,13 @@ from models_library.api_schemas_webserver.groups import (
     UsersGroup,
 )
 from models_library.generics import Envelope
-from models_library.users import GroupID, UserID
+from models_library.users import GroupID
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.groups._handlers import _ClassifiersQuery
+from simcore_service_webserver.groups._handlers import (
+    GroupUserPatch,
+    _ClassifiersQuery,
+    _GroupUserPathParams,
+)
 from simcore_service_webserver.scicrunch.models import ResearchResource, ResourceHit
 
 router = APIRouter(
@@ -91,8 +95,7 @@ async def add_group_user(
     response_model=Envelope[GroupUserGet],
 )
 async def get_group_user(
-    gid: GroupID,
-    uid: UserID,
+    _p: Annotated[_GroupUserPathParams, Depends()],
 ):
     ...
 
@@ -102,11 +105,9 @@ async def get_group_user(
     response_model=Envelope[GroupUserGet],
 )
 async def update_group_user(
-    gid: GroupID,
-    uid: UserID,
-    _update: GroupUserGet,
+    _p: Annotated[_GroupUserPathParams, Depends()],
+    _b: GroupUserPatch,
 ):
-    # FIXME: update type
     ...
 
 
@@ -115,8 +116,7 @@ async def update_group_user(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_group_user(
-    gid: GroupID,
-    uid: UserID,
+    _p: Annotated[_GroupUserPathParams, Depends()],
 ):
     ...
 
