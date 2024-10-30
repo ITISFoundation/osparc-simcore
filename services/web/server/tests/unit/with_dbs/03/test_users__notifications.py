@@ -379,7 +379,7 @@ async def test_update_user_notification_at_correct_index(
 
     async def _get_stored_notifications() -> list[UserNotification]:
         return [
-            UserNotification.parse_raw(x)
+            UserNotification.model_validate_json(x)
             for x in await notification_redis_client.lrange(
                 get_notification_key(user_id), 0, -1
             )

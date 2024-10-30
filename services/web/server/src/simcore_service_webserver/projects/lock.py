@@ -63,5 +63,5 @@ async def get_project_locked_state(
         if lock_value := await redis_locks_client.get(
             PROJECT_REDIS_LOCK_KEY.format(project_uuid)
         ):
-            return ProjectLocked.parse_raw(lock_value)
+            return ProjectLocked.model_validate_json(lock_value)
     return None

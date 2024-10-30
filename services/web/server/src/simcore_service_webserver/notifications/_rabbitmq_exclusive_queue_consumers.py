@@ -97,7 +97,7 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
 
 
 async def _log_message_parser(app: web.Application, data: bytes) -> bool:
-    rabbit_message = LoggerRabbitMessage.parse_raw(data)
+    rabbit_message = LoggerRabbitMessage.model_validate_json(data)
     await send_message_to_user(
         app,
         rabbit_message.user_id,
@@ -111,7 +111,7 @@ async def _log_message_parser(app: web.Application, data: bytes) -> bool:
 
 
 async def _events_message_parser(app: web.Application, data: bytes) -> bool:
-    rabbit_message = EventRabbitMessage.parse_raw(data)
+    rabbit_message = EventRabbitMessage.model_validate_json(data)
     await send_message_to_user(
         app,
         rabbit_message.user_id,

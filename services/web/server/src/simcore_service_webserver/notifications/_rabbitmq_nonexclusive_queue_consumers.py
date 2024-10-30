@@ -23,7 +23,7 @@ _APP_RABBITMQ_CONSUMERS_KEY: Final[str] = f"{__name__}.rabbit_consumers"
 
 
 async def _instrumentation_message_parser(app: web.Application, data: bytes) -> bool:
-    rabbit_message = InstrumentationRabbitMessage.parse_raw(data)
+    rabbit_message = InstrumentationRabbitMessage.model_validate_json(data)
     if rabbit_message.metrics == "service_started":
         service_started(
             app,
