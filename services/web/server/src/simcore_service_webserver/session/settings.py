@@ -4,6 +4,7 @@ from aiohttp import web
 from pydantic import AliasChoices, PositiveInt, field_validator
 from pydantic.fields import Field
 from pydantic.types import SecretStr
+from pydantic_settings import SettingsConfigDict
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_session import MixinSessionSettings
 
@@ -52,6 +53,10 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
     SESSION_COOKIE_HTTPONLY: bool = Field(
         default=True,
         description="This prevents JavaScript from accessing the session cookie",
+    )
+    
+    model_config = SettingsConfigDict(
+        extra="allow"
     )
 
     @field_validator("SESSION_SECRET_KEY")
