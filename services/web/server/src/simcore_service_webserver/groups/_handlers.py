@@ -7,6 +7,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver.groups import (
     AllUsersGroups,
     GroupGet,
+    GroupPatch,
     GroupUserGet,
     GroupUserPatch,
 )
@@ -154,7 +155,8 @@ async def create_group(request: web.Request):
 async def update_group(request: web.Request):
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
-    new_group_values = await request.json()
+    update: GroupPatch = await parse_request_body_as(GroupPatch, request)
+    new_group_values = update.dict(exclude_unset=True)
 
     updated_group = await api.update_user_group(
         request.app, req_ctx.user_id, path_params.gid, new_group_values

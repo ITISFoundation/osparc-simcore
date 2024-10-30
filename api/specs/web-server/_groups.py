@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.groups import (
     AllUsersGroups,
     GroupGet,
+    GroupPatch,
     GroupUserGet,
 )
 from models_library.generics import Envelope
@@ -60,7 +61,10 @@ async def get_group(_p: Annotated[_GroupPathParams, Depends()]):
     "/groups/{gid}",
     response_model=Envelope[GroupGet],
 )
-async def update_group(_p: Annotated[_GroupPathParams, Depends()], _update: GroupGet):
+async def update_group(
+    _p: Annotated[_GroupPathParams, Depends()],
+    _b: GroupPatch,
+):
     ...
 
 

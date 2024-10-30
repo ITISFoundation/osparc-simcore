@@ -87,6 +87,12 @@ class GroupGet(OutputSchema):
         }
 
 
+class GroupPatch(InputSchema):
+    label: str | None = None
+    description: str | None = None
+    thumbnail: AnyUrl | None = None
+
+
 class AllUsersGroups(BaseModel):
     me: GroupGet | None = None
     organizations: list[GroupGet] | None = None
