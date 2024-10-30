@@ -8,11 +8,11 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.groups import (
-    AllUsersGroups,
     GroupCreate,
     GroupGet,
     GroupUpdate,
     GroupUserGet,
+    MyGroupsGet,
 )
 from models_library.generics import Envelope
 from models_library.users import GroupID
@@ -35,11 +35,11 @@ router = APIRouter(
 
 @router.get(
     "/groups",
-    response_model=Envelope[AllUsersGroups],
+    response_model=Envelope[MyGroupsGet],
 )
 async def list_groups():
     """
-    List all possible groups (organizations, primary, everyone and products)
+    List all groups (organizations, primary, everyone and products) I belong to
     """
 
 
@@ -145,6 +145,11 @@ async def delete_group_user(
     """
     Removes a user from an organization group
     """
+
+
+#
+# Classifiers
+#
 
 
 @router.get(

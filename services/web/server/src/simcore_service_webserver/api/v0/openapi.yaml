@@ -454,8 +454,8 @@ paths:
       tags:
       - groups
       summary: List Groups
-      description: List all possible groups (organizations, primary, everyone and
-        products)
+      description: List all groups (organizations, primary, everyone and products)
+        I belong to
       operationId: list_groups
       responses:
         '200':
@@ -463,7 +463,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_AllUsersGroups_'
+                $ref: '#/components/schemas/Envelope_MyGroupsGet_'
     post:
       tags:
       - groups
@@ -6039,54 +6039,6 @@ components:
         queued:
           title: Queued
           type: boolean
-    AllUsersGroups:
-      title: AllUsersGroups
-      type: object
-      properties:
-        me:
-          $ref: '#/components/schemas/GroupGet'
-        organizations:
-          title: Organizations
-          type: array
-          items:
-            $ref: '#/components/schemas/GroupGet'
-        all:
-          $ref: '#/components/schemas/GroupGet'
-        product:
-          $ref: '#/components/schemas/GroupGet'
-      example:
-        me:
-          gid: '27'
-          label: A user
-          description: A very special user
-          accessRights:
-            read: true
-            write: true
-            delete: true
-        organizations:
-        - gid: '15'
-          label: ITIS Foundation
-          description: The Foundation for Research on Information Technologies in
-            Society
-          accessRights:
-            read: true
-            write: false
-            delete: false
-        - gid: '16'
-          label: Blue Fundation
-          description: Some foundation
-          accessRights:
-            read: true
-            write: false
-            delete: false
-        all:
-          gid: '0'
-          label: All
-          description: Open to all users
-          accessRights:
-            read: true
-            write: false
-            delete: false
     Annotation:
       title: Annotation
       required:
@@ -7151,14 +7103,6 @@ components:
       type: object
       properties: {}
       additionalProperties: false
-    Envelope_AllUsersGroups_:
-      title: Envelope[AllUsersGroups]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/AllUsersGroups'
-        error:
-          title: Error
     Envelope_AnyUrl_:
       title: Envelope[AnyUrl]
       type: object
@@ -7361,6 +7305,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/LoginNextPage'
+        error:
+          title: Error
+    Envelope_MyGroupsGet_:
+      title: Envelope[MyGroupsGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/MyGroupsGet'
         error:
           title: Error
     Envelope_NodeCreated_:
@@ -9092,6 +9044,54 @@ components:
           type: string
           format: color
       additionalProperties: false
+    MyGroupsGet:
+      title: MyGroupsGet
+      type: object
+      properties:
+        me:
+          $ref: '#/components/schemas/GroupGet'
+        organizations:
+          title: Organizations
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupGet'
+        all:
+          $ref: '#/components/schemas/GroupGet'
+        product:
+          $ref: '#/components/schemas/GroupGet'
+      example:
+        me:
+          gid: '27'
+          label: A user
+          description: A very special user
+          accessRights:
+            read: true
+            write: true
+            delete: true
+        organizations:
+        - gid: '15'
+          label: ITIS Foundation
+          description: The Foundation for Research on Information Technologies in
+            Society
+          accessRights:
+            read: true
+            write: false
+            delete: false
+        - gid: '16'
+          label: Blue Fundation
+          description: Some foundation
+          accessRights:
+            read: true
+            write: false
+            delete: false
+        all:
+          gid: '0'
+          label: All
+          description: Open to all users
+          accessRights:
+            read: true
+            write: false
+            delete: false
     NoAuthentication:
       title: NoAuthentication
       type: object
@@ -10255,7 +10255,7 @@ components:
           - ADMIN
           type: string
         groups:
-          $ref: '#/components/schemas/AllUsersGroups'
+          $ref: '#/components/schemas/MyGroupsGet'
         gravatar_id:
           title: Gravatar Id
           type: string

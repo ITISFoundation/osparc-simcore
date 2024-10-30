@@ -99,7 +99,7 @@ class GroupUpdate(InputSchema):
     thumbnail: AnyUrl | None = None
 
 
-class AllUsersGroups(BaseModel):
+class MyGroupsGet(OutputSchema):
     me: GroupGet | None = None
     organizations: list[GroupGet] | None = None
     all: GroupGet | None = None
