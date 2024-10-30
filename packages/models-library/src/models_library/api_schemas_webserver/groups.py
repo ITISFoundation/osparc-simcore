@@ -15,10 +15,6 @@ from simcore_service_webserver.db.base_repository import UserID
 from ..emails import LowerCaseEmailStr
 from ._base import InputSchema, OutputSchema
 
-#
-# GROUPS MODELS defined in OPENAPI specs
-#
-
 
 class GroupAccessRights(BaseModel):
     """
@@ -109,10 +105,10 @@ class GroupUpdate(InputSchema):
 
 
 class MyGroupsGet(OutputSchema):
-    me: GroupGet | None = None
+    me: GroupGet
     organizations: list[GroupGet] | None = None
-    all: GroupGet | None = None
-    product: GroupGet | None = None
+    all: GroupGet
+    product: GroupGet
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
