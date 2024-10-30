@@ -94,9 +94,6 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
         return prevDiskUsageState && prevDiskUsageState.nodeId === id && prevDiskUsageState.state !== warningLevel
       }
 
-      const diskHostUsage = data.usage["HOST"]
-      const diskVolsUsage = "STATE_VOLUMES" in data.usage ? data.usage["STATE_VOLUMES"] : null;
-
       let prevDiskUsageState = this.__prevDiskUsageStateList.find(isMatchingNodeId);
       if (prevDiskUsageState === undefined) {
         this.__prevDiskUsageStateList.push({
@@ -104,21 +101,23 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
           state: "NORMAL"
         })
       }
-      const freeSpace = osparc.utils.Utils.bytesToSize(diskHostUsage.free);
 
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
       if (!currentStudy) {
         return;
       }
-      const node = currentStudy.getWorkbench().getNode(id);
 
+      const node = currentStudy.getWorkbench().getNode(id);
       const nodeName = node ? node.getLabel() : null;
       if (nodeName === null) {
         return;
       }
 
+      const diskHostUsage = data.usage["HOST"]
+      const diskVolsUsage = "STATE_VOLUMES" in data.usage ? data.usage["STATE_VOLUMES"] : null;
       let message;
+      const freeSpace = osparc.utils.Utils.bytesToSize(diskHostUsage.free);
       const warningLevel = this.__getWarningLevel(diskHostUsage.free);
       const objIndex = this.__prevDiskUsageStateList.findIndex((obj => obj.nodeId === id));
       switch (warningLevel) {
