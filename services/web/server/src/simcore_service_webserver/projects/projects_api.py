@@ -216,7 +216,7 @@ async def get_project_for_user(
             )
         )
         project["accessRights"] = {
-            gid: access.model_dump()
+            f"{gid}": access.model_dump()
             for gid, access in workspace_db.access_rights.items()
         }
 
