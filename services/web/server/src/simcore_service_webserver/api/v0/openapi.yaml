@@ -473,7 +473,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UsersGroup_'
+                $ref: '#/components/schemas/Envelope_GroupGet_'
   /v0/groups/{gid}:
     get:
       tags:
@@ -495,7 +495,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UsersGroup_'
+                $ref: '#/components/schemas/Envelope_GroupGet_'
     delete:
       tags:
       - groups
@@ -531,7 +531,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UsersGroup'
+              $ref: '#/components/schemas/GroupPatch'
         required: true
       responses:
         '200':
@@ -539,7 +539,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UsersGroup_'
+                $ref: '#/components/schemas/Envelope_GroupGet_'
   /v0/groups/{gid}/users:
     get:
       tags:
@@ -666,7 +666,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupUserGet'
+              $ref: '#/components/schemas/GroupUserPatch'
         required: true
       responses:
         '200':
@@ -4311,7 +4311,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -6027,16 +6027,16 @@ components:
       type: object
       properties:
         me:
-          $ref: '#/components/schemas/UsersGroup'
+          $ref: '#/components/schemas/GroupGet'
         organizations:
           title: Organizations
           type: array
           items:
-            $ref: '#/components/schemas/UsersGroup'
+            $ref: '#/components/schemas/GroupGet'
         all:
-          $ref: '#/components/schemas/UsersGroup'
+          $ref: '#/components/schemas/GroupGet'
         product:
-          $ref: '#/components/schemas/UsersGroup'
+          $ref: '#/components/schemas/GroupGet'
       example:
         me:
           gid: '27'
@@ -7290,6 +7290,14 @@ components:
           $ref: '#/components/schemas/GetWalletAutoRecharge'
         error:
           title: Error
+    Envelope_GroupGet_:
+      title: Envelope[GroupGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GroupGet'
+        error:
+          title: Error
     Envelope_GroupUserGet_:
       title: Envelope[GroupUserGet]
       type: object
@@ -7585,14 +7593,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/UserProfile'
-        error:
-          title: Error
-    Envelope_UsersGroup_:
-      title: Envelope[UsersGroup]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/UsersGroup'
         error:
           title: Error
     Envelope_WalletGetWithAvailableCredits_:
@@ -8657,6 +8657,58 @@ components:
           title: Delete
           type: boolean
       description: defines acesss rights for the user
+    GroupGet:
+      title: GroupGet
+      required:
+      - gid
+      - label
+      - description
+      - accessRights
+      type: object
+      properties:
+        gid:
+          title: Gid
+          type: integer
+          description: the group ID
+        label:
+          title: Label
+          type: string
+          description: the group name
+        description:
+          title: Description
+          type: string
+          description: the group description
+        thumbnail:
+          title: Thumbnail
+          maxLength: 65536
+          minLength: 1
+          type: string
+          description: url to the group thumbnail
+          format: uri
+        accessRights:
+          $ref: '#/components/schemas/GroupAccessRights'
+        inclusionRules:
+          title: Inclusionrules
+          type: object
+          additionalProperties:
+            type: string
+          description: Maps user's column and regular expression
+    GroupPatch:
+      title: GroupPatch
+      type: object
+      properties:
+        label:
+          title: Label
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
     GroupUserGet:
       title: GroupUserGet
       required:
@@ -8697,6 +8749,17 @@ components:
         last_name: Smith
         gravatar_id: a1af5c6ecc38e81f29695f01d6ceb540
         gid: '3'
+        accessRights:
+          read: true
+          write: false
+          delete: false
+    GroupUserPatch:
+      title: GroupUserPatch
+      type: object
+      properties:
+        accessRights:
+          $ref: '#/components/schemas/GroupAccessRights'
+      example:
         accessRights:
           read: true
           write: false
@@ -12587,42 +12650,6 @@ components:
       - DELETED
       type: string
       description: An enumeration.
-    UsersGroup:
-      title: UsersGroup
-      required:
-      - gid
-      - label
-      - description
-      - accessRights
-      type: object
-      properties:
-        gid:
-          title: Gid
-          type: integer
-          description: the group ID
-        label:
-          title: Label
-          type: string
-          description: the group name
-        description:
-          title: Description
-          type: string
-          description: the group description
-        thumbnail:
-          title: Thumbnail
-          maxLength: 65536
-          minLength: 1
-          type: string
-          description: url to the group thumbnail
-          format: uri
-        accessRights:
-          $ref: '#/components/schemas/GroupAccessRights'
-        inclusionRules:
-          title: Inclusionrules
-          type: object
-          additionalProperties:
-            type: string
-          description: Maps user's column and regular expression
     Viewer:
       title: Viewer
       required:
