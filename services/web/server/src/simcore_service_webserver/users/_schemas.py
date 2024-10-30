@@ -12,7 +12,7 @@ import pycountry
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from pydantic import ConfigDict, Field, field_validator, model_validator
+from pydantic import ConfigDict, Field, ValidationInfo, field_validator, model_validator
 from simcore_postgres_database.models.users import UserStatus
 
 
@@ -45,8 +45,8 @@ class UserProfile(OutputSchema):
 
     @field_validator("status")
     @classmethod
-    def _consistency_check(cls, v, values):
-        registered = values["registered"]
+    def _consistency_check(cls, v, info: ValidationInfo):
+        registered = info.data["registered"]
         status = v
         if not registered and status is not None:
             msg = f"{registered=} and {status=} is not allowed"
