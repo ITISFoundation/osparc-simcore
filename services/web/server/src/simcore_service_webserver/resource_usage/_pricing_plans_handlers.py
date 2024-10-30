@@ -75,7 +75,7 @@ async def get_pricing_plan_unit(request: web.Request):
     webserver_pricing_unit_get = PricingUnitGet(
         pricing_unit_id=pricing_unit_get.pricing_unit_id,
         unit_name=pricing_unit_get.unit_name,
-        unit_extra_info=pricing_unit_get.unit_extra_info,  # type: ignore[arg-type]
+        unit_extra_info=pricing_unit_get.unit_extra_info,
         current_cost_per_unit=pricing_unit_get.current_cost_per_unit,
         default=pricing_unit_get.default,
     )

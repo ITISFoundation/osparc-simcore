@@ -48,7 +48,7 @@ class ServiceRunGet(
 class PricingUnitGet(OutputSchema):
     pricing_unit_id: PricingUnitId
     unit_name: str
-    unit_extra_info: dict
+    unit_extra_info: UnitExtraInfo
     current_cost_per_unit: Decimal
     default: bool
 
