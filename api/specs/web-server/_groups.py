@@ -15,7 +15,6 @@ from models_library.api_schemas_webserver.groups import (
     MyGroupsGet,
 )
 from models_library.generics import Envelope
-from models_library.users import GroupID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.groups._handlers import (
     GroupUserAdd,
@@ -158,8 +157,8 @@ async def delete_group_user(
     response_model=Envelope[dict[str, Any]],
 )
 async def get_group_classifiers(
-    gid: GroupID,
-    _query: Annotated[_ClassifiersQuery, Depends()],
+    _p: Annotated[_GroupPathParams, Depends()],
+    _q: Annotated[_ClassifiersQuery, Depends()],
 ):
     ...
 
