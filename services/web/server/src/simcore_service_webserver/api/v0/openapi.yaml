@@ -5410,6 +5410,57 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/folders/{folder_id}:trash:
+    post:
+      tags:
+      - trash
+      - folders
+      summary: Trash Folder
+      operationId: trash_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      - required: false
+        schema:
+          title: Force
+          type: boolean
+          default: false
+        name: force
+        in: query
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          description: Not such a folder
+        '409':
+          description: One or more projects is in use and cannot be trashed
+        '503':
+          description: Trash service error
+  /v0/folders/{folder_id}:untrash:
+    post:
+      tags:
+      - trash
+      - folders
+      summary: Untrash Folder
+      operationId: untrash_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
   /v0/repos/projects:
     get:
       tags:
