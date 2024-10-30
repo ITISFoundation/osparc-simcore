@@ -116,6 +116,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
         }
         case "license":
           control = new qx.ui.menu.Button(this.tr("License"));
+          osparc.utils.Utils.setIdToWidget(control, "userMenuLicenseBtn");
           osparc.store.Support.getLicenseURL()
             .then(licenseURL => control.addListener("execute", () => window.open(licenseURL)));
           this.add(control);
