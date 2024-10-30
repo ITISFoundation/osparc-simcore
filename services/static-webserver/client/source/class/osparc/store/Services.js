@@ -24,7 +24,7 @@ qx.Class.define("osparc.store.Services", {
     getServicesLatest: function(useCache = true) {
       return new Promise(resolve => {
         if (useCache && Object.keys(this.servicesCached)) {
-          // give latest only
+          // return latest only
           const latest = this.__getLatestCached();
           resolve(latest);
           return;
@@ -45,6 +45,45 @@ qx.Class.define("osparc.store.Services", {
             resolve(servicesObj);
           })
           .catch(err => console.error("getServices failed", err));
+      });
+    },
+
+    getServicesLatestList: function(excludeFrontend = true, excludeDeprecated = true) {
+      return new Promise(resolve => {
+        const servicesList = [];
+        this.getServicesLatest()
+          .then(async servicesLatest => {
+            const serviceKeys = Object.keys(servicesLatest);
+            for (let i=0; i<serviceKeys.length; i++) {
+              const key = serviceKeys[i];
+              let serviceLatest = servicesLatest[key];
+              if (excludeFrontend && key.includes("simcore/services/frontend/")) {
+                // do not add frontend services
+                return;
+              }
+              if (excludeDeprecated && serviceLatest["retired"]) {
+                // first check if a previous version of this service isn't retired
+                let versions = Object.keys(this.servicesCached[key]);
+                versions = versions.sort(osparc.utils.Utils.compareVersionNumbers).reverse();
+                for (let j=0; j<versions.length; j++) {
+                  const version = versions[j];
+                  if (!this.servicesCached[key][version]["retired"]) {
+                    serviceLatest = await this.getService(key, version);
+                    break;
+                  }
+                }
+                if (serviceLatest["retired"]) {
+                  // do not add retired services
+                  return;
+                }
+              }
+              servicesList.push(serviceLatest);
+            }
+          })
+          .catch(err => {
+            console.error(err);
+          })
+          .finally(() => resolve(servicesList));
       });
     },
 
