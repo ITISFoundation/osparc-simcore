@@ -43,7 +43,7 @@ _DEFAULT_SERVICE_SPECIFICATIONS: Final[
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
-    CATALOG_LOG_LEVEL: LogLevel = Field(
+    LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
         validation_alias=AliasChoices(
             "CATALOG_LOG_LEVEL", "CATALOG_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
