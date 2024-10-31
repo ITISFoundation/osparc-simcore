@@ -49,7 +49,7 @@ def _to_api_model(
         "osparc_credits": transaction.osparc_credits,
         "wallet_id": transaction.wallet_id,
         "created_at": transaction.initiated_at,
-        "state": transaction.state,
+        "state": f"{transaction.state}",
         "completed_at": transaction.completed_at,
     }
 

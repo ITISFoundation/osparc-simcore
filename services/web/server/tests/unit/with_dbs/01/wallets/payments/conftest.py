@@ -10,6 +10,7 @@ from decimal import Decimal
 from typing import Any, TypeAlias, cast
 from unittest.mock import MagicMock
 
+import pycountry
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
@@ -334,7 +335,7 @@ def setup_user_pre_registration_details_db(
                 address=faker.address().replace("\n", ", "),
                 city=faker.city(),
                 state=faker.state(),
-                country=faker.country(),
+                country=faker.random_element([c.name for c in pycountry.countries]),
                 postal_code=faker.postcode(),
                 created_by=None,
             )
