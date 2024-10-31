@@ -4,7 +4,7 @@ from typing import Any
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
-from pydantic.error_wrappers import ValidationError
+from pydantic import ValidationError
 from servicelib.aiohttp.typing_extension import Handler
 
 from ..projects.exceptions import ProjectNotFoundError
