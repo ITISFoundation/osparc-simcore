@@ -27,7 +27,7 @@ from models_library.generated_models.docker_rest_api import (
 from models_library.generated_models.docker_rest_api import (
     Resources1 as ServiceTaskResources,
 )
-from models_library.generated_models.docker_rest_api import ServiceSpec
+from models_library.generated_models.docker_rest_api import ServiceSpec, TaskSpec
 from models_library.products import ProductName
 from models_library.users import UserID
 from simcore_postgres_database.models.groups import user_to_groups
@@ -91,29 +91,33 @@ def create_service_specifications(
             service_key=service_key,
             service_version=service_version,
             gid=gid,
-            sidecar=ServiceSpec(Labels=faker.pydict(allowed_types=(str,))),  # type: ignore
-            service=ServiceTaskResources(
-                Limits=Limit(
-                    NanoCPUs=faker.pyint(),
-                    MemoryBytes=faker.pyint(),
-                    Pids=faker.pyint(),
-                ),
-                Reservations=ResourceObject(
-                    NanoCPUs=faker.pyint(),
-                    MemoryBytes=faker.pyint(),
-                    GenericResources=GenericResources(
-                        root=[
-                            GenericResource(
-                                NamedResourceSpec=NamedResourceSpec(
-                                    Kind=faker.pystr(), Value=faker.pystr()
-                                ),
-                                DiscreteResourceSpec=DiscreteResourceSpec(
-                                    Kind=faker.pystr(), Value=faker.pyint()
-                                ),
-                            )
-                        ]
-                    ),
-                ),
+            sidecar=ServiceSpec(Labels=faker.pydict(allowed_types=(str,))),
+            service=ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=ServiceTaskResources(
+                        Limits=Limit(
+                            NanoCPUs=faker.pyint(),
+                            MemoryBytes=faker.pyint(),
+                            Pids=faker.pyint(),
+                        ),
+                        Reservations=ResourceObject(
+                            NanoCPUs=faker.pyint(),
+                            MemoryBytes=faker.pyint(),
+                            GenericResources=GenericResources(
+                                root=[
+                                    GenericResource(
+                                        NamedResourceSpec=NamedResourceSpec(
+                                            Kind=faker.pystr(), Value=faker.pystr()
+                                        ),
+                                        DiscreteResourceSpec=DiscreteResourceSpec(
+                                            Kind=faker.pystr(), Value=faker.pyint()
+                                        ),
+                                    )
+                                ]
+                            ),
+                        ),
+                    )
+                )
             ),
         )
 
