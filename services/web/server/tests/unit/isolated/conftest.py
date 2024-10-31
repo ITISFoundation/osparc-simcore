@@ -103,24 +103,6 @@ def mock_env_devel_environment(
         monkeypatch,
         envs={
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
-            "WEBSERVER_EMAIL": json.dumps({
-                "SMTP_HOST": faker.url(),
-                "SMTP_PORT": faker.port_number()
-            }),
-            "WEBSERVER_LOGIN": json.dumps({
-                "LOGIN_REGISTRATION_INVITATION_REQUIRED": True
-            }),
-            "WEBSERVER_PAYMENTS": json.dumps({
-                "PAYMENTS_USERNAME": faker.user_name(),
-                "PAYMENTS_PASSWORD": faker.password()
-            }),
-            "WEBSERVER_SCICRUNCH": json.dumps({
-                "SCICRUNCH_API_KEY": faker.pystr()
-            }),
-            "WEBSERVER_TRACING": json.dumps({
-                "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT": faker.url(),
-                "TRACING_OPENTELEMETRY_COLLECTOR_PORT": faker.port_number()
-            })
         },
     )
 
