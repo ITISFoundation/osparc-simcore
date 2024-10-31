@@ -285,8 +285,8 @@ async def test_share_project(
     )
     if new_project:
         assert new_project["accessRights"] == {
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True},
-            str(all_group["gid"]): share_rights,
+            f'{primary_group["gid"]}': {"read": True, "write": True, "delete": True},
+            f'{(all_group["gid"])}': share_rights,
         }
 
         # user 1 can always get to his project
