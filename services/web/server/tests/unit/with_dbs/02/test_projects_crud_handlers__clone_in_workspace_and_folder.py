@@ -114,7 +114,7 @@ async def test_clone_project(
         "folder_id": f"{create_workspace_and_folder[1]}",
     }
     url = base_url.with_query(**query_parameters)
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data = await resp.json()
     assert resp.status == 200
     assert len(data["data"]) == 1
@@ -135,7 +135,7 @@ async def test_clone_project(
         "folder_id": f"{create_workspace_and_folder[1]}",
     }
     url = base_url.with_query(**query_parameters)
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data = await resp.json()
     assert resp.status == 200
     assert len(data["data"]) == 2

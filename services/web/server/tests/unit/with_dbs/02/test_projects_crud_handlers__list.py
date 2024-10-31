@@ -55,7 +55,7 @@ async def _list_projects(
     if query_parameters:
         url = url.with_query(**query_parameters)
 
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, errors, meta, links = await assert_status(
         resp,
         expected,

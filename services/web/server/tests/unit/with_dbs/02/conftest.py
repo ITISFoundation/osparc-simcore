@@ -254,7 +254,7 @@ def assert_get_same_project_caller() -> Callable:
     ) -> dict:
         # GET /v0/projects/{project_id} with a project owned by user
         url = client.app.router["get_project"].url_for(project_id=project["uuid"])
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
         data, error = await assert_status(resp, expected)
 
         if not error:

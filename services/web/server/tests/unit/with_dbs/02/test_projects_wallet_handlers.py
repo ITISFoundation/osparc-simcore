@@ -42,7 +42,7 @@ async def test_project_wallets_user_role_access(
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     assert (
         resp.status == status.HTTP_401_UNAUTHORIZED
         if user_role == UserRole.ANONYMOUS
@@ -61,7 +61,7 @@ async def test_project_wallets_user_project_access(
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data == None
 
@@ -70,7 +70,7 @@ async def test_project_wallets_user_project_access(
         base_url = client.app.router["get_project_wallet"].url_for(
             project_id=user_project["uuid"]
         )
-        resp = await client.get(base_url)
+        resp = await client.get(f"{base_url}")
         _, errors = await assert_status(resp, status.HTTP_403_FORBIDDEN)
         assert errors
 
@@ -110,7 +110,7 @@ async def test_project_wallets_full_workflow(
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data == None
 
@@ -118,14 +118,14 @@ async def test_project_wallets_full_workflow(
     base_url = client.app.router["connect_wallet_to_project"].url_for(
         project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[0].wallet_id}"
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["walletId"] == setup_wallets_db[0].wallet_id
 
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["walletId"] == setup_wallets_db[0].wallet_id
 
@@ -133,13 +133,13 @@ async def test_project_wallets_full_workflow(
     base_url = client.app.router["connect_wallet_to_project"].url_for(
         project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[1].wallet_id}"
     )
-    resp = await client.put(base_url)
+    resp = await client.put(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["walletId"] == setup_wallets_db[1].wallet_id
 
     base_url = client.app.router["get_project_wallet"].url_for(
         project_id=user_project["uuid"]
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["walletId"] == setup_wallets_db[1].wallet_id

@@ -148,7 +148,7 @@ async def test_workflow_register_and_login_with_2fa(
     url = _get_confirmation_link_from_email()
 
     # 2. confirmation
-    response = await client.get(url)
+    response = await client.get(f"{url}")
     assert response.status == status.HTTP_200_OK
 
     # check email+password registered

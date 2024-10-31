@@ -52,7 +52,7 @@ async def test_project_node_pricing_unit_user_role_access(
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     assert (
         resp.status == status.HTTP_401_UNAUTHORIZED
         if user_role == UserRole.ANONYMOUS
@@ -71,7 +71,7 @@ async def test_project_node_pricing_unit_user_project_access(
     base_url = client.app.router["get_project_node_pricing_unit"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data == None
 
@@ -80,7 +80,7 @@ async def test_project_node_pricing_unit_user_project_access(
         base_url = client.app.router["get_project_node_pricing_unit"].url_for(
             project_id=user_project["uuid"], node_id=node_id
         )
-        resp = await client.get(base_url)
+        resp = await client.get(f"{base_url}")
         _, errors = await assert_status(resp, status.HTTP_403_FORBIDDEN)
         assert errors
 
