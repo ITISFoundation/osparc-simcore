@@ -40,11 +40,6 @@ def mock_env_devel_environment(
     return mock_env_devel_environment | setenvs_from_dict(
         monkeypatch, {
             "RESOURCE_MANAGER_RESOURCE_TTL_S": "3",
-            "WEBSERVER_EMAIL": json.dumps({"SMTP_HOST": "smtp.fake.com", "SMTP_PORT": 25}),
-            "WEBSERVER_LOGIN": json.dumps({"LOGIN_REGISTRATION_INVITATION_REQUIRED": "True"}),
-            "WEBSERVER_PAYMENTS": json.dumps({"PAYMENTS_USERNAME": "somebody", "PAYMENTS_PASSWORD": faker.password(length=10)}),
-            "WEBSERVER_SCICRUNCH": "null",
-            "WEBSERVER_TRACING": "null"
         }
     )
 

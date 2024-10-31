@@ -35,10 +35,6 @@ def app_environment(
             "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
-            "WEBSERVER_EMAIL": json.dumps({"SMTP_HOST": "smtp.fake.com", "SMTP_PORT": 25}),
-            "WEBSERVER_LOGIN": json.dumps({"LOGIN_REGISTRATION_INVITATION_REQUIRED": "True"}),
-            "WEBSERVER_PAYMENTS": json.dumps({"PAYMENTS_USERNAME": "somebody", "PAYMENTS_PASSWORD": faker.password(length=10)}),
-            "WEBSERVER_SCICRUNCH": "null",
             "PAYMENTS_FAKE_GATEWAY_URL": "https://some-fake-gateway.com",
         },
     )
