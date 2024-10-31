@@ -213,7 +213,7 @@ async def list_osparc_credits_aggregated_usages(request: web.Request):
 
     page = Page[dict[str, Any]].model_validate(
         paginate_data(
-            chunk=aggregated_services.items,
+            chunk=[item.model_dump() for item in aggregated_services.items],
             request_url=request.url,
             total=aggregated_services.total,
             limit=query_params.limit,
