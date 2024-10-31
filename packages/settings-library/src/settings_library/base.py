@@ -6,7 +6,12 @@ from common_library.pydantic_fields_extension import get_type, is_literal, is_nu
 from pydantic import ValidationInfo, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import ValidationError
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    EnvSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -44,6 +49,33 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
             raise DefaultFromEnvFactoryError(errors=err.errors()) from err
 
     return _default_factory
+
+
+class CustomEnvSettingsSource(EnvSettingsSource):
+    def __init__(self, settings_cls: BaseSettings, env_settings: EnvSettingsSource):
+        super().__init__(
+            settings_cls,
+            env_settings.case_sensitive,
+            env_settings.env_prefix,
+            env_settings.env_nested_delimiter,
+            env_settings.env_ignore_empty,
+            env_settings.env_parse_none_str,
+            env_settings.env_parse_enums,
+        )
+
+    def prepare_field_value(
+        self,
+        field_name: str,
+        field: FieldInfo,
+        value: Any,
+        value_is_complex: bool,  # noqa: FBT001
+    ) -> Any:
+        prepared_value = super().prepare_field_value(
+            field_name, field, value, value_is_complex
+        )
+        if field.default_factory and field.default is None and prepared_value == {}:
+            prepared_value = field.default_factory()
+        return prepared_value
 
 
 class BaseCustomSettings(BaseSettings):
@@ -126,3 +158,20 @@ class BaseCustomSettings(BaseSettings):
         # Optional to use to make the code more readable
         # More explicit and pylance seems to get less confused
         return cls(**overrides)
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: BaseSettings,
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        assert env_settings  # nosec
+        return (
+            init_settings,
+            CustomEnvSettingsSource(settings_cls, env_settings=env_settings),
+            dotenv_settings,
+            file_secret_settings,
+        )

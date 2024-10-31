@@ -12,7 +12,7 @@ import pytest
 import settings_library.base
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_envfile
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -22,7 +22,6 @@ from settings_library.base import (
     DefaultFromEnvFactoryError,
 )
 from settings_library.email import SMTPSettings
-from settings_library.utils_logging import MixinLoggingSettings
 
 S2 = json.dumps({"S_VALUE": 2})
 S3 = json.dumps({"S_VALUE": 3})
@@ -344,10 +343,12 @@ def test_issubclass_type_error_with_pydantic_models():
 def test_upgrade_failure_to_pydantic_settings_2_6(
     mock_env_devel_environment: EnvVarsDict,
 ):
-    class ProblematicSettings(BaseCustomSettings, MixinLoggingSettings):
+    class ProblematicSettings(BaseCustomSettings):
         WEBSERVER_EMAIL: SMTPSettings | None = Field(
             json_schema_extra={"auto_default_from_env": True}
         )
 
-    settings = ProblematicSettings.create_from_envs()
+        model_config = SettingsConfigDict(nested_model_default_partial_update=True)
+
+    settings = ProblematicSettings()
     assert settings.WEBSERVER_EMAIL is not None
