@@ -14,7 +14,6 @@ from faker import Faker
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
-    ServiceSpecificationsGet,
 )
 from models_library.generated_models.docker_rest_api import (
     DiscreteResourceSpec,
@@ -163,7 +162,7 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
     ).with_query(user_id=user_id)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.model_validate(response.json())
+    service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
 
     assert (
@@ -208,7 +207,7 @@ async def test_get_service_specifications(
     # this should now return default specs since there are none in the db
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.model_validate(response.json())
+    service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
     assert (
         service_specs.model_dump()
@@ -223,7 +222,7 @@ async def test_get_service_specifications(
     await services_specifications_injector(everyone_service_specs)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.model_validate(response.json())
+    service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
     assert service_specs == ServiceSpecifications.model_validate(
         everyone_service_specs.model_dump()
@@ -236,7 +235,7 @@ async def test_get_service_specifications(
     await services_specifications_injector(standard_group_service_specs)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.model_validate(response.json())
+    service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
     assert service_specs == ServiceSpecifications.model_validate(
         everyone_service_specs.model_dump()
@@ -247,7 +246,7 @@ async def test_get_service_specifications(
         await conn.execute(user_to_groups.insert().values(uid=user_id, gid=team_gid))
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.model_validate(response.json())
+    service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
     assert service_specs == ServiceSpecifications.model_validate(
         standard_group_service_specs.model_dump()
@@ -260,7 +259,7 @@ async def test_get_service_specifications(
     await services_specifications_injector(user_group_service_specs)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
-    service_specs = ServiceSpecificationsGet.model_validate(response.json())
+    service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
     assert service_specs == ServiceSpecifications.model_validate(
         user_group_service_specs.model_dump()
@@ -335,11 +334,11 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         )
         response = client.get(f"{url}")
         assert response.status_code == status.HTTP_200_OK
-        service_specs = ServiceSpecificationsGet.model_validate(response.json())
+        service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
         assert (
-            service_specs
-            == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
+            service_specs.model_dump()
+            == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS.model_dump()
         )
 
     # check version between first index and second all return the specs of the first
@@ -351,7 +350,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         )
         response = client.get(f"{url}")
         assert response.status_code == status.HTTP_200_OK
-        service_specs = ServiceSpecificationsGet.model_validate(response.json())
+        service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
         assert service_specs == ServiceSpecifications.model_validate(
             version_speced[0].model_dump()
@@ -364,7 +363,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         )
         response = client.get(f"{url}")
         assert response.status_code == status.HTTP_200_OK
-        service_specs = ServiceSpecificationsGet.model_validate(response.json())
+        service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
         assert service_specs == ServiceSpecifications.model_validate(
             version_speced[1].model_dump()
@@ -377,7 +376,7 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         )
         response = client.get(f"{url}")
         assert response.status_code == status.HTTP_200_OK
-        service_specs = ServiceSpecificationsGet.model_validate(response.json())
+        service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
         if version in versions_with_specs:
             assert (
