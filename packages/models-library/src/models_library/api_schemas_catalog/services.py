@@ -244,9 +244,10 @@ class ServiceGetV2(BaseModel):
     quality: dict[str, Any] = {}
 
     history: list[ServiceRelease] = Field(
-        default=[],
+        default_factory=list,
         description="history of releases for this service at this point in time, starting from the newest to the oldest."
         " It includes current release.",
+        json_schema_extra={"default": []},
     )
 
     model_config = ConfigDict(
