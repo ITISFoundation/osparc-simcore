@@ -1,20 +1,24 @@
 from datetime import datetime
-from typing import Any
+from typing import Annotated, Any
 
 from models_library.products import ProductName
 from models_library.services_access import ServiceGroupAccessRights
 from models_library.services_base import ServiceKeyVersion
 from models_library.services_metadata_editable import ServiceMetaDataEditable
 from models_library.services_types import ServiceKey, ServiceVersion
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.services_compatibility import CompatiblePolicyDict
 
 
 class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaDataEditable):
-    # for a partial update all members must be Optional
+    # for a partial update all Editable members must be Optional
+    name: str | None = None
+    thumbnail: Annotated[str, HttpUrl] | None = None
+    description: str | None = None
+
     classifiers: list[str] | None = Field(default_factory=list)
-    owner: PositiveInt | None
+    owner: PositiveInt | None = None
     model_config = ConfigDict(
         from_attributes=True,
         json_schema_extra={

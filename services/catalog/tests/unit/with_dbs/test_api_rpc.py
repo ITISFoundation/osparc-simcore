@@ -161,7 +161,7 @@ async def test_rpc_catalog_client(
             "description": "bar",
             "version_display": "this is a nice version",
             "description_ui": True,  # owner activates wiki view
-        },
+        },  # type: ignore
     )
 
     assert updated.key == got.key

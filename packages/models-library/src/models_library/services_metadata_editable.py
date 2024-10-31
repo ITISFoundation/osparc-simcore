@@ -18,9 +18,9 @@ assert ServiceVersion  # nosec
 
 class ServiceMetaDataEditable(ServiceBaseDisplay):
     # Overrides ServiceBaseDisplay fields to Optional for a partial update
-    name: str | None  # type: ignore[assignment]
+    name: str | None
     thumbnail: Annotated[str, HttpUrl] | None
-    description: str | None  # type: ignore[assignment]
+    description: str | None
     description_ui: bool = False
     version_display: str | None = None
 
