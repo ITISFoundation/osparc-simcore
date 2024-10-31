@@ -107,7 +107,7 @@ class ProjectReplace(InputSchema):
     uuid: ProjectID
     name: ShortTruncatedStr
     description: LongTruncatedStr
-    thumbnail: HttpUrl | None
+    thumbnail: Annotated[HttpUrl | None, BeforeValidator(empty_str_to_none_pre_validator)] = Field(default=None)
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
     workbench: NodesDict
@@ -123,15 +123,11 @@ class ProjectReplace(InputSchema):
         default_factory=dict, json_schema_extra={"default": {}}
     )
 
-    _empty_is_none = field_validator("thumbnail", mode="before")(
-        empty_str_to_none_pre_validator
-    )
-
 
 class ProjectPatch(InputSchema):
     name: ShortTruncatedStr | None = Field(default=None)
     description: LongTruncatedStr | None = Field(default=None)
-    thumbnail: Annotated[HttpUrl, BeforeValidator(empty_str_to_none_pre_validator)] | None = Field(default=None)
+    thumbnail: Annotated[HttpUrl | None, BeforeValidator(empty_str_to_none_pre_validator)] = Field(default=None)
     access_rights: dict[GroupIDStr, AccessRights] | None = Field(default=None)
     classifiers: list[ClassifierID] | None = Field(default=None)
     dev: dict | None = Field(default=None)
