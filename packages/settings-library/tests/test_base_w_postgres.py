@@ -357,7 +357,7 @@ def test_parse_from_mixed_envs(
                 "POSTGRES_DB": "db2",
                 "POSTGRES_MAXSIZE": 50,
                 "POSTGRES_MINSIZE": 1,
-                "POSTGRES_CLIENT_NAME": "client-name",
+                "POSTGRES_CLIENT_NAME": None,
             }
         }
         # NOTE how unset marks also applies to embedded fields
@@ -369,7 +369,6 @@ def test_parse_from_mixed_envs(
                 "POSTGRES_USER": "test2",  # <- (1)
                 "POSTGRES_PASSWORD": "shh2",  # <- (1)
                 "POSTGRES_DB": "db2",  # <- (1)
-                "POSTGRES_CLIENT_NAME": "client-name",  # <- (2)
             }
         }
 
@@ -386,7 +385,6 @@ def test_parse_from_mixed_envs(
                 "POSTGRES_USER": "test2",
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
-                "POSTGRES_CLIENT_NAME": "client-name",
             }
         }
 
@@ -403,7 +401,6 @@ def test_parse_from_mixed_envs(
                 "POSTGRES_USER": "test2",
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
-                "POSTGRES_CLIENT_NAME": "client-name",
             }
         }
 
@@ -420,7 +417,6 @@ def test_parse_from_mixed_envs(
                 "POSTGRES_USER": "test2",
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
-                "POSTGRES_CLIENT_NAME": "client-name",
             }
         }
 
@@ -437,7 +433,6 @@ def test_parse_from_mixed_envs(
                 "POSTGRES_USER": "test2",
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
-                "POSTGRES_CLIENT_NAME": "client-name",
             }
         }
 
