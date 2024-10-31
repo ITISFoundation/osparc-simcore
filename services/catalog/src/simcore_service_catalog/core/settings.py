@@ -5,7 +5,7 @@ from typing import Final
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
-from models_library.basic_types import BootModeEnum, LogLevel
+from models_library.basic_types import LogLevel
 from models_library.services_resources import ResourcesDict, ResourceValue
 from pydantic import AliasChoices, ByteSize, Field, PositiveInt, TypeAdapter
 from settings_library.application import BaseApplicationSettings
@@ -43,7 +43,6 @@ _DEFAULT_SERVICE_SPECIFICATIONS: Final[
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
-    SC_BOOT_MODE: BootModeEnum | None
     CATALOG_LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
         validation_alias=AliasChoices("CATALOG_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
