@@ -5,7 +5,10 @@ from starlette.responses import JSONResponse
 from starlette.types import HTTPExceptionHandler
 
 
-async def http_error_handler(_: Request, exc: HTTPException) -> JSONResponse:
+async def http_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    assert request  # nosec
+    assert isinstance(exc, HTTPException)  # nosec
+
     return JSONResponse(
         content=jsonable_encoder({"errors": [exc.detail]}), status_code=exc.status_code
     )

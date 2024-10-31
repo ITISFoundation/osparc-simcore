@@ -6,8 +6,8 @@ from ._validation_error import http422_error_handler
 
 
 def setup_exception_handlers(app: FastAPI) -> None:
-    app.add_exception_handler(HTTPException, http_error_handler)  # type: ignore[arg-type]
-    app.add_exception_handler(RequestValidationError, http422_error_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(HTTPException, http_error_handler)
+    app.add_exception_handler(RequestValidationError, http422_error_handler)
 
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
     app.add_exception_handler(
