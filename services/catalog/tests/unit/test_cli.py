@@ -4,8 +4,10 @@
 
 import os
 
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_catalog._meta import API_VERSION
 from simcore_service_catalog.cli import main
+from simcore_service_catalog.core.settings import ApplicationSettings
 from typer.testing import CliRunner
 
 
@@ -18,10 +20,12 @@ def test_cli_help_and_version(cli_runner: CliRunner):
     assert result.stdout.strip() == API_VERSION
 
 
-def test_settings(cli_runner: CliRunner):
-    result = cli_runner.invoke(main, ["settings"])
-    assert result.exit_code == 0
-    assert "APP_NAME=simcore-service-autoscaling" in result.stdout
+def test_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
+    result = cli_runner.invoke(main, ["settings", "--show-secrets", "--as-json"])
+    assert result.exit_code == os.EX_OK
+
+    settings = ApplicationSettings.model_validate_json(result.output)
+    assert settings.model_dump() == ApplicationSettings.create_from_envs().model_dump()
 
 
 def test_run(cli_runner: CliRunner):
