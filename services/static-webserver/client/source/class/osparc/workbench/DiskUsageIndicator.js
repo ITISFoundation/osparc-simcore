@@ -160,10 +160,10 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       let progress = `${diskHostUsage["used_percent"]}%`;
       let labelDiskSize = osparc.utils.Utils.bytesToSize(diskHostUsage.free);
       let toolTipText = this.tr("Disk usage");
-      if ("STATE_VOLUMES" in diskUsage["usage"]) {
-        const diskVolsUsage = diskUsage["usage"]["STATE_VOLUMES"];
+      if ("STATES_VOLUMES" in diskUsage["usage"]) {
+        const diskVolsUsage = diskUsage["usage"]["STATES_VOLUMES"];
         if (diskVolsUsage["used_percent"] > diskHostUsage["used_percent"]) {
-          // "STATE_VOLUMES" is more critical so it takes over
+          // "STATES_VOLUMES" is more critical so it takes over
           color1 = this.__getIndicatorColor(diskVolsUsage.free);
           progress = `${diskVolsUsage["used_percent"]}%`;
           labelDiskSize = osparc.utils.Utils.bytesToSize(diskVolsUsage.free);
