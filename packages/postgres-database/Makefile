@@ -99,7 +99,7 @@ setup-commit: install-dev up-pg ## sets up a database to create a new commit int
 	sleep 2
 	# discovering
 	sc-pg --help
-	sc-pg discover -u test -p test -d test
+	sc-pg discover -u test -p test -d test --host localhost
 	# upgrade
 	sc-pg upgrade
 	# some info
