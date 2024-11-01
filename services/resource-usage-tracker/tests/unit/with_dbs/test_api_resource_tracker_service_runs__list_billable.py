@@ -186,10 +186,11 @@ async def test_rpc_list_service_runs_raising_custom_error(
     resource_tracker_setup_db: dict,
     rpc_client: RabbitMQRPCClient,
 ):
-    with pytest.raises(RPCServerError):
+    with pytest.raises(RPCServerError) as e:
         await service_runs.get_service_run_page(
             rpc_client,
             user_id=_USER_ID,
             product_name="osparc",
             access_all_wallet_usage=True,
         )
+    assert e

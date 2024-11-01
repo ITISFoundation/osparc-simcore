@@ -1,16 +1,27 @@
 from collections.abc import Callable
 from typing import Awaitable
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
-from starlette.requests import Request
 from starlette.responses import JSONResponse
+
+from ...exceptions.errors import RutNotFoundError
 
 
 async def http_error_handler(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, HTTPException)  # nosec
     return JSONResponse(
         content=jsonable_encoder({"errors": [exc.detail]}), status_code=exc.status_code
+    )
+
+
+def http404_error_handler(
+    _: Request,  # pylint: disable=unused-argument
+    exc: RutNotFoundError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"message": f"{exc.msg_template}"},
     )
 
 

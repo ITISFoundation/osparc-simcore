@@ -5,6 +5,10 @@ class ResourceUsageTrackerBaseError(OsparcErrorMixin, Exception):
     msg_template = "Resource Usage Tracker unknown error"
 
 
+class ConfigurationError(ResourceUsageTrackerBaseError):
+    msg_template = "Resource usage Tracker configuration error"
+
+
 ###  NotCreatedDBError
 
 
@@ -56,7 +60,11 @@ class PricingUnitCostDoesNotExistsDBError(ResourceUsageTrackerBaseError):
 ### NotFoundError
 
 
-class PricingPlanNotFoundForServiceError(ResourceUsageTrackerBaseError):
+class RutNotFoundError(ResourceUsageTrackerBaseError):
+    ...
+
+
+class PricingPlanNotFoundForServiceError(RutNotFoundError):
     msg_template = (
         "Pricing plan not found for service key {service_key} version {service_version}"
     )

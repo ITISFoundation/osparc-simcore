@@ -14,6 +14,7 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
+from ..exceptions.handlers import setup_exception_handlers
 from ..services.background_tasks_setup import setup as setup_background_tasks
 from ..services.modules.db import setup as setup_db
 from ..services.modules.rabbitmq import setup as setup_rabbitmq
@@ -68,7 +69,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         )
 
     # ERROR HANDLERS
-    # app.add_exception_handler(CustomResourceUsageTrackerError, http404_error_handler)
+    setup_exception_handlers(app)
 
     # EVENTS
     async def _on_startup() -> None:
