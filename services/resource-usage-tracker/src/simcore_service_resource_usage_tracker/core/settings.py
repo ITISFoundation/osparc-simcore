@@ -69,7 +69,9 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         LoggerName, list[MessageSubstring]
     ] = Field(
         default_factory=dict,
-        env=["RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        validation_alias=AliasChoices(
+            "RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+        ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
