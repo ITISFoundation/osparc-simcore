@@ -65,7 +65,7 @@ qx.Class.define("osparc.service.PricingUnitsList", {
       this.getChildControl("pricing-units-container").removeAll();
 
       if (pricingUnits.length) {
-        const pUnits = new osparc.study.PricingUnits(pricingUnits);
+        const pUnits = new osparc.study.PricingUnits(pricingUnits, null, false);
         this.getChildControl("pricing-units-container").add(pUnits);
       } else {
         const notFound = new qx.ui.basic.Label().set({

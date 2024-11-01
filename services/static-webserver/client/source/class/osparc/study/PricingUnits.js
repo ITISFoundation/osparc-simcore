@@ -18,7 +18,7 @@
 qx.Class.define("osparc.study.PricingUnits", {
   extend: qx.ui.container.Composite,
 
-  construct: function(pricingUnits, preselectedPricingUnit) {
+  construct: function(pricingUnits, preselectedPricingUnit, changeSelectionAllowed = true) {
     this.base(arguments);
 
     this.set({
@@ -26,7 +26,7 @@ qx.Class.define("osparc.study.PricingUnits", {
       allowGrowY: false,
     });
 
-    this.__buildLayout(pricingUnits, preselectedPricingUnit);
+    this.__buildLayout(pricingUnits, preselectedPricingUnit, changeSelectionAllowed);
   },
 
   properties: {
@@ -39,7 +39,7 @@ qx.Class.define("osparc.study.PricingUnits", {
   },
 
   members: {
-    __buildLayout: function(pricingUnits, preselectedPricingUnit) {
+    __buildLayout: function(pricingUnits, preselectedPricingUnit, changeSelectionAllowed) {
       const buttons = [];
       pricingUnits.forEach(pricingUnit => {
         const button = new osparc.study.PricingUnit(pricingUnit);
@@ -69,12 +69,19 @@ qx.Class.define("osparc.study.PricingUnits", {
         });
       }
 
-      buttons.forEach(button => button.addListener("changeValue", e => {
-        if (e.getData()) {
-          const selectedUnitId = button.getUnitData().getPricingUnitId();
-          this.setSelectedUnitId(selectedUnitId);
+      buttons.forEach(button => {
+        if (!changeSelectionAllowed) {
+          button.setCursor("default");
         }
-      }));
+        button.addListener("execute", () => {
+          if (changeSelectionAllowed) {
+            const selectedUnitId = button.getUnitData().getPricingUnitId();
+            this.setSelectedUnitId(selectedUnitId);
+          } else {
+            buttons.forEach(btn => btn.setValue(btn.getUnitData().isDefault()));
+          }
+        });
+      });
     }
   }
 });
