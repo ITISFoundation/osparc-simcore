@@ -18,14 +18,15 @@
 qx.Class.define("osparc.study.PricingUnits", {
   extend: qx.ui.container.Composite,
 
-  construct: function(pricingUnits, preselectedPricingUnit) {
+  construct: function(pricingUnits, preselectedPricingUnit, changeSelectionAllowed = true) {
     this.base(arguments);
 
     this.set({
-      layout: new qx.ui.layout.HBox(5)
+      layout: new qx.ui.layout.HBox(5),
+      allowGrowY: false,
     });
 
-    this.__buildLayout(pricingUnits, preselectedPricingUnit);
+    this.__buildLayout(pricingUnits, preselectedPricingUnit, changeSelectionAllowed);
   },
 
   properties: {
@@ -38,7 +39,7 @@ qx.Class.define("osparc.study.PricingUnits", {
   },
 
   members: {
-    __buildLayout: function(pricingUnits, preselectedPricingUnit) {
+    __buildLayout: function(pricingUnits, preselectedPricingUnit, changeSelectionAllowed) {
       const buttons = [];
       pricingUnits.forEach(pricingUnit => {
         const button = new osparc.study.PricingUnit(pricingUnit);
@@ -47,7 +48,12 @@ qx.Class.define("osparc.study.PricingUnits", {
       });
 
       const groupOptions = new qx.ui.form.RadioGroup();
-      buttons.forEach(btn => groupOptions.add(btn));
+      buttons.forEach(btn => {
+        groupOptions.add(btn);
+        btn.bind("value", btn, "backgroundColor", {
+          converter: selected => selected ? "background-main-1" : "transparent"
+        });
+      });
 
       if (preselectedPricingUnit) {
         const buttonFound = buttons.find(button => button.getUnitData().getPricingUnitId() === preselectedPricingUnit["pricingUnitId"]);
@@ -63,12 +69,19 @@ qx.Class.define("osparc.study.PricingUnits", {
         });
       }
 
-      buttons.forEach(button => button.addListener("changeValue", e => {
-        if (e.getData()) {
-          const selectedUnitId = button.getUnitData().getPricingUnitId();
-          this.setSelectedUnitId(selectedUnitId);
+      buttons.forEach(button => {
+        if (!changeSelectionAllowed) {
+          button.setCursor("default");
         }
-      }));
+        button.addListener("execute", () => {
+          if (changeSelectionAllowed) {
+            const selectedUnitId = button.getUnitData().getPricingUnitId();
+            this.setSelectedUnitId(selectedUnitId);
+          } else {
+            buttons.forEach(btn => btn.setValue(btn.getUnitData().isDefault()));
+          }
+        });
+      });
     }
   }
 });
