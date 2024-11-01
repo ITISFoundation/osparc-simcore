@@ -25,9 +25,6 @@ from servicelib.fastapi.http_client import (
     HealthMixinMixin,
 )
 from servicelib.fastapi.httpx_utils import to_curl_command
-from simcore_service_payments.models.schemas.acknowledgements import (
-    AckPaymentWithPaymentMethod,
-)
 
 from ..core.settings import ApplicationSettings
 from ..models.payments_gateway import (
@@ -41,6 +38,7 @@ from ..models.payments_gateway import (
     PaymentMethodInitiated,
     PaymentMethodsBatch,
 )
+from ..models.schemas.acknowledgements import AckPaymentWithPaymentMethod
 
 _logger = logging.getLogger(__name__)
 
