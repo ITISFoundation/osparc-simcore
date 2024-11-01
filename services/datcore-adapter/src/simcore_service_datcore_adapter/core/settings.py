@@ -49,7 +49,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         LoggerName, list[MessageSubstring]
     ] = Field(
         default_factory=dict,
-        env=["DATCORE_ADAPTER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        validation_alias=AliasChoices(
+            "DATCORE_ADAPTER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+        ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
     DATCORE_ADAPTER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True

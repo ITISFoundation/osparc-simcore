@@ -154,7 +154,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     DY_SIDECAR_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default={},
-        env=["DY_SIDECAR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        validation_alias=AliasChoices(
+            "DY_SIDECAR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+        ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
     DY_SIDECAR_USER_ID: UserID
