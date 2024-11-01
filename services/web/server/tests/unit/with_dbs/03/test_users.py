@@ -381,7 +381,7 @@ def test_preuserprofile_parse_model_without_extras(
     account_request_form: dict[str, Any]
 ):
     required = {
-        f.alias or f.name for f in PreUserProfile.model_fields.values() if f.required
+        f.alias or f_name for f_name, f in PreUserProfile.model_fields.items() if f.is_required
     }
     data = {k: account_request_form[k] for k in required}
     assert not PreUserProfile(**data).extras
