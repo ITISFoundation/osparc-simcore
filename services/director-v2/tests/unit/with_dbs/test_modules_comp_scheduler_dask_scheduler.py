@@ -46,6 +46,7 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_service_director_v2.core.application import init_app
@@ -164,6 +165,7 @@ def minimal_dask_scheduler_config(
     postgres_host_config: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
     rabbit_service: RabbitSettings,
+    redis_service: RedisSettings,
     faker: Faker,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
