@@ -8,7 +8,7 @@ from models_library.api_schemas_catalog.services_specifications import (
 from models_library.basic_types import LogLevel
 from models_library.services_resources import ResourcesDict, ResourceValue
 from pydantic import AliasChoices, ByteSize, Field, PositiveInt, TypeAdapter
-from settings_library.application import BaseApplicationSettings
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
@@ -55,6 +55,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             "CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
         ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
+    CATALOG_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
+        default_factory=dict,
+        env=["CATALOG_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
     CATALOG_DEV_FEATURES_ENABLED: bool = Field(
         default=False,

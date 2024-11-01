@@ -16,6 +16,7 @@ from inspect import getframeinfo, stack
 from pathlib import Path
 from typing import Any, NotRequired, TypeAlias, TypedDict, TypeVar
 
+from .logging_utils_filtering import GeneralLogFilter, LoggerName, MessageSubstring
 from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
@@ -86,7 +87,11 @@ LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(fun
 # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| log_msg=%{GREEDYDATA:log_msg}
 
 
-def config_all_loggers(*, log_format_local_dev_enabled: bool) -> None:
+def config_all_loggers(
+    *,
+    log_format_local_dev_enabled: bool,
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
+) -> None:
     """
     Applies common configuration to ALL registered loggers
     """
@@ -102,12 +107,25 @@ def config_all_loggers(*, log_format_local_dev_enabled: bool) -> None:
         fmt = LOCAL_FORMATTING
 
     for logger in loggers:
-        set_logging_handler(
+        _set_logging_handler(
             logger, fmt=fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
         )
 
+    for logger_name, filtered_routes in logger_filter_mapping.items():
+        logger = logging.getLogger(logger_name)
+        # Check if the logger has any handlers or is in active use
+        if not logger.hasHandlers():
+            _logger.warning(
+                "Logger %s does not have any handlers. Filter will not be added.",
+                logger_name,
+            )
+            continue
 
-def set_logging_handler(
+        log_filter = GeneralLogFilter(filtered_routes)
+        logger.addFilter(log_filter)
+
+
+def _set_logging_handler(
     logger: logging.Logger,
     *,
     fmt: str,
