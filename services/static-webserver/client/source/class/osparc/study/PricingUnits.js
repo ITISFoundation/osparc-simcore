@@ -22,7 +22,8 @@ qx.Class.define("osparc.study.PricingUnits", {
     this.base(arguments);
 
     this.set({
-      layout: new qx.ui.layout.HBox(5)
+      layout: new qx.ui.layout.HBox(5),
+      allowGrowY: false,
     });
 
     this.__buildLayout(pricingUnits, preselectedPricingUnit);
