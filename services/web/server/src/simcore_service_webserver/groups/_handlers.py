@@ -98,6 +98,7 @@ async def list_groups(request: web.Request):
 
     if product.group_id:
         with suppress(GroupNotFoundError):
+            # Product is optional
             my_group["product"] = await api.get_product_group_for_user(
                 app=request.app,
                 user_id=req_ctx.user_id,
@@ -260,10 +261,10 @@ async def update_group_user(request: web.Request):
 
     user = await api.update_user_in_group(
         request.app,
-        req_ctx.user_id,
-        path_params.gid,
-        path_params.uid,
-        update.dict(exclude_unset=True),
+        user_id=req_ctx.user_id,
+        gid=path_params.gid,
+        the_user_id_in_group=path_params.uid,
+        access_rights=update.access_rights.dict(),
     )
     assert parse_obj_as(GroupUserGet, user) is not None  # nosec
     return envelope_json_response(user)

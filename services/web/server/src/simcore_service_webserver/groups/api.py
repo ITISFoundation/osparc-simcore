@@ -173,7 +173,7 @@ async def update_user_in_group(
     user_id: UserID,
     gid: GroupID,
     the_user_id_in_group: int,
-    new_values_for_user_in_group: dict,
+    access_rights: dict,
 ) -> dict[str, str]:
     async with get_database_engine(app).acquire() as conn:
         return await _db.update_user_in_group(
@@ -181,7 +181,7 @@ async def update_user_in_group(
             user_id=user_id,
             gid=gid,
             the_user_id_in_group=the_user_id_in_group,
-            new_values_for_user_in_group=new_values_for_user_in_group,
+            access_rights=access_rights,
         )
 
 

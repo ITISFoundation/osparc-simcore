@@ -358,8 +358,12 @@ async def update_user_in_group(
     user_id: UserID,
     gid: GroupID,
     the_user_id_in_group: int,
-    new_values_for_user_in_group: dict,
+    access_rights: dict,
 ) -> dict[str, str]:
+    if not access_rights:
+        msg = f"Cannot update empty {access_rights}"
+        raise ValueError(msg)
+
     # first check if the group exists
     group: RowProxy = await _get_user_group(conn, user_id, gid)
     check_group_permissions(group, user_id, gid, "write")
@@ -368,7 +372,7 @@ async def update_user_in_group(
         conn, gid, the_user_id_in_group
     )
     # modify the user access rights
-    new_db_values = {"access_rights": new_values_for_user_in_group["accessRights"]}
+    new_db_values = {"access_rights": access_rights}
     await conn.execute(
         # pylint: disable=no-value-for-parameter
         user_to_groups.update()

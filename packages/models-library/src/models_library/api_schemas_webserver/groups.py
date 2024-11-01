@@ -195,7 +195,9 @@ class GroupUserAdd(InputSchema):
 
 
 class GroupUserUpdate(InputSchema):
-    access_rights: GroupAccessRights | None = None
+    # NOTE: since it is a single item, it is required. Cannot
+    # update for the moment partial attributes e.g. {read: False}
+    access_rights: GroupAccessRights
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
