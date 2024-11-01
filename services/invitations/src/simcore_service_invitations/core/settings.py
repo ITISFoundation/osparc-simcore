@@ -2,6 +2,7 @@ from functools import cached_property
 
 from models_library.products import ProductName
 from pydantic import Field, HttpUrl, PositiveInt, SecretStr, validator
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
 from settings_library.tracing import TracingSettings
@@ -48,6 +49,11 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
+    INVITATIONS_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
+        default_factory=dict,
+        env=["INVITATIONS_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
     @cached_property
