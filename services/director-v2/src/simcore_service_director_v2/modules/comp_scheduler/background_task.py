@@ -14,7 +14,9 @@ from . import factory
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_TIMEOUT_S: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
+_COMPUTATIONAL_SCHEDULER_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
+    seconds=5
+)
 _TASK_NAME: Final[str] = "computational services scheduler"
 
 
@@ -31,7 +33,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
                     redis_clients_manager.client(RedisDatabase.LOCKS),
                     lock_key=lock_key,
                 )(scheduler.schedule_all_pipelines),
-                interval=_DEFAULT_TIMEOUT_S,
+                interval=_COMPUTATIONAL_SCHEDULER_INTERVAL,
                 task_name=_TASK_NAME,
             )
 
