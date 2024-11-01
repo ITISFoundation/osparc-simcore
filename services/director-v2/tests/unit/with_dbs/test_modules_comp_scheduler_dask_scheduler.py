@@ -102,7 +102,9 @@ def _assert_dask_client_correctly_initialized(
     )
     mocked_dask_client.register_handlers.assert_called_once_with(
         TaskHandlers(
-            cast(DaskScheduler, scheduler)._task_progress_change_handler,
+            cast(
+                DaskScheduler, scheduler
+            )._task_progress_change_handler,  # noqa: SLF001
             cast(DaskScheduler, scheduler)._task_log_change_handler,  # noqa: SLF001
         )
     )
@@ -236,7 +238,7 @@ async def minimal_app(async_client: httpx.AsyncClient) -> FastAPI:
     # a new thread on which it creates a new loop
     # causing issues downstream with coroutines not
     # being created on the same loop
-    return async_client._transport.app  # type: ignore
+    return async_client._transport.app  # type: ignore  # noqa: SLF001
 
 
 @pytest.fixture
