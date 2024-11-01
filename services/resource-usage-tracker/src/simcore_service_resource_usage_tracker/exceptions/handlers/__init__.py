@@ -1,8 +1,7 @@
 from fastapi import FastAPI, HTTPException, status
-from fastapi.exceptions import RequestValidationError
 
+from ..errors import RutNotFoundError
 from ._http_error import (
-    RutNotFoundError,
     http404_error_handler,
     http_error_handler,
     make_http_error_handler_for_exception,
