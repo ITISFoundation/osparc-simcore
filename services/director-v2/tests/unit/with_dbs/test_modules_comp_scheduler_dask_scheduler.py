@@ -258,7 +258,7 @@ async def test_scheduler_gracefully_starts_and_stops(
     minimal_app: FastAPI,
 ):
     # check it started correctly
-    assert minimal_app.state.scheduler_task is not None
+    assert minimal_app.state.computational_scheduler_task is not None
 
 
 @pytest.mark.parametrize(
