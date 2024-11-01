@@ -109,7 +109,8 @@ class MyGroupsGet(OutputSchema):
     me: GroupGet
     organizations: list[GroupGet] | None = None
     all: GroupGet
-    product: GroupGet
+    # FIXME: in GET /me is different as in GET /groups
+    product: GroupGet | None = None
 
     class Config:
         schema_extra: ClassVar[dict[str, Any]] = {
