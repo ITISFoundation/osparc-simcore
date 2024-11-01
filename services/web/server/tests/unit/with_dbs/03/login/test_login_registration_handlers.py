@@ -197,7 +197,7 @@ async def test_request_an_account(
 
     response = await client.post(
         "/v0/auth/request-account",
-        json={"form": user_data, "captcha": 123456},
+        json={"form": user_data, "captcha": "123456"},
     )
 
     await assert_status(response, status.HTTP_204_NO_CONTENT)
