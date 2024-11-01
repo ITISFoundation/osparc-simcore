@@ -205,7 +205,7 @@ def mocked_dask_client(mocker: MockerFixture) -> mock.MagicMock:
 @pytest.fixture
 def mocked_parse_output_data_fct(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.parse_output_data",
+        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.parse_output_data",
         autospec=True,
     )
 
@@ -213,7 +213,7 @@ def mocked_parse_output_data_fct(mocker: MockerFixture) -> mock.Mock:
 @pytest.fixture
 def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.clean_task_output_and_log_files_if_invalid",
+        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.clean_task_output_and_log_files_if_invalid",
         return_value=None,
         autospec=True,
     )
@@ -246,7 +246,7 @@ async def minimal_app(async_client: httpx.AsyncClient) -> FastAPI:
 @pytest.fixture
 def mocked_clean_task_output_and_log_files_if_invalid(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.clean_task_output_and_log_files_if_invalid",
+        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.clean_task_output_and_log_files_if_invalid",
         autospec=True,
     )
 
@@ -1066,7 +1066,7 @@ async def test_handling_of_disconnected_dask_scheduler(
 ):
     # this will create a non connected backend issue that will trigger re-connection
     mocked_dask_client_send_task = mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks",
+        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.DaskClient.send_computation_tasks",
         side_effect=backend_error,
     )
     assert mocked_dask_client_send_task
