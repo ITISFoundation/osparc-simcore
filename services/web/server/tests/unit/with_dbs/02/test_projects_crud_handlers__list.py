@@ -145,7 +145,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         query_parameters={"limit": limit, "offset": offset},
         expected_error_msg=expected_error_msg,
-        expected_error_code="value_error.number.not_ge",
+        expected_error_code="greater_than_equal",
     )
 
 
