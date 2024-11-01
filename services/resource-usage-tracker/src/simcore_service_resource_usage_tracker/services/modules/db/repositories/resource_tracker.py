@@ -28,9 +28,6 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import PositiveInt
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
-    CustomResourceUsageTrackerError,
-)
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
 )
@@ -51,6 +48,17 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
+from .....exceptions.errors import (
+    CreditTransactionNotCreatedDBError,
+    PricingPlanAndPricingUnitCombinationDoesNotExistsDBError,
+    PricingPlanDoesNotExistsDBError,
+    PricingPlanNotCreatedDBError,
+    PricingPlanToServiceNotCreatedDBError,
+    PricingUnitCostDoesNotExistsDBError,
+    PricingUnitCostNotCreatedDBError,
+    PricingUnitNotCreatedDBError,
+    ServiceRunNotCreatedDBError,
+)
 from .....models.credit_transactions import (
     CreditTransactionCreate,
     CreditTransactionCreditsAndStatusUpdate,
@@ -125,9 +133,7 @@ class ResourceTrackerRepository(
             result = await conn.execute(insert_stmt)
         row = result.first()
         if row is None:
-            raise CustomResourceUsageTrackerError(
-                msg=f"Service was not created: {data}"
-            )
+            raise ServiceRunNotCreatedDBError(data=data)
         return cast(ServiceRunId, row[0])
 
     async def update_service_run_last_heartbeat(
@@ -655,9 +661,7 @@ class ResourceTrackerRepository(
             result = await conn.execute(insert_stmt)
         row = result.first()
         if row is None:
-            raise CustomResourceUsageTrackerError(
-                msg=f"Transaction was not created: {data}"
-            )
+            raise CreditTransactionNotCreatedDBError(data=data)
         return cast(CreditTransactionId, row[0])
 
     async def update_credit_transaction_credits(
@@ -870,9 +874,7 @@ class ResourceTrackerRepository(
             result = await conn.execute(select_stmt)
         row = result.first()
         if row is None:
-            raise CustomResourceUsageTrackerError(
-                msg=f"Pricing plan does not exists: {pricing_plan_id}"
-            )
+            raise PricingPlanDoesNotExistsDBError(pricing_plan_id=pricing_plan_id)
         return PricingPlansDB.from_orm(row)
 
     async def list_pricing_plans_by_product(
@@ -921,9 +923,7 @@ class ResourceTrackerRepository(
             result = await conn.execute(insert_stmt)
         row = result.first()
         if row is None:
-            raise CustomResourceUsageTrackerError(
-                msg=f"Pricing plan was not created: {data}"
-            )
+            raise PricingPlanNotCreatedDBError(data=data)
         return PricingPlansDB.from_orm(row)
 
     async def update_pricing_plan(
@@ -1084,8 +1084,8 @@ class ResourceTrackerRepository(
             result = await conn.execute(insert_stmt)
             row = result.first()
             if row is None:
-                raise CustomResourceUsageTrackerError(
-                    msg="Pricing plan to service record was not created"
+                raise PricingPlanToServiceNotCreatedDBError(
+                    data=f"pricing_plan_id {pricing_plan_id}, service_key {service_key}, service_version {service_version}"
                 )
             return PricingPlanToServiceDB.from_orm(row)
 
@@ -1194,8 +1194,10 @@ class ResourceTrackerRepository(
 
         row = result.first()
         if row is None:
-            raise CustomResourceUsageTrackerError(
-                msg=f"Pricing plan {pricing_plan_id} and pricing unit {pricing_unit_id} for product {product_name} not found"
+            raise PricingPlanAndPricingUnitCombinationDoesNotExistsDBError(
+                pricing_plan_id=pricing_plan_id,
+                pricing_unit_id=pricing_unit_id,
+                product_name=product_name,
             )
         return PricingUnitsDB.from_orm(row)
 
@@ -1220,9 +1222,7 @@ class ResourceTrackerRepository(
             result = await conn.execute(insert_stmt)
             row = result.first()
             if row is None:
-                raise CustomResourceUsageTrackerError(
-                    msg=f"Pricing unit was not created: {data}"
-                )
+                raise PricingUnitNotCreatedDBError(data=data)
             _pricing_unit_id = row[0]
 
             # pricing unit cost table
@@ -1245,9 +1245,7 @@ class ResourceTrackerRepository(
             result = await conn.execute(insert_stmt)
             row = result.first()
             if row is None:
-                raise CustomResourceUsageTrackerError(
-                    msg=f"Pricing unit cost was not created: {data}"
-                )
+                raise PricingUnitCostNotCreatedDBError(data=data)
             _pricing_unit_cost_id = row[0]
 
         return (_pricing_unit_id, _pricing_unit_cost_id)
@@ -1313,9 +1311,7 @@ class ResourceTrackerRepository(
                 result = await conn.execute(insert_stmt)
                 row = result.first()
                 if row is None:
-                    raise CustomResourceUsageTrackerError(
-                        msg=f"Pricing unit cost was not created: {data}"
-                    )
+                    raise PricingUnitCostNotCreatedDBError(data=data)
 
     #################################
     # Pricing unit-costs
@@ -1345,7 +1341,7 @@ class ResourceTrackerRepository(
 
         row = result.first()
         if row is None:
-            raise CustomResourceUsageTrackerError(
-                msg=f"Pricing unit cost id {pricing_unit_cost_id} not found in the resource_tracker_pricing_unit_costs table",
+            raise PricingUnitCostDoesNotExistsDBError(
+                pricing_unit_cost_id=pricing_unit_cost_id
             )
         return PricingUnitCostsDB.from_orm(row)

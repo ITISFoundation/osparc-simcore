@@ -13,11 +13,9 @@ from models_library.resource_tracker import (
     PricingPlanUpdate,
 )
 from models_library.services import ServiceKey, ServiceVersion
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
-    CustomResourceUsageTrackerError,
-)
 
 from ..api.rest.dependencies import get_repository
+from ..exceptions.errors import PricingPlanNotFoundForServiceError
 from ..models.pricing_plans import PricingPlansDB, PricingPlanToServiceDB
 from ..models.pricing_units import PricingUnitsDB
 from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
@@ -68,8 +66,8 @@ async def get_service_default_pricing_plan(
             break
 
     if default_pricing_plan is None:
-        raise CustomResourceUsageTrackerError(
-            msg="No default pricing plan for the specified service"
+        raise PricingPlanNotFoundForServiceError(
+            service_key=service_key, service_version=service_version
         )
 
     pricing_plan_unit_db = (

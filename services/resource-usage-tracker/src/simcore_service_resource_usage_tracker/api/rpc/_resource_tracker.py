@@ -26,9 +26,6 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import AnyUrl
 from servicelib.rabbitmq import RPCRouter
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
-    CustomResourceUsageTrackerError,
-)
 
 from ...core.settings import ApplicationSettings
 from ...services import pricing_plans, pricing_units, service_runs
@@ -43,7 +40,7 @@ router = RPCRouter()
 ## Service runs
 
 
-@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+@router.expose(reraise_if_error_type=())
 async def get_service_run_page(
     app: FastAPI,
     *,
@@ -69,7 +66,7 @@ async def get_service_run_page(
     )
 
 
-@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+@router.expose(reraise_if_error_type=())
 async def export_service_runs(
     app: FastAPI,
     *,
@@ -98,7 +95,7 @@ async def export_service_runs(
     )
 
 
-@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+@router.expose(reraise_if_error_type=())
 async def get_osparc_credits_aggregated_usages_page(
     app: FastAPI,
     *,
@@ -127,7 +124,7 @@ async def get_osparc_credits_aggregated_usages_page(
 ## Pricing plans
 
 
-@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+@router.expose(reraise_if_error_type=())
 async def get_pricing_plan(
     app: FastAPI,
     *,
@@ -141,7 +138,7 @@ async def get_pricing_plan(
     )
 
 
-@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+@router.expose(reraise_if_error_type=())
 async def list_pricing_plans(
     app: FastAPI,
     *,
@@ -153,7 +150,7 @@ async def list_pricing_plans(
     )
 
 
-@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+@router.expose(reraise_if_error_type=())
 async def create_pricing_plan(
     app: FastAPI,
     *,
@@ -165,7 +162,7 @@ async def create_pricing_plan(
     )
 
 
-@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+@router.expose(reraise_if_error_type=())
 async def update_pricing_plan(
     app: FastAPI,
     *,
@@ -182,7 +179,7 @@ async def update_pricing_plan(
 ## Pricing units
 
 
-@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+@router.expose(reraise_if_error_type=())
 async def get_pricing_unit(
     app: FastAPI,
     *,
@@ -198,7 +195,7 @@ async def get_pricing_unit(
     )
 
 
-@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+@router.expose(reraise_if_error_type=())
 async def create_pricing_unit(
     app: FastAPI,
     *,
@@ -212,7 +209,7 @@ async def create_pricing_unit(
     )
 
 
-@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+@router.expose(reraise_if_error_type=())
 async def update_pricing_unit(
     app: FastAPI,
     *,
@@ -229,7 +226,7 @@ async def update_pricing_unit(
 ## Pricing plan to service
 
 
-@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+@router.expose(reraise_if_error_type=())
 async def list_connected_services_to_pricing_plan_by_pricing_plan(
     app: FastAPI,
     *,
@@ -246,7 +243,7 @@ async def list_connected_services_to_pricing_plan_by_pricing_plan(
     return output
 
 
-@router.expose(reraise_if_error_type=(CustomResourceUsageTrackerError,))
+@router.expose(reraise_if_error_type=())
 async def connect_service_to_pricing_plan(
     app: FastAPI,
     *,

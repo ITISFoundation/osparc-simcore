@@ -19,9 +19,6 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import AnyUrl, PositiveInt
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
-    CustomResourceUsageTrackerError,
-)
 
 from ..models.service_runs import ServiceRunWithCreditsDB
 from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
@@ -111,7 +108,7 @@ async def list_service_runs(
         )
     else:
         msg = "wallet_id and access_all_wallet_usage parameters must be specified together"
-        raise CustomResourceUsageTrackerError(msg=msg)
+        raise ValueError(msg)
 
     service_runs_api_model: list[ServiceRunGet] = []
     for service in service_runs_db_model:

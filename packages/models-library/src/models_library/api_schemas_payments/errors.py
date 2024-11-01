@@ -43,7 +43,7 @@ class PaymentAlreadyAckedError(PaymentsError):
 #
 
 
-class zl(_BaseRpcApiError):
+class PaymentsMethodsError(_BaseRpcApiError):
     ...
 
 

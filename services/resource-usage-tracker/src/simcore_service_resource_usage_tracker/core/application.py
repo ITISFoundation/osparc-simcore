@@ -3,9 +3,6 @@ import logging
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import setup_tracing
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
-    CustomResourceUsageTrackerError,
-)
 
 from .._meta import (
     API_VERSION,
@@ -25,7 +22,6 @@ from ..services.modules.s3 import setup as setup_s3
 from ..services.process_message_running_service_setup import (
     setup as setup_process_message_running_service,
 )
-from .errors import http404_error_handler
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -72,7 +68,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         )
 
     # ERROR HANDLERS
-    app.add_exception_handler(CustomResourceUsageTrackerError, http404_error_handler)
+    # app.add_exception_handler(CustomResourceUsageTrackerError, http404_error_handler)
 
     # EVENTS
     async def _on_startup() -> None:
