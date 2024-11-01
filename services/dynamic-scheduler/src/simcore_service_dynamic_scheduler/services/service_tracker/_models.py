@@ -89,7 +89,7 @@ class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attrib
 
     last_state_change: float = Field(
         default_factory=lambda: arrow.utcnow().timestamp(),
-        metadata={"description": "keeps track when the current_state was last updated"},
+        description="keeps track when the current_state was last updated",
     )
 
     #############################
