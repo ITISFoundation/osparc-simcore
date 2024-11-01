@@ -201,7 +201,7 @@ async def test_list_service_usage_with_order_by_query_param(
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith(
-        "We do not support ordering by provided field"
+        "Value error, We do not support ordering by provided field"
     )
 
     # with non-parsable field in order by query parameter
@@ -239,7 +239,7 @@ async def test_list_service_usage_with_order_by_query_param(
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error["errors"][0]["message"].startswith(
-        "value is not a valid enumeration member"
+        "Input should be 'asc' or 'desc'"
     )
 
     # without field
@@ -253,7 +253,7 @@ async def test_list_service_usage_with_order_by_query_param(
     _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert error["errors"][0]["message"].startswith("field required")
+    assert error["errors"][0]["message"].startswith("Field required")
 
 
 @pytest.mark.parametrize("user_role", [(UserRole.USER)])
