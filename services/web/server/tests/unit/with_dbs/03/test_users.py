@@ -85,7 +85,7 @@ async def test_get_profile(
     e = Envelope[ProfileGet].model_validate(await resp.json())
     assert e.error == error
     assert (
-        e.data.model_dump(**RESPONSE_MODEL_POLICY) == data if e.data else e.data == data
+        e.data.model_dump(**RESPONSE_MODEL_POLICY, mode="json") == data if e.data else e.data == data
     )
 
     if not error:
@@ -107,7 +107,7 @@ async def test_get_profile(
         assert profile.role == user_role.name
         assert profile.groups
 
-        got_profile_groups = profile.groups.model_dump(**RESPONSE_MODEL_POLICY)
+        got_profile_groups = profile.groups.model_dump(**RESPONSE_MODEL_POLICY, mode="json")
         assert got_profile_groups["me"] == primary_group
         assert got_profile_groups["all"] == all_group
 
