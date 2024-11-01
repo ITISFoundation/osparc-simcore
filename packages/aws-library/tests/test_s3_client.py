@@ -696,7 +696,7 @@ async def test_create_single_presigned_download_link(
 
     dest_file = tmp_path / faker.file_name()
     async with ClientSession() as session:
-        response = await session.get(download_url)
+        response = await session.get(f"{download_url}")
         response.raise_for_status()
         with dest_file.open("wb") as fp:
             fp.write(await response.read())

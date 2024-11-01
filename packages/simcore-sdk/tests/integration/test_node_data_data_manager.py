@@ -14,10 +14,11 @@ from uuid import uuid4
 
 import pytest
 from faker import Faker
+from models_library.basic_types import IDStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.progress_bar import ProgressBarData
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
@@ -157,7 +158,9 @@ async def test_valid_upload_download(
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
 ):
-    async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
+    async with ProgressBarData(
+        num_steps=2, description=IDStr(faker.pystr())
+    ) as progress_bar:
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
@@ -203,7 +206,9 @@ async def test_valid_upload_download_saved_to(
     mock_io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
 ):
-    async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
+    async with ProgressBarData(
+        num_steps=2, description=IDStr(faker.pystr())
+    ) as progress_bar:
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
@@ -251,7 +256,9 @@ async def test_delete_legacy_archive(
     temp_dir: Path,
     faker: Faker,
 ):
-    async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
+    async with ProgressBarData(
+        num_steps=2, description=IDStr(faker.pystr())
+    ) as progress_bar:
         # NOTE: legacy archives can no longer be crated
         # generating a "legacy style archive"
         archive_into_dir = temp_dir / f"legacy-archive-dir-{uuid4()}"
@@ -263,8 +270,8 @@ async def test_delete_legacy_archive(
             user_id=user_id,
             store_id=SIMCORE_LOCATION,
             store_name=None,
-            s3_object=parse_obj_as(
-                SimcoreS3FileID, f"{project_id}/{node_uuid}/{legacy_archive_name.name}"
+            s3_object=TypeAdapter(SimcoreS3FileID).validate_python(
+                f"{project_id}/{node_uuid}/{legacy_archive_name.name}"
             ),
             path_to_upload=legacy_archive_name,
             io_log_redirect_cb=None,

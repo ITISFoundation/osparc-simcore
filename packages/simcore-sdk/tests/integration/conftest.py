@@ -17,7 +17,7 @@ from models_library.api_schemas_storage import FileUploadSchema
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.faker_factories import random_project, random_user
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings, S3Provider
@@ -94,7 +94,7 @@ def create_valid_file_uuid(
 ) -> Callable[[str, Path], SimcoreS3FileID]:
     def _create(key: str, file_path: Path) -> SimcoreS3FileID:
         clean_path = Path(f"{project_id}/{node_uuid}/{key}/{file_path.name}")
-        return parse_obj_as(SimcoreS3FileID, f"{clean_path}")
+        return TypeAdapter(SimcoreS3FileID).validate_python(f"{clean_path}")
 
     return _create
 
