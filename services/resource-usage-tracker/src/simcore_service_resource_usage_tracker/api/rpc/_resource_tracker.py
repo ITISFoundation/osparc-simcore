@@ -31,11 +31,11 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 )
 
 from ...core.settings import ApplicationSettings
-from ...modules.db.repositories.resource_tracker import ResourceTrackerRepository
-from ...modules.s3 import get_s3_client
-from ...services import resource_tracker_pricing_plans as pricing_plans
-from ...services import resource_tracker_pricing_units as pricing_units
-from ...services import resource_tracker_service_runs as service_runs
+from ...services import pricing_plans, pricing_units, service_runs
+from ...services.modules.db.repositories.resource_tracker import (
+    ResourceTrackerRepository,
+)
+from ...services.modules.s3 import get_s3_client
 
 router = RPCRouter()
 

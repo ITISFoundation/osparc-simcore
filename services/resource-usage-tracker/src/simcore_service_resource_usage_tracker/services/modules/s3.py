@@ -12,7 +12,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from ..core.errors import ConfigurationError
+from ...core.errors import ConfigurationError
 
 _logger = logging.getLogger(__name__)
 

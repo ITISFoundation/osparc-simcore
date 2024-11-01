@@ -18,12 +18,9 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 )
 
 from ..api.rest.dependencies import get_repository
-from ..models.resource_tracker_pricing_plans import (
-    PricingPlansDB,
-    PricingPlanToServiceDB,
-)
-from ..models.resource_tracker_pricing_units import PricingUnitsDB
-from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from ..models.pricing_plans import PricingPlansDB, PricingPlanToServiceDB
+from ..models.pricing_units import PricingUnitsDB
+from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 
 async def _create_pricing_plan_get(

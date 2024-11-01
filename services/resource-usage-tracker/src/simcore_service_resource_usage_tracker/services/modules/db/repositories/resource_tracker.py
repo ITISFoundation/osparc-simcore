@@ -51,19 +51,19 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
 )
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
-from ....models.resource_tracker_credit_transactions import (
+from .....models.credit_transactions import (
     CreditTransactionCreate,
     CreditTransactionCreditsAndStatusUpdate,
     CreditTransactionCreditsUpdate,
 )
-from ....models.resource_tracker_pricing_plans import (
+from .....models.pricing_plans import (
     PricingPlansDB,
     PricingPlansWithServiceDefaultPlanDB,
     PricingPlanToServiceDB,
 )
-from ....models.resource_tracker_pricing_unit_costs import PricingUnitCostsDB
-from ....models.resource_tracker_pricing_units import PricingUnitsDB
-from ....models.resource_tracker_service_runs import (
+from .....models.pricing_unit_costs import PricingUnitCostsDB
+from .....models.pricing_units import PricingUnitsDB
+from .....models.service_runs import (
     OsparcCreditsAggregatedByServiceKeyDB,
     ServiceRunCreate,
     ServiceRunDB,

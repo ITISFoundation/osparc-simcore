@@ -23,8 +23,8 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
 )
 
-from ..models.resource_tracker_service_runs import ServiceRunWithCreditsDB
-from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from ..models.service_runs import ServiceRunWithCreditsDB
+from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 _PRESIGNED_LINK_EXPIRATION_SEC = 7200
 

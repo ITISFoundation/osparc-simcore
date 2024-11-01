@@ -10,7 +10,7 @@ from servicelib.rabbitmq import (
 )
 from settings_library.rabbit import RabbitSettings
 
-from ..core.errors import ConfigurationError
+from ...core.errors import ConfigurationError
 
 logger = logging.getLogger(__name__)
 
