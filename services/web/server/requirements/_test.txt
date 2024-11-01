@@ -65,6 +65,10 @@ frozenlist==1.4.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
+greenlet==2.0.2
+    # via
+    #   -c requirements/_base.txt
+    #   sqlalchemy
 hypothesis==6.91.0
     # via -r requirements/_test.in
 icdiff==2.0.7

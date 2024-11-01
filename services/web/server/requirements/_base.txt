@@ -26,6 +26,7 @@ aiofiles==0.8.0
     #   -r requirements/_base.in
 aiohttp==3.8.5
     # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -120,6 +121,7 @@ captcha==0.5.0
     # via -r requirements/_base.in
 certifi==2023.7.22
     # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -158,6 +160,7 @@ click==8.1.3
     # via typer
 cryptography==41.0.7
     # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -240,6 +243,7 @@ jinja-app-loader==1.0.2
     # via -r requirements/_base.in
 jinja2==3.1.2
     # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -286,6 +290,7 @@ lazy-object-proxy==1.7.1
     # via openapi-core
 mako==1.2.2
     # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -408,6 +413,7 @@ opentelemetry-util-http==0.47b0
     #   opentelemetry-instrumentation-requests
 orjson==3.10.0
     # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -435,10 +441,24 @@ orjson==3.10.0
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../requirements/constraints.txt
+    #   -r requirements/../../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
 packaging==24.1
     # via
@@ -475,6 +495,7 @@ pycparser==2.21
     # via cffi
 pydantic==2.9.2
     # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -503,6 +524,7 @@ pydantic==2.9.2
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/./constraints.txt
+    #   -r requirements/../../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/_base.in
@@ -537,12 +559,27 @@ pydantic-core==2.23.4
     # via pydantic
 pydantic-extra-types==2.9.0
     # via
+    #   -r requirements/../../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-pydantic-settings==2.6.0
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+pydantic-settings==2.5.2
     # via
+    #   -c requirements/./constraints.txt
     #   -r requirements/../../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
@@ -577,6 +614,7 @@ pytz==2022.1
     # via twilio
 pyyaml==6.0.1
     # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -610,6 +648,7 @@ pyyaml==6.0.1
     #   openapi-spec-validator
 redis==5.0.4
     # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -674,6 +713,7 @@ sniffio==1.3.1
     # via anyio
 sqlalchemy==1.4.47
     # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -744,6 +784,7 @@ typing-extensions==4.12.0
     #   typer
 ujson==5.5.0
     # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -774,6 +815,7 @@ ujson==5.5.0
     #   aiohttp-swagger
 urllib3==1.26.11
     # via
+    #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
