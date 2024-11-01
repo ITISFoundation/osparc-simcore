@@ -24,7 +24,7 @@ HEAD = f"{__file__}/ref/HEAD"
 
 CommitID: TypeAlias = int
 BranchID: TypeAlias = int
-RefID: TypeAlias = Union[CommitID, str]
+RefID: TypeAlias = CommitID | str
 
 CheckpointID: TypeAlias = PositiveInt
 
@@ -44,7 +44,7 @@ class Checkpoint(BaseModel):
             checksum=commit.snapshot_checksum,
             tags=tuple(tag.name for tag in tags),
             message=commit.message,
-            parents_ids=(commit.parent_commit_id,) if commit.parent_commit_id else None,  # type: ignore[arg-type]
+            parents_ids=(commit.parent_commit_id,) if commit.parent_commit_id else None,
             created_at=commit.created,
         )
 
