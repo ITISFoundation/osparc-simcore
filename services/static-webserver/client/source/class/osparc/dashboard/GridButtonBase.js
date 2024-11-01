@@ -77,33 +77,26 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       MODIFIED: {
         row: 0,
         column: 0,
-        rowSpan: 1,
-        colSpan: 2
       },
       UI_MODE: {
         row: 0,
-        column: 3,
-        colSpan: 1
+        column: 1,
       },
       UPDATES: {
         row: 0,
-        column: 4,
-        colSpan: 1
+        column: 2,
       },
       TSR: {
         row: 1,
         column: 0,
-        colSpan: 2
       },
       HITS: {
         row: 1,
-        column: 2,
-        colSpan: 1
+        column: 1,
       },
       PERMISSION: {
         row: 1,
-        column: 4,
-        colSpan: 1
+        column: 2,
       }
     }
   },
@@ -173,7 +166,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         case "footer": {
           const fgrid = new qx.ui.layout.Grid();
           fgrid.setSpacing(2);
-          fgrid.setRowFlex(2, 1);
           fgrid.setColumnFlex(0, 1);
           control = new qx.ui.container.Composite().set({
             backgroundColor: "background-card-overlay",
