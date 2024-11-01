@@ -229,7 +229,7 @@ async def upload_file(request: web.Request) -> web.Response:
     parse_request_path_parameters_as(_PathParams, request)
 
     class _QueryParams(BaseModel):
-        file_size: ByteSize | None
+        file_size: ByteSize | None = None
         link_type: LinkType = LinkType.PRESIGNED
         is_directory: bool = False
 
