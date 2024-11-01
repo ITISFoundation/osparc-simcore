@@ -108,7 +108,7 @@ async def test_workflow(
     resp = await client.get(
         f"/{VX}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}"
     )
-    assert str(resp.url) == checkpoint1.url
+    assert f"{resp.url}" == f"{checkpoint1.url}"
     assert CheckpointApiModel.model_validate(data) == checkpoint1
 
     # LIST checkpoints
