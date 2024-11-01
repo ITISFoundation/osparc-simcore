@@ -15,7 +15,6 @@ from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-
 from opentelemetry.instrumentation.aiohttp_server import (
     middleware as aiohttp_server_opentelemetry_middleware,  # pylint:disable=no-name-in-module
 )
-from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -37,6 +36,12 @@ try:
     HAS_AIOPG = True
 except ImportError:
     HAS_AIOPG = False
+try:
+    from opentelemetry.instrumentation.requests import RequestsInstrumentor
+
+    HAS_REQUESTS = True
+except ImportError:
+    HAS_REQUESTS = False
 
 
 def setup_tracing(
@@ -116,4 +121,10 @@ def setup_tracing(
             msg="Attempting to add botocore opentelemetry autoinstrumentation...",
         ):
             BotocoreInstrumentor().instrument()
-    RequestsInstrumentor().instrument()
+    if HAS_REQUESTS:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add requests opentelemetry autoinstrumentation...",
+        ):
+            RequestsInstrumentor().instrument()

@@ -50,6 +50,13 @@ try:
 except ImportError:
     HAS_BOTOCORE = False
 
+try:
+    from opentelemetry.instrumentation.requests import RequestsInstrumentor
+
+    HAS_REQUESTS = True
+except ImportError:
+    HAS_REQUESTS = False
+
 
 def setup_tracing(
     app: FastAPI, tracing_settings: TracingSettings, service_name: str
@@ -107,3 +114,10 @@ def setup_tracing(
             msg="Attempting to add botocore opentelemetry autoinstrumentation...",
         ):
             BotocoreInstrumentor().instrument()
+    if HAS_REQUESTS:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add requests opentelemetry autoinstrumentation...",
+        ):
+            RequestsInstrumentor().instrument()

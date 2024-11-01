@@ -4,7 +4,7 @@
 
 import importlib
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Iterator
 
 import pip
 import pytest
@@ -45,6 +45,7 @@ async def test_valid_tracing_settings(
     aiohttp_client: Callable,
     set_and_clean_settings_env_vars: Callable,
     tracing_settings_in,
+    uninstrument_opentelemetry: Iterator[None],
 ) -> TestClient:
     app = web.Application()
     service_name = "simcore_service_webserver"
@@ -69,6 +70,7 @@ async def test_invalid_tracing_settings(
     aiohttp_client: Callable,
     set_and_clean_settings_env_vars: Callable,
     tracing_settings_in,
+    uninstrument_opentelemetry: Iterator[None],
 ) -> TestClient:
     with pytest.raises(ValidationError):
         TracingSettings()
@@ -115,6 +117,7 @@ async def test_tracing_setup_package_detection(
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
     manage_package,
+    uninstrument_opentelemetry: Iterator[None],
 ):
     package_name = manage_package
     importlib.import_module(package_name)

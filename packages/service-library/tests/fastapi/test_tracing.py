@@ -5,7 +5,7 @@ import importlib
 import random
 import string
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Iterator
 
 import pip
 import pytest
@@ -51,6 +51,7 @@ async def test_valid_tracing_settings(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
+    uninstrument_opentelemetry: Iterator[None],
 ):
     tracing_settings = TracingSettings()
     setup_tracing(
@@ -86,6 +87,7 @@ async def test_invalid_tracing_settings(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
+    uninstrument_opentelemetry: Iterator[None],
 ):
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
@@ -137,6 +139,7 @@ async def test_tracing_setup_package_detection(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
+    uninstrument_opentelemetry: Iterator[None],
     manage_package,
 ):
     package_name = manage_package
