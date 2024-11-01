@@ -46,7 +46,7 @@ async def post_log_message(
     app: FastAPI, log: LogMessageStr, *, log_level: LogLevelInt
 ) -> None:
     app_settings: ApplicationSettings = app.state.settings
-    message = LoggerRabbitMessage.construct(
+    message = LoggerRabbitMessage.model_construct(
         node_id=app_settings.DY_SIDECAR_NODE_ID,
         user_id=app_settings.DY_SIDECAR_USER_ID,
         project_id=app_settings.DY_SIDECAR_PROJECT_ID,
@@ -61,7 +61,7 @@ async def post_progress_message(
     app: FastAPI, progress_type: ProgressType, report: ProgressReport
 ) -> None:
     app_settings: ApplicationSettings = app.state.settings
-    message = ProgressRabbitMessageNode.construct(
+    message = ProgressRabbitMessageNode.model_construct(
         node_id=app_settings.DY_SIDECAR_NODE_ID,
         user_id=app_settings.DY_SIDECAR_USER_ID,
         project_id=app_settings.DY_SIDECAR_PROJECT_ID,

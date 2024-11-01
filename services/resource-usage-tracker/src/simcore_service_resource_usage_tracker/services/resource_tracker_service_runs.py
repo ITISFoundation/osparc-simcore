@@ -116,7 +116,7 @@ async def list_service_runs(
     service_runs_api_model: list[ServiceRunGet] = []
     for service in service_runs_db_model:
         service_runs_api_model.append(
-            ServiceRunGet.construct(
+            ServiceRunGet.model_construct(
                 service_run_id=service.service_run_id,
                 wallet_id=service.wallet_id,
                 wallet_name=service.wallet_name,
@@ -218,7 +218,7 @@ async def get_osparc_credits_aggregated_usages_page(
     output_api_model: list[OsparcCreditsAggregatedByServiceGet] = []
     for item in output_list_db:
         output_api_model.append(
-            OsparcCreditsAggregatedByServiceGet.construct(
+            OsparcCreditsAggregatedByServiceGet.model_construct(
                 osparc_credits=item.osparc_credits,
                 service_key=item.service_key,
                 running_time_in_hours=item.running_time_in_hours,
