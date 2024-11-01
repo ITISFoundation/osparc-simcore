@@ -1371,7 +1371,7 @@ async def test_running_pipeline_triggers_heartbeat(
 @pytest.fixture
 async def mocked_get_or_create_cluster(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.get_or_create_on_demand_cluster",
+        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.get_or_create_on_demand_cluster",
         autospec=True,
     )
 
