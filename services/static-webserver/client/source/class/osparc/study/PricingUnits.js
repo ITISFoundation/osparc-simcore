@@ -47,7 +47,12 @@ qx.Class.define("osparc.study.PricingUnits", {
       });
 
       const groupOptions = new qx.ui.form.RadioGroup();
-      buttons.forEach(btn => groupOptions.add(btn));
+      buttons.forEach(btn => {
+        groupOptions.add(btn);
+        btn.bind("value", btn, "backgroundColor", {
+          converter: selected => selected ? "background-main-1" : "transparent"
+        });
+      });
 
       if (preselectedPricingUnit) {
         const buttonFound = buttons.find(button => button.getUnitData().getPricingUnitId() === preselectedPricingUnit["pricingUnitId"]);
