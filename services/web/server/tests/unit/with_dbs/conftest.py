@@ -17,8 +17,9 @@ import sys
 import textwrap
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
+from decimal import Decimal
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, AsyncIterable, Final
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
@@ -34,6 +35,8 @@ import simcore_service_webserver.utils
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from aiopg.sa import create_engine
+from aiopg.sa.connection import SAConnection
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.products import ProductName
@@ -41,6 +44,7 @@ from models_library.services_enums import ServiceState
 from pydantic import ByteSize, parse_obj_as
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.dict_tools import ConfigDict
+from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
@@ -56,7 +60,12 @@ from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
-from simcore_postgres_database.utils_products import get_default_product_name
+from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.products_prices import products_prices
+from simcore_postgres_database.utils_products import (
+    get_default_product_name,
+    get_or_create_product_group,
+)
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.db.plugin import get_database_engine
@@ -67,6 +76,10 @@ from simcore_service_webserver.groups.api import (
     list_user_groups_with_read_access,
 )
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.statics._constants import (
+    FRONTEND_APP_DEFAULT,
+    FRONTEND_APPS_AVAILABLE,
+)
 from sqlalchemy import exc as sql_exceptions
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -529,8 +542,6 @@ def postgres_db(
 
 @pytest.fixture
 async def aiopg_engine(postgres_db: sa.engine.Engine) -> AsyncIterator[aiopg.sa.Engine]:
-    from aiopg.sa import create_engine
-
     engine = await create_engine(f"{postgres_db.url}")
     assert engine
 
@@ -762,3 +773,124 @@ async def with_permitted_override_services_specifications(
             .where(groups_extra_properties.c.group_id == 1)
             .values(override_services_specifications=old_value)
         )
+
+
+# PRODUCT PRICES FIXTURES -------------------------------------------------------
+
+
+@pytest.fixture
+async def _pre_connection(postgres_db: sa.engine.Engine) -> AsyncIterable[SAConnection]:
+    # NOTE: call to postgres BEFORE app starts
+    async with await create_engine(
+        f"{postgres_db.url}"
+    ) as engine, engine.acquire() as conn:
+        yield conn
+
+
+@pytest.fixture
+async def all_products_names(
+    _pre_connection: SAConnection,
+) -> AsyncIterable[list[ProductName]]:
+    # default product
+    result = await _pre_connection.execute(
+        products.select().order_by(products.c.priority)
+    )
+    rows = await result.fetchall()
+    assert rows
+    assert len(rows) == 1
+    osparc_product_row = rows[0]
+    assert osparc_product_row.name == FRONTEND_APP_DEFAULT
+    assert osparc_product_row.priority == 0
+
+    # creates remaing products for front-end
+    priority = 1
+    for name in FRONTEND_APPS_AVAILABLE:
+        if name != FRONTEND_APP_DEFAULT:
+            result = await _pre_connection.execute(
+                products.insert().values(
+                    random_product(
+                        name=name,
+                        priority=priority,
+                        login_settings=osparc_product_row.login_settings,
+                        group_id=None,
+                    )
+                )
+            )
+            await get_or_create_product_group(_pre_connection, product_name=name)
+            priority += 1
+
+    # get all products
+    result = await _pre_connection.execute(
+        sa.select(products.c.name).order_by(products.c.priority)
+    )
+    rows = await result.fetchall()
+
+    yield [r.name for r in rows]
+
+    await _pre_connection.execute(products_prices.delete())
+    await _pre_connection.execute(
+        products.delete().where(products.c.name != FRONTEND_APP_DEFAULT)
+    )
+
+
+@pytest.fixture
+async def all_product_prices(
+    _pre_connection: SAConnection,
+    all_products_names: list[ProductName],
+    faker: Faker,
+) -> dict[ProductName, Decimal | None]:
+    """Initial list of prices for all products"""
+
+    # initial list of prices
+    product_price = {
+        "osparc": Decimal(0),  # free of charge
+        "tis": Decimal(5),
+        "tiplite": Decimal(5),
+        "s4l": Decimal(9),
+        "s4llite": Decimal(0),  # free of charge
+        "s4lacad": Decimal(1.1),
+    }
+
+    result = {}
+    for product_name in all_products_names:
+        usd_or_none = product_price.get(product_name, None)
+        if usd_or_none is not None:
+            await _pre_connection.execute(
+                products_prices.insert().values(
+                    product_name=product_name,
+                    usd_per_credit=usd_or_none,
+                    comment=faker.sentence(),
+                    min_payment_amount_usd=10,
+                    stripe_price_id=faker.pystr(),
+                    stripe_tax_rate_id=faker.pystr(),
+                )
+            )
+
+        result[product_name] = usd_or_none
+
+    return result
+
+
+@pytest.fixture
+async def latest_osparc_price(
+    all_product_prices: dict[ProductName, Decimal],
+    _pre_connection: SAConnection,
+) -> Decimal:
+    """This inserts a new price for osparc in the history
+    (i.e. the old price of osparc is still in the database)
+    """
+
+    usd = await _pre_connection.scalar(
+        products_prices.insert()
+        .values(
+            product_name="osparc",
+            usd_per_credit=all_product_prices["osparc"] + 5,
+            comment="New price for osparc",
+            stripe_price_id="stripe-price-id",
+            stripe_tax_rate_id="stripe-tax-rate-id",
+        )
+        .returning(products_prices.c.usd_per_credit)
+    )
+    assert usd is not None
+    assert usd != all_product_prices["osparc"]
+    return Decimal(usd)

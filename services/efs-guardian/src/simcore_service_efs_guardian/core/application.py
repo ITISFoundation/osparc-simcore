@@ -15,6 +15,7 @@ from ..api.rest.routes import setup_api_routes
 from ..api.rpc.routes import setup_rpc_routes
 from ..services.background_tasks_setup import setup as setup_background_tasks
 from ..services.efs_manager_setup import setup as setup_efs_manager
+from ..services.fire_and_forget_setup import setup as setup_fire_and_forget
 from ..services.modules.db import setup as setup_db
 from ..services.modules.rabbitmq import setup as setup_rabbitmq
 from ..services.modules.redis import setup as setup_redis
@@ -55,6 +56,8 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     setup_efs_manager(app)
     setup_background_tasks(app)  # requires Redis, DB
     setup_process_messages(app)  # requires Rabbit
+
+    setup_fire_and_forget(app)
 
     # EVENTS
     async def _on_startup() -> None:

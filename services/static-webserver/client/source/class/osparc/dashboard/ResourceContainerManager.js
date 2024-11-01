@@ -83,10 +83,12 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
   statics: {
     sortListByPriority: function(list) {
-      list.getChildren().sort((a, b) => {
-        let sortingValue = a.getPriority() - b.getPriority();
-        return sortingValue;
-      });
+      if (list) {
+        list.getChildren().sort((a, b) => {
+          let sortingValue = a.getPriority() - b.getPriority();
+          return sortingValue;
+        });
+      }
     },
 
     cardExists: function(container, newCard) {
@@ -233,6 +235,10 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     },
 
     __addCardToContainer: function(card, container) {
+      if (container == null) {
+        return;
+      }
+
       container.add(card);
 
       if (this.getMode() === "list") {

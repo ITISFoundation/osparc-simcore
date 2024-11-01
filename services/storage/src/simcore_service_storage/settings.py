@@ -1,6 +1,7 @@
 from typing import Any
 
 from pydantic import Field, PositiveInt, root_validator, validator
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
 from settings_library.postgres import PostgresSettings
@@ -67,6 +68,11 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         False,
         env=["STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
+    STORAGE_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
+        default_factory=dict,
+        env=["STORAGE_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
     @validator("LOG_LEVEL")

@@ -14,6 +14,7 @@ from models_library.utils.change_case import snake_to_camel
 from pydantic import AnyHttpUrl, parse_obj_as, root_validator, validator
 from pydantic.fields import Field, ModelField
 from pydantic.types import PositiveInt
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
@@ -113,6 +114,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         default=False,
         env=["WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
+    WEBSERVER_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
+        default_factory=dict,
+        env=["WEBSERVER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
     # TODO: find a better name!?
     WEBSERVER_SERVER_HOST: str = Field(
