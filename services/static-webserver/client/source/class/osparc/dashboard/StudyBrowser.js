@@ -924,8 +924,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (filterData.text) {
             this.__changeContext("search");
           } else {
-            // Back to My Workspace
-            this.__changeContext("studiesAndFolders", null, null);
+            const workspaceId = this.getCurrentWorkspaceId();
+            const folderId = this.getCurrentFolderId();
+            this.__changeContext("studiesAndFolders", workspaceId, folderId);
           }
         });
       }
