@@ -1,6 +1,7 @@
 """ Computational Runs Table
 
 """
+
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
@@ -105,6 +106,13 @@ comp_runs = sa.Table(
         sa.Boolean(),
         nullable=False,
         doc="the run uses on demand clusters",
+    ),
+    sa.Column(
+        "marked_for_cancellation",
+        sa.Boolean(),
+        server_default=sa.sql.expression.false(),
+        nullable=False,
+        doc="the run was marked for cancellation",
     ),
     sa.UniqueConstraint("project_uuid", "user_id", "iteration"),
 )
