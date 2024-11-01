@@ -4328,7 +4328,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -8710,6 +8710,7 @@ components:
           title: Email
           type: string
           format: email
+      description: To identify the user, you can either use `email` or user ID (`uid`)
     GroupUserGet:
       title: GroupUserGet
       required:
@@ -8756,6 +8757,8 @@ components:
           delete: false
     GroupUserUpdate:
       title: GroupUserUpdate
+      required:
+      - accessRights
       type: object
       properties:
         accessRights:
@@ -9062,7 +9065,6 @@ components:
       required:
       - me
       - all
-      - product
       type: object
       properties:
         me:

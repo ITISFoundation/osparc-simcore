@@ -180,6 +180,10 @@ class GroupUserGet(BaseModel):
 
 
 class GroupUserAdd(InputSchema):
+    """
+    To identify the user, you can either use `email` or user ID (`uid`)
+    """
+
     uid: UserID | None = None
     email: LowerCaseEmailStr | None = None
 
