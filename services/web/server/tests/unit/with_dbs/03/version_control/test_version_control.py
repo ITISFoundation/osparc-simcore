@@ -24,6 +24,6 @@ def test_compute_workbench_checksum(fake_project: ProjectDict):
     #
     #  e.g. order after parse maps order in BaseModel but not in dict
     #
-    sha1_w_model = compute_workbench_checksum(workbench.__root__)
+    sha1_w_model = compute_workbench_checksum(workbench.root)
 
     assert sha1_w_model == sha1_w_dict
