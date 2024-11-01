@@ -288,7 +288,7 @@ async def _try_start_pipeline(
 )
 # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
 @run_sequentially_in_context(target_args=["computation.project_id"])
-async def create_computation(  # noqa: PLR0913
+async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positional-arguments
     computation: ComputationCreate,
     request: Request,
     project_repo: Annotated[
