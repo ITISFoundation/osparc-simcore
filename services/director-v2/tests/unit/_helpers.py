@@ -30,7 +30,7 @@ class RunningProject(PublishedProject):
 
 async def trigger_comp_scheduler(scheduler: BaseCompScheduler) -> None:
     # trigger the scheduler
-    scheduler._wake_up_scheduler_now()  # pylint: disable=protected-access
+    scheduler._wake_up_scheduler_now()  # pylint: disable=protected-access  # noqa: SLF001
     # let the scheduler be actually triggered
     await asyncio.sleep(1)
 
