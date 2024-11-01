@@ -1,5 +1,6 @@
 from math import ceil
-from typing import Any, Protocol, TypedDict, Union, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
+from typing_extensions import TypedDict
 
 from common_library.pydantic_networks_extension import AnyHttpUrlLegacy
 from pydantic import TypeAdapter
@@ -29,7 +30,7 @@ class _StarletteURL(Protocol):
         ...
 
 
-_URLType = Union[_YarlURL, _StarletteURL]
+_URLType = _YarlURL | _StarletteURL
 
 
 def _replace_query(url: _URLType, query: dict[str, Any]) -> str:
@@ -69,9 +70,11 @@ def paginate_data(
     """
     last_page = ceil(total / limit) - 1
 
+    data = [item.model_dump() if hasattr(item, "model_dump") else item for item in chunk]
+
     return PageDict(
         _meta=PageMetaInfoLimitOffset(
-            total=total, count=len(chunk), limit=limit, offset=offset
+            total=total, count=len(data), limit=limit, offset=offset
         ),
         _links=PageLinks(
             self=_replace_query(request_url, {"offset": offset, "limit": limit}),
@@ -91,5 +94,5 @@ def paginate_data(
                 request_url, {"offset": last_page * limit, "limit": limit}
             ),
         ),
-        data=chunk,
+        data=data,
     )
