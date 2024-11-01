@@ -131,7 +131,7 @@ async def _assert_call_count(mock: AsyncMock, *, call_count: int) -> None:
 
 def _get_mocked_disk_usage(byte_size_str: str) -> DiskUsage:
     return DiskUsage(
-        total=ByteSize.validate(byte_size_str),
+        total=TypeAdapter(ByteSize).validate_python(byte_size_str),
         used=ByteSize(0),
         free=TypeAdapter(ByteSize).validate_python(byte_size_str),
         used_percent=0,
@@ -222,7 +222,7 @@ async def test_notifier_publish_disk_usage(
 
 @pytest.fixture
 def port_key() -> ServicePortKey:
-    return ServicePortKey("test_port")
+    return TypeAdapter(ServicePortKey).validate_python("test_port")
 
 
 def _get_on_input_port_spy(

@@ -14,11 +14,6 @@ reqs: ## compiles pip requirements (.in -> .txt)
 	cp .env-devel $@
 
 
-# specification of the used openapi-generator-cli (see also https://github.com/ITISFoundation/openapi-generator)
-OPENAPI_GENERATOR_NAME := openapitools/openapi-generator-cli
-OPENAPI_GENERATOR_TAG := latest
-OPENAPI_GENERATOR_IMAGE := $(OPENAPI_GENERATOR_NAME):$(OPENAPI_GENERATOR_TAG)
-
 define _create_and_validate_openapi
 	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
 	@source .env; \

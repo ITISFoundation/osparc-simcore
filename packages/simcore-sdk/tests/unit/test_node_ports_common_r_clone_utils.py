@@ -2,7 +2,7 @@ import json
 from unittest.mock import AsyncMock
 
 import pytest
-from pydantic import parse_raw_as
+from pydantic import TypeAdapter
 from simcore_sdk.node_ports_common.r_clone_utils import (
     SyncProgressLogParser,
     _RCloneSyncMessageBase,
@@ -68,7 +68,7 @@ from simcore_sdk.node_ports_common.r_clone_utils import (
     ],
 )
 async def test_rclone_stbc_message_parsing_regression(log_message: str, expected: type):
-    parsed_log = parse_raw_as(_RCloneSyncMessages, log_message)  # type: ignore[arg-type]
+    parsed_log = TypeAdapter(_RCloneSyncMessages).validate_json(log_message)
     assert isinstance(parsed_log, expected)
 
     progress_log_parser = SyncProgressLogParser(AsyncMock())

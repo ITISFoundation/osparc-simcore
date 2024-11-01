@@ -64,7 +64,7 @@ async def get_services_map(
     }
     for service in services_in_registry:
         try:
-            service_data = ServiceMetaDataPublished.parse_obj(service)
+            service_data = ServiceMetaDataPublished.model_validate(service)
             services[(service_data.key, service_data.version)] = service_data
 
         except ValidationError:  # noqa: PERF203

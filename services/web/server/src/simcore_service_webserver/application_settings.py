@@ -23,6 +23,7 @@ from pydantic import (
 from pydantic.fields import Field
 from pydantic.types import PositiveInt
 from pydantic_settings import SettingsConfigDict
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
@@ -125,6 +126,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
         ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
+    WEBSERVER_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
+        default_factory=dict,
+        env=["WEBSERVER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
     # TODO: find a better name!?
     WEBSERVER_SERVER_HOST: str = Field(

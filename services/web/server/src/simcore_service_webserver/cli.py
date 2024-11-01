@@ -55,6 +55,7 @@ def _setup_app_from_settings(
         level=settings.log_level,
         slow_duration=settings.AIODEBUG_SLOW_DURATION_SECS,
         log_format_local_dev_enabled=settings.WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=settings.WEBSERVER_LOG_FILTER_MAPPING,
     )
 
     app = create_application()

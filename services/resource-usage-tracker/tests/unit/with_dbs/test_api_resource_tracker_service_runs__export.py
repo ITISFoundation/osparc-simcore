@@ -1,3 +1,8 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=too-many-arguments
+
 import os
 from unittest.mock import Mock
 
@@ -25,24 +30,20 @@ _USER_ID = 1
 
 @pytest.fixture
 async def mocked_export(mocker: MockerFixture):
-    mock_export = mocker.patch(
+    return mocker.patch(
         "simcore_service_resource_usage_tracker.services.resource_tracker_service_runs.ResourceTrackerRepository.export_service_runs_table_to_s3",
         autospec=True,
     )
 
-    return mock_export
-
 
 @pytest.fixture
 async def mocked_presigned_link(mocker: MockerFixture):
-    mock_presigned_link = mocker.patch(
+    return mocker.patch(
         "simcore_service_resource_usage_tracker.services.resource_tracker_service_runs.SimcoreS3API.create_single_presigned_download_link",
         return_value=TypeAdapter(AnyUrl).validate_python(
             "https://www.testing.com/",
         ),
     )
-
-    return mock_presigned_link
 
 
 @pytest.fixture
@@ -76,6 +77,6 @@ async def test_rpc_list_service_runs_which_was_billed(
         user_id=_USER_ID,
         product_name="osparc",
     )
-    assert isinstance(download_url, AnyUrl)
+    assert isinstance(download_url, AnyUrl)  # nosec
     assert mocked_export.called
     assert mocked_presigned_link.called

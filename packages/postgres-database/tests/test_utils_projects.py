@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from faker import Faker
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.utils_projects import (
     DBProjectNotFoundError,
@@ -69,7 +69,7 @@ async def test_get_project_trashed_at_column_can_be_converted_to_datetime(
 
         row = result.fetchone()
 
-    trashed_at = parse_obj_as(datetime | None, row.trashed_at)
+    trashed_at = TypeAdapter(datetime | None).validate_python(row.trashed_at)
     assert trashed_at == expected
 
 

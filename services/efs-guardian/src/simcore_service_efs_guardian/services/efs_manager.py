@@ -83,6 +83,31 @@ class EfsManager:
 
         return await efs_manager_utils.get_size_bash_async(_dir_path)
 
+    async def list_project_node_state_names(
+        self, project_id: ProjectID, node_id: NodeID
+    ) -> list[str]:
+        """
+        These are currently state volumes that are mounted via docker volume to dynamic sidecar and user services
+        (ex. ".data_assets" and "home_user_workspace")
+        """
+        _dir_path = (
+            self._efs_mounted_path
+            / self._project_specific_data_base_directory
+            / f"{project_id}"
+            / f"{node_id}"
+        )
+
+        project_node_states = []
+        for child in _dir_path.iterdir():
+            if child.is_dir():
+                project_node_states.append(child.name)
+            else:
+                _logger.error(
+                    "This is not a directory. This should not happen! %s",
+                    _dir_path / child.name,
+                )
+        return project_node_states
+
     async def remove_project_node_data_write_permissions(
         self, project_id: ProjectID, node_id: NodeID
     ) -> None:

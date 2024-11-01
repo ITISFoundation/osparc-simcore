@@ -23,12 +23,42 @@ _logger = logging.getLogger(__name__)
 _INTERVAL_BETWEEN_CHECKS: Final[timedelta] = timedelta(seconds=1)
 _MAX_CONCURRENCY: Final[NonNegativeInt] = 10
 
+_REMOVE_AFTER_IDLE_FOR: Final[timedelta] = timedelta(minutes=5)
+
 
 async def _start_get_status_deferred(
     app: FastAPI, node_id: NodeID, *, next_check_delay: timedelta
 ) -> None:
     await service_tracker.set_service_scheduled_to_run(app, node_id, next_check_delay)
     await DeferredGetStatus.start(node_id=node_id)
+
+
+def _can_be_removed(model: TrackedServiceModel) -> bool:
+
+    # requested **as** `STOPPED`
+    # service **reports** `IDLE`
+    if (
+        model.current_state == SchedulerServiceState.IDLE
+        and model.requested_state == UserRequestedState.STOPPED
+    ):
+        return True
+
+    # NOTE: currently dynamic-scheduler does nto automatically start a
+    # service reported who's requested_state is STARTED
+    # to avoid monitoring services which no longer exist,
+    # the service has to be removed.
+
+    # requested as `STARTED`
+    # service **reports** `IDLE` since `_REMOVE_AFTER_IDLE_FOR`
+    if (  # noqa: SIM103
+        model.current_state == SchedulerServiceState.IDLE
+        and model.requested_state == UserRequestedState.RUNNING
+        and arrow.utcnow().timestamp() - model.last_state_change
+        > _REMOVE_AFTER_IDLE_FOR.total_seconds()
+    ):
+        return True
+
+    return False
 
 
 class Monitor:
@@ -44,7 +74,7 @@ class Monitor:
         """
         Check if a service requires it's status to be polled.
         Note that the interval at which the status is polled can vary.
-        This is a relatively low resoruce check.
+        This is a relatively low resource check.
         """
 
         # NOTE: this worker runs on only once across all instances of the scheduler
@@ -59,11 +89,7 @@ class Monitor:
         current_timestamp = arrow.utcnow().timestamp()
 
         for node_id, model in models.items():
-            # check if service is idle and status polling should stop
-            if (
-                model.current_state == SchedulerServiceState.IDLE
-                and model.requested_state == UserRequestedState.STOPPED
-            ):
+            if _can_be_removed(model):
                 to_remove.append(node_id)
                 continue
 
