@@ -96,13 +96,13 @@ async def test_register_body_validation(
         "errors": [
             {
                 "code": "value_error",
-                "message": "value is not a valid email address:  An email address must have an @-sign.",                                 
+                "message": "value is not a valid email address:  An email address must have an @-sign.",
                 "resource": "/v0/auth/register",
                 "field": "email",
             },
             {
                 "code": "value_error",
-                "message": MSG_PASSWORD_MISMATCH,
+                "message": f"Value error, {MSG_PASSWORD_MISMATCH}",
                 "resource": "/v0/auth/register",
                 "field": "confirm",
             },
