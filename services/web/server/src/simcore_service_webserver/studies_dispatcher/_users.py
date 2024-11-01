@@ -84,7 +84,7 @@ async def create_temporary_guest_user(request: web.Request):
         f"{random_user_name}@guest-at-osparc.io"
     )
     password = generate_password(length=12)
-    expires_at = datetime.now(UTC) + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
+    expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 
     # GUEST_USER_RC_LOCK:
     #
