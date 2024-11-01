@@ -1,0 +1,2 @@
+# GCR remove me
+pydantic-settings<2.6
