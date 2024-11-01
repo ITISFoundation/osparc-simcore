@@ -61,12 +61,12 @@ class PreUserProfile(InputSchema):
     first_name: str
     last_name: str
     email: LowerCaseEmailStr
-    institution: str | None = Field(None, description="company, university, ...")
+    institution: str | None = Field(default=None, description="company, university, ...")
     phone: str | None
     # billing details
     address: str
     city: str
-    state: str | None
+    state: str | None = Field(default=None)
     postal_code: str
     country: str
     extras: dict[str, Any] = Field(
