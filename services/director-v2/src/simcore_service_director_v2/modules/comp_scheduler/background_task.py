@@ -1,69 +1,46 @@
-import asyncio
+import datetime
 import logging
-from asyncio import CancelledError
-from contextlib import suppress
-from typing import Any, Callable, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import Any, Final
 
 from fastapi import FastAPI
+from servicelib.background_task import start_periodic_task, stop_periodic_task
+from servicelib.logging_utils import log_context
+from servicelib.redis import RedisClientsManager
+from servicelib.redis_utils import exclusive
+from settings_library.redis import RedisDatabase
 
 from . import factory
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_TIMEOUT_S: int = 5
-
-
-async def scheduler_task(app: FastAPI) -> None:
-    scheduler = app.state.scheduler
-    while app.state.comp_scheduler_running:
-        try:
-            logger.debug("Computational scheduler task running...")
-            await scheduler.schedule_all_pipelines()
-            with suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(
-                    scheduler.wake_up_event.wait(), timeout=_DEFAULT_TIMEOUT_S
-                )
-        except CancelledError:
-            logger.info("Computational scheduler task cancelled")
-            raise
-        except Exception:  # pylint: disable=broad-except
-            if not app.state.comp_scheduler_running:
-                logger.warning("Forced to stop computational scheduler")
-                break
-            logger.exception(
-                "Unexpected error in computational scheduler task, restarting scheduler now..."
-            )
-            # wait a bit before restarting the task
-            await asyncio.sleep(_DEFAULT_TIMEOUT_S)
+_DEFAULT_TIMEOUT_S: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
+_TASK_NAME: Final[str] = "computational services scheduler"
 
 
 def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
     async def start_scheduler() -> None:
-        # FIXME: added this variable to overcome the state in which the
-        # task cancelation is ignored and the exceptions enter in a loop
-        # that never stops the background task. This flag is an additional
-        # mechanism to enforce stopping the background task
-        app.state.comp_scheduler_running = True
-        app.state.scheduler = await factory.create_from_db(app)
-        app.state.scheduler_task = asyncio.create_task(
-            scheduler_task(app), name="computational services scheduler"
-        )
-        logger.info("Computational services Scheduler started")
+        with log_context(
+            logger, level=logging.INFO, msg="starting computational scheduler"
+        ):
+            redis_clients_manager: RedisClientsManager = app.state.redis_clients_manager
+            lock_key = f"{app.title}:computational_scheduler"
+            app.state.scheduler = scheduler = await factory.create_from_db(app)
+            app.state.computational_scheduler_task = start_periodic_task(
+                exclusive(
+                    redis_clients_manager.client(RedisDatabase.LOCKS),
+                    lock_key=lock_key,
+                )(scheduler.schedule_all_pipelines),
+                interval=_DEFAULT_TIMEOUT_S,
+                task_name=_TASK_NAME,
+            )
 
     return start_scheduler
 
 
 def on_app_shutdown(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
     async def stop_scheduler() -> None:
-        logger.info("Computational services Scheduler stopping...")
-        task = app.state.scheduler_task
-        with suppress(CancelledError):
-            app.state.comp_scheduler_running = False
-            task.cancel()
-            await task
-        app.state.scheduler = None
-        app.state.scheduler_task = None
-        logger.info("Computational services Scheduler stopped")
+        await stop_periodic_task(app.state.computational_scheduler_task)
 
     return stop_scheduler
 
