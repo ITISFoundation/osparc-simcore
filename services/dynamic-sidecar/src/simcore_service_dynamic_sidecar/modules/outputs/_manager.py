@@ -6,6 +6,7 @@ from contextlib import suppress
 from datetime import timedelta
 from functools import partial
 
+from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.basic_types import IDStr
 from models_library.rabbitmq_messages import ProgressType
