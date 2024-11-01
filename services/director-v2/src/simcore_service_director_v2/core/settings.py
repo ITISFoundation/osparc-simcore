@@ -20,6 +20,7 @@ from models_library.clusters import (
     NoAuthentication,
 )
 from pydantic import AnyHttpUrl, AnyUrl, Field, NonNegativeInt, validator
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
@@ -130,6 +131,11 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
+    DIRECTOR_V2_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
+        default_factory=dict,
+        env=["DIRECTOR_V2_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
