@@ -153,15 +153,9 @@ for (const product in products) {
 
         test.beforeAll(async ({ browser }) => {
           page = await browser.newPage();
-
           loginPageFixture = new LoginPage(page, productUrl);
-          await loginPageFixture.goto();
-
-          await loginPageFixture.login(user.email, user.password);
-
-          const response = await page.waitForResponse('**/me');
-          const meData = await response.json();
-          expect(meData["data"]["role"]).toBe(role);
+          const role = await loginPageFixture.login(user.email, user.password);
+          expect(role).toBe(user.role);
         });
 
         test.afterAll(async ({ browser }) => {
