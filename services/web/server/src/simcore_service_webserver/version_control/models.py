@@ -35,7 +35,7 @@ class Checkpoint(BaseModel):
     created_at: datetime
     tags: tuple[str, ...]
     message: str | None = None
-    parents_ids: tuple[PositiveInt, ...] = Field(default=None)
+    parents_ids: tuple[PositiveInt, ...] | None = Field(default=None)
 
     @classmethod
     def from_commit_log(cls, commit: RowProxy, tags: list[RowProxy]) -> "Checkpoint":
