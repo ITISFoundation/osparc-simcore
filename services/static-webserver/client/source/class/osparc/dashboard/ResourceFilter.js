@@ -65,6 +65,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     /* WORKSPACES AND FOLDERS */
     __createWorkspacesAndFoldersTree: function() {
       const workspacesAndFoldersTree = this.__workspacesAndFoldersTree = new osparc.dashboard.WorkspacesAndFoldersTree();
+      osparc.utils.Utils.setIdToWidget(workspacesAndFoldersTree, "contextTree");
       // Height needs to be calculated manually to make it flexible
       workspacesAndFoldersTree.set({
         minHeight: 60,
@@ -137,6 +138,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     /* TAGS */
     __createTagsFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      osparc.utils.Utils.setIdToWidget(layout, "tagsFilter");
 
       this.__populateTags(layout, []);
       osparc.store.Store.getInstance().addListener("changeTags", () => {
@@ -157,6 +159,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       layout.removeAll();
       osparc.store.Store.getInstance().getTags().forEach((tag, idx) => {
         const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/18");
+        osparc.utils.Utils.setIdToWidget(button, "tagFilterItem");
         button.id = tag.id;
         button.set({
           appearance: "filter-toggle-button",

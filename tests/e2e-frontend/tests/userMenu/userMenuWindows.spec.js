@@ -9,7 +9,7 @@ import users from '../users.json';
 
 const product = "osparc";
 const productUrl = products[product];
-const user = users[product];
+const user = users[product][0];
 
 test.describe.serial(`User Menu Windows: ${product}`, () => {
   let page = null;
@@ -17,15 +17,9 @@ test.describe.serial(`User Menu Windows: ${product}`, () => {
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
-
     loginPageFixture = new LoginPage(page, productUrl);
-    await loginPageFixture.goto();
-
-    await loginPageFixture.login(user.email, user.password);
-
-    const response = await page.waitForResponse('**/me');
-    const meData = await response.json();
-    expect(meData["data"]["role"]).toBe(user.role);
+    const role = await loginPageFixture.login(user.email, user.password);
+    expect(role).toBe(user.role);
   });
 
   test.afterAll(async ({ browser }) => {
@@ -50,5 +44,19 @@ test.describe.serial(`User Menu Windows: ${product}`, () => {
 
     // close window
     await page.getByTestId("organizationsWindowCloseBtn").click();
+  });
+
+  test(`License pop up`, async () => {
+    // open user menu
+    await page.getByTestId("userMenuBtn").click();
+
+    // open license in new tab
+    await page.getByTestId("userMenuLicenseBtn").click();
+    const newTabPromise = page.waitForEvent("popup");
+    const newTab = await newTabPromise;
+    await newTab.waitForLoadState();
+
+    // close tab
+    await newTab.close();
   });
 });
