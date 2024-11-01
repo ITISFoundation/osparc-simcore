@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 import shortuuid
 from aws_library.s3 import SimcoreS3API
@@ -18,7 +18,7 @@ from models_library.resource_tracker import (
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import PositiveInt, TypeAdapter
+from pydantic import AnyUrl, PositiveInt, TypeAdapter
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CustomResourceUsageTrackerError,
 )
@@ -144,6 +144,7 @@ async def list_service_runs(
 
 async def export_service_runs(
     s3_client: SimcoreS3API,
+    *,
     bucket_name: str,
     s3_region: str,
     user_id: UserID,
@@ -153,7 +154,7 @@ async def export_service_runs(
     access_all_wallet_usage: bool = False,
     order_by: OrderBy | None = None,
     filters: ServiceResourceUsagesFilters | None = None,
-) -> str:
+) -> AnyUrl:
     started_from = filters.started_at.from_ if filters else None
     started_until = filters.started_at.until if filters else None
 
@@ -161,7 +162,9 @@ async def export_service_runs(
     s3_bucket_name = TypeAdapter(S3BucketName).validate_python(bucket_name)
     # NOTE: su stands for "service usage"
     file_name = f"su_{shortuuid.uuid()}.csv"
-    s3_object_key = f"resource-usage-tracker-service-runs/{datetime.now(tz=timezone.utc).date()}/{file_name}"
+    s3_object_key = (
+        f"resource-usage-tracker-service-runs/{datetime.now(tz=UTC).date()}/{file_name}"
+    )
 
     # Export CSV to S3
     await resource_tracker_repo.export_service_runs_table_to_s3(
@@ -177,12 +180,11 @@ async def export_service_runs(
     )
 
     # Create presigned S3 link
-    generated_url = await s3_client.create_single_presigned_download_link(
+    return await s3_client.create_single_presigned_download_link(
         bucket=s3_bucket_name,
         object_key=s3_object_key,
         expiration_secs=_PRESIGNED_LINK_EXPIRATION_SEC,
     )
-    return f"{generated_url}"
 
 
 async def get_osparc_credits_aggregated_usages_page(
