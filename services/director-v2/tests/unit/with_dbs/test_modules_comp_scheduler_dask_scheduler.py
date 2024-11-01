@@ -219,7 +219,16 @@ def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
 @pytest.fixture
 def with_disabled_scheduler_task(mocker: MockerFixture) -> None:
     """disables the scheduler task, note that it needs to be triggered manually then"""
-    mocker.patch.object(_task, "scheduler_task")
+    mocker.patch.object(_task, "computational_scheduler_task")
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._task.start_periodic_task",
+        autospec=True,
+    )
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._task.stop_periodic_task",
+        autospec=True,
+    )
 
 
 @pytest.fixture
