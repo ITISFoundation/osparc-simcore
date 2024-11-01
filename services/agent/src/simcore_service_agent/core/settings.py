@@ -35,7 +35,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     AGENT_VOLUMES_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
-        env=["AGENT_VOLUMES_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        validation_alias=AliasChoices(
+            "AGENT_VOLUMES_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+        ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str = Field(
