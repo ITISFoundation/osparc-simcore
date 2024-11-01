@@ -121,9 +121,9 @@ def standard_user_role() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
 @pytest.mark.parametrize(
     "limit, offset, expected_error_msg",
     [
-        (-7, 0, "ensure this value is greater than or equal to 1"),
-        (0, 0, "ensure this value is greater than or equal to 1"),
-        (43, -2, "ensure this value is greater than or equal to 0"),
+        (-7, 0, "Input should be greater than or equal to 1"),
+        (0, 0, "Input should be greater than or equal to 1"),
+        (43, -2, "Input should be greater than or equal to 0"),
     ],
 )
 @pytest.mark.parametrize(*standard_user_role())
