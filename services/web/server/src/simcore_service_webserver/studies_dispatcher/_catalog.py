@@ -97,7 +97,7 @@ async def iter_latest_product_services(
             )
             & (services_meta_data.c.deprecated.is_(None))
             & (services_access_rights.c.gid == EVERYONE_GROUP_ID)
-            & (services_access_rights.c.execute_access is True)
+            & (services_access_rights.c.execute_access == sa.true())
             & (services_access_rights.c.product_name == product_name)
         )
     )
