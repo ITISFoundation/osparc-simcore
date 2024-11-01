@@ -222,7 +222,7 @@ async def test_notifier_publish_disk_usage(
 
 @pytest.fixture
 def port_key() -> ServicePortKey:
-    return ServicePortKey("test_port")
+    return TypeAdapter(ServicePortKey).validate_python("test_port")
 
 
 def _get_on_input_port_spy(

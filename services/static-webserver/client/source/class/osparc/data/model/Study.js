@@ -82,14 +82,14 @@ qx.Class.define("osparc.data.model.Study", {
 
     workspaceId: {
       check: "Number",
-      init: true,
+      init: null,
       nullable: true,
       event: "changeWorkspaceId"
     },
 
     folderId: {
       check: "Number",
-      init: true,
+      init: null,
       nullable: true,
       event: "changeFolderId"
     },
@@ -103,9 +103,9 @@ qx.Class.define("osparc.data.model.Study", {
 
     description: {
       check: "String",
-      nullable: false,
+      nullable: true,
       event: "changeDescription",
-      init: ""
+      init: null
     },
 
     prjOwner: {
@@ -356,11 +356,7 @@ qx.Class.define("osparc.data.model.Study", {
           jsonObject[key] = this.getUi().serialize();
           return;
         }
-        const value = this.get(key);
-        if (value !== null) {
-          // only put the value in the payload if there is a value
-          jsonObject[key] = value;
-        }
+        jsonObject[key] = this.get(key);
       });
       return jsonObject;
     },

@@ -119,10 +119,10 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       let freeSpace = osparc.utils.Utils.bytesToSize(diskHostUsage.free);
       let warningLevel = this.__getWarningLevel(diskHostUsage.free);
 
-      if ("STATE_VOLUMES" in data.usage) {
-        const diskVolsUsage = data.usage["STATE_VOLUMES"];
+      if ("STATES_VOLUMES" in data.usage) {
+        const diskVolsUsage = data.usage["STATES_VOLUMES"];
         if (diskVolsUsage["used_percent"] > diskHostUsage["used_percent"]) {
-          // "STATE_VOLUMES" is more critical so it takes over
+          // "STATES_VOLUMES" is more critical so it takes over
           freeSpace = osparc.utils.Utils.bytesToSize(diskVolsUsage.free);
           warningLevel = this.__getWarningLevel(diskVolsUsage.free);
         }

@@ -74,7 +74,7 @@ async def async_command(
     try:
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         proc.terminate()
         _close_transport(proc)
 
