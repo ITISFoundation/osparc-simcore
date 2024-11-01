@@ -249,7 +249,7 @@ async def register(request: web.Request):
     if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
         # Confirmation required: send confirmation email
         _confirmation: ConfirmationTokenDict = await db.create_confirmation(
-            user["id"], REGISTRATION, data=invitation.json() if invitation else None
+            user["id"], REGISTRATION, data=invitation.model_dump_json() if invitation else None
         )
 
         try:
