@@ -181,7 +181,7 @@ class GroupUserGet(BaseModel):
 
 class GroupUserAdd(InputSchema):
     """
-    To identify the user, you can either use `email` or user ID (`uid`)
+    Identify the user with either `email` or `uid` — only one.
     """
 
     uid: UserID | None = None

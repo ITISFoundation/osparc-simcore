@@ -4328,7 +4328,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -8710,7 +8710,7 @@ components:
           title: Email
           type: string
           format: email
-      description: To identify the user, you can either use `email` or user ID (`uid`)
+      description: "Identify the user with either `email` or `uid` \u2014 only one."
     GroupUserGet:
       title: GroupUserGet
       required:
