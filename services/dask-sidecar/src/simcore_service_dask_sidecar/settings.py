@@ -3,6 +3,7 @@ from typing import Any
 
 from models_library.basic_types import LogLevel
 from pydantic import Field, validator
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -39,6 +40,11 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         default=False,
         env=["DASK_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
+    DASK_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
+        default_factory=dict,
+        env=["DASK_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
     def as_scheduler(self) -> bool:

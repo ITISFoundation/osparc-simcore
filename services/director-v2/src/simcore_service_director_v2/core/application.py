@@ -113,7 +113,8 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
     config_all_loggers(
-        log_format_local_dev_enabled=settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED
+        log_format_local_dev_enabled=settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
     )
     _logger.debug(settings.json(indent=2))
 

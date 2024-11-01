@@ -3,6 +3,7 @@ from functools import cached_property
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr
 from pydantic.class_validators import validator
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.director_v2 import DirectorV2Settings
@@ -54,6 +55,11 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
         default=False,
         env=["API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
+    API_SERVER_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
+        default_factory=dict,
+        env=["API_SERVER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"],
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
     @validator("LOG_LEVEL", pre=True)
