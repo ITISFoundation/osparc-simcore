@@ -10,7 +10,7 @@ from servicelib.redis import RedisClientsManager
 from servicelib.redis_utils import exclusive
 from settings_library.redis import RedisDatabase
 
-from . import factory
+from . import _scheduler_factory
 
 _logger = logging.getLogger(__name__)
 
@@ -27,7 +27,9 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
         ):
             redis_clients_manager: RedisClientsManager = app.state.redis_clients_manager
             lock_key = f"{app.title}:computational_scheduler"
-            app.state.scheduler = scheduler = await factory.create_from_db(app)
+            app.state.scheduler = scheduler = await _scheduler_factory.create_from_db(
+                app
+            )
             app.state.computational_scheduler_task = start_periodic_task(
                 exclusive(
                     redis_clients_manager.client(RedisDatabase.LOCKS),
@@ -45,8 +47,3 @@ def on_app_shutdown(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
         await stop_periodic_task(app.state.computational_scheduler_task)
 
     return stop_scheduler
-
-
-def setup(app: FastAPI):
-    app.add_event_handler("startup", on_app_startup(app))
-    app.add_event_handler("shutdown", on_app_shutdown(app))

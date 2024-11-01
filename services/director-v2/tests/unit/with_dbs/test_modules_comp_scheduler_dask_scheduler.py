@@ -65,11 +65,11 @@ from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
-from simcore_service_director_v2.modules.comp_scheduler import background_task
-from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
+from simcore_service_director_v2.modules.comp_scheduler import _task
+from simcore_service_director_v2.modules.comp_scheduler._base_scheduler import (
     BaseCompScheduler,
 )
-from simcore_service_director_v2.modules.comp_scheduler.dask_scheduler import (
+from simcore_service_director_v2.modules.comp_scheduler._dask_scheduler import (
     DaskScheduler,
 )
 from simcore_service_director_v2.modules.dask_client import (
@@ -219,7 +219,7 @@ def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
 @pytest.fixture
 def with_disabled_scheduler_task(mocker: MockerFixture) -> None:
     """disables the scheduler task, note that it needs to be triggered manually then"""
-    mocker.patch.object(background_task, "scheduler_task")
+    mocker.patch.object(_task, "scheduler_task")
 
 
 @pytest.fixture

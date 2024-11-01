@@ -11,7 +11,7 @@ from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
-from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
+from simcore_service_director_v2.modules.comp_scheduler._base_scheduler import (
     BaseCompScheduler,
 )
 
