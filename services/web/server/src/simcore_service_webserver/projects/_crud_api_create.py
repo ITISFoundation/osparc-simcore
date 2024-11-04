@@ -417,7 +417,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 )
             )
             new_project["accessRights"] = {
-                gid: access.model_dump()
+                f"{gid}": access.model_dump()
                 for gid, access in workspace_db.access_rights.items()
             }
 
