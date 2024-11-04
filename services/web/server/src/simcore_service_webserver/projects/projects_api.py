@@ -1511,7 +1511,7 @@ async def is_service_deprecated(
         app, user_id, service_key, service_version, product_name
     )
     if deprecation_date := service.get("deprecated"):
-        deprecation_date_bool: bool = datetime.datetime.now(datetime.UTC) > datetime.datetime.fromisoformat(deprecation_date)
+        deprecation_date_bool: bool = datetime.datetime.now(datetime.UTC) > datetime.datetime.fromisoformat(deprecation_date).replace(tzinfo=datetime.UTC)
 
         return deprecation_date_bool
     return False

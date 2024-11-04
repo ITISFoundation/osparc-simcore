@@ -403,7 +403,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             # the access rights are set to use the logged user primary group + whatever was inside the project
             expected_data["accessRights"].update(
                 {
-                    str(primary_group["gid"]): {
+                    f"{primary_group['gid']}": {
                         "read": True,
                         "write": True,
                         "delete": True,
