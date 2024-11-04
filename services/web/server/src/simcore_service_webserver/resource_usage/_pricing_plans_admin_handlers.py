@@ -48,7 +48,9 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
             return await handler(request)
 
         except RPCServerError as exc:
-            raise RPCServerError from exc  # <- Will be improved
+            # NOTE: This will be improved; we will add a mapping between
+            # RPC errors and user-friendly frontend errors to pass to the frontend.
+            raise RPCServerError from exc
 
     return wrapper
 
