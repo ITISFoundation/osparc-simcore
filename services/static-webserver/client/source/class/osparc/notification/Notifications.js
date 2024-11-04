@@ -29,7 +29,8 @@ qx.Class.define("osparc.notification.Notifications", {
       return {
         "user_id": userId.toString(),
         "date": new Date().toISOString(),
-        "product": osparc.product.Utils.getProductName()
+        "product": osparc.product.Utils.getProductName(),
+        "user_from_id": osparc.auth.Data.getInstance().getUserId(),
       };
     },
 
