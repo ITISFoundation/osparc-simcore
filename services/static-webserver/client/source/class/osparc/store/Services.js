@@ -68,6 +68,7 @@ qx.Class.define("osparc.store.Services", {
                 for (let j=0; j<versions.length; j++) {
                   const version = versions[j];
                   if (!this.servicesCached[key][version]["retired"]) {
+                    // one older non retired version found
                     serviceLatest = await this.getService(key, version);
                     break;
                   }
