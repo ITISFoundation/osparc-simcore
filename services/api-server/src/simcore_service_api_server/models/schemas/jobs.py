@@ -133,6 +133,18 @@ class JobMetadataUpdate(BaseModel):
         default_factory=dict, description="Custom key-value map"
     )
 
+    class Config(BaseConfig):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "metadata": {
+                    "bool": "true",
+                    "int": "42",
+                    "float": "3.14",
+                    "str": "hej med dig",
+                }
+            }
+        }
+
 
 class JobMetadata(BaseModel):
     job_id: JobID = Field(..., description="Parent Job")
