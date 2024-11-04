@@ -145,7 +145,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
         resp = await client.get(url)
         _, errors = await assert_status(
             resp,
-            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN,
         )
         assert errors
 

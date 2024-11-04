@@ -2,12 +2,12 @@
 
 
 """
+
 import datetime
 import logging
 from typing import Any
 
 from aiohttp import web
-from models_library.utils.pydantic_tools_extension import FieldNotRequired
 from pydantic import BaseModel, parse_obj_as
 from servicelib.aiohttp import status
 
@@ -85,9 +85,9 @@ async def get_config(request: web.Request):
 
 
 class _ScheduledMaintenanceGet(BaseModel):
-    start: datetime.datetime = FieldNotRequired()
-    end: datetime.datetime = FieldNotRequired()
-    reason: str = FieldNotRequired()
+    start: datetime.datetime | None = None
+    end: datetime.datetime | None = None
+    reason: str | None = None
 
 
 @routes.get(f"/{API_VTAG}/scheduled_maintenance", name="get_scheduled_maintenance")

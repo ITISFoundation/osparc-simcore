@@ -120,7 +120,7 @@ certifi==2023.7.22
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   requests
-cffi==1.15.0
+cffi==1.17.1
     # via cryptography
 charset-normalizer==2.0.12
     # via
@@ -255,9 +255,9 @@ markupsafe==2.1.1
     #   mako
 mdurl==0.1.2
     # via markdown-it-py
-msgpack==1.0.7
+msgpack==1.1.0
     # via -r requirements/_base.in
-multidict==6.0.2
+multidict==6.1.0
     # via
     #   aiohttp
     #   yarl

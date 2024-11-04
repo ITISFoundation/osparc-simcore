@@ -1,7 +1,7 @@
 import datetime
 
 from pydantic import AliasChoices, Field, TypeAdapter, field_validator
-from pydantic_settings import SettingsConfigDict
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
 from settings_library.director_v2 import DirectorV2Settings
@@ -37,6 +37,15 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
+    DYNAMIC_SCHEDULER_LOG_FILTER_MAPPING: dict[
+        LoggerName, list[MessageSubstring]
+    ] = Field(
+        default_factory=dict,
+        validation_alias=AliasChoices(
+            "DYNAMIC_SCHEDULER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+        ),
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+    )
 
     DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=60),
@@ -50,8 +59,6 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     @classmethod
     def _validate_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
-
-    model_config = SettingsConfigDict(extra="allow")
 
 
 class ApplicationSettings(_BaseApplicationSettings):

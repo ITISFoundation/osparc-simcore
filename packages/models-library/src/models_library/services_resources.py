@@ -33,13 +33,14 @@ CPU_10_PERCENT: Final[int] = int(0.1 * GIGA)
 CPU_100_PERCENT: Final[int] = int(1 * GIGA)
 
 
-class ResourceValue(BaseModel):
+class ResourceValue(BaseModel, validate_assignment=True):
     limit: StrictInt | StrictFloat | str
     reservation: StrictInt | StrictFloat | str
 
     @model_validator(mode="before")
     @classmethod
     def _ensure_limits_are_equal_or_above_reservations(cls, values):
+        # WARNING: this does not validate ON-ASSIGNMENT!
         if isinstance(values["reservation"], str):
             # in case of string, the limit is the same as the reservation
             values["limit"] = values["reservation"]
@@ -56,10 +57,8 @@ class ResourceValue(BaseModel):
     def set_value(self, value: StrictInt | StrictFloat | str) -> None:
         self.limit = self.reservation = value
 
-    model_config = ConfigDict(validate_assignment=True)
 
-
-ResourcesDict = dict[ResourceName, ResourceValue]
+ResourcesDict: TypeAlias = dict[ResourceName, ResourceValue]
 
 
 class BootMode(StrAutoEnum):

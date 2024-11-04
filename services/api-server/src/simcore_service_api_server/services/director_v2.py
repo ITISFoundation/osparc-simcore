@@ -16,14 +16,11 @@ from pydantic import (
     PositiveInt,
     TypeAdapter,
 )
-from simcore_service_api_server.exceptions.backend_errors import (
-    JobNotFoundError,
-    LogFileNotFoundError,
-)
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
 from ..db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
+from ..exceptions.backend_errors import JobNotFoundError, LogFileNotFoundError
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.schemas.jobs import PercentageInt
 from ..models.schemas.studies import JobLogsMap, LogLink
@@ -186,12 +183,13 @@ class DirectorV2Api(BaseServiceClientApi):
         # probably not found
         response.raise_for_status()
 
-        log_links: list[LogLink] = []
-        for r in TypeAdapter(list[TaskLogFileGet]).validate_json(response.text or "[]"):
-            if r.download_link:
-                log_links.append(
-                    LogLink(node_name=f"{r.task_id}", download_link=r.download_link)
-                )
+        log_links: list[LogLink] = [
+            LogLink(node_name=f"{r.task_id}", download_link=r.download_link)
+            for r in TypeAdapter(list[TaskLogFileGet]).validate_json(
+                response.text or "[]"
+            )
+            if r.download_link
+        ]
 
         return JobLogsMap(log_links=log_links)
 

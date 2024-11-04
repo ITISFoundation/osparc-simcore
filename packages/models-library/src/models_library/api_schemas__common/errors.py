@@ -4,7 +4,6 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ..basic_types import IDStr
-from ..utils.pydantic_tools_extension import NOT_REQUIRED
 
 
 class DefaultApiError(BaseModel):
@@ -13,7 +12,7 @@ class DefaultApiError(BaseModel):
         description="Error identifier as a code or a name. "
         "Mainly for machine-machine communication purposes.",
     )
-    detail: Any | None = Field(NOT_REQUIRED, description="Human readable error message")
+    detail: Any | None = Field(default=None, description="Human readable error message")
 
     @classmethod
     def from_status_code(

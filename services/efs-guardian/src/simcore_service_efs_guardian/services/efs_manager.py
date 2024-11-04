@@ -7,7 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from pydantic import ByteSize, parse_obj_as
+from pydantic import ByteSize, TypeAdapter, ValidationError
 
 from ..core.settings import ApplicationSettings, get_application_settings
 from . import efs_manager_utils
@@ -83,6 +83,31 @@ class EfsManager:
 
         return await efs_manager_utils.get_size_bash_async(_dir_path)
 
+    async def list_project_node_state_names(
+        self, project_id: ProjectID, node_id: NodeID
+    ) -> list[str]:
+        """
+        These are currently state volumes that are mounted via docker volume to dynamic sidecar and user services
+        (ex. ".data_assets" and "home_user_workspace")
+        """
+        _dir_path = (
+            self._efs_mounted_path
+            / self._project_specific_data_base_directory
+            / f"{project_id}"
+            / f"{node_id}"
+        )
+
+        project_node_states = []
+        for child in _dir_path.iterdir():
+            if child.is_dir():
+                project_node_states.append(child.name)
+            else:
+                _logger.error(
+                    "This is not a directory. This should not happen! %s",
+                    _dir_path / child.name,
+                )
+        return project_node_states
+
     async def remove_project_node_data_write_permissions(
         self, project_id: ProjectID, node_id: NodeID
     ) -> None:
@@ -103,9 +128,9 @@ class EfsManager:
         for child in _dir_path.iterdir():
             if child.is_dir():
                 try:
-                    _project_id = parse_obj_as(ProjectID, child.name)
+                    _project_id = TypeAdapter(ProjectID).validate_python(child.name)
                     project_uuids.append(_project_id)
-                except ValueError:
+                except ValidationError:
                     _logger.error(
                         "This is not a project ID. This should not happen! %s",
                         _dir_path / child.name,
@@ -130,17 +155,15 @@ class EfsManager:
             try:
                 shutil.rmtree(_dir_path)
                 _logger.info("%s has been deleted.", _dir_path)
-            except FileNotFoundError as e:
-                _logger.error("Directory %s does not exist. Error: %s", _dir_path, e)
-            except PermissionError as e:
-                _logger.error(
-                    "Permission denied when trying to delete %s. Error: %s",
-                    _dir_path,
-                    e,
+            except FileNotFoundError:
+                _logger.exception("Directory %s does not exist.", _dir_path)
+            except PermissionError:
+                _logger.exception(
+                    "Permission denied when trying to delete %s.", _dir_path
                 )
-            except NotADirectoryError as e:
-                _logger.error("%s is not a directory. Error: %s", _dir_path, e)
-            except OSError as e:
-                _logger.error("Issue with path: %s Error: %s", _dir_path, e)
+            except NotADirectoryError:
+                _logger.exception("%s is not a directory.", _dir_path)
+            except OSError:
+                _logger.exception("Issue with path: %s", _dir_path)
         else:
             _logger.error("%s does not exist.", _dir_path)

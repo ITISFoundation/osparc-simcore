@@ -1,9 +1,10 @@
 from datetime import datetime
 from typing import TypeAlias
 
-from models_library.users import GroupID, UserID
-from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+
+from .users import GroupID, UserID
+from .workspaces import WorkspaceID
 
 FolderID: TypeAlias = PositiveInt
 

@@ -75,7 +75,7 @@ def to_simcore_runtime_docker_label_key(key: str) -> DockerLabelKey:
 class StandardSimcoreDockerLabels(BaseModel):
     """
     Represents the standard label on oSparc created containers (not yet services)
-    In order to create this object in code, please use construct() method!
+    In order to create this object in code, please use model_construct() method!
     """
 
     user_id: UserID = Field(..., alias=f"{_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX}user-id")  # type: ignore[literal-required]

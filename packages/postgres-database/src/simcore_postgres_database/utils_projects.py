@@ -1,8 +1,8 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import sqlalchemy as sa
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -37,5 +37,5 @@ class ProjectsRepo:
             row = result.first()
             if row is None:
                 raise DBProjectNotFoundError(project_uuid=project_uuid)
-            date = parse_obj_as(datetime, row[0])
-            return date.replace(tzinfo=timezone.utc)
+            date = TypeAdapter(datetime).validate_python(row[0])
+            return date.replace(tzinfo=UTC)

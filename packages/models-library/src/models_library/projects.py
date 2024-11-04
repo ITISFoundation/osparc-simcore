@@ -99,7 +99,7 @@ class ProjectAtDB(BaseProjectModel):
     prj_owner: int | None = Field(..., description="The project owner id")
 
     published: bool | None = Field(
-        False, description="Defines if a study is available publicly"
+        default=False, description="Defines if a study is available publicly"
     )
 
     @field_validator("project_type", mode="before")
@@ -178,7 +178,9 @@ class Project(BaseProjectModel):
         alias="folderId",
     )
 
-    model_config = ConfigDict(
-        title="osparc-simcore project",
-        extra="forbid",
+    trashed_at: datetime | None = Field(
+        default=None,
+        alias="trashedAt",
     )
+
+    model_config = ConfigDict(title="osparc-simcore project", extra="forbid")

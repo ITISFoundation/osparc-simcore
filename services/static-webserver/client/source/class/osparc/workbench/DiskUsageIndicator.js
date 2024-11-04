@@ -74,7 +74,6 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
             allowShrinkY: false,
             allowGrowX: true,
             allowGrowY: false,
-            toolTipText: this.tr("Disk usage")
           });
           this._add(control)
           break;
@@ -156,16 +155,32 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
         return;
       }
 
-      const usage = diskUsage["usage"]["HOST"]
-      const color1 = this.__getIndicatorColor(usage.free);
-      const progress = `${usage["used_percent"]}%`;
-      const labelDiskSize = osparc.utils.Utils.bytesToSize(usage.free);
+      const diskHostUsage = diskUsage["usage"]["HOST"]
+      let color1 = this.__getIndicatorColor(diskHostUsage.free);
+      let progress = `${diskHostUsage["used_percent"]}%`;
+      let labelDiskSize = osparc.utils.Utils.bytesToSize(diskHostUsage.free);
+      let toolTipText = this.tr("Disk usage");
+      if ("STATES_VOLUMES" in diskUsage["usage"]) {
+        const diskVolsUsage = diskUsage["usage"]["STATES_VOLUMES"];
+        if (diskVolsUsage["used_percent"] > diskHostUsage["used_percent"]) {
+          // "STATES_VOLUMES" is more critical so it takes over
+          color1 = this.__getIndicatorColor(diskVolsUsage.free);
+          progress = `${diskVolsUsage["used_percent"]}%`;
+          labelDiskSize = osparc.utils.Utils.bytesToSize(diskVolsUsage.free);
+        }
+        toolTipText = this.tr("Disk usage") + "<br>";
+        toolTipText += this.tr("Data storage: ") + osparc.utils.Utils.bytesToSize(diskVolsUsage.free) + "<br>";
+        toolTipText += this.tr("I/O storage: ") + osparc.utils.Utils.bytesToSize(diskHostUsage.free) + "<br>";
+      }
       const bgColor = qx.theme.manager.Color.getInstance().resolve("tab_navigation_bar_background_color");
       const color2 = qx.theme.manager.Color.getInstance().resolve("progressive-progressbar-background");
       indicator.getContentElement().setStyles({
         "background-color": bgColor,
         "background": `linear-gradient(90deg, ${color1} ${progress}, ${color2} ${progress})`,
         "border-color": color1
+      });
+      indicator.set({
+        toolTipText
       });
 
       const indicatorLabel = this.getChildControl("disk-indicator-label");

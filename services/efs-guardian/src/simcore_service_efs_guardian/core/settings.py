@@ -9,7 +9,15 @@ from models_library.basic_types import (
     LogLevel,
     VersionTag,
 )
-from pydantic import AliasChoices, ByteSize, Field, PositiveInt, field_validator
+from pydantic import (
+    AliasChoices,
+    ByteSize,
+    Field,
+    PositiveInt,
+    TypeAdapter,
+    field_validator,
+)
+from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.postgres import PostgresSettings
@@ -61,7 +69,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Linux group name that the EFS and Simcore linux users are part of"
     )
     EFS_DEFAULT_USER_SERVICE_SIZE_BYTES: ByteSize = Field(
-        default=parse_obj_as(ByteSize, "500GiB")
+        default=TypeAdapter(ByteSize).validate_python("500GiB")
     )
     EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA: datetime.timedelta = Field(
         default=datetime.timedelta(days=10),
@@ -85,6 +93,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+    )
+    EFS_GUARDIAN_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
+        default_factory=dict,
+        validation_alias=AliasChoices(
+            "EFS_GUARDIAN_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+        ),
+        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
     EFS_GUARDIAN_AWS_EFS_SETTINGS: AwsEfsSettings = Field(
