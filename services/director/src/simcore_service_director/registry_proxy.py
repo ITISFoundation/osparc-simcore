@@ -1,4 +1,3 @@
-# pylint: disable=C0111
 import asyncio
 import enum
 import json
@@ -11,15 +10,20 @@ from typing import Any
 from aiohttp import BasicAuth, ClientSession, client_exceptions
 from aiohttp.client import ClientTimeout
 from fastapi import FastAPI
-from simcore_service_director import config, exceptions
-from simcore_service_director.cache_request_decorator import cache_requests
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-from .config import APP_CLIENT_SESSION_KEY
+from . import exceptions
+from .cache_request_decorator import cache_requests
+from .constants import (
+    DIRECTOR_SIMCORE_SERVICES_PREFIX,
+    ORG_LABELS_TO_SCHEMA_LABELS,
+    SERVICE_RUNTIME_SETTINGS,
+)
+from .core.settings import ApplicationSettings, get_application_settings
 
 DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
 
@@ -42,20 +46,26 @@ class ServiceType(enum.Enum):
 async def _basic_auth_registry_request(
     app: FastAPI, path: str, method: str, **session_kwargs
 ) -> tuple[dict, dict]:
-    if not config.REGISTRY_URL:
+    app_settings = get_application_settings(app)
+    if not app_settings.DIRECTOR_REGISTRY.REGISTRY_URL:
         msg = "URL to registry is not defined"
         raise exceptions.DirectorException(msg)
 
     url = URL(
-        f"{'https' if config.REGISTRY_SSL else 'http'}://{config.REGISTRY_URL}{path}"
+        f"{'https' if app_settings.DIRECTOR_REGISTRY.REGISTRY_SSL else 'http'}://{app_settings.DIRECTOR_REGISTRY.REGISTRY_URL}{path}"
     )
     logger.debug("Requesting registry using %s", url)
     # try the registry with basic authentication first, spare 1 call
     resp_data: dict = {}
     resp_headers: dict = {}
     auth = (
-        BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW)
-        if config.REGISTRY_AUTH and config.REGISTRY_USER and config.REGISTRY_PW
+        BasicAuth(
+            login=app_settings.DIRECTOR_REGISTRY.REGISTRY_USER,
+            password=app_settings.DIRECTOR_REGISTRY.REGISTRY_PW.get_secret_value(),
+        )
+        if app_settings.DIRECTOR_REGISTRY.REGISTRY_AUTH
+        and app_settings.DIRECTOR_REGISTRY.REGISTRY_USER
+        and app_settings.DIRECTOR_REGISTRY.REGISTRY_PW
         else None
     )
 
@@ -68,7 +78,12 @@ async def _basic_auth_registry_request(
                 logger.debug("Registry unauthorized request: %s", await response.text())
                 # basic mode failed, test with other auth mode
                 resp_data, resp_headers = await _auth_registry_request(
-                    url, method, response.headers, session, **session_kwargs
+                    app_settings,
+                    url,
+                    method,
+                    response.headers,
+                    session,
+                    **session_kwargs,
                 )
 
             elif response.status == HTTPStatus.NOT_FOUND:
@@ -88,15 +103,24 @@ async def _basic_auth_registry_request(
 
             return (resp_data, resp_headers)
     except client_exceptions.ClientError as exc:
-        logger.exception("Unknown error while accessing registry: %s", str(exc))
-        msg = f"Unknown error while accessing registry: {str(exc)}"
+        logger.exception("Unknown error while accessing registry")
+        msg = f"Unknown error while accessing registry: {exc!s}"
         raise exceptions.DirectorException(msg) from exc
 
 
 async def _auth_registry_request(
-    url: URL, method: str, auth_headers: dict, session: ClientSession, **kwargs
+    app_settings: ApplicationSettings,
+    url: URL,
+    method: str,
+    auth_headers: dict,
+    session: ClientSession,
+    **kwargs,
 ) -> tuple[dict, dict]:
-    if not config.REGISTRY_AUTH or not config.REGISTRY_USER or not config.REGISTRY_PW:
+    if (
+        not app_settings.DIRECTOR_REGISTRY.REGISTRY_AUTH
+        or not app_settings.DIRECTOR_REGISTRY.REGISTRY_USER
+        or not app_settings.DIRECTOR_REGISTRY.REGISTRY_PW
+    ):
         msg = "Wrong configuration: Authentication to registry is needed!"
         raise exceptions.RegistryConnectionError(msg)
     # auth issue let's try some authentication get the auth type
@@ -113,7 +137,10 @@ async def _auth_registry_request(
     if not auth_type:
         msg = "Unknown registry type: cannot deduce authentication method!"
         raise exceptions.RegistryConnectionError(msg)
-    auth = BasicAuth(login=config.REGISTRY_USER, password=config.REGISTRY_PW)
+    auth = BasicAuth(
+        login=app_settings.DIRECTOR_REGISTRY.REGISTRY_USER,
+        password=app_settings.DIRECTOR_REGISTRY.REGISTRY_PW.get_secret_value(),
+    )
 
     # bearer type, it needs a token with all communications
     if auth_type == "Bearer":
@@ -122,7 +149,7 @@ async def _auth_registry_request(
             service=auth_details["service"], scope=auth_details["scope"]
         )
         async with session.get(token_url, auth=auth, **kwargs) as token_resp:
-            if not token_resp.status == HTTPStatus.OK:
+            if token_resp.status != HTTPStatus.OK:
                 msg = f"Unknown error while authentifying with registry: {token_resp!s}"
                 raise exceptions.RegistryConnectionError(msg)
             bearer_code = (await token_resp.json())["token"]
@@ -211,6 +238,7 @@ def setup(app: FastAPI) -> None:
         await _setup_registry(app)
 
     async def on_shutdown() -> None:
+        # nothing to do here
         ...
 
     app.add_event_handler("startup", on_startup)
@@ -375,7 +403,7 @@ async def list_interactive_service_dependencies(
 
 
 def _get_prefix(service_type: ServiceType) -> str:
-    return f"{config.SIMCORE_SERVICES_PREFIX}/{service_type.value}/"
+    return f"{DIRECTOR_SIMCORE_SERVICES_PREFIX}/{service_type.value}/"
 
 
 def get_service_first_name(image_key: str) -> str:
@@ -430,18 +458,19 @@ async def get_service_extras(
 ) -> dict[str, Any]:
     # check physical node requirements
     # all nodes require "CPU"
+    app_settings = get_application_settings(app)
     result = {
         "node_requirements": {
-            "CPU": config.DEFAULT_MAX_NANO_CPUS / 1.0e09,
-            "RAM": config.DEFAULT_MAX_MEMORY,
+            "CPU": app_settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS / 1.0e09,
+            "RAM": app_settings.DIRECTOR_DEFAULT_MAX_MEMORY,
         }
     }
 
     labels, _ = await get_image_labels(app, image_key, image_tag)
     logger.debug("Compiling service extras from labels %s", pformat(labels))
 
-    if config.SERVICE_RUNTIME_SETTINGS in labels:
-        service_settings = json.loads(labels[config.SERVICE_RUNTIME_SETTINGS])
+    if SERVICE_RUNTIME_SETTINGS in labels:
+        service_settings = json.loads(labels[SERVICE_RUNTIME_SETTINGS])
         for entry in service_settings:
             entry_name = entry.get("name", "").lower()
             entry_value = entry.get("value")
@@ -455,13 +484,13 @@ async def get_service_extras(
                     result["node_requirements"]["CPU"] = (
                         float(res_limit.get("NanoCPUs", 0))
                         or float(res_reservation.get("NanoCPUs", 0))
-                        or config.DEFAULT_MAX_NANO_CPUS
+                        or app_settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS
                     ) / 1.0e09
                     # RAM
                     result["node_requirements"]["RAM"] = (
                         res_limit.get("MemoryBytes", 0)
                         or res_reservation.get("MemoryBytes", 0)
-                        or config.DEFAULT_MAX_MEMORY
+                        or app_settings.DIRECTOR_DEFAULT_MAX_MEMORY
                     )
                 else:
                     invalid_with_msg = f"invalid type for resource [{entry_value}]"
@@ -500,7 +529,7 @@ async def get_service_extras(
     result.update(
         {
             sl: labels[dl]
-            for dl, sl in config.ORG_LABELS_TO_SCHEMA_LABELS.items()
+            for dl, sl in ORG_LABELS_TO_SCHEMA_LABELS.items()
             if dl in labels
         }
     )
