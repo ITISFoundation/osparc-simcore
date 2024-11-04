@@ -116,6 +116,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // "Starting..." page
           this._hideLoadingPage();
 
+          // since all the resources (templates, users, orgs...) were already loaded, notifications can be built
           osparc.data.Resources.get("notifications")
             .then(notifications => {
               osparc.notification.Notifications.getInstance().addNotifications(notifications);
