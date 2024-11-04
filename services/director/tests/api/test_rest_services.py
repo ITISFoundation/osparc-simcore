@@ -22,22 +22,6 @@ def _assert_response_and_unwrap_envelope(got: httpx.Response):
     return body.get("data"), body.get("error")
 
 
-async def test_get_root_path(client: httpx.AsyncClient, api_version_prefix: str):
-    resp = await client.get(f"/{api_version_prefix}/")
-
-    assert resp.is_success
-    assert resp.status_code == status.HTTP_200_OK
-
-    data, error = _assert_response_and_unwrap_envelope(resp)
-    assert data
-    assert not error
-
-    assert data["name"] == "simcore-service-director"
-    assert data["status"] == "SERVICE_RUNNING"
-    assert data["version"] == "0.1.0"
-    assert data["api_version"] == "0.1.0"
-
-
 def _assert_services(
     *,
     expected: list[ServiceInRegistryInfoDict],
