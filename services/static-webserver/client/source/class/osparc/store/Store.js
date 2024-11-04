@@ -427,6 +427,11 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
+    getTemplate: function(templateId) {
+      const templates = this.getTemplates();
+      return templates.find(template => template["uuid"] === templateId);
+    },
+
     deleteStudy: function(studyId) {
       const params = {
         url: {
