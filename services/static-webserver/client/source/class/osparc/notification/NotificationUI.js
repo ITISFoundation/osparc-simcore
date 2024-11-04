@@ -182,6 +182,23 @@ qx.Class.define("osparc.notification.NotificationUI", {
           break;
         case "ANNOTATION_NOTE":
           source = "@FontAwesome5Solid/file/14";
+          if (resourceId) {
+            const params = {
+              url: {
+                "studyId": resourceId
+              }
+            };
+            const study = await osparc.data.Resources.getOne("studies", params);
+            if (study) {
+              title = `Note added in ${study["name"]}`;
+            }
+          }
+          if (userFromId) {
+            const user = osparc.store.Store.getInstance().getUser(userFromId);
+            if (user) {
+              description = "It was added by " + user["label"];
+            }
+          }
           break;
         case "WALLET_SHARED":
           source = "@MaterialIcons/account_balance_wallet/14";
