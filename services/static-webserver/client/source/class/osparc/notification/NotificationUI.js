@@ -162,6 +162,28 @@ qx.Class.define("osparc.notification.NotificationUI", {
           break;
         case "TEMPLATE_SHARED":
           source = "@FontAwesome5Solid/copy/14";
+          if (resourceId) {
+            const params = {
+              url: {
+                "studyId": resourceId
+              }
+            };
+            const template = osparc.store.Store.getInstance().getTemplate(params);
+            const templateAlias = osparc.product.Utils.getTemplateAlias({
+              firstUpperCase: true
+            });
+            if (template) {
+              title = `${templateAlias} ${template["name"]}`;
+            } else {
+              title = `${templateAlias} shared`;
+            }
+          }
+          if (userFromId) {
+            const user = osparc.store.Store.getInstance().getUser(userFromId);
+            if (user) {
+              description = "was shared by " + user["label"];
+            }
+          }
           break;
         case "ANNOTATION_NOTE":
           source = "@FontAwesome5Solid/file/14";
