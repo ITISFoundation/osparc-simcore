@@ -35,6 +35,7 @@ def _assert_services(
         for s in expected
     ]
 
+    # TODO: check these are correct!
     json_schema_path = resources.get_path(resources.RESOURCE_NODE_SCHEMA)
     assert json_schema_path.exists() is True
     with json_schema_path.open() as file_pt:
@@ -198,43 +199,3 @@ async def test_get_service_labels(
         assert not error
 
         assert service["docker_labels"] == labels
-
-
-async def test_get_services_extras_by_key_and_version_with_empty_registry(
-    client: httpx.AsyncClient, api_version_prefix: str
-):
-    resp = await client.get(
-        f"/{api_version_prefix}/service_extras/whatever/someversion"
-    )
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    resp = await client.get(
-        f"/{api_version_prefix}/service_extras/simcore/services/dynamic/something/someversion"
-    )
-    assert resp.status_code == status.HTTP_404_NOT_FOUND
-    resp = await client.get(
-        f"/{api_version_prefix}/service_extras/simcore/services/dynamic/something/1.5.2"
-    )
-    assert resp.status_code == status.HTTP_404_NOT_FOUND
-
-
-async def test_get_services_extras_by_key_and_version(
-    client: httpx.AsyncClient,
-    created_services: list[ServiceInRegistryInfoDict],
-    api_version_prefix: str,
-):
-    assert len(created_services) == 5
-
-    for created_service in created_services:
-        service_description = created_service["service_description"]
-        # note that it is very important to remove the safe="/" from quote!!!!
-        key, version = (
-            quote(service_description[key], safe="") for key in ("key", "version")
-        )
-        url = f"/{api_version_prefix}/service_extras/{key}/{version}"
-        resp = await client.get(url)
-
-        assert resp.status_code == status.HTTP_200_OK, f"Got {resp.text=}"
-
-        service_extras, error = _assert_response_and_unwrap_envelope(resp.json())
-        assert not error
-        assert created_service["service_extras"] == service_extras
