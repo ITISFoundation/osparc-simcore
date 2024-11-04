@@ -1,15 +1,32 @@
+import logging
 from collections.abc import Callable
 from typing import Awaitable
 
 from fastapi import HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
+from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.status_codes_utils import is_5xx_server_error
 from starlette.responses import JSONResponse
 
 from ...exceptions.errors import RutNotFoundError
 
+_logger = logging.getLogger(__name__)
 
-async def http_error_handler(_: Request, exc: Exception) -> JSONResponse:
+
+async def http_error_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, HTTPException)  # nosec
+
+    if is_5xx_server_error(exc.status_code):
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                "Unexpected error happened in the Resource Usage Tracker. Please contact support.",
+                error=exc,
+                error_context={
+                    "request": request,
+                    "request.method": f"{request.method}",
+                },
+            )
+        )
     return JSONResponse(
         content=jsonable_encoder({"errors": [exc.detail]}), status_code=exc.status_code
     )

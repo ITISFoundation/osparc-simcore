@@ -2,11 +2,11 @@ from models_library.errors_classes import OsparcErrorMixin
 
 
 class ResourceUsageTrackerBaseError(OsparcErrorMixin, Exception):
-    msg_template = "Resource Usage Tracker unknown error"
+    msg_template = "Resource usage Tracker Service Error"
 
 
 class ConfigurationError(ResourceUsageTrackerBaseError):
-    msg_template = "Resource usage Tracker configuration error"
+    ...
 
 
 ###  NotCreatedDBError
