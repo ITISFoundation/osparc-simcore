@@ -27,14 +27,18 @@ def setup_logging(
     *,
     level: str | int,
     slow_duration: float | None = None,
-    log_format_local_dev_enabled: bool
+    log_format_local_dev_enabled: bool,
+    logger_filter_mapping: dict,
 ):
     # service log level
     logging.basicConfig(level=level)
 
     # root
     logging.root.setLevel(level)
-    config_all_loggers(log_format_local_dev_enabled=log_format_local_dev_enabled)
+    config_all_loggers(
+        log_format_local_dev_enabled=log_format_local_dev_enabled,
+        logger_filter_mapping=logger_filter_mapping,
+    )
 
     # Enforces same log-level to aiohttp & gunicorn access loggers
     #

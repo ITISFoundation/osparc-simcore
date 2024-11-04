@@ -213,9 +213,21 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       return control || this.base(arguments, id);
     },
 
+    __titleTapped: function() {
+      const workspaceId = this.getCurrentWorkspaceId();
+      const folderId = null;
+      this.setCurrentFolderId(folderId);
+      this.fireDataEvent("locationChanged", {
+        workspaceId,
+        folderId,
+      });
+    },
+
     __buildLayout: function() {
       this.getChildControl("icon");
       const title = this.getChildControl("title");
+      title.resetCursor();
+      title.removeListener("tap", this.__titleTapped, this);
       this.getChildControl("breadcrumbs");
       this.getChildControl("edit-button").exclude();
       this.resetAccessRights();
@@ -229,7 +241,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         this.__setIcon("@FontAwesome5Solid/search/24");
         title.set({
           value: this.tr("Search results"),
-          cursor: "auto",
         });
       } else if (currentContext === "trash") {
         this.__setIcon("@FontAwesome5Solid/trash/20");
@@ -245,21 +256,11 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         this.__setIcon(osparc.store.Workspaces.iconPath(32));
         title.set({
           value: this.tr("Shared Workspaces"),
-          cursor: "auto",
         })
       } else if (currentContext === "studiesAndFolders") {
         const workspaceId = this.getCurrentWorkspaceId();
-        title.set({
-          cursor: "pointer"
-        });
-        title.addListener("tap", () => {
-          const folderId = null;
-          this.setCurrentFolderId(folderId);
-          this.fireDataEvent("locationChanged", {
-            workspaceId,
-            folderId,
-          });
-        });
+        title.setCursor("pointer");
+        title.addListener("tap", this.__titleTapped, this);
         const workspace = osparc.store.Workspaces.getInstance().getWorkspace(workspaceId);
         if (workspace) {
           const thumbnail = workspace.getThumbnail();

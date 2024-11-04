@@ -30,6 +30,8 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTreeItem", {
 
     this.setNotHoveredStyle();
     this.__attachEventHandlers();
+
+    osparc.utils.Utils.setIdToWidget(this, "workspacesAndFoldersTreeItem");
   },
 
   members: {

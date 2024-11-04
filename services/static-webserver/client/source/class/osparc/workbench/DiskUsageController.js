@@ -34,7 +34,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
     this.__socket.on("serviceDiskUsage", data => {
       if (data["node_id"] && this.__callbacks[data["node_id"]]) {
         //  notify
-        this.setDiskUsageNotificationToUI(data);
+        this.__evaluateDisplayMessage(data);
         this.__callbacks[data["node_id"]].forEach(cb => {
           cb(data);
         })
@@ -65,7 +65,7 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       }
     },
 
-    getDiskUsage: function(freeSpace) {
+    __getWarningLevel: function(freeSpace) {
       const lowDiskSpacePreferencesSettings = osparc.Preferences.getInstance();
       this.__lowDiskThreshold = lowDiskSpacePreferencesSettings.getLowDiskSpaceThreshold();
       const warningSize = osparc.utils.Utils.gBToBytes(this.__lowDiskThreshold); // 5 GB Default
@@ -81,13 +81,12 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       return warningLevel
     },
 
-    setDiskUsageNotificationToUI: function(data) {
+    __evaluateDisplayMessage: function(data) {
       const id = data["node_id"];
       if (!this.__callbacks[id]) {
         return;
       }
 
-      const diskUsage = data.usage["HOST"]
       function isMatchingNodeId({nodeId}) {
         return nodeId === id;
       }
@@ -96,31 +95,41 @@ qx.Class.define("osparc.workbench.DiskUsageController", {
       }
 
       let prevDiskUsageState = this.__prevDiskUsageStateList.find(isMatchingNodeId);
-
-      const warningLevel = this.getDiskUsage(diskUsage.free);
       if (prevDiskUsageState === undefined) {
+        // Initialize it
         this.__prevDiskUsageStateList.push({
           nodeId: id,
           state: "NORMAL"
         })
       }
-      const freeSpace = osparc.utils.Utils.bytesToSize(diskUsage.free);
 
       const store = osparc.store.Store.getInstance();
       const currentStudy = store.getCurrentStudy();
       if (!currentStudy) {
         return;
       }
-      const node = currentStudy.getWorkbench().getNode(id);
 
+      const node = currentStudy.getWorkbench().getNode(id);
       const nodeName = node ? node.getLabel() : null;
       if (nodeName === null) {
         return;
       }
 
-      let message;
+      const diskHostUsage = data.usage["HOST"]
+      let freeSpace = osparc.utils.Utils.bytesToSize(diskHostUsage.free);
+      let warningLevel = this.__getWarningLevel(diskHostUsage.free);
+
+      if ("STATES_VOLUMES" in data.usage) {
+        const diskVolsUsage = data.usage["STATES_VOLUMES"];
+        if (diskVolsUsage["used_percent"] > diskHostUsage["used_percent"]) {
+          // "STATES_VOLUMES" is more critical so it takes over
+          freeSpace = osparc.utils.Utils.bytesToSize(diskVolsUsage.free);
+          warningLevel = this.__getWarningLevel(diskVolsUsage.free);
+        }
+      }
 
       const objIndex = this.__prevDiskUsageStateList.findIndex((obj => obj.nodeId === id));
+      let message;
       switch (warningLevel) {
         case "CRITICAL":
           if (shouldDisplayMessage(prevDiskUsageState, warningLevel)) {
