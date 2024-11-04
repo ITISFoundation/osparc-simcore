@@ -1,6 +1,8 @@
 import datetime
 import warnings
+from typing import cast
 
+from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
     BuildTargetEnum,
@@ -151,10 +153,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         env=["DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME", "SIMCORE_SERVICES_NETWORK_NAME"],
     )
     # useful when developing with an alternative registry namespace
-    DIRECTOR_SIMCORE_SERVICES_PREFIX: str = Field(
-        default="simcore/services",
-        env=["DIRECTOR_SIMCORE_SERVICES_PREFIX", "SIMCORE_SERVICES_PREFIX"],
-    )
 
     DIRECTOR_MONITORING_ENABLED: bool = Field(
         default=False, env=["DIRECTOR_MONITORING_ENABLED", "MONITORING_ENABLED"]
@@ -175,3 +173,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             raise ValueError(msg)
 
         return v
+
+
+def get_application_settings(app: FastAPI) -> ApplicationSettings:
+    return cast(ApplicationSettings, app.state.settings)
