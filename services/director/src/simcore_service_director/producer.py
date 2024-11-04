@@ -749,7 +749,7 @@ _SERVICE_KEY_REGEX = re.compile(
 
 
 async def _find_service_tag(
-    list_of_images: dict, service_key: str, service_tag: str
+    list_of_images: dict, service_key: str, service_tag: str | None
 ) -> str:
     if service_key not in list_of_images:
         raise exceptions.ServiceNotAvailableError(
@@ -772,6 +772,7 @@ async def _find_service_tag(
         )
 
     log.debug("Service tag found is %s ", service_tag)
+    assert tag is not None  # nosec
     return tag
 
 
@@ -949,7 +950,7 @@ async def start_service(
     user_id: str,
     project_id: str,
     service_key: str,
-    service_tag: str,
+    service_tag: str | None,
     node_uuid: str,
     node_base_path: str,
     request_simcore_user_agent: str,
