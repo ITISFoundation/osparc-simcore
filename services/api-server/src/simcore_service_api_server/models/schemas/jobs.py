@@ -141,6 +141,20 @@ class JobMetadata(BaseModel):
     # Links
     url: HttpUrl | None = Field(..., description="Link to get this resource (self)")
 
+    class Config(BaseConfig):
+        schema_extra: ClassVar[dict[str, Any]] = {
+            "example": {
+                "job_id": "3497e4de-0e69-41fb-b08f-7f3875a1ac4b",
+                "metadata": {
+                    "bool": "true",
+                    "int": "42",
+                    "float": "3.14",
+                    "str": "hej med dig",
+                },
+                "url": "https://f02b2452-1dd8-4882-b673-af06373b41b3.fake",
+            }
+        }
+
 
 # JOBS ----------
 #  - A job can be create on a specific solver or other type of future runner (e.g. a pipeline)
