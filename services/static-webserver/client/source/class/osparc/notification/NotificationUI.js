@@ -132,7 +132,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           source = "@FontAwesome5Solid/users/14";
           if (resourceId) {
             const group = await osparc.store.Store.getInstance().getGroup(resourceId);
-            title = group["name"];
+            description = "You're now member of '" + group["name"] + "'";
           }
           break;
         case "STUDY_SHARED":
@@ -148,9 +148,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
               firstUpperCase: true
             });
             if (study) {
-              title = `${studyAlias} ${study["name"]}`;
-            } else {
-              title = `${studyAlias} shared`;
+              title = `${studyAlias} '${study["name"]}'`;
             }
           }
           if (userFromId) {
@@ -168,9 +166,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
               firstUpperCase: true
             });
             if (template) {
-              title = `${templateAlias} ${template["name"]}`;
-            } else {
-              title = `${templateAlias} shared`;
+              title = `${templateAlias} '${template["name"]}'`;
             }
           }
           if (userFromId) {
@@ -190,13 +186,13 @@ qx.Class.define("osparc.notification.NotificationUI", {
             };
             const study = await osparc.data.Resources.getOne("studies", params);
             if (study) {
-              title = `Note added in ${study["name"]}`;
+              title = `Note added in '${study["name"]}'`;
             }
           }
           if (userFromId) {
             const user = osparc.store.Store.getInstance().getUser(userFromId);
             if (user) {
-              description = "It was added by " + user["label"];
+              description = "was added by " + user["label"];
             }
           }
           break;
