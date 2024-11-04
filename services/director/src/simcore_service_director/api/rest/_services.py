@@ -1,7 +1,6 @@
 import logging
 from typing import Annotated, Any
 
-import arrow
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from models_library.generics import Envelope
 from models_library.services_enums import ServiceType
@@ -19,7 +18,7 @@ log = logging.getLogger(__name__)
 async def list_services(
     the_app: Annotated[FastAPI, Depends(get_app)],
     service_type: ServiceType | None = None,
-):
+) -> Envelope[list[dict[str, Any]]]:
     log.debug(
         "Client does list_services request with service_type %s",
         service_type,
@@ -54,17 +53,64 @@ async def list_services(
 
 @router.get("/services/{service_key}/{service_version}")
 async def get_service(
+    the_app: Annotated[FastAPI, Depends(get_app)],
     service_key: ServiceKey,
     service_version: ServiceVersion,
-):
-    # NOTE: sync url in docker/healthcheck.py with this entrypoint!
-    return f"{__name__}.health_check@{arrow.utcnow().isoformat()}"
+) -> Envelope[list[dict[str, Any]]]:
+    log.debug(
+        "Client does get_service with service_key %s, service_version %s",
+        service_key,
+        service_version,
+    )
+    try:
+        services = [
+            await registry_proxy.get_image_details(
+                the_app, service_key, service_version
+            )
+        ]
+        return Envelope[list[dict[str, Any]]](data=services)
+    except exceptions.ServiceNotAvailableError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
+        ) from err
+    except exceptions.RegistryConnectionError as err:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
+        ) from err
+    except Exception as err:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{err}"
+        ) from err
 
 
 @router.get("/services/{service_key}/{service_version}/labels")
 async def list_service_labels(
+    the_app: Annotated[FastAPI, Depends(get_app)],
     service_key: ServiceKey,
     service_version: ServiceVersion,
-):
-    # NOTE: sync url in docker/healthcheck.py with this entrypoint!
-    return f"{__name__}.health_check@{arrow.utcnow().isoformat()}"
+) -> Envelope[dict[str, Any]]:
+    log.debug(
+        "Retrieving service labels with service_key %s, service_version %s",
+        service_key,
+        service_version,
+    )
+    try:
+        service_labels, _ = await registry_proxy.get_image_labels(
+            the_app, service_key, service_version
+        )
+        return Envelope[dict[str, Any]](data=service_labels)
+
+    except exceptions.ServiceNotAvailableError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
+        ) from err
+
+    except exceptions.RegistryConnectionError as err:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
+        ) from err
+
+    except Exception as err:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{err}"
+        ) from err
