@@ -17,3 +17,5 @@ MEM_RESOURCE_LIMIT_KEY: Final[str] = "SIMCORE_MEMORY_BYTES_LIMIT"
 APP_REGISTRY_CACHE_DATA_KEY: Final[str] = __name__ + "_registry_cache_data"
 
 API_ROOT: Final[str] = "api"
+
+DIRECTOR_SIMCORE_SERVICES_PREFIX: Final[str] = "simcore/services"
