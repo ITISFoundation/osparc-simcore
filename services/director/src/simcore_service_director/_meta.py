@@ -4,7 +4,7 @@
 
 from typing import Final
 
-from models_library.basic_types import VersionStr
+from models_library.basic_types import VersionStr, VersionTag
 from packaging.version import Version
 from servicelib.utils_meta import PackageInfo
 
@@ -16,7 +16,7 @@ PROJECT_NAME: Final[str] = info.project_name
 VERSION: Final[Version] = info.version
 API_VERSION: Final[VersionStr] = info.__version__
 APP_NAME: Final[str] = PROJECT_NAME
-API_VTAG: Final[str] = info.api_prefix_path_tag
+API_VTAG: Final[VersionTag] = VersionTag(info.api_prefix_path_tag)
 SUMMARY: Final[str] = info.get_summary()
 
 
