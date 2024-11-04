@@ -1,58 +1,73 @@
-# pylint: disable=unused-argument
-# pylint: disable=unused-import
-# pylint: disable=bare-except
 # pylint: disable=redefined-outer-name
-# pylint: disable=R0915
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
 import json
+import time
 import uuid
+from collections.abc import AsyncIterator
 from urllib.parse import quote
 
+import httpx
 import pytest
 from aioresponses.core import CallbackResult, aioresponses
+from fastapi import FastAPI, status
+from fixtures.fake_services import PushServicesCallable, ServiceInRegistryInfoDict
 from helpers import json_schema_validator
-from servicelib.rest_responses import (  # pylint: disable=no-name-in-module
-    unwrap_envelope,
-)
-from simcore_service_director import main, resources, rest
+from httpx._transports.asgi import ASGITransport
+from simcore_service_director import resources, rest
 
 
 @pytest.fixture
-def client(
-    loop,
-    aiohttp_client,
-    aiohttp_unused_port,
-    configure_schemas_location,
-    configure_registry_access,
+async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
+    # - Needed for app to trigger start/stop event handlers
+    # - Prefer this client instead of fastapi.testclient.TestClient
+    async with httpx.AsyncClient(
+        app=app,
+        base_url="http://director.testserver.io",
+        headers={"Content-Type": "application/json"},
+    ) as client:
+        assert isinstance(client._transport, ASGITransport)
+        yield client
+
+
+def _assert_response_and_unwrap_envelope(got: httpx.Response):
+    assert got.encoding == "application/json"
+
+    body = got.json()
+    assert isinstance(body, dict)
+    assert "data" in body or "error" in body
+    return body.get("data"), body.get("error")
+
+
+async def test_get_root_path(client: httpx.AsyncClient, api_version_prefix: str):
+    resp = await client.get(f"/{api_version_prefix}/")
+
+    assert resp.is_success
+    assert resp.status_code == status.HTTP_200_OK
+
+    data, error = _assert_response_and_unwrap_envelope(resp)
+    assert data
+    assert not error
+
+    assert data["name"] == "simcore-service-director"
+    assert data["status"] == "SERVICE_RUNNING"
+    assert data["version"] == "0.1.0"
+    assert data["api_version"] == "0.1.0"
+
+
+def _assert_services(
+    *,
+    expected: list[ServiceInRegistryInfoDict],
+    got: list[ServiceInRegistryInfoDict],
+    schema_version="v1",
 ):
-    app = main.setup_app()
-    server_kwargs = {"port": aiohttp_unused_port(), "host": "localhost"}
-    return loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
-
-
-async def test_root_get(client, api_version_prefix):
-    web_response = await client.get(f"/{api_version_prefix}/")
-    assert web_response.content_type == "application/json"
-    assert web_response.status == 200
-    healthcheck_enveloped = await web_response.json()
-    assert "data" in healthcheck_enveloped
-
-    assert isinstance(healthcheck_enveloped["data"], dict)
-
-    healthcheck = healthcheck_enveloped["data"]
-    assert healthcheck["name"] == "simcore-service-director"
-    assert healthcheck["status"] == "SERVICE_RUNNING"
-    assert healthcheck["version"] == "0.1.0"
-    assert healthcheck["api_version"] == "0.1.0"
-
-
-def _check_services(created_services, services, schema_version="v1"):
-    assert len(created_services) == len(services)
+    assert len(expected) == len(got)
 
     created_service_descriptions = [
         (x["service_description"]["key"], x["service_description"]["version"])
-        for x in created_services
+        for x in expected
     ]
 
     json_schema_path = resources.get_path(resources.RESOURCE_NODE_SCHEMA)
@@ -60,8 +75,8 @@ def _check_services(created_services, services, schema_version="v1"):
     with json_schema_path.open() as file_pt:
         service_schema = json.load(file_pt)
 
-    for service in services:
-        service.pop("image_digest")
+    for service in got:
+        service.pop("image_digest", None)
         if schema_version == "v1":
             assert (
                 created_service_descriptions.count((service["key"], service["version"]))
@@ -70,78 +85,121 @@ def _check_services(created_services, services, schema_version="v1"):
         json_schema_validator.validate_instance_object(service, service_schema)
 
 
-async def test_services_get(docker_registry, client, push_services, api_version_prefix):
-    # empty case
-    web_response = await client.get(f"/{api_version_prefix}/services")
-    assert web_response.status == 200
-    assert web_response.content_type == "application/json"
-    services_enveloped = await web_response.json()
-    assert isinstance(services_enveloped["data"], list)
-    services = services_enveloped["data"]
-    _check_services([], services)
+async def test_list_services_with_empty_registry(
+    docker_registry: str,
+    client: httpx.AsyncClient,
+    api_version_prefix: str,
+):
+    assert docker_registry, "docker-registry is not ready?"
 
-    # some services
-    created_services = await push_services(
+    # empty case
+    resp = await client.get(f"/{api_version_prefix}/services")
+    assert resp.status_code == status.HTTP_200_OK
+
+    services, error = _assert_response_and_unwrap_envelope(resp.json())
+    assert not error
+    assert isinstance(services, list)
+
+    _assert_services(expected=[], got=services)
+
+
+@pytest.fixture
+async def created_services(
+    push_services: PushServicesCallable,
+) -> list[ServiceInRegistryInfoDict]:
+    return await push_services(
         number_of_computational_services=3, number_of_interactive_services=2
     )
-    web_response = await client.get(f"/{api_version_prefix}/services")
-    assert web_response.status == 200
-    assert web_response.content_type == "application/json"
-    services_enveloped = await web_response.json()
-    assert isinstance(services_enveloped["data"], list)
-    services = services_enveloped["data"]
-    _check_services(created_services, services)
 
-    web_response = await client.get(
-        f"/{api_version_prefix}/services?service_type=blahblah"
-    )
-    assert web_response.status == 400
-    assert web_response.content_type == "application/json"
-    services_enveloped = await web_response.json()
-    assert "data" not in services_enveloped
-    assert "error" in services_enveloped
 
-    web_response = await client.get(
+async def test_list_services(
+    docker_registry: str,
+    client: httpx.AsyncClient,
+    created_services: list[ServiceInRegistryInfoDict],
+    api_version_prefix: str,
+):
+    assert docker_registry, "docker-registry is not ready?"
+
+    resp = await client.get(f"/{api_version_prefix}/services")
+    assert resp.status_code == status.HTTP_200_OK
+
+    services, error = _assert_response_and_unwrap_envelope(resp.json())
+    assert not error
+    assert isinstance(services, list)
+
+    _assert_services(expected=created_services, got=services)
+
+
+async def test_get_service_bad_request(
+    docker_registry: str,
+    client: httpx.AsyncClient,
+    created_services: list[ServiceInRegistryInfoDict],
+    api_version_prefix: str,
+):
+    assert docker_registry, "docker-registry is not ready?"
+    assert len(created_services) > 0
+
+    resp = await client.get(f"/{api_version_prefix}/services?service_type=blahblah")
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+    services, error = _assert_response_and_unwrap_envelope(resp.json())
+    assert not services
+    assert error
+
+
+async def test_list_services_by_service_type(
+    docker_registry: str,
+    client: httpx.AsyncClient,
+    created_services: list[ServiceInRegistryInfoDict],
+    api_version_prefix: str,
+):
+    assert docker_registry, "docker-registry is not ready?"
+    assert len(created_services) == 5
+
+    resp = await client.get(
         f"/{api_version_prefix}/services?service_type=computational"
     )
-    assert web_response.status == 200
-    assert web_response.content_type == "application/json"
-    services_enveloped = await web_response.json()
-    assert isinstance(services_enveloped["data"], list)
-    services = services_enveloped["data"]
+    assert resp.status_code == status.HTTP_200_OK
+
+    services, error = _assert_response_and_unwrap_envelope(resp.json())
+    assert not error
+    assert services
     assert len(services) == 3
 
-    web_response = await client.get(
-        f"/{api_version_prefix}/services?service_type=interactive"
-    )
-    assert web_response.status == 200
-    assert web_response.content_type == "application/json"
-    services_enveloped = await web_response.json()
-    assert isinstance(services_enveloped["data"], list)
-    services = services_enveloped["data"]
+    resp = await client.get(f"/{api_version_prefix}/services?service_type=interactive")
+    assert resp.status_code == status.HTTP_200_OK
+
+    services, error = _assert_response_and_unwrap_envelope(resp.json())
+    assert not error
+    assert services
     assert len(services) == 2
 
 
-async def test_services_by_key_version_get(
-    client, push_services, api_version_prefix
-):  # pylint: disable=W0613, W0621
-    web_response = await client.get(
-        f"/{api_version_prefix}/services/whatever/someversion"
-    )
-    assert web_response.status == 400
-    web_response = await client.get(
+async def test_get_services_by_key_and_version_with_empty_registry(
+    client: httpx.AsyncClient, api_version_prefix: str
+):
+    resp = await client.get(f"/{api_version_prefix}/services/whatever/someversion")
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+    resp = await client.get(
         f"/{api_version_prefix}/services/simcore/services/dynamic/something/someversion"
     )
-    assert web_response.status == 404
-    web_response = await client.get(
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+    resp = await client.get(
         f"/{api_version_prefix}/services/simcore/services/dynamic/something/1.5.2"
     )
-    assert web_response.status == 404
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
 
-    created_services = await push_services(3, 2)
+
+async def test_get_services_by_key_and_version(
+    client: httpx.AsyncClient,
+    created_services: list[ServiceInRegistryInfoDict],
+    api_version_prefix: str,
+):
     assert len(created_services) == 5
 
-    retrieved_services = []
+    retrieved_services: list[ServiceInRegistryInfoDict] = []
     for created_service in created_services:
         service_description = created_service["service_description"]
         # note that it is very important to remove the safe="/" from quote!!!!
@@ -149,25 +207,26 @@ async def test_services_by_key_version_get(
             quote(service_description[key], safe="") for key in ("key", "version")
         )
         url = f"/{api_version_prefix}/services/{key}/{version}"
-        web_response = await client.get(url)
+        resp = await client.get(url)
 
-        assert (
-            web_response.status == 200
-        ), await web_response.text()  # here the error is actually json.
-        assert web_response.content_type == "application/json"
-        services_enveloped = await web_response.json()
+        assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
+        assert resp.encoding == "application/json"
+        services_enveloped = resp.json()
 
         assert isinstance(services_enveloped["data"], list)
         services = services_enveloped["data"]
         assert len(services) == 1
         retrieved_services.append(services[0])
-    _check_services(created_services, retrieved_services)
+
+    _assert_services(expected=created_services, got=retrieved_services)
 
 
 async def test_get_service_labels(
-    client, push_services, api_version_prefix
-):  # pylint: disable=W0613, W0621
-    created_services = await push_services(3, 2)
+    client: httpx.AsyncClient,
+    created_services: list[ServiceInRegistryInfoDict],
+    api_version_prefix: str,
+):
+    assert len(created_services) == 5
 
     for service in created_services:
         service_description = service["service_description"]
@@ -176,32 +235,37 @@ async def test_get_service_labels(
             quote(service_description[key], safe="") for key in ("key", "version")
         )
         url = f"/{api_version_prefix}/services/{key}/{version}/labels"
-        web_response = await client.get(url)
-        assert web_response.status == 200, await web_response.text()
+        resp = await client.get(url)
+        assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
-        services_enveloped = await web_response.json()
+        services_enveloped = resp.json()
         labels = services_enveloped["data"]
 
         assert service["docker_labels"] == labels
 
 
-async def test_services_extras_by_key_version_get(
-    client, push_services, api_version_prefix
-):  # pylint: disable=W0613, W0621
-    web_response = await client.get(
+async def test_get_services_extras_by_key_and_version_with_empty_registry(
+    client: httpx.AsyncClient, api_version_prefix: str
+):
+    resp = await client.get(
         f"/{api_version_prefix}/service_extras/whatever/someversion"
     )
-    assert web_response.status == 400
-    web_response = await client.get(
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    resp = await client.get(
         f"/{api_version_prefix}/service_extras/simcore/services/dynamic/something/someversion"
     )
-    assert web_response.status == 404
-    web_response = await client.get(
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
+    resp = await client.get(
         f"/{api_version_prefix}/service_extras/simcore/services/dynamic/something/1.5.2"
     )
-    assert web_response.status == 404
+    assert resp.status_code == status.HTTP_404_NOT_FOUND
 
-    created_services = await push_services(3, 2)
+
+async def test_get_services_extras_by_key_and_version(
+    client: httpx.AsyncClient,
+    created_services: list[ServiceInRegistryInfoDict],
+    api_version_prefix: str,
+):
     assert len(created_services) == 5
 
     for created_service in created_services:
@@ -211,13 +275,11 @@ async def test_services_extras_by_key_version_get(
             quote(service_description[key], safe="") for key in ("key", "version")
         )
         url = f"/{api_version_prefix}/service_extras/{key}/{version}"
-        web_response = await client.get(url)
+        resp = await client.get(url)
 
-        assert (
-            web_response.status == 200
-        ), await web_response.text()  # here the error is actually json.
-        assert web_response.content_type == "application/json"
-        service_extras_enveloped = await web_response.json()
+        assert resp.status_code == status.HTTP_200_OK, f"Got {resp.text=}"
+        assert resp.encoding == "application/json"
+        service_extras_enveloped = resp.json()
 
         assert isinstance(service_extras_enveloped["data"], dict)
         service_extras = service_extras_enveloped["data"]
@@ -225,7 +287,7 @@ async def test_services_extras_by_key_version_get(
 
 
 async def _start_get_stop_services(
-    client,
+    client: httpx.AsyncClient,
     push_services,
     user_id,
     project_id,
@@ -235,10 +297,10 @@ async def _start_get_stop_services(
     mocker,
 ):
     params = {}
-    web_response = await client.post(
+    resp = await client.post(
         f"/{api_version_prefix}/running_interactive_services", params=params
     )
-    assert web_response.status == 400
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
     params = {
         "user_id": "None",
@@ -248,19 +310,19 @@ async def _start_get_stop_services(
         "service_tag": "None",  # optional
         "service_basepath": "None",  # optional
     }
-    web_response = await client.post(
+    resp = await client.post(
         f"/{api_version_prefix}/running_interactive_services", params=params
     )
-    data = await web_response.json()
-    assert web_response.status == 400, data
+    data = resp.json()
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST, data
 
     params["service_key"] = "simcore/services/comp/somfunkyname-nhsd"
     params["service_tag"] = "1.2.3"
-    web_response = await client.post(
+    resp = await client.post(
         f"/{api_version_prefix}/running_interactive_services", params=params
     )
-    data = await web_response.json()
-    assert web_response.status == 404, data
+    data = resp.json()
+    assert resp.status_code == status.HTTP_404_NOT_FOUND, data
 
     created_services = await push_services(0, 2)
     assert len(created_services) == 2
@@ -275,12 +337,12 @@ async def _start_get_stop_services(
         params["service_basepath"] = "/i/am/a/basepath"
         params["service_uuid"] = str(uuid.uuid4())
         # start the service
-        web_response = await client.post(
+        resp = await client.post(
             f"/{api_version_prefix}/running_interactive_services", params=params
         )
-        assert web_response.status == 201
-        assert web_response.content_type == "application/json"
-        running_service_enveloped = await web_response.json()
+        assert resp.status_code == status.HTTP_201_CREATED
+        assert resp.encoding == "application/json"
+        running_service_enveloped = resp.json()
         assert isinstance(running_service_enveloped["data"], dict)
         assert all(
             k in running_service_enveloped["data"]
@@ -313,14 +375,14 @@ async def _start_get_stop_services(
         assert service_basepath == params["service_basepath"]
 
         # get the service
-        web_response = await client.request(
+        resp = await client.request(
             "GET",
             f"/{api_version_prefix}/running_interactive_services/{params['service_uuid']}",
         )
-        assert web_response.status == 200
-        text = await web_response.text()
-        assert web_response.content_type == "application/json", text
-        running_service_enveloped = await web_response.json()
+        assert resp.status_code == status.HTTP_200_OK
+        text = resp.text
+        assert resp.encoding == "application/json", f"Got {text=}"
+        running_service_enveloped = resp.json()
         assert isinstance(running_service_enveloped["data"], dict)
         assert all(
             k in running_service_enveloped["data"]
@@ -371,17 +433,17 @@ async def _start_get_stop_services(
                 status=200,
                 callback=mocked_save_state_cb,
             )
-            web_response = await client.delete(
+            resp = await client.delete(
                 f"/{api_version_prefix}/running_interactive_services/{params['service_uuid']}",
                 params=query_params,
             )
             if expected_save_state_call:
                 mocked_save_state_cb.assert_called_once()
 
-        text = await web_response.text()
-        assert web_response.status == 204, text
-        assert web_response.content_type == "application/json"
-        data = await web_response.json()
+        text = resp.text
+        assert resp.status_code == status.HTTP_204_NO_CONTENT, text
+        assert resp.encoding == "application/json"
+        data = resp.json()
         assert data is None
 
 
@@ -390,7 +452,7 @@ async def _start_get_stop_services(
 )
 async def test_running_services_post_and_delete_no_swarm(
     configure_swarm_stack_name,
-    client,
+    client: httpx.AsyncClient,
     push_services,
     user_id,
     project_id,
@@ -402,11 +464,11 @@ async def test_running_services_post_and_delete_no_swarm(
         "service_uuid": "sdlfkj4",
         "service_key": "simcore/services/comp/some-key",
     }
-    web_response = await client.post(
+    resp = await client.post(
         f"/{api_version_prefix}/running_interactive_services", params=params
     )
-    data = await web_response.json()
-    assert web_response.status == 500, data
+    data = resp.json()
+    assert resp.status_code == 500, data
 
 
 @pytest.mark.parametrize(
@@ -414,7 +476,7 @@ async def test_running_services_post_and_delete_no_swarm(
 )
 async def test_running_services_post_and_delete(
     configure_swarm_stack_name,
-    client,
+    client: httpx.AsyncClient,
     push_services,
     docker_swarm,
     user_id,
@@ -437,7 +499,7 @@ async def test_running_services_post_and_delete(
 
 
 async def test_running_interactive_services_list_get(
-    client, push_services, docker_swarm
+    client: httpx.AsyncClient, push_services, docker_swarm
 ):
     """Test case for running_interactive_services_list_get
 
@@ -461,10 +523,10 @@ async def test_running_interactive_services_list_get(
                 params["service_tag"] = service_description["version"]
                 params["service_uuid"] = str(uuid.uuid4())
                 # start the service
-                web_response = await client.post(
+                resp = await client.post(
                     "/v0/running_interactive_services", params=params
                 )
-                assert web_response.status == 201
+                assert resp.status_code == 201
     # get the list of services
     for user_id in user_ids:
         for project_id in project_ids:
@@ -472,12 +534,12 @@ async def test_running_interactive_services_list_get(
             # list by user_id
             params["user_id"] = user_id
             response = await client.get(
-                path="/v0/running_interactive_services", params=params
+                "/v0/running_interactive_services", params=params
             )
-            assert response.status == 200, "Response body is : " + (
-                await response.read()
-            ).decode("utf-8")
-            data, error = unwrap_envelope(await response.json())
+            assert (
+                response.status_code == status.HTTP_200_OK
+            ), f"Response body is : {response.text}"
+            data, error = _assert_response_and_unwrap_envelope(response.json())
             assert data
             assert not error
             services_list = data
@@ -485,12 +547,12 @@ async def test_running_interactive_services_list_get(
             # list by user_id and project_id
             params["project_id"] = project_id
             response = await client.get(
-                path="/v0/running_interactive_services", params=params
+                "/v0/running_interactive_services", params=params
             )
-            assert response.status == 200, "Response body is : " + (
-                await response.read()
-            ).decode("utf-8")
-            data, error = unwrap_envelope(await response.json())
+            assert (
+                response.status_code == status.HTTP_200_OK
+            ), f"Response body is : {response.text}"
+            data, error = _assert_response_and_unwrap_envelope(response.json())
             assert data
             assert not error
             services_list = data
@@ -499,12 +561,12 @@ async def test_running_interactive_services_list_get(
             params = {}
             params["project_id"] = project_id
             response = await client.get(
-                path="/v0/running_interactive_services", params=params
+                "/v0/running_interactive_services", params=params
             )
-            assert response.status == 200, "Response body is : " + (
-                await response.read()
-            ).decode("utf-8")
-            data, error = unwrap_envelope(await response.json())
+            assert (
+                response.status_code == status.HTTP_200_OK
+            ), f"Response body is : {response.text}"
+            data, error = _assert_response_and_unwrap_envelope(response.json())
             assert data
             assert not error
             services_list = data
@@ -515,7 +577,6 @@ async def test_running_interactive_services_list_get(
 async def test_performance_get_services(
     loop, configure_custom_registry, configure_schemas_location
 ):
-    import time
 
     fake_request = "fake request"
     start_time = time.perf_counter()
@@ -524,15 +585,16 @@ async def test_performance_get_services(
     for i in range(number_of_calls):
         print("calling iteration", i)
         start_time_i = time.perf_counter()
-        web_response = await rest.handlers.services_get(fake_request)
-        assert web_response.status == 200
-        assert web_response.content_type == "application/json"
-        services_enveloped = json.loads(web_response.text)
+        resp = await rest.handlers.services_get(fake_request)
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.encoding == "application/json"
+        services_enveloped = json.loads(resp.text)
         assert isinstance(services_enveloped["data"], list)
         services = services_enveloped["data"]
         number_of_services = len(services)
         print("iteration completed in", (time.perf_counter() - start_time_i), "s")
     stop_time = time.perf_counter()
+
     print(
         f"Time to run {number_of_calls} times: {stop_time - start_time}s, #services {number_of_services}, time per call {(stop_time - start_time) / number_of_calls / number_of_services}s/service"
     )
