@@ -37,6 +37,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
                 )(scheduler.schedule_all_pipelines),
                 interval=_COMPUTATIONAL_SCHEDULER_INTERVAL,
                 task_name=_TASK_NAME,
+                early_wake_up_event=scheduler.wake_up_event,
             )
 
     return start_scheduler
