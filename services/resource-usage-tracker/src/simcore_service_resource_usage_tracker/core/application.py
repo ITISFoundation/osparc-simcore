@@ -15,7 +15,9 @@ from .._meta import (
 from ..api.rest.routes import setup_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..exceptions.handlers import setup_exception_handlers
-from ..services.background_tasks_setup import setup as setup_background_tasks
+from ..services.background_task_periodic_heartbeat_check_setup import (
+    setup as setup_background_task_periodic_heartbeat_check,
+)
 from ..services.modules.db import setup as setup_db
 from ..services.modules.rabbitmq import setup as setup_rabbitmq
 from ..services.modules.redis import setup as setup_redis
@@ -58,7 +60,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         setup_s3(app)
 
     setup_rpc_api_routes(app)  # Requires Rabbit, S3
-    setup_background_tasks(app)  # Requires Redis, DB
+    setup_background_task_periodic_heartbeat_check(app)  # Requires Redis, DB
+
     setup_process_message_running_service(app)  # Requires Rabbit
 
     if app.state.settings.RESOURCE_USAGE_TRACKER_TRACING:
