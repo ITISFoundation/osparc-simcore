@@ -47,7 +47,7 @@ def installed_package_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def common_schemas_specs_dir(osparc_simcore_root_dir: Path):
+def common_schemas_specs_dir(osparc_simcore_root_dir: Path) -> Path:
     specs_dir = osparc_simcore_root_dir / "api" / "specs" / "director" / "schemas"
     assert specs_dir.exists()
     return specs_dir
@@ -56,7 +56,7 @@ def common_schemas_specs_dir(osparc_simcore_root_dir: Path):
 @pytest.fixture
 def configure_schemas_location(
     installed_package_dir: Path, common_schemas_specs_dir: Path
-):
+) -> None:
     config.NODE_SCHEMA_LOCATION = str(
         common_schemas_specs_dir / "node-meta-v0.0.1.json"
     )
@@ -66,7 +66,7 @@ def configure_schemas_location(
 
 
 @pytest.fixture(scope="session")
-def configure_swarm_stack_name():
+def configure_swarm_stack_name() -> None:
     config.SWARM_STACK_NAME = "test_stack"
 
 
