@@ -148,7 +148,24 @@ qx.Class.define("osparc.notification.Notifications", {
         data: this.__newWalletObj(userId, studyId)
       };
       return osparc.data.Resources.fetch("notifications", "post", params);
-    }
+    },
+
+    markAsRead: function(notification) {
+      if (notification.isRead() === false) {
+        // set as read
+        const params = {
+          url: {
+            notificationId: notification.getId()
+          },
+          data: {
+            "read": true
+          }
+        };
+        osparc.data.Resources.fetch("notifications", "patch", params)
+          .then(() => notification.setRead(true))
+          .catch(() => notification.setRead(false));
+      }
+    },
   },
 
   members: {

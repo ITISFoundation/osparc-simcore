@@ -232,20 +232,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
 
       this.fireEvent("notificationTapped");
 
-      if (notification.isRead() === false) {
-        // set as read
-        const params = {
-          url: {
-            notificationId: notification.getId()
-          },
-          data: {
-            "read": true
-          }
-        };
-        osparc.data.Resources.fetch("notifications", "patch", params)
-          .then(() => notification.setRead(true))
-          .catch(() => notification.setRead(false));
-      }
+      osparc.notification.Notifications.markAsRead(notification);
 
       // open actionable path
       const actionablePath = notification.getActionablePath();
