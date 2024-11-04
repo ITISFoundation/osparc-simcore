@@ -4,6 +4,7 @@ from typing import Final
 from fastapi import FastAPI
 from servicelib.fastapi.tracing import setup_tracing
 
+from .. import registry_cache_task
 from .._meta import (
     API_VERSION,
     API_VTAG,
@@ -48,6 +49,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     if app.state.settings.DIRECTOR_TRACING:
         setup_tracing(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
+
+    registry_cache_task.setup(app)
 
     # ERROR HANDLERS
 
