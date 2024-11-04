@@ -163,7 +163,7 @@ def set_inputs_in_project(
 
 
 class _NonStrictPortLink(PortLink):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
 
 class _OutputPortInfo(NamedTuple):
