@@ -163,12 +163,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
         case "TEMPLATE_SHARED":
           source = "@FontAwesome5Solid/copy/14";
           if (resourceId) {
-            const params = {
-              url: {
-                "studyId": resourceId
-              }
-            };
-            const template = osparc.store.Store.getInstance().getTemplate(params);
+            const template = osparc.store.Store.getInstance().getTemplate(resourceId);
             const templateAlias = osparc.product.Utils.getTemplateAlias({
               firstUpperCase: true
             });
