@@ -26,8 +26,10 @@ class NotificationCategory(StrAutoEnum):
 
 class BaseUserNotification(BaseModel):
     user_id: UserID
+    user_from_id: Literal[None] | UserID = None
     category: NotificationCategory
     actionable_path: str
+    resource_id: Literal[""] | str = ""
     title: str
     text: str
     date: datetime
