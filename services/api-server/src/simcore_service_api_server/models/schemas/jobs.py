@@ -133,8 +133,8 @@ class JobMetadataUpdate(BaseModel):
         default_factory=dict, description="Custom key-value map"
     )
 
-    class Config(BaseConfig):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "metadata": {
                     "bool": "true",
@@ -144,6 +144,7 @@ class JobMetadataUpdate(BaseModel):
                 }
             }
         }
+    )
 
 
 class JobMetadata(BaseModel):
@@ -153,8 +154,8 @@ class JobMetadata(BaseModel):
     # Links
     url: HttpUrl | None = Field(..., description="Link to get this resource (self)")
 
-    class Config(BaseConfig):
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "job_id": "3497e4de-0e69-41fb-b08f-7f3875a1ac4b",
                 "metadata": {
@@ -166,6 +167,7 @@ class JobMetadata(BaseModel):
                 "url": "https://f02b2452-1dd8-4882-b673-af06373b41b3.fake",
             }
         }
+    )
 
 
 # JOBS ----------
