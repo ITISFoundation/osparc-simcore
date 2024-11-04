@@ -8478,6 +8478,10 @@ components:
           title: Modifiedat
           type: string
           format: date-time
+        trashedAt:
+          title: Trashedat
+          type: string
+          format: date-time
         owner:
           title: Owner
           exclusiveMinimum: true

@@ -2,6 +2,7 @@ import logging
 
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
+from models_library.rest_filters import Filters, FiltersQueryParameters
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
 from models_library.users import UserID
@@ -25,7 +26,16 @@ class FoldersPathParams(StrictRequestParams):
     folder_id: FolderID
 
 
-class FolderListWithJsonStrQueryParams(PageQueryParameters):
+class FolderFilters(Filters):
+    trashed: bool | None = Field(
+        default=False,
+        description="Set to true to list trashed, false to list non-trashed (default), None to list all",
+    )
+
+
+class FolderListWithJsonStrQueryParams(
+    PageQueryParameters, FiltersQueryParameters[FolderFilters]
+):
     # pylint: disable=unsubscriptable-object
     order_by: Json[OrderBy] = Field(
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),

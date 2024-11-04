@@ -81,6 +81,7 @@ async def list_(
     user_id: UserID | None,
     workspace_id: WorkspaceID | None,
     product_name: ProductName,
+    trashed: bool | None,
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
@@ -106,6 +107,13 @@ async def list_(
     else:
         assert workspace_id  # nosec
         base_query = base_query.where(folders_v2.c.workspace_id == workspace_id)
+
+    if trashed is not None:
+        base_query = base_query.where(
+            folders_v2.c.trashed_at.is_not(None)
+            if trashed
+            else folders_v2.c.trashed_at.is_(None)
+        )
 
     # Select total count from base_query
     subquery = base_query.subquery()

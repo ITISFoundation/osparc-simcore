@@ -27,6 +27,7 @@ from ..utils_aiohttp import envelope_json_response
 from . import _folders_api
 from ._exceptions_handling import handle_plugin_requests_exceptions
 from ._models import (
+    FolderFilters,
     FolderListWithJsonStrQueryParams,
     FoldersPathParams,
     FoldersRequestContext,
@@ -68,12 +69,16 @@ async def list_folders(request: web.Request):
         FolderListWithJsonStrQueryParams, request
     )
 
+    if not query_params.filters:
+        query_params.filters = FolderFilters()
+
     folders: FolderGetPage = await _folders_api.list_folders(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         folder_id=query_params.folder_id,
         workspace_id=query_params.workspace_id,
+        trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,
         order_by=parse_obj_as(OrderBy, query_params.order_by),
