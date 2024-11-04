@@ -145,7 +145,7 @@ class ApiKeyRepo:
             stmt = (
                 api_keys.delete()
                 .where(
-                    (api_keys.c.expires_at != None)  # noqa: E711
+                    (api_keys.c.expires_at.is_not(None))
                     & (api_keys.c.expires_at < sa.func.now())
                 )
                 .returning(api_keys.c.display_name)
