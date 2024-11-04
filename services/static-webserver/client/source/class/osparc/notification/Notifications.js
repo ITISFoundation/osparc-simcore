@@ -38,6 +38,7 @@ qx.Class.define("osparc.notification.Notifications", {
       const specNotification = {
         "category": "NEW_ORGANIZATION",
         "actionable_path": "organization/"+orgId,
+        "resource_id": orgId,
         "title": "New organization",
         "text": "You're now member of a new Organization"
       };
@@ -55,6 +56,7 @@ qx.Class.define("osparc.notification.Notifications", {
       const specNotification = {
         "category": "STUDY_SHARED",
         "actionable_path": "study/"+studyId,
+        "resource_id": studyId,
         "title": `${study} shared`,
         "text": `A ${study} was shared with you`
       };
@@ -72,6 +74,7 @@ qx.Class.define("osparc.notification.Notifications", {
       const specNotification = {
         "category": "TEMPLATE_SHARED",
         "actionable_path": "template/"+templateId,
+        "resource_id": templateId,
         "title": `${template} shared`,
         "text": `A ${template} was shared with you`
       };
@@ -86,6 +89,7 @@ qx.Class.define("osparc.notification.Notifications", {
       const specNotification = {
         "category": "ANNOTATION_NOTE",
         "actionable_path": "study/"+studyId,
+        "resource_id": studyId,
         "title": "Note added",
         "text": "A Note was added for you"
       };
@@ -100,6 +104,7 @@ qx.Class.define("osparc.notification.Notifications", {
       const specNotification = {
         "category": "WALLET_SHARED",
         "actionable_path": "wallet/"+walletId,
+        "resource_id": walletId,
         "title": "Credits shared",
         "text": "A Credit Account was shared with you"
       };
