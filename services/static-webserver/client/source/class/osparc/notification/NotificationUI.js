@@ -231,10 +231,11 @@ qx.Class.define("osparc.notification.NotificationUI", {
       }
 
       this.fireEvent("notificationTapped");
-
       osparc.notification.Notifications.markAsRead(notification);
+      this.__openActionablePath(notification);
+    },
 
-      // open actionable path
+    __openActionablePath: function(notification) {
       const actionablePath = notification.getActionablePath();
       const items = actionablePath.split("/");
       const resourceId = items.pop();
