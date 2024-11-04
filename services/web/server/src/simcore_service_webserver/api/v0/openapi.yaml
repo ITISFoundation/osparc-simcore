@@ -2626,6 +2626,27 @@ paths:
         example: '{"field": "name", "direction": "desc"}'
         name: order_by
         in: query
+      - description: "filters\n{\n \"title\": \"FolderFilters\",\n \"description\"\
+          : \"Encoded as JSON. Each available filter can have its own logic (should\
+          \ be well documented)\\nInspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.\"\
+          ,\n \"type\": \"object\",\n \"properties\": {\n  \"trashed\": {\n   \"title\"\
+          : \"Trashed\",\n   \"description\": \"Set to true to list trashed, false\
+          \ to list non-trashed (default), None to list all\",\n   \"default\": false,\n\
+          \   \"type\": \"boolean\"\n  }\n }\n}"
+        required: false
+        schema:
+          title: Filters
+          type: string
+          description: "filters\n{\n \"title\": \"FolderFilters\",\n \"description\"\
+            : \"Encoded as JSON. Each available filter can have its own logic (should\
+            \ be well documented)\\nInspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.\"\
+            ,\n \"type\": \"object\",\n \"properties\": {\n  \"trashed\": {\n   \"\
+            title\": \"Trashed\",\n   \"description\": \"Set to true to list trashed,\
+            \ false to list non-trashed (default), None to list all\",\n   \"default\"\
+            : false,\n   \"type\": \"boolean\"\n  }\n }\n}"
+          format: json-string
+        name: filters
+        in: query
       - required: false
         schema:
           title: Limit
@@ -3056,10 +3077,24 @@ paths:
         example: '{"field": "last_change_date", "direction": "desc"}'
         name: order_by
         in: query
-      - required: false
+      - description: "filters\n{\n \"title\": \"ProjectFilters\",\n \"description\"\
+          : \"Encoded as JSON. Each available filter can have its own logic (should\
+          \ be well documented)\\nInspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.\"\
+          ,\n \"type\": \"object\",\n \"properties\": {\n  \"trashed\": {\n   \"title\"\
+          : \"Trashed\",\n   \"description\": \"Set to true to list trashed, false\
+          \ to list non-trashed (default), None to list all\",\n   \"default\": false,\n\
+          \   \"type\": \"boolean\"\n  }\n }\n}"
+        required: false
         schema:
           title: Filters
           type: string
+          description: "filters\n{\n \"title\": \"ProjectFilters\",\n \"description\"\
+            : \"Encoded as JSON. Each available filter can have its own logic (should\
+            \ be well documented)\\nInspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.\"\
+            ,\n \"type\": \"object\",\n \"properties\": {\n  \"trashed\": {\n   \"\
+            title\": \"Trashed\",\n   \"description\": \"Set to true to list trashed,\
+            \ false to list non-trashed (default), None to list all\",\n   \"default\"\
+            : false,\n   \"type\": \"boolean\"\n  }\n }\n}"
           format: json-string
         name: filters
         in: query

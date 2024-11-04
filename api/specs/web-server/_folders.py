@@ -21,7 +21,7 @@ from models_library.rest_pagination import PageQueryParameters
 from models_library.workspaces import WorkspaceID
 from pydantic import Json
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.folders._models import FoldersPathParams
+from simcore_service_webserver.folders._models import FolderFilters, FoldersPathParams
 
 router = APIRouter(
     prefix=f"/{API_VTAG}",
@@ -55,6 +55,10 @@ async def list_folders(
             example='{"field": "name", "direction": "desc"}',
         ),
     ] = '{"field": "modified_at", "direction": "desc"}',
+    filters: Annotated[
+        Json | None,
+        Query(description=FolderFilters.schema_json(indent=1)),
+    ] = None,
 ):
     ...
 
