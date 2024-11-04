@@ -1,6 +1,7 @@
 from enum import auto
-from typing import Annotated, Any, ClassVar, Literal, TypeAlias, get_args
+from typing import Annotated, Any, ClassVar, Literal, TypeAlias
 
+from common_library.pydantic_fields_extension import get_type
 from pydantic import BaseModel, Field
 from pydantic._internal._model_construction import ModelMetaclass
 
@@ -94,11 +95,7 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
 
     @classmethod
     def update_preference_default_value(cls, new_default: Any) -> None:
-        expected_type = (
-            t[0]
-            if (t := get_args(cls.model_fields["value"].annotation))
-            else cls.model_fields["value"].annotation
-        )
+        expected_type = get_type(cls.model_fields["value"])
         detected_type = type(new_default)
         if expected_type != detected_type:
             msg = (
@@ -110,6 +107,9 @@ class FrontendUserPreference(_BaseUserPreferenceModel):
             cls.model_fields["value"].default_factory = lambda: new_default
         else:
             cls.model_fields["value"].default = new_default
+            cls.model_fields["value"].default_factory = None
+
+        cls.model_rebuild(force=True)
 
 
 class UserServiceUserPreference(_BaseUserPreferenceModel):
