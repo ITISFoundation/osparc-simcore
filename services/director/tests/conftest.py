@@ -5,12 +5,17 @@
 
 import os
 from pathlib import Path
+from typing import AsyncIterator
 
 import pytest
 import simcore_service_director
+from asgi_lifespan import LifespanManager
+from fastapi import FastAPI
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director import config, resources
+from simcore_service_director.core.application import create_app
+from simcore_service_director.core.settings import ApplicationSettings
 
 pytest_plugins = [
     "fixtures.fake_services",
@@ -107,6 +112,23 @@ def app_environment(
             # ADD here env-var overrides
         },
     )
+
+
+MAX_TIME_FOR_APP_TO_STARTUP = 10
+MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
+
+
+@pytest.fixture
+async def app(
+    app_environment: EnvVarsDict, is_pdb_enabled: bool
+) -> AsyncIterator[FastAPI]:
+    the_test_app = create_app(settings=ApplicationSettings.create_from_envs())
+    async with LifespanManager(
+        the_test_app,
+        startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
+        shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
+    ):
+        yield the_test_app
 
 
 # @pytest.fixture
