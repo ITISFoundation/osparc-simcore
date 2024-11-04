@@ -5,7 +5,6 @@ import json
 import time
 
 import pytest
-
 from simcore_service_director import config, registry_proxy
 
 
@@ -133,10 +132,12 @@ async def test_list_interactive_service_dependencies(
             docker_dependencies = json.loads(
                 docker_labels["simcore.service.dependencies"]
             )
-            image_dependencies = await registry_proxy.list_interactive_service_dependencies(
-                aiohttp_mock_app,
-                service_description["key"],
-                service_description["version"],
+            image_dependencies = (
+                await registry_proxy.list_interactive_service_dependencies(
+                    aiohttp_mock_app,
+                    service_description["key"],
+                    service_description["version"],
+                )
             )
             assert isinstance(image_dependencies, list)
             assert len(image_dependencies) == len(docker_dependencies)
@@ -179,6 +180,7 @@ async def test_get_image_labels(
         assert image_manifest_digest is not None
         assert image_manifest_digest not in images_digests
         images_digests.add(image_manifest_digest)
+
 
 def test_get_service_first_name():
     repo = "simcore/services/dynamic/myservice/modeler/my-sub-modeler"
@@ -273,11 +275,7 @@ async def test_get_services_performance(
     )
     stop_time = time.perf_counter()
     print(
-        "\nTime to run getting services: {}s, #services {}, time per call {}s/service".format(
-            stop_time - start_time,
-            len(services),
-            (stop_time - start_time) / len(services),
-        )
+        f"\nTime to run getting services: {stop_time - start_time}s, #services {len(services)}, time per call {(stop_time - start_time) / len(services)}s/service"
     )
 
 

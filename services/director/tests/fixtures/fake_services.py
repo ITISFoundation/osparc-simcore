@@ -19,7 +19,7 @@ from simcore_service_director.config import DEFAULT_MAX_MEMORY, DEFAULT_MAX_NANO
 _logger = logging.getLogger(__name__)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def push_services(docker_registry, tmpdir):
     registry_url = docker_registry
     tmp_dir = Path(tmpdir)
@@ -50,7 +50,7 @@ def push_services(docker_registry, tmpdir):
 
             images_to_build = []
 
-            for image_index in range(0, number_of_computational_services):
+            for image_index in range(number_of_computational_services):
                 images_to_build.append(
                     _build_push_image(
                         tmp_dir,
@@ -63,7 +63,7 @@ def push_services(docker_registry, tmpdir):
                     )
                 )
 
-            for image_index in range(0, number_of_interactive_services):
+            for image_index in range(number_of_interactive_services):
                 images_to_build.append(
                     _build_push_image(
                         tmp_dir,

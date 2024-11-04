@@ -7,7 +7,6 @@
 
 import json
 import uuid
-from typing import Optional
 from urllib.parse import quote
 
 import pytest
@@ -29,8 +28,7 @@ def client(
 ):
     app = main.setup_app()
     server_kwargs = {"port": aiohttp_unused_port(), "host": "localhost"}
-    client = loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
-    return client
+    return loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
 
 
 async def test_root_get(client, api_version_prefix):
@@ -58,7 +56,7 @@ def _check_services(created_services, services, schema_version="v1"):
     ]
 
     json_schema_path = resources.get_path(resources.RESOURCE_NODE_SCHEMA)
-    assert json_schema_path.exists() == True
+    assert json_schema_path.exists() is True
     with json_schema_path.open() as file_pt:
         service_schema = json.load(file_pt)
 
@@ -100,7 +98,7 @@ async def test_services_get(docker_registry, client, push_services, api_version_
     assert web_response.status == 400
     assert web_response.content_type == "application/json"
     services_enveloped = await web_response.json()
-    assert not "data" in services_enveloped
+    assert "data" not in services_enveloped
     assert "error" in services_enveloped
 
     web_response = await client.get(
@@ -147,9 +145,9 @@ async def test_services_by_key_version_get(
     for created_service in created_services:
         service_description = created_service["service_description"]
         # note that it is very important to remove the safe="/" from quote!!!!
-        key, version = [
+        key, version = (
             quote(service_description[key], safe="") for key in ("key", "version")
-        ]
+        )
         url = f"/{api_version_prefix}/services/{key}/{version}"
         web_response = await client.get(url)
 
@@ -174,9 +172,9 @@ async def test_get_service_labels(
     for service in created_services:
         service_description = service["service_description"]
         # note that it is very important to remove the safe="/" from quote!!!!
-        key, version = [
+        key, version = (
             quote(service_description[key], safe="") for key in ("key", "version")
-        ]
+        )
         url = f"/{api_version_prefix}/services/{key}/{version}/labels"
         web_response = await client.get(url)
         assert web_response.status == 200, await web_response.text()
@@ -209,9 +207,9 @@ async def test_services_extras_by_key_version_get(
     for created_service in created_services:
         service_description = created_service["service_description"]
         # note that it is very important to remove the safe="/" from quote!!!!
-        key, version = [
+        key, version = (
             quote(service_description[key], safe="") for key in ("key", "version")
-        ]
+        )
         url = f"/{api_version_prefix}/service_extras/{key}/{version}"
         web_response = await client.get(url)
 
@@ -232,7 +230,7 @@ async def _start_get_stop_services(
     user_id,
     project_id,
     api_version_prefix: str,
-    save_state: Optional[bool],
+    save_state: bool | None,
     expected_save_state_call: bool,
     mocker,
 ):
@@ -422,7 +420,7 @@ async def test_running_services_post_and_delete(
     user_id,
     project_id,
     api_version_prefix,
-    save_state: Optional[bool],
+    save_state: bool | None,
     expected_save_state_call: bool,
     mocker,
 ):
@@ -536,10 +534,5 @@ async def test_performance_get_services(
         print("iteration completed in", (time.perf_counter() - start_time_i), "s")
     stop_time = time.perf_counter()
     print(
-        "Time to run {} times: {}s, #services {}, time per call {}s/service".format(
-            number_of_calls,
-            stop_time - start_time,
-            number_of_services,
-            (stop_time - start_time) / number_of_calls / number_of_services,
-        )
+        f"Time to run {number_of_calls} times: {stop_time - start_time}s, #services {number_of_services}, time per call {(stop_time - start_time) / number_of_calls / number_of_services}s/service"
     )
