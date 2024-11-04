@@ -1,7 +1,7 @@
+--constraint ../../../requirements/constraints.txt
 --constraint _base.txt
 --constraint _test.txt
 
+--requirement ../../../requirements/devenv.txt
+
 watchdog[watchmedo]
-black~=20.8b0
-pip-tools
-bump2version
