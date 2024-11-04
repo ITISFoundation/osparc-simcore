@@ -12,11 +12,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 )
 from models_library.resource_tracker import CreditTransactionId
 
-from ...services import (
-    resource_tracker_credit_transactions,
-    resource_tracker_pricing_plans,
-    resource_tracker_pricing_units,
-)
+from ...services import credit_transactions, pricing_plans, pricing_units
 
 _logger = logging.getLogger(__name__)
 
@@ -38,9 +34,7 @@ router = APIRouter()
 async def get_credit_transactions_sum(
     wallet_total_credits: Annotated[
         WalletTotalCredits,
-        Depends(
-            resource_tracker_credit_transactions.sum_credit_transactions_by_product_and_wallet
-        ),
+        Depends(credit_transactions.sum_credit_transactions_by_product_and_wallet),
     ],
 ):
     return wallet_total_credits
@@ -56,7 +50,7 @@ async def get_credit_transactions_sum(
 async def create_credit_transaction(
     transaction_id: Annotated[
         CreditTransactionId,
-        Depends(resource_tracker_credit_transactions.create_credit_transaction),
+        Depends(credit_transactions.create_credit_transaction),
     ],
 ):
     return {"credit_transaction_id": transaction_id}
@@ -77,7 +71,7 @@ async def create_credit_transaction(
 async def get_service_default_pricing_plan(
     service_pricing_plans: Annotated[
         PricingPlanGet,
-        Depends(resource_tracker_pricing_plans.get_service_default_pricing_plan),
+        Depends(pricing_plans.get_service_default_pricing_plan),
     ],
 ):
     return service_pricing_plans
@@ -93,7 +87,7 @@ async def get_service_default_pricing_plan(
 async def get_pricing_plan_unit(
     pricing_unit: Annotated[
         PricingUnitGet,
-        Depends(resource_tracker_pricing_units.get_pricing_unit),
+        Depends(pricing_units.get_pricing_unit),
     ]
 ):
     return pricing_unit

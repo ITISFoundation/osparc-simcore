@@ -11,13 +11,11 @@ from models_library.resource_tracker import (
 )
 from pydantic import NonNegativeInt, PositiveInt
 
-from .core.settings import ApplicationSettings
-from .models.resource_tracker_credit_transactions import (
-    CreditTransactionCreditsAndStatusUpdate,
-)
-from .models.resource_tracker_service_runs import ServiceRunStoppedAtUpdate
+from ..core.settings import ApplicationSettings
+from ..models.credit_transactions import CreditTransactionCreditsAndStatusUpdate
+from ..models.service_runs import ServiceRunStoppedAtUpdate
 from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
-from .resource_tracker_utils import compute_service_run_credit_costs, make_negative
+from .utils import compute_service_run_credit_costs, make_negative
 
 _logger = logging.getLogger(__name__)
 
