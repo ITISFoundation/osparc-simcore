@@ -35,6 +35,7 @@ _SELECTION_ARGS = (
     folders_v2.c.created_by_gid,
     folders_v2.c.created,
     folders_v2.c.modified,
+    folders_v2.c.trashed_at,
     folders_v2.c.user_id,
     folders_v2.c.workspace_id,
 )
@@ -320,8 +321,7 @@ async def get_projects_recursively_only_if_user_is_owner(
         result = await conn.execute(query)
 
         rows = await result.fetchall() or []
-        results = [ProjectID(row[0]) for row in rows]
-        return results
+        return [ProjectID(row[0]) for row in rows]
 
 
 async def get_folders_recursively(
