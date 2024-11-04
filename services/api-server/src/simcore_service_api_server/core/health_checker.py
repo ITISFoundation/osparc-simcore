@@ -84,9 +84,6 @@ class ApiServerHealthChecker:
         while self._dummy_queue.qsize() > 0:
             _ = self._dummy_queue.get_nowait()
         try:
-            if not self._rabbit_client.healthy:
-                self._increment_health_check_failure_count()
-                return
             await asyncio.wait_for(
                 self._rabbit_client.publish(
                     self._dummy_message.channel_name, self._dummy_message
