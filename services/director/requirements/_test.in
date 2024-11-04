@@ -9,6 +9,7 @@
 --constraint _base.txt
 
 # testing
+asgi_lifespan
 docker
 faker
 jsonref
