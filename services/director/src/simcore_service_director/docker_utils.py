@@ -20,18 +20,18 @@ async def docker_client() -> AsyncIterator[aiodocker.docker.Docker]:
 
 
 async def swarm_get_number_nodes() -> int:
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+    async with docker_client() as client:
         nodes = await client.nodes.list()
         return len(nodes)
 
 
 async def swarm_has_manager_nodes() -> bool:
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+    async with docker_client() as client:
         nodes = await client.nodes.list(filters={"role": "manager"})
         return bool(nodes)
 
 
 async def swarm_has_worker_nodes() -> bool:
-    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+    async with docker_client() as client:
         nodes = await client.nodes.list(filters={"role": "worker"})
         return bool(nodes)
