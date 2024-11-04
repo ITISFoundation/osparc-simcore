@@ -25,5 +25,5 @@ def setup(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-def get_redis_client(app: FastAPI) -> RedisClientSDK:
+def get_redis_lock_client(app: FastAPI) -> RedisClientSDK:
     return cast(RedisClientSDK, app.state.redis_client_sdk)

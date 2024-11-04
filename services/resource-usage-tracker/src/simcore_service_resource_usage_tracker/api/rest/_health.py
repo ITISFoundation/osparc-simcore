@@ -7,7 +7,7 @@ from fastapi.responses import PlainTextResponse
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.rabbitmq import RabbitMQClient
 
-from ...modules.rabbitmq import get_rabbitmq_client_from_request
+from ...services.modules.rabbitmq import get_rabbitmq_client_from_request
 
 logger = logging.getLogger(__name__)
 
