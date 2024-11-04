@@ -6,7 +6,7 @@ import logging
 import re
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any, AsyncIterator
+from typing import Any
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions
 from aiohttp.client import ClientTimeout
@@ -43,7 +43,8 @@ async def _basic_auth_registry_request(
     app: FastAPI, path: str, method: str, **session_kwargs
 ) -> tuple[dict, dict]:
     if not config.REGISTRY_URL:
-        raise exceptions.DirectorException("URL to registry is not defined")
+        msg = "URL to registry is not defined"
+        raise exceptions.DirectorException(msg)
 
     url = URL(
         f"{'https' if config.REGISTRY_SSL else 'http'}://{config.REGISTRY_URL}{path}"
@@ -177,7 +178,7 @@ async def registry_request(
     )
 
 
-async def is_registry_responsive(app: FastAPI) -> bool:
+async def _is_registry_responsive(app: FastAPI) -> bool:
     path = "/v2/"
     try:
         await registry_request(
@@ -189,21 +190,31 @@ async def is_registry_responsive(app: FastAPI) -> bool:
         return False
 
 
-async def setup_registry(app: FastAPI) -> AsyncIterator[None]:
+async def _setup_registry(app: FastAPI) -> None:
     logger.debug("pinging registry...")
 
     @retry(
         wait=wait_fixed(2),
         before_sleep=before_sleep_log(logger, logging.WARNING),
-        retry=retry_if_result(lambda result: result == False),
+        retry=retry_if_result(lambda result: result is False),
         reraise=True,
     )
     async def wait_until_registry_responsive(app: FastAPI) -> bool:
-        return await is_registry_responsive(app)
+        return await _is_registry_responsive(app)
 
     await wait_until_registry_responsive(app)
     logger.info("Connected to docker registry")
-    yield
+
+
+def setup(app: FastAPI) -> None:
+    async def on_startup() -> None:
+        await _setup_registry(app)
+
+    async def on_shutdown() -> None:
+        ...
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
 
 
 async def _list_repositories(app: FastAPI) -> list[str]:

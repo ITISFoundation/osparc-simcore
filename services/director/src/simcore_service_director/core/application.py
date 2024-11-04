@@ -2,6 +2,7 @@ import logging
 from typing import Final
 
 from fastapi import FastAPI
+from servicelib.client_session import persistent_client_session
 from servicelib.fastapi.tracing import setup_tracing
 
 from .. import registry_cache_task
@@ -13,6 +14,8 @@ from .._meta import (
     APP_STARTED_BANNER_MSG,
 )
 from ..api.rest.routes import setup_api_routes
+from ..monitoring import setup_app_monitoring
+from ..registry_proxy import setup as setup_registry
 from .settings import ApplicationSettings
 
 _LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
@@ -50,7 +53,11 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     if app.state.settings.DIRECTOR_TRACING:
         setup_tracing(app, app.state.settings.DIRECTOR_TRACING, APP_NAME)
 
+    # replace by httpx client
+    app.cleanup_ctx.append(persistent_client_session)
+    setup_registry(app)
     registry_cache_task.setup(app)
+    setup_app_monitoring(app, "simcore_service_director")
 
     # ERROR HANDLERS
 
