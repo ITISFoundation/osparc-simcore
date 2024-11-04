@@ -21,7 +21,7 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
         base_url="http://director.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
-        assert isinstance(client._transport, ASGITransport)
+        assert isinstance(getattr(client, "_transport", None), ASGITransport)
         yield client
 
 
