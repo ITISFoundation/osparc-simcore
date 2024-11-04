@@ -4,7 +4,7 @@ from servicelib.fastapi.exceptions_utils import (
     http_exception_as_json_response,
 )
 
-from .._meta import API_VTAG
+from ..._meta import API_VTAG
 from . import _health, _running_interactive_services, _service_extras, _services
 
 
