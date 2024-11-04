@@ -84,6 +84,7 @@ def push_services(docker_registry, tmpdir):
         return list_of_pushed_images_tags
 
     yield build_push_images
+
     _logger.info("clean registry")
     _clean_registry(registry_url, list_of_pushed_images_tags)
     _clean_registry(registry_url, dependent_images)
@@ -185,7 +186,7 @@ def _clean_registry(registry_url, list_of_images):
         url = "http://{host}/v2/{name}/manifests/{tag}".format(
             host=registry_url, name=service_description["key"], tag=tag
         )
-        response = requests.get(url, headers=request_headers)
+        response = requests.get(url, headers=request_headers, timeout=10)
         docker_content_digest = response.headers["Docker-Content-Digest"]
         # remove the image from the registry
         url = "http://{host}/v2/{name}/manifests/{digest}".format(
@@ -193,7 +194,7 @@ def _clean_registry(registry_url, list_of_images):
             name=service_description["key"],
             digest=docker_content_digest,
         )
-        response = requests.delete(url, headers=request_headers)
+        response = requests.delete(url, headers=request_headers, timeout=5)
 
 
 async def _create_base_image(labels, tag):
@@ -223,7 +224,11 @@ def _create_service_description(service_type, name, tag):
         service_key_type = "comp"
     elif service_type == "dynamic":
         service_key_type = "dynamic"
-    service_desc["key"] = "simcore/services/" + service_key_type + "/" + name
+    else:
+        msg = f"Invalid {service_type=}"
+        raise ValueError(msg)
+
+    service_desc["key"] = f"simcore/services/{service_key_type}/{name}"
     service_desc["version"] = tag
     service_desc["type"] = service_type
 

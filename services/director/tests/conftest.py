@@ -13,6 +13,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director import config, resources
 
 pytest_plugins = [
+    "fixtures.fake_services",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
@@ -70,7 +71,7 @@ def configure_swarm_stack_name():
 
 
 @pytest.fixture
-def configure_registry_access(docker_registry: str):
+def configure_registry_access(docker_registry: str) -> None:
     config.REGISTRY_URL = docker_registry
     config.REGISTRY_PATH = docker_registry
     config.REGISTRY_SSL = False
@@ -78,7 +79,7 @@ def configure_registry_access(docker_registry: str):
 
 
 @pytest.fixture(scope="session")
-def configure_custom_registry(pytestconfig: pytest.Config):
+def configure_custom_registry(pytestconfig: pytest.Config) -> None:
     # to set these values call
     # pytest --registry_url myregistry --registry_user username --registry_pw password
     config.REGISTRY_URL = pytestconfig.getoption("registry_url")
