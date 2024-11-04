@@ -14,6 +14,7 @@ import arrow
 import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from models_library.api_schemas_webserver.folders_v2 import FolderGet
 from models_library.api_schemas_webserver.projects import ProjectGet, ProjectListItem
 from models_library.rest_pagination import Page
 from pytest_mock import MockerFixture
@@ -174,3 +175,41 @@ async def test_trash_projects(  # noqa: PLR0915
         await asyncio.sleep(0.1)
         mock_stop_pipeline.assert_awaited()
         mock_remove_dynamic_services.assert_awaited()
+
+
+@pytest.mark.acceptance_test(
+    "For https://github.com/ITISFoundation/osparc-simcore/pull/6642"
+)
+@pytest.mark.parametrize("is_project_running", [False, True])
+@pytest.mark.parametrize("force", [False, True])
+async def test_trash_folder(
+    client: TestClient, logged_user: UserInfoDict, is_project_running: bool, force: bool
+):
+    folder_id = ...
+
+    # LIST NOT trashed
+    resp = await client.get("/v0/folders")
+    await assert_status(resp, status.HTTP_200_OK)
+
+    page = Page[FolderGet].parse_obj(await resp.json())
+    assert page.meta.total == 1
+
+    got = page.data[0]
+    assert got.folder_id == folder_id
+    assert got.trashed_at is None
+
+    # LIST trashed
+    resp = await client.get("/v0/folders", params={"filters": '{"trashed": true}'})
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # TRASH
+    trashing_at = arrow.utcnow().datetime
+    resp = await client.post(
+        f"/v0/folders/{folder_id}:trash", params={"force": f"{force}"}
+    )
+    _, error = await assert_status(
+        resp,
+        status.HTTP_409_CONFLICT
+        if (is_project_running and not force)
+        else status.HTTP_204_NO_CONTENT,
+    )
