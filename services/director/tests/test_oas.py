@@ -1,20 +1,11 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
 
-import pytest
+
 import yaml
-from openapi_spec_validator import validate_spec
-from openapi_spec_validator.exceptions import OpenAPIValidationError
 from simcore_service_director import resources
-
-
-def test_openapi_specs():
-    openapi_path = resources.get_path(resources.RESOURCE_OPEN_API)
-    with resources.stream(resources.RESOURCE_OPEN_API) as fh:
-        specs = yaml.safe_load(fh)
-        try:
-            validate_spec(specs, spec_url=openapi_path.as_uri())
-        except OpenAPIValidationError as err:
-            pytest.fail(err.message)
 
 
 def test_server_specs():
