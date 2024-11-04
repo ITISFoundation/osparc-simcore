@@ -161,7 +161,7 @@ async def validate_requested_service(
             sa.select(services_consume_filetypes.c.is_guest_allowed)
             .where(
                 (services_consume_filetypes.c.service_key == service_key)
-                & (services_consume_filetypes.c.is_guest_allowed is True)
+                & (services_consume_filetypes.c.is_guest_allowed == sa.true())
             )
             .limit(1)
         )
