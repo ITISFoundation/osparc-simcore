@@ -4,8 +4,8 @@
 # pylint: disable=too-many-arguments
 
 import os
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator
 
 import pytest
 import simcore_service_director
@@ -19,6 +19,7 @@ from simcore_service_director.core.settings import ApplicationSettings
 
 pytest_plugins = [
     "fixtures.fake_services",
+    "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
