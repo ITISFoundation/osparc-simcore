@@ -1,14 +1,11 @@
 import prometheus_client
-from aiohttp import web
+from fastapi import FastAPI
 from prometheus_client import CONTENT_TYPE_LATEST
 from prometheus_client.registry import CollectorRegistry
-
-
-from servicelib.monitor_services import (  # pylint: disable=no-name-in-module
+from servicelib.monitor_services import (
     add_instrumentation as add_services_instrumentation,
 )
-
-from . import config
+from simcore_service_director.core.settings import ApplicationSettings
 
 kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
 
@@ -21,8 +18,9 @@ async def metrics_handler(request: web.Request):
     return resp
 
 
-def setup_app_monitoring(app: web.Application, app_name: str) -> None:
-    if not config.MONITORING_ENABLED:
+def setup_app_monitoring(app: FastAPI, app_name: str) -> None:
+    app_settings: ApplicationSettings = app.state.settings
+    if not app_settings.DIRECTOR_MONITORING_ENABLED:
         return
     # app-scope registry
     app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(auto_describe=True)
