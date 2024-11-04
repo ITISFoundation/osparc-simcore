@@ -6,8 +6,8 @@
 
 import json
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 import docker
 import pytest
@@ -158,7 +158,7 @@ async def test_find_service_tag():
     )
     assert latest_version == "2.11.0"
     # get a specific version
-    version = await producer._find_service_tag(list_of_images, my_service_key, "1.2.3")
+    await producer._find_service_tag(list_of_images, my_service_key, "1.2.3")
 
 
 async def test_start_stop_service(docker_network, run_services):

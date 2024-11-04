@@ -22,7 +22,7 @@ def client(
 
     registry_cache_task.setup(app)
 
-    yield loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
+    return loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
 
 
 async def test_registry_caching_task(client, push_services):

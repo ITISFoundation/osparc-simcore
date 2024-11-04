@@ -1,11 +1,11 @@
+# pylint: disable=bare-except
+# pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
-# pylint: disable=bare-except
-# pylint:disable=redefined-outer-name
 
-import pytest
 import json
 import logging
+
 from helpers import json_schema_validator
 
 log = logging.getLogger(__name__)

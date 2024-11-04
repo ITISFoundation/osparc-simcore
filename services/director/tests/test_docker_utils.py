@@ -4,6 +4,7 @@
 # pylint:disable=too-many-arguments
 # pylint: disable=not-async-context-manager
 from asyncio import sleep
+from collections.abc import Callable
 
 import pytest
 from aiodocker.exceptions import DockerError
@@ -37,31 +38,31 @@ async def test_docker_client():
         (docker_utils.swarm_has_worker_nodes),
     ],
 )
-async def test_swarm_method_with_no_swarm(fct):
+async def test_swarm_method_with_no_swarm(fct: Callable):
     # if this fails on your development machine run
     # `docker swarm leave --force` to leave the swarm
     with pytest.raises(DockerError):
         await fct()
 
 
-async def test_swarm_get_number_nodes(docker_swarm):
+async def test_swarm_get_number_nodes(docker_swarm: None):
     num_nodes = await docker_utils.swarm_get_number_nodes()
     assert num_nodes == 1
 
 
-async def test_swarm_has_manager_nodes(docker_swarm):
-    assert (await docker_utils.swarm_has_manager_nodes()) == True
+async def test_swarm_has_manager_nodes(docker_swarm: None):
+    assert (await docker_utils.swarm_has_manager_nodes()) is True
 
 
-async def test_swarm_has_worker_nodes(docker_swarm):
-    assert (await docker_utils.swarm_has_worker_nodes()) == False
+async def test_swarm_has_worker_nodes(docker_swarm: None):
+    assert (await docker_utils.swarm_has_worker_nodes()) is False
 
 
 async def test_push_services(
-    push_services,
-    configure_registry_access,
-    configure_schemas_location,
+    push_services: Callable,
+    configure_registry_access: None,
+    configure_schemas_location: None,
 ):
-    images = await push_services(
+    await push_services(
         number_of_computational_services=3, number_of_interactive_services=3
     )
