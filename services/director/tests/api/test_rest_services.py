@@ -3,14 +3,12 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import json
 from urllib.parse import quote
 
 import httpx
 from fastapi import status
 from fixtures.fake_services import ServiceInRegistryInfoDict
-from helpers import json_schema_validator
-from simcore_service_director import resources
+from models_library.api_schemas_director.services import ServiceDataGet
 
 
 def _assert_response_and_unwrap_envelope(got: httpx.Response):
@@ -35,20 +33,12 @@ def _assert_services(
         for s in expected
     ]
 
-    # TODO: check these are correct!
-    json_schema_path = resources.get_path(resources.RESOURCE_NODE_SCHEMA)
-    assert json_schema_path.exists() is True
-    with json_schema_path.open() as file_pt:
-        service_schema = json.load(file_pt)
-
-    for service in got:
-        service.pop("image_digest", None)
-        if schema_version == "v1":
-            assert (
-                expected_key_version_tuples.count((service["key"], service["version"]))
-                == 1
-            )
-        json_schema_validator.validate_instance_object(service, service_schema)
+    for data in got:
+        service = ServiceDataGet.parse_obj(data)
+        assert (
+            expected_key_version_tuples.count((f"{service.key}", f"{service.version}"))
+            == 1
+        )
 
 
 async def test_list_services_with_empty_registry(
@@ -60,7 +50,7 @@ async def test_list_services_with_empty_registry(
 
     # empty case
     resp = await client.get(f"/{api_version_prefix}/services")
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
     services, error = _assert_response_and_unwrap_envelope(resp.json())
     assert not error
@@ -78,7 +68,7 @@ async def test_list_services(
     assert docker_registry, "docker-registry is not ready?"
 
     resp = await client.get(f"/{api_version_prefix}/services")
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
     services, error = _assert_response_and_unwrap_envelope(resp.json())
     assert not error
@@ -97,7 +87,7 @@ async def test_get_service_bad_request(
     assert len(created_services) > 0
 
     resp = await client.get(f"/{api_version_prefix}/services?service_type=blahblah")
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST, f"Got f{resp.text}"
 
     services, error = _assert_response_and_unwrap_envelope(resp.json())
     assert not services
@@ -116,7 +106,7 @@ async def test_list_services_by_service_type(
     resp = await client.get(
         f"/{api_version_prefix}/services?service_type=computational"
     )
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
     services, error = _assert_response_and_unwrap_envelope(resp.json())
     assert not error
@@ -124,7 +114,7 @@ async def test_list_services_by_service_type(
     assert len(services) == 3
 
     resp = await client.get(f"/{api_version_prefix}/services?service_type=interactive")
-    assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
     services, error = _assert_response_and_unwrap_envelope(resp.json())
     assert not error
@@ -136,17 +126,17 @@ async def test_get_services_by_key_and_version_with_empty_registry(
     client: httpx.AsyncClient, api_version_prefix: str
 ):
     resp = await client.get(f"/{api_version_prefix}/services/whatever/someversion")
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST, f"Got f{resp.text}"
 
     resp = await client.get(
         f"/{api_version_prefix}/services/simcore/services/dynamic/something/someversion"
     )
-    assert resp.status_code == status.HTTP_404_NOT_FOUND
+    assert resp.status_code == status.HTTP_404_NOT_FOUND, f"Got f{resp.text}"
 
     resp = await client.get(
         f"/{api_version_prefix}/services/simcore/services/dynamic/something/1.5.2"
     )
-    assert resp.status_code == status.HTTP_404_NOT_FOUND
+    assert resp.status_code == status.HTTP_404_NOT_FOUND, f"Got f{resp.text}"
 
 
 async def test_get_services_by_key_and_version(
