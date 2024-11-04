@@ -25,15 +25,34 @@ class PeriodicTaskCancellationError(PydanticErrorMixin, Exception):
     msg_template: str = "Could not cancel task '{task_name}'"
 
 
+class SleepUsingAsyncioEvent:
+    """Sleep strategy that waits on an event to be set."""
+
+    def __init__(self, event: "asyncio.Event") -> None:
+        self.event = event
+
+    async def __call__(self, timeout: float | None) -> None:
+        with contextlib.suppress(TimeoutError):
+            await asyncio.wait_for(self.event.wait(), timeout=timeout)
+            self.event.clear()
+
+
 async def _periodic_scheduled_task(
     task: Callable[..., Awaitable[None]],
     *,
     interval: datetime.timedelta,
     task_name: str,
+    early_wake_up_event: asyncio.Event | None,
     **task_kwargs,
 ) -> None:
     # NOTE: This retries forever unless cancelled
-    async for attempt in AsyncRetrying(wait=wait_fixed(interval.total_seconds())):
+    nap = asyncio.sleep
+    if early_wake_up_event is not None:
+        nap = SleepUsingAsyncioEvent(early_wake_up_event)
+    async for attempt in AsyncRetrying(
+        sleep=nap,
+        wait=wait_fixed(interval.total_seconds()),
+    ):
         with attempt:
             with log_context(
                 _logger,
@@ -51,6 +70,7 @@ def start_periodic_task(
     interval: datetime.timedelta,
     task_name: str,
     wait_before_running: datetime.timedelta = datetime.timedelta(0),
+    early_wake_up_event: asyncio.Event | None = None,
     **kwargs,
 ) -> asyncio.Task:
     with log_context(
@@ -64,6 +84,7 @@ def start_periodic_task(
                 task,
                 interval=interval,
                 task_name=task_name,
+                early_wake_up_event=early_wake_up_event,
                 **kwargs,
             ),
             name=task_name,
