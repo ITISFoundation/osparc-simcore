@@ -17,8 +17,8 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
-    "pytest_simcore.fakers_projects_data",
-    "pytest_simcore.fakers_users_data",
+    "pytest_simcore.faker_projects_data",
+    "pytest_simcore.faker_users_data",
     "pytest_simcore.repository_paths",
 ]
 
