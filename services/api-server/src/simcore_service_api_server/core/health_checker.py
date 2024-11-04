@@ -69,7 +69,9 @@ class ApiServerHealthChecker:
 
     @property
     def healthy(self) -> bool:
-        return self._health_check_failure_count <= self._allowed_health_check_failures
+        return self._rabbit_client.healthy and (
+            self._health_check_failure_count <= self._allowed_health_check_failures
+        )
 
     @property
     def health_check_failure_count(self) -> NonNegativeInt:
