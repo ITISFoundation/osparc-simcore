@@ -46,9 +46,11 @@ async def _periodic_scheduled_task(
     **task_kwargs,
 ) -> None:
     # NOTE: This retries forever unless cancelled
-    nap = asyncio.sleep
-    if early_wake_up_event is not None:
-        nap = SleepUsingAsyncioEvent(early_wake_up_event)
+    nap = (
+        asyncio.sleep
+        if early_wake_up_event is None
+        else SleepUsingAsyncioEvent(early_wake_up_event)
+    )
     async for attempt in AsyncRetrying(
         sleep=nap,
         wait=wait_fixed(interval.total_seconds()),
