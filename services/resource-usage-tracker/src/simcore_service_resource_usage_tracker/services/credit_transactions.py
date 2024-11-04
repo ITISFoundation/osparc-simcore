@@ -15,10 +15,10 @@ from models_library.wallets import WalletID
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..api.rest.dependencies import get_repository
-from ..models.resource_tracker_credit_transactions import CreditTransactionCreate
-from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
-from ..modules.rabbitmq import get_rabbitmq_client_from_request
-from ..resource_tracker_utils import sum_credit_transactions_and_publish_to_rabbitmq
+from ..models.credit_transactions import CreditTransactionCreate
+from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from .modules.rabbitmq import get_rabbitmq_client_from_request
+from .utils import sum_credit_transactions_and_publish_to_rabbitmq
 
 
 async def create_credit_transaction(
