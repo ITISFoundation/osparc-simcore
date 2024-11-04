@@ -82,7 +82,8 @@ qx.Class.define("osparc.notification.NotificationsButton", {
     },
 
     __updateButton: function() {
-      const notifications = osparc.notification.Notifications.getInstance().getNotifications();
+      const notificationManager = osparc.notification.Notifications.getInstance();
+      const notifications = notificationManager.getNotifications();
       notifications.forEach(notification => notification.addListener("changeRead", () => this.__updateButton(), this));
 
       const nUnreadNotifications = notifications.filter(notification => notification.getRead() === false).length;
@@ -116,6 +117,10 @@ qx.Class.define("osparc.notification.NotificationsButton", {
 
       // Show the container
       this.__notificationsContainer.show();
+
+      // mark all notifications as read
+      const notificationManager = osparc.notification.Notifications.getInstance();
+      notificationManager.markAllAsRead();
 
       // Add listener for taps outside the container to hide it
       document.addEventListener("mousedown", this.__onTapOutside.bind(this), true);

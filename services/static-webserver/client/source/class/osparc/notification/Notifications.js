@@ -188,6 +188,14 @@ qx.Class.define("osparc.notification.Notifications", {
 
     getNotifications: function() {
       return this.__notifications;
-    }
+    },
+
+    markAllAsRead: function() {
+      this.__notifications.forEach(notification => {
+        if (notification.isRead() === false) {
+          osparc.notification.Notifications.markAsRead(notification);
+        }
+      });
+    },
   }
 });
