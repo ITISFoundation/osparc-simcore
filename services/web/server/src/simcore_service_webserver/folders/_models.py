@@ -44,7 +44,7 @@ class FolderListWithJsonStrQueryParams(PageQueryParameters):
 
     @validator("order_by", check_fields=False)
     @classmethod
-    def validate_order_by_field(cls, v):
+    def _validate_order_by_field(cls, v):
         if v.field not in {
             "modified_at",
             "name",
