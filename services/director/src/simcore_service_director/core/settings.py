@@ -1,3 +1,6 @@
+import datetime
+import warnings
+
 from models_library.basic_types import (
     BootModeEnum,
     BuildTargetEnum,
@@ -5,13 +8,16 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from pydantic import Field, PositiveInt
+from pydantic import AnyUrl, ByteSize, Field, PositiveInt, parse_obj_as, validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
+from settings_library.docker_registry import RegistrySettings
+from settings_library.postgres import PostgresSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
+from ..constants import API_ROOT
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -64,3 +70,108 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_TRACING: TracingSettings | None = Field(
         auto_default_from_env=True, description="settings for opentelemetry tracing"
     )
+
+    # migrated settings
+    DIRECTOR_DEFAULT_MAX_NANO_CPUS: int = Field(
+        default=1 * pow(10, 9),
+        env=["DIRECTOR_DEFAULT_MAX_NANO_CPUS", "DEFAULT_MAX_NANO_CPUS"],
+    )
+    DIRECTOR_DEFAULT_MAX_MEMORY: int = Field(
+        default=parse_obj_as(ByteSize, "2GiB"),
+        env=["DIRECTOR_DEFAULT_MAX_MEMORY", "DEFAULT_MAX_MEMORY"],
+    )
+    DIRECTOR_REGISTRY_CACHING: bool = Field(
+        default=True, description="cache the docker registry internally"
+    )
+    DIRECTOR_REGISTRY_CACHING_TTL: datetime.timedelta = Field(
+        default=datetime.timedelta(minutes=15),
+        description="cache time to live value (defaults to 15 minutes)",
+    )
+    DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: str = ""
+
+    DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[
+        str, str
+    ] = Field(default_factory=dict)
+    DIRECTOR_SELF_SIGNED_SSL_SECRET_ID: str = ""
+    DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME: str = ""
+    DIRECTOR_SELF_SIGNED_SSL_FILENAME: str = ""
+
+    DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS: int = 10
+    DIRECTOR_SERVICES_RESTART_POLICY_DELAY_S: int = 12
+
+    DIRECTOR_TRAEFIK_SIMCORE_ZONE: str = Field(
+        default="internal_simcore_stack",
+        env=["DIRECTOR_TRAEFIK_SIMCORE_ZONE", "TRAEFIK_SIMCORE_ZONE"],
+    )
+
+    DIRECTOR_REGISTRY: RegistrySettings = Field(
+        auto_default_from_env=True,
+        description="settings for the private registry deployed with the platform",
+    )
+
+    DIRECTOR_EXTRA_HOSTS_SUFFIX: str = Field(
+        default="undefined", env=["DIRECTOR_EXTRA_HOSTS_SUFFIX", "EXTRA_HOSTS_SUFFIX"]
+    )
+
+    DIRECTOR_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
+    STORAGE_ENDPOINT: AnyUrl = Field(...)
+
+    # TODO: this needs some code changes
+    # SERVICES_DEFAULT_ENVS: dict[str, str] = {
+    #     "POSTGRES_ENDPOINT": os.environ.get(
+    #         "POSTGRES_ENDPOINT", "undefined postgres endpoint"
+    #     ),
+    #     "POSTGRES_USER": os.environ.get("POSTGRES_USER", "undefined postgres user"),
+    #     "POSTGRES_PASSWORD": os.environ.get(
+    #         "POSTGRES_PASSWORD", "undefined postgres password"
+    #     ),
+    #     "POSTGRES_DB": os.environ.get("POSTGRES_DB", "undefined postgres db"),
+    #     "STORAGE_ENDPOINT": os.environ.get(
+    #         "STORAGE_ENDPOINT", "undefined storage endpoint"
+    #     ),
+    # }
+
+    DIRECTOR_PUBLISHED_HOST_NAME: str = Field(
+        default="", env=["DIRECTOR_PUBLISHED_HOST_NAME", "PUBLISHED_HOST_NAME"]
+    )
+
+    DIRECTOR_SWARM_STACK_NAME: str = Field(
+        default="undefined-please-check",
+        env=["DIRECTOR_SWARM_STACK_NAME", "SWARM_STACK_NAME"],
+    )
+
+    # used when in devel mode vs release mode
+    DIRECTOR_NODE_SCHEMA_LOCATION: str = Field(
+        default=f"{API_ROOT}/{API_VERSION}/schemas/node-meta-v0.0.1.json",
+        env=["DIRECTOR_NODE_SCHEMA_LOCATION", "NODE_SCHEMA_LOCATION"],
+    )
+    # used to find the right network name
+    DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME: str | None = Field(
+        default=None,
+        env=["DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME", "SIMCORE_SERVICES_NETWORK_NAME"],
+    )
+    # useful when developing with an alternative registry namespace
+    DIRECTOR_SIMCORE_SERVICES_PREFIX: str = Field(
+        default="simcore/services",
+        env=["DIRECTOR_SIMCORE_SERVICES_PREFIX", "SIMCORE_SERVICES_PREFIX"],
+    )
+
+    DIRECTOR_MONITORING_ENABLED: bool = Field(
+        default=False, env=["DIRECTOR_MONITORING_ENABLED", "MONITORING_ENABLED"]
+    )
+
+    @validator("DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
+    @classmethod
+    def _validate_substitutions(cls, v):
+        if v:
+            warnings.warn(  # noqa: B028
+                "Generic resources will be replaced by the following "
+                f"placement constraints {v}. This is a workaround "
+                "for https://github.com/moby/swarmkit/pull/3162",
+                UserWarning,
+            )
+        if len(v) != len(set(v.values())):
+            msg = f"Dictionary values must be unique, provided: {v}"
+            raise ValueError(msg)
+
+        return v
