@@ -626,17 +626,11 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getUser: function(uid) {
-      return new Promise(resolve => {
-        if (uid) {
-          this.getReachableMembers()
-            .then(visibleMembers => {
-              resolve(Object.values(visibleMembers).find(member => member.id === uid));
-            })
-            .catch(() => resolve(null));
-        } else {
-          resolve(null);
-        }
-      });
+      if (uid) {
+        const visibleMembers = this.getReachableMembers();
+        return Object.values(visibleMembers).find(member => member.id === uid);
+      }
+      return null;
     },
 
     reloadCreditPrice: function() {

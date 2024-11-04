@@ -92,16 +92,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     __tabButtons: null,
 
     populateLayout: function() {
-      return new Promise(resolve => {
-        osparc.data.Resources.get("notifications")
-          .then(notifications => {
-            osparc.notification.Notifications.getInstance().addNotifications(notifications);
-            this.__buildLayout();
-            osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
-            resolve();
-          })
-          .catch(err => console.error(err));
-      });
+      this.__buildLayout();
+      osparc.WindowSizeTracker.getInstance().addListener("changeCompactVersion", () => this.__navBarResized(), this);
     },
 
     __buildLayout: function() {

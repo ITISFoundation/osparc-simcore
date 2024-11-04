@@ -115,6 +115,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
           // "Starting..." page
           this._hideLoadingPage();
+
+          osparc.data.Resources.get("notifications")
+            .then(notifications => {
+              osparc.notification.Notifications.getInstance().addNotifications(notifications);
+            });
         })
         .catch(err => {
           console.error(err);
