@@ -73,11 +73,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # migrated settings
-    DIRECTOR_DEFAULT_MAX_NANO_CPUS: int = Field(
+    DIRECTOR_DEFAULT_MAX_NANO_CPUS: PositiveInt = Field(
         default=1 * pow(10, 9),
         env=["DIRECTOR_DEFAULT_MAX_NANO_CPUS", "DEFAULT_MAX_NANO_CPUS"],
     )
-    DIRECTOR_DEFAULT_MAX_MEMORY: int = Field(
+    DIRECTOR_DEFAULT_MAX_MEMORY: PositiveInt = Field(
         default=parse_obj_as(ByteSize, "2GiB"),
         env=["DIRECTOR_DEFAULT_MAX_MEMORY", "DEFAULT_MAX_MEMORY"],
     )
