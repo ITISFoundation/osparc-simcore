@@ -50,6 +50,7 @@ services:
   director:
     environment:
       <<: *common_environment
+      DIRECTOR_REMOTE_DEBUGGING_PORT : 3000
     ports:
       - "8080"
       - "3004:3000"
