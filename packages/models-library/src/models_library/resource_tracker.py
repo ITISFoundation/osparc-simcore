@@ -259,7 +259,7 @@ class PricingUnitWithCostUpdate(BaseModel):
     unit_extra_info: UnitExtraInfo
     default: bool
     specific_info: SpecificInfo
-    pricing_unit_cost_update: None | PricingUnitCostUpdate = Field(default=None)
+    pricing_unit_cost_update: PricingUnitCostUpdate | None
 
     model_config = ConfigDict(
         json_schema_extra={
