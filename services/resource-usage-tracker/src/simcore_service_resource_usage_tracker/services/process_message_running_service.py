@@ -22,19 +22,19 @@ from models_library.resource_tracker import (
 from models_library.services import ServiceType
 from pydantic import parse_raw_as
 
-from .models.resource_tracker_credit_transactions import (
+from ..models.credit_transactions import (
     CreditTransactionCreate,
     CreditTransactionCreditsAndStatusUpdate,
     CreditTransactionCreditsUpdate,
 )
-from .models.resource_tracker_service_runs import (
+from ..models.service_runs import (
     ServiceRunCreate,
     ServiceRunLastHeartbeatUpdate,
     ServiceRunStoppedAtUpdate,
 )
 from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 from .modules.rabbitmq import RabbitMQClient, get_rabbitmq_client
-from .resource_tracker_utils import (
+from .utils import (
     compute_service_run_credit_costs,
     make_negative,
     publish_to_rabbitmq_wallet_credits_limit_reached,
