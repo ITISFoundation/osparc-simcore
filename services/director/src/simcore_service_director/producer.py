@@ -7,7 +7,7 @@ from datetime import timedelta
 from enum import Enum
 from http import HTTPStatus
 from pprint import pformat
-from typing import Final
+from typing import Any, Final
 
 import aiodocker
 import aiodocker.networks
@@ -187,7 +187,7 @@ async def _create_docker_service_params(
         "POSTGRES_DB": app_settings.DIRECTOR_POSTGRES.POSTGRES_DB,
         "STORAGE_ENDPOINT": app_settings.STORAGE_ENDPOINT,
     }
-    container_spec = {
+    container_spec: dict[str, Any] = {
         "Image": f"{app_settings.DIRECTOR_REGISTRY.resolved_registry_url}/{service_key}:{service_tag}",
         "Env": {
             **service_default_envs,
@@ -241,7 +241,7 @@ async def _create_docker_service_params(
         ]
 
     # SEE https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
-    docker_params = {
+    docker_params: dict[str, Any] = {
         "auth": (
             await _create_auth(app_settings.DIRECTOR_REGISTRY)
             if app_settings.DIRECTOR_REGISTRY.REGISTRY_AUTH
