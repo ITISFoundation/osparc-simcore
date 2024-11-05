@@ -68,6 +68,8 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "window-caption-background-active":  "background-main-3",
     "window-caption-text": "text",
     "window-caption-text-active": "c12",
+    "window-border":  "background-main-2",
+    "window-border-inner":  "background-main-1",
 
     // material-button
     "material-button-background": "fab-background",
@@ -110,10 +112,6 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "button-box":  "background-main-3",
     "button-box-pressed":  "background-main-4",
     "border-lead": "c07",
-
-    // window
-    "window-border":  "background-main-2",
-    "window-border-inner":  "background-main-1",
 
     // group box
     "white-box-border":  "background-main-2",
