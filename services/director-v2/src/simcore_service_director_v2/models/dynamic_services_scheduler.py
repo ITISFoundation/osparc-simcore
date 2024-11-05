@@ -127,8 +127,8 @@ class DockerContainerInspect(BaseModel):
 
     @cached_property
     def status(self) -> DockerStatus:
-        assert self.container_state.Status  # nosec
-        result: DockerStatus = self.container_state.Status
+        assert self.container_state.status  # nosec
+        result: DockerStatus = self.container_state.status
         return result
 
     @classmethod
@@ -198,7 +198,7 @@ class DynamicSidecar(BaseModel):
 
     is_ready: bool = Field(
         default=False,
-        scription=(
+        description=(
             "is True while the health check on the dynamic-sidecar is responding. "
             "Meaning that the dynamic-sidecar is reachable and can accept requests"
         ),
@@ -220,7 +220,7 @@ class DynamicSidecar(BaseModel):
 
     containers_inspect: list[DockerContainerInspect] = Field(
         [],
-        scription="docker inspect results from all the container ran at regular intervals",
+        description="docker inspect results from all the container ran at regular intervals",
     )
 
     was_dynamic_sidecar_started: bool = False

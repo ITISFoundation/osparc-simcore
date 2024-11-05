@@ -1,6 +1,6 @@
 from aiodocker.exceptions import DockerError
+from common_library.errors_classes import OsparcErrorMixin
 from models_library.projects_nodes_io import NodeID
-from pydantic.errors import PydanticErrorMixin
 
 from ...core.errors import DirectorError
 
@@ -39,6 +39,6 @@ class LegacyServiceIsNotSupportedError(DirectorError):
     """This API is not implemented by the director-v0"""
 
 
-class UnexpectedContainerStatusError(PydanticErrorMixin, DynamicSidecarError):
+class UnexpectedContainerStatusError(OsparcErrorMixin, DynamicSidecarError):
     code = "dynamic_sidecar.container_status"
     msg_template = "Unexpected status from containers: {containers_with_error}"
