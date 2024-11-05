@@ -63,15 +63,16 @@ def _handle_groups_exceptions(handler: Handler):
             ) from exc
 
         except GroupNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"Group {exc.gid} not found") from exc
+            gid = getattr(exc, "gid", "")
+            raise web.HTTPNotFound(reason=f"Group {gid} not found") from exc
 
         except UserInGroupNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"User not found in group {exc.gid}") from exc
+            gid = getattr(exc, "gid", "")
+            raise web.HTTPNotFound(reason=f"User not found in group {gid}") from exc
 
         except UserAlreadyInGroupError as exc:
-            raise web.HTTPConflict(
-                reason=f"User is already in group {exc.gid}"
-            ) from exc
+            gid = getattr(exc, "gid", "")
+            raise web.HTTPConflict(reason=f"User is already in group {gid}") from exc
 
         except UserInsufficientRightsError as exc:
             raise web.HTTPForbidden from exc

@@ -55,7 +55,7 @@ async def _get_user_group(
     )
     group = await result.fetchone()
     if not group:
-        raise GroupNotFoundError(gid)
+        raise GroupNotFoundError(gid=gid)
     assert isinstance(group, RowProxy)  # nosec
     return group
 
@@ -317,7 +317,7 @@ async def add_new_user_in_group(
     )
     if not users_count:
         assert new_user_id is not None  # nosec
-        raise UserInGroupNotFoundError(new_user_id, gid)
+        raise UserInGroupNotFoundError(uid=new_user_id, gid=gid)
 
     # add the new user to the group now
     user_access_rights = _DEFAULT_GROUP_READ_ACCESS_RIGHTS
@@ -348,7 +348,7 @@ async def _get_user_in_group_permissions(
     )
     the_user: RowProxy | None = await result.fetchone()
     if not the_user:
-        raise UserInGroupNotFoundError(the_user_id_in_group, gid)
+        raise UserInGroupNotFoundError(uid=the_user_id_in_group, gid=gid)
     return the_user
 
 

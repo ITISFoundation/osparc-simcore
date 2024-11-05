@@ -4,7 +4,7 @@ from ..errors import WebServerBaseError
 
 
 class GroupsError(WebServerBaseError):
-    msg_template = "Groups plugin errored {msg}"
+    msg_template = "Groups plugin errored: {msg}"
 
 
 class GroupNotFoundError(GroupsError):
@@ -12,7 +12,9 @@ class GroupNotFoundError(GroupsError):
 
 
 class UserInsufficientRightsError(GroupsError):
-    ...
+    msg = (
+        "User {user_id} has insufficient rights for {permission} access to group {gid}"
+    )
 
 
 class UserInGroupNotFoundError(GroupsError):
