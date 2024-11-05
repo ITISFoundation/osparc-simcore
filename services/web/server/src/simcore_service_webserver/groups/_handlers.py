@@ -57,7 +57,9 @@ def _handle_groups_exceptions(handler: Handler):
             return await handler(request)
 
         except UserNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"User {exc.uid} not found") from exc
+            raise web.HTTPNotFound(
+                reason=f"User {exc.uid or exc.email} not found"
+            ) from exc
 
         except GroupNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"Group {exc.gid} not found") from exc
