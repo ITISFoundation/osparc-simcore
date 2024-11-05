@@ -9,6 +9,7 @@ from models_library.basic_types import LogLevel
 from models_library.services_resources import ResourcesDict, ResourceValue
 from pydantic import AliasChoices, ByteSize, Field, PositiveInt, TypeAdapter
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
+from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
