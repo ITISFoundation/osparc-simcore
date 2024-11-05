@@ -102,6 +102,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           label: option.label,
           icon: option.icon,
         });
+        osparc.utils.Utils.setIdToWidget(button, this.__resourceType + "-sharedWithFilterItem");
         if (this.__resourceType === "study") {
           if (option.id === "show-all") {
             button.set({
@@ -220,6 +221,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         const iconSize = 20;
         const button = new qx.ui.toolbar.RadioButton(serviceType.label, serviceType.icon+iconSize);
         button.id = serviceId;
+        osparc.utils.Utils.setIdToWidget(button, this.__resourceType + "-serviceTypeFilterItem");
         button.set({
           appearance: "filter-toggle-button",
           value: false
