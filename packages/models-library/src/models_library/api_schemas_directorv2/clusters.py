@@ -176,7 +176,7 @@ class ClusterPatch(BaseCluster):
     endpoint: AnyUrl | None = None  # type: ignore[assignment]
     authentication: ExternalClusterAuthentication | None = None  # type: ignore[assignment]
     access_rights: dict[GroupID, ClusterAccessRights] | None = Field(  # type: ignore[assignment]
-        None, alias="accessRights"
+        default=None, alias="accessRights"
     )
 
     model_config = ConfigDict(
