@@ -7,6 +7,7 @@ from http import HTTPStatus
 from pprint import pformat
 from typing import Any, Final
 
+from aiocache import Cache, SimpleMemoryCache
 from aiohttp import BasicAuth, ClientSession, client_exceptions
 from aiohttp.client import ClientTimeout
 from fastapi import FastAPI
@@ -18,7 +19,6 @@ from tenacity.wait import wait_fixed
 from yarl import URL
 
 from . import exceptions
-from .cache_request_decorator import cache_requests
 from .client_session import get_client_session
 from .constants import (
     DIRECTOR_SIMCORE_SERVICES_PREFIX,
@@ -202,9 +202,24 @@ async def registry_request(
     logger.debug(
         "Request to registry: path=%s, method=%s. no_cache=%s", path, method, no_cache
     )
-    return await cache_requests(_basic_auth_registry_request, no_cache=no_cache)(
+    cache: SimpleMemoryCache = app.state.registry_cache_memory
+    cache_key = f"{method}_{path}"
+    if not no_cache and (cached_response := await cache.get(cache_key)):
+        return cached_response
+
+    app_settings = get_application_settings(app)
+    response, response_headers = await _basic_auth_registry_request(
         app, path, method, **session_kwargs
     )
+
+    if not no_cache and app_settings.DIRECTOR_REGISTRY_CACHING and method == "GET":
+        await cache.set(
+            cache_key,
+            (response, response_headers),
+            ttl=app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds(),
+        )
+
+    return response, response_headers
 
 
 async def _is_registry_responsive(app: FastAPI) -> bool:
@@ -237,6 +252,9 @@ async def _setup_registry(app: FastAPI) -> None:
 
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
+        cache = Cache(Cache.MEMORY)
+        assert isinstance(cache, SimpleMemoryCache)  # nosec
+        app.state.registry_cache_memory = cache
         await _setup_registry(app)
 
     async def on_shutdown() -> None:

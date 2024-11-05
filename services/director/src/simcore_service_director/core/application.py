@@ -4,7 +4,6 @@ from typing import Final
 from fastapi import FastAPI
 from servicelib.fastapi.tracing import setup_tracing
 
-from .. import registry_cache_task
 from .._meta import (
     API_VERSION,
     API_VTAG,
@@ -55,7 +54,6 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # replace by httpx client
     setup_client_session(app)
-    registry_cache_task.setup(app)
     setup_registry(app)
 
     setup_instrumentation(app)
