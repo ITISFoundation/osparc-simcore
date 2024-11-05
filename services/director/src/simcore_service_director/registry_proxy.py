@@ -1,4 +1,3 @@
-import asyncio
 import enum
 import json
 import logging
@@ -6,11 +5,12 @@ import re
 from collections.abc import Mapping
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions
 from aiohttp.client import ClientTimeout
 from fastapi import FastAPI
+from servicelib.utils import limited_gather
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
@@ -31,7 +31,7 @@ DEPENDENCIES_LABEL_KEY: str = "simcore.service.dependencies"
 
 NUMBER_OF_RETRIEVED_REPOS: int = 50
 NUMBER_OF_RETRIEVED_TAGS: int = 50
-
+_MAX_CONCURRENT_CALLS: Final[int] = 50
 VERSION_REG = re.compile(
     r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
 )
@@ -318,7 +318,9 @@ async def get_image_labels(
     return (labels, manifest_digest)
 
 
-async def get_image_details(app: FastAPI, image_key: str, image_tag: str) -> dict:
+async def get_image_details(
+    app: FastAPI, image_key: str, image_tag: str
+) -> dict[str, Any]:
     image_details: dict = {}
     labels, image_manifest_digest = await get_image_labels(app, image_key, image_tag)
 
@@ -348,15 +350,16 @@ async def get_image_details(app: FastAPI, image_key: str, image_tag: str) -> dic
     return image_details
 
 
-async def get_repo_details(app: FastAPI, image_key: str) -> list[dict]:
-    repo_details = []
+async def get_repo_details(app: FastAPI, image_key: str) -> list[dict[str, Any]]:
+
     image_tags = await list_image_tags(app, image_key)
-    tasks = [get_image_details(app, image_key, tag) for tag in image_tags]
-    results = await asyncio.gather(*tasks)
-    for image_details in results:
-        if image_details:
-            repo_details.append(image_details)
-    return repo_details
+    results = await limited_gather(
+        *[get_image_details(app, image_key, tag) for tag in image_tags],
+        reraise=False,
+        log=logger,
+        limit=_MAX_CONCURRENT_CALLS,
+    )
+    return [result for result in results if not isinstance(result, BaseException)]
 
 
 async def list_services(app: FastAPI, service_type: ServiceType) -> list[dict]:
@@ -372,15 +375,19 @@ async def list_services(app: FastAPI, service_type: ServiceType) -> list[dict]:
     logger.debug("retrieved list of repos : %s", repos)
 
     # only list as service if it actually contains the necessary labels
-    tasks = [get_repo_details(app, repo) for repo in repos]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    services = []
-    for repo_details in results:
-        if repo_details and isinstance(repo_details, list):
-            services.extend(repo_details)
-        elif isinstance(repo_details, Exception):
-            logger.error("Exception occured while listing services %s", repo_details)
-    return services
+    results = await limited_gather(
+        *[get_repo_details(app, repo) for repo in repos],
+        reraise=False,
+        log=logger,
+        limit=_MAX_CONCURRENT_CALLS,
+    )
+
+    return [
+        service
+        for repo_details in results
+        if isinstance(repo_details, list)
+        for service in repo_details
+    ]
 
 
 async def list_interactive_service_dependencies(
