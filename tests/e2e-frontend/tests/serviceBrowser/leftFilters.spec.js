@@ -38,27 +38,27 @@ test.describe.serial(`Left Filters:`, () => {
   });
 
   test(`Filters`, async () => {
-    const sharedWithFilters = page.getByTestId("service-sharedWithFilterItem");
-    await expect(sharedWithFilters.first()).toBeVisible({
+    const sharedWithButtons = page.getByTestId("service-sharedWithFilterItem");
+    await expect(sharedWithButtons.first()).toBeVisible({
       timeout: 30000 // it will take some time to load the Study Browser
     });
 
-    const countSharedWith = await sharedWithFilters.count();
+    const countSharedWithButtons = await sharedWithButtons.count();
     // All Services
     // My Services
     // Shared with Me
     // Shared with Everyone
-    expect(countSharedWith === 4).toBeTruthy();
+    expect(countSharedWithButtons === 4).toBeTruthy();
 
 
-    const serviceTypeFilters = page.getByTestId("service-serviceTypeFilterItem");
-    await expect(serviceTypeFilters.first()).toBeVisible({
+    const serviceTypeButtons = page.getByTestId("service-serviceTypeFilterItem");
+    await expect(serviceTypeButtons.first()).toBeVisible({
       timeout: 30000 // it will take some time to load the Study Browser
     });
 
-    const countServiceType = await serviceTypeFilters.count();
+    const countServiceTypeButtons = await serviceTypeButtons.count();
     // Computational
     // Interactive
-    expect(countServiceType === 2).toBeTruthy();
+    expect(countServiceTypeButtons === 2).toBeTruthy();
   });
 });

@@ -77,8 +77,8 @@ for (const product in products) {
             timeout: 30000
           });
 
-          const serviceItems = servicesList.locator(':scope > *');
-          const count = await serviceItems.count();
+          const serviceCards = servicesList.locator(':scope > *');
+          const count = await serviceCards.count();
           console.log("N Services listed", count);
           expect(count > 0);
         });
