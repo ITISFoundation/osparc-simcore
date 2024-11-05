@@ -10,7 +10,7 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from pydantic import AnyUrl, ByteSize, Field, PositiveInt, parse_obj_as, validator
+from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -116,7 +116,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     DIRECTOR_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
-    STORAGE_ENDPOINT: AnyUrl = Field(...)
+    STORAGE_ENDPOINT: str = Field(..., description="storage endpoint without scheme")
 
     DIRECTOR_PUBLISHED_HOST_NAME: str = Field(
         default="", env=["DIRECTOR_PUBLISHED_HOST_NAME", "PUBLISHED_HOST_NAME"]
