@@ -27,8 +27,6 @@ from .errors import PaymentCompletedError, PaymentNotFoundError
 _logger = logging.getLogger(__name__)
 
 
-PaymentIDTypeAdapter: TypeAdapter[PaymentID] = TypeAdapter(PaymentID)
-
 #
 # NOTE: this will be moved to the payments service
 # NOTE: with https://sqlmodel.tiangolo.com/ we would only define this once!
@@ -76,7 +74,7 @@ async def get_pending_payment_transactions_ids(app: web.Application) -> list[Pay
             .order_by(payments_transactions.c.initiated_at.asc())  # oldest first
         )
         rows = await result.fetchall() or []
-        return [PaymentIDTypeAdapter.validate_python(row.payment_id) for row in rows]
+        return [TypeAdapter(PaymentID).validate_python(row.payment_id) for row in rows]
 
 
 async def complete_payment_transaction(
