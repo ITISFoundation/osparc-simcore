@@ -120,15 +120,23 @@ def test_parse_from_empty_envs(
 
     S1, S2, S3, S4, S5 = model_classes_factory()
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match="WEBSERVER_POSTGRES") as exc_info:
         S1()
+
+    validation_error = exc_info.value
+    assert validation_error.error_count() == 1
+    error = validation_error.errors()[0]
+    assert error["type"] == "missing"
+    assert error["input"] == {}
 
     s2 = S2()
     assert s2.WEBSERVER_POSTGRES_NULLABLE_OPTIONAL is None
 
-    with pytest.raises(DefaultFromEnvFactoryError):
+    with pytest.raises(DefaultFromEnvFactoryError) as exc_info:
         # NOTE: cannot have a default or assignment
         S3()
+
+    assert len(exc_info.value.errors) == 4, "Default could not be constructed"
 
     # auto default factory resolves to None (because is nullable)
     s4 = S4()

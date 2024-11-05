@@ -22,7 +22,7 @@ _DEFAULTS_TO_NONE_MSG: Final[
 
 class DefaultFromEnvFactoryError(ValueError):
     def __init__(self, errors):
-        super().__init__()
+        super().__init__("Default could not be constructed")
         self.errors = errors
 
 
