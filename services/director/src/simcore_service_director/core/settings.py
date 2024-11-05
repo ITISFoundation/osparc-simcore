@@ -100,6 +100,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS: int = 10
     DIRECTOR_SERVICES_RESTART_POLICY_DELAY_S: int = 12
+    DIRECTOR_SERVICES_STATE_MONITOR_S: int = 8
 
     DIRECTOR_TRAEFIK_SIMCORE_ZONE: str = Field(
         default="internal_simcore_stack",
