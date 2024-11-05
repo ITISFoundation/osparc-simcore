@@ -26,14 +26,14 @@ class NotificationCategory(StrAutoEnum):
 
 class BaseUserNotification(BaseModel):
     user_id: UserID
-    user_from_id: Literal[None] | UserID = None
     category: NotificationCategory
     actionable_path: str
-    resource_id: Literal[""] | str = ""
     title: str
     text: str
     date: datetime
     product: Literal["UNDEFINED"] | ProductName = "UNDEFINED"
+    resource_id: Literal[""] | str = ""
+    user_from_id: Literal[None] | UserID = None
 
     @validator("category", pre=True)
     @classmethod
@@ -108,6 +108,8 @@ class UserNotification(BaseUserNotification):
                     "date": "2023-02-23T16:28:13.122Z",
                     "product": "s4l",
                     "read": False,
+                    "resource_id": "3fb96d89-ff5d-4d27-b5aa-d20d46e20e12",
+                    "user_from_id": "2",
                 },
                 {
                     "id": "390053c9-3931-40e1-839f-585268f6fd3e",
@@ -119,6 +121,8 @@ class UserNotification(BaseUserNotification):
                     "date": "2023-09-29T16:28:13.122Z",
                     "product": "tis",
                     "read": False,
+                    "resource_id": "3fb96d89-ff5d-4d27-b5aa-d20d46e20e13",
+                    "user_from_id": "2",
                 },
             ]
         }

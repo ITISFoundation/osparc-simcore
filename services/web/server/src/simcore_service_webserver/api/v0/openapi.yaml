@@ -12471,6 +12471,22 @@ components:
         read:
           title: Read
           type: boolean
+        resource_id:
+          title: Resource ID
+          anyOf:
+          - enum:
+            - ""
+            type: string
+          - type: string
+          default: ""
+        user_from_id:
+          title: User ID of the one creating it
+          anyOf:
+          - enum:
+            - None
+            type: integer
+          - type: integer
+          default: None
     UserNotificationCreate:
       title: UserNotificationCreate
       required:
@@ -12510,6 +12526,22 @@ components:
             type: string
           - type: string
           default: UNDEFINED
+        resource_id:
+          title: Resource ID
+          anyOf:
+          - enum:
+            - ""
+            type: string
+          - type: string
+          default: ""
+        user_from_id:
+          title: User ID of the one creating it
+          anyOf:
+          - enum:
+            - None
+            type: integer
+          - type: integer
+          default: None
     UserNotificationPatch:
       title: UserNotificationPatch
       required:
