@@ -70,7 +70,7 @@ def cluster_simple_authentication(faker: Faker) -> Callable[[], dict[str, Any]]:
             "username": faker.user_name(),
             "password": faker.password(),
         }
-        assert SimpleAuthentication.parse_obj(simple_auth)
+        assert SimpleAuthentication.model_validate(simple_auth)
         return simple_auth
 
     return creator

@@ -445,13 +445,13 @@ async def projects_networks_db(
     # NOTE: director-v2 does not have access to the webserver which creates this
     # injecting all dynamic-sidecar started services on a default networks
 
-    container_aliases: ContainerAliases = ContainerAliases.parse_obj({})
+    container_aliases: ContainerAliases = ContainerAliases.model_validate({})
 
     for k, (node_uuid, node) in enumerate(current_study.workbench.items()):
         if not is_legacy(node):
             container_aliases[node_uuid] = f"networkable_alias_{k}"
 
-    networks_with_aliases: NetworksWithAliases = NetworksWithAliases.parse_obj({})
+    networks_with_aliases: NetworksWithAliases = NetworksWithAliases.model_validate({})
     default_network_name = f"{PROJECT_NETWORK_PREFIX}_{current_study.uuid}_test"
     networks_with_aliases[default_network_name] = container_aliases
 
@@ -971,7 +971,7 @@ async def test_nodeports_integration(
         task_out,
         project=current_study,
         exp_task_state=RunningState.SUCCESS,
-        exp_pipeline_details=PipelineDetails.parse_obj(fake_dy_success),
+        exp_pipeline_details=PipelineDetails.model_validate(fake_dy_success),
         iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
     )

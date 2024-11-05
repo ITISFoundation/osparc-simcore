@@ -239,7 +239,7 @@ def fake_workbench(fake_workbench_file: Path) -> NodesDict:
     workbench_dict = json.loads(fake_workbench_file.read_text())
     workbench = {}
     for node_id, node_data in workbench_dict.items():
-        workbench[node_id] = Node.parse_obj(node_data)
+        workbench[node_id] = Node.model_validate(node_data)
     return workbench
 
 
@@ -336,7 +336,7 @@ def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
 @pytest.fixture
 def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
 
-    fake_data = ApiKeyGet.parse_obj(
+    fake_data = ApiKeyGet.model_validate(
         ApiKeyGet.model_config["json_schema_extra"]["examples"][0]
     )
 

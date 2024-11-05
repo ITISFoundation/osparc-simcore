@@ -196,7 +196,7 @@ def fake_io_data(
             path=create_simcore_file_id(
                 faker.uuid4(), faker.uuid4(), faker.file_name()
             ),
-        ).dict(by_alias=True, exclude_unset=True)
+        ).model_dump(by_alias=True, exclude_unset=True)
 
     TYPE_TO_FAKE_CALLABLE_MAP = {
         "number": faker.pyfloat,
@@ -316,7 +316,7 @@ async def test_compute_input_data(
                     sleeper_task.node_id,
                     faker.file_name(),
                 ),
-            ).dict(by_alias=True, exclude_unset=True)
+            ).model_dump(by_alias=True, exclude_unset=True)
             if value_type["type"] == "data:*/*"
             else fake_io_data[key]
         )
@@ -446,7 +446,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
             path=create_simcore_file_id(
                 published_project.project.uuid, sleeper_task.node_id, faker.file_name()
             ),
-        ).dict(by_alias=True, exclude_unset=True)
+        ).model_dump(by_alias=True, exclude_unset=True)
         for key, value_type in fake_io_schema.items()
         if value_type["type"] == "data:*/*"
     }

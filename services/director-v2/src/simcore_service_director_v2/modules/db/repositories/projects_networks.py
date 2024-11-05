@@ -28,7 +28,7 @@ class ProjectsNetworksRepository(BaseRepository):
     async def upsert_projects_networks(
         self, project_id: ProjectID, networks_with_aliases: NetworksWithAliases
     ) -> None:
-        projects_networks_to_insert = ProjectsNetworks.parse_obj(
+        projects_networks_to_insert = ProjectsNetworks.model_validate(
             {"project_uuid": project_id, "networks_with_aliases": networks_with_aliases}
         )
 

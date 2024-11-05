@@ -122,7 +122,7 @@ async def _assert_comp_run_db(
                 & (comp_runs.c.project_uuid == f"{pub_project.project.uuid}")
             )  # there is only one entry
         )
-        run_entry = CompRunsAtDB.parse_obj(await result.first())
+        run_entry = CompRunsAtDB.model_validate(await result.first())
     assert (
         run_entry.result == expected_state
     ), f"comp_runs: expected state '{expected_state}, found '{run_entry.result}'"
@@ -365,7 +365,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
                 & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}")
             )  # there is only one entry
         )
-        run_entry = CompRunsAtDB.parse_obj(await result.first())
+        run_entry = CompRunsAtDB.model_validate(await result.first())
     assert run_entry.result == RunningState.PUBLISHED
     # let the scheduler kick in
     await run_comp_scheduler(scheduler)
@@ -379,7 +379,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
                 & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}")
             )  # there is only one entry
         )
-        run_entry = CompRunsAtDB.parse_obj(await result.first())
+        run_entry = CompRunsAtDB.model_validate(await result.first())
     assert run_entry.result == RunningState.ABORTED
     assert run_entry.metadata == run_metadata
 
@@ -756,7 +756,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_success
 
     async def _return_random_task_result(job_id) -> TaskOutputData:
-        return TaskOutputData.parse_obj({"out_1": None, "out_2": 45})
+        return TaskOutputData.model_validate({"out_1": None, "out_2": 45})
 
     mocked_dask_client.get_task_result.side_effect = _return_random_task_result
     await run_comp_scheduler(scheduler)
@@ -1175,7 +1175,7 @@ class RebootState:
         pytest.param(
             RebootState(
                 dask_task_status=DaskClientTaskState.SUCCESS,
-                task_result=TaskOutputData.parse_obj({"whatever_output": 123}),
+                task_result=TaskOutputData.model_validate({"whatever_output": 123}),
                 expected_task_state_group1=RunningState.SUCCESS,
                 expected_task_progress_group1=1,
                 expected_task_state_group2=RunningState.SUCCESS,

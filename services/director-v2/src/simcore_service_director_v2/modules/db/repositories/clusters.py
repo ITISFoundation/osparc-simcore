@@ -108,9 +108,9 @@ async def _compute_user_access_rights(
     ) and (primary_grp_rights := cluster.access_rights.get(primary_group_row.gid)):
         return primary_grp_rights
 
-    solved_rights = CLUSTER_NO_RIGHTS.dict()
+    solved_rights = CLUSTER_NO_RIGHTS.model_dump()
     for group_row in filter(lambda ugrp: ugrp[1] != GroupType.PRIMARY, user_groups):
-        grp_access = cluster.access_rights.get(group_row.gid, CLUSTER_NO_RIGHTS).dict()
+        grp_access = cluster.access_rights.get(group_row.gid, CLUSTER_NO_RIGHTS).model_dump()
         for operation in ["read", "write", "delete"]:
             solved_rights[operation] |= grp_access[operation]
     return ClusterAccessRights(**solved_rights)
@@ -250,14 +250,14 @@ class ClustersRepository(BaseRepository):
             if updated_cluster.access_rights:
                 for grp, rights in resolved_access_rights.items():
                     insert_stmt = pg_insert(cluster_to_groups).values(
-                        **rights.dict(by_alias=True), gid=grp, cluster_id=the_cluster.id
+                        **rights.model_dump(by_alias=True), gid=grp, cluster_id=the_cluster.id
                     )
                     on_update_stmt = insert_stmt.on_conflict_do_update(
                         index_elements=[
                             cluster_to_groups.c.cluster_id,
                             cluster_to_groups.c.gid,
                         ],
-                        set_=rights.dict(by_alias=True),
+                        set_=rights.model_dump(by_alias=True),
                     )
                     await conn.execute(on_update_stmt)
 

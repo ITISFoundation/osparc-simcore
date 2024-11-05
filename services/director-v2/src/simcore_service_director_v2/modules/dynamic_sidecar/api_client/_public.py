@@ -495,7 +495,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             dynamic_sidecar_endpoint
         )
         decoded_response = response.json()
-        return ActivityInfo.parse_obj(decoded_response) if decoded_response else None
+        return ActivityInfo.model_validate(decoded_response) if decoded_response else None
 
     async def free_reserved_disk_space(
         self, dynamic_sidecar_endpoint: AnyHttpUrl

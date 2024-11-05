@@ -87,7 +87,7 @@ def fake_clusters(faker: Faker) -> Callable[[int], list[Cluster]]:
         fake_clusters = []
         for n in range(num_clusters):
             fake_clusters.append(
-                Cluster.parse_obj(
+                Cluster.model_validate(
                     {
                         "id": faker.pyint(),
                         "name": faker.name(),

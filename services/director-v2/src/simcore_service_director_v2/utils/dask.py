@@ -229,7 +229,7 @@ async def compute_input_data(
     if ports_errors:
         raise PortsValidationError(project_id, node_id, ports_errors)
 
-    return TaskInputData.parse_obj(input_data)
+    return TaskInputData.model_validate(input_data)
 
 
 async def compute_output_data_schema(
@@ -276,7 +276,7 @@ async def compute_output_data_schema(
                 }
             )
 
-    return TaskOutputDataSchema.parse_obj(output_data_schema)
+    return TaskOutputDataSchema.model_validate(output_data_schema)
 
 
 _LOGS_FILE_NAME = "logs.zip"

@@ -330,7 +330,7 @@ def service_name() -> str:
 
 @pytest.fixture(
     params=[
-        SimcoreServiceLabels.parse_obj(example)
+        SimcoreServiceLabels.model_validate(example)
         for example in SimcoreServiceLabels.model_config["json_schema_extra"][
             "examples"
         ]
@@ -397,7 +397,7 @@ def test_settings__valid_network_names(
     items["SIMCORE_SERVICES_NETWORK_NAME"] = simcore_services_network_name
 
     # validate network names
-    DynamicServicesSchedulerSettings.parse_obj(items)
+    DynamicServicesSchedulerSettings.model_validate(items)
 
 
 async def test_failed_docker_client_request(docker_swarm: None):

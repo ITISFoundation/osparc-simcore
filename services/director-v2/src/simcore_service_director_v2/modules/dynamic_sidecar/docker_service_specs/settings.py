@@ -304,7 +304,7 @@ def _merge_resources_in_settings(
 
     # merge all resources
     empty_resource_entry: SimcoreServiceSettingLabelEntry = (
-        SimcoreServiceSettingLabelEntry.parse_obj(
+        SimcoreServiceSettingLabelEntry.model_validate(
             {
                 "name": "Resources",
                 "type": "Resources",
@@ -406,7 +406,7 @@ def _get_boot_options(
 
     boot_options = json.loads(boot_options_encoded)["boot-options"]
     log.debug("got boot_options=%s", boot_options)
-    return {k: BootOption.parse_obj(v) for k, v in boot_options.items()}
+    return {k: BootOption.model_validate(v) for k, v in boot_options.items()}
 
 
 def _assemble_env_vars_for_boot_options(
@@ -511,7 +511,7 @@ async def merge_settings_before_use(
     )
     settings = _patch_target_service_into_env_vars(settings)
 
-    return SimcoreServiceSettingsLabel.parse_obj(settings)
+    return SimcoreServiceSettingsLabel.model_validate(settings)
 
 
 __all__ = ["merge_settings_before_use", "update_service_params_from_settings"]

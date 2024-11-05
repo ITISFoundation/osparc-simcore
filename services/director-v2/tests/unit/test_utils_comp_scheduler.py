@@ -78,7 +78,7 @@ def test_get_resource_tracking_run_id(
 @pytest.mark.parametrize(
     "task",
     [
-        CompTaskAtDB.parse_obj(example)
+        CompTaskAtDB.model_validate(example)
         for example in CompTaskAtDB.model_config["json_schema_extra"]["examples"]
     ],
     ids=str,

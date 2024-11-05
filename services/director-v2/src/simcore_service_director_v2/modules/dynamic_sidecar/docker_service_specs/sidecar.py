@@ -553,4 +553,4 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         create_service_params=create_service_params,
     )
 
-    return AioDockerServiceSpec.parse_obj(create_service_params)
+    return AioDockerServiceSpec.model_validate(create_service_params)

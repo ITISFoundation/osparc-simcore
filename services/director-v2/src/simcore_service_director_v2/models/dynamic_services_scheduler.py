@@ -275,7 +275,7 @@ class DynamicSidecar(BaseModel):
     )
 
     instrumentation: ServicesInstrumentation = Field(
-        default_factory=lambda: ServicesInstrumentation.parse_obj({}),
+        default_factory=lambda: ServicesInstrumentation.model_validate({}),
         description="keeps track times for various operations",
     )
 

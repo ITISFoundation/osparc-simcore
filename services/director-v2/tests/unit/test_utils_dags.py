@@ -597,5 +597,5 @@ async def test_compute_pipeline_details(
         pipeline_test_params.comp_tasks,
     )
     assert (
-        received_details.dict() == pipeline_test_params.expected_pipeline_details.dict()
+        received_details.model_dump() == pipeline_test_params.expected_pipeline_details.model_dump()
     )

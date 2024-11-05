@@ -286,7 +286,7 @@ async def service_retrieve_data_on_ports(
         )
 
         # validate and return
-        return RetrieveDataOutEnveloped.parse_obj(response.json())
+        return RetrieveDataOutEnveloped.model_validate(response.json())
 
 
 @router.post(

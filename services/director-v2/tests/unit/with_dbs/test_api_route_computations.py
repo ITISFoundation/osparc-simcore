@@ -148,7 +148,7 @@ def mocked_director_service_fcts(
                 r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+$"
             ),
             name="get_service",
-        ).respond(json={"data": [fake_service_details.dict(by_alias=True)]})
+        ).respond(json={"data": [fake_service_details.model_dump(by_alias=True)]})
         respx_mock.get(
             re.compile(
                 r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/labels"
@@ -161,7 +161,7 @@ def mocked_director_service_fcts(
                 r"/service_extras/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
             ),
             name="get_service_extras",
-        ).respond(json={"data": fake_service_extras.dict(by_alias=True)})
+        ).respond(json={"data": fake_service_extras.model_dump(by_alias=True)})
 
         yield respx_mock
 
