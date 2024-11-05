@@ -130,15 +130,10 @@ async def app(
 
 
 @pytest.fixture
-async def remove_redis_data(redis_service: RedisSettings) -> AsyncIterator[None]:
-    async def _remove_all_data() -> None:
-        async with RedisClientsManager(
-            {RedisManagerDBConfig(x) for x in RedisDatabase}, redis_service
-        ) as manager:
-            await logged_gather(
-                *[manager.client(d).redis.flushall() for d in RedisDatabase]
-            )
-
-    await _remove_all_data()
-    yield None
-    await _remove_all_data()
+async def remove_redis_data(redis_service: RedisSettings) -> None:
+    async with RedisClientsManager(
+        {RedisManagerDBConfig(x) for x in RedisDatabase}, redis_service
+    ) as manager:
+        await logged_gather(
+            *[manager.client(d).redis.flushall() for d in RedisDatabase]
+        )
