@@ -3,9 +3,10 @@ import enum
 import json
 import logging
 import re
+from collections.abc import Mapping
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any, Mapping
+from typing import Any
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions
 from aiohttp.client import ClientTimeout
