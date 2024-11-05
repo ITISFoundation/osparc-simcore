@@ -30,10 +30,6 @@ from ...core.errors import (
 from ...models.comp_runs import RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...models.dask_subsystem import DaskClientTaskState
-from ...modules.dask_client import DaskClient, PublishedComputationTask
-from ...modules.dask_clients_pool import DaskClientsPool
-from ...modules.db.repositories.clusters import ClustersRepository
-from ...modules.db.repositories.comp_runs import CompRunsRepository
 from ...utils.comp_scheduler import Iteration, get_resource_tracking_run_id
 from ...utils.dask import (
     clean_task_output_and_log_files_if_invalid,
@@ -48,8 +44,12 @@ from ...utils.rabbitmq import (
     publish_service_stopped_metrics,
 )
 from ..clusters_keeper import get_or_create_on_demand_cluster
+from ..dask_client import DaskClient, PublishedComputationTask
+from ..dask_clients_pool import DaskClientsPool
+from ..db.repositories.clusters import ClustersRepository
+from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
-from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
+from ._base_scheduler import BaseCompScheduler, ScheduledPipelineParams
 
 _logger = logging.getLogger(__name__)
 
@@ -158,9 +158,11 @@ class DaskScheduler(BaseCompScheduler):
             for dask_task_state, task in zip(tasks_statuses, tasks, strict=True):
                 if dask_task_state is DaskClientTaskState.PENDING_OR_STARTED:
                     running_states += [
-                        RunningState.STARTED
-                        if task.progress is not None
-                        else RunningState.PENDING
+                        (
+                            RunningState.STARTED
+                            if task.progress is not None
+                            else RunningState.PENDING
+                        )
                     ]
                 else:
                     running_states += [
