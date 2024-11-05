@@ -17,9 +17,18 @@ test.describe.serial(`Left Filters:`, () => {
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
+
+    const responsePromise = page.waitForResponse('**/services/-/latest**', {
+      timeout: 30000
+    });
+
     loginPageFixture = new LoginPage(page, productUrl);
     const role = await loginPageFixture.login(user.email, user.password);
     expect(role).toBe(user.role);
+
+    await responsePromise;
+
+    await page.getByTestId("servicesTabBtn").click();
   });
 
   test.afterAll(async ({ browser }) => {
@@ -28,27 +37,28 @@ test.describe.serial(`Left Filters:`, () => {
     await browser.close();
   });
 
-  test(`Context`, async () => {
-    const contextTree = page.getByTestId("contextTree");
-    await expect(contextTree).toBeVisible({
+  test(`Filters`, async () => {
+    const sharedWithButtons = page.getByTestId("service-sharedWithFilterItem");
+    await expect(sharedWithButtons.first()).toBeVisible({
       timeout: 30000 // it will take some time to load the Study Browser
     });
 
-    const workspacesAndFoldersTreeItems = page.getByTestId("workspacesAndFoldersTreeItem");
-    const count = await workspacesAndFoldersTreeItems.count();
-    // at least two: My Workspace and Shared Workspaces
-    expect(count > 1).toBeTruthy();
-  });
+    const countSharedWithButtons = await sharedWithButtons.count();
+    // All Services
+    // My Services
+    // Shared with Me
+    // Shared with Everyone
+    expect(countSharedWithButtons === 4).toBeTruthy();
 
-  test(`Tags`, async () => {
-    const tagsFilter = page.getByTestId("study-tagsFilter");
-    await expect(tagsFilter).toBeVisible({
+
+    const serviceTypeButtons = page.getByTestId("service-serviceTypeFilterItem");
+    await expect(serviceTypeButtons.first()).toBeVisible({
       timeout: 30000 // it will take some time to load the Study Browser
     });
 
-    const tagFilterItems = page.getByTestId("study-tagFilterItem");
-    const count = await tagFilterItems.count();
-    // at least two and less than 6 (max five are shown)
-    expect(count > 1 && count < 6).toBeTruthy();
+    const countServiceTypeButtons = await serviceTypeButtons.count();
+    // Computational
+    // Interactive
+    expect(countServiceTypeButtons === 2).toBeTruthy();
   });
 });
