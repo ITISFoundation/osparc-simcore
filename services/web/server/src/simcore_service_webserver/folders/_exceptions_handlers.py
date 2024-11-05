@@ -5,7 +5,6 @@ from servicelib.aiohttp import status
 from ..exceptions_handlers import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    create__http_error_map_handler,
     create_exception_handlers_decorator,
 )
 from ..projects.exceptions import (
@@ -69,6 +68,6 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 
 
 handle_plugin_requests_exceptions = create_exception_handlers_decorator(
-    create__http_error_map_handler(_TO_HTTP_ERROR_MAP),
-    (ProjectTrashError, FoldersValueError),
+    exception_catch=(ProjectTrashError, FoldersValueError),
+    exc_to_status_map=_TO_HTTP_ERROR_MAP,
 )

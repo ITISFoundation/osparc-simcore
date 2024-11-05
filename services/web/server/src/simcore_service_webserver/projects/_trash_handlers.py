@@ -12,7 +12,6 @@ from ..application_settings_utils import requires_dev_feature_enabled
 from ..exceptions_handlers import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
-    create__http_error_map_handler,
     create_exception_handlers_decorator,
 )
 from ..login.decorators import get_user_id, login_required
@@ -47,7 +46,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 
 
 _handle_exceptions = create_exception_handlers_decorator(
-    create__http_error_map_handler(_TO_HTTP_ERROR_MAP), ProjectTrashError
+    exception_catch=ProjectTrashError, exc_to_status_map=_TO_HTTP_ERROR_MAP
 )
 
 #

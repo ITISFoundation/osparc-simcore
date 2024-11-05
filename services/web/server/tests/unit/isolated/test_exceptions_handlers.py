@@ -6,6 +6,8 @@
 # pylint: disable=unused-variable
 
 
+import logging
+
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
@@ -13,9 +15,7 @@ from servicelib.aiohttp import status
 from simcore_service_webserver.errors import WebServerBaseError
 from simcore_service_webserver.exceptions_handlers import (
     HttpErrorInfo,
-    _handled_exception_context,
     _sort_exceptions_by_specificity,
-    create__http_error_map_handler,
     create_exception_handlers_decorator,
 )
 
@@ -65,84 +65,53 @@ def test_sort_exceptions_by_specificity():
             assert not issubclass(exc_after, exc), f"{got_exceptions_cls=}"
 
 
-@pytest.fixture
-def fake_request() -> web.Request:
-    return make_mocked_request("GET", "/foo")
+async def test_exception_handlers_decorator(
+    caplog: pytest.LogCaptureFixture,
+):
 
-
-def test_http_error_map_handler_factory(fake_request: web.Request):
-
-    exc_handler = create__http_error_map_handler(
-        {
+    _handle_exceptions = create_exception_handlers_decorator(
+        exception_catch=BasePluginError,
+        exc_to_status_map={
             OneError: HttpErrorInfo(
-                status.HTTP_400_BAD_REQUEST, "Error One mapped to 400"
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                msg_template="This is one error for front-end",
             )
-        }
+        },
     )
 
-    # Converts exception in map
-    got_exc = exc_handler(OneError(), fake_request)
-
-    assert isinstance(got_exc, web.HTTPBadRequest)
-    assert got_exc.reason == "Error One mapped to 400"
-
-    # By-passes exceptions not listed
-    err = RuntimeError()
-    assert exc_handler(err, fake_request) is err
-
-
-def test_handled_exception_context(fake_request: web.Request):
-    def _suppress_handler(exception, request):
-        assert request == fake_request
-        assert isinstance(
-            exception, BasePluginError
-        ), "only BasePluginError exceptions should call this handler"
-        return None  # noqa: RET501, PLR1711
-
-    def _fun(raises):
-        with _handled_exception_context(
-            BasePluginError, _suppress_handler, request=fake_request
-        ):
-            raise raises
-
-    # checks
-    _fun(raises=OneError)
-    _fun(raises=OtherError)
-
-    with pytest.raises(ArithmeticError):
-        _fun(raises=ArithmeticError)
-
-
-async def test_exception_handlers_decorator():
-    def _suppress_handler(exception, request):
-        assert isinstance(
-            exception, BasePluginError
-        ), "only BasePluginError exceptions should call this handler"
-        return None  # noqa: RET501, PLR1711
-
-    _handle_exceptons = create_exception_handlers_decorator(
-        _suppress_handler, BasePluginError
-    )
-
-    @_handle_exceptons
-    async def _rest_handler(request: web.Request):
+    @_handle_exceptions
+    async def _rest_handler(request: web.Request) -> web.Response:
         if request.query.get("raise") == "OneError":
             raise OneError
         if request.query.get("raise") == "ArithmeticError":
             raise ArithmeticError
 
-        return web.Response(text="all good")
+        return web.Response(reason="all good")
 
-    # emulates call
-    resp = await _rest_handler(make_mocked_request("GET", "/foo"))
-    assert resp.status == status.HTTP_200_OK
+    with caplog.at_level(logging.ERROR):
 
-    # OMG! not good!?
-    resp = await _rest_handler(make_mocked_request("GET", "/foo?raise=OneError"))
-    assert resp is None
+        # emulates successful call
+        resp = await _rest_handler(make_mocked_request("GET", "/foo"))
+        assert resp.status == status.HTTP_200_OK
+        assert resp.reason == "all good"
 
-    # typically capture by last
-    with pytest.raises(ArithmeticError):
-        resp = await _rest_handler(
-            make_mocked_request("GET", "/foo?raise=ArithmeticError")
-        )
+        assert not caplog.records
+
+        # this will be passed and catched by the outermost error middleware
+        with pytest.raises(ArithmeticError):
+            await _rest_handler(
+                make_mocked_request("GET", "/foo?raise=ArithmeticError")
+            )
+
+        assert not caplog.records
+
+        # this is a 5XX will be converted to response but is logged as error as well
+        with pytest.raises(web.HTTPException) as exc_info:
+            await _rest_handler(make_mocked_request("GET", "/foo?raise=OneError"))
+
+        resp = exc_info.value
+        assert resp.status == status.HTTP_503_SERVICE_UNAVAILABLE
+        assert "front-end" in resp.reason
+
+        assert caplog.records
+        assert caplog.records[0].levelno == logging.ERROR
