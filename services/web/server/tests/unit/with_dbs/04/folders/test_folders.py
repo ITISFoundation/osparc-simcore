@@ -192,7 +192,7 @@ async def test_sub_folders_full_workflow(
             "parentFolderId": f"{subsubfolder_folder['folderId']}",
         },
     )
-    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
+    await assert_status(resp, status.HTTP_409_CONFLICT)
 
     # move sub sub folder to root folder
     url = client.app.router["replace_folder"].url_for(

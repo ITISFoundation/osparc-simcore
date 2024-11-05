@@ -50,11 +50,11 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     FolderValueNotPermittedError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        "Provided folder value is not permitted. {reason}",
+        "Provided folder value is not permitted: {reason}",
     ),
     FoldersValueError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        "Invalid folder value set. {reason}",
+        "Invalid folder value set: {reason}",
     ),
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
