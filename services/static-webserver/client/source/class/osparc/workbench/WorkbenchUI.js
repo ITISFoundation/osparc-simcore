@@ -484,7 +484,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const allChildren = Array.from(this.getContentElement().getDomElement().getElementsByTagName("*"));
       const nodesAndSuspicious = allChildren.filter(child => parseInt(child.style.zIndex) >= 100000);
       nodesAndSuspicious.forEach(child => {
-        if (child.className !== "qx-window-small-cap") {
+        if (child.className !== "qx-node-ui-cap") {
           console.warn("moving undesired element to background");
           child.style.zIndex = "1";
         }
