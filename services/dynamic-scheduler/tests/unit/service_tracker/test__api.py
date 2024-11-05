@@ -45,6 +45,9 @@ from simcore_service_dynamic_scheduler.services.service_tracker._models import (
 pytest_simcore_core_services_selection = [
     "redis",
 ]
+pytest_simcore_ops_services_selection = [
+    # "redis-commander",
+]
 
 
 @pytest.fixture
