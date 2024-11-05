@@ -154,6 +154,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
         return v
 
+    @validator("DIRECTOR_LOGLEVEL", pre=True)
+    @classmethod
+    def _valid_log_level(cls, value: str) -> str:
+        return cls.validate_log_level(value)
+
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:
     return cast(ApplicationSettings, app.state.settings)
