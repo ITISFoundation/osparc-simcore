@@ -21,4 +21,7 @@ def test_valid_web_application_settings(app_environment: EnvVarsDict):
 
     assert settings == ApplicationSettings.create_from_envs()
 
-    assert app_environment["DIRECTOR_DEBUG"] == settings.DIRECTOR_DEBUG
+    assert (
+        app_environment["DIRECTOR_DEFAULT_MAX_MEMORY"]
+        == settings.DIRECTOR_DEFAULT_MAX_MEMORY
+    )

@@ -135,9 +135,9 @@ def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
 
 @pytest.fixture
 async def app(
-    app_setting: ApplicationSettings, is_pdb_enabled: bool
+    app_settings: ApplicationSettings, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
-    the_test_app = create_app(settings=app_setting)
+    the_test_app = create_app(settings=app_settings)
     async with LifespanManager(
         the_test_app,
         startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
