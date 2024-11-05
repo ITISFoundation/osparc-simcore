@@ -19,7 +19,7 @@ import requests
 from aiodocker import utils
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
-from simcore_service_director.config import DEFAULT_MAX_MEMORY, DEFAULT_MAX_NANO_CPUS
+from simcore_service_director.core.settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
@@ -115,7 +115,8 @@ async def _build_and_push_image(
     dependent_image=None,
     *,
     bad_json_format: bool = False,
-) -> ServiceInRegistryInfoDict:  # pylint: disable=R0913
+    app_settings: ApplicationSettings,
+) -> ServiceInRegistryInfoDict:
 
     # crate image
     service_description = _create_service_description(service_type, name, tag)
@@ -176,8 +177,8 @@ async def _build_and_push_image(
     # create the typical org.label-schema labels
     service_extras = ServiceExtrasDict(
         node_requirements=NodeRequirementsDict(
-            CPU=DEFAULT_MAX_NANO_CPUS / 1e9,
-            RAM=DEFAULT_MAX_MEMORY,
+            CPU=app_settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS / 1e9,
+            RAM=app_settings.DIRECTOR_DEFAULT_MAX_MEMORY,
         ),
         build_date="2020-08-19T15:36:27Z",
         vcs_ref="ca180ef1",
@@ -247,7 +248,9 @@ class PushServicesCallable(Protocol):
 
 
 @pytest.fixture
-def push_services(docker_registry: str) -> Iterator[PushServicesCallable]:
+def push_services(
+    docker_registry: str, app_settings: ApplicationSettings
+) -> Iterator[PushServicesCallable]:
     registry_url = docker_registry
     list_of_pushed_images_tags: list[ServiceInRegistryInfoDict] = []
     dependent_images = []
@@ -270,6 +273,7 @@ def push_services(docker_registry: str) -> Iterator[PushServicesCallable]:
                     tag="10.52.999999",
                     dependent_image=None,
                     bad_json_format=bad_json_format,
+                    app_settings=app_settings,
                 )
                 dependent_images.append(dependent_image)
 
@@ -281,6 +285,7 @@ def push_services(docker_registry: str) -> Iterator[PushServicesCallable]:
                     tag=f"{version}{image_index}",
                     dependent_image=dependent_image,
                     bad_json_format=bad_json_format,
+                    app_settings=app_settings,
                 )
                 for image_index in range(number_of_computational_services)
             ]
@@ -294,6 +299,7 @@ def push_services(docker_registry: str) -> Iterator[PushServicesCallable]:
                         tag=f"{version}{image_index}",
                         dependent_image=dependent_image,
                         bad_json_format=bad_json_format,
+                        app_settings=app_settings,
                     )
                     for image_index in range(number_of_interactive_services)
                 ]

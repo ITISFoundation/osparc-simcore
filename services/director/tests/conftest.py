@@ -129,10 +129,15 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
 
 @pytest.fixture
+def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
+    return ApplicationSettings.create_from_envs()
+
+
+@pytest.fixture
 async def app(
-    app_environment: EnvVarsDict, is_pdb_enabled: bool
+    app_setting: ApplicationSettings, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
-    the_test_app = create_app(settings=ApplicationSettings.create_from_envs())
+    the_test_app = create_app(settings=app_setting)
     async with LifespanManager(
         the_test_app,
         startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,
