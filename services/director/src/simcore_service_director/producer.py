@@ -7,7 +7,7 @@ from datetime import timedelta
 from enum import Enum
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import aiodocker
 import aiodocker.networks
@@ -136,9 +136,9 @@ def _parse_env_settings(settings: list[str]) -> dict:
 
 async def _read_service_settings(
     app: FastAPI, key: str, tag: str, settings_name: str
-) -> dict:
+) -> dict[str, Any] | list[Any]:
     image_labels, _ = await registry_proxy.get_image_labels(app, key, tag)
-    settings = (
+    settings: dict[str, Any] | list[Any] = (
         json.loads(image_labels[settings_name]) if settings_name in image_labels else {}
     )
 
@@ -317,6 +317,7 @@ async def _create_docker_service_params(
         ]
 
     # some services define strip_path:true if they need the path to be stripped away
+    assert isinstance(reverse_proxy_settings, dict)  # nosec
     if reverse_proxy_settings and reverse_proxy_settings.get("strip_path"):
         docker_params["labels"][
             f"traefik.http.middlewares.{service_name}_stripprefixregex.stripprefixregex.regex"
@@ -329,7 +330,7 @@ async def _create_docker_service_params(
     placement_substitutions: dict[
         str, str
     ] = app_settings.DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
-
+    assert isinstance(service_parameters_labels, list)  # nosec
     for param in service_parameters_labels:
         _check_setting_correctness(param)
         # replace %service_uuid% by the given uuid
@@ -488,12 +489,15 @@ async def _create_docker_service_params(
     return docker_params
 
 
-def _get_service_entrypoint(service_boot_parameters_labels: dict) -> str:
+def _get_service_entrypoint(
+    service_boot_parameters_labels: list[dict[str, Any]]
+) -> str:
     log.debug("Getting service entrypoint")
     for param in service_boot_parameters_labels:
         _check_setting_correctness(param)
         if param["name"] == "entry_point":
             log.debug("Service entrypoint is %s", param["value"])
+            assert isinstance(param["value"], str)  # nosec
             return param["value"]
     return ""
 
@@ -558,7 +562,7 @@ async def _get_docker_image_port_mapping(
 async def _pass_port_to_service(
     service_name: str,
     port: str,
-    service_boot_parameters_labels: dict,
+    service_boot_parameters_labels: list[Any],
     session: ClientSession,
     app_settings: ApplicationSettings,
 ) -> None:
@@ -608,7 +612,7 @@ async def _create_overlay_network_in_swarm(
             service_name,
             node_uuid,
         )
-        return docker_network.id
+        return cast(str, docker_network.id)
     except aiodocker.exceptions.DockerError as err:
         log.exception("Error while creating network for service %s", service_name)
         msg = "Error while creating network"
@@ -872,6 +876,7 @@ async def _start_docker_service(
         service_boot_parameters_labels = await _read_service_settings(
             app, service_key, service_tag, SERVICE_RUNTIME_BOOTSETTINGS
         )
+        assert isinstance(service_boot_parameters_labels, list)  # nosec
         service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
         if published_port:
             session = get_client_session(app)
@@ -983,8 +988,8 @@ async def _get_service_key_version_from_docker_service(
     return service_key, service_tag
 
 
-async def _get_service_basepath_from_docker_service(service: dict) -> str:
-    envs_list = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Env"]
+async def _get_service_basepath_from_docker_service(service: dict[str, Any]) -> str:
+    envs_list: list[str] = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Env"]
     envs_dict = dict(x.split("=") for x in envs_list)
     return envs_dict["SIMCORE_NODE_BASEPATH"]
 

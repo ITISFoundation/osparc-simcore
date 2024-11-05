@@ -297,20 +297,20 @@ async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
 
 async def get_image_labels(
     app: FastAPI, image: str, tag: str
-) -> tuple[dict, str | None]:
+) -> tuple[dict[str, str], str | None]:
     """Returns image labels and the image manifest digest"""
 
     logger.debug("getting image labels of %s:%s", image, tag)
     path = f"/v2/{image}/manifests/{tag}"
     request_result, headers = await registry_request(app, path)
     v1_compatibility_key = json.loads(request_result["history"][0]["v1Compatibility"])
-    container_config = v1_compatibility_key.get(
+    container_config: dict[str, Any] = v1_compatibility_key.get(
         "container_config", v1_compatibility_key["config"]
     )
-    labels = container_config["Labels"]
+    labels: dict[str, str] = container_config["Labels"]
 
     headers = headers or {}
-    manifest_digest = headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
+    manifest_digest: str | None = headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
 
     logger.debug("retrieved labels of image %s:%s", image, tag)
 
@@ -460,7 +460,7 @@ async def get_service_extras(
     # check physical node requirements
     # all nodes require "CPU"
     app_settings = get_application_settings(app)
-    result = {
+    result: dict[str, Any] = {
         "node_requirements": {
             "CPU": app_settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS / 1.0e09,
             "RAM": app_settings.DIRECTOR_DEFAULT_MAX_MEMORY,
@@ -471,7 +471,9 @@ async def get_service_extras(
     logger.debug("Compiling service extras from labels %s", pformat(labels))
 
     if SERVICE_RUNTIME_SETTINGS in labels:
-        service_settings = json.loads(labels[SERVICE_RUNTIME_SETTINGS])
+        service_settings: list[dict[str, Any]] = json.loads(
+            labels[SERVICE_RUNTIME_SETTINGS]
+        )
         for entry in service_settings:
             entry_name = entry.get("name", "").lower()
             entry_value = entry.get("value")
