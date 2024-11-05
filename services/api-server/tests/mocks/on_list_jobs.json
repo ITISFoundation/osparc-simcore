@@ -162,7 +162,10 @@
       "annotations": {}
      },
      "quality": {},
-     "dev": {}
+     "dev": {},
+     "workspace_id": null,
+     "folder_id": null,
+     "trashed_at": null
     },
     {
      "uuid": "61d8acda-a560-4d76-ac47-59c56a399d98",
@@ -232,7 +235,10 @@
       "annotations": {}
      },
      "quality": {},
-     "dev": {}
+     "dev": {},
+     "workspace_id": null,
+     "folder_id": null,
+     "trashed_at": null
     }
    ]
   },
