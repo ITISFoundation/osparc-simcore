@@ -15,7 +15,6 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeGetUnknown,
 )
 from models_library.projects_nodes_io import NodeID
-from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RPCServerError
 from simcore_service_webserver.dynamic_scheduler.api import (
@@ -48,10 +47,8 @@ def mock_rpc_client(
 
 @pytest.fixture
 def dynamic_service_start() -> DynamicServiceStart:
-    return (
-        TypeAdapter(DynamicServiceStart).validate_python(
-            DynamicServiceStart.model_config["json_schema_extra"]["example"]
-        ),
+    return DynamicServiceStart.parse_obj(
+        DynamicServiceStart.Config.schema_extra["example"]
     )
 
 
