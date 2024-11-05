@@ -28,6 +28,7 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
     grid.setColumnFlex(1, 1);
 
     this.set({
+      appearance: "window-small-cap",
       layout: grid,
       showMinimize: false,
       showMaximize: false,
@@ -82,11 +83,6 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
       check: "Number",
       event: "changeScale",
       nullable: false
-    },
-
-    appearance: {
-      init: "window-small-cap",
-      refine: true
     },
 
     isMovable: {
