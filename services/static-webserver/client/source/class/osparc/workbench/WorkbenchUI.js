@@ -484,7 +484,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const allChildren = Array.from(this.getContentElement().getDomElement().getElementsByTagName("*"));
       const nodesAndSuspicious = allChildren.filter(child => parseInt(child.style.zIndex) >= 100000);
       nodesAndSuspicious.forEach(child => {
-        if (child.className !== "qx-window-small-cap") {
+        if (child.className !== "qx-node-ui-cap") {
           console.warn("moving undesired element to background");
           child.style.zIndex = "1";
         }
@@ -653,6 +653,25 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       nodeUI.addListener("markerClicked", e => this.__openMarkerEditor(e.getData()), this);
       nodeUI.addListener("infoNode", e => this.__openNodeInfo(e.getData()), this);
       nodeUI.addListener("removeNode", e => this.fireDataEvent("removeNode", e.getData()), this);
+
+      if (nodeUI.getNode().getPropsForm()) {
+        nodeUI.getNode().getPropsForm().addListener("highlightEdge", e => {
+          const {
+            highlight,
+            fromNodeId,
+            toNodeId,
+          } = e.getData();
+          const edgeFound = this.__edgesUI.find(edgeUI => {
+            const edge = edgeUI.getEdge();
+            const inputNode = edge.getInputNode();
+            const outputNode = edge.getOutputNode();
+            return (inputNode.getNodeId() === fromNodeId && outputNode.getNodeId() === toNodeId)
+          });
+          if (edgeFound) {
+            edgeFound.setHighlighted(highlight);
+          }
+        });
+      }
 
       return nodeUI;
     },
@@ -1654,7 +1673,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const title = this.tr("Service information");
         const width = osparc.info.CardLarge.WIDTH;
         const height = osparc.info.CardLarge.HEIGHT;
-        osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+        osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height).set({
+          maxHeight: height
+        });
       }
     },
 
@@ -2002,7 +2023,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
             }
           } else {
-            osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file at a time is accepted."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(osparc.file.FileDrop.ONE_FILE_ONLY, "ERROR");
           }
         } else {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Folders are not accepted. You might want to upload a zip file."), "ERROR");

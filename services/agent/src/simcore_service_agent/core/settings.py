@@ -53,14 +53,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     AGENT_VOLUMES_CLEANUP_INTERVAL: timedelta = Field(
         timedelta(minutes=1), description="interval for running volumes removal"
     )
-    AGENT_VOLUMES_CLENUP_BOOK_KEEPING_INTERVAL: timedelta = Field(
+    AGENT_VOLUMES_CLEANUP_BOOK_KEEPING_INTERVAL: timedelta = Field(
         timedelta(minutes=1),
         description=(
             "interval at which to scan for unsued volumes and keep track since "
             "they were detected as being unused"
         ),
     )
-    AGENT_VOLUMES_CLENUP_REMOVE_VOLUMES_INACTIVE_FOR: timedelta = Field(
+    AGENT_VOLUMES_CLEANUP_REMOVE_VOLUMES_INACTIVE_FOR: timedelta = Field(
         timedelta(minutes=65),
         description=(
             "if a volume is unused for more than this interval it can be removed. "
