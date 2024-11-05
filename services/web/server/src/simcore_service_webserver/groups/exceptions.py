@@ -4,28 +4,22 @@ from ..errors import WebServerBaseError
 
 
 class GroupsError(WebServerBaseError):
-    msg_template = "{msg}"
-
-    def __init__(self, msg: str | None = None):
-        super().__init__(msg=msg or "Unexpected error occured in projects subpackage")
+    msg_template = "Groups plugin errored: {msg}"
 
 
 class GroupNotFoundError(GroupsError):
     msg_template = "Group with id {gid} not found"
 
-    def __init__(self, gid, **extras):
-        super().__init__(**extras)
-        self.gid = gid
-
 
 class UserInsufficientRightsError(GroupsError):
-    ...
+    msg = (
+        "User {user_id} has insufficient rights for {permission} access to group {gid}"
+    )
 
 
 class UserInGroupNotFoundError(GroupsError):
     msg_template = "User id {uid} in Group {gid} not found"
 
-    def __init__(self, uid, gid, **extras):
-        super().__init__(**extras)
-        self.uid = uid
-        self.gid = gid
+
+class UserAlreadyInGroupError(GroupsError):
+    msg_template = "User `{uid}` is already in Group `{gid}`"
