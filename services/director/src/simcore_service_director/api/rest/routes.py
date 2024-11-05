@@ -17,6 +17,7 @@ def setup_api_routes(app: FastAPI):
     """
 
     app.include_router(_health.router, tags=["operations"])
+    app.include_router(_health.router, tags=["operations"], prefix=f"/{_V0_VTAG}")
 
     # include the rest under /vX
     api_router = APIRouter(prefix=f"/{_V0_VTAG}")
