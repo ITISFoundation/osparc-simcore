@@ -18,10 +18,21 @@ from models_library.api_schemas_webserver.projects import ProjectGet, ProjectLis
 from models_library.rest_pagination import Page
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch, {"WEBSERVER_DEV_FEATURES_ENABLED": "1"}
+    )
 
 
 @pytest.fixture
