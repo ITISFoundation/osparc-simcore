@@ -170,7 +170,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "workbench-start-hint": "#505050",
 
     "node-background": "rgba(113, 157, 181, 0.5)",
-    "node-selected-background": "background-selected",
+    "node-selected-background": "strong-main",
     "node-title-text": "text-selected",
     "node-port-text": "#454545",
 
