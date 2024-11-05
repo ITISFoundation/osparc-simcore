@@ -19,6 +19,7 @@ from typing import Final
 
 import typer
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from settings_library.utils_cli import create_settings_command
 from typing_extensions import Annotated
 
@@ -69,7 +70,7 @@ async def app_factory() -> web.Application:
 
     _logger.info(
         "Application settings: %s",
-        app_settings.model_dump_json(indent=2),
+        json_dumps(app_settings, indent=2, sort_keys=True),
     )
 
     app, _ = _setup_app_from_settings(app_settings)
