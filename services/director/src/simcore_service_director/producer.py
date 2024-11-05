@@ -25,8 +25,6 @@ from aiohttp import (
 from fastapi import FastAPI
 from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
-
-# from servicelib.monitor_services import service_started, service_stopped
 from settings_library.docker_registry import RegistrySettings
 from tenacity import retry
 from tenacity.retry import retry_if_exception_type
@@ -44,6 +42,7 @@ from .constants import (
 )
 from .core.settings import ApplicationSettings, get_application_settings
 from .exceptions import ServiceStateSaveError
+from .instrumentation import get_instrumentation
 from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
 from .utils import parse_as_datetime
@@ -1033,15 +1032,12 @@ async def start_service(
         )
         node_details = containers_meta_data[0]
         if app_settings.DIRECTOR_MONITORING_ENABLED:
-            ...
-            # TODO: is monitoring necessary?
-            # service_started(
-            #     app,
-            #     "undefined_user",  # NOTE: to prevent high cardinality metrics this is disabled
-            #     service_key,
-            #     service_tag,
-            #     "DYNAMIC",
-            # )
+            get_instrumentation(app).services_started.labels(
+                service_key=service_key,
+                service_tag=service_tag,
+                simcore_user_agent="undefined_user",
+            ).inc()
+
         # we return only the info of the main service
         return node_details
 
@@ -1294,13 +1290,9 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
         log.debug("removed network")
 
         if app_settings.DIRECTOR_MONITORING_ENABLED:
-            ...
-            # TODO: is it necessary still?
-            # service_stopped(
-            #     app,
-            #     "undefined_user",
-            #     service_details["service_key"],
-            #     service_details["service_version"],
-            #     "DYNAMIC",
-            #     "SUCCESS",
-            # )
+            get_instrumentation(app).services_stopped.labels(
+                service_key=service_details["service_key"],
+                service_tag=service_details["service_version"],
+                simcore_user_agent="undefined_user",
+                result="SUCCESS",
+            ).inc()
