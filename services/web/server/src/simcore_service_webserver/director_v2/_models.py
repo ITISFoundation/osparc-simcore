@@ -45,7 +45,7 @@ class ClusterCreate(BaseCluster):
             "examples": [
                 {
                     "name": "My awesome cluster",
-                    "type": ClusterType.ON_PREMISE.value,  # can use also values from equivalent enum
+                    "type": f"{ClusterType.ON_PREMISE}",  # can use also values from equivalent enum
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
                         "type": "simple",
@@ -56,7 +56,7 @@ class ClusterCreate(BaseCluster):
                 {
                     "name": "My AWS cluster",
                     "description": "a AWS cluster administered by me",
-                    "type": ClusterType.AWS.value,
+                    "type": f"{ClusterType.AWS}",
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
