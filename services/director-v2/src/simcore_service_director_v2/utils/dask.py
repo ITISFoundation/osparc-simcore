@@ -30,7 +30,7 @@ from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, ValidationError, parse_obj_as
+from pydantic import AnyUrl, ByteSize, TypeAdapter, ValidationError
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.exceptions import (
@@ -326,8 +326,7 @@ def compute_task_labels(
         memory_limit=node_requirements.ram,
         cpu_limit=node_requirements.cpu,
     ).to_simcore_runtime_docker_labels()
-    return standard_simcore_labels | parse_obj_as(
-        ContainerLabelsDict,
+    return standard_simcore_labels | TypeAdapter(ContainerLabelsDict).validate_python(
         {
             DockerLabelKey.from_key(k): f"{v}"
             for k, v in run_metadata.items()
@@ -552,8 +551,8 @@ def _to_human_readable_resource_values(resources: dict[str, Any]) -> dict[str, A
     for res_name, res_value in resources.items():
         if "RAM" in res_name:
             try:
-                human_readable_resources[res_name] = parse_obj_as(
-                    ByteSize, res_value
+                human_readable_resources[res_name] = TypeAdapter(ByteSize).validate_python(
+                    res_value
                 ).human_readable()
             except ValidationError:
                 _logger.warning(

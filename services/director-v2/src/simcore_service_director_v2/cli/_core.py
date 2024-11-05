@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceType
 from models_library.services_enums import ServiceBootType, ServiceState
-from pydantic import AnyHttpUrl, BaseModel, PositiveInt, parse_obj_as
+from pydantic import AnyHttpUrl, BaseModel, PositiveInt, TypeAdapter
 from rich.live import Live
 from rich.table import Table
 from servicelib.services_utils import get_service_from_key
@@ -58,7 +58,7 @@ def _get_dynamic_sidecar_endpoint(
     dynamic_sidecar_names = DynamicSidecarNamesHelper.make(NodeID(node_id))
     hostname = dynamic_sidecar_names.service_name_dynamic_sidecar
     port = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT
-    url: AnyHttpUrl = parse_obj_as(AnyHttpUrl, f"http://{hostname}:{port}")  # NOSONAR
+    url: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(f"http://{hostname}:{port}")  # NOSONAR
     return url
 
 

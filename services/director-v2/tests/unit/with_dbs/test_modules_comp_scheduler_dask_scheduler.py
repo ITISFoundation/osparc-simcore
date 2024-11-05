@@ -41,7 +41,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingStoppedMessage,
 )
 from models_library.users import UserID
-from pydantic import parse_obj_as, parse_raw_as
+from pydantic import TypeAdapter, parse_raw_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQClient
@@ -144,7 +144,7 @@ async def _assert_comp_tasks_db(
                 & (comp_tasks.c.node_id.in_([f"{n}" for n in task_ids]))
             )  # there is only one entry
         )
-        tasks = parse_obj_as(list[CompTaskAtDB], await result.fetchall())
+        tasks = TypeAdapter(list[CompTaskAtDB]).validate_python(await result.fetchall())
     assert all(
         t.state == expected_state for t in tasks
     ), f"expected state: {expected_state}, found: {[t.state for t in tasks]}"

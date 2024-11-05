@@ -20,7 +20,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.users import UserID
-from pydantic import PositiveInt, parse_obj_as
+from pydantic import PositiveInt, TypeAdapter
 from pytest_simcore.helpers.host import get_localhost_ip
 from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_DNS,
@@ -303,7 +303,7 @@ async def _get_service_resources(
     url = f"{catalog_url}/v0/services/{encoded_key}/{service_version}/resources"
     async with httpx.AsyncClient() as client:
         response = await client.get(f"{url}")
-        return parse_obj_as(ServiceResourcesDict, response.json())
+        return TypeAdapter(ServiceResourcesDict).validate_python(response.json())
 
 
 async def _handle_redirection(

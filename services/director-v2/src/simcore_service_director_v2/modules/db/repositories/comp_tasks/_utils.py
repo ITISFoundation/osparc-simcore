@@ -36,7 +36,7 @@ from models_library.services_resources import (
 )
 from models_library.users import UserID
 from models_library.wallets import ZERO_CREDITS, WalletInfo
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.rabbitmq import (
     RabbitMQRPCClient,
     RemoteMethodNotRegisteredError,
@@ -174,7 +174,7 @@ async def _generate_task_image(
     }
     project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
     project_node = await project_nodes_repo.get(connection, node_id=node_id)
-    node_resources = parse_obj_as(ServiceResourcesDict, project_node.required_resources)
+    node_resources = TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
     if not node_resources:
         node_resources = await catalog_client.get_service_resources(
             user_id, node.key, node.version
@@ -287,7 +287,7 @@ async def _update_project_node_resources_from_hardware_info(
         # less memory than the machine theoretical amount
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         node = await project_nodes_repo.get(connection, node_id=node_id)
-        node_resources = parse_obj_as(ServiceResourcesDict, node.required_resources)
+        node_resources = TypeAdapter(ServiceResourcesDict).validate_python(node.required_resources)
         if DEFAULT_SINGLE_SERVICE_NAME in node_resources:
             image_resources: ImageResources = node_resources[
                 DEFAULT_SINGLE_SERVICE_NAME

@@ -21,7 +21,7 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import parse_obj_as, parse_raw_as
+from pydantic import parse_raw_as
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.core.settings import AppSettings
@@ -197,7 +197,7 @@ async def test_get_tasks_outputs(
 
     assert resp.status_code == status.HTTP_200_OK
 
-    tasks_outputs = parse_obj_as(TasksOutputs, resp.json())
+    tasks_outputs = TasksOutputs.model_validate(resp.json())
 
     assert selection == set(tasks_outputs.nodes_outputs.keys())
     outputs = tasks_outputs.nodes_outputs[node_id]

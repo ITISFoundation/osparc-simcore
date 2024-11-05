@@ -36,9 +36,8 @@ from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize
+from pydantic import ByteSize, TypeAdapter
 from pydantic.networks import AnyUrl
-from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_sdk.node_ports_v2 import FileLinkType
@@ -95,16 +94,15 @@ async def mocked_node_ports_filemanager_fcts(
                 0,
                 FileUploadSchema(
                     urls=[
-                        parse_obj_as(
-                            AnyUrl,
+                        TypeAdapter(AnyUrl).validate_python(
                             f"{URL(faker.uri()).with_scheme(choice(tasks_file_link_scheme))}",  # noqa: S311
                         )
                     ],
-                    chunk_size=parse_obj_as(ByteSize, "5GiB"),
+                    chunk_size=TypeAdapter(ByteSize).validate_python("5GiB"),
                     links=FileUploadLinks(
-                        abort_upload=parse_obj_as(AnyUrl, "https://www.fakeabort.com"),
-                        complete_upload=parse_obj_as(
-                            AnyUrl, "https://www.fakecomplete.com"
+                        abort_upload=TypeAdapter(AnyUrl).validate_python("https://www.fakeabort.com"),
+                        complete_upload=TypeAdapter(AnyUrl).validate_python(
+                            "https://www.fakecomplete.com"
                         ),
                     ),
                 ),
@@ -234,7 +232,7 @@ def fake_task_output_data(
         )
         for key, value in fake_io_data.items()
     }
-    data = parse_obj_as(TaskOutputData, converted_data)
+    data = TypeAdapter(TaskOutputData).validate_python(converted_data)
     assert data
     return data
 
@@ -334,7 +332,7 @@ async def test_compute_input_data(
             fake_inputs.values(), fake_io_schema.values(), strict=True
         ):
             if value_type["type"] == "data:*/*":
-                yield parse_obj_as(AnyUrl, faker.url())
+                yield TypeAdapter(AnyUrl).validate_python(faker.url())
             else:
                 yield value
 

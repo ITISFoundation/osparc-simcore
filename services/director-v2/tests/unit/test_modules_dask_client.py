@@ -54,8 +54,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, SecretStr
-from pydantic.tools import parse_obj_as
+from pydantic import AnyUrl, ByteSize, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.background_task import periodic_task
@@ -164,7 +163,7 @@ async def create_dask_client_from_scheduler(
         client = await DaskClient.create(
             app=minimal_app,
             settings=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
-            endpoint=parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address),
+            endpoint=TypeAdapter(AnyUrl).validate_python(dask_spec_local_cluster.scheduler_address),
             authentication=NoAuthentication(),
             tasks_file_link_type=tasks_file_link_type,
             cluster_type=ClusterTypeInModel.ON_PREMISE,
@@ -205,7 +204,7 @@ async def create_dask_client_from_gateway(
         client = await DaskClient.create(
             app=minimal_app,
             settings=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
-            endpoint=parse_obj_as(AnyUrl, local_dask_gateway_server.address),
+            endpoint=TypeAdapter(AnyUrl).validate_python(local_dask_gateway_server.address),
             authentication=SimpleAuthentication(
                 username="pytest_user",
                 password=SecretStr(local_dask_gateway_server.password),
@@ -299,7 +298,7 @@ def cpu_image(node_id: NodeID) -> ImageParams:
         tag="1.5.5",
         node_requirements=NodeRequirements(
             CPU=1,
-            RAM=parse_obj_as(ByteSize, "128 MiB"),
+            RAM=TypeAdapter(ByteSize).validate_python("128 MiB"),
             GPU=None,
         ),
     )  # type: ignore
@@ -327,7 +326,7 @@ def gpu_image(node_id: NodeID) -> ImageParams:
         node_requirements=NodeRequirements(
             CPU=1,
             GPU=1,
-            RAM=parse_obj_as(ByteSize, "256 MiB"),
+            RAM=TypeAdapter(ByteSize).validate_python("256 MiB"),
         ),
     )  # type: ignore
     return ImageParams(
@@ -367,15 +366,15 @@ def _mocked_node_ports(mocker: MockerFixture) -> None:
 
     mocker.patch(
         "simcore_service_director_v2.modules.dask_client.dask_utils.compute_input_data",
-        return_value=TaskInputData.parse_obj({}),
+        return_value=TaskInputData.model_validate({}),
     )
     mocker.patch(
         "simcore_service_director_v2.modules.dask_client.dask_utils.compute_output_data_schema",
-        return_value=TaskOutputDataSchema.parse_obj({}),
+        return_value=TaskOutputDataSchema.model_validate({}),
     )
     mocker.patch(
         "simcore_service_director_v2.modules.dask_client.dask_utils.compute_service_log_file_upload_link",
-        return_value=parse_obj_as(AnyUrl, "file://undefined"),
+        return_value=TypeAdapter(AnyUrl).validate_python("file://undefined"),
     )
 
 
@@ -470,8 +469,7 @@ def comp_run_metadata(faker: Faker) -> RunMetadataDict:
 
 @pytest.fixture
 def task_labels(comp_run_metadata: RunMetadataDict) -> ContainerLabelsDict:
-    return parse_obj_as(
-        ContainerLabelsDict,
+    return TypeAdapter(ContainerLabelsDict).validate_python(
         {
             k.replace("_", "-").lower(): v
             for k, v in comp_run_metadata.items()
@@ -949,7 +947,7 @@ async def test_too_many_resources_send_computation_task(
         tag="1.4.5",
         node_requirements=NodeRequirements(
             CPU=10000000000000000,
-            RAM=parse_obj_as(ByteSize, "128 MiB"),
+            RAM=TypeAdapter(ByteSize).validate_python("128 MiB"),
             GPU=None,
         ),
     )  # type: ignore

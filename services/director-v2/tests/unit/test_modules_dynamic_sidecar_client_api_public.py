@@ -11,7 +11,7 @@ from faker import Faker
 from fastapi import FastAPI, status
 from httpx import HTTPError, Response
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.http_client_thin import ClientHttpError, UnexpectedStatusError
@@ -33,7 +33,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
 
 @pytest.fixture
 def dynamic_sidecar_endpoint() -> AnyHttpUrl:
-    return parse_obj_as(AnyHttpUrl, "http://missing-host:1111")
+    return TypeAdapter(AnyHttpUrl).validate_python("http://missing-host:1111")
 
 
 @pytest.fixture

@@ -13,7 +13,7 @@ from models_library.api_schemas_directorv2.clusters import (
     WorkerMetrics,
 )
 from models_library.clusters import ClusterTypeInModel
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel, TypeAdapter
 from simcore_postgres_database.models.clusters import ClusterType
 
 
@@ -63,11 +63,10 @@ def test_worker_constructor_corrects_negative_used_resources(faker: Faker):
     worker = Worker(
         id=faker.pyint(min_value=1),
         name=faker.name(),
-        resources=parse_obj_as(AvailableResources, {}),
-        used_resources=parse_obj_as(UsedResources, {"CPU": -0.0000234}),
+        resources=TypeAdapter(AvailableResources).validate_python({}),
+        used_resources=TypeAdapter(UsedResources).validate_python({"CPU": -0.0000234}),
         memory_limit=faker.pyint(min_value=1),
-        metrics=parse_obj_as(
-            WorkerMetrics,
+        metrics=WorkerMetrics.model_validate(
             {
                 "cpu": faker.pyfloat(min_value=0),
                 "memory": faker.pyint(min_value=0),

@@ -49,7 +49,7 @@ from models_library.services_resources import (
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletInfo
-from pydantic import AnyHttpUrl, ByteSize, PositiveInt, ValidationError, parse_obj_as
+from pydantic import AnyHttpUrl, ByteSize, PositiveInt, TypeAdapter, ValidationError
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
@@ -117,8 +117,7 @@ def fake_service_extras() -> ServiceExtras:
 
 @pytest.fixture
 def fake_service_resources() -> ServiceResourcesDict:
-    return parse_obj_as(
-        ServiceResourcesDict,
+    return TypeAdapter(ServiceResourcesDict).validate_python(
         ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
     )
 
@@ -422,7 +421,7 @@ def fake_ec2_cpus() -> PositiveInt:
 
 @pytest.fixture
 def fake_ec2_ram() -> ByteSize:
-    return parse_obj_as(ByteSize, "4GiB")
+    return TypeAdapter(ByteSize).validate_python("4GiB")
 
 
 @pytest.fixture
@@ -575,7 +574,7 @@ async def test_create_computation_with_wallet(
 @pytest.mark.parametrize(
     "default_pricing_plan",
     [
-        PricingPlanGet.construct(
+        PricingPlanGet.model_construct(
             **PricingPlanGet.model_config["json_schema_extra"]["examples"][0]
         )
     ],
@@ -874,7 +873,7 @@ async def test_get_computation_from_empty_project(
     )
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
-    returned_computation = ComputationGet.parse_obj(response.json())
+    returned_computation = ComputationGet.model_validate(response.json())
     assert returned_computation
     expected_computation = ComputationGet(
         id=proj.uuid,
@@ -882,8 +881,8 @@ async def test_get_computation_from_empty_project(
         pipeline_details=PipelineDetails(
             adjacency_list={}, node_states={}, progress=None
         ),
-        url=parse_obj_as(
-            AnyHttpUrl, f"{async_client.base_url.join(get_computation_url)}"
+        url=TypeAdapter(AnyHttpUrl).validate_python(
+            f"{async_client.base_url.join(get_computation_url)}"
         ),
         stop_url=None,
         result=None,
@@ -893,7 +892,7 @@ async def test_get_computation_from_empty_project(
         stopped=None,
         submitted=None,
     )
-    assert returned_computation.dict() == expected_computation.dict()
+    assert returned_computation.model_dump() == expected_computation.model_dump()
 
 
 async def test_get_computation_from_not_started_computation_task(
@@ -923,14 +922,14 @@ async def test_get_computation_from_not_started_computation_task(
     comp_tasks = tasks(user=user, project=proj)
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
-    returned_computation = ComputationGet.parse_obj(response.json())
+    returned_computation = ComputationGet.model_validate(response.json())
     assert returned_computation
     expected_computation = ComputationGet(
         id=proj.uuid,
         state=RunningState.NOT_STARTED,
         pipeline_details=PipelineDetails(
-            adjacency_list=parse_obj_as(
-                dict[NodeID, list[NodeID]], fake_workbench_adjacency
+            adjacency_list=TypeAdapter(dict[NodeID, list[NodeID]]).validate_python(
+                fake_workbench_adjacency
             ),
             progress=0,
             node_states={
@@ -948,8 +947,8 @@ async def test_get_computation_from_not_started_computation_task(
                 if t.node_class == NodeClass.COMPUTATIONAL
             },
         ),
-        url=parse_obj_as(
-            AnyHttpUrl, f"{async_client.base_url.join(get_computation_url)}"
+        url=TypeAdapter(AnyHttpUrl).validate_python(
+            f"{async_client.base_url.join(get_computation_url)}"
         ),
         stop_url=None,
         result=None,
@@ -960,12 +959,12 @@ async def test_get_computation_from_not_started_computation_task(
         submitted=None,
     )
     _CHANGED_FIELDS = {"submitted"}
-    assert returned_computation.dict(
+    assert returned_computation.model_dump(
         exclude=_CHANGED_FIELDS
-    ) == expected_computation.dict(exclude=_CHANGED_FIELDS)
-    assert returned_computation.dict(
+    ) == expected_computation.model_dump(exclude=_CHANGED_FIELDS)
+    assert returned_computation.model_dump(
         include=_CHANGED_FIELDS
-    ) != expected_computation.dict(include=_CHANGED_FIELDS)
+    ) != expected_computation.model_dump(include=_CHANGED_FIELDS)
 
 
 async def test_get_computation_from_published_computation_task(
@@ -993,7 +992,7 @@ async def test_get_computation_from_published_computation_task(
     )
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
-    returned_computation = ComputationGet.parse_obj(response.json())
+    returned_computation = ComputationGet.model_validate(response.json())
     assert returned_computation
     expected_stop_url = async_client.base_url.join(
         f"/v2/computations/{proj.uuid}:stop?user_id={user['id']}"
@@ -1002,8 +1001,8 @@ async def test_get_computation_from_published_computation_task(
         id=proj.uuid,
         state=RunningState.PUBLISHED,
         pipeline_details=PipelineDetails(
-            adjacency_list=parse_obj_as(
-                dict[NodeID, list[NodeID]], fake_workbench_adjacency
+            adjacency_list=TypeAdapter(dict[NodeID, list[NodeID]]).validate_python(
+                fake_workbench_adjacency
             ),
             node_states={
                 t.node_id: NodeState(
@@ -1021,10 +1020,10 @@ async def test_get_computation_from_published_computation_task(
             },
             progress=0,
         ),
-        url=parse_obj_as(
-            AnyHttpUrl, f"{async_client.base_url.join(get_computation_url)}"
+        url=TypeAdapter(AnyHttpUrl).validate_python(
+            f"{async_client.base_url.join(get_computation_url)}"
         ),
-        stop_url=parse_obj_as(AnyHttpUrl, f"{expected_stop_url}"),
+        stop_url=TypeAdapter(AnyHttpUrl).validate_python(f"{expected_stop_url}"),
         result=None,
         iteration=1,
         cluster_id=DEFAULT_CLUSTER_ID,
@@ -1034,9 +1033,9 @@ async def test_get_computation_from_published_computation_task(
     )
 
     _CHANGED_FIELDS = {"submitted"}
-    assert returned_computation.dict(
+    assert returned_computation.model_dump(
         exclude=_CHANGED_FIELDS
-    ) == expected_computation.dict(exclude=_CHANGED_FIELDS)
-    assert returned_computation.dict(
+    ) == expected_computation.model_dump(exclude=_CHANGED_FIELDS)
+    assert returned_computation.model_dump(
         include=_CHANGED_FIELDS
-    ) != expected_computation.dict(include=_CHANGED_FIELDS)
+    ) != expected_computation.model_dump(include=_CHANGED_FIELDS)

@@ -48,7 +48,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
 from models_library.users import UserID
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 from pydantic.networks import AnyUrl
 from servicelib.logging_utils import log_catch
 from settings_library.s3 import S3Settings
@@ -583,5 +583,5 @@ class DaskClient:
         assert dashboard_link  # nosec
         return ClusterDetails(
             scheduler=Scheduler(status=scheduler_status, **scheduler_info),
-            dashboard_link=parse_obj_as(AnyUrl, dashboard_link),
+            dashboard_link=TypeAdapter(AnyUrl).validate_python(dashboard_link),
         )

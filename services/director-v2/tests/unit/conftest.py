@@ -10,6 +10,7 @@ from typing import Any
 from unittest import mock
 
 import aiodocker
+from pydantic import TypeAdapter
 import pytest
 import respx
 from faker import Faker
@@ -27,7 +28,6 @@ from models_library.generated_models.docker_rest_api import (
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import RunID, ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.services_enums import ServiceState
-from pydantic import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.s3 import S3Settings
@@ -52,16 +52,16 @@ def simcore_services_network_name() -> str:
 
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
-    simcore_service_labels = SimcoreServiceLabels.parse_obj(
+    simcore_service_labels = SimcoreServiceLabels.model_validate(
         SimcoreServiceLabels.model_config["json_schema_extra"]["examples"][1]
     )
-    simcore_service_labels.callbacks_mapping = parse_obj_as(CallbacksMapping, {})
+    simcore_service_labels.callbacks_mapping = CallbacksMapping.model_validate({})
     return simcore_service_labels
 
 
 @pytest.fixture
 def dynamic_service_create() -> DynamicServiceCreate:
-    return DynamicServiceCreate.parse_obj(
+    return DynamicServiceCreate.model_validate(
         DynamicServiceCreate.model_config["json_schema_extra"]["example"]
     )
 
@@ -211,8 +211,8 @@ def mocked_storage_service_api(
 @pytest.fixture
 def mock_service_key_version() -> ServiceKeyVersion:
     return ServiceKeyVersion(
-        key=parse_obj_as(ServiceKey, "simcore/services/dynamic/myservice"),
-        version=parse_obj_as(ServiceVersion, "1.4.5"),
+        key=TypeAdapter(ServiceKey).validate_python("simcore/services/dynamic/myservice"),
+        version=TypeAdapter(ServiceVersion).validate_python("1.4.5"),
     )
 
 
@@ -221,7 +221,7 @@ def fake_service_specifications(faker: Faker) -> dict[str, Any]:
     # the service specifications follow the Docker service creation available
     # https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     return {
-        "sidecar": DockerServiceSpec.parse_obj(
+        "sidecar": DockerServiceSpec.model_validate(
             {
                 "Labels": {"label_one": faker.pystr(), "label_two": faker.pystr()},
                 "TaskTemplate": {
