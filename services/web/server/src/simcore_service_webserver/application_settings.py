@@ -279,10 +279,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "Currently this is a system plugin and cannot be disabled",
     )
 
-    model_config = SettingsConfigDict(
-        frozen=False
-    )
-
     @model_validator(mode="after")
     @classmethod
     def build_vcs_release_url_if_unset(cls, v):
