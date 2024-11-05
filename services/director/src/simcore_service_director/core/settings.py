@@ -19,7 +19,6 @@ from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
-from ..constants import API_ROOT
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -119,21 +118,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
     STORAGE_ENDPOINT: AnyUrl = Field(...)
 
-    # TODO: this needs some code changes
-    # SERVICES_DEFAULT_ENVS: dict[str, str] = {
-    #     "POSTGRES_ENDPOINT": os.environ.get(
-    #         "POSTGRES_ENDPOINT", "undefined postgres endpoint"
-    #     ),
-    #     "POSTGRES_USER": os.environ.get("POSTGRES_USER", "undefined postgres user"),
-    #     "POSTGRES_PASSWORD": os.environ.get(
-    #         "POSTGRES_PASSWORD", "undefined postgres password"
-    #     ),
-    #     "POSTGRES_DB": os.environ.get("POSTGRES_DB", "undefined postgres db"),
-    #     "STORAGE_ENDPOINT": os.environ.get(
-    #         "STORAGE_ENDPOINT", "undefined storage endpoint"
-    #     ),
-    # }
-
     DIRECTOR_PUBLISHED_HOST_NAME: str = Field(
         default="", env=["DIRECTOR_PUBLISHED_HOST_NAME", "PUBLISHED_HOST_NAME"]
     )
@@ -143,11 +127,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         env=["DIRECTOR_SWARM_STACK_NAME", "SWARM_STACK_NAME"],
     )
 
-    # used when in devel mode vs release mode
-    DIRECTOR_NODE_SCHEMA_LOCATION: str = Field(
-        default=f"{API_ROOT}/{API_VERSION}/schemas/node-meta-v0.0.1.json",
-        env=["DIRECTOR_NODE_SCHEMA_LOCATION", "NODE_SCHEMA_LOCATION"],
-    )
     # used to find the right network name
     DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME: str | None = Field(
         default=None,
