@@ -16,17 +16,15 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
-from simcore_service_resource_usage_tracker.models.resource_tracker_credit_transactions import (
+from simcore_service_resource_usage_tracker.models.credit_transactions import (
     CreditTransactionDB,
 )
-from simcore_service_resource_usage_tracker.models.resource_tracker_service_runs import (
-    ServiceRunDB,
-)
-from simcore_service_resource_usage_tracker.modules.db.repositories.resource_tracker import (
-    ResourceTrackerRepository,
-)
-from simcore_service_resource_usage_tracker.resource_tracker_background_task import (
+from simcore_service_resource_usage_tracker.models.service_runs import ServiceRunDB
+from simcore_service_resource_usage_tracker.services.background_task_periodic_heartbeat_check import (
     periodic_check_of_running_services_task,
+)
+from simcore_service_resource_usage_tracker.services.modules.db.repositories.resource_tracker import (
+    ResourceTrackerRepository,
 )
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]

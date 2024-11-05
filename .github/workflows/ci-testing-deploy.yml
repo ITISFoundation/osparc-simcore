@@ -450,6 +450,51 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  unit-test-webserver-04:
+      needs: changes
+      if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
+      timeout-minutes: 25 # if this timeout gets too small, then split the tests
+      name: "[unit] webserver 04"
+      runs-on: ${{ matrix.os }}
+      strategy:
+        matrix:
+          python: ["3.11"]
+          os: [ubuntu-22.04]
+        fail-fast: false
+      steps:
+        - uses: actions/checkout@v4
+        - name: setup docker buildx
+          id: buildx
+          uses: docker/setup-buildx-action@v3
+          with:
+            driver: docker-container
+        - name: setup python environment
+          uses: actions/setup-python@v5
+          with:
+            python-version: ${{ matrix.python }}
+        - name: install uv
+          uses: astral-sh/setup-uv@v3
+          with:
+            version: "0.4.x"
+            enable-cache: false
+            cache-dependency-glob: "**/web/server/requirements/ci.txt"
+        - name: show system version
+          run: ./ci/helpers/show_system_versions.bash
+        - name: install webserver
+          run: ./ci/github/unit-testing/webserver.bash install
+        - name: test
+          run: ./ci/github/unit-testing/webserver.bash test_with_db 04
+        - uses: codecov/codecov-action@v4.6.0
+          env:
+            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          with:
+            flags: unittests #optional
+        - name: Upload test results to Codecov
+          if: ${{ !cancelled() }}
+          uses: codecov/test-results-action@v1
+          with:
+            token: ${{ secrets.CODECOV_TOKEN }}
+
   unit-test-storage:
     needs: changes
     if: ${{ needs.changes.outputs.storage == 'true' || github.event_name == 'push' }}
@@ -1875,6 +1920,7 @@ jobs:
         unit-test-webserver-01,
         unit-test-webserver-02,
         unit-test-webserver-03,
+        unit-test-webserver-04,
       ]
     runs-on: ubuntu-latest
     steps:

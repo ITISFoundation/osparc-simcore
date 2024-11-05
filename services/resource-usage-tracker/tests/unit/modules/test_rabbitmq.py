@@ -5,7 +5,9 @@
 
 from fastapi import FastAPI
 from settings_library.rabbit import RabbitSettings
-from simcore_service_resource_usage_tracker.modules.rabbitmq import get_rabbitmq_client
+from simcore_service_resource_usage_tracker.services.modules.rabbitmq import (
+    get_rabbitmq_client,
+)
 
 # Selection of core and tool services started in this swarm fixture (integration)
 pytest_simcore_core_services_selection = [

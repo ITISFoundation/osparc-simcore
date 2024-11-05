@@ -56,7 +56,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
       --log-level \"${SERVER_LOG_LEVEL}\"
   "
 else
-  exec uvicorn simcore_service_resource_usage_tracker.web_main:the_app \
+  exec uvicorn simcore_service_resource_usage_tracker.main:the_app \
     --host 0.0.0.0 \
     --log-level "${SERVER_LOG_LEVEL}"
 fi

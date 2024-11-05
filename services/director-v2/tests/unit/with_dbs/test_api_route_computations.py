@@ -53,6 +53,7 @@ from pydantic import AnyHttpUrl, ByteSize, PositiveInt, ValidationError, parse_o
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
@@ -65,7 +66,7 @@ from simcore_service_director_v2.modules.db.repositories.comp_tasks._utils impor
 )
 from simcore_service_director_v2.utils.computations import to_node_class
 
-pytest_simcore_core_services_selection = ["postgres", "rabbit"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
@@ -84,6 +85,7 @@ def minimal_configuration(
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
     rabbit_service: RabbitSettings,
+    redis_service: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
     mocked_rabbit_mq_client: None,
     faker: Faker,
