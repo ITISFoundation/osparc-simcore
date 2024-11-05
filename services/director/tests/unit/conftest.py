@@ -57,16 +57,20 @@ def common_schemas_specs_dir(osparc_simcore_root_dir: Path) -> Path:
     return specs_dir
 
 
-@pytest.fixture(scope="session")
-def configure_swarm_stack_name(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
-    return setenvs_from_dict(monkeypatch, envs={"SWARM_STACK_NAME": "test_stack"})
+@pytest.fixture
+def configure_swarm_stack_name(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch, envs={"SWARM_STACK_NAME": "test_stack"}
+    )
 
 
 @pytest.fixture
 def configure_registry_access(
-    monkeypatch: pytest.MonkeyPatch, docker_registry: str
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, docker_registry: str
 ) -> EnvVarsDict:
-    return setenvs_from_dict(
+    return app_environment | setenvs_from_dict(
         monkeypatch,
         envs={
             "REGISTRY_URL": docker_registry,
@@ -79,7 +83,9 @@ def configure_registry_access(
 
 @pytest.fixture(scope="session")
 def configure_custom_registry(
-    monkeypatch: pytest.MonkeyPatch, pytestconfig: pytest.Config
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    pytestconfig: pytest.Config,
 ) -> EnvVarsDict:
     # to set these values call
     # pytest --registry_url myregistry --registry_user username --registry_pw password
@@ -92,7 +98,7 @@ def configure_custom_registry(
     registry_pw = pytestconfig.getoption("registry_pw")
     assert registry_pw
     assert isinstance(registry_pw, str)
-    return setenvs_from_dict(
+    return app_environment | setenvs_from_dict(
         monkeypatch,
         envs={
             "REGISTRY_URL": registry_url,
@@ -144,25 +150,3 @@ async def app(
         shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
     ):
         yield the_test_app
-
-
-# @pytest.fixture
-# async def aiohttp_mock_app(loop, mocker):
-#     print("client session started ...")
-#     session = ClientSession()
-
-#     mock_app_storage = {
-#         config.APP_CLIENT_SESSION_KEY: session,
-#         config.APP_REGISTRY_CACHE_DATA_KEY: {},
-#     }
-
-#     def _get_item(self, key):
-#         return mock_app_storage[key]
-
-#     aiohttp_app = mocker.patch("aiohttp.web.Application")
-#     aiohttp_app.__getitem__ = _get_item
-
-#     yield aiohttp_app
-
-#     # cleanup session
-#     await session.close()

@@ -7,9 +7,12 @@ import uuid
 
 import httpx
 import pytest
+from faker import Faker
 
 # from aioresponses.core import CallbackResult, aioresponses
 from fastapi import status
+from models_library.projects import ProjectID
+from models_library.users import UserID
 
 
 def _assert_response_and_unwrap_envelope(got: httpx.Response):
@@ -50,26 +53,28 @@ async def test_running_services_post_and_delete_no_swarm(
 )
 async def test_running_services_post_and_delete(
     configure_swarm_stack_name,
+    configure_registry_access,
     client: httpx.AsyncClient,
     push_services,
-    docker_swarm,
-    user_id,
-    project_id,
-    api_version_prefix,
+    docker_swarm: None,
+    user_id: UserID,
+    project_id: ProjectID,
+    api_version_prefix: str,
     save_state: bool | None,
     expected_save_state_call: bool,
     mocker,
+    faker: Faker,
 ):
     params = {}
     resp = await client.post(
         f"/{api_version_prefix}/running_interactive_services", params=params
     )
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     params = {
-        "user_id": "None",
-        "project_id": "None",
-        "service_uuid": "sdlfkj4",
+        "user_id": f"{faker.pyint(min_value=1)}",
+        "project_id": f"{faker.uuid4()}",
+        "service_uuid": f"{faker.uuid4()}",
         "service_key": "None",
         "service_tag": "None",  # optional
         "service_basepath": "None",  # optional
@@ -78,31 +83,39 @@ async def test_running_services_post_and_delete(
         f"/{api_version_prefix}/running_interactive_services", params=params
     )
     data = resp.json()
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST, data
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, data
+
+    fake_headers = {"x-simcore-user-agent": faker.pystr()}
 
     params["service_key"] = "simcore/services/comp/somfunkyname-nhsd"
     params["service_tag"] = "1.2.3"
     resp = await client.post(
-        f"/{api_version_prefix}/running_interactive_services", params=params
+        f"/{api_version_prefix}/running_interactive_services",
+        params=params,
+        headers=fake_headers,
     )
     data = resp.json()
     assert resp.status_code == status.HTTP_404_NOT_FOUND, data
 
-    created_services = await push_services(0, 2)
+    created_services = await push_services(
+        number_of_computational_services=0, number_of_interactive_services=2
+    )
     assert len(created_services) == 2
     for created_service in created_services:
         service_description = created_service["service_description"]
-        params["user_id"] = user_id
-        params["project_id"] = project_id
+        params["user_id"] = f"{user_id}"
+        params["project_id"] = f"{project_id}"
         params["service_key"] = service_description["key"]
         params["service_tag"] = service_description["version"]
         service_port = created_service["internal_port"]
         service_entry_point = created_service["entry_point"]
         params["service_basepath"] = "/i/am/a/basepath"
-        params["service_uuid"] = str(uuid.uuid4())
+        params["service_uuid"] = f"{faker.uuid4()}"
         # start the service
         resp = await client.post(
-            f"/{api_version_prefix}/running_interactive_services", params=params
+            f"/{api_version_prefix}/running_interactive_services",
+            params=params,
+            headers=fake_headers,
         )
         assert resp.status_code == status.HTTP_201_CREATED
         assert resp.encoding == "application/json"
