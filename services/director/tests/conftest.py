@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import os
 from collections.abc import AsyncIterator
 from pathlib import Path
 
@@ -13,7 +12,6 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_director import config, resources
 from simcore_service_director.core.application import create_app
 from simcore_service_director.core.settings import ApplicationSettings
 
@@ -59,45 +57,56 @@ def common_schemas_specs_dir(osparc_simcore_root_dir: Path) -> Path:
     return specs_dir
 
 
+@pytest.fixture(scope="session")
+def configure_swarm_stack_name(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
+    return setenvs_from_dict(monkeypatch, envs={"SWARM_STACK_NAME": "test_stack"})
+
+
 @pytest.fixture
-def configure_schemas_location(
-    installed_package_dir: Path, common_schemas_specs_dir: Path
-) -> None:
-    config.NODE_SCHEMA_LOCATION = str(
-        common_schemas_specs_dir / "node-meta-v0.0.1.json"
-    )
-    resources.RESOURCE_NODE_SCHEMA = os.path.relpath(
-        config.NODE_SCHEMA_LOCATION, installed_package_dir
+def configure_registry_access(
+    monkeypatch: pytest.MonkeyPatch, docker_registry: str
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "REGISTRY_URL": docker_registry,
+            "REGISTRY_PATH": docker_registry,
+            "REGISTRY_SSL": False,
+            "DIRECTOR_REGISTRY_CACHING": False,
+        },
     )
 
 
 @pytest.fixture(scope="session")
-def configure_swarm_stack_name() -> None:
-    config.SWARM_STACK_NAME = "test_stack"
-
-
-@pytest.fixture
-def configure_registry_access(docker_registry: str) -> None:
-    config.REGISTRY_URL = docker_registry
-    config.REGISTRY_PATH = docker_registry
-    config.REGISTRY_SSL = False
-    config.DIRECTOR_REGISTRY_CACHING = False
-
-
-@pytest.fixture(scope="session")
-def configure_custom_registry(pytestconfig: pytest.Config) -> None:
+def configure_custom_registry(
+    monkeypatch: pytest.MonkeyPatch, pytestconfig: pytest.Config
+) -> EnvVarsDict:
     # to set these values call
     # pytest --registry_url myregistry --registry_user username --registry_pw password
-    config.REGISTRY_URL = pytestconfig.getoption("registry_url")
-    config.REGISTRY_AUTH = True
-    config.REGISTRY_USER = pytestconfig.getoption("registry_user")
-    config.REGISTRY_PW = pytestconfig.getoption("registry_pw")
-    config.DIRECTOR_REGISTRY_CACHING = False
+    registry_url = pytestconfig.getoption("registry_url")
+    assert registry_url
+    assert isinstance(registry_url, str)
+    registry_user = pytestconfig.getoption("registry_user")
+    assert registry_user
+    assert isinstance(registry_user, str)
+    registry_pw = pytestconfig.getoption("registry_pw")
+    assert registry_pw
+    assert isinstance(registry_pw, str)
+    return setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "REGISTRY_URL": registry_url,
+            "REGISTRY_AUTH": True,
+            "REGISTRY_USER": registry_user,
+            "REGISTRY_PW": registry_pw,
+            "REGISTRY_SSL": False,
+            "DIRECTOR_REGISTRY_CACHING": False,
+        },
+    )
 
 
 @pytest.fixture
 def api_version_prefix() -> str:
-    assert "v0" in resources.listdir(resources.RESOURCE_OPENAPI_ROOT)
     return "v0"
 
 
