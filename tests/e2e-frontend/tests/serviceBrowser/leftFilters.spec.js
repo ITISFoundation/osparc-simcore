@@ -17,9 +17,18 @@ test.describe.serial(`Left Filters:`, () => {
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
+
+    const responsePromise = page.waitForResponse('**/services/-/latest**', {
+      timeout: 30000
+    });
+
     loginPageFixture = new LoginPage(page, productUrl);
     const role = await loginPageFixture.login(user.email, user.password);
     expect(role).toBe(user.role);
+
+    await responsePromise;
+
+    await page.getByTestId("servicesTabBtn").click();
   });
 
   test.afterAll(async ({ browser }) => {
@@ -29,14 +38,27 @@ test.describe.serial(`Left Filters:`, () => {
   });
 
   test(`Filters`, async () => {
-    const contextTree = page.getByTestId("contextTree");
-    await expect(contextTree).toBeVisible({
+    const sharedWithFilters = page.getByTestId("service-sharedWithFilterItem");
+    await expect(sharedWithFilters).toBeVisible({
       timeout: 30000 // it will take some time to load the Study Browser
     });
 
-    const workspacesAndFoldersTreeItems = page.getByTestId("workspacesAndFoldersTreeItem");
-    const count = await workspacesAndFoldersTreeItems.count();
-    // at least two: My Workspace and Shared Workspaces
-    expect(count > 1).toBeTruthy();
+    const countSharedWith = await sharedWithFilters.count();
+    // All Services
+    // My Services
+    // Shared with Me
+    // Shared with Everyone
+    expect(countSharedWith === 4).toBeTruthy();
+
+
+    const serviceTypeFilters = page.getByTestId("service-serviceTypeFilterItem");
+    await expect(serviceTypeFilters).toBeVisible({
+      timeout: 30000 // it will take some time to load the Study Browser
+    });
+
+    const countServiceType = await serviceTypeFilters.count();
+    // Computational
+    // Interactive
+    expect(countServiceType === 2).toBeTruthy();
   });
 });

@@ -49,7 +49,9 @@ for (const product in products) {
         test.beforeAll(async ({ browser }) => {
           page = await browser.newPage();
 
-          const responsePromise = page.waitForResponse('**/services/-/latest**');
+          const responsePromise = page.waitForResponse('**/services/-/latest**', {
+            timeout: 30000
+          });
 
           loginPageFixture = new LoginPage(page, productUrl);
           const role = await loginPageFixture.login(user.email, user.password);
