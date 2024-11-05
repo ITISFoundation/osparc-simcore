@@ -180,10 +180,17 @@ async def _create_docker_service_params(
     )
     service_name = registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
     log.debug("Converting labels to docker runtime parameters")
+    service_default_envs = {
+        "POSTGRES_ENDPOINT": app_settings.DIRECTOR_POSTGRES.dsn,
+        "POSTGRES_USER": app_settings.DIRECTOR_POSTGRES.POSTGRES_USER,
+        "POSTGRES_PASSWORD": app_settings.DIRECTOR_POSTGRES.POSTGRES_PASSWORD.get_secret_value(),
+        "POSTGRES_DB": app_settings.DIRECTOR_POSTGRES.POSTGRES_DB,
+        "STORAGE_ENDPOINT": app_settings.STORAGE_ENDPOINT,
+    }
     container_spec = {
         "Image": f"{app_settings.DIRECTOR_REGISTRY.resolved_registry_url}/{service_key}:{service_tag}",
         "Env": {
-            **config.SERVICES_DEFAULT_ENVS,
+            **service_default_envs,
             "SIMCORE_USER_ID": user_id,
             "SIMCORE_NODE_UUID": node_uuid,
             "SIMCORE_PROJECT_ID": project_id,
