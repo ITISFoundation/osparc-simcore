@@ -64,30 +64,16 @@ qx.Class.define("osparc.service.PricingUnitsList", {
     __populateList: function(pricingUnits) {
       this.getChildControl("pricing-units-container").removeAll();
 
-      if (pricingUnits.length === 0) {
+      if (pricingUnits.length) {
+        const pUnits = new osparc.study.PricingUnits(pricingUnits, null, false);
+        this.getChildControl("pricing-units-container").add(pUnits);
+      } else {
         const notFound = new qx.ui.basic.Label().set({
           value: this.tr("No Tiers found"),
           font: "text-14"
         });
         this.getChildControl("pricing-units-container").add(notFound);
-        return;
       }
-
-      pricingUnits.forEach(pricingUnit => {
-        const pUnit = new osparc.study.PricingUnit(pricingUnit).set({
-          allowGrowY: false
-        });
-        this.getChildControl("pricing-units-container").add(pUnit);
-      });
-
-      const buttons = this.getChildControl("pricing-units-container").getChildren();
-      const keepDefaultSelected = () => {
-        buttons.forEach(btn => {
-          btn.setValue(btn.getUnitData().isDefault());
-        });
-      };
-      keepDefaultSelected();
-      buttons.forEach(btn => btn.addListener("execute", () => keepDefaultSelected()));
     }
   }
 });

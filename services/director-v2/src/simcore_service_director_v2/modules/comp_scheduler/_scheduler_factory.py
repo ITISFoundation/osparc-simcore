@@ -2,16 +2,16 @@ import logging
 
 from fastapi import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
-from simcore_service_director_v2.core.settings import AppSettings
 
 from ...core.errors import ConfigurationError
+from ...core.settings import AppSettings
 from ...models.comp_runs import CompRunsAtDB
-from ...modules.dask_clients_pool import DaskClientsPool
-from ...modules.rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 from ...utils.comp_scheduler import SCHEDULED_STATES
+from ..dask_clients_pool import DaskClientsPool
 from ..db.repositories.comp_runs import CompRunsRepository
-from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
-from .dask_scheduler import DaskScheduler
+from ..rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
+from ._base_scheduler import BaseCompScheduler, ScheduledPipelineParams
+from ._dask_scheduler import DaskScheduler
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +43,9 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
         db_engine=db_engine,
         scheduled_pipelines={
             (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
-                cluster_id=r.cluster_id
-                if r.cluster_id is not None
-                else DEFAULT_CLUSTER_ID,
+                cluster_id=(
+                    r.cluster_id if r.cluster_id is not None else DEFAULT_CLUSTER_ID
+                ),
                 run_metadata=r.metadata,
                 mark_for_cancellation=False,
                 use_on_demand_clusters=r.use_on_demand_clusters,

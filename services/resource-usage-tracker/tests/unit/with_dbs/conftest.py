@@ -31,12 +31,10 @@ from simcore_postgres_database.models.resource_tracker_service_runs import (
 )
 from simcore_service_resource_usage_tracker.core.application import create_app
 from simcore_service_resource_usage_tracker.core.settings import ApplicationSettings
-from simcore_service_resource_usage_tracker.models.resource_tracker_credit_transactions import (
+from simcore_service_resource_usage_tracker.models.credit_transactions import (
     CreditTransactionDB,
 )
-from simcore_service_resource_usage_tracker.models.resource_tracker_service_runs import (
-    ServiceRunDB,
-)
+from simcore_service_resource_usage_tracker.models.service_runs import ServiceRunDB
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay

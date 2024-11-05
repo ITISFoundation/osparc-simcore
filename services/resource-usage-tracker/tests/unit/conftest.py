@@ -68,6 +68,7 @@ def app_environment(
             "PROMETHEUS_USERNAME": faker.user_name(),
             "PROMETHEUS_PASSWORD": faker.password(special_chars=False),
             "RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_CHECK_ENABLED": "0",
+            "RESOURCE_USAGE_TRACKER_TRACING": "null",
         },
     )
 

@@ -97,7 +97,7 @@ async def iter_latest_product_services(
             )
             & (services_meta_data.c.deprecated.is_(None))
             & (services_access_rights.c.gid == EVERYONE_GROUP_ID)
-            & (services_access_rights.c.execute_access == True)
+            & (services_access_rights.c.execute_access.is_(True))
             & (services_access_rights.c.product_name == product_name)
         )
     )
@@ -161,7 +161,7 @@ async def validate_requested_service(
             sa.select(services_consume_filetypes.c.is_guest_allowed)
             .where(
                 (services_consume_filetypes.c.service_key == service_key)
-                & (services_consume_filetypes.c.is_guest_allowed == True)
+                & (services_consume_filetypes.c.is_guest_allowed.is_(True))
             )
             .limit(1)
         )
