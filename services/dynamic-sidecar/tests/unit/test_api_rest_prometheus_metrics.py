@@ -111,11 +111,12 @@ async def _get_task_id_create_service_containers(
         docker_compose_yaml=compose_spec,
     )
     await httpx_async_client.post(
-        f"/{API_VTAG}/containers/compose-spec", json=ctontainers_compose_spec.dict()
+        f"/{API_VTAG}/containers/compose-spec",
+        json=ctontainers_compose_spec.model_dump(),
     )
     containers_create = ContainersCreate(metrics_params=mock_metrics_params)
     response = await httpx_async_client.post(
-        f"/{API_VTAG}/containers", json=containers_create.dict()
+        f"/{API_VTAG}/containers", json=containers_create.model_dump()
     )
     task_id: TaskId = response.json()
     assert isinstance(task_id, str)

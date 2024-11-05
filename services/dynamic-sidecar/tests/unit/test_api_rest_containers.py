@@ -104,7 +104,7 @@ async def _start_containers(
 
     response = await test_client.post(
         f"/{API_VTAG}/containers",
-        json={"metrics_params": mock_metrics_params.dict()},
+        json={"metrics_params": mock_metrics_params.model_dump()},
     )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     task_id: TaskId = response.json()
