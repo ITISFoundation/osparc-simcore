@@ -2,7 +2,8 @@ import asyncio
 import logging
 
 from fastapi import FastAPI
-from servicelib.utils import logged_gather
+from servicelib.logging_utils import log_context
+from servicelib.utils import limited_gather
 
 from . import exceptions, registry_proxy
 from .core.settings import ApplicationSettings, get_application_settings
@@ -15,28 +16,21 @@ TASK_NAME: str = __name__ + "_registry_caching_task"
 async def registry_caching_task(app: FastAPI) -> None:
     app_settings = get_application_settings(app)
     try:
+        with log_context(_logger, logging.INFO, msg=f"{TASK_NAME}: starting"):
+            assert hasattr(app.state, "registry_cache")  # nosec
+            assert isinstance(app.state.registry_cache, dict)  # nosec
+            app.state.registry_cache.clear()
 
-        _logger.info("%s: initializing cache...", TASK_NAME)
-        assert hasattr(app.state, "registry_cache")  # nosec
-        assert isinstance(app.state.registry_cache, dict)  # nosec
-        app.state.registry_cache.clear()
         await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
-        _logger.info("%s: initialisation completed", TASK_NAME)
         while True:
             _logger.info("%s: waking up, refreshing cache...", TASK_NAME)
             try:
-                keys = []
-                refresh_tasks = []
-                for key in app.state.registry_cache:
-                    path, method = key.split(":")
-                    _logger.debug("refresh %s:%s", method, path)
-                    refresh_tasks.append(
-                        registry_proxy.registry_request(
-                            app, path, method, no_cache=True
-                        )
-                    )
+                refresh_tasks = [
+                    registry_proxy.registry_request(app, key.split(":"), no_cache=True)
+                    for key in app.state.registry_cache
+                ]
                 keys = list(app.state.registry_cache.keys())
-                results = await logged_gather(*refresh_tasks)
+                results = await limited_gather(*refresh_tasks, log=_logger, limit=50)
 
                 for key, result in zip(keys, results, strict=False):
                     app.state.registry_cache[key] = result
