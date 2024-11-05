@@ -14,7 +14,7 @@ from .._meta import (
     APP_STARTED_BANNER_MSG,
 )
 from ..api.rest.routes import setup_api_routes
-from ..monitoring import setup_app_monitoring
+from ..instrumentation import setup as setup_instrumentation
 from ..registry_proxy import setup as setup_registry
 from .settings import ApplicationSettings
 
@@ -57,7 +57,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     app.cleanup_ctx.append(persistent_client_session)
     setup_registry(app)
     registry_cache_task.setup(app)
-    setup_app_monitoring(app, "simcore_service_director")
+    setup_instrumentation(app)
 
     # ERROR HANDLERS
 
