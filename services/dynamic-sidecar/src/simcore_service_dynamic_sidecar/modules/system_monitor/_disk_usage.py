@@ -52,10 +52,6 @@ def _get_normalized_folder_name(path: Path) -> str:
     return f"{path}".replace("/", "_")
 
 
-def _have_common_entries(a: set[str], b: set[str]) -> bool:
-    return bool(len(a & b) > 0)
-
-
 @dataclass
 class DiskUsageMonitor:
     app: FastAPI
@@ -124,11 +120,11 @@ class DiskUsageMonitor:
 
     @staticmethod
     def _get_grouped_usage_to_folder_names(
-        normalized_disk_usage: dict[str, DiskUsage]
+        local_disk_usage: dict[str, DiskUsage]
     ) -> dict[DiskUsage, set[str]]:
         """Groups all paths that have the same metrics together"""
         usage_to_folder_names: dict[DiskUsage, set[str]] = {}
-        for folder_name, disk_usage in normalized_disk_usage.items():
+        for folder_name, disk_usage in local_disk_usage.items():
             if disk_usage not in usage_to_folder_names:
                 usage_to_folder_names[disk_usage] = set()
 
@@ -170,18 +166,12 @@ class DiskUsageMonitor:
                 msg = f"Could not assign {disk_usage=} for {folder_names=}"
                 raise RuntimeError(msg)
 
-        detected_items = set(usage.keys())
-        if not detected_items.issubset(_SUPPORTED_ITEMS):
-            msg = (
-                f"Computed {usage=}, has unsupported items {detected_items=}. "
-                f"Currently only  the following are supported: {_SUPPORTED_ITEMS}"
-            )
-            raise RuntimeError(msg)
+        supported_usage = {k: v for k, v in usage.items() if k in _SUPPORTED_ITEMS}
 
         # notify only when usage changes
-        if self._last_usage != usage:
-            await self._publish_disk_usage(usage)
-            self._last_usage = usage
+        if self._last_usage != supported_usage:
+            await self._publish_disk_usage(supported_usage)
+            self._last_usage = supported_usage
 
     async def setup(self) -> None:
         self._monitor_task = start_periodic_task(
