@@ -8,36 +8,56 @@ import json
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any, AsyncIterator, Awaitable, Iterator
 
 import docker
+import docker.models.networks
 import pytest
-from simcore_service_director import config, exceptions, producer
+from fastapi import FastAPI
+from models_library.projects import ProjectID
+from models_library.users import UserID
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.docker_registry import RegistrySettings
+from simcore_service_director import exceptions, producer
+from simcore_service_director.constants import (
+    CPU_RESOURCE_LIMIT_KEY,
+    MEM_RESOURCE_LIMIT_KEY,
+)
+from simcore_service_director.core.settings import ApplicationSettings
 from tenacity import Retrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 
 @pytest.fixture
-def ensure_service_runs_in_ci(monkeypatch):
-    monkeypatch.setattr(config, "DEFAULT_MAX_MEMORY", int(25 * pow(1024, 2)))
-    monkeypatch.setattr(config, "DEFAULT_MAX_NANO_CPUS", int(0.01 * pow(10, 9)))
+def ensure_service_runs_in_ci(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "DEFAULT_MAX_MEMORY": int(25 * pow(1024, 2)),
+            "DEFAULT_MAX_NANO_CPUS": int(0.01 * pow(10, 9)),
+        },
+    )
 
 
 @pytest.fixture
 async def run_services(
-    ensure_service_runs_in_ci,
-    aiohttp_mock_app,
-    configure_registry_access,
-    configure_schemas_location,
+    ensure_service_runs_in_ci: EnvVarsDict,
+    configure_registry_access: EnvVarsDict,
+    configure_schemas_location: EnvVarsDict,
+    app: FastAPI,
     push_services,
-    docker_swarm,
-    user_id,
-    project_id,
+    docker_swarm: None,
+    user_id: UserID,
+    project_id: ProjectID,
     docker_client: docker.client.DockerClient,
-) -> Callable:
+) -> AsyncIterator[Callable[[int, int], Awaitable[list[dict[str, Any]]]]]:
     started_services = []
 
-    async def push_start_services(number_comp: int, number_dyn: int, dependant=False):
+    async def push_start_services(
+        number_comp: int, number_dyn: int, dependant=False
+    ) -> list[dict[str, Any]]:
         pushed_services = await push_services(
             number_comp, number_dyn, inter_dependent_services=dependant
         )
@@ -51,12 +71,12 @@ async def run_services(
             service_uuid = str(uuid.uuid1())
             service_basepath = "/my/base/path"
             with pytest.raises(exceptions.ServiceUUIDNotFoundError):
-                await producer.get_service_details(aiohttp_mock_app, service_uuid)
+                await producer.get_service_details(app, service_uuid)
             # start the service
             started_service = await producer.start_service(
-                aiohttp_mock_app,
-                user_id,
-                project_id,
+                app,
+                f"{user_id}",
+                f"{project_id}",
                 service_key,
                 service_version,
                 service_uuid,
@@ -84,9 +104,7 @@ async def run_services(
             assert "service_message" in started_service
 
             # wait for service to be running
-            node_details = await producer.get_service_details(
-                aiohttp_mock_app, service_uuid
-            )
+            node_details = await producer.get_service_details(app, service_uuid)
             max_time = 60
             for attempt in Retrying(
                 wait=wait_fixed(1), stop=stop_after_delay(max_time), reraise=True
@@ -95,9 +113,7 @@ async def run_services(
                     print(
                         f"--> waiting for {started_service['service_key']}:{started_service['service_version']} to run..."
                     )
-                    node_details = await producer.get_service_details(
-                        aiohttp_mock_app, service_uuid
-                    )
+                    node_details = await producer.get_service_details(app, service_uuid)
                     print(
                         f"<-- {started_service['service_key']}:{started_service['service_version']} state is {node_details['service_state']} using {config.DEFAULT_MAX_MEMORY}Bytes, {config.DEFAULT_MAX_NANO_CPUS}nanocpus"
                     )
@@ -123,9 +139,9 @@ async def run_services(
         # NOTE: Fake services are not even web-services therefore we cannot
         # even emulate a legacy dy-service that does not implement a save-state feature
         # so here we must make save_state=False
-        await producer.stop_service(aiohttp_mock_app, service_uuid, save_state=False)
+        await producer.stop_service(app, node_uuid=service_uuid, save_state=False)
         with pytest.raises(exceptions.ServiceUUIDNotFoundError):
-            await producer.get_service_details(aiohttp_mock_app, service_uuid)
+            await producer.get_service_details(app, service_uuid)
 
 
 async def test_find_service_tag():
@@ -143,31 +159,41 @@ async def test_find_service_tag():
         ]
     }
     with pytest.raises(exceptions.ServiceNotAvailableError):
-        await producer._find_service_tag(list_of_images, "some_wrong_key", None)
+        await producer._find_service_tag(  # noqa: SLF001
+            list_of_images, "some_wrong_key", None
+        )
     with pytest.raises(exceptions.ServiceNotAvailableError):
-        await producer._find_service_tag(
+        await producer._find_service_tag(  # noqa: SLF001
             list_of_images, my_service_key, "some wrong key"
         )
     # get the latest (e.g. 2.11.0)
-    latest_version = await producer._find_service_tag(
+    latest_version = await producer._find_service_tag(  # noqa: SLF001
         list_of_images, my_service_key, None
     )
     assert latest_version == "2.11.0"
-    latest_version = await producer._find_service_tag(
+    latest_version = await producer._find_service_tag(  # noqa: SLF001
         list_of_images, my_service_key, "latest"
     )
     assert latest_version == "2.11.0"
     # get a specific version
-    await producer._find_service_tag(list_of_images, my_service_key, "1.2.3")
+    await producer._find_service_tag(  # noqa: SLF001
+        list_of_images, my_service_key, "1.2.3"
+    )
 
 
-async def test_start_stop_service(docker_network, run_services):
+async def test_start_stop_service(
+    docker_network: docker.models.networks.Network,
+    run_services: Callable[..., Awaitable[list[dict[str, Any]]]],
+):
     # standard test
     await run_services(number_comp=1, number_dyn=1)
 
 
 async def test_service_assigned_env_variables(
-    docker_network, run_services, user_id, project_id
+    docker_network: docker.models.networks.Network,
+    run_services: Callable[..., Awaitable[list[dict[str, Any]]]],
+    user_id: UserID,
+    project_id: ProjectID,
 ):
     started_services = await run_services(number_comp=1, number_dyn=1)
     client = docker.from_env()
@@ -202,8 +228,8 @@ async def test_service_assigned_env_variables(
         assert "SIMCORE_HOST_NAME" in envs_dict
         assert envs_dict["SIMCORE_HOST_NAME"] == docker_service.name
 
-        assert config.MEM_RESOURCE_LIMIT_KEY in envs_dict
-        assert config.CPU_RESOURCE_LIMIT_KEY in envs_dict
+        assert MEM_RESOURCE_LIMIT_KEY in envs_dict
+        assert CPU_RESOURCE_LIMIT_KEY in envs_dict
 
 
 async def test_interactive_service_published_port(docker_network, run_services):
@@ -233,13 +259,16 @@ async def test_interactive_service_published_port(docker_network, run_services):
 
 @pytest.fixture
 def docker_network(
-    docker_client: docker.client.DockerClient, docker_swarm: None
-) -> docker.models.networks.Network:
+    app_settings: ApplicationSettings,
+    docker_client: docker.client.DockerClient,
+    docker_swarm: None,
+) -> Iterator[docker.models.networks.Network]:
     network = docker_client.networks.create(
         "test_network_default", driver="overlay", scope="swarm"
     )
     print(f"--> docker network '{network.name}' created")
-    config.SIMCORE_SERVICES_NETWORK_NAME = network.name
+    # TODO: should probably be done via monkeypatch actually...
+    app_settings.DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME = network.name
     yield network
 
     # cleanup
@@ -249,10 +278,10 @@ def docker_network(
     for attempt in Retrying(stop=stop_after_delay(60), wait=wait_fixed(1)):
         with attempt:
             list_networks = docker_client.networks.list(
-                config.SIMCORE_SERVICES_NETWORK_NAME
+                app_settings.DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME
             )
             assert not list_networks
-    config.SIMCORE_SERVICES_NETWORK_NAME = None
+    app_settings.DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME = None
     print(f"<-- removed docker network '{network.name}'")
 
 
@@ -305,6 +334,11 @@ class FakeDockerService:
     expected_tag: str
 
 
+@pytest.fixture
+def registry_settings(app_settings: ApplicationSettings) -> RegistrySettings:
+    return app_settings.DIRECTOR_REGISTRY
+
+
 @pytest.mark.parametrize(
     "fake_service",
     [
@@ -321,13 +355,14 @@ class FakeDockerService:
     ],
 )
 async def test_get_service_key_version_from_docker_service(
+    registry_settings: RegistrySettings,
     fake_service: FakeDockerService,
 ):
     docker_service_partial_inspect = {
         "Spec": {
             "TaskTemplate": {
                 "ContainerSpec": {
-                    "Image": f"{config.REGISTRY_PATH}{fake_service.service_str}"
+                    "Image": f"{registry_settings.resolved_registry_url}{fake_service.service_str}"
                 }
             }
         }
@@ -335,8 +370,8 @@ async def test_get_service_key_version_from_docker_service(
     (
         service_key,
         service_tag,
-    ) = await producer._get_service_key_version_from_docker_service(
-        docker_service_partial_inspect
+    ) = await producer._get_service_key_version_from_docker_service(  # noqa: SLF001
+        docker_service_partial_inspect, registry_settings
     )
     assert service_key == fake_service.expected_key
     assert service_tag == fake_service.expected_tag
@@ -352,18 +387,19 @@ async def test_get_service_key_version_from_docker_service(
     ],
 )
 async def test_get_service_key_version_from_docker_service_except_invalid_keys(
+    registry_settings: RegistrySettings,
     fake_service_str: str,
 ):
     docker_service_partial_inspect = {
         "Spec": {
             "TaskTemplate": {
                 "ContainerSpec": {
-                    "Image": f"{config.REGISTRY_PATH if fake_service_str.startswith('/') else ''}{fake_service_str}"
+                    "Image": f"{registry_settings.resolved_registry_url if fake_service_str.startswith('/') else ''}{fake_service_str}"
                 }
             }
         }
     }
     with pytest.raises(exceptions.DirectorException):
-        await producer._get_service_key_version_from_docker_service(
-            docker_service_partial_inspect
+        await producer._get_service_key_version_from_docker_service(  # noqa: SLF001
+            docker_service_partial_inspect, registry_settings
         )

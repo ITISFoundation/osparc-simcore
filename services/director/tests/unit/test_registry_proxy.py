@@ -5,32 +5,33 @@ import json
 import time
 
 import pytest
-from simcore_service_director import config, registry_proxy
+from fastapi import FastAPI
+from simcore_service_director import registry_proxy
 
 
 async def test_list_no_services_available(
-    aiohttp_mock_app,
+    app: FastAPI,
     docker_registry,
     configure_registry_access,
     configure_schemas_location,
 ):
 
     computational_services = await registry_proxy.list_services(
-        aiohttp_mock_app, registry_proxy.ServiceType.COMPUTATIONAL
+        app, registry_proxy.ServiceType.COMPUTATIONAL
     )
     assert not computational_services  # it's empty
     interactive_services = await registry_proxy.list_services(
-        aiohttp_mock_app, registry_proxy.ServiceType.DYNAMIC
+        app, registry_proxy.ServiceType.DYNAMIC
     )
     assert not interactive_services
     all_services = await registry_proxy.list_services(
-        aiohttp_mock_app, registry_proxy.ServiceType.ALL
+        app, registry_proxy.ServiceType.ALL
     )
     assert not all_services
 
 
 async def test_list_services_with_bad_json_formatting(
-    aiohttp_mock_app,
+    app: FastAPI,
     docker_registry,
     configure_registry_access,
     configure_schemas_location,
@@ -44,21 +45,21 @@ async def test_list_services_with_bad_json_formatting(
     )
     assert len(created_services) == 5
     computational_services = await registry_proxy.list_services(
-        aiohttp_mock_app, registry_proxy.ServiceType.COMPUTATIONAL
+        app, registry_proxy.ServiceType.COMPUTATIONAL
     )
     assert not computational_services  # it's empty
     interactive_services = await registry_proxy.list_services(
-        aiohttp_mock_app, registry_proxy.ServiceType.DYNAMIC
+        app, registry_proxy.ServiceType.DYNAMIC
     )
     assert not interactive_services
     all_services = await registry_proxy.list_services(
-        aiohttp_mock_app, registry_proxy.ServiceType.ALL
+        app, registry_proxy.ServiceType.ALL
     )
     assert not all_services
 
 
 async def test_list_computational_services(
-    aiohttp_mock_app,
+    app: FastAPI,
     docker_registry,
     push_services,
     configure_registry_access,
@@ -69,13 +70,13 @@ async def test_list_computational_services(
     )
 
     computational_services = await registry_proxy.list_services(
-        aiohttp_mock_app, registry_proxy.ServiceType.COMPUTATIONAL
+        app, registry_proxy.ServiceType.COMPUTATIONAL
     )
     assert len(computational_services) == 6
 
 
 async def test_list_interactive_services(
-    aiohttp_mock_app,
+    app: FastAPI,
     docker_registry,
     push_services,
     configure_registry_access,
@@ -85,13 +86,13 @@ async def test_list_interactive_services(
         number_of_computational_services=5, number_of_interactive_services=4
     )
     interactive_services = await registry_proxy.list_services(
-        aiohttp_mock_app, registry_proxy.ServiceType.DYNAMIC
+        app, registry_proxy.ServiceType.DYNAMIC
     )
     assert len(interactive_services) == 4
 
 
 async def test_list_of_image_tags(
-    aiohttp_mock_app,
+    app: FastAPI,
     docker_registry,
     push_services,
     configure_registry_access,
@@ -109,12 +110,12 @@ async def test_list_of_image_tags(
         image_number[key] = image_number[key] + 1
 
     for key, number in image_number.items():
-        list_of_image_tags = await registry_proxy.list_image_tags(aiohttp_mock_app, key)
+        list_of_image_tags = await registry_proxy.list_image_tags(app, key)
         assert len(list_of_image_tags) == number
 
 
 async def test_list_interactive_service_dependencies(
-    aiohttp_mock_app,
+    app: FastAPI,
     docker_registry,
     push_services,
     configure_registry_access,
@@ -134,7 +135,7 @@ async def test_list_interactive_service_dependencies(
             )
             image_dependencies = (
                 await registry_proxy.list_interactive_service_dependencies(
-                    aiohttp_mock_app,
+                    app,
                     service_description["key"],
                     service_description["version"],
                 )
@@ -146,7 +147,7 @@ async def test_list_interactive_service_dependencies(
 
 
 async def test_get_image_labels(
-    aiohttp_mock_app,
+    app: FastAPI,
     docker_registry,
     push_services,
     configure_registry_access,
@@ -159,7 +160,7 @@ async def test_get_image_labels(
     for image in images:
         service_description = image["service_description"]
         labels, image_manifest_digest = await registry_proxy.get_image_labels(
-            aiohttp_mock_app, service_description["key"], service_description["version"]
+            app, service_description["key"], service_description["version"]
         )
         assert "io.simcore.key" in labels
         assert "io.simcore.version" in labels
@@ -175,7 +176,7 @@ async def test_get_image_labels(
             assert "simcore.service.settings" in labels
 
         assert image_manifest_digest == await registry_proxy.get_image_digest(
-            aiohttp_mock_app, service_description["key"], service_description["version"]
+            app, service_description["key"], service_description["version"]
         )
         assert image_manifest_digest is not None
         assert image_manifest_digest not in images_digests
@@ -221,7 +222,7 @@ def test_get_service_last_namess():
 
 
 async def test_get_image_details(
-    aiohttp_mock_app,
+    app: FastAPI,
     push_services,
     configure_registry_access,
     configure_schemas_location,
@@ -232,7 +233,7 @@ async def test_get_image_details(
     for image in images:
         service_description = image["service_description"]
         details = await registry_proxy.get_image_details(
-            aiohttp_mock_app, service_description["key"], service_description["version"]
+            app, service_description["key"], service_description["version"]
         )
 
         assert details.pop("image_digest").startswith("sha")
@@ -241,7 +242,7 @@ async def test_get_image_details(
 
 
 async def test_registry_caching(
-    aiohttp_mock_app,
+    app: FastAPI,
     push_services,
     configure_registry_access,
     configure_schemas_location,
@@ -249,30 +250,23 @@ async def test_registry_caching(
     images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
     )
-    config.DIRECTOR_REGISTRY_CACHING = True
+    # TODO: use monkeypatching
+    # config.DIRECTOR_REGISTRY_CACHING = True
     start_time = time.perf_counter()
-    services = await registry_proxy.list_services(
-        aiohttp_mock_app, registry_proxy.ServiceType.ALL
-    )
+    services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     time_to_retrieve_without_cache = time.perf_counter() - start_time
     assert len(services) == len(images)
     start_time = time.perf_counter()
-    services = await registry_proxy.list_services(
-        aiohttp_mock_app, registry_proxy.ServiceType.ALL
-    )
+    services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     time_to_retrieve_with_cache = time.perf_counter() - start_time
     assert len(services) == len(images)
     assert time_to_retrieve_with_cache < time_to_retrieve_without_cache
 
 
 @pytest.mark.skip(reason="test needs credentials to real registry")
-async def test_get_services_performance(
-    aiohttp_mock_app, loop, configure_custom_registry
-):
+async def test_get_services_performance(app, loop, configure_custom_registry):
     start_time = time.perf_counter()
-    services = await registry_proxy.list_services(
-        aiohttp_mock_app, registry_proxy.ServiceType.ALL
-    )
+    services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     stop_time = time.perf_counter()
     print(
         f"\nTime to run getting services: {stop_time - start_time}s, #services {len(services)}, time per call {(stop_time - start_time) / len(services)}s/service"
@@ -280,7 +274,7 @@ async def test_get_services_performance(
 
 
 async def test_generate_service_extras(
-    aiohttp_mock_app,
+    app,
     push_services,
     configure_registry_access,
     configure_schemas_location,
@@ -294,7 +288,7 @@ async def test_generate_service_extras(
         service_extras = image["service_extras"]
 
         extras = await registry_proxy.get_service_extras(
-            aiohttp_mock_app, service_description["key"], service_description["version"]
+            app, service_description["key"], service_description["version"]
         )
 
         assert extras == service_extras
