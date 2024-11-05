@@ -74,7 +74,6 @@ def setup(app: FastAPI) -> None:
             _logger.info("Registry caching disabled")
             return
 
-        app.state.registry_cache = {}
         app.state.registry_cache_task = asyncio.get_event_loop().create_task(
             registry_caching_task(app)
         )
