@@ -48,9 +48,19 @@ for (const product in products) {
 
         test.beforeAll(async ({ browser }) => {
           page = await browser.newPage();
+
+          const responsePromise = page.waitForResponse('**/services/-/latest**');
+
           loginPageFixture = new LoginPage(page, productUrl);
           const role = await loginPageFixture.login(user.email, user.password);
           expect(role).toBe(user.role);
+
+          const response = await responsePromise;
+          const resp = await response.json();
+          expect("data" in resp && "_meta" in resp["data"] && "total" in resp["data"]["_meta"]);
+          console.log("N Services in Response:", resp["data"]["_meta"]["total"]);
+
+          await page.getByTestId("servicesTabBtn").click();
         });
 
         test.afterAll(async ({ browser }) => {
@@ -61,8 +71,13 @@ for (const product in products) {
 
         test(`Services list`, async () => {
           const servicesList = page.getByTestId("servicesList");
+          await expect(servicesList).toBeVisible({
+            timeout: 30000
+          });
+
           const serviceItems = servicesList.locator(':scope > *');
           const count = await serviceItems.count();
+          console.log("N Services listed", count);
           expect(count > 0);
         });
       });
