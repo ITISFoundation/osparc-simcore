@@ -1,6 +1,6 @@
 from collections.abc import Awaitable, Callable, Mapping
 from functools import wraps
-from typing import Any
+from typing import Any, cast
 
 from fastapi import FastAPI
 
@@ -16,13 +16,17 @@ def cache_requests(
     async def wrapped(
         app: FastAPI, url: str, method: str, *args, **kwargs
     ) -> tuple[dict, Mapping]:
+        assert hasattr(app.state, "registry_cache")  # nosec
+        assert isinstance(app.state.registry_cache, dict)  # nosec
         app_settings = get_application_settings(app)
         is_cache_enabled = app_settings.DIRECTOR_REGISTRY_CACHING and method == "GET"
         cache_key = f"{url}:{method}"
         if is_cache_enabled and not no_cache:
             cache_data = app.state.registry_cache
             if cache_key in cache_data:
-                return cache_data[cache_key]
+                return cast(
+                    tuple[dict[str, Any], Mapping[str, Any]], cache_data[cache_key]
+                )
 
         resp_data, resp_headers = await func(app, url, method, *args, **kwargs)
 
