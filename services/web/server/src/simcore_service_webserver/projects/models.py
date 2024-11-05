@@ -66,6 +66,7 @@ class ProjectDB(BaseModel):
 
 class UserSpecificProjectDataDB(ProjectDB):
     folder_id: FolderID | None
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -84,7 +85,7 @@ class UserProjectAccessRightsDB(BaseModel):
 
 class UserProjectAccessRightsWithWorkspace(BaseModel):
     uid: UserID
-    workspace_id: WorkspaceID | None = None  # None if it's a private workspace
+    workspace_id: WorkspaceID | None  # None if it's a private workspace
     read: bool
     write: bool
     delete: bool

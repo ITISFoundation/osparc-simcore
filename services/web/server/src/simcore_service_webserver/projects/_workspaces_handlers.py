@@ -1,11 +1,12 @@
 import functools
 import logging
+from typing import Annotated
 
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.utils.common_validators import null_or_none_str_to_none_validator
 from models_library.workspaces import WorkspaceID
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
@@ -50,13 +51,9 @@ routes = web.RouteTableDef()
 
 class _ProjectWorkspacesPathParams(BaseModel):
     project_id: ProjectID
-    workspace_id: WorkspaceID | None = None
-    model_config = ConfigDict(extra="forbid")
+    workspace_id: Annotated[WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)] = Field(default=None)
 
-    # validators
-    _null_or_none_str_to_none_validator = field_validator(
-        "workspace_id", mode="before"
-    )(null_or_none_str_to_none_validator)
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.put(

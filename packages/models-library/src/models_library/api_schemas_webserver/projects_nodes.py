@@ -19,7 +19,7 @@ __all__: tuple[str, ...] = ("ServiceResourcesDict",)
 class NodeCreate(InputSchemaWithoutCamelCase):
     service_key: ServiceKey
     service_version: ServiceVersion
-    service_id: str | None = Field(default=None)
+    service_id: str | None
 
 
 BootOptions: TypeAlias = dict
