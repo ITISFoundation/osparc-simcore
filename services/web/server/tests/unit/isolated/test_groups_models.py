@@ -1,6 +1,6 @@
 import models_library.groups
 import simcore_postgres_database.models.groups
-from models_library.api_schemas_webserver.groups import UsersGroup
+from models_library.api_schemas_webserver.groups import GroupGet
 from models_library.utils.enums import enum_to_dict
 
 
@@ -14,7 +14,7 @@ def test_models_library_and_postgress_database_enums_are_equivalent():
 
 
 def test_sanitize_legacy_data():
-    users_group_1 = UsersGroup.parse_obj(
+    users_group_1 = GroupGet.parse_obj(
         {
             "gid": "27",
             "label": "A user",
@@ -26,7 +26,7 @@ def test_sanitize_legacy_data():
 
     assert users_group_1.thumbnail is None
 
-    users_group_2 = UsersGroup.parse_obj(
+    users_group_2 = GroupGet.parse_obj(
         {
             "gid": "27",
             "label": "A user",

@@ -6,9 +6,8 @@
 
 
 import datetime
-import random
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 from uuid import uuid4
 
 import pytest
@@ -17,6 +16,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from pydantic import ByteSize, HttpUrl, parse_obj_as
+from pytest_simcore.helpers.faker_factories import DEFAULT_FAKER
 from simcore_service_storage.constants import S3_UNDEFINED_OR_EXTERNAL_MULTIPART_ID
 from simcore_service_storage.models import ETag, FileMetaData, S3BucketName, UploadID
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
@@ -46,24 +46,30 @@ async def test_download_files(tmp_path: Path, httpbin_base_url: HttpUrl):
     [
         (-1, None, None, None, False),
         (0, None, None, None, False),
-        (random.randint(1, 1000000), None, None, None, False),
+        (DEFAULT_FAKER.random_int(1, 1000000), None, None, None, False),
         (-1, "some_valid_entity_tag", None, None, False),
         (0, "some_valid_entity_tag", None, None, False),
         (
-            random.randint(1, 1000000),
+            DEFAULT_FAKER.random_int(1, 1000000),
             "some_valid_entity_tag",
             "som_upload_id",
             None,
             False,
         ),
         (
-            random.randint(1, 1000000),
+            DEFAULT_FAKER.random_int(1, 1000000),
             "some_valid_entity_tag",
             None,
             datetime.datetime.utcnow(),
             False,
         ),
-        (random.randint(1, 1000000), "some_valid_entity_tag", None, None, True),
+        (
+            DEFAULT_FAKER.random_int(1, 1000000),
+            "some_valid_entity_tag",
+            None,
+            None,
+            True,
+        ),
     ],
 )
 def test_file_entry_valid(
