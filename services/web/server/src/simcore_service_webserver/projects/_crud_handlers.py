@@ -109,16 +109,14 @@ def _handle_projects_exceptions(handler: Handler):
 routes = web.RouteTableDef()
 
 
-#
-# - Create https://google.aip.dev/133
-#
-
-
 @routes.post(f"/{VTAG}/projects", name="create_project")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_project(request: web.Request):
+    #
+    # - Create https://google.aip.dev/133
+    #
     req_ctx = RequestContext.model_validate(request)
     query_params: ProjectCreateParams = parse_request_query_parameters_as(
         ProjectCreateParams, request
@@ -171,8 +169,6 @@ async def create_project(request: web.Request):
     )
 
 
-# - List https://google.aip.dev/132
-#
 
 
 @routes.get(f"/{VTAG}/projects", name="list_projects")
@@ -180,6 +176,9 @@ async def create_project(request: web.Request):
 @permission_required("project.read")
 @_handle_projects_exceptions
 async def list_projects(request: web.Request):
+    #
+    # - List https://google.aip.dev/132
+    #
     """
 
     Raises:
@@ -265,16 +264,14 @@ async def list_projects_full_search(request: web.Request):
     )
 
 
-#
-# - Get https://google.aip.dev/131
-# - Get active project: Singleton per-session resources https://google.aip.dev/156
-#
-
-
 @routes.get(f"/{VTAG}/projects/active", name="get_active_project")
 @login_required
 @permission_required("project.read")
 async def get_active_project(request: web.Request) -> web.Response:
+    #
+    # - Get https://google.aip.dev/131
+    # - Get active project: Singleton per-session resources https://google.aip.dev/156
+    #
     """
 
     Raises:
@@ -395,6 +392,9 @@ async def get_project_inactivity(request: web.Request):
 @permission_required("services.pipeline.*")
 @_handle_projects_exceptions
 async def patch_project(request: web.Request):
+    #
+    # Update https://google.aip.dev/134
+    #
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
@@ -411,7 +411,7 @@ async def patch_project(request: web.Request):
 
 
 #
-# - Delete https://google.aip.dev/135
+
 #
 
 
@@ -419,6 +419,7 @@ async def patch_project(request: web.Request):
 @login_required
 @permission_required("project.delete")
 async def delete_project(request: web.Request):
+    # Delete https://google.aip.dev/135
     """
 
     Raises:
@@ -431,7 +432,6 @@ async def delete_project(request: web.Request):
         web.HTTPConflict: Somethine went wrong while deleting
         web.HTTPNoContent: Sucess
     """
-
     req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
