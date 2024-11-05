@@ -80,6 +80,8 @@ def test_get_notification_key(user_id: UserID):
                     "text": "You're now member of a new Organization",
                     "date": "2023-02-23T16:23:13.122Z",
                     "product": "s4l",
+                    "resource_id": "other_id",
+                    "user_from_id": "2",
                 }
             ),
             id="category_from_string",
@@ -95,6 +97,8 @@ def test_get_notification_key(user_id: UserID):
                     "text": "You're now member of a new Organization",
                     "date": "2023-02-23T16:23:13.122Z",
                     "product": "tis",
+                    "resource_id": "other_id",
+                    "user_from_id": "2",
                 }
             ),
             id="category_from_lower_case_string",
