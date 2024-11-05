@@ -2,12 +2,12 @@ import functools
 from pathlib import Path
 
 import pkg_resources
-from simcore_service_director import config
 
+from .constants import NODE_SCHEMA_LOCATION
 
 RESOURCE_OPENAPI_ROOT: str = "api"
-RESOURCE_OPEN_API: str = f"{RESOURCE_OPENAPI_ROOT}/{config.API_VERSION}/openapi.yaml"
-RESOURCE_NODE_SCHEMA: str = config.NODE_SCHEMA_LOCATION
+RESOURCE_OPEN_API: str = f"{RESOURCE_OPENAPI_ROOT}/v0/openapi.yaml"
+RESOURCE_NODE_SCHEMA: str = NODE_SCHEMA_LOCATION
 
 """
  List of pkg_resources functions *bound* to current package with the following signature
@@ -27,10 +27,10 @@ isdir = functools.partial(pkg_resources.resource_isdir, __name__)
 
 
 def get_path(resource_name: str) -> Path:
-    """ Returns a path to a resource
+    """Returns a path to a resource
 
-        WARNING: existence of file is not guaranteed. Use resources.exists
-        WARNING: resource files are supposed to be used as read-only!
+    WARNING: existence of file is not guaranteed. Use resources.exists
+    WARNING: resource files are supposed to be used as read-only!
     """
     resource_path = Path(pkg_resources.resource_filename(__name__, resource_name))
     return resource_path
