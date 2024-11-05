@@ -23,5 +23,5 @@ def test_valid_web_application_settings(app_environment: EnvVarsDict):
 
     assert (
         app_environment["DIRECTOR_DEFAULT_MAX_MEMORY"]
-        == settings.DIRECTOR_DEFAULT_MAX_MEMORY
+        == f"{settings.DIRECTOR_DEFAULT_MAX_MEMORY}"
     )
