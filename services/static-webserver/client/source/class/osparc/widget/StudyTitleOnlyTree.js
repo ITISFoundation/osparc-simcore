@@ -48,7 +48,9 @@ qx.Class.define("osparc.widget.StudyTitleOnlyTree", {
       const title = this.tr("Study Information");
       const width = osparc.info.CardLarge.WIDTH;
       const height = osparc.info.CardLarge.HEIGHT;
-      osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
+      osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height).set({
+        maxHeight: height
+      });
     },
 
     selectStudyItem: function() {

@@ -137,7 +137,7 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
-    "window-small-cap": {
+    "node-ui-cap": {
       include: "service-window",
       style: {
         shadowBlurRadius: 0,
@@ -150,7 +150,7 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
-    "window-small-cap-maximized": {
+    "node-ui-cap-maximized": {
       include: "service-window-maximized",
       style: {
         width: 1,
