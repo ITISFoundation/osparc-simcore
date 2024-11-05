@@ -139,9 +139,7 @@ class DockerContainerInspect(BaseModel):
             id=container["Id"],
         )
 
-    # TODO[pydantic]: The following keys were removed: `allow_mutation`.
-    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
-    model_config = ConfigDict(ignored_types=(cached_property,), allow_mutation=False)
+    model_config = ConfigDict(ignored_types=(cached_property,), frozen=True)
 
 
 class ServiceRemovalState(BaseModel):
