@@ -6,7 +6,12 @@ from common_library.pydantic_fields_extension import get_type, is_literal, is_nu
 from pydantic import ValidationInfo, field_validator
 from pydantic.fields import FieldInfo
 from pydantic_core import ValidationError
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    EnvSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -17,7 +22,7 @@ _DEFAULTS_TO_NONE_MSG: Final[
 
 class DefaultFromEnvFactoryError(ValueError):
     def __init__(self, errors):
-        super().__init__()
+        super().__init__("Default could not be constructed")
         self.errors = errors
 
 
@@ -44,6 +49,47 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
             raise DefaultFromEnvFactoryError(errors=err.errors()) from err
 
     return _default_factory
+
+
+def _is_auto_default_from_env_enabled(field: FieldInfo) -> bool:
+    return bool(
+        field.json_schema_extra is not None
+        and field.json_schema_extra.get("auto_default_from_env", False)
+    )
+
+
+class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
+    def __init__(
+        self, settings_cls: type[BaseSettings], env_settings: EnvSettingsSource
+    ):
+        super().__init__(
+            settings_cls,
+            env_settings.case_sensitive,
+            env_settings.env_prefix,
+            env_settings.env_nested_delimiter,
+            env_settings.env_ignore_empty,
+            env_settings.env_parse_none_str,
+            env_settings.env_parse_enums,
+        )
+
+    def prepare_field_value(
+        self,
+        field_name: str,
+        field: FieldInfo,
+        value: Any,
+        value_is_complex: bool,  # noqa: FBT001
+    ) -> Any:
+        prepared_value = super().prepare_field_value(
+            field_name, field, value, value_is_complex
+        )
+        if (
+            _is_auto_default_from_env_enabled(field)
+            and field.default_factory
+            and field.default is None
+            and prepared_value == {}
+        ):
+            prepared_value = field.default_factory()
+        return prepared_value
 
 
 class BaseCustomSettings(BaseSettings):
@@ -82,12 +128,7 @@ class BaseCustomSettings(BaseSettings):
         super().__pydantic_init_subclass__(**kwargs)
 
         for name, field in cls.model_fields.items():
-            auto_default_from_env = (
-                field.json_schema_extra is not None
-                and field.json_schema_extra.get(  # type: ignore[union-attr]
-                    "auto_default_from_env", False
-                )
-            )
+            auto_default_from_env = _is_auto_default_from_env_enabled(field)
             field_type = get_type(field)
 
             # Avoids issubclass raising TypeError. SEE test_issubclass_type_error_with_pydantic_models
@@ -102,7 +143,7 @@ class BaseCustomSettings(BaseSettings):
                 and issubclass(field_type, BaseCustomSettings)
             ):
                 if auto_default_from_env:
-                    # Transform it into something like `Field(default_factory=create_settings_from_env(field))`
+                    # Builds a default factory `Field(default_factory=create_settings_from_env(field))`
                     field.default_factory = _create_settings_from_env(name, field)
                     field.default = None
 
@@ -126,3 +167,20 @@ class BaseCustomSettings(BaseSettings):
         # Optional to use to make the code more readable
         # More explicit and pylance seems to get less confused
         return cls(**overrides)
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: BaseSettings,
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        assert env_settings  # nosec
+        return (
+            init_settings,
+            EnvSettingsWithAutoDefaultSource(settings_cls, env_settings=env_settings),
+            dotenv_settings,
+            file_secret_settings,
+        )
