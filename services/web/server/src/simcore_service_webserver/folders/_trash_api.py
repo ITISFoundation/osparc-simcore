@@ -1,9 +1,9 @@
 import logging
 
 from aiohttp import web
+from models_library.folders import FolderID
 from models_library.products import ProductName
 from models_library.users import UserID
-from simcore_service_webserver.folders._folders_api import FolderID
 
 _logger = logging.getLogger(__name__)
 
