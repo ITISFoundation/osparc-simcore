@@ -5,7 +5,7 @@ import logging
 import re
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any
+from typing import Any, Mapping
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions
 from aiohttp.client import ClientTimeout
@@ -18,6 +18,7 @@ from yarl import URL
 
 from . import exceptions
 from .cache_request_decorator import cache_requests
+from .client_session import get_client_session
 from .constants import (
     DIRECTOR_SIMCORE_SERVICES_PREFIX,
     ORG_LABELS_TO_SCHEMA_LABELS,
@@ -45,7 +46,7 @@ class ServiceType(enum.Enum):
 
 async def _basic_auth_registry_request(
     app: FastAPI, path: str, method: str, **session_kwargs
-) -> tuple[dict, dict]:
+) -> tuple[dict, Mapping]:
     app_settings = get_application_settings(app)
     if not app_settings.DIRECTOR_REGISTRY.REGISTRY_URL:
         msg = "URL to registry is not defined"
@@ -57,7 +58,7 @@ async def _basic_auth_registry_request(
     logger.debug("Requesting registry using %s", url)
     # try the registry with basic authentication first, spare 1 call
     resp_data: dict = {}
-    resp_headers: dict = {}
+    resp_headers: Mapping = {}
     auth = (
         BasicAuth(
             login=app_settings.DIRECTOR_REGISTRY.REGISTRY_USER,
@@ -69,7 +70,7 @@ async def _basic_auth_registry_request(
         else None
     )
 
-    session = app[APP_CLIENT_SESSION_KEY]
+    session = get_client_session(app)
     try:
         async with session.request(
             method.lower(), url, auth=auth, **session_kwargs
@@ -112,10 +113,10 @@ async def _auth_registry_request(
     app_settings: ApplicationSettings,
     url: URL,
     method: str,
-    auth_headers: dict,
+    auth_headers: Mapping,
     session: ClientSession,
     **kwargs,
-) -> tuple[dict, dict]:
+) -> tuple[dict, Mapping]:
     if (
         not app_settings.DIRECTOR_REGISTRY.REGISTRY_AUTH
         or not app_settings.DIRECTOR_REGISTRY.REGISTRY_USER
@@ -196,7 +197,7 @@ async def registry_request(
     method: str = "GET",
     no_cache: bool = False,
     **session_kwargs,
-) -> tuple[dict, dict]:
+) -> tuple[dict, Mapping]:
     logger.debug(
         "Request to registry: path=%s, method=%s. no_cache=%s", path, method, no_cache
     )

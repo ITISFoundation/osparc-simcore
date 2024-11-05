@@ -4,8 +4,8 @@ import logging
 from fastapi import FastAPI
 from servicelib.utils import logged_gather
 
-from . import config, exceptions, registry_proxy
-from .core.settings import ApplicationSettings
+from . import exceptions, registry_proxy
+from .core.settings import ApplicationSettings, get_application_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -13,6 +13,7 @@ TASK_NAME: str = __name__ + "_registry_caching_task"
 
 
 async def registry_caching_task(app: FastAPI) -> None:
+    app_settings = get_application_settings(app)
     try:
 
         _logger.info("%s: initializing cache...", TASK_NAME)
@@ -50,9 +51,11 @@ async def registry_caching_task(app: FastAPI) -> None:
             _logger.info(
                 "cache refreshed %s: sleeping for %ss...",
                 TASK_NAME,
-                config.DIRECTOR_REGISTRY_CACHING_TTL,
+                app_settings.DIRECTOR_REGISTRY_CACHING_TTL,
             )
-            await asyncio.sleep(config.DIRECTOR_REGISTRY_CACHING_TTL)
+            await asyncio.sleep(
+                app_settings.DIRECTOR_REGISTRY_CACHING_TTL.total_seconds()
+            )
     except asyncio.CancelledError:
         _logger.info("%s: cancelling task...", TASK_NAME)
     except Exception:  # pylint: disable=broad-except

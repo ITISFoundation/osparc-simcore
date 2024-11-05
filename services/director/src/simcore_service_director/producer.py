@@ -22,6 +22,7 @@ from aiohttp import (
 from fastapi import FastAPI
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.monitor_services import service_started, service_stopped
+from simcore_service_director.utils import parse_as_datetime
 from tenacity import retry
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
@@ -663,8 +664,9 @@ async def _get_service_state(
     elif task_state in ("running"):
         now = arrow.utcnow().datetime
         # NOTE: task_state_update_time is only used to discrimitate between 'starting' and 'running'
-        last_task["Status"]["Timestamp"]
-        task_state_update_time = arrow.get(last_task["Status"]["Timestamp"]).datetime
+        task_state_update_time = parse_as_datetime(
+            last_task["Status"]["Timestamp"], default=now
+        )
         time_since_running = now - task_state_update_time
 
         log.debug("Now is %s, time since running mode is %s", now, time_since_running)
