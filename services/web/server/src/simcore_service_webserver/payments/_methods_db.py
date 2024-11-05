@@ -26,9 +26,6 @@ from .errors import (
 _logger = logging.getLogger(__name__)
 
 
-PaymentMethodIDTypeAdapter: TypeAdapter[PaymentMethodID] = TypeAdapter(PaymentMethodID)
-
-
 class PaymentsMethodsDB(BaseModel):
     payment_method_id: PaymentMethodID
     user_id: UserID
@@ -114,12 +111,12 @@ async def get_pending_payment_methods_ids(
     async with get_database_engine(app).acquire() as conn:
         result = await conn.execute(
             sa.select(payments_methods.c.payment_method_id)
-            .where(payments_methods.c.completed_at == None)  # noqa: E711
+            .where(payments_methods.c.completed_at.is_(None))
             .order_by(payments_methods.c.initiated_at.asc())  # oldest first
         )
         rows = await result.fetchall() or []
         return [
-            PaymentMethodIDTypeAdapter.validate_python(row.payment_method_id)
+            TypeAdapter(PaymentMethodID).validate_python(row.payment_method_id)
             for row in rows
         ]
 
