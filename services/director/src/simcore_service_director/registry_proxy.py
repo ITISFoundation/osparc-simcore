@@ -5,9 +5,9 @@ import re
 from collections.abc import Mapping
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any, Final
+from typing import Any, Final, cast
 
-from aiocache import Cache, SimpleMemoryCache
+from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
 from aiohttp import BasicAuth, ClientSession, client_exceptions
 from aiohttp.client import ClientTimeout
 from fastapi import FastAPI
@@ -205,7 +205,8 @@ async def registry_request(
     cache: SimpleMemoryCache = app.state.registry_cache_memory
     cache_key = f"{method}_{path}"
     if not no_cache and (cached_response := await cache.get(cache_key)):
-        return cached_response
+        assert isinstance(tuple[dict, Mapping], cached_response)  # nosec
+        return cast(tuple[dict, Mapping], cached_response)
 
     app_settings = get_application_settings(app)
     response, response_headers = await _basic_auth_registry_request(
