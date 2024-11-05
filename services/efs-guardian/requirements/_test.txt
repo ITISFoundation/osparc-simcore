@@ -319,6 +319,7 @@ typing-extensions==4.12.2
     #   cfn-lint
     #   faker
     #   pydantic
+    #   pydantic-core
 urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
