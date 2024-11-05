@@ -23,7 +23,7 @@ async def list_running_services(
     the_app: Annotated[FastAPI, Depends(get_app)],
     user_id: UserID | None,
     project_id: ProjectID | None,
-):
+) -> Envelope[list[dict[str, Any]]]:
     log.debug(
         "Client does list_running_services request user_id %s, project_id %s",
         user_id,
@@ -131,7 +131,7 @@ async def stop_service(
     the_app: Annotated[FastAPI, Depends(get_app)],
     service_uuid: UUID,
     save_state: bool = True,
-):
+) -> None:
     log.debug(
         "Client does stop_service with service_uuid %s",
         service_uuid,

@@ -18,7 +18,7 @@ async def list_service_extras(
     the_app: Annotated[FastAPI, Depends(get_app)],
     service_key: ServiceKey,
     service_version: ServiceVersion,
-):
+) -> Envelope[dict[str, Any]]:
     log.debug(
         "Client does service_extras_by_key_version_get request with service_key %s, service_version %s",
         service_key,
