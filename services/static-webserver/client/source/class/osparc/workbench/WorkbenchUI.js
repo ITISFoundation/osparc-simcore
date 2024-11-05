@@ -2021,7 +2021,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
             }
           } else {
-            osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file at a time is accepted."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(osparc.file.FileDrop.ONE_FILE_ONLY, "ERROR");
           }
         } else {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Folders are not accepted. You might want to upload a zip file."), "ERROR");
