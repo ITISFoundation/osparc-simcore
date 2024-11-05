@@ -39,7 +39,7 @@ test.describe.serial(`Left Filters:`, () => {
 
   test(`Filters`, async () => {
     const sharedWithFilters = page.getByTestId("service-sharedWithFilterItem");
-    await expect(sharedWithFilters).toBeVisible({
+    await expect(sharedWithFilters.first()).toBeVisible({
       timeout: 30000 // it will take some time to load the Study Browser
     });
 
@@ -52,7 +52,7 @@ test.describe.serial(`Left Filters:`, () => {
 
 
     const serviceTypeFilters = page.getByTestId("service-serviceTypeFilterItem");
-    await expect(serviceTypeFilters).toBeVisible({
+    await expect(serviceTypeFilters.first()).toBeVisible({
       timeout: 30000 // it will take some time to load the Study Browser
     });
 
