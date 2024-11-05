@@ -343,7 +343,7 @@ def test_create_dynamic_services(
     response = client.post(
         "/v2/dynamic_services",
         headers=dynamic_sidecar_headers,
-        json=json.loads(post_data.json()),
+        json=json.loads(post_data.model_dump_json()),
         follow_redirects=False,
     )
     assert (
@@ -555,7 +555,7 @@ def test_delete_service_waiting_for_manual_intervention(
     response = client.post(
         "/v2/dynamic_services",
         headers=dynamic_sidecar_headers,
-        json=json.loads(post_data.json()),
+        json=json.loads(post_data.model_dump_json()),
     )
     assert (
         response.status_code == exp_status_code

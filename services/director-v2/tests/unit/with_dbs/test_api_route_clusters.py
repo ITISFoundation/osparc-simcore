@@ -311,7 +311,7 @@ async def test_create_cluster(
     response = await async_client.post(
         create_cluster_url,
         json=json.loads(
-            cluster_data.json(
+            cluster_data.model_dump_json(
                 by_alias=True,
                 exclude_unset=True,
                 encoder=create_json_encoder_wo_secrets(ClusterCreate),
@@ -355,7 +355,7 @@ async def test_update_own_cluster(
     response = await async_client.patch(
         f"/v2/clusters/15615165165165?user_id={user_1['id']}",
         json=json.loads(
-            ClusterPatch().json(
+            ClusterPatch().model_dump_json(
                 **_PATCH_EXPORT, encoder=create_json_encoder_wo_secrets(ClusterPatch)
             )
         ),
@@ -377,7 +377,7 @@ async def test_update_own_cluster(
     response = await async_client.patch(
         f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}",
         json=json.loads(
-            ClusterPatch().json(
+            ClusterPatch().model_dump_json(
                 **_PATCH_EXPORT, encoder=create_json_encoder_wo_secrets(ClusterPatch)
             )
         ),

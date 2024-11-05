@@ -598,7 +598,7 @@ async def _trigger_progress_event(
         ),
     )
     await cast(DaskScheduler, scheduler)._task_progress_change_handler(  # noqa: SLF001
-        event.json()
+        event.model_dump_json()
     )
 
 
@@ -1021,7 +1021,7 @@ async def test_task_progress_triggers(
         await cast(
             DaskScheduler, scheduler
         )._task_progress_change_handler(  # noqa: SLF001
-            progress_event.json()
+            progress_event.model_dump_json()
         )
         # NOTE: not sure whether it should switch to STARTED.. it would make sense
         await _assert_comp_tasks_db(

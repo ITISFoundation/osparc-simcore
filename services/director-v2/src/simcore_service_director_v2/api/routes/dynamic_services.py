@@ -281,7 +281,7 @@ async def service_retrieve_data_on_ports(
         response = await services_client.request(
             "POST",
             f"{service_base_url}/retrieve",
-            content=retrieve_settings.json(by_alias=True),
+            content=retrieve_settings.model_dump_json(by_alias=True),
             timeout=timeout,
         )
 

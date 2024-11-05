@@ -195,7 +195,7 @@ def dynamic_sidecar_service_spec(
             f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
             f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
             f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
-            DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data_from_http_request.json(),
+            DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: scheduler_data_from_http_request.model_dump_json(),
         },
     }
 
