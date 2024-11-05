@@ -69,7 +69,7 @@ async def app_factory() -> web.Application:
 
     _logger.info(
         "Application settings: %s",
-        app_settings.model_dump_json(indent=2, sort_keys=True),
+        app_settings.model_dump_json(indent=2),
     )
 
     app, _ = _setup_app_from_settings(app_settings)
