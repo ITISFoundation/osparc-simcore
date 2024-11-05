@@ -51,8 +51,17 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
     return _default_factory
 
 
-class CustomEnvSettingsSource(EnvSettingsSource):
-    def __init__(self, settings_cls: BaseSettings, env_settings: EnvSettingsSource):
+def _is_auto_default_from_env_enabled(field: FieldInfo) -> bool:
+    return bool(
+        field.json_schema_extra is not None
+        and field.json_schema_extra.get("auto_default_from_env", False)
+    )
+
+
+class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
+    def __init__(
+        self, settings_cls: type[BaseSettings], env_settings: EnvSettingsSource
+    ):
         super().__init__(
             settings_cls,
             env_settings.case_sensitive,
@@ -73,7 +82,12 @@ class CustomEnvSettingsSource(EnvSettingsSource):
         prepared_value = super().prepare_field_value(
             field_name, field, value, value_is_complex
         )
-        if field.default_factory and field.default is None and prepared_value == {}:
+        if (
+            _is_auto_default_from_env_enabled(field)
+            and field.default_factory
+            and field.default is None
+            and prepared_value == {}
+        ):
             prepared_value = field.default_factory()
         return prepared_value
 
@@ -114,12 +128,7 @@ class BaseCustomSettings(BaseSettings):
         super().__pydantic_init_subclass__(**kwargs)
 
         for name, field in cls.model_fields.items():
-            auto_default_from_env = (
-                field.json_schema_extra is not None
-                and field.json_schema_extra.get(  # type: ignore[union-attr]
-                    "auto_default_from_env", False
-                )
-            )
+            auto_default_from_env = _is_auto_default_from_env_enabled(field)
             field_type = get_type(field)
 
             # Avoids issubclass raising TypeError. SEE test_issubclass_type_error_with_pydantic_models
@@ -134,7 +143,7 @@ class BaseCustomSettings(BaseSettings):
                 and issubclass(field_type, BaseCustomSettings)
             ):
                 if auto_default_from_env:
-                    # Transform it into something like `Field(default_factory=create_settings_from_env(field))`
+                    # Builds a default factory `Field(default_factory=create_settings_from_env(field))`
                     field.default_factory = _create_settings_from_env(name, field)
                     field.default = None
 
@@ -171,7 +180,7 @@ class BaseCustomSettings(BaseSettings):
         assert env_settings  # nosec
         return (
             init_settings,
-            CustomEnvSettingsSource(settings_cls, env_settings=env_settings),
+            EnvSettingsWithAutoDefaultSource(settings_cls, env_settings=env_settings),
             dotenv_settings,
             file_secret_settings,
         )
