@@ -13,7 +13,7 @@ from models_library.resource_tracker import (
 )
 
 from ..api.rest.dependencies import get_repository
-from ..modules.db.repositories.resource_tracker import ResourceTrackerRepository
+from .modules.db.repositories.resource_tracker import ResourceTrackerRepository
 
 
 async def get_pricing_unit(
