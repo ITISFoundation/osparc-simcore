@@ -55,8 +55,9 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     # replace by httpx client
     setup_client_session(app)
-    setup_registry(app)
     registry_cache_task.setup(app)
+    setup_registry(app)
+
     setup_instrumentation(app)
 
     # ERROR HANDLERS
