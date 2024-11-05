@@ -144,7 +144,7 @@ typing-extensions==4.11.0
     #   mypy
     #   sqlalchemy2-stubs
     #   types-aiobotocore-s3
-urllib3==2.2.2
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

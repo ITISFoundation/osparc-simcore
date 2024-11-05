@@ -331,7 +331,7 @@ typing-extensions==4.11.0
     #   types-aiobotocore-iam
     #   types-aiobotocore-s3
     #   types-aiobotocore-ssm
-urllib3==2.2.1
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
