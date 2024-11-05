@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from collections.abc import Iterator
 from pathlib import Path
 from pprint import pprint
 from typing import Any
@@ -310,6 +309,8 @@ async def test_run_solver_job(
         "contact",
         "inputs",
         "outputs",
+        "owner",
+        "classifiers",
     } == set(oas["components"]["schemas"]["ServiceGet"]["required"])
 
     example = next(
