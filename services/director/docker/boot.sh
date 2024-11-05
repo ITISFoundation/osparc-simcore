@@ -23,7 +23,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
 
-  cd services/autoscaling
+  cd services/director
   uv pip --quiet --no-cache-dir sync requirements/dev.txt
   cd -
   uv pip list
@@ -46,7 +46,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
 
   exec sh -c "
-    cd services/autoscaling/src/simcore_service_director && \
+    cd services/director/src/simcore_service_director && \
     python -m debugpy --listen 0.0.0.0:${DIRECTOR_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
       --host 0.0.0.0 \
       --reload \
