@@ -40,17 +40,17 @@ class ProjectDB(BaseModel):
     uuid: ProjectID
     name: str
     description: str
-    thumbnail: HttpUrl | None = None
+    thumbnail: HttpUrl | None
     prj_owner: UserID
     creation_date: datetime
     last_change_date: datetime
-    ui: StudyUI | None = None
+    ui: StudyUI | None
     classifiers: list[ClassifierID]
-    dev: dict | None = None
+    dev: dict | None
     quality: dict[str, Any]
     published: bool
     hidden: bool
-    workspace_id: WorkspaceID | None = None
+    workspace_id: WorkspaceID | None
     trashed_at: datetime | None
 
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
@@ -65,7 +65,7 @@ class ProjectDB(BaseModel):
 
 
 class UserSpecificProjectDataDB(ProjectDB):
-    folder_id: FolderID | None = None
+    folder_id: FolderID | None
     model_config = ConfigDict(from_attributes=True)
 
 
