@@ -23,7 +23,7 @@ pydantic-core==2.23.4
     # via pydantic
 pydantic-extra-types==2.9.0
     # via -r requirements/../../../packages/common-library/requirements/_base.in
-pydantic-settings==2.5.2
+pydantic-settings==2.6.1
     # via -r requirements/_base.in
 pygments==2.18.0
     # via rich

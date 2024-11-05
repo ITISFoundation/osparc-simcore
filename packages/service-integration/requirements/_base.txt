@@ -13,6 +13,8 @@ binaryornot==0.4.4
     # via cookiecutter
 certifi==2024.8.30
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -42,6 +44,8 @@ iniconfig==2.0.0
     # via pytest
 jinja2==3.1.4
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   cookiecutter
@@ -64,8 +68,12 @@ multidict==6.1.0
     # via yarl
 orjson==3.10.7
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
 packaging==24.1
     # via pytest
@@ -73,16 +81,23 @@ pluggy==1.5.0
     # via pytest
 pydantic==2.9.2
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   pydantic-extra-types
     #   pydantic-settings
 pydantic-core==2.23.4
     # via pydantic
 pydantic-extra-types==2.9.0
-    # via -r requirements/../../../packages/models-library/requirements/_base.in
-pydantic-settings==2.5.2
+    # via
+    #   -r requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+pydantic-settings==2.6.1
     # via -r requirements/../../../packages/models-library/requirements/_base.in
 pygments==2.18.0
     # via rich
@@ -96,6 +111,8 @@ python-slugify==8.0.4
     # via cookiecutter
 pyyaml==6.0.2
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
@@ -133,6 +150,8 @@ typing-extensions==4.12.2
     #   typer
 urllib3==2.2.3
     # via
+    #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

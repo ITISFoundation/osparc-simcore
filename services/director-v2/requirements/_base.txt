@@ -630,7 +630,7 @@ pydantic==2.9.2
     #   pydantic-settings
 pydantic-core==2.23.4
     # via pydantic
-pydantic-extra-types==2.9.0
+pydantic-extra-types==2.10.0
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/common-library/requirements/_base.in
@@ -655,9 +655,8 @@ pydantic-extra-types==2.9.0
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   fastapi
-pydantic-settings==2.5.2
+pydantic-settings==2.6.1
     # via
-    #   -c requirements/./constraints.txt
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -940,6 +939,7 @@ typing-extensions==4.11.0
     #   pint
     #   pydantic
     #   pydantic-core
+    #   pydantic-extra-types
     #   typer
 ujson==5.10.0
     # via
