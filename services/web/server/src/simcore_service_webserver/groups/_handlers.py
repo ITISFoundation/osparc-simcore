@@ -38,6 +38,7 @@ from . import api
 from ._classifiers import GroupClassifierRepository, build_rrids_tree_view
 from .exceptions import (
     GroupNotFoundError,
+    UserAlreadyInGroupError,
     UserInGroupNotFoundError,
     UserInsufficientRightsError,
 )
@@ -66,6 +67,11 @@ def _handle_groups_exceptions(handler: Handler):
 
         except UserInGroupNotFoundError as exc:
             raise web.HTTPNotFound(reason=f"User not found in group {exc.gid}") from exc
+
+        except UserAlreadyInGroupError as exc:
+            raise web.HTTPConflict(
+                reason=f"User is already in group {exc.gid}"
+            ) from exc
 
         except UserInsufficientRightsError as exc:
             raise web.HTTPForbidden from exc

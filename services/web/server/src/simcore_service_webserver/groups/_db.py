@@ -7,6 +7,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.groups import GroupAtDB
 from models_library.users import GroupID, UserID
 from pydantic import parse_obj_as
+from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.utils_products import get_or_create_product_group
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
@@ -20,7 +21,11 @@ from ._utils import (
     convert_groups_db_to_schema,
     convert_groups_schema_to_db,
 )
-from .exceptions import GroupNotFoundError, UserInGroupNotFoundError
+from .exceptions import (
+    GroupNotFoundError,
+    UserAlreadyInGroupError,
+    UserInGroupNotFoundError,
+)
 
 _DEFAULT_PRODUCT_GROUP_ACCESS_RIGHTS = AccessRightsDict(
     read=False,
@@ -305,6 +310,7 @@ async def add_new_user_in_group(
     # first check if the group exists
     group: RowProxy = await _get_user_group(conn, user_id, gid)
     check_group_permissions(group, user_id, gid, "write")
+
     # now check the new user exists
     users_count = await conn.scalar(
         sa.select(sa.func.count()).where(users.c.id == new_user_id)
@@ -317,12 +323,18 @@ async def add_new_user_in_group(
     user_access_rights = _DEFAULT_GROUP_READ_ACCESS_RIGHTS
     if access_rights:
         user_access_rights.update(access_rights)
-    await conn.execute(
-        # pylint: disable=no-value-for-parameter
-        user_to_groups.insert().values(
-            uid=new_user_id, gid=group.gid, access_rights=user_access_rights
+
+    try:
+        await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            user_to_groups.insert().values(
+                uid=new_user_id, gid=group.gid, access_rights=user_access_rights
+            )
         )
-    )
+    except UniqueViolation as exc:
+        raise UserAlreadyInGroupError(
+            uid=new_user_id, gid=gid, user_id=user_id, access_rights=access_rights
+        ) from exc
 
 
 async def _get_user_in_group_permissions(
