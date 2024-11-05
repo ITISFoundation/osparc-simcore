@@ -19,3 +19,8 @@ APP_REGISTRY_CACHE_DATA_KEY: Final[str] = __name__ + "_registry_cache_data"
 API_ROOT: Final[str] = "api"
 
 DIRECTOR_SIMCORE_SERVICES_PREFIX: Final[str] = "simcore/services"
+
+
+# TO remove
+# used when in devel mode vs release mode
+NODE_SCHEMA_LOCATION: Final[str] = f"{API_ROOT}/v0/schemas/node-meta-v0.0.1.json"
