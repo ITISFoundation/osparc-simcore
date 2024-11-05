@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 # - parse+validate from redis
 # - schema in the response
 class Announcement(BaseModel):
-    id: str  # noqa: A003
+    id: str
     products: list[str]
     start: datetime
     end: datetime
@@ -20,7 +20,7 @@ class Announcement(BaseModel):
 
     @field_validator("end")
     @classmethod
-    def check_start_before_end(cls, v, info: ValidationInfo):
+    def _check_start_before_end(cls, v, info: ValidationInfo):
         if start := info.data.get("start"):
             end = v
             if end <= start:
