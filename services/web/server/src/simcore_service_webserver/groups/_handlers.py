@@ -5,21 +5,23 @@ from typing import Literal
 
 from aiohttp import web
 from models_library.api_schemas_webserver.groups import (
-    AllUsersGroups,
+    GroupCreate,
+    GroupGet,
+    GroupUpdate,
+    GroupUserAdd,
     GroupUserGet,
-    UsersGroup,
+    GroupUserUpdate,
+    MyGroupsGet,
 )
-from models_library.emails import LowerCaseEmailStr
 from models_library.users import GroupID, UserID
-from models_library.utils.json_serialization import json_dumps
 from pydantic import BaseModel, Extra, Field, parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
+    parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .._constants import RQ_PRODUCT_KEY, RQT_USERID_KEY
 from .._meta import API_VTAG
@@ -36,6 +38,7 @@ from . import api
 from ._classifiers import GroupClassifierRepository, build_rrids_tree_view
 from .exceptions import (
     GroupNotFoundError,
+    UserAlreadyInGroupError,
     UserInGroupNotFoundError,
     UserInsufficientRightsError,
 )
@@ -55,13 +58,21 @@ def _handle_groups_exceptions(handler: Handler):
             return await handler(request)
 
         except UserNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"User {exc.uid} not found") from exc
+            raise web.HTTPNotFound(
+                reason=f"User {exc.uid or exc.email} not found"
+            ) from exc
 
         except GroupNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"Group {exc.gid} not found") from exc
+            gid = getattr(exc, "gid", "")
+            raise web.HTTPNotFound(reason=f"Group {gid} not found") from exc
 
         except UserInGroupNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"User not found in group {exc.gid}") from exc
+            gid = getattr(exc, "gid", "")
+            raise web.HTTPNotFound(reason=f"User not found in group {gid}") from exc
+
+        except UserAlreadyInGroupError as exc:
+            gid = getattr(exc, "gid", "")
+            raise web.HTTPConflict(reason=f"User is already in group {gid}") from exc
 
         except UserInsufficientRightsError as exc:
             raise web.HTTPForbidden from exc
@@ -77,11 +88,9 @@ routes = web.RouteTableDef()
 @permission_required("groups.read")
 @_handle_groups_exceptions
 async def list_groups(request: web.Request):
-    """Lists my groups
-
-    List of the groups I belonged to
     """
-
+    List all groups (organizations, primary, everyone and products) I belong to
+    """
     product: Product = get_current_product(request)
     req_ctx = _GroupsRequestContext.parse_obj(request)
 
@@ -89,7 +98,7 @@ async def list_groups(request: web.Request):
         request.app, req_ctx.user_id
     )
 
-    result = {
+    my_group = {
         "me": primary_group,
         "organizations": user_groups,
         "all": all_group,
@@ -98,14 +107,20 @@ async def list_groups(request: web.Request):
 
     if product.group_id:
         with suppress(GroupNotFoundError):
-            result["product"] = await api.get_product_group_for_user(
+            # Product is optional
+            my_group["product"] = await api.get_product_group_for_user(
                 app=request.app,
                 user_id=req_ctx.user_id,
                 product_gid=product.group_id,
             )
 
-    assert parse_obj_as(AllUsersGroups, result) is not None  # nosec
-    return result
+    assert parse_obj_as(MyGroupsGet, my_group) is not None  # nosec
+    return envelope_json_response(my_group)
+
+
+#
+# Organization groups
+#
 
 
 class _GroupPathParams(BaseModel):
@@ -120,13 +135,13 @@ class _GroupPathParams(BaseModel):
 @permission_required("groups.read")
 @_handle_groups_exceptions
 async def get_group(request: web.Request):
-    """Get one group details"""
+    """Get an organization group"""
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
 
     group = await api.get_user_group(request.app, req_ctx.user_id, path_params.gid)
-    assert parse_obj_as(UsersGroup, group) is not None  # nosec
-    return group
+    assert parse_obj_as(GroupGet, group) is not None  # nosec
+    return envelope_json_response(group)
 
 
 @routes.post(f"/{API_VTAG}/groups", name="create_group")
@@ -134,15 +149,15 @@ async def get_group(request: web.Request):
 @permission_required("groups.*")
 @_handle_groups_exceptions
 async def create_group(request: web.Request):
-    """Creates organization groups"""
+    """Creates an organization group"""
     req_ctx = _GroupsRequestContext.parse_obj(request)
-    new_group = await request.json()
+    create = await parse_request_body_as(GroupCreate, request)
+    new_group = create.dict(exclude_unset=True)
 
     created_group = await api.create_user_group(request.app, req_ctx.user_id, new_group)
-    assert parse_obj_as(UsersGroup, created_group) is not None  # nosec
-    raise web.HTTPCreated(
-        text=json_dumps({"data": created_group}), content_type=MIMETYPE_APPLICATION_JSON
-    )
+    assert parse_obj_as(GroupGet, created_group) is not None  # nosec
+
+    return envelope_json_response(created_group, status_cls=web.HTTPCreated)
 
 
 @routes.patch(f"/{API_VTAG}/groups/{{gid}}", name="update_group")
@@ -150,14 +165,16 @@ async def create_group(request: web.Request):
 @permission_required("groups.*")
 @_handle_groups_exceptions
 async def update_group(request: web.Request):
+    """Updates organization groups"""
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
-    new_group_values = await request.json()
+    update: GroupUpdate = await parse_request_body_as(GroupUpdate, request)
+    new_group_values = update.dict(exclude_unset=True)
 
     updated_group = await api.update_user_group(
         request.app, req_ctx.user_id, path_params.gid, new_group_values
     )
-    assert parse_obj_as(UsersGroup, updated_group) is not None  # nosec
+    assert parse_obj_as(GroupGet, updated_group) is not None  # nosec
     return envelope_json_response(updated_group)
 
 
@@ -166,6 +183,7 @@ async def update_group(request: web.Request):
 @permission_required("groups.*")
 @_handle_groups_exceptions
 async def delete_group(request: web.Request):
+    """Deletes organization groups"""
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
 
@@ -173,11 +191,17 @@ async def delete_group(request: web.Request):
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-@routes.get(f"/{API_VTAG}/groups/{{gid}}/users", name="get_group_users")
+#
+# Users in organization groups (i.e. members of an organization)
+#
+
+
+@routes.get(f"/{API_VTAG}/groups/{{gid}}/users", name="get_all_group_users")
 @login_required
 @permission_required("groups.*")
 @_handle_groups_exceptions
-async def get_group_users(request: web.Request):
+async def get_all_group_users(request: web.Request):
+    """Gets users in organization groups"""
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
 
@@ -198,23 +222,14 @@ async def add_group_user(request: web.Request):
     """
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupPathParams, request)
-    new_user_in_group = await request.json()
-
-    assert "uid" in new_user_in_group or "email" in new_user_in_group  # nosec
-
-    new_user_id = new_user_in_group["uid"] if "uid" in new_user_in_group else None
-    new_user_email = (
-        parse_obj_as(LowerCaseEmailStr, new_user_in_group["email"])
-        if "email" in new_user_in_group
-        else None
-    )
+    added: GroupUserAdd = await parse_request_body_as(GroupUserAdd, request)
 
     await api.add_user_in_group(
         request.app,
         req_ctx.user_id,
         path_params.gid,
-        new_user_id=new_user_id,
-        new_user_email=new_user_email,
+        new_user_id=added.uid,
+        new_user_email=added.email,
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
@@ -233,7 +248,7 @@ class _GroupUserPathParams(BaseModel):
 @_handle_groups_exceptions
 async def get_group_user(request: web.Request):
     """
-    Gets specific user in group
+    Gets specific user in an organization group
     """
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupUserPathParams, request)
@@ -249,18 +264,16 @@ async def get_group_user(request: web.Request):
 @permission_required("groups.*")
 @_handle_groups_exceptions
 async def update_group_user(request: web.Request):
-    """
-    Modify specific user in group
-    """
     req_ctx = _GroupsRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_GroupUserPathParams, request)
-    new_values_for_user_in_group = await request.json()
+    update: GroupUserUpdate = await parse_request_body_as(GroupUserUpdate, request)
+
     user = await api.update_user_in_group(
         request.app,
-        req_ctx.user_id,
-        path_params.gid,
-        path_params.uid,
-        new_values_for_user_in_group,
+        user_id=req_ctx.user_id,
+        gid=path_params.gid,
+        the_user_id_in_group=path_params.uid,
+        access_rights=update.access_rights.dict(),
     )
     assert parse_obj_as(GroupUserGet, user) is not None  # nosec
     return envelope_json_response(user)
