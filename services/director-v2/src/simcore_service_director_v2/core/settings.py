@@ -63,11 +63,13 @@ class DirectorV0Settings(BaseApplicationSettings):
 
     @cached_property
     def endpoint(self) -> str:
-        url: str = AnyHttpUrl.build(
-            scheme="http",
-            host=self.DIRECTOR_HOST,
-            port=self.DIRECTOR_PORT,
-            path=f"/{self.DIRECTOR_V0_VTAG}",
+        url: str = str(
+            AnyHttpUrl.build(
+                scheme='http',
+                host=self.DIRECTOR_HOST,
+                port=self.DIRECTOR_PORT,
+                path=f"/{self.DIRECTOR_V0_VTAG}",
+            )
         )
         return url
 
