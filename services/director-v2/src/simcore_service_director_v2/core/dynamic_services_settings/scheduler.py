@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Final
 
 from models_library.projects_networks import DockerNetworkName
-from pydantic import Field, NonNegativeFloat, NonNegativeInt, PositiveFloat
+from pydantic import Field, NonNegativeInt, PositiveFloat
 from settings_library.base import BaseCustomSettings
 
 _MINUTE: Final[NonNegativeInt] = 60
@@ -111,7 +111,7 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         ),
     )
 
-    DYNAMIC_SIDECAR_API_STATES_RESTORE_NOTIFICATION_THRESHOLD: NonNegativeFloat = Field(
+    DYNAMIC_SIDECAR_API_STATES_RESTORE_NOTIFICATION_THRESHOLD: float = Field(
         0.8,
         gt=0,
         le=1,
