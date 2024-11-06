@@ -2,7 +2,7 @@ import logging
 
 import pytest
 from models_library.rest_filters import Filters, FiltersQueryParameters
-from pydantic import Extra, ValidationError
+from pydantic import ConfigDict, ValidationError
 
 
 # 1. create filter model
@@ -12,8 +12,7 @@ class CustomFilter(Filters):
 
 
 class CustomFilterStrict(CustomFilter):
-    class Config(CustomFilter.Config):
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 def test_custom_filter_query_parameters():
@@ -26,7 +25,7 @@ def test_custom_filter_query_parameters():
 
     # lets filter only is_trashed and unset is_hidden
     custom_filter = CustomFilter(is_trashed=True)
-    assert custom_filter.json() == '{"is_trashed": true, "is_hidden": null}'
+    assert custom_filter.model_dump_json() == '{"is_trashed": true, "is_hidden": null}'
 
     # default to None (optional)
     query_param = FiltersQueryParameters[CustomFilter]()
