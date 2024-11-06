@@ -209,6 +209,9 @@ async def get_for_user_or_workspace(
         return FolderDB.from_orm(row)
 
 
+_MAX_ITEMS_UPDATE: Final = 100
+
+
 async def update(
     app: web.Application,
     *,
@@ -238,9 +241,10 @@ async def update(
     )
 
     if isinstance(folder_id, set):
-        if len(folder_id) == 0:
-            msg = f"Expected one or more folder_id to update, got {folder_id}"
+        if len(folder_id) == 0 or len(folder_id) > _MAX_ITEMS_UPDATE:
+            msg = f"Number of items for batch update is out-of-range, got {len(folder_id)=}"
             raise ValueError(msg)
+
         # batch-update
         query = query.where(folders_v2.c.folder_id.in_(list(folder_id)))
     else:
