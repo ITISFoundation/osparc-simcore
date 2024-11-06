@@ -305,6 +305,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
         if (myAccountWindow.openWallets()) {
           const msg = this.tr("Do you want to make it the default Credit Account?");
           const win = new osparc.ui.window.Confirmation(msg).set({
+            caption: this.tr("Default Credit Account"),
             confirmAction: "create"
           });
           win.center();
