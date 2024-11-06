@@ -102,6 +102,7 @@ class UserProjectAccessRightsWithWorkspace(BaseModel):
 class ProjectPatchExtended(ProjectPatch):
     # Only used internally
     trashed_at: datetime | None = None
+    hidden: bool | None = None
 
     class Config:
         allow_population_by_field_name = True
