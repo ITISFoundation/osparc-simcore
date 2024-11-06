@@ -100,8 +100,9 @@ async def list_(
 ) -> tuple[int, list[FolderDB]]:
     """
     content_of_folder_id - Used to filter in which folder we want to list folders. None means root folder.
+    trashed - If set to true, it returns folders **explicitly** trashed, if false then non-trashed folders.
     """
-    assert not (
+    assert not (  # nosec
         user_id is not None and workspace_id is not None
     ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
 
@@ -122,7 +123,10 @@ async def list_(
 
     if trashed is not None:
         base_query = base_query.where(
-            folders_v2.c.trashed_at.is_not(None)
+            (
+                (folders_v2.c.trashed_at.is_not(None))
+                & (folders_v2.c.trashed_explicitly.is_(True))
+            )
             if trashed
             else folders_v2.c.trashed_at.is_(None)
         )
