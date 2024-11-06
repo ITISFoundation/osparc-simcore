@@ -464,7 +464,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         )
         duration = time.time() - started
 
-        if transferred_bytes > 0:
+        if transferred_bytes and transferred_bytes > 0:
             get_instrumentation(
                 self.app
             ).dynamic_sidecar_metrics.input_ports_pull_rate.labels(
