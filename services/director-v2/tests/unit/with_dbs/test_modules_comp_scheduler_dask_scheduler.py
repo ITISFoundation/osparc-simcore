@@ -726,7 +726,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
     messages = await _assert_message_received(
-        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.model_validate_json
     )
     assert messages[0].metrics == "service_started"
     assert messages[0].service_uuid == exp_started_task.node_id
@@ -737,7 +737,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingStartedMessage.parse_raw,
+        RabbitResourceTrackingStartedMessage.model_validate_json,
     )
     assert messages[0].node_id == exp_started_task.node_id
 
@@ -769,14 +769,14 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         expected_progress=1,
     )
     messages = await _assert_message_received(
-        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.model_validate_jsonidate_jsonidate_json
     )
     assert messages[0].metrics == "service_stopped"
     assert messages[0].service_uuid == exp_started_task.node_id
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingStoppedMessage.parse_raw,
+        RabbitResourceTrackingStoppedMessage.model_validate_json,
     )
 
     completed_tasks = [exp_started_task]
@@ -871,14 +871,14 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
     messages = await _assert_message_received(
-        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.model_validate_json
     )
     assert messages[0].metrics == "service_started"
     assert messages[0].service_uuid == exp_started_task.node_id
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingStartedMessage.parse_raw,
+        RabbitResourceTrackingStartedMessage.model_validate_json,
     )
     assert messages[0].node_id == exp_started_task.node_id
 
@@ -915,14 +915,14 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     mocked_parse_output_data_fct.assert_not_called()
     expected_pending_tasks.remove(exp_started_task)
     messages = await _assert_message_received(
-        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.parse_raw
+        instrumentation_rabbit_client_parser, 1, InstrumentationRabbitMessage.model_validate_json
     )
     assert messages[0].metrics == "service_stopped"
     assert messages[0].service_uuid == exp_started_task.node_id
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingStoppedMessage.parse_raw,
+        RabbitResourceTrackingStoppedMessage.model_validate_json,
     )
 
     # -------------------------------------------------------------------------------
@@ -959,7 +959,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     )
     mocked_dask_client.get_task_result.assert_called_once_with(exp_started_task.job_id)
     messages = await _assert_message_received(
-        instrumentation_rabbit_client_parser, 2, InstrumentationRabbitMessage.parse_raw
+        instrumentation_rabbit_client_parser, 2, InstrumentationRabbitMessage.model_validate_json
     )
     # NOTE: the service was fast and went directly to success
     assert messages[0].metrics == "service_started"
@@ -1328,7 +1328,7 @@ async def test_running_pipeline_triggers_heartbeat(
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingStartedMessage.parse_raw,
+        RabbitResourceTrackingStartedMessage.model_validate_json,
     )
     assert messages[0].node_id == exp_started_task.node_id
 
@@ -1340,7 +1340,7 @@ async def test_running_pipeline_triggers_heartbeat(
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingHeartbeatMessage.parse_raw,
+        RabbitResourceTrackingHeartbeatMessage.model_validate_json,
     )
     assert isinstance(messages[0], RabbitResourceTrackingHeartbeatMessage)
 
@@ -1352,7 +1352,7 @@ async def test_running_pipeline_triggers_heartbeat(
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,
         1,
-        RabbitResourceTrackingHeartbeatMessage.parse_raw,
+        RabbitResourceTrackingHeartbeatMessage.model_validate_json,
     )
     assert isinstance(messages[0], RabbitResourceTrackingHeartbeatMessage)
 

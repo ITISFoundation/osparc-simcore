@@ -25,8 +25,8 @@ def test_regression_as_label_data(scheduler_data: SchedulerData) -> None:
     # using pydantic's internals
     label_data = scheduler_data.as_label_data()
 
-    parsed_json_encoded = SchedulerData.parse_raw(json_encoded)
-    parsed_label_data = SchedulerData.parse_raw(label_data)
+    parsed_json_encoded = SchedulerData.model_validate_json(json_encoded)
+    parsed_label_data = SchedulerData.model_validate_json(label_data)
     assert parsed_json_encoded == parsed_label_data
 
 

@@ -180,7 +180,7 @@ async def test_get_task_logs_file(
     )
     assert resp.status_code == status.HTTP_200_OK
 
-    log_file = TaskLogFileGet.parse_raw(resp.text)
+    log_file = TaskLogFileGet.model_validate_json(resp.text)
     assert log_file.download_link
 
 

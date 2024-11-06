@@ -729,7 +729,7 @@ async def test_update_scheduler_data_label(
     # fetch stored data in labels
     service_inspect = await async_docker_client.services.inspect(mock_service)
     labels = service_inspect["Spec"]["Labels"]
-    scheduler_data = SchedulerData.parse_raw(
+    scheduler_data = SchedulerData.model_validate_json(
         labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL]
     )
     assert scheduler_data == mock_scheduler_data
