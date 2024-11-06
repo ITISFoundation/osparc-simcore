@@ -6,9 +6,9 @@
 
 import json
 import uuid
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable
+from typing import Any
 
 import docker
 import docker.models.networks
@@ -31,8 +31,10 @@ from tenacity.wait import wait_fixed
 
 
 @pytest.fixture
-def ensure_service_runs_in_ci(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
-    return setenvs_from_dict(
+def ensure_service_runs_in_ci(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
         monkeypatch,
         envs={
             "DEFAULT_MAX_MEMORY": f"{int(25 * pow(1024, 2))}",
@@ -42,10 +44,30 @@ def ensure_service_runs_in_ci(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 
 
 @pytest.fixture
+async def with_docker_network(
+    docker_network: Callable[..., Awaitable[dict[str, Any]]],
+) -> dict[str, Any]:
+    return await docker_network()
+
+
+@pytest.fixture
+def configured_docker_network(
+    with_docker_network: dict[str, Any],
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {"DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME": with_docker_network["Name"]},
+    )
+
+
+@pytest.fixture
 async def run_services(
     ensure_service_runs_in_ci: EnvVarsDict,
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
+    app_settings: ApplicationSettings,
     push_services,
     docker_swarm: None,
     user_id: UserID,
@@ -116,7 +138,7 @@ async def run_services(
                     )
                     node_details = await producer.get_service_details(app, service_uuid)
                     print(
-                        f"<-- {started_service['service_key']}:{started_service['service_version']} state is {node_details['service_state']} using {config.DEFAULT_MAX_MEMORY}Bytes, {config.DEFAULT_MAX_NANO_CPUS}nanocpus"
+                        f"<-- {started_service['service_key']}:{started_service['service_version']} state is {node_details['service_state']} using {app_settings.DIRECTOR_DEFAULT_MAX_MEMORY}Bytes, {app_settings.DIRECTOR_DEFAULT_MAX_NANO_CPUS}nanocpus"
                     )
                     for service in docker_client.services.list():
                         tasks = service.tasks()
@@ -183,7 +205,7 @@ async def test_find_service_tag():
 
 
 async def test_start_stop_service(
-    docker_network: docker.models.networks.Network,
+    configured_docker_network: EnvVarsDict,
     run_services: Callable[..., Awaitable[list[dict[str, Any]]]],
 ):
     # standard test
@@ -191,7 +213,7 @@ async def test_start_stop_service(
 
 
 async def test_service_assigned_env_variables(
-    docker_network: docker.models.networks.Network,
+    configured_docker_network: EnvVarsDict,
     run_services: Callable[..., Awaitable[list[dict[str, Any]]]],
     user_id: UserID,
     project_id: ProjectID,
@@ -233,7 +255,10 @@ async def test_service_assigned_env_variables(
         assert CPU_RESOURCE_LIMIT_KEY in envs_dict
 
 
-async def test_interactive_service_published_port(docker_network, run_services):
+async def test_interactive_service_published_port(
+    configured_docker_network: EnvVarsDict,
+    run_services,
+):
     running_dynamic_services = await run_services(number_comp=0, number_dyn=1)
     assert len(running_dynamic_services) == 1
 
@@ -256,53 +281,6 @@ async def test_interactive_service_published_port(docker_network, run_services):
     assert not docker_service.attrs["Endpoint"]["Spec"]
     # service is started with dnsrr (round-robin) mode
     assert docker_service.attrs["Spec"]["EndpointSpec"]["Mode"] == "dnsrr"
-
-
-# @pytest.fixture
-# def docker_network(
-#     app_settings: ApplicationSettings,
-#     docker_client: docker.client.DockerClient,
-#     docker_swarm: None,
-# ) -> Iterator[docker.models.networks.Network]:
-#     network = docker_client.networks.create(
-#         "test_network_default", driver="overlay", scope="swarm"
-#     )
-#     print(f"--> docker network '{network.name}' created")
-#     # TODO: should probably be done via monkeypatch actually...
-#     app_settings.DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME = network.name
-#     yield network
-
-#     # cleanup
-#     print(f"<-- removing docker network '{network.name}'...")
-#     network.remove()
-
-#     for attempt in Retrying(stop=stop_after_delay(60), wait=wait_fixed(1)):
-#         with attempt:
-#             list_networks = docker_client.networks.list(
-#                 app_settings.DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME
-#             )
-#             assert not list_networks
-#     app_settings.DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME = None
-#     print(f"<-- removed docker network '{network.name}'")
-
-
-@pytest.fixture
-async def with_docker_network(
-    docker_network: Callable[..., Awaitable[dict[str, Any]]],
-) -> dict[str, Any]:
-    return await docker_network()
-
-
-@pytest.fixture
-def configured_docker_network(
-    with_docker_network: dict[str, Any],
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(
-        monkeypatch,
-        {"DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME": with_docker_network["Name"]},
-    )
 
 
 async def test_interactive_service_in_correct_network(
@@ -329,7 +307,10 @@ async def test_interactive_service_in_correct_network(
         )
 
 
-async def test_dependent_services_have_common_network(docker_network, run_services):
+async def test_dependent_services_have_common_network(
+    configured_docker_network: EnvVarsDict,
+    run_services,
+):
     running_dynamic_services = await run_services(
         number_comp=0, number_dyn=2, dependant=True
     )
