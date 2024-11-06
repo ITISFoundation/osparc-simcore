@@ -8,14 +8,15 @@ from ..exceptions_handlers import (
     create_exception_handlers_decorator,
 )
 from ..projects.exceptions import (
+    BaseProjectError,
     ProjectRunningConflictError,
     ProjectStoppingError,
-    ProjectTrashError,
 )
 from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceFolderInconsistencyError,
     WorkspaceNotFoundError,
+    WorkspacesValueError,
 )
 from .errors import (
     FolderAccessForbiddenError,
@@ -68,6 +69,6 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 
 
 handle_plugin_requests_exceptions = create_exception_handlers_decorator(
-    exception_catch=(ProjectTrashError, FoldersValueError),
+    exception_catch=(BaseProjectError, FoldersValueError, WorkspacesValueError),
     exc_to_status_map=_TO_HTTP_ERROR_MAP,
 )
