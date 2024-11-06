@@ -96,7 +96,7 @@ class FileUploadCompleteEnveloped(BaseModel):
 
 class FileUploadCompleteFutureEnveloped(BaseModel):
     data: FileUploadCompleteFuture
-    error: Any = None
+    error: Any
 
 
 class DatasetMetaEnvelope(BaseModel):
