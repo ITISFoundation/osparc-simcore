@@ -3,7 +3,7 @@ from typing import Any, ClassVar, Literal
 from uuid import UUID
 
 from models_library.api_schemas_webserver._base import OutputSchema
-from models_library.api_schemas_webserver.groups import AllUsersGroups
+from models_library.api_schemas_webserver.groups import MyGroupsGet
 from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import FirstNameStr, LastNameStr, UserID
@@ -65,7 +65,7 @@ class ProfileGet(BaseModel):
     last_name: LastNameStr | None = None
     login: LowerCaseEmailStr
     role: Literal["ANONYMOUS", "GUEST", "USER", "TESTER", "PRODUCT_OWNER", "ADMIN"]
-    groups: AllUsersGroups | None = None
+    groups: MyGroupsGet | None = None
     gravatar_id: str | None = None
     expiration_date: date | None = Field(
         default=None,
