@@ -3,7 +3,7 @@
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from common_library.json_serialization import json_dumps
 from pydantic import (
@@ -267,7 +267,7 @@ class RestartPolicy(str, Enum):
 class DynamicSidecarServiceLabels(BaseModel):
     """All "simcore.service.*" labels including keys"""
 
-    paths_mapping: Json[PathMappingsLabel] | None = Field(
+    paths_mapping: Annotated[PathMappingsLabel | None, Json]= Field(
         None,
         alias="simcore.service.paths-mapping",
         description=(
@@ -276,7 +276,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    compose_spec: Json[ComposeSpecLabelDict] | None = Field(
+    compose_spec: Annotated[ComposeSpecLabelDict | None, Json] = Field(
         None,
         alias="simcore.service.compose-spec",
         description=(
@@ -317,21 +317,19 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    containers_allowed_outgoing_permit_list: None | (
-        Json[dict[str, list[NATRule]]]
-    ) = Field(
+    containers_allowed_outgoing_permit_list: Annotated[None | dict[str, list[NATRule]], Json] = Field(
         None,
         alias="simcore.service.containers-allowed-outgoing-permit-list",
         description="allow internet access to certain domain names and ports per container",
     )
 
-    containers_allowed_outgoing_internet: Json[set[str]] | None = Field(
+    containers_allowed_outgoing_internet: Annotated[set[str] | None, Json] = Field(
         None,
         alias="simcore.service.containers-allowed-outgoing-internet",
         description="allow complete internet access to containers in here",
     )
 
-    callbacks_mapping: Json[CallbacksMapping] | None = Field(
+    callbacks_mapping: Annotated[CallbacksMapping | None, Json] = Field(
         default_factory=CallbacksMapping,  # type: ignore[arg-type] # this one ANE I am not sure about
         alias="simcore.service.callbacks-mapping",
         description="exposes callbacks from user services to the sidecar",
