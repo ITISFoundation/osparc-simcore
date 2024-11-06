@@ -1,6 +1,6 @@
 import functools
 import logging
-from typing import NamedTuple, TypeAlias
+from typing import Iterable, NamedTuple, TypeAlias
 
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
@@ -25,7 +25,7 @@ class _DefaultDict(dict):
 
 
 def _sort_exceptions_by_specificity(
-    exceptions: list[type[BaseException]], *, concrete_first: bool = True
+    exceptions: Iterable[type[BaseException]], *, concrete_first: bool = True
 ) -> list[type[BaseException]]:
     return sorted(
         exceptions,
@@ -35,13 +35,16 @@ def _sort_exceptions_by_specificity(
 
 
 def create_exception_handlers_decorator(
-    exception_catch: type[BaseException] | tuple[type[BaseException], ...],
+    exceptions_catch: type[BaseException] | tuple[type[BaseException], ...],
     exc_to_status_map: ExceptionToHttpErrorMap,
 ):
-
-    included: list[type[BaseException]] = _sort_exceptions_by_specificity(
-        list(exc_to_status_map.keys())
+    mapped_classes: tuple[type[BaseException], ...] = tuple(
+        _sort_exceptions_by_specificity(exc_to_status_map.keys())
     )
+
+    assert all(  # nosec
+        issubclass(cls, exceptions_catch) for cls in mapped_classes
+    ), f"Every {mapped_classes=} must inherit by one or more of {exceptions_catch=}"
 
     def _decorator(handler: Handler):
         @functools.wraps(handler)
@@ -49,8 +52,10 @@ def create_exception_handlers_decorator(
             try:
                 return await handler(request)
 
-            except exception_catch as exc:
-                if exc_cls := next((_ for _ in included if isinstance(exc, _)), None):
+            except exceptions_catch as exc:
+                if exc_cls := next(
+                    (cls for cls in mapped_classes if isinstance(exc, cls)), None
+                ):
                     http_error_info = exc_to_status_map[exc_cls]
 
                     # safe formatting, i.e. does not raise
@@ -77,7 +82,7 @@ def create_exception_handlers_decorator(
                             )
                         )
                     raise http_error_cls(reason=user_msg) from exc
-                raise
+                raise  # reraise
 
         return _wrapper
 

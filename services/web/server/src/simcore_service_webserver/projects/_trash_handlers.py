@@ -46,7 +46,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 
 
 _handle_exceptions = create_exception_handlers_decorator(
-    exception_catch=ProjectTrashError, exc_to_status_map=_TO_HTTP_ERROR_MAP
+    exceptions_catch=ProjectTrashError, exc_to_status_map=_TO_HTTP_ERROR_MAP
 )
 
 #

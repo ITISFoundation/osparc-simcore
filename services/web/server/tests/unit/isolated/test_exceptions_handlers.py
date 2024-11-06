@@ -70,7 +70,7 @@ async def test_exception_handlers_decorator(
 ):
 
     _handle_exceptions = create_exception_handlers_decorator(
-        exception_catch=BasePluginError,
+        exceptions_catch=BasePluginError,
         exc_to_status_map={
             OneError: HttpErrorInfo(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

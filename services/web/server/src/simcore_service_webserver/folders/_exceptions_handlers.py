@@ -69,6 +69,6 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 
 
 handle_plugin_requests_exceptions = create_exception_handlers_decorator(
-    exception_catch=(BaseProjectError, FoldersValueError, WorkspacesValueError),
+    exceptions_catch=(BaseProjectError, FoldersValueError, WorkspacesValueError),
     exc_to_status_map=_TO_HTTP_ERROR_MAP,
 )
