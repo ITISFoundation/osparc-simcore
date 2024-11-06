@@ -134,7 +134,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           icon.setSource("@FontAwesome5Solid/users/14");
           if (resourceId) {
             osparc.store.Store.getInstance().getGroup(resourceId)
-              .then(group => descriptionLabel.setValue("You're now member of '" + group["name"] + "'"))
+              .then(group => descriptionLabel.setValue("You're now member of '" + group["label"] + "'"))
               .catch(() => this.setEnabled(false));
           }
           break;
