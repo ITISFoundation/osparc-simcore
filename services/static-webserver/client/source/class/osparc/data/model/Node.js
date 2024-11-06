@@ -949,6 +949,7 @@ qx.Class.define("osparc.data.model.Node", {
         if (preferencesSettings.getConfirmStopNode()) {
           const msg = this.tr("Do you really want Stop and Save the current state?");
           const win = new osparc.ui.window.Confirmation(msg).set({
+            caption: this.tr("Stop"),
             confirmText: this.tr("Stop")
           });
           win.center();
