@@ -5595,7 +5595,8 @@
           "usdPerCredit": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
