@@ -238,6 +238,9 @@ async def update(
     )
 
     if isinstance(folder_id, set):
+        if len(folder_id) == 0:
+            msg = f"Expected one or more folder_id to update, got {folder_id}"
+            raise ValueError(msg)
         # batch-update
         query = query.where(folders_v2.c.folder_id.in_(list(folder_id)))
     else:
