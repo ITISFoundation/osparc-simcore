@@ -24,8 +24,9 @@ def check_group_permissions(
     group: RowProxy, user_id: int, gid: int, permission: str
 ) -> None:
     if not group.access_rights[permission]:
-        msg = f"User {user_id} has insufficient rights for {permission} access to group {gid}"
-        raise UserInsufficientRightsError(msg)
+        raise UserInsufficientRightsError(
+            user_id=user_id, gid=gid, permission=permission
+        )
 
 
 def convert_groups_db_to_schema(

@@ -34,7 +34,7 @@
  *       c.bindProperty("thumbnail", "thumbnail", null, item, id);
  *       c.bindProperty("name", "title", null, item, id);
  *       c.bindProperty("description", "subtitle", null, item, id);
- *       c.bindProperty("contact", "contact", null, item, id);
+ *       c.bindProperty("role", "role", null, item, id);
  *     }
  *   });
  * </pre>
@@ -98,9 +98,9 @@ qx.Class.define("osparc.ui.list.ListItem", {
       nullable : true
     },
 
-    contact: {
+    role: {
       check : "String",
-      apply : "__applyContact",
+      apply : "__applyRole",
       nullable : true
     }
   },
@@ -180,7 +180,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
             column: 1
           });
           break;
-        case "contact":
+        case "role":
           control = new qx.ui.basic.Label().set({
             font: "text-13",
             alignY: "middle"
@@ -244,11 +244,11 @@ qx.Class.define("osparc.ui.list.ListItem", {
       label.setValue(value);
     },
 
-    __applyContact: function(value) {
+    __applyRole: function(value) {
       if (value === null) {
         return;
       }
-      const label = this.getChildControl("contact");
+      const label = this.getChildControl("role");
       label.setValue(value);
     },
 

@@ -41,12 +41,12 @@ test.describe.serial(`Left Filters:`, () => {
   });
 
   test(`Tags`, async () => {
-    const tagsFilter = page.getByTestId("tagsFilter");
+    const tagsFilter = page.getByTestId("study-tagsFilter");
     await expect(tagsFilter).toBeVisible({
       timeout: 30000 // it will take some time to load the Study Browser
     });
 
-    const tagFilterItems = page.getByTestId("tagFilterItem");
+    const tagFilterItems = page.getByTestId("study-tagFilterItem");
     const count = await tagFilterItems.count();
     // at least two and less than 6 (max five are shown)
     expect(count > 1 && count < 6).toBeTruthy();

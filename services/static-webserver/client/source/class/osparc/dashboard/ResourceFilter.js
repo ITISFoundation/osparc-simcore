@@ -22,7 +22,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
   construct: function(resourceType) {
     this.base(arguments);
 
-    osparc.utils.Utils.setIdToWidget(this, "resourceFilter");
+    osparc.utils.Utils.setIdToWidget(this, resourceType + "-resourceFilter");
 
     this.__resourceType = resourceType;
     this.__sharedWithButtons = [];
@@ -133,6 +133,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
           label: option.label,
           icon: option.icon,
         });
+        osparc.utils.Utils.setIdToWidget(button, this.__resourceType + "-sharedWithFilterItem");
         if (this.__resourceType === "study") {
           if (option.id === "show-all") {
             button.set({
@@ -169,7 +170,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
     /* TAGS */
     __createTagsFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      osparc.utils.Utils.setIdToWidget(layout, "tagsFilter");
+      osparc.utils.Utils.setIdToWidget(layout, this.__resourceType + "-tagsFilter");
 
       this.__populateTags(layout, []);
       osparc.store.Store.getInstance().addListener("changeTags", () => {
@@ -190,7 +191,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
       layout.removeAll();
       osparc.store.Store.getInstance().getTags().forEach((tag, idx) => {
         const button = new qx.ui.form.ToggleButton(tag.name, "@FontAwesome5Solid/tag/18");
-        osparc.utils.Utils.setIdToWidget(button, "tagFilterItem");
+        osparc.utils.Utils.setIdToWidget(button, this.__resourceType + "-tagFilterItem");
         button.id = tag.id;
         button.set({
           appearance: "filter-toggle-button",
@@ -251,6 +252,7 @@ qx.Class.define("osparc.dashboard.ResourceFilter", {
         const iconSize = 20;
         const button = new qx.ui.toolbar.RadioButton(serviceType.label, serviceType.icon+iconSize);
         button.id = serviceId;
+        osparc.utils.Utils.setIdToWidget(button, this.__resourceType + "-serviceTypeFilterItem");
         button.set({
           appearance: "filter-toggle-button",
           value: false

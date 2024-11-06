@@ -192,19 +192,19 @@ qx.Theme.define("osparc.theme.Appearance", {
       WINDOW-SMALL-CAP CHOOSER
     ---------------------------------------------------------------------------
     */
-    "window-small-cap": {
+    "node-ui-cap": {
       include: "window", // get all the settings from window
       alias: "window", // redirect kids to window/kid
       style: function(states) {
         return {
           backgroundColor: states.selected ? "node-selected-background" : "node-background",
           textColor: states.selected ? "text-selected" : "text",
-          decorator: states.maximized ? "window-small-cap-maximized" : "window-small-cap"
+          decorator: states.maximized ? "node-ui-cap-maximized" : "node-ui-cap"
         };
       }
     },
 
-    "window-small-cap/captionbar": {
+    "node-ui-cap/captionbar": {
       include: "window/captionbar", // load defaults from window captionbar
       alias: "window/captionbar", // redirect kids
       style: function(states) {
@@ -217,7 +217,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
-    "window-small-cap/title": {
+    "node-ui-cap/title": {
       include: "window/title",
       style: function(states) {
         return {
@@ -228,7 +228,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
-    "window-small-cap/minimize-button": {
+    "node-ui-cap/minimize-button": {
       alias: "window/minimize-button",
       include: "window/minimize-button",
       style: function(states) {
@@ -238,7 +238,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
-    "window-small-cap/restore-button": {
+    "node-ui-cap/restore-button": {
       alias: "window/restore-button",
       include: "window/restore-button",
       style: function(states) {
@@ -248,7 +248,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
-    "window-small-cap/maximize-button": {
+    "node-ui-cap/maximize-button": {
       alias: "window/maximize-button",
       include: "window/maximize-button",
       style: function(states) {
@@ -258,7 +258,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
-    "window-small-cap/close-button": {
+    "node-ui-cap/close-button": {
       alias: "window/close-button",
       include: "window/close-button",
       style: function(states) {
@@ -268,7 +268,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
-    "window-small-cap/progress": "progressbar",
+    "node-ui-cap/progress": "progressbar",
 
     "service-window": {
       include: "window",

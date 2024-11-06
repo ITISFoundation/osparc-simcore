@@ -63,7 +63,9 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             const title = this.tr("Information");
             const width = osparc.info.CardLarge.WIDTH;
             const height = osparc.info.CardLarge.HEIGHT;
-            osparc.ui.window.Window.popUpInWindow(widget, title, width, height);
+            osparc.ui.window.Window.popUpInWindow(widget, title, width, height).set({
+              maxHeight: height
+            });
           });
           break;
         case "study-menu-download-logs":

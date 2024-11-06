@@ -7,6 +7,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from models_library.groups import GroupAtDB
 from models_library.users import GroupID, UserID
 from pydantic import parse_obj_as
+from simcore_postgres_database.errors import UniqueViolation
 from simcore_postgres_database.utils_products import get_or_create_product_group
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
@@ -20,7 +21,11 @@ from ._utils import (
     convert_groups_db_to_schema,
     convert_groups_schema_to_db,
 )
-from .exceptions import GroupNotFoundError, UserInGroupNotFoundError
+from .exceptions import (
+    GroupNotFoundError,
+    UserAlreadyInGroupError,
+    UserInGroupNotFoundError,
+)
 
 _DEFAULT_PRODUCT_GROUP_ACCESS_RIGHTS = AccessRightsDict(
     read=False,
@@ -50,7 +55,7 @@ async def _get_user_group(
     )
     group = await result.fetchone()
     if not group:
-        raise GroupNotFoundError(gid)
+        raise GroupNotFoundError(gid=gid)
     assert isinstance(group, RowProxy)  # nosec
     return group
 
@@ -305,24 +310,31 @@ async def add_new_user_in_group(
     # first check if the group exists
     group: RowProxy = await _get_user_group(conn, user_id, gid)
     check_group_permissions(group, user_id, gid, "write")
+
     # now check the new user exists
     users_count = await conn.scalar(
         sa.select(sa.func.count()).where(users.c.id == new_user_id)
     )
     if not users_count:
         assert new_user_id is not None  # nosec
-        raise UserInGroupNotFoundError(new_user_id, gid)
+        raise UserInGroupNotFoundError(uid=new_user_id, gid=gid)
 
     # add the new user to the group now
     user_access_rights = _DEFAULT_GROUP_READ_ACCESS_RIGHTS
     if access_rights:
         user_access_rights.update(access_rights)
-    await conn.execute(
-        # pylint: disable=no-value-for-parameter
-        user_to_groups.insert().values(
-            uid=new_user_id, gid=group.gid, access_rights=user_access_rights
+
+    try:
+        await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            user_to_groups.insert().values(
+                uid=new_user_id, gid=group.gid, access_rights=user_access_rights
+            )
         )
-    )
+    except UniqueViolation as exc:
+        raise UserAlreadyInGroupError(
+            uid=new_user_id, gid=gid, user_id=user_id, access_rights=access_rights
+        ) from exc
 
 
 async def _get_user_in_group_permissions(
@@ -336,7 +348,7 @@ async def _get_user_in_group_permissions(
     )
     the_user: RowProxy | None = await result.fetchone()
     if not the_user:
-        raise UserInGroupNotFoundError(the_user_id_in_group, gid)
+        raise UserInGroupNotFoundError(uid=the_user_id_in_group, gid=gid)
     return the_user
 
 
@@ -358,8 +370,12 @@ async def update_user_in_group(
     user_id: UserID,
     gid: GroupID,
     the_user_id_in_group: int,
-    new_values_for_user_in_group: dict,
+    access_rights: dict,
 ) -> dict[str, str]:
+    if not access_rights:
+        msg = f"Cannot update empty {access_rights}"
+        raise ValueError(msg)
+
     # first check if the group exists
     group: RowProxy = await _get_user_group(conn, user_id, gid)
     check_group_permissions(group, user_id, gid, "write")
@@ -368,7 +384,7 @@ async def update_user_in_group(
         conn, gid, the_user_id_in_group
     )
     # modify the user access rights
-    new_db_values = {"access_rights": new_values_for_user_in_group["accessRights"]}
+    new_db_values = {"access_rights": access_rights}
     await conn.execute(
         # pylint: disable=no-value-for-parameter
         user_to_groups.update()

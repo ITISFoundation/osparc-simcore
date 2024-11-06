@@ -464,6 +464,11 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
+    getTemplate: function(templateId) {
+      const templates = this.getTemplates();
+      return templates.find(template => template["uuid"] === templateId);
+    },
+
     deleteStudy: function(studyId) {
       const params = {
         url: {
@@ -663,17 +668,11 @@ qx.Class.define("osparc.store.Store", {
     },
 
     getUser: function(uid) {
-      return new Promise(resolve => {
-        if (uid) {
-          this.getReachableMembers()
-            .then(visibleMembers => {
-              resolve(Object.values(visibleMembers).find(member => member.id === uid));
-            })
-            .catch(() => resolve(null));
-        } else {
-          resolve(null);
-        }
-      });
+      if (uid) {
+        const visibleMembers = this.getReachableMembers();
+        return Object.values(visibleMembers).find(member => member.id === uid);
+      }
+      return null;
     },
 
     reloadCreditPrice: function() {

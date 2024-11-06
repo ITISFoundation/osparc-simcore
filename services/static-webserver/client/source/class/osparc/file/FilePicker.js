@@ -417,7 +417,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     uploadPendingFiles: function(files) {
-      if (files.length > 0) {
+      if (files.length) {
         if (files.length === 1) {
           const fileUploader = new osparc.file.FileUploader(this.getNode());
           fileUploader.addListener("uploadAborted", () => this.__resetOutput());
@@ -428,7 +428,7 @@ qx.Class.define("osparc.file.FilePicker", {
           fileUploader.retrieveUrlAndUpload(files[0]);
           return true;
         }
-        osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+        osparc.FlashMessenger.getInstance().logAs(osparc.file.FileDrop.ONE_FILE_ONLY, "ERROR");
       }
       return false;
     },

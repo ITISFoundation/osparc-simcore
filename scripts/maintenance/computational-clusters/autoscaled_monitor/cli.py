@@ -13,6 +13,7 @@ from .constants import (
     DEFAULT_COMPUTATIONAL_EC2_FORMAT_WORKERS,
     DEFAULT_DYNAMIC_EC2_FORMAT,
     DEPLOY_SSH_KEY_PARSER,
+    UNIFIED_SSH_KEY_PARSE,
     wallet_id_spec,
 )
 from .ec2 import autoscaling_ec2_client, cluster_keeper_ec2_client
@@ -78,16 +79,12 @@ def main(
 
     # locate ssh key path
     for file_path in deploy_config.glob("**/*.pem"):
-        if any(_ in file_path.name for _ in ["license", "pkcs8"]):
-            continue
-        # very bad HACK where the license file contain openssh in the name
-        if (
-            any(_ in f"{file_path}" for _ in ("sim4life.io", "osparc-master"))
-            and "openssh" not in f"{file_path}"
-        ):
+        if any(_ in file_path.name for _ in ["license", "pkcs8", "dask"]):
             continue
 
-        if DEPLOY_SSH_KEY_PARSER.parse(f"{file_path.name}") is not None:
+        if DEPLOY_SSH_KEY_PARSER.parse(
+            f"{file_path.name}"
+        ) is not None or UNIFIED_SSH_KEY_PARSE.parse(f"{file_path.name}"):
             rich.print(
                 f"will be using following ssh_key_path: {file_path}. "
                 "TIP: if wrong adapt the code or manually remove some of them."

@@ -14,6 +14,7 @@ from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.status_codes_utils import is_5xx_server_error
 
 from .._meta import API_VTAG as VTAG
+from ..application_settings_utils import requires_dev_feature_enabled
 from ..login.decorators import get_user_id, login_required
 from ..products.api import get_product_name
 from ..projects._common_models import ProjectPathParams
@@ -102,6 +103,7 @@ routes = web.RouteTableDef()
 
 
 @routes.delete(f"/{VTAG}/trash", name="empty_trash")
+@requires_dev_feature_enabled
 @login_required
 @permission_required("project.delete")
 @_handle_request_exceptions
@@ -117,6 +119,7 @@ async def empty_trash(request: web.Request):
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:trash", name="trash_project")
+@requires_dev_feature_enabled
 @login_required
 @permission_required("project.delete")
 @_handle_request_exceptions
@@ -140,6 +143,7 @@ async def trash_project(request: web.Request):
 
 
 @routes.post(f"/{VTAG}/projects/{{project_id}}:untrash", name="untrash_project")
+@requires_dev_feature_enabled
 @login_required
 @permission_required("project.delete")
 @_handle_request_exceptions

@@ -2,13 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from servicelib.fastapi.prometheus_instrumentation import (
-    setup_prometheus_instrumentation,
-)
 from servicelib.fastapi.tracing import setup_tracing
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
-    CustomResourceUsageTrackerError,
-)
 
 from .._meta import (
     API_VERSION,
@@ -20,12 +14,17 @@ from .._meta import (
 )
 from ..api.rest.routes import setup_api_routes
 from ..api.rpc.routes import setup_rpc_api_routes
-from ..modules.db import setup as setup_db
-from ..modules.rabbitmq import setup as setup_rabbitmq
-from ..modules.redis import setup as setup_redis
-from ..modules.s3 import setup as setup_s3
-from ..resource_tracker import setup as setup_resource_tracker
-from .errors import http404_error_handler
+from ..exceptions.handlers import setup_exception_handlers
+from ..services.background_task_periodic_heartbeat_check_setup import (
+    setup as setup_background_task_periodic_heartbeat_check,
+)
+from ..services.modules.db import setup as setup_db
+from ..services.modules.rabbitmq import setup as setup_rabbitmq
+from ..services.modules.redis import setup as setup_redis
+from ..services.modules.s3 import setup as setup_s3
+from ..services.process_message_running_service_setup import (
+    setup as setup_process_message_running_service,
+)
 from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -52,18 +51,6 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     # PLUGINS SETUP
     setup_api_routes(app)
 
-    if app.state.settings.RESOURCE_USAGE_TRACKER_PROMETHEUS_INSTRUMENTATION_ENABLED:
-        setup_prometheus_instrumentation(app)
-    if app.state.settings.RESOURCE_USAGE_TRACKER_TRACING:
-        setup_tracing(
-            app,
-            app.state.settings.RESOURCE_USAGE_TRACKER_TRACING,
-            app.state.settings.APP_NAME,
-        )
-
-    # ERROR HANDLERS
-    app.add_exception_handler(CustomResourceUsageTrackerError, http404_error_handler)
-
     if settings.RESOURCE_USAGE_TRACKER_POSTGRES:
         setup_db(app)
     setup_redis(app)
@@ -72,8 +59,20 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         # Needed for CSV export functionality
         setup_s3(app)
 
-    setup_resource_tracker(app)
-    setup_rpc_api_routes(app)
+    setup_rpc_api_routes(app)  # Requires Rabbit, S3
+    setup_background_task_periodic_heartbeat_check(app)  # Requires Redis, DB
+
+    setup_process_message_running_service(app)  # Requires Rabbit
+
+    if app.state.settings.RESOURCE_USAGE_TRACKER_TRACING:
+        setup_tracing(
+            app,
+            app.state.settings.RESOURCE_USAGE_TRACKER_TRACING,
+            app.state.settings.APP_NAME,
+        )
+
+    # ERROR HANDLERS
+    setup_exception_handlers(app)
 
     # EVENTS
     async def _on_startup() -> None:
