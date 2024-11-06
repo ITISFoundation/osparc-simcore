@@ -18,7 +18,7 @@
 qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
   extend: osparc.ui.list.ListItemWithMenu,
 
-  constructor: function(resourceType) {
+  construct: function(resourceType) {
     this.__resourceType = resourceType;
   },
 
