@@ -286,8 +286,29 @@ async def test_interactive_service_published_port(docker_network, run_services):
 #     print(f"<-- removed docker network '{network.name}'")
 
 
+@pytest.fixture
+async def with_docker_network(
+    docker_network: Callable[..., Awaitable[dict[str, Any]]],
+) -> dict[str, Any]:
+    return await docker_network()
+
+
+@pytest.fixture
+def configured_docker_network(
+    with_docker_network: dict[str, Any],
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {"DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME": with_docker_network["Name"]},
+    )
+
+
 async def test_interactive_service_in_correct_network(
-    docker_network: docker.models.networks.Network, run_services
+    with_docker_network: dict[str, Any],
+    configured_docker_network: EnvVarsDict,
+    run_services,
 ):
     running_dynamic_services = await run_services(
         number_comp=0, number_dyn=2, dependant=False
@@ -303,7 +324,8 @@ async def test_interactive_service_in_correct_network(
         assert len(list_of_services) == 1
         docker_service = list_of_services[0]
         assert (
-            docker_service.attrs["Spec"]["Networks"][0]["Target"] == docker_network.id
+            docker_service.attrs["Spec"]["Networks"][0]["Target"]
+            == with_docker_network["Id"]
         )
 
 
