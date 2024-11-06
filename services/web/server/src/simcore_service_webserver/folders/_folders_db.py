@@ -5,7 +5,8 @@
 """
 
 import logging
-from typing import cast
+from datetime import datetime
+from typing import Any, Final, cast
 
 from aiohttp import web
 from models_library.folders import FolderDB, FolderID
@@ -26,6 +27,17 @@ from ..db.plugin import get_database_engine
 from .errors import FolderAccessForbiddenError, FolderNotFoundError
 
 _logger = logging.getLogger(__name__)
+
+
+class UnSet:
+    ...
+
+
+_unset: Final = UnSet()
+
+
+def as_dict_exclude_unset(**params) -> dict[str, Any]:
+    return {k: v for k, v in params.items() if not isinstance(v, UnSet)}
 
 
 _SELECTION_ARGS = (
@@ -200,25 +212,40 @@ async def get_for_user_or_workspace(
 async def update(
     app: web.Application,
     *,
-    folder_id: FolderID,
-    name: str,
-    parent_folder_id: FolderID | None,
+    folder_id: FolderID | set[FolderID],
     product_name: ProductName,
+    # updatable columns
+    name: str | UnSet = _unset,
+    parent_folder_id: FolderID | None | UnSet = _unset,
+    trashed_at: datetime | None | UnSet = _unset,
+    trashed_explicitly: bool | UnSet = _unset,
 ) -> FolderDB:
+    """
+    Batch/single patch of folder/s
+    """
+    # NOTE: exclude unset can also be done using a pydantic model and dict(exclude_unset=True)
+    updated = as_dict_exclude_unset(
+        name=name,
+        parent_folder_id=parent_folder_id,
+        trashed_at=trashed_at,
+        trashed_explicitly=trashed_explicitly,
+    )
+
+    query = (
+        (folders_v2.update().values(modified=func.now(), **updated))
+        .where(folders_v2.c.product_name == product_name)
+        .returning(*_SELECTION_ARGS)
+    )
+
+    if isinstance(folder_id, set):
+        # batch-update
+        query = query.where(folders_v2.c.folder_id.in_(list(folder_id)))
+    else:
+        # single-update
+        query = query.where(folders_v2.c.folder_id == folder_id)
+
     async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(
-            folders_v2.update()
-            .values(
-                name=name,
-                parent_folder_id=parent_folder_id,
-                modified=func.now(),
-            )
-            .where(
-                (folders_v2.c.folder_id == folder_id)
-                & (folders_v2.c.product_name == product_name)
-            )
-            .returning(*_SELECTION_ARGS)
-        )
+        result = await conn.execute(query)
         row = await result.first()
         if row is None:
             raise FolderNotFoundError(reason=f"Folder {folder_id} not found.")
@@ -240,6 +267,7 @@ async def delete_recursively(
             & (folders_v2.c.product_name == product_name)
         )
         folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
+
         # Step 2: Define the recursive case
         folder_alias = aliased(folders_v2)
         recursive_query = select(
@@ -250,8 +278,10 @@ async def delete_recursively(
                 folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
             )
         )
+
         # Step 3: Combine base and recursive cases into a CTE
         folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
+
         # Step 4: Execute the query to get all descendants
         final_query = select(folder_hierarchy_cte)
         result = await conn.execute(final_query)
@@ -347,6 +377,7 @@ async def get_folders_recursively(
             & (folders_v2.c.product_name == product_name)
         )
         folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
+
         # Step 2: Define the recursive case
         folder_alias = aliased(folders_v2)
         recursive_query = select(
@@ -357,8 +388,10 @@ async def get_folders_recursively(
                 folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
             )
         )
+
         # Step 3: Combine base and recursive cases into a CTE
         folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
+
         # Step 4: Execute the query to get all descendants
         final_query = select(folder_hierarchy_cte)
         result = await conn.execute(final_query)
