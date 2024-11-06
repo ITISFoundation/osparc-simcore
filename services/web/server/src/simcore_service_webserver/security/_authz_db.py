@@ -36,11 +36,11 @@ async def get_active_user_or_none(engine: Engine, email: str) -> AuthInfoDict | 
         )
         row = await result.fetchone()
         assert (
-            row is None or TypeAdapter(IdInt).validate_python(row.id) is not None
-        )  # nosec
+            row is None or TypeAdapter(IdInt).validate_python(row.id) is not None   # nosec
+        )
         assert (
-            row is None or TypeAdapter(UserRole).validate_python(row.role) is not None
-        )  # nosec
+            row is None or TypeAdapter(UserRole).validate_python(row.role) is not None  # nosec
+        )
 
         return AuthInfoDict(id=row.id, role=row.role) if row else None
 
