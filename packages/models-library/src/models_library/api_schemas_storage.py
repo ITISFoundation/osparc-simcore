@@ -317,6 +317,7 @@ class FoldersBody(BaseModel):
 
     @model_validator(mode="after")
     def ensure_consistent_entries(self) -> Self:
+        # pylint:disable=no-member
         source_node_keys = (NodeID(n) for n in self.source.get("workbench", {}))
         if set(source_node_keys) != set(self.nodes_map.keys()):
             msg = "source project nodes do not fit with nodes_map entries"

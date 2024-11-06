@@ -456,6 +456,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @model_validator(mode="after")
     def _not_allowed_in_both_specs(self):
+        # pylint:disable=no-member
         match_keys = {
             "containers_allowed_outgoing_internet",
             "containers_allowed_outgoing_permit_list",
