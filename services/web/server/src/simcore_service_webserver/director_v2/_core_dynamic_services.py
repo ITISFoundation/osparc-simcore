@@ -10,7 +10,7 @@ from aiohttp import web
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects import ProjectID
 from models_library.services import ServicePortKey
-from pydantic import BaseModel, NonNegativeInt, parse_obj_as
+from pydantic import BaseModel, NonNegativeInt, TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from yarl import URL
@@ -33,7 +33,7 @@ async def list_dynamic_services(
     project_id: str | None = None,
 ) -> list[DynamicServiceGet]:
     params = _Params(user_id=user_id, project_id=project_id)
-    params_dict = params.dict(exclude_none=True)
+    params_dict = params.model_dump(exclude_none=True)
     settings: DirectorV2Settings = get_plugin_settings(app)
     if params_dict:  # Update query doesnt work with no params to unwrap
         backend_url = (settings.base_url / "dynamic_services").update_query(
@@ -49,7 +49,7 @@ async def list_dynamic_services(
     if services is None:
         services = []
     assert isinstance(services, list)  # nosec
-    return parse_obj_as(list[DynamicServiceGet], services)
+    return TypeAdapter(list[DynamicServiceGet]).validate_python(services)
 
 
 # NOTE: ANE https://github.com/ITISFoundation/osparc-simcore/issues/3191

@@ -58,7 +58,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
     )
 
     plugin_settings = StudiesDispatcherSettings.create_from_envs()
-    print(plugin_settings.json(indent=1))
+    print(plugin_settings.model_dump_json(indent=1))
 
     return {**app_environment, **envs_plugins, **envs_studies_dispatcher}
 

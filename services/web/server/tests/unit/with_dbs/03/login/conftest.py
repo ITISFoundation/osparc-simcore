@@ -20,7 +20,7 @@ from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_s
 
 
 @pytest.fixture
-def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker):
     envs_plugins = setenvs_from_dict(
         monkeypatch,
         {
@@ -41,6 +41,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "WEBSERVER_TRACING": "null",
             "WEBSERVER_VERSION_CONTROL": "0",
             "WEBSERVER_WALLETS": "1",
+            "WEBSERVER_TRACING": "null"
         },
     )
 

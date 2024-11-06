@@ -9,7 +9,7 @@ from aiopg.sa.result import ResultProxy
 from models_library.projects import ProjectID
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.projects_comments import projects_comments
 from sqlalchemy import func, literal_column
@@ -32,7 +32,7 @@ async def create_project_comment(
         .returning(projects_comments.c.comment_id)
     )
     result: tuple[PositiveInt] = await project_comment_id.first()
-    return parse_obj_as(CommentID, result[0])
+    return TypeAdapter(CommentID).validate_python(result[0])
 
 
 async def list_project_comments(
@@ -50,7 +50,7 @@ async def list_project_comments(
         .limit(limit)
     )
     result = [
-        parse_obj_as(ProjectsCommentsDB, row)
+        ProjectsCommentsDB.model_validate(row)
         for row in await project_comment_result.fetchall()
     ]
     return result
@@ -86,7 +86,7 @@ async def update_project_comment(
         .returning(literal_column("*"))
     )
     result = await project_comment_result.first()
-    return parse_obj_as(ProjectsCommentsDB, result)
+    return ProjectsCommentsDB.model_validate(result)
 
 
 async def delete_project_comment(conn, comment_id: CommentID) -> None:
@@ -100,4 +100,4 @@ async def get_project_comment(conn, comment_id: CommentID) -> ProjectsCommentsDB
         projects_comments.select().where(projects_comments.c.comment_id == comment_id)
     )
     result = await project_comment_result.first()
-    return parse_obj_as(ProjectsCommentsDB, result)
+    return ProjectsCommentsDB.model_validate(result)

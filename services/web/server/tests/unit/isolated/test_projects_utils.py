@@ -58,7 +58,7 @@ def test_clone_project_document(
     #
     # SEE https://swagger.io/docs/specification/data-models/data-types/#Null
 
-    assert Project.parse_obj(clone) is not None
+    assert Project.model_validate(clone) is not None
 
 
 @pytest.mark.parametrize(
@@ -145,4 +145,4 @@ def test_validate_project_json_schema():
     with open(CURRENT_DIR / "data/project-data.json") as f:
         project: ProjectDict = json.load(f)
 
-    Project.parse_obj(project)
+    Project.model_validate(project)

@@ -12,7 +12,7 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.payments import InvoiceDataGet
 from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
@@ -77,11 +77,11 @@ async def test_one_time_payment_worfklow(
 
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
-        parse_obj_as(RPCMethodName, "get_invoice_data"),
+        TypeAdapter(RPCMethodName).validate_python("get_invoice_data"),
         user_id=logged_user["id"],
         dollar_amount=Decimal(900),
         product_name="osparc",
     )
-    invoice_data_get = parse_obj_as(InvoiceDataGet, result)
+    invoice_data_get = InvoiceDataGet.model_validate(result)
     assert invoice_data_get
     assert len(invoice_data_get.user_invoice_address.country) == 2

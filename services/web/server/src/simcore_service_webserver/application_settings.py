@@ -3,6 +3,7 @@ from functools import cached_property
 from typing import Any, Final
 
 from aiohttp import web
+from common_library.pydantic_fields_extension import is_nullable
 from models_library.basic_types import (
     BootModeEnum,
     BuildTargetEnum,
@@ -11,9 +12,17 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.utils.change_case import snake_to_camel
-from pydantic import AnyHttpUrl, parse_obj_as, root_validator, validator
-from pydantic.fields import Field, ModelField
+from pydantic import (
+    AliasChoices,
+    AnyHttpUrl,
+    TypeAdapter,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
+from pydantic.fields import Field
 from pydantic.types import PositiveInt
+from pydantic_settings import SettingsConfigDict
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
@@ -54,7 +63,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = APP_NAME
-    API_VTAG: VersionTag = parse_obj_as(VersionTag, API_VTAG)
+    API_VTAG: VersionTag = TypeAdapter(VersionTag).validate_python(API_VTAG)
 
     # IMAGE BUILDTIME ------------------------------------------------------
     # @Makefile
@@ -84,13 +93,15 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SIMCORE_VCS_RELEASE_TAG: str | None = Field(
         default=None,
         description="Name of the tag that marks this release, or None if undefined",
-        example="ResistanceIsFutile10",
+        examples=["ResistanceIsFutile10"],
     )
 
     SIMCORE_VCS_RELEASE_URL: AnyHttpUrl | None = Field(
         default=None,
         description="URL to release notes",
-        example="https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_ResistanceIsFutile10",
+        examples=[
+            "https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_ResistanceIsFutile10"
+        ],
     )
 
     SWARM_STACK_NAME: str | None = Field(
@@ -106,13 +117,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     WEBSERVER_LOGLEVEL: LogLevel = Field(
         default=LogLevel.WARNING.value,
-        env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+        validation_alias=AliasChoices("WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
         # NOTE: suffix '_LOGLEVEL' is used overall
     )
-
     WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
-        env=["WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"],
+        validation_alias=AliasChoices(
+            "WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
+        ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     WEBSERVER_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
@@ -128,100 +140,117 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="host name to serve within the container."
         "NOTE that this different from WEBSERVER_HOST env which is the host seen outside the container",
     )
-    WEBSERVER_HOST: str | None = Field(None, env=["WEBSERVER_HOST", "HOST", "HOSTNAME"])
-    WEBSERVER_PORT: PortInt = parse_obj_as(PortInt, DEFAULT_AIOHTTP_PORT)
+    WEBSERVER_HOST: str | None = Field(
+        None, validation_alias=AliasChoices("WEBSERVER_HOST", "HOST", "HOSTNAME")
+    )
+    WEBSERVER_PORT: PortInt = TypeAdapter(PortInt).validate_python(DEFAULT_AIOHTTP_PORT)
 
     WEBSERVER_FRONTEND: FrontEndAppSettings | None = Field(
-        auto_default_from_env=True, description="front-end static settings"
+        json_schema_extra={"auto_default_from_env": True},
+        description="front-end static settings",
     )
 
     # PLUGINS ----------------
 
     WEBSERVER_ACTIVITY: PrometheusSettings | None = Field(
-        auto_default_from_env=True,
+        json_schema_extra={"auto_default_from_env": True},
         description="activity plugin",
     )
     WEBSERVER_CATALOG: CatalogSettings | None = Field(
-        auto_default_from_env=True, description="catalog service client's plugin"
+        json_schema_extra={"auto_default_from_env": True},
+        description="catalog service client's plugin",
     )
     # TODO: Shall be required
     WEBSERVER_DB: PostgresSettings | None = Field(
-        auto_default_from_env=True, description="database plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="database plugin"
     )
     WEBSERVER_DIAGNOSTICS: DiagnosticsSettings | None = Field(
-        auto_default_from_env=True, description="diagnostics plugin"
+        json_schema_extra={"auto_default_from_env": True},
+        description="diagnostics plugin",
     )
     WEBSERVER_DIRECTOR_V2: DirectorV2Settings | None = Field(
-        auto_default_from_env=True, description="director-v2 service client's plugin"
+        json_schema_extra={"auto_default_from_env": True},
+        description="director-v2 service client's plugin",
     )
     WEBSERVER_EMAIL: SMTPSettings | None = Field(
-        auto_default_from_env=True, description="email plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="email plugin"
     )
     WEBSERVER_EXPORTER: ExporterSettings | None = Field(
-        auto_default_from_env=True, description="exporter plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="exporter plugin"
     )
     WEBSERVER_GARBAGE_COLLECTOR: GarbageCollectorSettings | None = Field(
-        auto_default_from_env=True, description="garbage collector plugin"
+        json_schema_extra={"auto_default_from_env": True},
+        description="garbage collector plugin",
     )
 
     WEBSERVER_INVITATIONS: InvitationsSettings | None = Field(
-        auto_default_from_env=True, description="invitations plugin"
+        json_schema_extra={"auto_default_from_env": True},
+        description="invitations plugin",
     )
 
     WEBSERVER_LOGIN: LoginSettings | None = Field(
-        auto_default_from_env=True, description="login plugin"
+        json_schema_extra={"auto_default_from_env": True}, description="login plugin"
     )
 
     WEBSERVER_PAYMENTS: PaymentsSettings | None = Field(
-        auto_default_from_env=True, description="payments plugin settings"
+        json_schema_extra={"auto_default_from_env": True},
+        description="payments plugin settings",
     )
 
     WEBSERVER_DYNAMIC_SCHEDULER: DynamicSchedulerSettings | None = Field(
-        auto_default_from_env=True, description="dynamic-scheduler plugin settings"
+        description="dynamic-scheduler plugin settings",
+        json_schema_extra={"auto_default_from_env": True},
     )
 
-    WEBSERVER_REDIS: RedisSettings | None = Field(auto_default_from_env=True)
+    WEBSERVER_REDIS: RedisSettings | None = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
 
     WEBSERVER_REST: RestSettings | None = Field(
-        auto_default_from_env=True, description="rest api plugin"
+        description="rest api plugin", json_schema_extra={"auto_default_from_env": True}
     )
 
     WEBSERVER_RESOURCE_MANAGER: ResourceManagerSettings = Field(
-        auto_default_from_env=True, description="resource_manager plugin"
+        description="resource_manager plugin",
+        json_schema_extra={"auto_default_from_env": True},
     )
     WEBSERVER_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings | None = Field(
-        auto_default_from_env=True,
         description="resource usage tracker service client's plugin",
+        json_schema_extra={"auto_default_from_env": True},
     )
     WEBSERVER_SCICRUNCH: SciCrunchSettings | None = Field(
-        auto_default_from_env=True, description="scicrunch plugin"
+        description="scicrunch plugin",
+        json_schema_extra={"auto_default_from_env": True},
     )
     WEBSERVER_SESSION: SessionSettings = Field(
-        auto_default_from_env=True, description="session plugin"
+        description="session plugin", json_schema_extra={"auto_default_from_env": True}
     )
 
     WEBSERVER_STATICWEB: StaticWebserverModuleSettings | None = Field(
-        auto_default_from_env=True, description="static-webserver service plugin"
+        description="static-webserver service plugin",
+        json_schema_extra={"auto_default_from_env": True},
     )
     WEBSERVER_STORAGE: StorageSettings | None = Field(
-        auto_default_from_env=True, description="storage service client's plugin"
+        description="storage service client's plugin",
+        json_schema_extra={"auto_default_from_env": True},
     )
     WEBSERVER_STUDIES_DISPATCHER: StudiesDispatcherSettings | None = Field(
-        auto_default_from_env=True, description="studies dispatcher plugin"
+        description="studies dispatcher plugin",
+        json_schema_extra={"auto_default_from_env": True},
     )
 
     WEBSERVER_TRACING: TracingSettings | None = Field(
-        auto_default_from_env=True, description="tracing plugin"
+        description="tracing plugin", json_schema_extra={"auto_default_from_env": True}
     )
 
     WEBSERVER_PROJECTS: ProjectsSettings | None = Field(
-        auto_default_from_env=True, description="projects plugin"
+        description="projects plugin", json_schema_extra={"auto_default_from_env": True}
     )
     WEBSERVER_RABBITMQ: RabbitSettings | None = Field(
-        auto_default_from_env=True, description="rabbitmq plugin"
+        description="rabbitmq plugin", json_schema_extra={"auto_default_from_env": True}
     )
     WEBSERVER_USERS: UsersSettings | None = Field(
-        auto_default_from_env=True, description="users plugin"
+        description="users plugin", json_schema_extra={"auto_default_from_env": True}
     )
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
@@ -250,57 +279,59 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "Currently this is a system plugin and cannot be disabled",
     )
 
-    @root_validator()
+    @model_validator(mode="after")
     @classmethod
-    def build_vcs_release_url_if_unset(cls, values):
-        release_url = values.get("SIMCORE_VCS_RELEASE_URL")
+    def build_vcs_release_url_if_unset(cls, v):
+        release_url = v.SIMCORE_VCS_RELEASE_URL
 
-        if release_url is None and (
-            vsc_release_tag := values.get("SIMCORE_VCS_RELEASE_TAG")
-        ):
+        if release_url is None and (vsc_release_tag := v.SIMCORE_VCS_RELEASE_TAG):
             if vsc_release_tag == "latest":
                 release_url = (
                     "https://github.com/ITISFoundation/osparc-simcore/commits/master/"
                 )
             else:
                 release_url = f"https://github.com/ITISFoundation/osparc-simcore/releases/tag/{vsc_release_tag}"
-            values["SIMCORE_VCS_RELEASE_URL"] = release_url
+            v.SIMCORE_VCS_RELEASE_URL = release_url
 
-        return values
+        return v
 
-    @validator(
+    @field_validator(
         # List of plugins under-development (keep up-to-date)
         # TODO: consider mark as dev-feature in field extras of Config attr.
         # Then they can be automtically advertised
         "WEBSERVER_META_MODELING",
         "WEBSERVER_VERSION_CONTROL",
-        pre=True,
-        always=True,
+        mode="before",
     )
     @classmethod
-    def enable_only_if_dev_features_allowed(cls, v, values, field: ModelField):
+    def enable_only_if_dev_features_allowed(cls, v, info: ValidationInfo):
         """Ensures that plugins 'under development' get programatically
         disabled if WEBSERVER_DEV_FEATURES_ENABLED=False
         """
-        if values["WEBSERVER_DEV_FEATURES_ENABLED"]:
+        if info.data["WEBSERVER_DEV_FEATURES_ENABLED"]:
             return v
         if v:
             _logger.warning(
-                "%s still under development and will be disabled.", field.name
+                "%s still under development and will be disabled.", info.field_name
             )
-        return None if field.allow_none else False
+
+        return (
+            None
+            if info.field_name and is_nullable(cls.model_fields[info.field_name])
+            else False
+        )
 
     @cached_property
     def log_level(self) -> int:
         level: int = getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
         return level
 
-    @validator("WEBSERVER_LOGLEVEL", pre=True)
+    @field_validator("WEBSERVER_LOGLEVEL")
     @classmethod
-    def valid_log_level(cls, value: str) -> str:
+    def valid_log_level(cls, value):
         return cls.validate_log_level(value)
 
-    @validator("SC_HEALTHCHECK_TIMEOUT", pre=True)
+    @field_validator("SC_HEALTHCHECK_TIMEOUT", mode="before")
     @classmethod
     def get_healthcheck_timeout_in_seconds(cls, v):
         # Ex. HEALTHCHECK --interval=5m --timeout=3s
@@ -356,7 +387,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         def config_alias_generator(s):
             return s.lower()
 
-        data: dict[str, Any] = self.dict(**kwargs)
+        data: dict[str, Any] = self.model_dump(**kwargs)
         current_keys = list(data.keys())
 
         for key in current_keys:
@@ -418,7 +449,7 @@ def setup_settings(app: web.Application) -> ApplicationSettings:
     app[APP_SETTINGS_KEY] = settings
     _logger.debug(
         "Captured app settings:\n%s",
-        app[APP_SETTINGS_KEY].json(indent=1, sort_keys=True),
+        app[APP_SETTINGS_KEY].model_dump_json(indent=1),
     )
     return settings
 

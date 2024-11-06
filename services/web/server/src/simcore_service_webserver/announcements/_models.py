@@ -1,15 +1,15 @@
 from datetime import datetime
-from typing import Any, ClassVar, Literal
+from typing import Literal
 
 import arrow
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 
 
 # NOTE: this model is used for BOTH
 # - parse+validate from redis
 # - schema in the response
 class Announcement(BaseModel):
-    id: str  # noqa: A003
+    id: str
     products: list[str]
     start: datetime
     end: datetime
@@ -18,10 +18,10 @@ class Announcement(BaseModel):
     link: str
     widgets: list[Literal["login", "ribbon", "user-menu"]]
 
-    @validator("end")
+    @field_validator("end")
     @classmethod
-    def check_start_before_end(cls, v, values):
-        if start := values.get("start"):
+    def _check_start_before_end(cls, v, info: ValidationInfo):
+        if start := info.data.get("start"):
             end = v
             if end <= start:
                 msg = f"end={end!r} is not before start={start!r}"
@@ -31,8 +31,8 @@ class Announcement(BaseModel):
     def expired(self) -> bool:
         return self.end <= arrow.utcnow().datetime
 
-    class Config:
-        schema_extra: ClassVar[dict[str, Any]] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "examples": [
                 {
                     "id": "Student_Competition_2023",
@@ -56,3 +56,4 @@ class Announcement(BaseModel):
                 },
             ]
         }
+    )

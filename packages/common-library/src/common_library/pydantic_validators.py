@@ -1,8 +1,33 @@
 import datetime
+import re
 import warnings
 from datetime import timedelta
 
 from pydantic import TypeAdapter, field_validator
+
+
+def _validate_legacy_timedelta_str(time_str: str | timedelta) -> str | timedelta:
+    if not isinstance(time_str, str):
+        return time_str
+
+    # Match the format [-][DD ][HH:MM]SS[.ffffff]
+    match = re.match(
+        r"^(?P<sign>-)?(?:(?P<days>\d+)\s)?(?:(?P<hours>\d+):)?(?:(?P<minutes>\d+):)?(?P<seconds>\d+)(?P<fraction>\.\d+)?$",
+        time_str,
+    )
+    if not match:
+        return time_str
+
+    # Extract components with defaults if not present
+    sign = match.group("sign") or ""
+    days = match.group("days") or "0"
+    hours = match.group("hours") or "0"
+    minutes = match.group("minutes") or "0"
+    seconds = match.group("seconds")
+    fraction = match.group("fraction") or ""
+
+    # Convert to the format [-][DD]D[,][HH:MM:]SS[.ffffff]
+    return f"{sign}{int(days)}D,{int(hours):02}:{int(minutes):02}:{seconds}{fraction}"
 
 
 def validate_numeric_string_as_timedelta(field: str):
@@ -29,7 +54,7 @@ def validate_numeric_string_as_timedelta(field: str):
                 return converted_value
             except ValueError:
                 # returns format like "1:00:00"
-                return v
+                return _validate_legacy_timedelta_str(v)
         return v
 
     return field_validator(field, mode="before")(_numeric_string_as_timedelta)

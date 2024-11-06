@@ -11,11 +11,12 @@ import traceback
 import tracemalloc
 from datetime import datetime
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, cast
 
 import orjson
 from common_library.error_codes import ErrorCodeStr
 from models_library.basic_types import SHA1Str
+from typing_extensions import TypedDict
 
 _CURRENT_DIR = (
     Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -190,4 +191,4 @@ def compute_sha1_on_small_dataset(d: Any) -> SHA1Str:
     """
     # SEE options in https://github.com/ijl/orjson#option
     data_bytes = orjson.dumps(d, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS)
-    return cast(SHA1Str, hashlib.sha1(data_bytes).hexdigest())  # nosec
+    return SHA1Str(hashlib.sha1(data_bytes).hexdigest())  # nosec # NOSONAR

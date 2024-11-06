@@ -15,7 +15,7 @@ from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 from models_library.api_schemas_directorv2.comp_tasks import TasksOutputs
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_fake_ports_data import (
     PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA,
@@ -276,13 +276,13 @@ async def test_clone_project_and_set_inputs(
             data = await long_running_task.result()
 
     assert data is not None
-    cloned_project = ProjectGet.parse_obj(data)
+    cloned_project = ProjectGet.model_validate(data)
 
     assert parent_project_id != cloned_project.uuid
     assert user_project["description"] == cloned_project.description
-    assert parse_obj_as(datetime, user_project["creationDate"]) < parse_obj_as(
-        datetime, cloned_project.creation_date
-    )
+    assert TypeAdapter(datetime).validate_python(
+        user_project["creationDate"]
+    ) < TypeAdapter(datetime).validate_python(cloned_project.creation_date)
 
     # - set_inputs project_clone_id ----------------------------------------------
     job_inputs_values = {"X": 42}  # like JobInputs.values

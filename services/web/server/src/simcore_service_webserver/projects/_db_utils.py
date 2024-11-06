@@ -191,7 +191,7 @@ class BaseProjectDB:
             assert isinstance(row, RowProxy)  # nosec
             try:
                 await asyncio.get_event_loop().run_in_executor(
-                    None, ProjectAtDB.from_orm, row
+                    None, ProjectAtDB.model_validate, row
                 )
 
             except ProjectInvalidRightsError:
@@ -380,7 +380,7 @@ def patch_workbench(
                 raise ProjectInvalidUsageError
             # if it's a new node, let's check that it validates
             try:
-                Node.parse_obj(new_node_data)
+                Node.model_validate(new_node_data)
                 patched_project["workbench"][node_key] = new_node_data
                 changed_entries.update({node_key: new_node_data})
             except ValidationError as err:

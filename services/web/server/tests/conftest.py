@@ -327,9 +327,9 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
                 data, error = await assert_status(result, status.HTTP_200_OK)
                 assert data
                 assert not error
-                task_status = TaskStatus.parse_obj(data)
+                task_status = TaskStatus.model_validate(data)
                 assert task_status
-                print(f"<-- status: {task_status.json(indent=2)}")
+                print(f"<-- status: {task_status.model_dump_json(indent=2)}")
                 assert task_status.done, "task incomplete"
                 print(
                     f"-- project creation completed: {json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
@@ -403,7 +403,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             # the access rights are set to use the logged user primary group + whatever was inside the project
             expected_data["accessRights"].update(
                 {
-                    str(primary_group["gid"]): {
+                    f"{primary_group['gid']}": {
                         "read": True,
                         "write": True,
                         "delete": True,

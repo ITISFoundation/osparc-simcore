@@ -41,7 +41,7 @@ class HitSource(BaseModel):
 
     def flatten_dict(self) -> dict[str, Any]:
         """Used as an output"""
-        return {**self.item.dict(), **self.rrid.dict()}
+        return {**self.item.model_dump(), **self.rrid.model_dump()}
 
 
 class HitDetail(BaseModel):
@@ -93,7 +93,7 @@ async def resolve_rrid(
         body = await resp.json()
 
     # process and simplify response
-    resolved = ResolverResponseBody.parse_obj(body)
+    resolved = ResolverResponseBody.model_validate(body)
     if resolved.hits.total == 0:
         return []
 
@@ -113,7 +113,7 @@ async def resolve_rrid(
     items = []
     for hit in resolved.hits.hits:
         try:
-            items.append(ResolvedItem.parse_obj(hit.source.flatten_dict()))
+            items.append(ResolvedItem.model_validate(hit.source.flatten_dict()))
         except ValidationError as err:
             logger.warning("Skipping unexpected response %s: %s", url, err)
 
