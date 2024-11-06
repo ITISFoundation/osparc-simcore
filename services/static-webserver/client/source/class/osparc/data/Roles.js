@@ -34,8 +34,8 @@ qx.Class.define("osparc.data.Roles", {
         label: qx.locale.Manager.tr("Member"),
         longLabel: qx.locale.Manager.tr("Member: Read access"),
         canDo: [
-          qx.locale.Manager.tr("- can see other users"),
-          qx.locale.Manager.tr("- can share with other users")
+          qx.locale.Manager.tr("- can see other members"),
+          qx.locale.Manager.tr("- can share with other members")
         ]
       },
       2: {
