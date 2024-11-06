@@ -65,7 +65,7 @@ routes = web.RouteTableDef()
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def _create_payment(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     body_params = await parse_request_body_as(CreateWalletPayment, request)
 
@@ -113,7 +113,7 @@ async def _list_all_payments(request: web.Request):
     be listed here.
     """
 
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     query_params: PageQueryParameters = parse_request_query_parameters_as(
         PageQueryParameters, request
     )
@@ -126,7 +126,7 @@ async def _list_all_payments(request: web.Request):
         offset=query_params.offset,
     )
 
-    page = Page[PaymentTransaction].parse_obj(
+    page = Page[PaymentTransaction].model_validate(
         paginate_data(
             chunk=payments,
             request_url=request.url,
@@ -148,7 +148,7 @@ async def _list_all_payments(request: web.Request):
 @handle_wallets_exceptions
 async def _get_payment_invoice_link(request: web.Request):
     """Get invoice for concrete payment"""
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PaymentsPathParams, request)
 
     payment_invoice = await get_payment_invoice_url(
@@ -174,7 +174,7 @@ class PaymentsPathParams(WalletsPathParams):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def _cancel_payment(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PaymentsPathParams, request)
 
     await api.cancel_payment_to_wallet(
@@ -208,7 +208,7 @@ async def _init_creation_of_payment_method(request: web.Request):
     """Triggers the creation of a new payment method.
     Note that creating a payment-method follows the init-prompt-ack flow
     """
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
     with log_context(
@@ -241,7 +241,7 @@ async def _init_creation_of_payment_method(request: web.Request):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def _cancel_creation_of_payment_method(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
 
     with log_context(
@@ -272,7 +272,7 @@ async def _cancel_creation_of_payment_method(request: web.Request):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def _list_payments_methods(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
     payments_methods: list[PaymentMethodGet] = await list_wallet_payment_methods(
@@ -292,7 +292,7 @@ async def _list_payments_methods(request: web.Request):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def _get_payment_method(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
 
     payment_method: PaymentMethodGet = await get_wallet_payment_method(
@@ -313,7 +313,7 @@ async def _get_payment_method(request: web.Request):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def _delete_payment_method(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
 
     await delete_wallet_payment_method(
@@ -337,7 +337,7 @@ _TINY_WAIT_TO_TRIGGER_CONTEXT_SWITCH = 0.1
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def _pay_with_payment_method(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PaymentMethodsPathParams, request)
     body_params = await parse_request_body_as(CreateWalletPayment, request)
 
@@ -409,7 +409,7 @@ async def _pay_with_payment_method(request: web.Request):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def _get_wallet_autorecharge(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
     auto_recharge = await get_wallet_payment_autorecharge(
@@ -426,7 +426,7 @@ async def _get_wallet_autorecharge(request: web.Request):
         product_name=req_ctx.product_name,
     )
 
-    return envelope_json_response(GetWalletAutoRecharge.parse_obj(auto_recharge))
+    return envelope_json_response(GetWalletAutoRecharge.model_validate(auto_recharge))
 
 
 @routes.put(
@@ -437,7 +437,7 @@ async def _get_wallet_autorecharge(request: web.Request):
 @permission_required("wallets.*")
 @handle_wallets_exceptions
 async def _replace_wallet_autorecharge(request: web.Request):
-    req_ctx = WalletsRequestContext.parse_obj(request)
+    req_ctx = WalletsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
     body_params = await parse_request_body_as(ReplaceWalletAutoRecharge, request)
 
@@ -454,4 +454,4 @@ async def _replace_wallet_autorecharge(request: web.Request):
         wallet_id=path_params.wallet_id,
         new=body_params,
     )
-    return envelope_json_response(GetWalletAutoRecharge.parse_obj(udpated))
+    return envelope_json_response(GetWalletAutoRecharge.model_validate(udpated))

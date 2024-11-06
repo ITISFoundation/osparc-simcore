@@ -18,7 +18,7 @@ import logging
 from typing import Any
 
 from aiohttp import ClientSession
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
 from yarl import URL
 
 from .models import ResourceHit
@@ -49,7 +49,7 @@ class ResourceView(BaseModel):
 
     @classmethod
     def from_response_payload(cls, payload: dict):
-        assert payload["success"] == True  # nosec
+        assert payload["success"] is True  # nosec
         return cls(**payload["data"])
 
     @property
@@ -72,8 +72,8 @@ class ResourceView(BaseModel):
         return URL(str(self._get_field("Resource URL")))
 
 
-class ListOfResourceHits(BaseModel):
-    __root__: list[ResourceHit]
+class ListOfResourceHits(RootModel[list[ResourceHit]]):
+    ...
 
 
 # REQUESTS
@@ -120,4 +120,4 @@ async def autocomplete_by_name(
     ) as resp:
         body = await resp.json()
         assert body.get("success")  # nosec
-        return ListOfResourceHits.parse_obj(body.get("data", []))
+        return ListOfResourceHits.model_validate(body.get("data", []))

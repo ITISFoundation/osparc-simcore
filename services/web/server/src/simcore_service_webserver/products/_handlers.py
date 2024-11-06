@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.api_schemas_webserver.product import GetCreditPrice, GetProduct
 from models_library.basic_types import IDStr
 from models_library.users import UserID
-from pydantic import Extra, Field
+from pydantic import Field
 from servicelib.aiohttp.requests_validation import (
     RequestParams,
     StrictRequestParams,
@@ -36,12 +36,12 @@ class _ProductsRequestContext(RequestParams):
 @login_required
 @permission_required("product.price.read")
 async def _get_current_product_price(request: web.Request):
-    req_ctx = _ProductsRequestContext.parse_obj(request)
+    req_ctx = _ProductsRequestContext.model_validate(request)
     price_info = await _api.get_current_product_credit_price_info(request)
 
     credit_price = GetCreditPrice(
         product_name=req_ctx.product_name,
-        usd_per_credit=price_info.usd_per_credit if price_info else None,  # type: ignore[arg-type]
+        usd_per_credit=price_info.usd_per_credit if price_info else None,
         min_payment_amount_usd=price_info.min_payment_amount_usd  # type: ignore[arg-type]
         if price_info
         else None,
@@ -57,7 +57,7 @@ class _ProductsRequestParams(StrictRequestParams):
 @login_required
 @permission_required("product.details.*")
 async def _get_product(request: web.Request):
-    req_ctx = _ProductsRequestContext.parse_obj(request)
+    req_ctx = _ProductsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProductsRequestParams, request)
 
     if path_params.product_name == "current":
@@ -70,8 +70,8 @@ async def _get_product(request: web.Request):
     except KeyError as err:
         raise web.HTTPNotFound(reason=f"{product_name=} not found") from err
 
-    assert GetProduct.Config.extra == Extra.ignore  # nosec
-    data = GetProduct(**product.dict(), templates=[])
+    assert GetProduct.model_config["extra"] == "ignore"  # nosec
+    data = GetProduct(**product.model_dump(), templates=[])
     return envelope_json_response(data)
 
 
@@ -86,7 +86,7 @@ class _ProductTemplateParams(_ProductsRequestParams):
 @login_required
 @permission_required("product.details.*")
 async def update_product_template(request: web.Request):
-    req_ctx = _ProductsRequestContext.parse_obj(request)
+    req_ctx = _ProductsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_ProductTemplateParams, request)
 
     assert req_ctx  # nosec

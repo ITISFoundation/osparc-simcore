@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import GroupID, UserID
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel
 
 from ..users import api as users_api
 from . import _groups_db as projects_groups_db
@@ -53,7 +53,9 @@ async def create_project_group(
         write=write,
         delete=delete,
     )
-    project_group_api: ProjectGroupGet = ProjectGroupGet(**project_group_db.dict())
+    project_group_api: ProjectGroupGet = ProjectGroupGet(
+        **project_group_db.model_dump()
+    )
 
     return project_group_api
 
@@ -78,7 +80,7 @@ async def list_project_groups_by_user_and_project(
     ] = await projects_groups_db.list_project_groups(app=app, project_id=project_id)
 
     project_groups_api: list[ProjectGroupGet] = [
-        parse_obj_as(ProjectGroupGet, group) for group in project_groups_db
+        ProjectGroupGet.model_validate(group.model_dump()) for group in project_groups_db
     ]
 
     return project_groups_api
@@ -127,7 +129,7 @@ async def replace_project_group(
         )
     )
 
-    project_api: ProjectGroupGet = ProjectGroupGet(**project_group_db.dict())
+    project_api: ProjectGroupGet = ProjectGroupGet(**project_group_db.model_dump())
     return project_api
 
 

@@ -6,7 +6,7 @@ from models_library.api_schemas_webserver.projects_metadata import MetadataDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from ..db.plugin import get_database_engine
 from . import _metadata_db
@@ -67,7 +67,7 @@ async def set_project_ancestors_from_custom_metadata(
 
     if parent_node_idstr := custom_metadata.get("node_id"):
         # NOTE: backward compatibility with S4l old client
-        parent_node_id = parse_obj_as(NodeID, parent_node_idstr)
+        parent_node_id = TypeAdapter(NodeID).validate_python(parent_node_idstr)
 
         if parent_node_id == _NIL_NODE_UUID:
             return

@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID
@@ -48,7 +48,7 @@ class ServiceRunGet(
 class PricingUnitGet(OutputSchema):
     pricing_unit_id: PricingUnitId
     unit_name: str
-    unit_extra_info: dict
+    unit_extra_info: UnitExtraInfo
     current_cost_per_unit: Decimal
     default: bool
 
@@ -131,7 +131,7 @@ class UpdatePricingUnitBodyParams(InputSchema):
     unit_extra_info: UnitExtraInfo
     default: bool
     specific_info: SpecificInfo
-    pricing_unit_cost_update: PricingUnitCostUpdate | None
+    pricing_unit_cost_update: PricingUnitCostUpdate | None = Field(default=None)
 
     model_config = ConfigDict(
         str_strip_whitespace=True,

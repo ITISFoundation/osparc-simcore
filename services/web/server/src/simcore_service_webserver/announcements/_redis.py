@@ -37,7 +37,7 @@ async def list_announcements(
     announcements = []
     for i, item in enumerate(items):
         try:
-            model = Announcement.parse_raw(item)
+            model = Announcement.model_validate_json(item)
             # filters
             if include_product not in model.products:
                 continue

@@ -1,10 +1,10 @@
 from typing import Final
 
 from aiohttp import web
-from pydantic import PositiveInt
-from pydantic.class_validators import validator
+from pydantic import AliasChoices, PositiveInt, field_validator
 from pydantic.fields import Field
 from pydantic.types import SecretStr
+from pydantic_settings import SettingsConfigDict
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_session import MixinSessionSettings
 
@@ -22,7 +22,9 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
         description="Secret key to encrypt cookies. "
         'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
         min_length=44,
-        env=["SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"],
+        validation_alias=AliasChoices(
+            "SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"
+        ),
     )
 
     SESSION_ACCESS_TOKENS_EXPIRATION_INTERVAL_SECS: int = Field(
@@ -52,13 +54,17 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
         default=True,
         description="This prevents JavaScript from accessing the session cookie",
     )
+    
+    model_config = SettingsConfigDict(
+        extra="allow"
+    )
 
-    @validator("SESSION_SECRET_KEY")
+    @field_validator("SESSION_SECRET_KEY")
     @classmethod
     def check_valid_fernet_key(cls, v):
         return cls.do_check_valid_fernet_key(v)
 
-    @validator("SESSION_COOKIE_SAMESITE")
+    @field_validator("SESSION_COOKIE_SAMESITE")
     @classmethod
     def check_valid_samesite_attribute(cls, v):
         # NOTE: Replacement to `Literal["Strict", "Lax"] | None` due to bug in settings_library/base.py:93: in prepare_field

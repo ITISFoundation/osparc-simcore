@@ -10,7 +10,7 @@ from models_library.api_schemas_invitations.invitations import (
     ApiInvitationInputs,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyHttpUrl, parse_obj_as
+from pydantic import AnyHttpUrl
 from yarl import URL
 
 from .._constants import APP_SETTINGS_KEY
@@ -86,7 +86,7 @@ class InvitationsServiceApi:
             url=self._url_vtag("/invitations:extract"),
             json={"invitation_url": invitation_url},
         )
-        return parse_obj_as(ApiInvitationContent, await response.json())
+        return ApiInvitationContent.model_validate(await response.json())
 
     async def generate_invitation(
         self, params: ApiInvitationInputs
@@ -95,7 +95,7 @@ class InvitationsServiceApi:
             url=self._url_vtag("/invitations"),
             json=jsonable_encoder(params),
         )
-        return parse_obj_as(ApiInvitationContentAndLink, await response.json())
+        return ApiInvitationContentAndLink.model_validate(await response.json())
 
 
 #

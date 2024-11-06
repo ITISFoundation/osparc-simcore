@@ -18,7 +18,9 @@ from aioresponses import aioresponses
 from faker import Faker
 from models_library.products import ProductName
 from models_library.projects_state import ProjectState
-from pydantic import parse_obj_as
+from models_library.services import ServiceKey
+from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -168,10 +170,10 @@ async def _assert_get_same_project(
         assert data == project
 
         if project_state:
-            assert parse_obj_as(ProjectState, project_state)
+            assert ProjectState.model_validate(project_state)
 
         if project_permalink:
-            assert parse_obj_as(ProjectPermalink, project_permalink)
+            assert ProjectPermalink.model_validate(project_permalink)
 
         assert folder_id is None
 
@@ -209,7 +211,7 @@ async def test_list_projects(
         assert not ProjectState(
             **project_state
         ).locked.value, "Templates are not locked"
-        assert parse_obj_as(ProjectPermalink, project_permalink)
+        assert ProjectPermalink.model_validate(project_permalink)
 
         # standard project
         project_state = data[1].pop("state")
@@ -252,7 +254,7 @@ async def test_list_projects(
         assert not ProjectState(
             **project_state
         ).locked.value, "Templates are not locked"
-        assert parse_obj_as(ProjectPermalink, project_permalink)
+        assert ProjectPermalink.model_validate(project_permalink)
 
 
 @pytest.fixture(scope="session")
@@ -432,7 +434,7 @@ async def test_new_project_from_template(
     if new_project:
         # check uuid replacement
         for node_name in new_project["workbench"]:
-            parse_obj_as(uuidlib.UUID, node_name)
+            TypeAdapter(uuidlib.UUID).validate_python(node_name)
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
@@ -461,7 +463,7 @@ async def test_new_project_from_other_study(
         # check uuid replacement
         assert new_project["name"].endswith("(Copy)")
         for node_name in new_project["workbench"]:
-            parse_obj_as(uuidlib.UUID, node_name)
+            TypeAdapter(uuidlib.UUID).validate_python(node_name)
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
@@ -515,7 +517,7 @@ async def test_new_project_from_template_with_body(
 
         # check uuid replacement
         for node_name in project["workbench"]:
-            parse_obj_as(uuidlib.UUID, node_name)
+            TypeAdapter(uuidlib.UUID).validate_python(node_name)
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
@@ -571,7 +573,7 @@ async def test_new_template_from_project(
 
         # check uuid replacement
         for node_name in template_project["workbench"]:
-            parse_obj_as(uuidlib.UUID, node_name)
+            TypeAdapter(uuidlib.UUID).validate_python(node_name)
 
     # do the same with a body
     predefined = {
@@ -631,7 +633,7 @@ async def test_new_template_from_project(
 
         # check uuid replacement
         for node_name in template_project["workbench"]:
-            parse_obj_as(uuidlib.UUID, node_name)
+            TypeAdapter(uuidlib.UUID).validate_python(node_name)
 
 
 @pytest.fixture

@@ -5,7 +5,7 @@ from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import GroupID, UserID
 from models_library.wallets import UserWalletDB, WalletID
-from pydantic import BaseModel, parse_obj_as
+from pydantic import BaseModel, ConfigDict
 
 from ..users import api as users_api
 from . import _db as wallets_db
@@ -23,6 +23,10 @@ class WalletGroupGet(BaseModel):
     delete: bool
     created: datetime
     modified: datetime
+    
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
 async def create_wallet_group(
@@ -45,7 +49,7 @@ async def create_wallet_group(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.dict(
+            user_acces_rights_on_wallet=wallet.model_dump(
                 include={"read", "write", "delete"}
             ),
         )
@@ -58,7 +62,7 @@ async def create_wallet_group(
         write=write,
         delete=delete,
     )
-    wallet_group_api: WalletGroupGet = WalletGroupGet(**wallet_group_db.dict())
+    wallet_group_api: WalletGroupGet = WalletGroupGet(**wallet_group_db.model_dump())
 
     return wallet_group_api
 
@@ -79,7 +83,7 @@ async def list_wallet_groups_by_user_and_wallet(
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
-            user_acces_rights_on_wallet=wallet.dict(
+            user_acces_rights_on_wallet=wallet.model_dump(
                 include={"read", "write", "delete"}
             ),
         )
@@ -89,7 +93,7 @@ async def list_wallet_groups_by_user_and_wallet(
     ] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
 
     wallet_groups_api: list[WalletGroupGet] = [
-        parse_obj_as(WalletGroupGet, group) for group in wallet_groups_db
+        WalletGroupGet.model_validate(group) for group in wallet_groups_db
     ]
 
     return wallet_groups_api
@@ -105,7 +109,7 @@ async def list_wallet_groups_with_read_access_by_wallet(
     ] = await wallets_groups_db.list_wallet_groups(app=app, wallet_id=wallet_id)
 
     wallet_groups_api: list[WalletGroupGet] = [
-        parse_obj_as(WalletGroupGet, group)
+        WalletGroupGet.model_validate(group)
         for group in wallet_groups_db
         if group.read is True
     ]
@@ -140,7 +144,7 @@ async def update_wallet_group(
                 user_id=user_id,
                 wallet_id=wallet_id,
                 product_name=product_name,
-                user_acces_rights_on_wallet=wallet.dict(
+                user_acces_rights_on_wallet=wallet.model_dump(
                     include={"read", "write", "delete"}
                 ),
             )
@@ -154,7 +158,7 @@ async def update_wallet_group(
         delete=delete,
     )
 
-    wallet_api: WalletGroupGet = WalletGroupGet(**wallet_group_db.dict())
+    wallet_api: WalletGroupGet = WalletGroupGet(**wallet_group_db.model_dump())
     return wallet_api
 
 

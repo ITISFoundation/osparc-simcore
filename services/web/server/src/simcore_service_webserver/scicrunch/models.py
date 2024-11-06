@@ -6,7 +6,7 @@ import logging
 import re
 from datetime import datetime
 
-from pydantic import BaseModel, Field, validator
+from pydantic import field_validator, ConfigDict, BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -58,19 +58,16 @@ class ResearchResource(BaseModel):
     rrid: str = Field(
         ...,
         description="Unique identifier used as classifier, i.e. to tag studies and services",
-        regex=STRICT_RRID_PATTERN,
+        pattern=STRICT_RRID_PATTERN,
     )
     name: str
     description: str
 
-    @validator("rrid", pre=True)
+    @field_validator("rrid", mode="before")
     @classmethod
     def format_rrid(cls, v):
         return normalize_rrid_tags(v, with_prefix=True)
-
-    class Config:
-        orm_mode = True
-        anystr_strip_whitespace = True
+    model_config = ConfigDict(from_attributes=True, str_strip_whitespace=True)
 
 
 # postgres_database.scicrunch_resources ORM --------------------
