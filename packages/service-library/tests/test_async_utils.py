@@ -237,12 +237,13 @@ async def test_notify_when_over_threshold():
         notification_spy()
         print("notified")
 
-    async def _worker(*, sleep_for: float, raise_error: bool = False) -> float:
+    async def _worker(
+        *, sleep_for: float, raise_error: type[BaseException] | None = None
+    ) -> float:
         await asyncio.sleep(sleep_for)
 
         if raise_error:
-            msg = "raise error as planned"
-            raise RuntimeError(msg)
+            raise raise_error
 
         return sleep_for
 
@@ -267,21 +268,23 @@ async def test_notify_when_over_threshold():
     assert notification_spy.call_count == 0
 
     # 3. raise error before notification
-    notification_spy.reset_mock()
-    with pytest.raises(RuntimeError):
-        await notify_when_over_threshold(
-            _worker(sleep_for=0, raise_error=True),
-            notification_hook=notification,
-            notify_after=timedelta(seconds=0.2),
-        )
-    assert notification_spy.call_count == 0
+    for notification_type in (RuntimeError, asyncio.CancelledError):
+        notification_spy.reset_mock()
+        with pytest.raises(notification_type):
+            await notify_when_over_threshold(
+                _worker(sleep_for=0, raise_error=notification_type),
+                notification_hook=notification,
+                notify_after=timedelta(seconds=0.2),
+            )
+        assert notification_spy.call_count == 0
 
     # 4. raise after notification
-    notification_spy.reset_mock()
-    with pytest.raises(RuntimeError):
-        await notify_when_over_threshold(
-            _worker(sleep_for=0.2, raise_error=True),
-            notification_hook=notification,
-            notify_after=timedelta(seconds=0.1),
-        )
-    assert notification_spy.call_count == 1
+    for notification_type in (RuntimeError, asyncio.CancelledError):
+        notification_spy.reset_mock()
+        with pytest.raises(notification_type):
+            await notify_when_over_threshold(
+                _worker(sleep_for=0.2, raise_error=notification_type),
+                notification_hook=notification,
+                notify_after=timedelta(seconds=0.1),
+            )
+        assert notification_spy.call_count == 1
