@@ -272,16 +272,16 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     },
 
     // overridden
-    _setSubtitle: function() {
+    _setRole: function() {
       const accessRightss = this.getAccessRights();
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const found = accessRightss && accessRightss.find(ar => ar["gid"] === myGid);
       if (found) {
-        const subtitle = this.getChildControl("contact");
+        const role = this.getChildControl("role");
         if (found["write"]) {
-          subtitle.setValue(osparc.data.Roles.WALLET[2].label);
+          role.setValue(osparc.data.Roles.WALLET[2].label);
         } else if (found["read"]) {
-          subtitle.setValue(osparc.data.Roles.WALLET[1].label);
+          role.setValue(osparc.data.Roles.WALLET[1].label);
         }
       }
     },

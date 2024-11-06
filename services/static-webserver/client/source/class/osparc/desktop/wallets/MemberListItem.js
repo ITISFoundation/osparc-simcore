@@ -46,13 +46,13 @@ qx.Class.define("osparc.desktop.wallets.MemberListItem", {
     },
 
     // overridden
-    _setSubtitle: function() {
+    _setRole: function() {
       const accessRights = this.getAccessRights();
-      const subtitle = this.getChildControl("contact");
+      const role = this.getChildControl("role");
       if ("getWrite" in accessRights && accessRights.getWrite()) {
-        subtitle.setValue(osparc.data.Roles.WALLET[2].label);
+        role.setValue(osparc.data.Roles.WALLET[2].label);
       } else if ("getRead" in accessRights && accessRights.getRead()) {
-        subtitle.setValue(osparc.data.Roles.WALLET[1].label);
+        role.setValue(osparc.data.Roles.WALLET[1].label);
       }
     },
 
