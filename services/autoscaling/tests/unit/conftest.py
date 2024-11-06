@@ -86,6 +86,7 @@ pytest_plugins = [
     "pytest_simcore.aws_iam_service",
     "pytest_simcore.aws_ssm_service",
     "pytest_simcore.dask_scheduler",
+    "pytest_simcore.docker",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
@@ -431,12 +432,6 @@ async def async_client(initialized_app: FastAPI) -> AsyncIterator[httpx.AsyncCli
 async def autoscaling_docker() -> AsyncIterator[AutoscalingDocker]:
     async with AutoscalingDocker() as docker_client:
         yield cast(AutoscalingDocker, docker_client)
-
-
-@pytest.fixture
-async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
-    async with aiodocker.Docker() as docker_client:
-        yield docker_client
 
 
 @pytest.fixture

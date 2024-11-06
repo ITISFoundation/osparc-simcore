@@ -13,7 +13,6 @@ async def test_list_no_services_available(
     app: FastAPI,
     docker_registry,
     configure_registry_access,
-    configure_schemas_location,
 ):
 
     computational_services = await registry_proxy.list_services(
@@ -34,7 +33,6 @@ async def test_list_services_with_bad_json_formatting(
     app: FastAPI,
     docker_registry,
     configure_registry_access,
-    configure_schemas_location,
     push_services,
 ):
     # some services
@@ -63,7 +61,6 @@ async def test_list_computational_services(
     docker_registry,
     push_services,
     configure_registry_access,
-    configure_schemas_location,
 ):
     await push_services(
         number_of_computational_services=6, number_of_interactive_services=3
@@ -80,7 +77,6 @@ async def test_list_interactive_services(
     docker_registry,
     push_services,
     configure_registry_access,
-    configure_schemas_location,
 ):
     await push_services(
         number_of_computational_services=5, number_of_interactive_services=4
@@ -96,7 +92,6 @@ async def test_list_of_image_tags(
     docker_registry,
     push_services,
     configure_registry_access,
-    configure_schemas_location,
 ):
     images = await push_services(
         number_of_computational_services=5, number_of_interactive_services=3
@@ -119,7 +114,6 @@ async def test_list_interactive_service_dependencies(
     docker_registry,
     push_services,
     configure_registry_access,
-    configure_schemas_location,
 ):
     images = await push_services(
         number_of_computational_services=2,
@@ -151,7 +145,6 @@ async def test_get_image_labels(
     docker_registry,
     push_services,
     configure_registry_access,
-    configure_schemas_location,
 ):
     images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
@@ -225,7 +218,6 @@ async def test_get_image_details(
     app: FastAPI,
     push_services,
     configure_registry_access,
-    configure_schemas_location,
 ):
     images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
@@ -245,7 +237,6 @@ async def test_registry_caching(
     app: FastAPI,
     push_services,
     configure_registry_access,
-    configure_schemas_location,
 ):
     images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
@@ -277,7 +268,6 @@ async def test_generate_service_extras(
     app,
     push_services,
     configure_registry_access,
-    configure_schemas_location,
 ):
     images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1

@@ -136,10 +136,12 @@ def _parse_env_settings(settings: list[str]) -> dict:
 
 async def _read_service_settings(
     app: FastAPI, key: str, tag: str, settings_name: str
-) -> dict[str, Any] | list[Any]:
+) -> dict[str, Any] | list[Any] | None:
     image_labels, _ = await registry_proxy.get_image_labels(app, key, tag)
-    settings: dict[str, Any] | list[Any] = (
-        json.loads(image_labels[settings_name]) if settings_name in image_labels else {}
+    settings: dict[str, Any] | list[Any] | None = (
+        json.loads(image_labels[settings_name])
+        if settings_name in image_labels
+        else None
     )
 
     log.debug("Retrieved %s settings: %s", settings_name, pformat(settings))
@@ -317,8 +319,11 @@ async def _create_docker_service_params(
         ]
 
     # some services define strip_path:true if they need the path to be stripped away
-    assert isinstance(reverse_proxy_settings, dict)  # nosec
-    if reverse_proxy_settings and reverse_proxy_settings.get("strip_path"):
+    if (
+        isinstance(reverse_proxy_settings, dict)
+        and reverse_proxy_settings
+        and reverse_proxy_settings.get("strip_path")
+    ):
         docker_params["labels"][
             f"traefik.http.middlewares.{service_name}_stripprefixregex.stripprefixregex.regex"
         ] = f"^/x/{node_uuid}"
@@ -876,17 +881,18 @@ async def _start_docker_service(
         service_boot_parameters_labels = await _read_service_settings(
             app, service_key, service_tag, SERVICE_RUNTIME_BOOTSETTINGS
         )
-        assert isinstance(service_boot_parameters_labels, list)  # nosec
-        service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
-        if published_port:
-            session = get_client_session(app)
-            await _pass_port_to_service(
-                service_name,
-                published_port,
-                service_boot_parameters_labels,
-                session,
-                app_settings=app_settings,
-            )
+        service_entrypoint = ""
+        if isinstance(service_boot_parameters_labels, list):
+            service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
+            if published_port:
+                session = get_client_session(app)
+                await _pass_port_to_service(
+                    service_name,
+                    published_port,
+                    service_boot_parameters_labels,
+                    session,
+                    app_settings=app_settings,
+                )
 
         return {
             "published_port": published_port,
@@ -1065,7 +1071,11 @@ async def _get_node_details(
     )
 
     service_boot_parameters_labels = results[0]
-    service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
+    service_entrypoint = ""
+    if service_boot_parameters_labels and isinstance(
+        service_boot_parameters_labels, list
+    ):
+        service_entrypoint = _get_service_entrypoint(service_boot_parameters_labels)
     service_basepath = results[1]
     service_state, service_msg = results[2]
     service_name = service["Spec"]["Name"]

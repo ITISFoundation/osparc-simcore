@@ -7,6 +7,12 @@ import aiodocker
 import pytest
 
 
+@pytest.fixture
+async def async_docker_client() -> AsyncIterator[aiodocker.Docker]:
+    async with aiodocker.Docker() as docker_client:
+        yield docker_client
+
+
 @contextlib.asynccontextmanager
 async def _pause_container(
     async_docker_client: aiodocker.Docker, container_name: str

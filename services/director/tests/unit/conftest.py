@@ -18,6 +18,7 @@ from simcore_service_director.core.settings import ApplicationSettings
 pytest_plugins = [
     "fixtures.fake_services",
     "pytest_simcore.cli_runner",
+    "pytest_simcore.docker",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",

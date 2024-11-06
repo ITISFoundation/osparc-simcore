@@ -8,7 +8,7 @@ import json
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Iterator
+from typing import Any, AsyncIterator, Awaitable
 
 import docker
 import docker.models.networks
@@ -35,8 +35,8 @@ def ensure_service_runs_in_ci(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         envs={
-            "DEFAULT_MAX_MEMORY": int(25 * pow(1024, 2)),
-            "DEFAULT_MAX_NANO_CPUS": int(0.01 * pow(10, 9)),
+            "DEFAULT_MAX_MEMORY": f"{int(25 * pow(1024, 2))}",
+            "DEFAULT_MAX_NANO_CPUS": f"{int(0.01 * pow(10, 9))}",
         },
     )
 
@@ -45,7 +45,6 @@ def ensure_service_runs_in_ci(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 async def run_services(
     ensure_service_runs_in_ci: EnvVarsDict,
     configure_registry_access: EnvVarsDict,
-    configure_schemas_location: EnvVarsDict,
     app: FastAPI,
     push_services,
     docker_swarm: None,
@@ -59,7 +58,9 @@ async def run_services(
         number_comp: int, number_dyn: int, dependant=False
     ) -> list[dict[str, Any]]:
         pushed_services = await push_services(
-            number_comp, number_dyn, inter_dependent_services=dependant
+            number_of_computational_services=number_comp,
+            number_of_interactive_services=number_dyn,
+            inter_dependent_services=dependant,
         )
         assert len(pushed_services) == (number_comp + number_dyn)
         for pushed_service in pushed_services:
@@ -257,32 +258,32 @@ async def test_interactive_service_published_port(docker_network, run_services):
     assert docker_service.attrs["Spec"]["EndpointSpec"]["Mode"] == "dnsrr"
 
 
-@pytest.fixture
-def docker_network(
-    app_settings: ApplicationSettings,
-    docker_client: docker.client.DockerClient,
-    docker_swarm: None,
-) -> Iterator[docker.models.networks.Network]:
-    network = docker_client.networks.create(
-        "test_network_default", driver="overlay", scope="swarm"
-    )
-    print(f"--> docker network '{network.name}' created")
-    # TODO: should probably be done via monkeypatch actually...
-    app_settings.DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME = network.name
-    yield network
+# @pytest.fixture
+# def docker_network(
+#     app_settings: ApplicationSettings,
+#     docker_client: docker.client.DockerClient,
+#     docker_swarm: None,
+# ) -> Iterator[docker.models.networks.Network]:
+#     network = docker_client.networks.create(
+#         "test_network_default", driver="overlay", scope="swarm"
+#     )
+#     print(f"--> docker network '{network.name}' created")
+#     # TODO: should probably be done via monkeypatch actually...
+#     app_settings.DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME = network.name
+#     yield network
 
-    # cleanup
-    print(f"<-- removing docker network '{network.name}'...")
-    network.remove()
+#     # cleanup
+#     print(f"<-- removing docker network '{network.name}'...")
+#     network.remove()
 
-    for attempt in Retrying(stop=stop_after_delay(60), wait=wait_fixed(1)):
-        with attempt:
-            list_networks = docker_client.networks.list(
-                app_settings.DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME
-            )
-            assert not list_networks
-    app_settings.DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME = None
-    print(f"<-- removed docker network '{network.name}'")
+#     for attempt in Retrying(stop=stop_after_delay(60), wait=wait_fixed(1)):
+#         with attempt:
+#             list_networks = docker_client.networks.list(
+#                 app_settings.DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME
+#             )
+#             assert not list_networks
+#     app_settings.DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME = None
+#     print(f"<-- removed docker network '{network.name}'")
 
 
 async def test_interactive_service_in_correct_network(
