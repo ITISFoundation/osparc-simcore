@@ -91,9 +91,7 @@ async def test_folders_full_workflow(
     )
     resp = await client.put(
         f"{url}",
-        json={
-            "name": "My Second folder",
-        },
+        json={"name": "My Second folder"},
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     updated_folder = FolderGet.parse_obj(data)
