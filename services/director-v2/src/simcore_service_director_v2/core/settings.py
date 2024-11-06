@@ -30,6 +30,7 @@ from pydantic import (
 )
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
+from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
@@ -52,7 +53,7 @@ from simcore_sdk.node_ports_v2 import FileLinkType
 from .dynamic_services_settings import DynamicServicesSettings
 
 
-class DirectorV0Settings(BaseApplicationSettings):
+class DirectorV0Settings(BaseCustomSettings):
     DIRECTOR_V0_ENABLED: bool = True
 
     DIRECTOR_HOST: str = "director"
@@ -74,7 +75,7 @@ class DirectorV0Settings(BaseApplicationSettings):
         return url
 
 
-class ComputationalBackendSettings(BaseApplicationSettings):
+class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_ENABLED: bool = Field(
         default=True,
     )
@@ -126,10 +127,6 @@ class ComputationalBackendSettings(BaseApplicationSettings):
 
 
 class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
-    # docker environs
-    SC_BOOT_MODE: BootModeEnum
-    SC_BOOT_TARGET: BuildTargetEnum | None
-
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
         validation_alias=AliasChoices("DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
