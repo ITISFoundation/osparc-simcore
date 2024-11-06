@@ -3,6 +3,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
   colors: {
     "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
+    "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 5),
     "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 15),
     "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
     "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 35),
@@ -17,11 +18,10 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
     "product-color": "rgba(0, 144, 208, 1)", // override in product
     "strong-main": "product-color",
-    "strong-text": "background-main-1",
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
 
     // main
-    "background-main": "rgba(250,250,250, 1)", // Is manipulated
+    "background-main": "c01",
     "background-main-1": "c02",
     "background-main-2": "c03",
     "background-main-3": "c04",
@@ -34,7 +34,6 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "primary-background-color": "rgba(255, 255, 255, 1)",
     "navigation_bar_background_color": "rgba(229, 229, 229, 0.8)",
     "tab_navigation_bar_background_color": "c00",
-    "modal-backdrop": "rgba(247, 248, 252, 0.4)",
     "fab_text": "contrasted-text-dark",
     "fab-background": "rgba(255, 255, 255, 1)",
     "input_background": "rgba(209, 214, 218, 1)",

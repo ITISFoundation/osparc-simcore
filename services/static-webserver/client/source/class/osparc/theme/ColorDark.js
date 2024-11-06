@@ -3,6 +3,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
   colors: {
     "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
+    "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 100),
     "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 95),
     "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 85),
     "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 80),
@@ -17,11 +18,10 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
     "product-color": "rgba(0, 144, 208, 1)", // override in product
     "strong-main": "product-color",
-    "strong-text": "rgba(255, 255, 255, 1)",
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
 
     // main
-    "background-main": "#222",
+    "background-main": "c01",
     "background-main-1": "c02",
     "background-main-2": "c03",
     "background-main-3": "c04",
@@ -34,7 +34,6 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "primary-background-color": "rgba(0, 20, 46, 1)",
     "navigation_bar_background_color": "rgba(1, 18, 26, 0.8)",
     "tab_navigation_bar_background_color": "c00",
-    "modal-backdrop": "rgba(8, 9, 13, 1)",
     "fab_text": "contrasted-text-dark",
     "fab-background": "rgba(255, 255, 255, 0.2)",
     "input_background": "#213248",
