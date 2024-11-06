@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 import arrow
 from aiohttp import web
@@ -14,14 +15,13 @@ from . import _folders_db
 _logger = logging.getLogger(__name__)
 
 
-async def trash_folder(
+async def _check_exists_and_access(
     app: web.Application,
     *,
     product_name: ProductName,
     user_id: UserID,
     folder_id: FolderID,
-    force_stop_first: bool,
-):
+) -> bool:
     # 1. exists ?
     folder_db = await _folders_db.get(
         app, folder_id=folder_id, product_name=product_name
@@ -46,6 +46,56 @@ async def trash_folder(
         user_id=user_id if workspace_is_private else None,
         workspace_id=folder_db.workspace_id,
     )
+    return workspace_is_private
+
+
+async def _batch_update_folders(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    folder_id: FolderID,
+    trashed_at: datetime | None,
+):
+    # EXPLICIT un/trash
+    await _folders_db.update(
+        app,
+        folder_id=folder_id,
+        product_name=product_name,
+        trashed_at=trashed_at,
+        trashed_explicitly=trashed_at is not None,
+    )
+
+    # IMPLICIT un/trash
+    child_folders: set[FolderID] = {
+        f
+        for f in await _folders_db.get_folders_recursively(
+            app, folder_id=folder_id, product_name=product_name
+        )
+        if f != folder_id
+    }
+
+    if child_folders:
+        await _folders_db.update(
+            app,
+            folder_id=child_folders,
+            product_name=product_name,
+            trashed_at=trashed_at,
+            trashed_explicitly=False,
+        )
+
+
+async def trash_folder(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    folder_id: FolderID,
+    force_stop_first: bool,
+):
+
+    workspace_is_private = await _check_exists_and_access(
+        app, product_name=product_name, user_id=user_id, folder_id=folder_id
+    )
 
     # 3. Trash
     trashed_at = arrow.utcnow().datetime
@@ -55,13 +105,12 @@ async def trash_folder(
         force_stop_first,
     )
 
-    # 3.1 Trash folder
-    await _folders_db.update(
+    # 3.1 Trash folder and children
+    await _batch_update_folders(
         app,
         folder_id=folder_id,
         product_name=product_name,
         trashed_at=trashed_at,
-        trashed_explicitly=True,
     )
 
     # 3.2 Trash all child projects that I am an owner
@@ -85,24 +134,6 @@ async def trash_folder(
             explicit=False,
         )
 
-    # 3.3 Trash all child folders
-    child_folders: set[FolderID] = {
-        f
-        for f in await _folders_db.get_folders_recursively(
-            app, folder_id=folder_id, product_name=product_name
-        )
-        if f != folder_id
-    }
-
-    if child_folders:
-        await _folders_db.update(
-            app,
-            folder_id=child_folders,
-            product_name=product_name,
-            trashed_at=trashed_at,
-            trashed_explicitly=False,
-        )
-
 
 async def untrash_folder(
     app: web.Application,
@@ -111,40 +142,18 @@ async def untrash_folder(
     user_id: UserID,
     folder_id: FolderID,
 ):
-    # 1. exists?
-    folder_db = await _folders_db.get(
-        app, folder_id=folder_id, product_name=product_name
-    )
-
-    # 2. can?
-    workspace_is_private = True
-    if folder_db.workspace_id:
-        await check_user_workspace_access(
-            app,
-            user_id=user_id,
-            workspace_id=folder_db.workspace_id,
-            product_name=product_name,
-            permission="delete",
-        )
-        workspace_is_private = False
-
-    await _folders_db.get_for_user_or_workspace(
-        app,
-        folder_id=folder_id,
-        product_name=product_name,
-        user_id=user_id if workspace_is_private else None,
-        workspace_id=folder_db.workspace_id,
+    workspace_is_private = await _check_exists_and_access(
+        app, product_name=product_name, user_id=user_id, folder_id=folder_id
     )
 
     # 3. UNtrash
 
-    # 3.1 UNtrash folder
-    await _folders_db.update(
+    # 3.1 UNtrash folder and children
+    await _batch_update_folders(
         app,
         folder_id=folder_id,
         product_name=product_name,
         trashed_at=None,
-        trashed_explicitly=False,
     )
 
     # 3.2 UNtrash all child projects that I am an owner
@@ -161,22 +170,4 @@ async def untrash_folder(
     for project_id in child_projects:
         await untrash_project(
             app, product_name=product_name, user_id=user_id, project_id=project_id
-        )
-
-    # 3.3 UNtrash all child folders
-    child_folders: set[FolderID] = {
-        f
-        for f in await _folders_db.get_folders_recursively(
-            app, folder_id=folder_id, product_name=product_name
-        )
-        if f != folder_id
-    }
-
-    if child_folders:
-        await _folders_db.update(
-            app,
-            folder_id={_ for _ in child_folders if _ != folder_id},
-            product_name=product_name,
-            trashed_at=None,
-            trashed_explicitly=False,
         )
