@@ -149,22 +149,22 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         return;
       }
 
-      this.__setSubtitle();
+      this.__setRole();
 
       const menu = this.__getOptionsMenu();
       const optionsMenu = this.getChildControl("options");
       optionsMenu.setMenu(menu);
     },
 
-    __setSubtitle: function() {
+    __setRole: function() {
       const accessRights = this.getAccessRights();
-      const subtitle = this.getChildControl("contact");
+      const role = this.getChildControl("role");
       if (this.self().canDelete(accessRights)) {
-        subtitle.setValue(this._getResource(3).label);
+        role.setValue(this._getResource(3).label);
       } else if (this.self().canWrite(accessRights)) {
-        subtitle.setValue(this._getResource(2).label);
+        role.setValue(this._getResource(2).label);
       } else {
-        subtitle.setValue(this._getResource(1).label);
+        role.setValue(this._getResource(1).label);
       }
     },
 
