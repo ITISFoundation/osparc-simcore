@@ -19,6 +19,7 @@ from models_library.shared_user_preferences import (
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
+from servicelib.async_utils import notify_when_over_threshold
 from servicelib.fastapi.http_client_thin import BaseHttpClientError
 from servicelib.fastapi.long_running_tasks.client import (
     ProgressCallback,
@@ -449,6 +450,7 @@ async def prepare_services_environment(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
     app_settings: AppSettings = app.state.settings
+    dynamic_sidecar_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
@@ -502,8 +504,18 @@ async def prepare_services_environment(
         )
 
     async def _restore_service_state_with_metrics() -> None:
+        async def notify_frontend() -> None:
+            # TODO: finish implementation below
+            _logger.debug(
+                f"Notify {scheduler_data.node_uuid=}, {scheduler_data.project_id=} went over the time threshold"
+            )
+
         with track_duration() as duration:
-            size = await sidecars_client.restore_service_state(dynamic_sidecar_endpoint)
+            size = await notify_when_over_threshold(
+                sidecars_client.restore_service_state(dynamic_sidecar_endpoint),
+                notification_hook=notify_frontend,
+                notify_after=dynamic_sidecar_settings.states_restore_notification_timeout,
+            )
 
         if size and size > 0:
             get_instrumentation(
