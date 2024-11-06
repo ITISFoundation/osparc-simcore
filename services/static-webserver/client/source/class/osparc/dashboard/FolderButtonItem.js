@@ -240,6 +240,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     __deleteStudyRequested: function() {
       const msg = this.tr("Are you sure you want to delete") + " <b>" + this.getTitle() + "</b>?";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete"),
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });

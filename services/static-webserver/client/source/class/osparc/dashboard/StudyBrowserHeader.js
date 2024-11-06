@@ -108,7 +108,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           });
           this._add(control);
           break;
-        case "workspace-title":
+        case "title":
           control = new qx.ui.basic.Label().set({
             font: "text-16",
             alignY: "middle",
@@ -197,7 +197,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
 
     __buildLayout: function() {
       this.getChildControl("icon");
-      const title = this.getChildControl("workspace-title");
+      const title = this.getChildControl("title");
       title.resetCursor();
       title.removeListener("tap", this.__titleTapped, this);
       this.getChildControl("breadcrumbs");

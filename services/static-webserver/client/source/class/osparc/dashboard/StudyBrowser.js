@@ -455,6 +455,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __showMoveToWorkspaceWarningMessage: function() {
       const msg = this.tr("The permissions will be taken from the new workspace.");
       const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Move"),
         confirmText: this.tr("Move"),
       });
       win.open();
