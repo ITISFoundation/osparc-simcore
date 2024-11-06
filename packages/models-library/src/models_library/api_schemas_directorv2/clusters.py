@@ -126,6 +126,7 @@ class ClusterCreate(BaseCluster):
                     "name": "My awesome cluster",
                     "type": ClusterTypeInModel.ON_PREMISE,
                     "endpoint": "https://registry.osparc-development.fake.dev",
+                    "owner": None,
                     "authentication": {
                         "type": "simple",
                         "username": "someuser",
