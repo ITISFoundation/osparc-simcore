@@ -20,6 +20,8 @@ qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
 
   construct: function(resourceType) {
     this.__resourceType = resourceType;
+
+    this.base(arguments);
   },
 
   properties: {
