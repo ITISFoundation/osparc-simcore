@@ -9,6 +9,7 @@ from unittest import mock
 from uuid import uuid4
 
 import httpx
+from pydantic import TypeAdapter
 import pytest
 from faker import Faker
 from fastapi import FastAPI, status
@@ -21,7 +22,6 @@ from models_library.api_schemas_directorv2.comp_tasks import (
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from pydantic import parse_raw_as
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director_v2.core.settings import AppSettings
@@ -162,7 +162,7 @@ async def test_get_all_tasks_log_files(
 
     # test expected response according to OAS!
     assert resp.status_code == status.HTTP_200_OK
-    log_files = parse_raw_as(list[TaskLogFileGet], resp.text)
+    log_files = TypeAdapter(list[TaskLogFileGet]).validate_json(resp.text)
     assert log_files
     assert all(l.download_link for l in log_files)
 

@@ -41,7 +41,7 @@ from models_library.rabbitmq_messages import (
     RabbitResourceTrackingStoppedMessage,
 )
 from models_library.users import UserID
-from pydantic import TypeAdapter, parse_raw_as
+from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQClient
@@ -732,7 +732,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     assert messages[0].service_uuid == exp_started_task.node_id
 
     def _parser(x) -> RabbitResourceTrackingMessages:
-        return parse_raw_as(RabbitResourceTrackingMessages, x)
+        return TypeAdapter(RabbitResourceTrackingMessages).validate_json(x)
 
     messages = await _assert_message_received(
         resource_tracking_rabbit_client_parser,

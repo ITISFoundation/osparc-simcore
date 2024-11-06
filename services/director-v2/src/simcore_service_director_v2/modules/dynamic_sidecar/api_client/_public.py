@@ -293,7 +293,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         return Client(
             app=self._app,
             async_client=self._async_client,
-            base_url=dynamic_sidecar_endpoint,
+            base_url=f"{dynamic_sidecar_endpoint}",
         )
 
     async def _await_for_result(

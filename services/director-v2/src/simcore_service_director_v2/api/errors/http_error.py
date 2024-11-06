@@ -14,7 +14,7 @@ async def http_error_handler(_: Request, exc: HTTPException) -> JSONResponse:
 
 def make_http_error_handler_for_exception(
     status_code: int, exception_cls: type[BaseException]
-) -> Callable[[Request, type[BaseException]], Awaitable[JSONResponse]]:
+) -> Callable[[Request, Exception], Awaitable[JSONResponse]]:
     """
     Produces a handler for BaseException-type exceptions which converts them
     into an error JSON response with a given status code
