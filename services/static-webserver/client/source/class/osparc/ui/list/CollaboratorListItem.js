@@ -18,10 +18,6 @@
 qx.Class.define("osparc.ui.list.CollaboratorListItem", {
   extend: osparc.ui.list.ListItem,
 
-  construct: function() {
-    this.base(arguments);
-  },
-
   properties: {
     collabType: {
       check: [0, 1, 2], // 0:all, 1:org, 2:user
