@@ -19,7 +19,7 @@ from servicelib.utils import fire_and_forget_task
 from ..folders.errors import FolderValueNotPermittedError
 from ..projects.projects_api import submit_delete_project_task
 from ..users.api import get_user
-from ..workspaces._workspaces_api import check_user_workspace_access
+from ..workspaces.api import check_user_workspace_access
 from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceFolderInconsistencyError,
