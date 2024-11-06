@@ -18,11 +18,8 @@ install() {
 test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  # tests without DB can be safely run in parallel
   pushd services/director
-  make test-ci-unit pytest-parameters="--numprocesses=auto --ignore-glob=**/with_dbs/**"
-  # these tests cannot be run in parallel
-  make test-ci-unit test-path=with_dbs
+  make test-ci-unit
   popd
 }
 
