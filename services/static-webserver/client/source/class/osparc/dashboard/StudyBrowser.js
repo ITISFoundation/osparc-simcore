@@ -1725,8 +1725,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createConfirmWindow: function(studyNames) {
       const rUSure = this.tr("Are you sure you want to delete");
-      const studyAlias = osparc.product.Utils.getStudyAlias({plural: studyNames.length});
-      const msg = rUSure + (studyNames.length > 1 ? ` ${studyNames.length} ${studyAlias} ?` : ` <b>${studyNames[0]}</b>?`)
+      const studyAlias = osparc.product.Utils.getStudyAlias({plural: studyNames.length > 1});
+      const msg = rUSure + (studyNames.length > 1 ? ` ${studyNames.length} ${studyAlias}?` : ` <b>${studyNames[0]}</b>?`)
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete") + " " + studyAlias,
         confirmText: this.tr("Delete"),
