@@ -78,7 +78,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
   },
 
   members: {
-    _getResource: function(i) {
+    __getRoleInfo: function(i) {
       const resource = this.getResourceType();
       if (resource === "study" || resource === "template") {
         return osparc.data.Roles.STUDY[i];
@@ -161,11 +161,11 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       const accessRights = this.getAccessRights();
       const role = this.getChildControl("role");
       if (this.self().canDelete(accessRights)) {
-        role.setValue(this._getResource(3).label);
+        role.setValue(this.__getRoleInfo(3).label);
       } else if (this.self().canWrite(accessRights)) {
-        role.setValue(this._getResource(2).label);
+        role.setValue(this.__getRoleInfo(2).label);
       } else {
-        role.setValue(this._getResource(1).label);
+        role.setValue(this.__getRoleInfo(1).label);
       }
     },
 
@@ -175,17 +175,17 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       });
 
       const accessRights = this.getAccessRights();
-      let currentRole = this._getResource(1);
+      let currentRole = this.__getRoleInfo(1);
       if (this.self().canDelete(accessRights)) {
-        currentRole = this._getResource(3);
+        currentRole = this.__getRoleInfo(3);
       } else if (this.self().canWrite(accessRights)) {
-        currentRole = this._getResource(2);
+        currentRole = this.__getRoleInfo(2);
       }
 
       // promote/demote actions
       switch (currentRole.id) {
         case "read": {
-          const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this._getResource(2).label}`));
+          const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this.__getRoleInfo(2).label}`));
           promoteButton.addListener("execute", () => {
             this.fireDataEvent("promoteToEditor", {
               gid: this.getKey(),
@@ -197,7 +197,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         }
         case "write": {
           const resource = this.getResourceType();
-          const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this._getResource(3).label}`));
+          const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this.__getRoleInfo(3).label}`));
           promoteButton.setVisibility(resource === "service" ? "excluded" : "visible");
           promoteButton.addListener("execute", () => {
             this.fireDataEvent("promoteToOwner", {
@@ -206,7 +206,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
             });
           });
           menu.add(promoteButton);
-          const demoteButton = new qx.ui.menu.Button(this.tr(`Demote to ${this._getResource(1).label}`));
+          const demoteButton = new qx.ui.menu.Button(this.tr(`Demote to ${this.__getRoleInfo(1).label}`));
           demoteButton.addListener("execute", () => {
             this.fireDataEvent("demoteToUser", {
               gid: this.getKey(),
@@ -217,7 +217,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
           break;
         }
         case "delete": {
-          const demoteButton = new qx.ui.menu.Button(this.tr(`Demote to ${this._getResource(2).label}`));
+          const demoteButton = new qx.ui.menu.Button(this.tr(`Demote to ${this.__getRoleInfo(2).label}`));
           demoteButton.addListener("execute", () => {
             this.fireDataEvent("demoteToEditor", {
               gid: this.getKey(),
