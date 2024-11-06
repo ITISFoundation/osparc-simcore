@@ -197,7 +197,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           if (userFromId) {
             const user = osparc.store.Store.getInstance().getUser(userFromId);
             if (user) {
-              descriptionLabel.setValue("was shared by " + user["label"]);
+              descriptionLabel.setValue("was added by " + user["label"]);
             }
           }
           break;
