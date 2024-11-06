@@ -14,3 +14,13 @@ main.command()(
     create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
 )
 main.callback()(create_version_callback(__version__))
+
+
+@main.command()
+def run():
+    """Runs application"""
+    typer.secho("Sorry, this entrypoint is intentionally disabled. Use instead")
+    typer.secho(
+        "$ uvicorn simcore_service_director.main:the_app",
+        fg=typer.colors.BLUE,
+    )
