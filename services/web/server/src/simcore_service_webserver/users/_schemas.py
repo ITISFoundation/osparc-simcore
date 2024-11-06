@@ -17,16 +17,16 @@ from simcore_postgres_database.models.users import UserStatus
 
 
 class UserProfile(OutputSchema):
-    first_name: str | None = Field(default=None)
-    last_name: str | None = Field(default=None)
+    first_name: str | None
+    last_name: str | None
     email: LowerCaseEmailStr
-    institution: str | None = Field(default=None)
-    phone: str | None = Field(default=None)
-    address: str | None = Field(default=None)
-    city: str | None = Field(default=None)
-    state: str | None = Field(default=None, description="State, province, canton, ...")
-    postal_code: str | None = Field(default=None)
-    country: str | None = Field(default=None)
+    institution: str | None
+    phone: str | None
+    address: str | None
+    city: str | None
+    state: str | None = Field(description="State, province, canton, ...")
+    postal_code: str | None
+    country: str | None
     extras: dict[str, Any] = Field(
         default_factory=dict,
         description="Keeps extra information provided in the request form",
@@ -37,7 +37,7 @@ class UserProfile(OutputSchema):
 
     # user status
     registered: bool
-    status: UserStatus | None = Field(default=None)
+    status: UserStatus | None
     products: list[ProductName] | None = Field(
         default=None,
         description="List of products this users is included or None if fields is unset",
