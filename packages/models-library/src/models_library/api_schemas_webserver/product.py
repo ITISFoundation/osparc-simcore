@@ -26,12 +26,12 @@ class GetCreditPrice(OutputSchema):
         ...,
         description="Price of a credit in USD. "
         "If None, then this product's price is UNDEFINED",
-    )
+    )  # TODO: should be nullable
     min_payment_amount_usd: NonNegativeInt = Field(
         ...,
         description="Minimum amount (included) in USD that can be paid for this product"
         "Can be None if this product's price is UNDEFINED",
-    )
+    )  # TODO: should be nullable
 
     model_config = ConfigDict(
         json_schema_extra={

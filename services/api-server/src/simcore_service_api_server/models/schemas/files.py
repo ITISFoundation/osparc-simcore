@@ -33,7 +33,9 @@ class ClientFile(BaseModel):
     """Represents a file stored on the client side"""
 
     filename: FileName = Field(..., description="File name")
-    filesize: ByteSize = Field(..., description="File size in bytes")
+    filesize: int = Field(
+        ..., description="File size in bytes"
+    )  # TODO: should probably be a NonNegativeInt
     sha256_checksum: SHA256Str = Field(..., description="SHA256 checksum")
 
 
@@ -50,13 +52,15 @@ class File(BaseModel):
         default=None,
         description="Guess of type content [EXPERIMENTAL]",
         validate_default=True,
-    )
+    )  # TODO: should be nullable
     sha256_checksum: SHA256Str = Field(
         default=None,
         description="SHA256 hash of the file's content",
         alias="checksum",  # alias for backwards compatibility
-    )
-    e_tag: ETag = Field(default=None, description="S3 entity tag")
+    )  # TODO: should be nullable
+    e_tag: ETag = Field(
+        default=None, description="S3 entity tag"
+    )  # TODO: should be nullable
 
     model_config = ConfigDict(
         populate_by_name=True,
