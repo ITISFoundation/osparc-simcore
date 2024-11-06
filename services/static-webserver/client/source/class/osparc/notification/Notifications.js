@@ -28,8 +28,9 @@ qx.Class.define("osparc.notification.Notifications", {
     __newNotificationBase: function(userId) {
       return {
         "user_id": userId.toString(),
+        "user_from_id": osparc.auth.Data.getInstance().getUserId(),
         "date": new Date().toISOString(),
-        "product": osparc.product.Utils.getProductName()
+        "product": osparc.product.Utils.getProductName(),
       };
     },
 
@@ -38,6 +39,7 @@ qx.Class.define("osparc.notification.Notifications", {
       const specNotification = {
         "category": "NEW_ORGANIZATION",
         "actionable_path": "organization/"+orgId,
+        "resource_id": orgId,
         "title": "New organization",
         "text": "You're now member of a new Organization"
       };
@@ -55,6 +57,7 @@ qx.Class.define("osparc.notification.Notifications", {
       const specNotification = {
         "category": "STUDY_SHARED",
         "actionable_path": "study/"+studyId,
+        "resource_id": studyId,
         "title": `${study} shared`,
         "text": `A ${study} was shared with you`
       };
@@ -72,6 +75,7 @@ qx.Class.define("osparc.notification.Notifications", {
       const specNotification = {
         "category": "TEMPLATE_SHARED",
         "actionable_path": "template/"+templateId,
+        "resource_id": templateId,
         "title": `${template} shared`,
         "text": `A ${template} was shared with you`
       };
@@ -86,6 +90,7 @@ qx.Class.define("osparc.notification.Notifications", {
       const specNotification = {
         "category": "ANNOTATION_NOTE",
         "actionable_path": "study/"+studyId,
+        "resource_id": studyId,
         "title": "Note added",
         "text": "A Note was added for you"
       };
@@ -100,6 +105,7 @@ qx.Class.define("osparc.notification.Notifications", {
       const specNotification = {
         "category": "WALLET_SHARED",
         "actionable_path": "wallet/"+walletId,
+        "resource_id": walletId,
         "title": "Credits shared",
         "text": "A Credit Account was shared with you"
       };
@@ -142,7 +148,24 @@ qx.Class.define("osparc.notification.Notifications", {
         data: this.__newWalletObj(userId, studyId)
       };
       return osparc.data.Resources.fetch("notifications", "post", params);
-    }
+    },
+
+    markAsRead: function(notification) {
+      if (notification.isRead() === false) {
+        // set as read
+        const params = {
+          url: {
+            notificationId: notification.getId()
+          },
+          data: {
+            "read": true
+          }
+        };
+        osparc.data.Resources.fetch("notifications", "patch", params)
+          .then(() => notification.setRead(true))
+          .catch(() => notification.setRead(false));
+      }
+    },
   },
 
   members: {
@@ -165,6 +188,14 @@ qx.Class.define("osparc.notification.Notifications", {
 
     getNotifications: function() {
       return this.__notifications;
-    }
+    },
+
+    markAllAsRead: function() {
+      this.__notifications.forEach(notification => {
+        if (notification.isRead() === false) {
+          osparc.notification.Notifications.markAsRead(notification);
+        }
+      });
+    },
   }
 });
