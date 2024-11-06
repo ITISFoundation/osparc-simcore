@@ -42,8 +42,8 @@ def test_failing_validation():
     with pytest.raises(ValidationError) as exc:
         assert DiskUsage.from_efs_guardian(100, 10)
 
-    assert "free=" in f"{exc.value}"
-    assert "negative value" in f"{exc.value}"
+    assert "free" in f"{exc.value}"
+    assert "input_value=-90" in f"{exc.value}"
 
     with pytest.raises(ValidationError) as exc:
         assert DiskUsage(
@@ -52,8 +52,8 @@ def test_failing_validation():
             total=ByteSize(0),
             used_percent=-10,
         )
-    assert "used=" in f"{exc.value}"
-    assert "negative value" in f"{exc.value}"
+    assert "used" in f"{exc.value}"
+    assert "input_value=-10" in f"{exc.value}"
 
     with pytest.raises(ValidationError) as exc:
         DiskUsage(
