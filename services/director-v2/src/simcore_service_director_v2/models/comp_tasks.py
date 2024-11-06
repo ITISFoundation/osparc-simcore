@@ -58,7 +58,7 @@ class Image(BaseModel):
 
     @field_validator("node_requirements", mode="before")
     @classmethod
-    def migrate_from_requirements(cls, v, info: ValidationInfo):
+    def _migrate_from_requirements(cls, v, info: ValidationInfo):
         if v is None:
             # NOTE: 'node_requirements' field's default=None although is NOT declared as nullable.
             # Then this validator with `pre=True, always=True` is used to create a default
@@ -147,12 +147,12 @@ class CompTaskAtDB(BaseModel):
     created: datetime.datetime
     modified: datetime.datetime
     # Additional information about price and hardware (ex. AWS EC2 instance type)
-    pricing_info: dict | None = None
+    pricing_info: dict | None
     hardware_info: HardwareInfo
 
     @field_validator("state", mode="before")
     @classmethod
-    def convert_state_from_state_type_enum_if_needed(cls, v):
+    def _convert_state_from_state_type_enum_if_needed(cls, v):
         if isinstance(v, str):
             # try to convert to a StateType, if it fails the validations will continue
             # and pydantic will try to convert it to a RunninState later on
@@ -164,14 +164,14 @@ class CompTaskAtDB(BaseModel):
 
     @field_validator("start", "end", "submit")
     @classmethod
-    def ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
+    def _ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
         if v is not None and v.tzinfo is None:
             v = v.replace(tzinfo=datetime.UTC)
         return v
 
     @field_validator("hardware_info", mode="before")
     @classmethod
-    def backward_compatible_null_value(cls, v: HardwareInfo | None) -> HardwareInfo:
+    def _backward_compatible_null_value(cls, v: HardwareInfo | None) -> HardwareInfo:
         if v is None:
             return HardwareInfo(aws_ec2_instances=[])
         return v
