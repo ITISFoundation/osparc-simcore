@@ -122,7 +122,7 @@ typing-extensions==4.10.0
     # via
     #   -c requirements/_base.txt
     #   boto3-stubs
-urllib3==2.2.1
+urllib3==2.2.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

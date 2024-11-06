@@ -90,7 +90,7 @@ tornado==6.4
     # via
     #   -c requirements/./_base.txt
     #   distributed
-urllib3==2.2.1
+urllib3==2.2.3
     # via
     #   -c requirements/./_base.txt
     #   distributed

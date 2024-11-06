@@ -29,7 +29,7 @@ async def health_endpoint(
 ) -> ApplicationHealth:
     if not application_health.is_healthy:
         raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, detail=application_health.dict()
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail=application_health.model_dump()
         )
 
     if not rabbitmq_client.healthy or not rabbitmq_rpc_server.healthy:

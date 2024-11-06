@@ -104,7 +104,7 @@ async def _start_containers(
 
     response = await test_client.post(
         f"/{API_VTAG}/containers",
-        json={"metrics_params": mock_metrics_params.dict()},
+        json={"metrics_params": mock_metrics_params.model_dump()},
     )
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     task_id: TaskId = response.json()
@@ -776,7 +776,7 @@ def mock_inactive_since_command_response(
     activity_response: ActivityInfo,
 ) -> None:
     mocker.patch(
-        "simcore_service_dynamic_sidecar.api.containers.run_command_in_container",
+        "simcore_service_dynamic_sidecar.api.rest.containers.run_command_in_container",
         return_value=activity_response.model_dump_json(),
     )
 

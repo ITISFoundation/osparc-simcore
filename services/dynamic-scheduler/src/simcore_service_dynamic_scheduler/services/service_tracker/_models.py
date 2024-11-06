@@ -131,7 +131,9 @@ class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attrib
     #####################
 
     def to_bytes(self) -> bytes:
-        result: bytes = umsgpack.packb(self.dict(), ext_handlers=_PACKB_EXTENSION_TYPES)
+        result: bytes = umsgpack.packb(
+            self.model_dump(), ext_handlers=_PACKB_EXTENSION_TYPES
+        )
         return result
 
     @classmethod
