@@ -1,6 +1,7 @@
 import functools
 import logging
-from typing import Iterable, NamedTuple, TypeAlias
+from collections.abc import Iterable
+from typing import NamedTuple, TypeAlias
 
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
