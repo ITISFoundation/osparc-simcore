@@ -42,6 +42,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       event: "changeShowOptions",
       nullable: true
     },
+
     resourceType : {
       check: "String",
       event: "changeResourceType",
