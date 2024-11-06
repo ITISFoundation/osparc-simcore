@@ -69,7 +69,7 @@ openapi-client-master.json:
 
 
 define _openapi_diff_inputs
-	$(SCRIPTS_DIR)/openapi-diff.bash diff $(foreach f,$^,/specs/$f) -f json > $@
+	$(SCRIPTS_DIR)/openapi-diff.bash diff $(foreach f,$^,/specs/$f) --format json > $@
 	$(SCRIPTS_DIR)/openapi-diff.bash breaking $(foreach f,$^,/specs/$f) --fail-on ERR > /dev/null
 endef
 
@@ -81,7 +81,7 @@ openapi-%-diff.json: openapi.json openapi-%.json ## Diffs against newer or older
 	$(call _openapi_diff_inputs)
 
 openapi-diff.md: guard-OPENAPI_JSON_URL openapi.json ## Diffs against a remote openapi.json. E.g. OPENAPI_JSON_URL=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/api-server/openapi.json
-	$(SCRIPTS_DIR)/openapi-diff.bash diff $(OPENAPI_JSON_URL) /specs/openapi.json -f markup > $@
+	$(SCRIPTS_DIR)/openapi-diff.bash diff $(OPENAPI_JSON_URL) /specs/openapi.json --format markup --flatten-allof --exclude-elements title,description > $@
 	$(SCRIPTS_DIR)/openapi-diff.bash breaking $(OPENAPI_JSON_URL) /specs/openapi.json --fail-on ERR > /dev/null
 
 # SEE https://schemathesis.readthedocs.io/en/stable/index.html

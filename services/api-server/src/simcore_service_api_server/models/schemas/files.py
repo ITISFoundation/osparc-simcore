@@ -13,7 +13,6 @@ from models_library.projects_nodes_io import StorageFileID
 from pydantic import (
     AnyUrl,
     BaseModel,
-    ByteSize,
     ConfigDict,
     Field,
     StringConstraints,
@@ -170,8 +169,10 @@ class UploadLinks(BaseModel):
 
 
 class FileUploadData(BaseModel):
-    chunk_size: ByteSize
-    urls: list[AnyUrl]
+    chunk_size: int  # TODO: should probably be a NonNegativeInt
+    urls: list[
+        Annotated[AnyUrl, StringConstraints(max_length=65536)]
+    ]  # maxlength added for backwards compatibility
     links: UploadLinks
 
 
