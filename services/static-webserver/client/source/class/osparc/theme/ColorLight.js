@@ -55,7 +55,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
     // shadows
     "bg-shadow": "background-main-5",
-    "box-shadow": "rgba(0,0,0, 0.15)",
+    "box-shadow": "rgba(0, 0, 0, 0.15)",
     "shadow": qx.core.Environment.get("css.rgba") ? "a-bit-transparent" : "bg-shadow",
 
     // window
