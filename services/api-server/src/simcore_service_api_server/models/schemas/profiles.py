@@ -9,8 +9,12 @@ from ..domain.groups import Groups
 
 
 class ProfileCommon(BaseModel):
-    first_name: FirstNameStr | None = Field(None, examples=["James"])
-    last_name: LastNameStr | None = Field(None, examples=["Maxwell"])
+    first_name: FirstNameStr = Field(
+        None, examples=["James"]
+    )  # TODO: should be nullable
+    last_name: LastNameStr = Field(
+        None, examples=["Maxwell"]
+    )  # TODO: should be nullable
 
 
 class ProfileUpdate(ProfileCommon):
@@ -31,12 +35,12 @@ class Profile(ProfileCommon):
     id_: UserID = Field(alias="id")
     login: LowerCaseEmailStr
     role: UserRoleEnum
-    groups: Groups | None = None
-    gravatar_id: str | None = Field(
+    groups: Groups = None  # TODO: should be nullable
+    gravatar_id: str = Field(
         None,
         description="md5 hash value of email to retrieve an avatar image from https://www.gravatar.com",
         max_length=40,
-    )
+    )  # TODO: should be nullable
 
     @field_validator("role", mode="before")
     @classmethod
