@@ -46,17 +46,17 @@ class File(BaseModel):
     id: UUID = Field(..., description="Resource identifier")  # noqa: A003
 
     filename: str = Field(..., description="Name of the file with extension")
-    content_type: str | None = Field(
+    content_type: str = Field(
         default=None,
         description="Guess of type content [EXPERIMENTAL]",
         validate_default=True,
     )
-    sha256_checksum: SHA256Str | None = Field(
+    sha256_checksum: SHA256Str = Field(
         default=None,
         description="SHA256 hash of the file's content",
         alias="checksum",  # alias for backwards compatibility
     )
-    e_tag: ETag | None = Field(default=None, description="S3 entity tag")
+    e_tag: ETag = Field(default=None, description="S3 entity tag")
 
     model_config = ConfigDict(
         populate_by_name=True,

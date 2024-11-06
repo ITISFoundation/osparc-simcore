@@ -22,12 +22,12 @@ class GetCreditPrice(OutputSchema):
     usd_per_credit: Annotated[
         NonNegativeDecimal,
         PlainSerializer(float, return_type=NonNegativeFloat, when_used="json"),
-    ] | None = Field(
+    ] = Field(
         ...,
         description="Price of a credit in USD. "
         "If None, then this product's price is UNDEFINED",
     )
-    min_payment_amount_usd: NonNegativeInt | None = Field(
+    min_payment_amount_usd: NonNegativeInt = Field(
         ...,
         description="Minimum amount (included) in USD that can be paid for this product"
         "Can be None if this product's price is UNDEFINED",
