@@ -1023,20 +1023,20 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     setIdToWidget: (qWidget, id) => {
-      if (qWidget.getContentElement) {
+      if (qWidget.getContentElement && qWidget.getContentElement()) {
         qWidget.getContentElement().setAttribute("osparc-test-id", id);
       }
     },
 
     getIdFromWidget: qWidget => {
-      if (qWidget.getContentElement) {
+      if (qWidget.getContentElement && qWidget.getContentElement()) {
         return qWidget.getContentElement().getAttribute("osparc-test-id");
       }
       return null;
     },
 
     setKeyToWidget: (qWidget, id) => {
-      if (qWidget.getContentElement) {
+      if (qWidget.getContentElement && qWidget.getContentElement()) {
         qWidget.getContentElement().setAttribute("osparc-test-key", id);
       }
     },

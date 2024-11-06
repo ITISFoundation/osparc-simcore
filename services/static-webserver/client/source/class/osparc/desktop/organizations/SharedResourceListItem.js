@@ -18,6 +18,12 @@
 qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
   extend: osparc.ui.list.ListItemWithMenu,
 
+  construct: function(resourceType) {
+    this.__resourceType = resourceType;
+
+    this.base(arguments);
+  },
+
   properties: {
     orgId: {
       check: "Integer",
@@ -38,7 +44,28 @@ qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
     "openMoreInfo": "qx.event.type.Data"
   },
 
+  statics: {
+    canDelete: function(accessRights) {
+      const canDelete = accessRights.getDelete ? accessRights.getDelete() : false;
+      return canDelete;
+    },
+
+    canWrite: function(accessRights) {
+      let canWrite = accessRights.getWrite ? accessRights.getWrite() : false;
+      canWrite = canWrite || (accessRights.getWriteAccess ? accessRights.getWriteAccess() : false);
+      return canWrite;
+    },
+
+    canRead: function(accessRights) {
+      let canRead = accessRights.getRead ? accessRights.getRead() : false;
+      canRead = canRead || (accessRights.getExecuteAccess ? accessRights.getExecuteAccess() : false);
+      return canRead;
+    }
+  },
+
   members: {
+    __resourceType: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -61,6 +88,26 @@ qx.Class.define("osparc.desktop.organizations.SharedResourceListItem", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __getRoleInfo: function(i) {
+      if (this.__resourceType === "service") {
+        return osparc.data.Roles.SERVICES[i];
+      }
+      return osparc.data.Roles.STUDY[i];
+    },
+
+    // overridden
+    _setRole: function() {
+      const accessRights = this.getAccessRights();
+      const role = this.getChildControl("role");
+      if (this.self().canDelete(accessRights)) {
+        role.setValue(this.__getRoleInfo(3).label);
+      } else if (this.self().canWrite(accessRights)) {
+        role.setValue(this.__getRoleInfo(2).label);
+      } else {
+        role.setValue(this.__getRoleInfo(1).label);
+      }
     },
 
     // overridden
