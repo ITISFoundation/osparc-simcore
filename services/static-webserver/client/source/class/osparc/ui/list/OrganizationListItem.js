@@ -34,6 +34,12 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
 
   members: {
     // overridden
+    _setRole: function() {
+      // Role field was already filled up with the nMembers
+      return;
+    },
+
+    // overridden
     _getOptionsMenu: function() {
       let menu = null;
       const accessRights = this.getAccessRights();
