@@ -127,15 +127,18 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         return;
       }
 
+      const resourceAlias = this._resourceType === "template" ?
+        osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) :
+        osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       const newCollaborators = {};
       gids.forEach(gid => {
         newCollaborators[gid] = this._resourceType === "study" ? this.self().getCollaboratorAccessRight() : this.self().getViewerAccessRight();
       });
       osparc.info.StudyUtils.addCollaborators(this._serializedDataCopy, newCollaborators)
         .then(() => {
-          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
-          const text = this.tr("User(s) successfully added.");
+          const text = resourceAlias + this.tr(" successfully shared");
           osparc.FlashMessenger.getInstance().logAs(text);
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           this._reloadCollaboratorsList();
 
           this.__pushNotifications(gids);
@@ -143,7 +146,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding user(s)"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong sharing the ") + resourceAlias, "ERROR");
         });
     },
 

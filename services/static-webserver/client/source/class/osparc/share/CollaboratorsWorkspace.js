@@ -72,14 +72,14 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
       gids.forEach(gid => newCollaborators[gid] = this.self().getCollaboratorAccessRight());
       osparc.store.Workspaces.getInstance().addCollaborators(this.__workspace.getWorkspaceId(), newCollaborators)
         .then(() => {
-          this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
-          const text = this.tr("User(s) successfully added.");
+          const text = this.tr("Workspace successfully shared");
           osparc.FlashMessenger.getInstance().logAs(text);
+          this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
           this._reloadCollaboratorsList();
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went adding user(s)"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong sharing the Workspace"), "ERROR");
         });
     },
 

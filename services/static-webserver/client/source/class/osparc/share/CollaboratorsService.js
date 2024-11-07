@@ -93,13 +93,13 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       osparc.store.Services.patchServiceData(this._serializedDataCopy, "accessRights", newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
-          const text = this.tr("Service successfully shared.");
+          const text = this.tr("Service successfully shared");
           osparc.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong adding editor(s)"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong sharing the Service"), "ERROR");
         });
     },
 
