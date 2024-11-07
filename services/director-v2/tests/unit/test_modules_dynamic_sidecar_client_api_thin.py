@@ -139,7 +139,7 @@ async def test_post_patch_containers_ports_io(
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
         "PATCH",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/ports/io",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/ports/io",
         mock_response,
         None,
     )

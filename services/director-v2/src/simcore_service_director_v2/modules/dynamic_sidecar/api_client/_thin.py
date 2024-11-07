@@ -100,7 +100,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         enable_outputs: bool,
         enable_inputs: bool,
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/io")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers/ports/io")
         return await self.client.patch(
             url, json={"enable_outputs": enable_outputs, "enable_inputs": enable_inputs}
         )
@@ -110,7 +110,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     async def post_containers_ports_outputs_dirs(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, outputs_labels: dict[str, Any]
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs/dirs")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers/ports/outputs/dirs")
         return await self.client.post(url, json={"outputs_labels": outputs_labels})
 
     @retry_on_errors()
@@ -125,7 +125,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
             }
         )
         url = self._get_url(
-            dynamic_sidecar_endpoint, f"/containers/name?filters={filters}"
+            dynamic_sidecar_endpoint, f"containers/name?filters={filters}"
         )
         return await self.client.get(url=url)
 
@@ -140,7 +140,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         network_aliases: list[str],
     ) -> Response:
         url = self._get_url(
-            dynamic_sidecar_endpoint, f"/containers/{container_id}/networks:attach"
+            dynamic_sidecar_endpoint, f"containers/{container_id}/networks:attach"
         )
         return await self.client.post(
             url,
@@ -158,7 +158,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         network_id: str,
     ) -> Response:
         url = self._get_url(
-            dynamic_sidecar_endpoint, f"/containers/{container_id}/networks:detach"
+            dynamic_sidecar_endpoint, f"containers/{container_id}/networks:detach"
         )
         return await self.client.post(
             url,
@@ -174,7 +174,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         *,
         compose_spec: str,
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/compose-spec")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers/compose-spec")
         return await self.client.post(url, json={"docker_compose_yaml": compose_spec})
 
     @retry_on_errors()
@@ -185,9 +185,9 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         *,
         metrics_params: CreateServiceMetricsAdditionalParams,
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers")
         return await self.client.post(
-            url, json={"metrics_params": metrics_params.dict()}
+            url, json={"metrics_params": metrics_params.model_dump()}
         )
 
     @retry_on_errors()
@@ -195,7 +195,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     async def post_containers_tasks_down(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers:down")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers:down")
         return await self.client.post(url)
 
     @retry_on_errors()
@@ -203,7 +203,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     async def post_containers_tasks_state_restore(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/state:restore")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers/state:restore")
         return await self.client.post(url)
 
     @retry_on_errors()
@@ -211,7 +211,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     async def post_containers_tasks_state_save(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/state:save")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers/state:save")
         return await self.client.post(url)
 
     @retry_on_errors()
@@ -219,7 +219,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     async def post_containers_images_pull(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/images:pull")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers/images:pull")
         return await self.client.post(url)
 
     @retry_on_errors()
@@ -230,7 +230,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         port_keys: list[str] | None = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/inputs:pull")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers/ports/inputs:pull")
         return await self.client.post(url, json=port_keys)
 
     @retry_on_errors()
@@ -241,7 +241,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         port_keys: list[str] | None = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:pull")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers/ports/outputs:pull")
         return await self.client.post(url, json=port_keys)
 
     @retry_on_errors()
@@ -249,7 +249,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     async def post_containers_tasks_ports_outputs_push(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/ports/outputs:push")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers/ports/outputs:push")
         return await self.client.post(url)
 
     @retry_on_errors()
@@ -257,7 +257,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     async def post_containers_tasks_restart(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers:restart")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers:restart")
         return await self.client.post(url)
 
     @retry_on_errors()
@@ -268,7 +268,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         volume_category: VolumeCategory,
         volume_status: VolumeStatus,
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, f"/volumes/{volume_category}")
+        url = self._get_url(dynamic_sidecar_endpoint, f"volumes/{volume_category}")
 
         return await self.client.put(url, json={"status": volume_status})
 
@@ -277,7 +277,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     async def proxy_config_load(
         self, proxy_endpoint: AnyHttpUrl, proxy_configuration: dict[str, Any]
     ) -> Response:
-        url = self._get_url(proxy_endpoint, "/load", no_api_version=True)
+        url = self._get_url(proxy_endpoint, "load", no_api_version=True)
         return await self.client.post(url, json=proxy_configuration)
 
     @retry_on_errors()
@@ -286,7 +286,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers/activity")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers/activity")
         return await self.client.get(url)
 
     @retry_on_errors()
@@ -295,5 +295,5 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         self,
         dynamic_sidecar_endpoint: AnyHttpUrl,
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/disk/reserved:free")
+        url = self._get_url(dynamic_sidecar_endpoint, "disk/reserved:free")
         return await self.client.post(url)
