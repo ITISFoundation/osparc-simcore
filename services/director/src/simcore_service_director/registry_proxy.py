@@ -89,7 +89,6 @@ async def _basic_auth_registry_request(
                 )
 
             elif response.status == HTTPStatus.NOT_FOUND:
-                logger.exception("Path to registry not found: %s", url)
                 raise exceptions.ServiceNotAvailableError(str(path))
 
             elif response.status > 399:
