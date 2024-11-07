@@ -13,7 +13,7 @@ router = APIRouter()
 log = logging.getLogger(__name__)
 
 
-@router.get("/service_extras/{service_key}/{service_version}")
+@router.get("/service_extras/{service_key:path}/{service_version}")
 async def list_service_extras(
     the_app: Annotated[FastAPI, Depends(get_app)],
     service_key: ServiceKey,
