@@ -9,6 +9,7 @@ from servicelib.fastapi.openapi import (
 from servicelib.fastapi.profiler_middleware import ProfilerMiddleware
 from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
+from settings_library.basic_types import BootMode
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..api.entrypoints import api_router
@@ -127,12 +128,12 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
         logging.getLogger(name).setLevel(quiet_level)
 
     app = FastAPI(
-        debug=settings.SC_BOOT_MODE.is_devel_mode(),
+        debug=settings.SC_BOOT_MODE == BootMode.DEVELOPMENT,
         title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        **get_common_oas_options(settings.SC_BOOT_MODE.is_devel_mode()),
+        **get_common_oas_options(settings.SC_BOOT_MODE == BootMode.DEVELOPMENT),
     )
     override_fastapi_openapi_method(app)
     app.state.settings = settings

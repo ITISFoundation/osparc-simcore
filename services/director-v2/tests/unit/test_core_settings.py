@@ -43,7 +43,7 @@ def test_enforce_r_clone_requirement(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_settings_with_project_env_devel(project_env_devel_environment: dict[str, Any]):
     # loads from environ
     settings = AppSettings.create_from_envs()
-    print("captured settings: \n", settings.json(indent=2))
+    print("captured settings: \n", settings.model_dump_json(indent=2))
 
     assert settings.SC_BOOT_MODE == BootModeEnum.DEBUG
     assert settings.LOG_LEVEL == LogLevel.DEBUG
@@ -60,7 +60,7 @@ def test_settings_with_repository_env_devel(
     )  # defined in docker-compose
 
     settings = AppSettings.create_from_envs()
-    print("captured settings: \n", settings.json(indent=2))
+    print("captured settings: \n", settings.model_dump_json(indent=2))
     assert settings
 
 
