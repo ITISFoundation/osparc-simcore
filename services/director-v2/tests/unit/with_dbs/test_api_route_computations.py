@@ -142,7 +142,6 @@ def mocked_director_service_fcts(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        assert VersionStr.regex
         respx_mock.get(
             re.compile(
                 r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+$"
