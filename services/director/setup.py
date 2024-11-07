@@ -58,8 +58,8 @@ SETUP = {
     "extras_require": {"test": TEST_REQUIREMENTS},
     "entry_points": {
         "console_scripts": [
-            "simcore-service-director = simcore_service_director.__main__:main",
-            "simcore-service = simcore_service_director.__main__:main",
+            "simcore-service-director = simcore_service_director.cli:main",
+            "simcore-service = simcore_service_director.cli:main",
         ],
     },
 }
