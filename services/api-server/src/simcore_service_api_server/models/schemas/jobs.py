@@ -36,8 +36,8 @@ JobID: TypeAlias = UUID
 
 # ArgumentTypes are types used in the job inputs (see ResultsTypes)
 ArgumentTypes: TypeAlias = (
-    File | StrictFloat | StrictInt | StrictBool | str | list
-)  # TODO: should be nullable
+    File | StrictFloat | StrictInt | StrictBool | str | list | None
+)
 KeywordArguments: TypeAlias = dict[str, ArgumentTypes]
 PositionalArguments: TypeAlias = list[ArgumentTypes]
 
@@ -152,9 +152,7 @@ class JobMetadata(BaseModel):
     metadata: dict[str, MetaValueType] = Field(..., description="Custom key-value map")
 
     # Links
-    url: HttpUrl = Field(
-        ..., description="Link to get this resource (self)"
-    )  # TODO: should be nullable
+    url: HttpUrl | None = Field(..., description="Link to get this resource (self)")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -200,15 +198,13 @@ class Job(BaseModel):
     )
 
     # Get links to other resources
-    url: HttpUrl = Field(
-        ..., description="Link to get this resource (self)"
-    )  # TODO: should be nullable
-    runner_url: HttpUrl = Field(
+    url: HttpUrl | None = Field(..., description="Link to get this resource (self)")
+    runner_url: HttpUrl | None = Field(
         ..., description="Link to the solver's job (parent collection)"
-    )  # TODO: should be nullable
-    outputs_url: HttpUrl = Field(
+    )
+    outputs_url: HttpUrl | None = Field(
         ..., description="Link to the job outputs (sub-collection)"
-    )  # TODO: should be nullable
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -295,14 +291,14 @@ class JobStatus(BaseModel):
     submitted_at: datetime.datetime = Field(
         ..., description="Last modification timestamp of the solver job"
     )
-    started_at: datetime.datetime = Field(
+    started_at: datetime.datetime | None = Field(
         None,
         description="Timestamp that indicate the moment the solver starts execution or None if the event did not occur",
-    )  # TODO: should be nullable
-    stopped_at: datetime.datetime = Field(
+    )
+    stopped_at: datetime.datetime | None = Field(
         None,
         description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
-    )  # TODO: should be nullable
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -334,7 +330,7 @@ class JobPricingSpecification(BaseModel):
 
 class JobLog(BaseModel):
     job_id: ProjectID
-    node_id: NodeID = None  # TODO: should be nullable
+    node_id: NodeID | None = None
     log_level: LogLevelInt
     messages: list[LogMessageStr]
 
