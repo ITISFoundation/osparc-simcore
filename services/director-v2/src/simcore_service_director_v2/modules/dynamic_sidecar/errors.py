@@ -40,5 +40,5 @@ class LegacyServiceIsNotSupportedError(DirectorError):
 
 
 class UnexpectedContainerStatusError(OsparcErrorMixin, DynamicSidecarError):
-    code = "dynamic_sidecar.container_status"
+    code = "dynamic_sidecar.container_status"   # type: ignore
     msg_template = "Unexpected status from containers: {containers_with_error}"

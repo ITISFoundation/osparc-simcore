@@ -129,8 +129,6 @@ class WalletNotEnoughCreditsError(OsparcErrorMixin, DirectorError):
 
 
 class SchedulerError(DirectorError):
-    code = "scheduler_error"
-
     def __init__(self, msg: str | None = None):
         super().__init__(msg or "Unexpected error in the scheduler")
 
@@ -144,6 +142,7 @@ class InvalidPipelineError(SchedulerError):
 
 class TaskSchedulingError(SchedulerError):
     """A task cannot be scheduled"""
+    code: str = "task scheduler error"
 
     def __init__(self, project_id: ProjectID, node_id: NodeID, msg: str | None = None):
         super().__init__(msg=msg)
@@ -225,12 +224,12 @@ class PortsValidationError(TaskSchedulingError):
 
 
 class ComputationalSchedulerChangedError(OsparcErrorMixin, SchedulerError):
-    code = "computational_backend.scheduler_changed"
+    code = "computational_backend.scheduler_changed"    # type: ignore
     msg_template = "The dask scheduler ID changed from '{original_scheduler_id}' to '{current_scheduler_id}'"
 
 
 class ComputationalBackendNotConnectedError(OsparcErrorMixin, SchedulerError):
-    code = "computational_backend.not_connected"
+    code = "computational_backend.not_connected"    # type: ignore
     msg_template = "The dask computational backend is not connected"
 
 
@@ -239,24 +238,24 @@ class ComputationalBackendNoS3AccessError(OsparcErrorMixin, SchedulerError):
 
 
 class ComputationalBackendTaskNotFoundError(OsparcErrorMixin, SchedulerError):
-    code = "computational_backend.task_not_found"
+    code = "computational_backend.task_not_found"   # type: ignore
     msg_template = (
         "The dask computational backend does not know about the task '{job_id}'"
     )
 
 
 class ComputationalBackendTaskResultsNotReadyError(OsparcErrorMixin, SchedulerError):
-    code = "computational_backend.task_result_not_ready"
+    code = "computational_backend.task_result_not_ready"    # type: ignore
     msg_template = "The task result is not ready yet for job '{job_id}'"
 
 
 class ClustersKeeperNotAvailableError(OsparcErrorMixin, SchedulerError):
-    code = "computational_backend.clusters_keeper_not_available"
+    code = "computational_backend.clusters_keeper_not_available"    # type: ignore
     msg_template = "clusters-keeper service is not available!"
 
 
 class ComputationalBackendOnDemandNotReadyError(OsparcErrorMixin, SchedulerError):
-    code = "computational_backend.on_demand_cluster.not_ready"
+    code = "computational_backend.on_demand_cluster.not_ready"  # type: ignore
     msg_template = (
         "The on demand computational cluster is not ready 'est. remaining time: {eta}'"
     )
@@ -266,7 +265,7 @@ class ComputationalBackendOnDemandNotReadyError(OsparcErrorMixin, SchedulerError
 # SCHEDULER/CLUSTER ERRORS
 #
 class ClusterNotFoundError(OsparcErrorMixin, SchedulerError):
-    code = "cluster.not_found"
+    code = "cluster.not_found"  # type: ignore
     msg_template = "The cluster '{cluster_id}' not found"
 
 
@@ -284,24 +283,24 @@ class ClusterInvalidOperationError(OsparcErrorMixin, SchedulerError):
 
 
 class DaskClientRequestError(OsparcErrorMixin, SchedulerError):
-    code = "dask_client.request.error"
+    code = "dask_client.request.error"  # type: ignore
     msg_template = (
         "The dask client to cluster on '{endpoint}' did an invalid request '{error}'"
     )
 
 
 class DaskClusterError(OsparcErrorMixin, SchedulerError):
-    code = "cluster.error"
+    code = "cluster.error"  # type: ignore
     msg_template = "The dask cluster on '{endpoint}' encountered an error: '{error}'"
 
 
 class DaskGatewayServerError(OsparcErrorMixin, SchedulerError):
-    code = "gateway.error"
+    code = "gateway.error"  # type: ignore
     msg_template = "The dask gateway on '{endpoint}' encountered an error: '{error}'"
 
 
 class DaskClientAcquisisitonError(OsparcErrorMixin, SchedulerError):
-    code = "dask_client.acquisition.error"
+    code = "dask_client.acquisition.error"  # type: ignore
     msg_template = (
         "The dask client to cluster '{cluster}' encountered an error '{error}'"
     )

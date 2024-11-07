@@ -12,8 +12,10 @@ from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
 
 async def http422_error_handler(
     _: Request,
-    exc: Union[RequestValidationError, ValidationError],
+    exc: Exception,
 ) -> JSONResponse:
+    assert isinstance(exc, RequestValidationError | ValidationError)
+
     return JSONResponse(
         content=jsonable_encoder({"errors": exc.errors()}),
         status_code=HTTP_422_UNPROCESSABLE_ENTITY,
