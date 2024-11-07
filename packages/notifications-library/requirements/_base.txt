@@ -16,6 +16,10 @@ attrs==24.2.0
     #   referencing
 click==8.1.7
     # via typer
+deprecated==1.2.14
+    # via
+    #   opentelemetry-api
+    #   opentelemetry-semantic-conventions
 dnspython==2.6.1
     # via email-validator
 email-validator==2.2.0
@@ -26,6 +30,8 @@ idna==3.10
     # via
     #   email-validator
     #   yarl
+importlib-metadata==8.5.0
+    # via opentelemetry-api
 jinja2==3.1.4
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -54,6 +60,19 @@ mdurl==0.1.2
     # via markdown-it-py
 multidict==6.1.0
     # via yarl
+opentelemetry-api==1.28.0
+    # via
+    #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-asyncpg
+    #   opentelemetry-semantic-conventions
+opentelemetry-instrumentation==0.49b0
+    # via opentelemetry-instrumentation-asyncpg
+opentelemetry-instrumentation-asyncpg==0.49b0
+    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+opentelemetry-semantic-conventions==0.49b0
+    # via
+    #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-asyncpg
 orjson==3.10.7
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -61,6 +80,8 @@ orjson==3.10.7
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+packaging==24.1
+    # via opentelemetry-instrumentation
 psycopg2-binary==2.9.9
     # via sqlalchemy
 pydantic==1.10.18
@@ -109,5 +130,11 @@ typing-extensions==4.12.2
     #   alembic
     #   pydantic
     #   typer
+wrapt==1.16.0
+    # via
+    #   deprecated
+    #   opentelemetry-instrumentation
 yarl==1.12.1
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+zipp==3.20.2
+    # via importlib-metadata
