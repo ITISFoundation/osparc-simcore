@@ -20,19 +20,15 @@ def model_dump_with_secrets(
             data[field_name] = field_data.total_seconds()
 
         elif isinstance(field_data, SecretStr):
-            if show_secrets:
-                data[field_name] = field_data.get_secret_value()
-            else:
-                data[field_name] = str(field_data)
+            data[field_name] = field_data.get_secret_value() if show_secrets else str(field_data)
+
 
         elif isinstance(field_data, Url):
             data[field_name] = str(field_data)
 
         elif isinstance(field_data, dict):
             field_type = get_origin(settings_obj.model_fields[field_name].annotation)
-            if not field_type:
-                continue
-            if issubclass(field_type, BaseModel):
+            if field_type and issubclass(field_type, BaseModel):
                 data[field_name] = model_dump_with_secrets(
                     field_type.model_validate(field_data),
                     show_secrets=show_secrets,
