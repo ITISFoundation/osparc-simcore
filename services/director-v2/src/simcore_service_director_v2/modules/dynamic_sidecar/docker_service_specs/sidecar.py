@@ -3,6 +3,7 @@ from copy import deepcopy
 from typing import Any, NamedTuple
 
 from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
@@ -19,9 +20,6 @@ from pydantic import ByteSize, TypeAdapter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.efs_guardian import efs_manager
 from servicelib.utils import unused_port
-from settings_library.aws_s3_cli import AwsS3CliSettings
-from settings_library.docker_registry import RegistrySettings
-from settings_library.utils_encoders import create_json_encoder_wo_secrets
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.dynamic_services_settings.scheduler import (
@@ -101,8 +99,11 @@ def _get_environment_variables(
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS
         and app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS.AWS_S3_CLI_S3
     ):
-        dy_sidecar_aws_s3_cli_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS.json(
-            encoder=create_json_encoder_wo_secrets(AwsS3CliSettings),
+        dy_sidecar_aws_s3_cli_settings = json_dumps(
+            model_dump_with_secrets(
+                app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS,
+                show_secrets=True,
+            )
         )
 
     state_exclude = set()
@@ -133,7 +134,7 @@ def _get_environment_variables(
         "DY_SIDECAR_USER_SERVICES_HAVE_INTERNET_ACCESS": f"{allow_internet_access}",
         "DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE": f"{telemetry_enabled}",
         "DY_SIDECAR_STATE_EXCLUDE": json_dumps(f"{x}" for x in state_exclude),
-        "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.json(),
+        "DY_SIDECAR_CALLBACKS_MAPPING": callbacks_mapping.model_dump_json(),
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             f"{x}" for x in scheduler_data.paths_mapping.state_paths
         ),
@@ -157,14 +158,22 @@ def _get_environment_variables(
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
-        "DY_DEPLOYMENT_REGISTRY_SETTINGS": app_settings.DIRECTOR_V2_DOCKER_REGISTRY.json(
-            encoder=create_json_encoder_wo_secrets(RegistrySettings),
-            exclude={"resolved_registry_url", "api_url"},
+        "DY_DEPLOYMENT_REGISTRY_SETTINGS": (
+            json_dumps(
+                model_dump_with_secrets(
+                    app_settings.DIRECTOR_V2_DOCKER_REGISTRY,
+                    show_secrets=True,
+                    exclude={"resolved_registry_url", "api_url"},
+                )
+            )
         ),
         "DY_DOCKER_HUB_REGISTRY_SETTINGS": (
-            app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY.json(
-                encoder=create_json_encoder_wo_secrets(RegistrySettings),
-                exclude={"resolved_registry_url", "api_url"},
+            json_dumps(
+                model_dump_with_secrets(
+                    app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY,
+                    show_secrets=True,
+                    exclude={"resolved_registry_url", "api_url"},
+                )
             )
             if app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY
             else "null"
