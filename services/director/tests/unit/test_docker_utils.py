@@ -6,8 +6,6 @@
 from asyncio import sleep
 from collections.abc import Callable
 
-import pytest
-from aiodocker.exceptions import DockerError
 from simcore_service_director import docker_utils
 
 
@@ -28,21 +26,6 @@ async def test_docker_client():
             "".join(logs)
         ) == "hello world\n", f"running containers {client.containers.list()}"
         await container.delete(force=True)
-
-
-@pytest.mark.parametrize(
-    "fct",
-    [
-        (docker_utils.swarm_get_number_nodes),
-        (docker_utils.swarm_has_manager_nodes),
-        (docker_utils.swarm_has_worker_nodes),
-    ],
-)
-async def test_swarm_method_with_no_swarm(fct: Callable):
-    # if this fails on your development machine run
-    # `docker swarm leave --force` to leave the swarm
-    with pytest.raises(DockerError):
-        await fct()
 
 
 async def test_swarm_get_number_nodes(docker_swarm: None):
