@@ -396,7 +396,9 @@ def docker_stack(
 
 @pytest.fixture
 async def docker_network(
-    async_docker_client: aiodocker.Docker, faker: Faker
+    docker_swarm: None,
+    async_docker_client: aiodocker.Docker,
+    faker: Faker,
 ) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
     networks = []
 
