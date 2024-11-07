@@ -46,15 +46,13 @@ class Solver(BaseModel):
 
     # Human readables Identifiers
     title: str = Field(..., description="Human readable name")
-    description: str = None  # TODO: should be nullable
+    description: str | None = None
     maintainer: str
     # TODO: consider released: Optional[datetime]   required?
     # TODO: consider version_aliases: list[str] = []  # remaining tags
 
     # Get links to other resources
-    url: HttpUrl = Field(
-        ..., description="Link to get this resource"
-    )  # TODO: should be nullable
+    url: HttpUrl | None = Field(..., description="Link to get this resource")
     model_config = ConfigDict(
         extra="ignore",
         json_schema_extra={
@@ -120,10 +118,10 @@ class SolverPort(BaseModel):
         title="Key name",
     )
     kind: PortKindStr
-    content_schema: dict[str, Any] = Field(
+    content_schema: dict[str, Any] | None = Field(
         None,
         description="jsonschema for the port's value. SEE https://json-schema.org",
-    )  # TODO: should be nullable
+    )
     model_config = ConfigDict(
         extra="ignore",
         json_schema_extra={
