@@ -120,12 +120,12 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       osparc.store.Services.patchServiceData(this._serializedDataCopy, "accessRights", this._serializedDataCopy["accessRights"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Member successfully removed"));
+          osparc.FlashMessenger.getInstance().logAs(collaborator["name"] + this.tr(" successfully removed"));
           this._reloadCollaboratorsList();
         })
         .catch(err => {
           console.error(err);
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Member"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing ") + collaborator["name"], "ERROR");
         })
         .finally(() => {
           if (item) {
@@ -154,8 +154,8 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
-        this.tr("Viewer successfully made Editor"),
-        this.tr("Something went wrong making Viewer Editor"),
+        this.tr(`Successfully promoted to ${osparc.data.Roles.SERVICE[2].label}`),
+        this.tr(`Something went wrong promoting to ${osparc.data.Roles.SERVICE[2].label}`),
         item
       );
     },
@@ -168,8 +168,8 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr("Editor successfully made Viewer"),
-        this.tr("Something went wrong making Editor Viewer"),
+        this.tr(`Successfully demoted to ${osparc.data.Roles.SERVICE[1].label}`),
+        this.tr(`Something went wrong demoting ${osparc.data.Roles.SERVICE[1].label}`),
         item
       );
     },
