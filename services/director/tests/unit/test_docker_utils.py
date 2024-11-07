@@ -4,7 +4,6 @@
 # pylint:disable=too-many-arguments
 # pylint: disable=not-async-context-manager
 from asyncio import sleep
-from collections.abc import Callable
 
 from simcore_service_director import docker_utils
 
@@ -39,12 +38,3 @@ async def test_swarm_has_manager_nodes(docker_swarm: None):
 
 async def test_swarm_has_worker_nodes(docker_swarm: None):
     assert (await docker_utils.swarm_has_worker_nodes()) is False
-
-
-async def test_push_services(
-    push_services: Callable,
-    configure_registry_access: None,
-):
-    await push_services(
-        number_of_computational_services=3, number_of_interactive_services=3
-    )
