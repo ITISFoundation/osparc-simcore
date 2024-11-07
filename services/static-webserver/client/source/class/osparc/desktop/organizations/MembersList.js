@@ -322,7 +322,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       };
       osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
-          const text = orgMemberEmail + this.tr(" successfully added.");
+          const text = orgMemberEmail + this.tr(" successfully added");
           if (productEveryone && productEveryone["gid"] === parseInt(orgId)) {
             // demote the new member to user
             const params2 = {
