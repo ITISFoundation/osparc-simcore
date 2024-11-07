@@ -13,6 +13,7 @@ class PricingInfo(BaseModel):
     pricing_unit_id: PricingUnitId
     pricing_unit_cost_id: PricingUnitCostId
     pricing_unit_cost: Decimal
+
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
@@ -20,7 +21,7 @@ class PricingInfo(BaseModel):
                     "pricing_plan_id": 1,
                     "pricing_unit_id": 1,
                     "pricing_unit_cost_id": 1,
-                    "pricing_unit_cost": Decimal(10),
+                    "pricing_unit_cost": Decimal(10),   # type: ignore
                 }
             ]
         }
