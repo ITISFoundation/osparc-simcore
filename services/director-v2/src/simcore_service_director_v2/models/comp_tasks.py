@@ -225,7 +225,7 @@ class CompTaskAtDB(BaseModel):
                         }
                     },
                     "image": image_example,
-                    "submit": "2021-03-01 13:07:34.19161",
+                    "submit": "2021-03-01T13:07:34.19161",
                     "node_class": "INTERACTIVE",
                     "state": "NOT_STARTED",
                     "progress": 0.44,
