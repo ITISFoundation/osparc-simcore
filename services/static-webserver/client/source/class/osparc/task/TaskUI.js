@@ -118,6 +118,7 @@ qx.Class.define("osparc.task.TaskUI", {
       stopButton.addListener("tap", () => {
         const msg = this.tr("Are you sure you want to cancel the task?");
         const win = new osparc.ui.window.Confirmation(msg).set({
+          caption: this.tr("Cancel Task"),
           confirmText: this.tr("Cancel"),
           confirmAction: "delete"
         });

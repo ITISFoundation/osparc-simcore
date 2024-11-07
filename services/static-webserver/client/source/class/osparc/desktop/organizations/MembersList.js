@@ -79,6 +79,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
   members: {
     __currentOrg: null,
+    __introLabel: null,
     __memberInvitation: null,
     __membersModel: null,
 
@@ -91,9 +92,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
     },
 
     __createIntroText: function() {
-      const msg = this.tr("If you are a manager or administrator, you can add new members and promote or demote existing ones.");
-      const intro = new qx.ui.basic.Label().set({
-        value: msg,
+      const intro = this.__introLabel = new qx.ui.basic.Label().set({
         alignX: "left",
         rich: true,
         font: "text-13"
@@ -105,7 +104,6 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
       const hBox = this.__memberInvitation = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
         alignY: "middle"
       }));
-      hBox.exclude();
 
       const userEmail = new qx.ui.form.TextField().set({
         required: true,
@@ -217,8 +215,14 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
 
       const canIWrite = orgModel.getAccessRights().getWrite();
       const canIDelete = orgModel.getAccessRights().getDelete();
+
+      const introText = canIWrite ?
+        this.tr("You can add new members and promote or demote existing ones.") :
+        this.tr("You can't add new members to this Organization. Please contact an Administrator or Manager.");
+      this.__introLabel.setValue(introText);
+
       this.__memberInvitation.set({
-        visibility: canIWrite ? "visible" : "excluded"
+        enabled: canIWrite
       });
 
       const params = {
@@ -567,6 +571,7 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           }
           rUSure += "<br><br>" + this.tr("If you Leave, the page will be reloaded.");
           const confirmationWin = new osparc.ui.window.Confirmation(rUSure).set({
+            caption: this.tr("Leave Organization"),
             confirmText: this.tr("Leave"),
             confirmAction: "delete"
           });

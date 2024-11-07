@@ -70,7 +70,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
       const servicesModel = this.__servicesModel = new qx.data.Array();
       const servicesCtrl = new qx.data.controller.List(servicesModel, servicesUIList, "name");
       servicesCtrl.setDelegate({
-        createItem: () => new osparc.desktop.organizations.SharedResourceListItem(),
+        createItem: () => new osparc.desktop.organizations.SharedResourceListItem("service"),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("key", "model", null, item, id);
           ctrl.bindProperty("key", "key", null, item, id);

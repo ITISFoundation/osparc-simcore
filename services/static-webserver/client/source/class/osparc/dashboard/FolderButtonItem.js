@@ -197,7 +197,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       menu.addSeparator();
 
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
-      deleteButton.addListener("execute", () => this.__deleteStudyRequested(), this);
+      deleteButton.addListener("execute", () => this.__deleteFolderRequested(), this);
       menu.add(deleteButton);
 
       menuButton.setMenu(menu);
@@ -237,9 +237,10 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       folderEditor.addListener("cancel", () => win.close());
     },
 
-    __deleteStudyRequested: function() {
+    __deleteFolderRequested: function() {
       const msg = this.tr("Are you sure you want to delete") + " <b>" + this.getTitle() + "</b>?";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete Folder"),
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });
