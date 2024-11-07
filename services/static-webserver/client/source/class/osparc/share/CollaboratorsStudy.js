@@ -196,8 +196,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`${osparc.data.Roles.STUDY[1].label} successfully changed ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[1].label} to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`Something went wrong promoting to ${osparc.data.Roles.STUDY[2].label}`),
         item
       );
     },
@@ -206,8 +206,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       this.__make(
         collaborator["gid"],
         this.self().getOwnerAccessRight(),
-        this.tr(`${osparc.data.Roles.STUDY[2].label} successfully changed to ${osparc.data.Roles.STUDY[3].label}`),
-        this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[2].label} to ${osparc.data.Roles.STUDY[3].label}`),
+        this.tr(`Successfully promoted to ${osparc.data.Roles.STUDY[3].label}`),
+        this.tr(`Something went wrong promoting to ${osparc.data.Roles.STUDY[3].label}`),
         item
       );
     },
@@ -218,8 +218,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         this.__make(
           gid,
           this.self().getViewerAccessRight(),
-          this.tr(`${osparc.data.Roles.STUDY[2].label} successfully changed to ${osparc.data.Roles.STUDY[1].label}`),
-          this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[2].label} to ${osparc.data.Roles.STUDY[1].label}`),
+          this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[1].label}`),
+          this.tr(`Something went wrong demoting to ${osparc.data.Roles.STUDY[1].label}`),
           itm
         );
       };
@@ -249,8 +249,8 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       this.__make(
         collaborator["gid"],
         this.self().getCollaboratorAccessRight(),
-        this.tr(`${osparc.data.Roles.STUDY[3].label} successfully changed to ${osparc.data.Roles.STUDY[2].label}`),
-        this.tr(`Something went wrong changing ${osparc.data.Roles.STUDY[3].label} to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`Successfully demoted to ${osparc.data.Roles.STUDY[2].label}`),
+        this.tr(`Something went wrong demoting to ${osparc.data.Roles.STUDY[2].label}`),
         item
       );
     },
