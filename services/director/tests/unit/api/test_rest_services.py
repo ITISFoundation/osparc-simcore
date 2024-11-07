@@ -9,10 +9,12 @@ import httpx
 from fastapi import status
 from fixtures.fake_services import ServiceInRegistryInfoDict
 from models_library.api_schemas_director.services import ServiceDataGet
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 
 def _assert_response_and_unwrap_envelope(got: httpx.Response):
-    assert got.encoding == "application/json"
+    assert got.headers["content-type"] == "application/json"
+    assert got.encoding == "utf-8"
 
     body = got.json()
     assert isinstance(body, dict)
@@ -43,6 +45,7 @@ def _assert_services(
 
 async def test_list_services_with_empty_registry(
     docker_registry: str,
+    configure_registry_access: EnvVarsDict,
     client: httpx.AsyncClient,
     api_version_prefix: str,
 ):
@@ -52,7 +55,7 @@ async def test_list_services_with_empty_registry(
     resp = await client.get(f"/{api_version_prefix}/services")
     assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
-    services, error = _assert_response_and_unwrap_envelope(resp.json())
+    services, error = _assert_response_and_unwrap_envelope(resp)
     assert not error
     assert isinstance(services, list)
 
@@ -61,6 +64,7 @@ async def test_list_services_with_empty_registry(
 
 async def test_list_services(
     docker_registry: str,
+    configure_registry_access: EnvVarsDict,
     client: httpx.AsyncClient,
     created_services: list[ServiceInRegistryInfoDict],
     api_version_prefix: str,
@@ -70,7 +74,7 @@ async def test_list_services(
     resp = await client.get(f"/{api_version_prefix}/services")
     assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
-    services, error = _assert_response_and_unwrap_envelope(resp.json())
+    services, error = _assert_response_and_unwrap_envelope(resp)
     assert not error
     assert isinstance(services, list)
 
@@ -79,6 +83,7 @@ async def test_list_services(
 
 async def test_get_service_bad_request(
     docker_registry: str,
+    configure_registry_access: EnvVarsDict,
     client: httpx.AsyncClient,
     created_services: list[ServiceInRegistryInfoDict],
     api_version_prefix: str,
@@ -87,15 +92,16 @@ async def test_get_service_bad_request(
     assert len(created_services) > 0
 
     resp = await client.get(f"/{api_version_prefix}/services?service_type=blahblah")
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST, f"Got f{resp.text}"
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got f{resp.text}"
 
-    services, error = _assert_response_and_unwrap_envelope(resp.json())
+    services, error = _assert_response_and_unwrap_envelope(resp)
     assert not services
     assert error
 
 
 async def test_list_services_by_service_type(
     docker_registry: str,
+    configure_registry_access: EnvVarsDict,
     client: httpx.AsyncClient,
     created_services: list[ServiceInRegistryInfoDict],
     api_version_prefix: str,
@@ -108,7 +114,7 @@ async def test_list_services_by_service_type(
     )
     assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
-    services, error = _assert_response_and_unwrap_envelope(resp.json())
+    services, error = _assert_response_and_unwrap_envelope(resp)
     assert not error
     assert services
     assert len(services) == 3
@@ -116,17 +122,19 @@ async def test_list_services_by_service_type(
     resp = await client.get(f"/{api_version_prefix}/services?service_type=interactive")
     assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
-    services, error = _assert_response_and_unwrap_envelope(resp.json())
+    services, error = _assert_response_and_unwrap_envelope(resp)
     assert not error
     assert services
     assert len(services) == 2
 
 
 async def test_get_services_by_key_and_version_with_empty_registry(
-    client: httpx.AsyncClient, api_version_prefix: str
+    configure_registry_access: EnvVarsDict,
+    client: httpx.AsyncClient,
+    api_version_prefix: str,
 ):
     resp = await client.get(f"/{api_version_prefix}/services/whatever/someversion")
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST, f"Got f{resp.text}"
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got f{resp.text}"
 
     resp = await client.get(
         f"/{api_version_prefix}/services/simcore/services/dynamic/something/someversion"
@@ -140,6 +148,7 @@ async def test_get_services_by_key_and_version_with_empty_registry(
 
 
 async def test_get_services_by_key_and_version(
+    configure_registry_access: EnvVarsDict,
     client: httpx.AsyncClient,
     created_services: list[ServiceInRegistryInfoDict],
     api_version_prefix: str,
@@ -158,7 +167,7 @@ async def test_get_services_by_key_and_version(
 
         assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
-        services, error = _assert_response_and_unwrap_envelope(resp.json())
+        services, error = _assert_response_and_unwrap_envelope(resp)
         assert not error
         assert isinstance(services, list)
         assert len(services) == 1
@@ -169,6 +178,7 @@ async def test_get_services_by_key_and_version(
 
 
 async def test_get_service_labels(
+    configure_registry_access: EnvVarsDict,
     client: httpx.AsyncClient,
     created_services: list[ServiceInRegistryInfoDict],
     api_version_prefix: str,
@@ -185,7 +195,7 @@ async def test_get_service_labels(
         resp = await client.get(url)
         assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
-        labels, error = _assert_response_and_unwrap_envelope(resp.json())
+        labels, error = _assert_response_and_unwrap_envelope(resp)
         assert not error
 
         assert service["docker_labels"] == labels
