@@ -185,6 +185,7 @@ async def test_find_service_tag():
 
 
 async def test_start_stop_service(
+    configure_registry_access: EnvVarsDict,
     configured_docker_network: EnvVarsDict,
     run_services: Callable[..., Awaitable[list[dict[str, Any]]]],
 ):
@@ -193,6 +194,7 @@ async def test_start_stop_service(
 
 
 async def test_service_assigned_env_variables(
+    configure_registry_access: EnvVarsDict,
     configured_docker_network: EnvVarsDict,
     run_services: Callable[..., Awaitable[list[dict[str, Any]]]],
     user_id: UserID,
@@ -236,6 +238,7 @@ async def test_service_assigned_env_variables(
 
 
 async def test_interactive_service_published_port(
+    configure_registry_access: EnvVarsDict,
     configured_docker_network: EnvVarsDict,
     run_services,
 ):
@@ -264,6 +267,7 @@ async def test_interactive_service_published_port(
 
 
 async def test_interactive_service_in_correct_network(
+    configure_registry_access: EnvVarsDict,
     with_docker_network: dict[str, Any],
     configured_docker_network: EnvVarsDict,
     run_services,
@@ -288,6 +292,7 @@ async def test_interactive_service_in_correct_network(
 
 
 async def test_dependent_services_have_common_network(
+    configure_registry_access: EnvVarsDict,
     configured_docker_network: EnvVarsDict,
     run_services,
 ):
@@ -339,6 +344,7 @@ def registry_settings(app_settings: ApplicationSettings) -> RegistrySettings:
     ],
 )
 async def test_get_service_key_version_from_docker_service(
+    configure_registry_access: EnvVarsDict,
     registry_settings: RegistrySettings,
     fake_service: FakeDockerService,
 ):
@@ -371,6 +377,7 @@ async def test_get_service_key_version_from_docker_service(
     ],
 )
 async def test_get_service_key_version_from_docker_service_except_invalid_keys(
+    configure_registry_access: EnvVarsDict,
     registry_settings: RegistrySettings,
     fake_service_str: str,
 ):
