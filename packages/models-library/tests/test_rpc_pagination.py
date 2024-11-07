@@ -2,11 +2,10 @@ from typing import Any
 
 import pytest
 from models_library.rpc_pagination import PageRpc
+from shared_examples import RPC_PAGE_EXAMPLES
 
 
-@pytest.mark.parametrize(
-    "example", PageRpc.model_config["json_schema_extra"]["examples"]
-)
+@pytest.mark.parametrize("example", RPC_PAGE_EXAMPLES)
 def test_create_page_rpc(example: dict[str, Any]):
 
     expected = PageRpc.model_validate(example)

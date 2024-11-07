@@ -35,6 +35,15 @@ class ModelExample(NamedTuple):
     example_data: Any
 
 
+def iter_examples(
+    *, model_cls: type[BaseModel], examples: list[Any]
+) -> Iterator[ModelExample]:
+    for k, data in enumerate(examples):
+        yield ModelExample(
+            model_cls=model_cls, example_name=f"example_{k}", example_data=data
+        )
+
+
 def walk_model_examples_in_package(package: ModuleType) -> Iterator[ModelExample]:
     """Walks recursively all sub-modules and collects BaseModel.Config examples"""
     assert inspect.ismodule(package)
