@@ -15,6 +15,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    NonNegativeInt,
     StringConstraints,
     TypeAdapter,
     ValidationInfo,
@@ -32,9 +33,7 @@ class ClientFile(BaseModel):
     """Represents a file stored on the client side"""
 
     filename: FileName = Field(..., description="File name")
-    filesize: int = Field(
-        ..., description="File size in bytes"
-    )  # TODO: should probably be a NonNegativeInt
+    filesize: NonNegativeInt = Field(..., description="File size in bytes")
     sha256_checksum: SHA256Str = Field(..., description="SHA256 checksum")
 
 
@@ -47,19 +46,17 @@ class File(BaseModel):
     id: UUID = Field(..., description="Resource identifier")  # noqa: A003
 
     filename: str = Field(..., description="Name of the file with extension")
-    content_type: str = Field(
+    content_type: str | None = Field(
         default=None,
         description="Guess of type content [EXPERIMENTAL]",
         validate_default=True,
-    )  # TODO: should be nullable
-    sha256_checksum: SHA256Str = Field(
+    )
+    sha256_checksum: SHA256Str | None = Field(
         default=None,
         description="SHA256 hash of the file's content",
         alias="checksum",  # alias for backwards compatibility
-    )  # TODO: should be nullable
-    e_tag: ETag = Field(
-        default=None, description="S3 entity tag"
-    )  # TODO: should be nullable
+    )
+    e_tag: ETag | None = Field(default=None, description="S3 entity tag")
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -169,7 +166,7 @@ class UploadLinks(BaseModel):
 
 
 class FileUploadData(BaseModel):
-    chunk_size: int  # TODO: should probably be a NonNegativeInt
+    chunk_size: NonNegativeInt
     urls: list[
         Annotated[AnyUrl, StringConstraints(max_length=65536)]
     ]  # maxlength added for backwards compatibility
