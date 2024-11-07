@@ -117,6 +117,8 @@ docker==7.1.0
     #   -r requirements/_test.in
 email-validator==2.2.0
     # via pydantic
+faker==30.8.2
+    # via -r requirements/_test.in
 fast-depends==2.4.12
     # via faststream
 faststream==0.5.28
@@ -197,6 +199,10 @@ opentelemetry-api==1.27.0
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aiopg
+    #   opentelemetry-instrumentation-asyncpg
+    #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
@@ -213,7 +219,22 @@ opentelemetry-exporter-otlp-proto-grpc==1.27.0
 opentelemetry-exporter-otlp-proto-http==1.27.0
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.48b0
-    # via opentelemetry-instrumentation-requests
+    # via
+    #   opentelemetry-instrumentation-aiopg
+    #   opentelemetry-instrumentation-asyncpg
+    #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-redis
+    #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-aiopg==0.48b0
+    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+opentelemetry-instrumentation-asyncpg==0.48b0
+    # via -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+opentelemetry-instrumentation-dbapi==0.48b0
+    # via opentelemetry-instrumentation-aiopg
+opentelemetry-instrumentation-redis==0.48b0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-requests==0.48b0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -231,6 +252,9 @@ opentelemetry-sdk==1.27.0
     #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-semantic-conventions==0.48b0
     # via
+    #   opentelemetry-instrumentation-asyncpg
+    #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
 opentelemetry-util-http==0.48b0
@@ -343,7 +367,9 @@ pytest-runner==6.0.1
 pytest-sugar==1.0.0
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
-    # via arrow
+    # via
+    #   arrow
+    #   faker
 python-dotenv==1.0.1
     # via -r requirements/_test.in
 pyyaml==6.0.2
@@ -465,6 +491,7 @@ typing-extensions==4.12.2
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   aiodebug
     #   alembic
+    #   faker
     #   faststream
     #   flexcache
     #   flexparser
@@ -494,6 +521,9 @@ wrapt==1.16.0
     # via
     #   deprecated
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aiopg
+    #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-redis
 yarl==1.12.1
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
