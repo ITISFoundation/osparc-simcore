@@ -32,7 +32,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-from . import docker_utils, exceptions, registry_proxy
+from . import docker_utils, registry_proxy
 from .client_session import get_client_session
 from .constants import (
     CPU_RESOURCE_LIMIT_KEY,
@@ -41,8 +41,16 @@ from .constants import (
     SERVICE_RUNTIME_BOOTSETTINGS,
     SERVICE_RUNTIME_SETTINGS,
 )
+from .core.errors import (
+    DirectorRuntimeError,
+    GenericDockerError,
+    ServiceNotAvailableError,
+    ServiceStartTimeoutError,
+    ServiceStateSaveError,
+    ServiceUUIDInUseError,
+    ServiceUUIDNotFoundError,
+)
 from .core.settings import ApplicationSettings, get_application_settings
-from .exceptions import ServiceStateSaveError
 from .instrumentation import get_instrumentation
 from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
@@ -78,19 +86,18 @@ async def _check_node_uuid_available(
                 "label": f"{_to_simcore_runtime_docker_label_key('node_id')}={node_uuid}"
             }
         )
-    except aiodocker.exceptions.DockerError as err:
-        log.exception("Error while retrieving services list")
+    except aiodocker.DockerError as err:
         msg = "Error while retrieving services"
-        raise exceptions.GenericDockerError(msg, err) from err
+        raise GenericDockerError(err=msg) from err
     if list_of_running_services_w_uuid:
-        raise exceptions.ServiceUUIDInUseError(node_uuid)
+        raise ServiceUUIDInUseError(service_uuid=node_uuid)
     log.debug("UUID %s is free", node_uuid)
 
 
 def _check_setting_correctness(setting: dict) -> None:
     if "name" not in setting or "type" not in setting or "value" not in setting:
         msg = f"Invalid setting in {setting}"
-        raise exceptions.DirectorException(msg)
+        raise DirectorRuntimeError(msg=msg)
 
 
 def _parse_mount_settings(settings: list[dict]) -> list[dict]:
@@ -516,7 +523,7 @@ async def _get_swarm_network(
         if "swarm" in x["Scope"] and network_name in x["Name"]
     ]
     if not networks or len(networks) > 1:
-        raise exceptions.DirectorException(
+        raise DirectorRuntimeError(
             msg=(
                 "Swarm network name is not configured, found following networks "
                 "(if there is more then 1 network, remove the one which has no "
@@ -614,10 +621,9 @@ async def _create_overlay_network_in_swarm(
             node_uuid,
         )
         return cast(str, docker_network.id)
-    except aiodocker.exceptions.DockerError as err:
-        log.exception("Error while creating network for service %s", service_name)
+    except aiodocker.DockerError as err:
         msg = "Error while creating network"
-        raise exceptions.GenericDockerError(msg, err) from err
+        raise GenericDockerError(err=msg) from err
 
 
 async def _remove_overlay_network_of_swarm(
@@ -640,12 +646,9 @@ async def _remove_overlay_network_of_swarm(
             docker_network = aiodocker.networks.DockerNetwork(client, network["Id"])
             await docker_network.delete()
         log.debug("Removed %s networks with uuid %s", len(networks), node_uuid)
-    except aiodocker.exceptions.DockerError as err:
-        log.exception(
-            "Error while removing networks for service with uuid: %s", node_uuid
-        )
+    except aiodocker.DockerError as err:
         msg = "Error while removing networks"
-        raise exceptions.GenericDockerError(msg, err) from err
+        raise GenericDockerError(err=msg) from err
 
 
 async def _get_service_state(
@@ -738,7 +741,9 @@ async def _wait_until_service_running_or_failed(
                 log.error(
                     "Error while waiting for service with %s", last_task["Status"]
                 )
-                raise exceptions.ServiceStartTimeoutError(service_name, node_uuid)
+                raise ServiceStartTimeoutError(
+                    service_name=service_name, service_uuid=node_uuid
+                )
             if task_state in ("running", "complete"):
                 break
         # allows dealing with other events instead of wasting time here
@@ -753,7 +758,7 @@ async def _get_repos_from_key(app: FastAPI, service_key: str) -> dict[str, list[
     }
     log.debug("entries %s", list_of_images)
     if not list_of_images[service_key]:
-        raise exceptions.ServiceNotAvailableError(service_key)
+        raise ServiceNotAvailableError(service_name=service_key)
 
     log.debug(
         "Service %s has the following list of images available: %s",
@@ -790,7 +795,7 @@ async def _find_service_tag(
     list_of_images: dict, service_key: str, service_tag: str | None
 ) -> str:
     if service_key not in list_of_images:
-        raise exceptions.ServiceNotAvailableError(
+        raise ServiceNotAvailableError(
             service_name=service_key, service_tag=service_tag
         )
     # filter incorrect chars
@@ -799,13 +804,15 @@ async def _find_service_tag(
     available_tags_list = sorted(filtered_tags_list, key=Version)
     # not tags available... probably an undefined service there...
     if not available_tags_list:
-        raise exceptions.ServiceNotAvailableError(service_key, service_tag)
+        raise ServiceNotAvailableError(
+            service_name=service_key, service_tag=service_tag
+        )
     tag = service_tag
     if not service_tag or service_tag == "latest":
         # get latest tag
         tag = available_tags_list[len(available_tags_list) - 1]
     elif available_tags_list.count(service_tag) != 1:
-        raise exceptions.ServiceNotAvailableError(
+        raise ServiceNotAvailableError(
             service_name=service_key, service_tag=service_tag
         )
 
@@ -854,7 +861,7 @@ async def _start_docker_service(
         if "ID" not in service:
             # error while starting service
             msg = f"Error while starting service: {service!s}"
-            raise exceptions.DirectorException(msg)
+            raise DirectorRuntimeError(msg=msg)
         log.debug("Service started now waiting for it to run")
 
         # get the full info from docker
@@ -903,18 +910,20 @@ async def _start_docker_service(
             "project_id": project_id,
         }
 
-    except exceptions.ServiceStartTimeoutError:
+    except ServiceStartTimeoutError:
         log.exception("Service failed to start")
         await _silent_service_cleanup(app, node_uuid)
         raise
-    except aiodocker.exceptions.DockerError as err:
+    except aiodocker.DockerError as err:
         log.exception("Unexpected error")
         await _silent_service_cleanup(app, node_uuid)
-        raise exceptions.ServiceNotAvailableError(service_key, service_tag) from err
+        raise ServiceNotAvailableError(
+            service_name=service_key, service_tag=service_tag
+        ) from err
 
 
 async def _silent_service_cleanup(app: FastAPI, node_uuid: str) -> None:
-    with contextlib.suppress(exceptions.DirectorException):
+    with contextlib.suppress(DirectorRuntimeError):
         await stop_service(app, node_uuid=node_uuid, save_state=False)
 
 
@@ -971,7 +980,7 @@ async def _get_service_key_version_from_docker_service(
 ) -> tuple[str, str]:
     service_full_name = str(service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"])
     if not service_full_name.startswith(registry_settings.resolved_registry_url):
-        raise exceptions.DirectorException(
+        raise DirectorRuntimeError(
             msg=f"Invalid service '{service_full_name}', it is missing {registry_settings.resolved_registry_url}"
         )
 
@@ -980,7 +989,7 @@ async def _get_service_key_version_from_docker_service(
     ].strip("/")
     service_re_match = _SERVICE_KEY_REGEX.match(service_full_name)
     if not service_re_match:
-        raise exceptions.DirectorException(
+        raise DirectorRuntimeError(
             msg=f"Invalid service '{service_full_name}', it does not follow pattern '{_SERVICE_KEY_REGEX.pattern}'"
         )
     service_key = service_re_match.group("key")
@@ -1125,14 +1134,9 @@ async def get_services_details(
                 await _get_node_details(app, client, dict(service))
                 for service in list_running_services
             ]
-        except aiodocker.exceptions.DockerError as err:
-            log.exception(
-                "Error while listing services with user_id, study_id %s, %s",
-                user_id,
-                study_id,
-            )
-            msg = "Error while accessing container"
-            raise exceptions.GenericDockerError(msg, err) from err
+        except aiodocker.DockerError as err:
+            msg = f"Error while accessing container for {user_id=}, {study_id=}"
+            raise GenericDockerError(err=msg) from err
 
 
 async def get_service_details(app: FastAPI, node_uuid: str) -> dict:
@@ -1150,21 +1154,20 @@ async def get_service_details(app: FastAPI, node_uuid: str) -> dict:
             )
             # error if no service with such an id exists
             if not list_running_services_with_uuid:
-                raise exceptions.ServiceUUIDNotFoundError(node_uuid)
+                raise ServiceUUIDNotFoundError(service_uuid=node_uuid)
 
             if len(list_running_services_with_uuid) > 1:
                 # someone did something fishy here
-                raise exceptions.DirectorException(
+                raise DirectorRuntimeError(
                     msg="More than one docker service is labeled as main service"
                 )
 
             return await _get_node_details(
                 app, client, dict(list_running_services_with_uuid[0])
             )
-        except aiodocker.exceptions.DockerError as err:
-            log.exception("Error while accessing container with uuid: %s", node_uuid)
-            msg = "Error while accessing container"
-            raise exceptions.GenericDockerError(msg, err) from err
+        except aiodocker.DockerError as err:
+            msg = f"Error while accessing container {node_uuid=}"
+            raise GenericDockerError(err=msg) from err
 
 
 @retry(
@@ -1232,14 +1235,13 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
                     ]
                 }
             )
-        except aiodocker.exceptions.DockerError as err:
-            log.exception("Error while stopping container with uuid: %s", node_uuid)
-            msg = "Error while stopping container"
-            raise exceptions.GenericDockerError(msg, err) from err
+        except aiodocker.DockerError as err:
+            msg = f"Error while stopping container {node_uuid=}"
+            raise GenericDockerError(err=msg) from err
 
         # error if no service with such an id exists
         if not list_running_services_with_uuid:
-            raise exceptions.ServiceUUIDNotFoundError(node_uuid)
+            raise ServiceUUIDNotFoundError(service_uuid=node_uuid)
 
         log.debug("found service(s) with uuid %s", list_running_services_with_uuid)
 
@@ -1268,7 +1270,7 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
                 )
             except ClientResponseError as err:
                 raise ServiceStateSaveError(
-                    node_uuid,
+                    service_uuid=node_uuid,
                     reason=f"service {service_host_name} rejected to save state, "
                     f"responded {err.message} (status {err.status})."
                     "Aborting stop service to prevent data loss.",
@@ -1289,9 +1291,9 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
                 log.debug("removing %s", service["Spec"]["Name"])
                 await client.services.delete(service["Spec"]["Name"])
 
-        except aiodocker.exceptions.DockerError as err:
-            msg = "Error while removing services"
-            raise exceptions.GenericDockerError(msg, err) from err
+        except aiodocker.DockerError as err:
+            msg = f"Error while removing services {node_uuid=}"
+            raise GenericDockerError(err=msg) from err
 
         # remove network(s)
         log.debug("removed services, now removing network...")

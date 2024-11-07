@@ -8,7 +8,8 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import BaseModel
 from servicelib.fastapi.dependencies import get_app
 
-from ... import exceptions, registry_proxy
+from ... import registry_proxy
+from ...core.errors import RegistryConnectionError, ServiceNotAvailableError
 
 router = APIRouter()
 
@@ -59,7 +60,7 @@ async def list_services(
         # NOTE2: the catalog will directly talk to the registry see case #2165 [https://github.com/ITISFoundation/osparc-simcore/issues/2165]
         # services = node_validator.validate_nodes(services)
         return Envelope[list[dict[str, Any]]](data=services)
-    except exceptions.RegistryConnectionError as err:
+    except RegistryConnectionError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
         ) from err
@@ -83,12 +84,12 @@ async def list_service_labels(
         )
         return Envelope[dict[str, Any]](data=service_labels)
 
-    except exceptions.ServiceNotAvailableError as err:
+    except ServiceNotAvailableError as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
         ) from err
 
-    except exceptions.RegistryConnectionError as err:
+    except RegistryConnectionError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
         ) from err
@@ -112,11 +113,11 @@ async def get_service(
             )
         ]
         return Envelope[list[dict[str, Any]]](data=services)
-    except exceptions.ServiceNotAvailableError as err:
+    except ServiceNotAvailableError as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
         ) from err
-    except exceptions.RegistryConnectionError as err:
+    except RegistryConnectionError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
         ) from err

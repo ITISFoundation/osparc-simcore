@@ -10,7 +10,13 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
 
-from ... import exceptions, producer
+from ... import producer
+from ...core.errors import (
+    RegistryConnectionError,
+    ServiceNotAvailableError,
+    ServiceUUIDInUseError,
+    ServiceUUIDNotFoundError,
+)
 
 router = APIRouter()
 
@@ -72,15 +78,15 @@ async def start_service(
             x_simcore_user_agent,
         )
         return Envelope[dict[str, Any]](data=service)
-    except exceptions.ServiceNotAvailableError as err:
+    except ServiceNotAvailableError as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
         ) from err
-    except exceptions.ServiceUUIDInUseError as err:
+    except ServiceUUIDInUseError as err:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=f"{err}"
         ) from err
-    except exceptions.RegistryConnectionError as err:
+    except RegistryConnectionError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
         ) from err
@@ -98,7 +104,7 @@ async def get_running_service(
     try:
         service = await producer.get_service_details(the_app, f"{service_uuid}")
         return Envelope[dict[str, Any]](data=service)
-    except exceptions.ServiceUUIDNotFoundError as err:
+    except ServiceUUIDNotFoundError as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
         ) from err
@@ -122,7 +128,7 @@ async def stop_service(
             the_app, node_uuid=f"{service_uuid}", save_state=save_state
         )
 
-    except exceptions.ServiceUUIDNotFoundError as err:
+    except ServiceUUIDNotFoundError as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
         ) from err

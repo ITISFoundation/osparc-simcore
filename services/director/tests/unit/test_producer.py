@@ -18,10 +18,15 @@ from models_library.users import UserID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.docker_registry import RegistrySettings
-from simcore_service_director import exceptions, producer
+from simcore_service_director import producer
 from simcore_service_director.constants import (
     CPU_RESOURCE_LIMIT_KEY,
     MEM_RESOURCE_LIMIT_KEY,
+)
+from simcore_service_director.core.errors import (
+    DirectorRuntimeError,
+    ServiceNotAvailableError,
+    ServiceUUIDNotFoundError,
 )
 from simcore_service_director.core.settings import ApplicationSettings
 from tenacity import Retrying
@@ -73,7 +78,7 @@ async def run_services(
             service_entry_point = pushed_service["entry_point"]
             service_uuid = str(uuid.uuid1())
             service_basepath = "/my/base/path"
-            with pytest.raises(exceptions.ServiceUUIDNotFoundError):
+            with pytest.raises(ServiceUUIDNotFoundError):
                 await producer.get_service_details(app, service_uuid)
             # start the service
             started_service = await producer.start_service(
@@ -143,7 +148,7 @@ async def run_services(
         # even emulate a legacy dy-service that does not implement a save-state feature
         # so here we must make save_state=False
         await producer.stop_service(app, node_uuid=service_uuid, save_state=False)
-        with pytest.raises(exceptions.ServiceUUIDNotFoundError):
+        with pytest.raises(ServiceUUIDNotFoundError):
             await producer.get_service_details(app, service_uuid)
 
 
@@ -161,11 +166,11 @@ async def test_find_service_tag():
             "1.2.3",
         ]
     }
-    with pytest.raises(exceptions.ServiceNotAvailableError):
+    with pytest.raises(ServiceNotAvailableError):
         await producer._find_service_tag(  # noqa: SLF001
             list_of_images, "some_wrong_key", None
         )
-    with pytest.raises(exceptions.ServiceNotAvailableError):
+    with pytest.raises(ServiceNotAvailableError):
         await producer._find_service_tag(  # noqa: SLF001
             list_of_images, my_service_key, "some wrong key"
         )
@@ -390,7 +395,7 @@ async def test_get_service_key_version_from_docker_service_except_invalid_keys(
             }
         }
     }
-    with pytest.raises(exceptions.DirectorException):
+    with pytest.raises(DirectorRuntimeError):
         await producer._get_service_key_version_from_docker_service(  # noqa: SLF001
             docker_service_partial_inspect, registry_settings
         )

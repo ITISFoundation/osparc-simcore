@@ -18,12 +18,16 @@ from tenacity.retry import retry_if_result
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-from . import exceptions
 from .client_session import get_client_session
 from .constants import (
     DIRECTOR_SIMCORE_SERVICES_PREFIX,
     ORG_LABELS_TO_SCHEMA_LABELS,
     SERVICE_RUNTIME_SETTINGS,
+)
+from .core.errors import (
+    DirectorRuntimeError,
+    RegistryConnectionError,
+    ServiceNotAvailableError,
 )
 from .core.settings import ApplicationSettings, get_application_settings
 
@@ -51,7 +55,7 @@ async def _basic_auth_registry_request(
     app_settings = get_application_settings(app)
     if not app_settings.DIRECTOR_REGISTRY.REGISTRY_URL:
         msg = "URL to registry is not defined"
-        raise exceptions.DirectorException(msg)
+        raise DirectorRuntimeError(msg=msg)
 
     url = URL(
         f"{'https' if app_settings.DIRECTOR_REGISTRY.REGISTRY_SSL else 'http'}://{app_settings.DIRECTOR_REGISTRY.REGISTRY_URL}{path}"
@@ -89,13 +93,13 @@ async def _basic_auth_registry_request(
                 )
 
             elif response.status == HTTPStatus.NOT_FOUND:
-                raise exceptions.ServiceNotAvailableError(str(path))
+                raise ServiceNotAvailableError(service_name=path)
 
             elif response.status > 399:
                 logger.exception(
                     "Unknown error while accessing registry: %s", str(response)
                 )
-                raise exceptions.RegistryConnectionError(str(response))
+                raise RegistryConnectionError(msg=str(response))
 
             else:
                 # registry that does not need an auth
@@ -106,7 +110,7 @@ async def _basic_auth_registry_request(
     except client_exceptions.ClientError as exc:
         logger.exception("Unknown error while accessing registry")
         msg = f"Unknown error while accessing registry: {exc!s}"
-        raise exceptions.DirectorException(msg) from exc
+        raise DirectorRuntimeError(msg=msg) from exc
 
 
 async def _auth_registry_request(
@@ -123,7 +127,7 @@ async def _auth_registry_request(
         or not app_settings.DIRECTOR_REGISTRY.REGISTRY_PW
     ):
         msg = "Wrong configuration: Authentication to registry is needed!"
-        raise exceptions.RegistryConnectionError(msg)
+        raise RegistryConnectionError(msg=msg)
     # auth issue let's try some authentication get the auth type
     auth_type = None
     auth_details: dict[str, str] = {}
@@ -137,7 +141,7 @@ async def _auth_registry_request(
             break
     if not auth_type:
         msg = "Unknown registry type: cannot deduce authentication method!"
-        raise exceptions.RegistryConnectionError(msg)
+        raise RegistryConnectionError(msg=msg)
     auth = BasicAuth(
         login=app_settings.DIRECTOR_REGISTRY.REGISTRY_USER,
         password=app_settings.DIRECTOR_REGISTRY.REGISTRY_PW.get_secret_value(),
@@ -152,7 +156,7 @@ async def _auth_registry_request(
         async with session.get(token_url, auth=auth, **kwargs) as token_resp:
             if token_resp.status != HTTPStatus.OK:
                 msg = f"Unknown error while authentifying with registry: {token_resp!s}"
-                raise exceptions.RegistryConnectionError(msg)
+                raise RegistryConnectionError(msg=msg)
             bearer_code = (await token_resp.json())["token"]
             headers = {"Authorization": f"Bearer {bearer_code}"}
             async with getattr(session, method.lower())(
@@ -160,13 +164,13 @@ async def _auth_registry_request(
             ) as resp_wtoken:
                 if resp_wtoken.status == HTTPStatus.NOT_FOUND:
                     logger.exception("path to registry not found: %s", url)
-                    raise exceptions.ServiceNotAvailableError(str(url))
+                    raise ServiceNotAvailableError(service_name=f"{url}")
                 if resp_wtoken.status > 399:
                     logger.exception(
                         "Unknown error while accessing with token authorized registry: %s",
                         str(resp_wtoken),
                     )
-                    raise exceptions.RegistryConnectionError(str(resp_wtoken))
+                    raise RegistryConnectionError(msg=f"{resp_wtoken}")
                 resp_data = await resp_wtoken.json(content_type=None)
                 resp_headers = resp_wtoken.headers
                 return (resp_data, resp_headers)
@@ -177,18 +181,18 @@ async def _auth_registry_request(
         ) as resp_wbasic:
             if resp_wbasic.status == HTTPStatus.NOT_FOUND:
                 logger.exception("path to registry not found: %s", url)
-                raise exceptions.ServiceNotAvailableError(str(url))
+                raise ServiceNotAvailableError(service_name=f"{url}")
             if resp_wbasic.status > 399:
                 logger.exception(
                     "Unknown error while accessing with token authorized registry: %s",
                     str(resp_wbasic),
                 )
-                raise exceptions.RegistryConnectionError(str(resp_wbasic))
+                raise RegistryConnectionError(msg=f"{resp_wbasic}")
             resp_data = await resp_wbasic.json(content_type=None)
             resp_headers = resp_wbasic.headers
             return (resp_data, resp_headers)
     msg = f"Unknown registry authentification type: {url}"
-    raise exceptions.RegistryConnectionError(msg)
+    raise RegistryConnectionError(msg=msg)
 
 
 async def registry_request(
@@ -229,7 +233,7 @@ async def _is_registry_responsive(app: FastAPI) -> bool:
             app, path, no_cache=True, timeout=ClientTimeout(total=1.0)
         )
         return True
-    except (TimeoutError, exceptions.DirectorException) as exc:
+    except (TimeoutError, DirectorRuntimeError) as exc:
         logger.debug("Registry not responsive: %s", exc)
         return False
 
