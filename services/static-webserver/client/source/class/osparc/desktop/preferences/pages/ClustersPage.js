@@ -352,6 +352,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const name = cluster.getName();
       const msg = this.tr("Are you sure you want to delete ") + name + "?";
       const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete Cluster"),
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });
