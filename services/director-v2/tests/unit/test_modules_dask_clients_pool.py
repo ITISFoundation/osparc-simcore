@@ -7,6 +7,8 @@ from random import choice
 from typing import Any, AsyncIterator, Callable, get_args
 from unittest import mock
 
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 import pytest
 from _dask_helpers import DaskGatewayServer
 from distributed.deploy.spec import SpecCluster
@@ -126,10 +128,14 @@ def default_scheduler_set_as_osparc_gateway(
         )
         monkeypatch.setenv(
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH",
-            SimpleAuthentication(
-                username=faker.user_name(),
-                password=SecretStr(local_dask_gateway_server.password),
-            ).json(encoder=create_json_encoder_wo_secrets(SimpleAuthentication)),
+            json_dumps(
+                model_dump_with_secrets(
+                    SimpleAuthentication(
+                        username=faker.user_name(),
+                        password=SecretStr(local_dask_gateway_server.password),
+                    ), show_secrets=True
+                )
+            )
         )
 
     return creator
@@ -194,11 +200,11 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
                 cluster_type=ClusterTypeInModel.ON_PREMISE,
             )
         )
-        async with clients_pool.acquire(cluster) as dask_client:
+        async with clients_pool.acquire(cluster):
             # on start it is created
             mocked_dask_client.create.assert_has_calls(mocked_creation_calls)
 
-        async with clients_pool.acquire(cluster) as dask_client:
+        async with clients_pool.acquire(cluster):
             # the connection already exists, so there is no new call to create
             mocked_dask_client.create.assert_has_calls(mocked_creation_calls)
 
@@ -278,5 +284,5 @@ async def test_acquire_default_cluster(
         )
         future = dask_client.backend.client.submit(just_a_quick_fct, 12, 23)
         assert future
-        result = await future.result(timeout=10)  # type: ignore
+        result = await future.result(timeout=10)
     assert result == 35
