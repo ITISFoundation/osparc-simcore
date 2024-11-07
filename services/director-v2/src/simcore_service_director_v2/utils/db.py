@@ -5,7 +5,6 @@ from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from models_library.clusters import BaseCluster
 from models_library.projects_state import RunningState
-from settings_library.utils_encoders import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ..api.dependencies.database import RepoType, get_base_repository
