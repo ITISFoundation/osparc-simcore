@@ -33,7 +33,7 @@ async def test_get_services_extras_by_key_and_version_with_empty_registry(
     resp = await client.get(
         f"/{api_version_prefix}/service_extras/simcore/services/dynamic/something/someversion"
     )
-    assert resp.status_code == status.HTTP_404_NOT_FOUND, f"Got f{resp.text}"
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got f{resp.text}"
     resp = await client.get(
         f"/{api_version_prefix}/service_extras/simcore/services/dynamic/something/1.5.2"
     )

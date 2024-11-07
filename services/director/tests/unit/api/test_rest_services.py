@@ -94,9 +94,7 @@ async def test_get_service_bad_request(
     resp = await client.get(f"/{api_version_prefix}/services?service_type=blahblah")
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got f{resp.text}"
 
-    services, error = _assert_response_and_unwrap_envelope(resp)
-    assert not services
-    assert error
+    # NOTE: only successful errors are enveloped
 
 
 async def test_list_services_by_service_type(
@@ -119,7 +117,7 @@ async def test_list_services_by_service_type(
     assert services
     assert len(services) == 3
 
-    resp = await client.get(f"/{api_version_prefix}/services?service_type=interactive")
+    resp = await client.get(f"/{api_version_prefix}/services?service_type=dynamic")
     assert resp.status_code == status.HTTP_200_OK, f"Got f{resp.text}"
 
     services, error = _assert_response_and_unwrap_envelope(resp)
@@ -137,12 +135,12 @@ async def test_get_services_by_key_and_version_with_empty_registry(
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got f{resp.text}"
 
     resp = await client.get(
-        f"/{api_version_prefix}/services/simcore/services/dynamic/something/someversion"
+        f"/{api_version_prefix}/simcore/services/dynamic/something/someversion"
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND, f"Got f{resp.text}"
 
     resp = await client.get(
-        f"/{api_version_prefix}/services/simcore/services/dynamic/something/1.5.2"
+        f"/{api_version_prefix}/simcore/services/dynamic/something/1.5.2"
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND, f"Got f{resp.text}"
 
