@@ -101,7 +101,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       createOrgBtn.addListener("execute", function() {
         const newOrg = true;
         const orgEditor = new osparc.editor.OrganizationEditor(newOrg);
-        const title = this.tr("Organization Details Editor");
+        const title = this.tr("New Organization");
         const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
         orgEditor.addListener("createOrg", () => {
           this.__createOrganization(win, orgEditor.getChildControl("create"), orgEditor);
