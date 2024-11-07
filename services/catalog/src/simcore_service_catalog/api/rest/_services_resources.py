@@ -148,7 +148,7 @@ async def _get_service_labels(
         # `busybox:latest` or `traefik:latest` because
         # the director-v0 cannot extract labels from them
         # and will fail validating the key or the version
-        if err.status_code == status.HTTP_400_BAD_REQUEST:
+        if err.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY:
             return None
         raise
 
