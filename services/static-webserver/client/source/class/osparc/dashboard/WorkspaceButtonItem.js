@@ -250,7 +250,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
       let msg = this.tr("Are you sure you want to delete") + " <b>" + this.getTitle() + "</b>?";
       msg += "<br>" + this.tr("All the content of the workspace will be deleted.");
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
-        caption: this.tr("Delete"),
+        caption: this.tr("Delete Workspace"),
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });

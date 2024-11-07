@@ -193,10 +193,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       });
       updateAllButton.exclude();
       updateAllButton.addListener("tap", () => {
-        const templatesText = osparc.product.Utils.getTemplateAlias({plural: true});
-        const msg = this.tr("Are you sure you want to update all ") + templatesText + "?";
+        const templatesAlias = osparc.product.Utils.getTemplateAlias({plural: true});
+        const msg = this.tr("Are you sure you want to update all ") + templatesAlias + "?";
         const win = new osparc.ui.window.Confirmation(msg).set({
-          caption: this.tr("Update"),
+          caption: this.tr("Update") + " " + templatesAlias,
           confirmText: this.tr("Update all"),
           confirmAction: "create"
         });

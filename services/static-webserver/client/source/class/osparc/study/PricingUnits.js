@@ -58,13 +58,13 @@ qx.Class.define("osparc.study.PricingUnits", {
       if (preselectedPricingUnit) {
         const buttonFound = buttons.find(button => button.getUnitData().getPricingUnitId() === preselectedPricingUnit["pricingUnitId"]);
         if (buttonFound) {
-          buttonFound.execute();
+          buttonFound.setValue(true);
         }
       } else {
         // preselect default
         buttons.forEach(button => {
           if (button.getUnitData().isDefault()) {
-            button.execute();
+            button.setValue(true);
           }
         });
       }
