@@ -2,6 +2,7 @@ import logging
 from typing import Final
 
 from fastapi import FastAPI
+from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.tracing import setup_tracing
 
 from .._meta import (
@@ -65,6 +66,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
 
     async def _on_shutdown() -> None:
+        await cancel_sequential_workers()
         print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
     app.add_event_handler("startup", _on_startup)
