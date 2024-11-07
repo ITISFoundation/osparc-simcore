@@ -453,15 +453,11 @@ async def _create_docker_service_params(
         ]
 
     # attach the service to the swarm network dedicated to services
-    try:
-        swarm_network = await _get_swarm_network(client, app_settings=app_settings)
-        swarm_network_id = swarm_network["Id"]
-        swarm_network_name = swarm_network["Name"]
-        docker_params["networks"].append(swarm_network_id)
-        docker_params["labels"]["traefik.docker.network"] = swarm_network_name
-
-    except exceptions.DirectorException:
-        log.exception("Could not find swarm network")
+    swarm_network = await _get_swarm_network(client, app_settings=app_settings)
+    swarm_network_id = swarm_network["Id"]
+    swarm_network_name = swarm_network["Name"]
+    docker_params["networks"].append(swarm_network_id)
+    docker_params["labels"]["traefik.docker.network"] = swarm_network_name
 
     # set labels for CPU and Memory limits
     nano_cpus_limit = str(
@@ -524,7 +520,7 @@ async def _get_swarm_network(
             msg=(
                 "Swarm network name is not configured, found following networks "
                 "(if there is more then 1 network, remove the one which has no "
-                f"containers attached and all is fixed): {networks}"
+                f"containers attached and all is fixed): {networks if networks else 'no swarm network!'}"
             )
         )
     return networks[0]
