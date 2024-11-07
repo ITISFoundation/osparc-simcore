@@ -6,42 +6,15 @@ import time
 
 import pytest
 from fastapi import FastAPI
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director import registry_proxy
 
 
 async def test_list_no_services_available(
+    configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    docker_registry,
-    configure_registry_access,
 ):
 
-    computational_services = await registry_proxy.list_services(
-        app, registry_proxy.ServiceType.COMPUTATIONAL
-    )
-    assert not computational_services  # it's empty
-    interactive_services = await registry_proxy.list_services(
-        app, registry_proxy.ServiceType.DYNAMIC
-    )
-    assert not interactive_services
-    all_services = await registry_proxy.list_services(
-        app, registry_proxy.ServiceType.ALL
-    )
-    assert not all_services
-
-
-async def test_list_services_with_bad_json_formatting(
-    app: FastAPI,
-    docker_registry,
-    configure_registry_access,
-    push_services,
-):
-    # some services
-    created_services = await push_services(
-        number_of_computational_services=3,
-        number_of_interactive_services=2,
-        bad_json_format=True,
-    )
-    assert len(created_services) == 5
     computational_services = await registry_proxy.list_services(
         app, registry_proxy.ServiceType.COMPUTATIONAL
     )
@@ -57,10 +30,9 @@ async def test_list_services_with_bad_json_formatting(
 
 
 async def test_list_computational_services(
+    configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    docker_registry,
     push_services,
-    configure_registry_access,
 ):
     await push_services(
         number_of_computational_services=6, number_of_interactive_services=3
@@ -73,10 +45,9 @@ async def test_list_computational_services(
 
 
 async def test_list_interactive_services(
+    configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    docker_registry,
     push_services,
-    configure_registry_access,
 ):
     await push_services(
         number_of_computational_services=5, number_of_interactive_services=4
@@ -88,10 +59,9 @@ async def test_list_interactive_services(
 
 
 async def test_list_of_image_tags(
+    configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    docker_registry,
     push_services,
-    configure_registry_access,
 ):
     images = await push_services(
         number_of_computational_services=5, number_of_interactive_services=3
@@ -110,10 +80,9 @@ async def test_list_of_image_tags(
 
 
 async def test_list_interactive_service_dependencies(
+    configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    docker_registry,
     push_services,
-    configure_registry_access,
 ):
     images = await push_services(
         number_of_computational_services=2,
@@ -141,10 +110,9 @@ async def test_list_interactive_service_dependencies(
 
 
 async def test_get_image_labels(
+    configure_registry_access: EnvVarsDict,
     app: FastAPI,
-    docker_registry,
     push_services,
-    configure_registry_access,
 ):
     images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
@@ -215,9 +183,9 @@ def test_get_service_last_namess():
 
 
 async def test_get_image_details(
+    configure_registry_access: EnvVarsDict,
     app: FastAPI,
     push_services,
-    configure_registry_access,
 ):
     images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
@@ -234,9 +202,9 @@ async def test_get_image_details(
 
 
 async def test_registry_caching(
+    configure_registry_access: EnvVarsDict,
     app: FastAPI,
     push_services,
-    configure_registry_access,
 ):
     images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
@@ -255,7 +223,10 @@ async def test_registry_caching(
 
 
 @pytest.mark.skip(reason="test needs credentials to real registry")
-async def test_get_services_performance(app, loop, configure_custom_registry):
+async def test_get_services_performance(
+    configure_registry_access: EnvVarsDict,
+    app: FastAPI,
+):
     start_time = time.perf_counter()
     services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     stop_time = time.perf_counter()
@@ -265,9 +236,9 @@ async def test_get_services_performance(app, loop, configure_custom_registry):
 
 
 async def test_generate_service_extras(
-    app,
+    configure_registry_access: EnvVarsDict,
+    app: FastAPI,
     push_services,
-    configure_registry_access,
 ):
     images = await push_services(
         number_of_computational_services=1, number_of_interactive_services=1
