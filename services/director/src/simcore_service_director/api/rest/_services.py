@@ -47,7 +47,7 @@ async def list_services(
         ) from err
 
 
-@router.get("/services/{service_key}/{service_version}")
+@router.get("/services/{service_key:path}/{service_version}")
 async def get_service(
     the_app: Annotated[FastAPI, Depends(get_app)],
     service_key: ServiceKey,
@@ -75,7 +75,7 @@ async def get_service(
         ) from err
 
 
-@router.get("/services/{service_key}/{service_version}/labels")
+@router.get("/services/{service_key:path}/{service_version}/labels")
 async def list_service_labels(
     the_app: Annotated[FastAPI, Depends(get_app)],
     service_key: ServiceKey,
