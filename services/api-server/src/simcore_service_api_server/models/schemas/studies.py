@@ -13,8 +13,8 @@ DownloadLink: TypeAlias = AnyUrl
 
 class Study(BaseModel):
     uid: StudyID
-    title: str = None  # TODO: should be nullable
-    description: str = None  # TODO: should be nullable
+    title: str | None = None
+    description: str | None = None
 
     @classmethod
     def compose_resource_name(cls, study_key) -> api_resources.RelativeResourceName:
