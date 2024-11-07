@@ -4,19 +4,22 @@
 # pylint: disable=too-many-arguments
 
 import uuid
+from collections.abc import Iterator
 
 import httpx
 import pytest
+from aioresponses import CallbackResult, aioresponses
 from faker import Faker
-
-# from aioresponses.core import CallbackResult, aioresponses
 from fastapi import status
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from servicelib.async_utils import _sequential_jobs_contexts
 
 
 def _assert_response_and_unwrap_envelope(got: httpx.Response):
-    assert got.encoding == "application/json"
+    assert got.headers["content-type"] == "application/json"
+    assert got.encoding == "utf-8"
 
     body = got.json()
     assert isinstance(body, dict)
@@ -28,12 +31,12 @@ def _assert_response_and_unwrap_envelope(got: httpx.Response):
     reason="docker_swarm fixture is a session fixture making it bad running together with other tests that require a swarm"
 )
 async def test_running_services_post_and_delete_no_swarm(
-    configure_swarm_stack_name,
+    configure_swarm_stack_name: EnvVarsDict,
     client: httpx.AsyncClient,
     push_services,
-    user_id,
-    project_id,
-    api_version_prefix,
+    user_id: UserID,
+    project_id: ProjectID,
+    api_version_prefix: str,
 ):
     params = {
         "user_id": "None",
@@ -48,15 +51,26 @@ async def test_running_services_post_and_delete_no_swarm(
     assert resp.status_code == 500, data
 
 
+@pytest.fixture
+def x_simcore_user_agent_header(faker: Faker) -> dict[str, str]:
+    return {"x-simcore-user-agent": faker.pystr()}
+
+
+@pytest.fixture
+def sequential_context_cleaner() -> Iterator[None]:
+    yield
+    _sequential_jobs_contexts.clear()
+
+
 @pytest.mark.parametrize(
     "save_state, expected_save_state_call", [(True, True), (False, False), (None, True)]
 )
 async def test_running_services_post_and_delete(
-    configure_swarm_stack_name,
-    configure_registry_access,
+    configure_swarm_stack_name: EnvVarsDict,
+    configure_registry_access: EnvVarsDict,
+    configured_docker_network: EnvVarsDict,
     client: httpx.AsyncClient,
     push_services,
-    docker_swarm: None,
     user_id: UserID,
     project_id: ProjectID,
     api_version_prefix: str,
@@ -64,6 +78,8 @@ async def test_running_services_post_and_delete(
     expected_save_state_call: bool,
     mocker,
     faker: Faker,
+    x_simcore_user_agent_header: dict[str, str],
+    ensure_run_in_sequence_context_is_empty: None,
 ):
     params = {}
     resp = await client.post(
@@ -85,14 +101,12 @@ async def test_running_services_post_and_delete(
     data = resp.json()
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, data
 
-    fake_headers = {"x-simcore-user-agent": faker.pystr()}
-
     params["service_key"] = "simcore/services/comp/somfunkyname-nhsd"
     params["service_tag"] = "1.2.3"
     resp = await client.post(
         f"/{api_version_prefix}/running_interactive_services",
         params=params,
-        headers=fake_headers,
+        headers=x_simcore_user_agent_header,
     )
     data = resp.json()
     assert resp.status_code == status.HTTP_404_NOT_FOUND, data
@@ -115,10 +129,11 @@ async def test_running_services_post_and_delete(
         resp = await client.post(
             f"/{api_version_prefix}/running_interactive_services",
             params=params,
-            headers=fake_headers,
+            headers=x_simcore_user_agent_header,
         )
-        assert resp.status_code == status.HTTP_201_CREATED
-        assert resp.encoding == "application/json"
+        assert resp.status_code == status.HTTP_201_CREATED, resp.text
+        assert resp.encoding == "utf-8"
+        assert resp.headers["content-type"] == "application/json"
         running_service_enveloped = resp.json()
         assert isinstance(running_service_enveloped["data"], dict)
         assert all(
@@ -158,7 +173,8 @@ async def test_running_services_post_and_delete(
         )
         assert resp.status_code == status.HTTP_200_OK
         text = resp.text
-        assert resp.encoding == "application/json", f"Got {text=}"
+        assert resp.headers["content-type"] == "application/json"
+        assert resp.encoding == "utf-8", f"Got {text=}"
         running_service_enveloped = resp.json()
         assert isinstance(running_service_enveloped["data"], dict)
         assert all(
@@ -193,55 +209,64 @@ async def test_running_services_post_and_delete(
         if save_state:
             query_params.update({"save_state": "true" if save_state else "false"})
 
-        # TODO: replace with respx??
-        # mocked_save_state_cb = mocker.MagicMock(
-        #     return_value=CallbackResult(status=200, payload={})
-        # )
-        # PASSTHROUGH_REQUESTS_PREFIXES = [
-        #     "http://127.0.0.1",
-        #     "http://localhost",
-        #     "unix://",  # docker engine
-        #     "ws://",  # websockets
-        # ]
-        # with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
+        mocked_save_state_cb = mocker.MagicMock(
+            return_value=CallbackResult(status=200, payload={})
+        )
+        PASSTHROUGH_REQUESTS_PREFIXES = [
+            "http://127.0.0.1",
+            "http://localhost",
+            "unix://",  # docker engine
+            "ws://",  # websockets
+        ]
+        with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
 
-        #     # POST /http://service_host:service_port service_basepath/state -------------------------------------------------
-        #     mock.post(
-        #         f"http://{service_host}:{service_port}{service_basepath}/state",
-        #         status=200,
-        #         callback=mocked_save_state_cb,
-        #     )
-        #     resp = await client.delete(
-        #         f"/{api_version_prefix}/running_interactive_services/{params['service_uuid']}",
-        #         params=query_params,
-        #     )
-        #     if expected_save_state_call:
-        #         mocked_save_state_cb.assert_called_once()
+            # POST /http://service_host:service_port service_basepath/state -------------------------------------------------
+            mock.post(
+                f"http://{service_host}:{service_port}{service_basepath}/state",
+                status=200,
+                callback=mocked_save_state_cb,
+            )
+            resp = await client.delete(
+                f"/{api_version_prefix}/running_interactive_services/{params['service_uuid']}",
+                params=query_params,
+            )
+            if expected_save_state_call:
+                mocked_save_state_cb.assert_called_once()
 
-        # text = resp.text
-        # assert resp.status_code == status.HTTP_204_NO_CONTENT, text
-        # assert resp.encoding == "application/json"
-        # data = resp.json()
-        # assert data is None
+        text = resp.text
+        assert resp.status_code == status.HTTP_204_NO_CONTENT, text
+        assert resp.headers["content-type"] == "application/json"
+        assert resp.encoding == "utf-8"
 
 
 async def test_running_interactive_services_list_get(
-    client: httpx.AsyncClient, push_services, docker_swarm
+    configure_swarm_stack_name: EnvVarsDict,
+    configure_registry_access: EnvVarsDict,
+    configured_docker_network: EnvVarsDict,
+    client: httpx.AsyncClient,
+    push_services,
+    x_simcore_user_agent_header: dict[str, str],
+    api_version_prefix: str,
+    ensure_run_in_sequence_context_is_empty: None,
+    faker: Faker,
 ):
     """Test case for running_interactive_services_list_get
 
     Returns a list of interactive services
     """
-    user_ids = ["first_user_id", "second_user_id"]
-    project_ids = ["first_project_id", "second_project_id", "third_project_id"]
+    user_ids = [faker.pyint(min_value=1), faker.pyint(min_value=1)]
+    project_ids = [faker.uuid4(), faker.uuid4(), faker.uuid4()]
     # prepare services
     NUM_SERVICES = 1
-    created_services = await push_services(0, NUM_SERVICES)
-    assert len(created_services) == NUM_SERVICES
+    available_services = await push_services(
+        number_of_computational_services=0, number_of_interactive_services=NUM_SERVICES
+    )
+    assert len(available_services) == NUM_SERVICES
     # start the services
+    created_services = []
     for user_id in user_ids:
         for project_id in project_ids:
-            for created_service in created_services:
+            for created_service in available_services:
                 service_description = created_service["service_description"]
                 params = {}
                 params["user_id"] = user_id
@@ -251,9 +276,12 @@ async def test_running_interactive_services_list_get(
                 params["service_uuid"] = str(uuid.uuid4())
                 # start the service
                 resp = await client.post(
-                    "/v0/running_interactive_services", params=params
+                    "/v0/running_interactive_services",
+                    params=params,
+                    headers=x_simcore_user_agent_header,
                 )
-                assert resp.status_code == 201
+                assert resp.status_code == 201, resp.text
+                created_services.append(resp.json()["data"])
     # get the list of services
     for user_id in user_ids:
         for project_id in project_ids:
@@ -266,7 +294,7 @@ async def test_running_interactive_services_list_get(
             assert (
                 response.status_code == status.HTTP_200_OK
             ), f"Response body is : {response.text}"
-            data, error = _assert_response_and_unwrap_envelope(response.json())
+            data, error = _assert_response_and_unwrap_envelope(response)
             assert data
             assert not error
             services_list = data
@@ -279,7 +307,7 @@ async def test_running_interactive_services_list_get(
             assert (
                 response.status_code == status.HTTP_200_OK
             ), f"Response body is : {response.text}"
-            data, error = _assert_response_and_unwrap_envelope(response.json())
+            data, error = _assert_response_and_unwrap_envelope(response)
             assert data
             assert not error
             services_list = data
@@ -293,8 +321,26 @@ async def test_running_interactive_services_list_get(
             assert (
                 response.status_code == status.HTTP_200_OK
             ), f"Response body is : {response.text}"
-            data, error = _assert_response_and_unwrap_envelope(response.json())
+            data, error = _assert_response_and_unwrap_envelope(response)
             assert data
             assert not error
             services_list = data
             assert len(services_list) == len(user_ids) * NUM_SERVICES
+    # get all the running services
+    response = await client.get("/v0/running_interactive_services")
+    assert (
+        response.status_code == status.HTTP_200_OK
+    ), f"Response body is : {response.text}"
+    data, error = _assert_response_and_unwrap_envelope(response)
+    assert data
+    assert not error
+    services_list = data
+    assert len(services_list) == len(user_ids) * len(project_ids) * NUM_SERVICES
+
+    # cleanup
+    for service in created_services:
+        resp = await client.delete(
+            f"/{api_version_prefix}/running_interactive_services/{service['service_uuid']}",
+            params={"save_state": False},
+        )
+        assert resp.status_code == status.HTTP_204_NO_CONTENT, resp.text
