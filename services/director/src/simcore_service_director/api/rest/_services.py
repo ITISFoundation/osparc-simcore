@@ -45,10 +45,6 @@ async def list_services(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
         ) from err
-    except Exception as err:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{err}"
-        ) from err
 
 
 @router.get("/services/{service_key}/{service_version}")
@@ -77,10 +73,6 @@ async def get_service(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
         ) from err
-    except Exception as err:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{err}"
-        ) from err
 
 
 @router.get("/services/{service_key}/{service_version}/labels")
@@ -108,9 +100,4 @@ async def list_service_labels(
     except exceptions.RegistryConnectionError as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
-        ) from err
-
-    except Exception as err:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{err}"
         ) from err

@@ -37,7 +37,3 @@ async def list_service_extras(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
         ) from err
-    except Exception as err:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{err}"
-        ) from err
