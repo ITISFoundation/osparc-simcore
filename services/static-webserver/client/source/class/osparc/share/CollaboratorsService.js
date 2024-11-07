@@ -93,9 +93,7 @@ qx.Class.define("osparc.share.CollaboratorsService", {
       osparc.store.Services.patchServiceData(this._serializedDataCopy, "accessRights", newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
-          let text = this.tr("Editor(s) successfully added.");
-          text += "<br>";
-          text += this.tr("The user will not get notified.");
+          const text = this.tr("Service successfully shared.");
           osparc.FlashMessenger.getInstance().logAs(text);
           this._reloadCollaboratorsList();
         })
