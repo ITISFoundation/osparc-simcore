@@ -6,8 +6,10 @@ import time
 
 import pytest
 from fastapi import FastAPI
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_director import registry_proxy
+from simcore_service_director.core.settings import ApplicationSettings
 
 
 async def test_list_no_services_available(
@@ -201,16 +203,27 @@ async def test_get_image_details(
         assert details == service_description
 
 
+@pytest.fixture
+def configure_registry_caching(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch, {"DIRECTOR_REGISTRY_CACHING": True}
+    )
+
+
 async def test_registry_caching(
     configure_registry_access: EnvVarsDict,
+    configure_registry_caching: EnvVarsDict,
+    app_settings: ApplicationSettings,
     app: FastAPI,
     push_services,
 ):
     images = await push_services(
-        number_of_computational_services=1, number_of_interactive_services=1
+        number_of_computational_services=21, number_of_interactive_services=21
     )
-    # TODO: use monkeypatching
-    # config.DIRECTOR_REGISTRY_CACHING = True
+    assert app_settings.DIRECTOR_REGISTRY_CACHING is True
+
     start_time = time.perf_counter()
     services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     time_to_retrieve_without_cache = time.perf_counter() - start_time
@@ -220,6 +233,8 @@ async def test_registry_caching(
     time_to_retrieve_with_cache = time.perf_counter() - start_time
     assert len(services) == len(images)
     assert time_to_retrieve_with_cache < time_to_retrieve_without_cache
+    print("time to retrieve services without cache: ", time_to_retrieve_without_cache)
+    print("time to retrieve services with cache: ", time_to_retrieve_with_cache)
 
 
 @pytest.mark.skip(reason="test needs credentials to real registry")

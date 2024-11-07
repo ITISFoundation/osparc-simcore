@@ -208,7 +208,7 @@ async def registry_request(
     cache: SimpleMemoryCache = app.state.registry_cache_memory
     cache_key = f"{method}_{path}"
     if not no_cache and (cached_response := await cache.get(cache_key)):
-        assert isinstance(tuple[dict, Mapping], cached_response)  # nosec
+        assert isinstance(cached_response, tuple)  # nosec
         return cast(tuple[dict, Mapping], cached_response)
 
     app_settings = get_application_settings(app)
