@@ -191,7 +191,7 @@ async def test_get_containers_name(
     mock_request(
         "GET",
         (
-            f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}"
+            f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}"
             f"/containers/name?filters={encoded_filters}"
         ),
         mock_response,
@@ -353,7 +353,7 @@ async def test_post_containers_tasks(
     mock_response = Response(status.HTTP_202_ACCEPTED, json="mocked_task_id")
     mock_request(
         "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}{mock_endpoint}",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}{mock_endpoint}",
         mock_response,
         None,
     )
