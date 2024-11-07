@@ -172,7 +172,7 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
     DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     DIRECTOR_V2_PROFILING: bool = False
 
-    DIRECTOR_V2_REMOTE_DEBUGGING_PORT: PortInt | None
+    DIRECTOR_V2_REMOTE_DEBUGGING_PORT: PortInt | None = Field(default=None)
 
     # extras
     SWARM_STACK_NAME: str = Field(
@@ -244,6 +244,7 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
         description="settings for the private registry deployed with the platform",
     )
     DIRECTOR_V2_DOCKER_HUB_REGISTRY: RegistrySettings | None = Field(
+        default=None,
         description="public DockerHub registry settings"
     )
 
