@@ -416,10 +416,11 @@ async def list_interactive_service_dependencies(
     if DEPENDENCIES_LABEL_KEY in image_labels:
         try:
             dependencies = json.loads(image_labels[DEPENDENCIES_LABEL_KEY])
-            for dependency in dependencies:
-                dependency_keys.append(
-                    {"key": dependency["key"], "tag": dependency["tag"]}
-                )
+            dependency_keys = [
+                {"key": dependency["key"], "tag": dependency["tag"]}
+                for dependency in dependencies
+            ]
+
         except json.decoder.JSONDecodeError:
             logging.exception(
                 "Incorrect json formatting in %s, skipping...",
@@ -525,7 +526,6 @@ async def get_service_extras(
                     invalid_with_msg = f"invalid type for resource [{entry_value}]"
 
                 # discrete resources (custom made ones) ---
-                # TODO: this could be adjusted to separate between GPU and/or VRAM
                 # check if the service requires GPU support
                 if not invalid_with_msg and _validate_kind(entry, "VRAM"):
 
