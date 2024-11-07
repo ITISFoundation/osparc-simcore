@@ -35,7 +35,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         # timeouts
         self._health_request_timeout = Timeout(1.0, connect=1.0)
         self._save_restore_timeout = Timeout(
-            scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
+            scheduler_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT.total_seconds(),
             connect=scheduler_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
         self._restart_containers_timeout = Timeout(
