@@ -8,6 +8,7 @@ import pytest
 from models_library.basic_types import LogLevel
 from pydantic import ValidationError
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.base import DefaultFromEnvFactoryError
 from settings_library.r_clone import S3Provider
 from simcore_service_director_v2.core.dynamic_services_settings.egress_proxy import (
     EnvoyLogLevel,
@@ -185,7 +186,7 @@ def test_services_custom_constraint_failures(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
-    with pytest.raises(Exception):
+    with pytest.raises(DefaultFromEnvFactoryError):
         AppSettings.create_from_envs()
 
 
