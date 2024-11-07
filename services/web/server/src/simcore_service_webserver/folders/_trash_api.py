@@ -135,7 +135,7 @@ async def trash_folder(
             user_id=user_id,
             project_id=project_id,
             force_stop_first=force_stop_first,
-            explicit=trashed_at is not None,
+            explicit=False,
         )
 
 

@@ -120,7 +120,7 @@ async def trash_project(
         product_name=product_name,
         project_uuid=project_id,
         project_patch=ProjectPatchExtended(
-            trashed_at=arrow.utcnow().datetime, trashed_explicitly=not explicit
+            trashed_at=arrow.utcnow().datetime, trashed_explicitly=explicit
         ),
     )
 

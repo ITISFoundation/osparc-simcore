@@ -362,7 +362,7 @@ class ProjectDBAPI(BaseProjectDB):
         search: str | None = None,
         filter_by_project_type: ProjectType | None = None,
         filter_by_services: list[dict] | None = None,
-        published: bool | None = False,
+        filter_published: bool | None = False,
         filter_hidden: bool | None = False,
         filter_trashed: bool | None = False,
         # pagination
@@ -445,8 +445,8 @@ class ProjectDBAPI(BaseProjectDB):
             if filter_hidden is not None:
                 attributes_filters.append(projects.c.hidden.is_(filter_hidden))
 
-            if published is not None:
-                attributes_filters.append(projects.c.published.is_(published))
+            if filter_published is not None:
+                attributes_filters.append(projects.c.published.is_(filter_published))
 
             if filter_trashed is not None:
                 attributes_filters.append(
