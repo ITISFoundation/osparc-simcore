@@ -80,9 +80,9 @@ endef
 openapi-%-diff.json: openapi.json openapi-%.json ## Diffs against newer or older openapi-%.json and checks backwards compatibility
 	$(call _openapi_diff_inputs)
 
-openapi-diff.md: guard-OPENAPI_JSON_URL openapi.json ## Diffs against a remote openapi.json. E.g. OPENAPI_JSON_URL=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/api-server/openapi.json
-	$(SCRIPTS_DIR)/openapi-diff.bash diff $(OPENAPI_JSON_URL) /specs/openapi.json --format markup --flatten-allof --exclude-elements title,description > $@
-	$(SCRIPTS_DIR)/openapi-diff.bash breaking $(OPENAPI_JSON_URL) /specs/openapi.json --flatten-allof --fail-on ERR
+openapi-diff.md: guard-OPENAPI_JSON_BASE_URL openapi.json ## Diffs against a remote openapi.json. E.g. OPENAPI_JSON_BASE_URL=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/api-server/openapi.json
+	$(SCRIPTS_DIR)/openapi-diff.bash diff $(OPENAPI_JSON_BASE_URL) /specs/openapi.json --format markup --flatten-allof --exclude-elements title,description > $@
+	$(SCRIPTS_DIR)/openapi-diff.bash breaking $(OPENAPI_JSON_BASE_URL) /specs/openapi.json --flatten-allof --fail-on ERR
 
 # SEE https://schemathesis.readthedocs.io/en/stable/index.html
 APP_URL:=http://$(get_my_ip).nip.io:8006
