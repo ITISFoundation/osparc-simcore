@@ -79,13 +79,15 @@ folders_v2 = sa.Table(
         "trashed_at",
         sa.DateTime(timezone=True),
         nullable=True,
-        doc="The date and time when the folder was marked as trashed. Null if the folder has not been trashed.",
+        comment="The date and time when the folder was marked as trashed."
+        "Null if the folder has not been trashed [default].",
     ),
     sa.Column(
         "trashed_explicitly",
         sa.Boolean,
         nullable=False,
         server_default=expression.false(),
-        doc="Indicates whether the folder was explicitly trashed by the user (true) or inherited its trashed status from a parent (false).",
+        comment="Indicates whether the folder was explicitly trashed by the user (true)"
+        " or inherited its trashed status from a parent (false) [default].",
     ),
 )
