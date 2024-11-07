@@ -13,9 +13,9 @@ from ._base import InputSchema, OutputSchema
 class WalletGet(OutputSchema):
     wallet_id: WalletID
     name: IDStr
-    description: str | None
+    description: str = None  # TODO: should be nullable and default was added for backwards compatibility
     owner: GroupID
-    thumbnail: str | None
+    thumbnail: str = None  # TODO: should be nullable and default was added for backwards compatibility
     status: WalletStatus
     created: datetime
     modified: datetime

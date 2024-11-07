@@ -46,13 +46,15 @@ class Solver(BaseModel):
 
     # Human readables Identifiers
     title: str = Field(..., description="Human readable name")
-    description: str | None = None
+    description: str = None  # TODO: should be nullable
     maintainer: str
     # TODO: consider released: Optional[datetime]   required?
     # TODO: consider version_aliases: list[str] = []  # remaining tags
 
     # Get links to other resources
-    url: HttpUrl | None = Field(..., description="Link to get this resource")
+    url: HttpUrl = Field(
+        ..., description="Link to get this resource"
+    )  # TODO: should be nullable
     model_config = ConfigDict(
         extra="ignore",
         json_schema_extra={

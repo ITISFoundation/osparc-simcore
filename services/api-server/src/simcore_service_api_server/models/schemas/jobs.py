@@ -36,8 +36,8 @@ JobID: TypeAlias = UUID
 
 # ArgumentTypes are types used in the job inputs (see ResultsTypes)
 ArgumentTypes: TypeAlias = (
-    File | StrictFloat | StrictInt | StrictBool | str | list | None
-)
+    File | StrictFloat | StrictInt | StrictBool | str | list
+)  # TODO: should be nullable
 KeywordArguments: TypeAlias = dict[str, ArgumentTypes]
 PositionalArguments: TypeAlias = list[ArgumentTypes]
 
@@ -152,7 +152,9 @@ class JobMetadata(BaseModel):
     metadata: dict[str, MetaValueType] = Field(..., description="Custom key-value map")
 
     # Links
-    url: HttpUrl | None = Field(..., description="Link to get this resource (self)")
+    url: HttpUrl = Field(
+        ..., description="Link to get this resource (self)"
+    )  # TODO: should be nullable
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -198,13 +200,15 @@ class Job(BaseModel):
     )
 
     # Get links to other resources
-    url: HttpUrl | None = Field(..., description="Link to get this resource (self)")
-    runner_url: HttpUrl | None = Field(
+    url: HttpUrl = Field(
+        ..., description="Link to get this resource (self)"
+    )  # TODO: should be nullable
+    runner_url: HttpUrl = Field(
         ..., description="Link to the solver's job (parent collection)"
-    )
-    outputs_url: HttpUrl | None = Field(
+    )  # TODO: should be nullable
+    outputs_url: HttpUrl = Field(
         ..., description="Link to the job outputs (sub-collection)"
-    )
+    )  # TODO: should be nullable
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -330,7 +334,7 @@ class JobPricingSpecification(BaseModel):
 
 class JobLog(BaseModel):
     job_id: ProjectID
-    node_id: NodeID | None = None
+    node_id: NodeID = None  # TODO: should be nullable
     log_level: LogLevelInt
     messages: list[LogMessageStr]
 
