@@ -529,9 +529,9 @@ async def test_mark_all_services_in_wallet_for_removal(
         wallet_id = scheduler_data.wallet_info.wallet_id
         can_remove = scheduler_data.dynamic_sidecar.service_removal_state.can_remove
         match wallet_id:
-            case WalletID(1):
+            case 1:
                 assert can_remove is True
-            case WalletID(2):
+            case 2:
                 assert can_remove is False
             case _:
                 pytest.fail("unexpected case")
