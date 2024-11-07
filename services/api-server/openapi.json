@@ -327,14 +327,7 @@
             "in": "header",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "string",
               "title": "Content-Length"
             }
           }
@@ -770,15 +763,8 @@
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^[a-fA-F0-9]{64}$"
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{64}$",
               "title": "Sha256 Checksum"
             }
           },
@@ -787,15 +773,8 @@
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "string",
+              "format": "uuid",
               "title": "File Id"
             }
           },
@@ -2058,15 +2037,8 @@
             "in": "header",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "string",
+              "format": "uuid",
               "title": "X-Simcore-Parent-Project-Uuid"
             }
           },
@@ -2075,15 +2047,8 @@
             "in": "header",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "string",
+              "format": "uuid",
               "title": "X-Simcore-Parent-Node-Id"
             }
           }
@@ -2641,15 +2606,8 @@
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "integer",
-                  "minimum": 0
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "integer",
+              "minimum": 0,
               "title": "Cluster Id"
             }
           }
@@ -3788,15 +3746,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/WalletGetWithAvailableCredits"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Response Get Job Wallet V0 Solvers  Solver Key  Releases  Version  Jobs  Job Id  Wallet Get"
+                  "$ref": "#/components/schemas/WalletGetWithAvailableCredits"
                 }
               }
             }
@@ -3935,15 +3885,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/PricingUnitGet"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Response Get Job Pricing Unit V0 Solvers  Solver Key  Releases  Version  Jobs  Job Id  Pricing Unit Get"
+                  "$ref": "#/components/schemas/PricingUnitGet"
                 }
               }
             }
@@ -4307,15 +4249,8 @@
             "in": "header",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "string",
+              "format": "uuid",
               "title": "X-Simcore-Parent-Project-Uuid"
             }
           },
@@ -4324,15 +4259,8 @@
             "in": "header",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "string",
+              "format": "uuid",
               "title": "X-Simcore-Parent-Node-Id"
             }
           }
@@ -4469,15 +4397,8 @@
             "in": "header",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "string",
+              "format": "uuid",
               "title": "X-Simcore-Parent-Project-Uuid"
             }
           },
@@ -4486,15 +4407,8 @@
             "in": "header",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "string",
+              "format": "uuid",
               "title": "X-Simcore-Parent-Node-Id"
             }
           }
@@ -4634,15 +4548,8 @@
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "integer",
-                  "minimum": 0
-                },
-                {
-                  "type": "null"
-                }
-              ],
+              "type": "integer",
+              "minimum": 0,
               "title": "Cluster Id"
             }
           }
@@ -5414,16 +5321,7 @@
             "description": "File name"
           },
           "filesize": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?"
-              },
-              {
-                "type": "integer",
-                "minimum": 0
-              }
-            ],
+            "type": "integer",
             "title": "Filesize",
             "description": "File size in bytes"
           },
@@ -5497,39 +5395,18 @@
             "description": "Name of the file with extension"
           },
           "content_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Content Type",
             "description": "Guess of type content [EXPERIMENTAL]"
           },
           "checksum": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^[a-fA-F0-9]{64}$"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$",
             "title": "Checksum",
             "description": "SHA256 hash of the file's content"
           },
           "e_tag": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "E Tag",
             "description": "S3 entity tag"
           }
@@ -5562,12 +5439,12 @@
         "properties": {
           "chunk_size": {
             "type": "integer",
-            "minimum": 0,
             "title": "Chunk Size"
           },
           "urls": {
             "items": {
               "type": "string",
+              "maxLength": 65536,
               "minLength": 1,
               "format": "uri"
             },
@@ -5593,28 +5470,14 @@
             "title": "Productname"
           },
           "usdPerCredit": {
-            "anyOf": [
-              {
-                "type": "number",
-                "minimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "number",
+            "minimum": 0.0,
             "title": "Usdpercredit",
             "description": "Price of a credit in USD. If None, then this product's price is UNDEFINED"
           },
           "minPaymentAmountUsd": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Minpaymentamountusd",
             "description": "Minimum amount (included) in USD that can be paid for this productCan be None if this product's price is UNDEFINED"
           }
@@ -5633,17 +5496,10 @@
             "$ref": "#/components/schemas/UsersGroup"
           },
           "organizations": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/UsersGroup"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "items": {
+              "$ref": "#/components/schemas/UsersGroup"
+            },
+            "type": "array",
             "title": "Organizations",
             "default": []
           },
@@ -5701,47 +5557,26 @@
             "description": "Runner that executes job"
           },
           "url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
             "title": "Url",
             "description": "Link to get this resource (self)"
           },
           "runner_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
             "title": "Runner Url",
             "description": "Link to the solver's job (parent collection)"
           },
           "outputs_url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
             "title": "Outputs Url",
             "description": "Link to the job outputs (sub-collection)"
           }
@@ -5792,9 +5627,6 @@
                 {
                   "items": {},
                   "type": "array"
-                },
-                {
-                  "type": "null"
                 }
               ]
             },
@@ -5828,15 +5660,8 @@
             "title": "Job Id"
           },
           "node_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "uuid",
             "title": "Node Id"
           },
           "log_level": {
@@ -5914,17 +5739,10 @@
             "description": "Custom key-value map"
           },
           "url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
             "title": "Url",
             "description": "Link to get this resource (self)"
           }
@@ -6011,9 +5829,6 @@
                 {
                   "items": {},
                   "type": "array"
-                },
-                {
-                  "type": "null"
                 }
               ]
             },
@@ -6065,28 +5880,14 @@
             "description": "Last modification timestamp of the solver job"
           },
           "started_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "date-time",
             "title": "Started At",
             "description": "Timestamp that indicate the moment the solver starts execution or None if the event did not occur"
           },
           "stopped_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "date-time",
             "title": "Stopped At",
             "description": "Timestamp at which the solver finished or killed execution or None if the event did not occur"
           }
@@ -6182,6 +5983,7 @@
           },
           "download_link": {
             "type": "string",
+            "maxLength": 65536,
             "minLength": 1,
             "format": "uri",
             "title": "Download Link"
@@ -6206,29 +6008,24 @@
             "title": "Version"
           },
           "released": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "type": "string",
-                  "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$"
+            },
+            "type": "object",
             "title": "Released",
             "description": "Maps every route's path tag with a released version"
           },
           "docs_url": {
             "type": "string",
+            "maxLength": 65536,
             "minLength": 1,
             "format": "uri",
             "title": "Docs Url"
           },
           "docs_dev_url": {
             "type": "string",
+            "maxLength": 65536,
             "minLength": 1,
             "format": "uri",
             "title": "Docs Dev Url"
@@ -6263,15 +6060,8 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           }
         },
@@ -6291,15 +6081,8 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           }
         },
@@ -6511,7 +6294,7 @@
             "title": "Unitextrainfo"
           },
           "currentCostPerUnit": {
-            "type": "string",
+            "type": "number",
             "title": "Currentcostperunit"
           },
           "default": {
@@ -6532,27 +6315,13 @@
       "Profile": {
         "properties": {
           "first_name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 255,
             "title": "First Name"
           },
           "last_name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 255,
             "title": "Last Name"
           },
           "id": {
@@ -6570,25 +6339,11 @@
             "$ref": "#/components/schemas/UserRoleEnum"
           },
           "groups": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Groups"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/Groups"
           },
           "gravatar_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 40
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 40,
             "title": "Gravatar Id",
             "description": "md5 hash value of email to retrieve an avatar image from https://www.gravatar.com"
           }
@@ -6625,27 +6380,13 @@
       "ProfileUpdate": {
         "properties": {
           "first_name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 255,
             "title": "First Name"
           },
           "last_name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 255,
             "title": "Last Name"
           }
         },
@@ -6737,14 +6478,7 @@
             "description": "Human readable name"
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Description"
           },
           "maintainer": {
@@ -6752,17 +6486,10 @@
             "title": "Maintainer"
           },
           "url": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2083,
-                "minLength": 1,
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
             "title": "Url",
             "description": "Link to get this resource"
           }
@@ -6803,14 +6530,7 @@
             "title": "Kind"
           },
           "content_schema": {
-            "anyOf": [
-              {
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "object",
             "title": "Content Schema",
             "description": "jsonschema for the port's value. SEE https://json-schema.org"
           }
@@ -6841,25 +6561,11 @@
             "title": "Uid"
           },
           "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Title"
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Description"
           }
         },
@@ -6886,14 +6592,7 @@
             "title": "Kind"
           },
           "content_schema": {
-            "anyOf": [
-              {
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "object",
             "title": "Content Schema",
             "description": "jsonschema for the port's value. SEE https://json-schema.org"
           }
@@ -6977,14 +6676,7 @@
             "title": "Label"
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Description"
           }
         },
@@ -7043,14 +6735,7 @@
             "title": "Name"
           },
           "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Description"
           },
           "owner": {
@@ -7060,14 +6745,7 @@
             "minimum": 0
           },
           "thumbnail": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Thumbnail"
           },
           "status": {
@@ -7092,9 +6770,7 @@
         "required": [
           "walletId",
           "name",
-          "description",
           "owner",
-          "thumbnail",
           "status",
           "created",
           "modified",
