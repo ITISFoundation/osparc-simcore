@@ -8,10 +8,12 @@ from urllib.parse import quote
 import httpx
 from fastapi import status
 from fixtures.fake_services import ServiceInRegistryInfoDict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 
 def _assert_response_and_unwrap_envelope(got: httpx.Response):
-    assert got.encoding == "application/json"
+    assert got.headers["content-type"] == "application/json"
+    assert got.encoding == "utf-8"
 
     body = got.json()
     assert isinstance(body, dict)
@@ -20,12 +22,14 @@ def _assert_response_and_unwrap_envelope(got: httpx.Response):
 
 
 async def test_get_services_extras_by_key_and_version_with_empty_registry(
-    client: httpx.AsyncClient, api_version_prefix: str
+    configure_registry_access: EnvVarsDict,
+    client: httpx.AsyncClient,
+    api_version_prefix: str,
 ):
     resp = await client.get(
         f"/{api_version_prefix}/service_extras/whatever/someversion"
     )
-    assert resp.status_code == status.HTTP_400_BAD_REQUEST, f"Got f{resp.text}"
+    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"Got f{resp.text}"
     resp = await client.get(
         f"/{api_version_prefix}/service_extras/simcore/services/dynamic/something/someversion"
     )
@@ -37,6 +41,7 @@ async def test_get_services_extras_by_key_and_version_with_empty_registry(
 
 
 async def test_get_services_extras_by_key_and_version(
+    configure_registry_access: EnvVarsDict,
     client: httpx.AsyncClient,
     created_services: list[ServiceInRegistryInfoDict],
     api_version_prefix: str,
@@ -54,6 +59,6 @@ async def test_get_services_extras_by_key_and_version(
 
         assert resp.status_code == status.HTTP_200_OK, f"Got {resp.text=}"
 
-        service_extras, error = _assert_response_and_unwrap_envelope(resp.json())
+        service_extras, error = _assert_response_and_unwrap_envelope(resp)
         assert not error
         assert created_service["service_extras"] == service_extras
