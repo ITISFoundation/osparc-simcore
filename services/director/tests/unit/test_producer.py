@@ -221,11 +221,11 @@ async def test_service_assigned_env_variables(
         assert "STORAGE_ENDPOINT" in envs_dict
 
         assert "SIMCORE_USER_ID" in envs_dict
-        assert envs_dict["SIMCORE_USER_ID"] == user_id
+        assert envs_dict["SIMCORE_USER_ID"] == f"{user_id}"
         assert "SIMCORE_NODE_UUID" in envs_dict
         assert envs_dict["SIMCORE_NODE_UUID"] == service_uuid
         assert "SIMCORE_PROJECT_ID" in envs_dict
-        assert envs_dict["SIMCORE_PROJECT_ID"] == project_id
+        assert envs_dict["SIMCORE_PROJECT_ID"] == f"{project_id}"
         assert "SIMCORE_NODE_BASEPATH" in envs_dict
         assert envs_dict["SIMCORE_NODE_BASEPATH"] == service["service_basepath"]
         assert "SIMCORE_HOST_NAME" in envs_dict
