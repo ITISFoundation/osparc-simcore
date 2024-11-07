@@ -3,8 +3,9 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 import simcore_service_director
@@ -26,6 +27,7 @@ pytest_plugins = [
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.repository_paths",
+    "pytest_simcore.simcore_service_library_fixtures",
 ]
 
 
@@ -151,3 +153,22 @@ async def app(
         shutdown_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_SHUTDOWN,
     ):
         yield the_test_app
+
+
+@pytest.fixture
+async def with_docker_network(
+    docker_network: Callable[..., Awaitable[dict[str, Any]]],
+) -> dict[str, Any]:
+    return await docker_network()
+
+
+@pytest.fixture
+def configured_docker_network(
+    with_docker_network: dict[str, Any],
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {"DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME": with_docker_network["Name"]},
+    )
