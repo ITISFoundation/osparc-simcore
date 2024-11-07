@@ -94,7 +94,7 @@ class CompRunsAtDB(BaseModel):
                     "cluster_id": 0,
                     "iteration": 42,
                     "result": "NOT_STARTED",
-                    "created": "2021-03-01T13:07:34.19161",
+                    "created": "2021-03-01T12:07:34.19161",
                     "modified": "2021-03-01T13:07:34.19161",
                     "use_on_demand_clusters": False,
                 },
@@ -106,7 +106,7 @@ class CompRunsAtDB(BaseModel):
                     "iteration": 12,
                     "result": "SUCCESS",
                     "created": "2021-03-01T13:07:34.19161",
-                    "modified": "2021-03-01T13:07:34.19161",
+                    "modified": "2021-03-01T14:07:34.19161",
                     "started": "2021-03-01T08:07:34.19161",
                     "ended": "2021-03-01T13:07:34.10",
                     "metadata": {
