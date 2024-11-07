@@ -13,10 +13,15 @@ from pydantic import BaseModel
 from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,
 )
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
 from sqlalchemy import func, literal_column
+from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_asyncpg_engine
 from .errors import WorkspaceGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -41,14 +46,15 @@ class WorkspaceGroupGetDB(BaseModel):
 
 async def create_workspace_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     workspace_id: WorkspaceID,
     group_id: GroupID,
-    *,
     read: bool,
     write: bool,
     delete: bool,
 ) -> WorkspaceGroupGetDB:
-    async with get_database_engine(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
             workspaces_access_rights.insert()
             .values(
@@ -62,12 +68,14 @@ async def create_workspace_group(
             )
             .returning(literal_column("*"))
         )
-        row = await result.first()
+        row = result.first()
         return WorkspaceGroupGetDB.from_orm(row)
 
 
 async def list_workspace_groups(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     workspace_id: WorkspaceID,
 ) -> list[WorkspaceGroupGetDB]:
     stmt = (
@@ -83,14 +91,16 @@ async def list_workspace_groups(
         .where(workspaces_access_rights.c.workspace_id == workspace_id)
     )
 
-    async with get_database_engine(app).acquire() as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(stmt)
-        rows = await result.fetchall() or []
+        rows = result.fetchall() or []
         return [WorkspaceGroupGetDB.from_orm(row) for row in rows]
 
 
 async def get_workspace_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     workspace_id: WorkspaceID,
     group_id: GroupID,
 ) -> WorkspaceGroupGetDB:
@@ -110,9 +120,9 @@ async def get_workspace_group(
         )
     )
 
-    async with get_database_engine(app).acquire() as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(stmt)
-        row = await result.first()
+        row = result.first()
         if row is None:
             raise WorkspaceGroupNotFoundError(
                 workspace_id=workspace_id, group_id=group_id
@@ -122,14 +132,15 @@ async def get_workspace_group(
 
 async def update_workspace_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     workspace_id: WorkspaceID,
     group_id: GroupID,
-    *,
     read: bool,
     write: bool,
     delete: bool,
 ) -> WorkspaceGroupGetDB:
-    async with get_database_engine(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
             workspaces_access_rights.update()
             .values(
@@ -143,7 +154,7 @@ async def update_workspace_group(
             )
             .returning(literal_column("*"))
         )
-        row = await result.first()
+        row = result.first()
         if row is None:
             raise WorkspaceGroupNotFoundError(
                 workspace_id=workspace_id, group_id=group_id
@@ -153,10 +164,12 @@ async def update_workspace_group(
 
 async def delete_workspace_group(
     app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
     workspace_id: WorkspaceID,
     group_id: GroupID,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(
             workspaces_access_rights.delete().where(
                 (workspaces_access_rights.c.workspace_id == workspace_id)
