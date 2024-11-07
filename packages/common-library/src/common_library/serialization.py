@@ -31,7 +31,7 @@ def model_dump_with_secrets(
         elif isinstance(field_data, dict):
             field_type = get_origin(settings_obj.model_fields[field_name].annotation)
             if not field_type:
-                break
+                continue
             if issubclass(field_type, BaseModel):
                 data[field_name] = model_dump_with_secrets(
                     field_type.model_validate(field_data),
