@@ -1,5 +1,4 @@
 from typing import Final
-
 # dynamic services
 
 DYNAMIC_SIDECAR_SERVICE_PREFIX: Final[str] = "dy-sidecar"
@@ -14,7 +13,7 @@ DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: Final[str] = "io.simcore.scheduler-data"
 # - itisfoundation
 # - 10.0.0.0:8473 (IP & Port)
 DYNAMIC_SIDECAR_DOCKER_IMAGE_RE = (
-    r"(^([_a-zA-Z0-9:.-]+)/)?(dynamic-sidecar):([_a-zA-Z0-9.-]+$)"
+    r"^(([_a-zA-Z0-9:.-]+)/)?(dynamic-sidecar):([_a-zA-Z0-9.-]+)$"
 )
 
 REGEX_DY_SERVICE_SIDECAR = rf"^{DYNAMIC_SIDECAR_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"

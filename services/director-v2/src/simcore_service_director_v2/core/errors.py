@@ -28,9 +28,6 @@ from models_library.projects_nodes_io import NodeID
 class DirectorError(Exception):
     """Basic exception"""
 
-    def message(self) -> str:
-        return f"{self.args[0]}"
-
 
 class ConfigurationError(DirectorError):
     """An error in the director-v2 configuration"""
@@ -161,7 +158,7 @@ class TaskSchedulingError(SchedulerError):
                     f"{self.project_id}",
                     f"{self.node_id}",
                 ),
-                "msg": self.message(),
+                "msg": f"{self.args[0]}",
                 "type": self.code,
             },
         ]
