@@ -228,10 +228,20 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
     },
 
     __removeWorkspace: function(workspace) {
+      // remove it from the tree
       const sharedWorkspaceModel = this.__getModel(-1, null);
       const idx = sharedWorkspaceModel.getChildren().toArray().findIndex(w => workspace.getWorkspaceId() === w.getWorkspaceId());
       if (idx > -1) {
-        sharedWorkspaceModel.getChildren().toArray().splice(idx, 1);
+        sharedWorkspaceModel.getChildren().removeAt(idx);
+      }
+
+      // remove it from the cached models
+      const modelFound = this.__getModel(workspace.getWorkspaceId(), null);
+      if (modelFound) {
+        const index = this.__models.indexOf(modelFound);
+        if (index > -1) { // only splice array when item is found
+          this.__models.splice(index, 1); // 2nd parameter means remove one item only
+        }
       }
     },
 
