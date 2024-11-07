@@ -22,12 +22,16 @@ async def _check_exists_and_access(
     user_id: UserID,
     folder_id: FolderID,
 ) -> bool:
-    # 1. exists ?
+    # exists?
+    #   check whether this folder exists
+    #   otherwise raise not-found error
     folder_db = await _folders_db.get(
         app, folder_id=folder_id, product_name=product_name
     )
 
-    # 2. can ?
+    # can?
+    #  check whether user in product has enough permissions to delete this folder
+    #  otherwise raise forbidden error
     workspace_is_private = True
     if folder_db.workspace_id:
         await check_user_workspace_access(
@@ -49,7 +53,7 @@ async def _check_exists_and_access(
     return workspace_is_private
 
 
-async def _batch_update_folders(
+async def _folders_db_update(
     app: web.Application,
     *,
     product_name: ProductName,
@@ -97,7 +101,7 @@ async def trash_folder(
         app, product_name=product_name, user_id=user_id, folder_id=folder_id
     )
 
-    # 3. Trash
+    # Trash
     trashed_at = arrow.utcnow().datetime
 
     _logger.debug(
@@ -105,15 +109,15 @@ async def trash_folder(
         force_stop_first,
     )
 
-    # 3.1 Trash folder and children
-    await _batch_update_folders(
+    # 1. Trash folder and children
+    await _folders_db_update(
         app,
         folder_id=folder_id,
         product_name=product_name,
         trashed_at=trashed_at,
     )
 
-    # 3.2 Trash all child projects that I am an owner
+    # 2. Trash all child projects that I am an owner
     child_projects: list[
         ProjectID
     ] = await _folders_db.get_projects_recursively_only_if_user_is_owner(
@@ -149,7 +153,7 @@ async def untrash_folder(
     # 3. UNtrash
 
     # 3.1 UNtrash folder and children
-    await _batch_update_folders(
+    await _folders_db_update(
         app,
         folder_id=folder_id,
         product_name=product_name,
