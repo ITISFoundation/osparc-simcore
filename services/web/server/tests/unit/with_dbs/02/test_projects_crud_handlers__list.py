@@ -55,7 +55,7 @@ async def _list_projects(
     if query_parameters:
         url = url.with_query(**query_parameters)
 
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, errors, meta, links = await assert_status(
         resp,
         expected,
@@ -121,9 +121,9 @@ def standard_user_role() -> tuple[str, tuple[UserRole, ExpectedResponse]]:
 @pytest.mark.parametrize(
     "limit, offset, expected_error_msg",
     [
-        (-7, 0, "ensure this value is greater than or equal to 1"),
-        (0, 0, "ensure this value is greater than or equal to 1"),
-        (43, -2, "ensure this value is greater than or equal to 0"),
+        (-7, 0, "Input should be greater than or equal to 1"),
+        (0, 0, "Input should be greater than or equal to 1"),
+        (43, -2, "Input should be greater than or equal to 0"),
     ],
 )
 @pytest.mark.parametrize(*standard_user_role())
@@ -145,7 +145,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         query_parameters={"limit": limit, "offset": offset},
         expected_error_msg=expected_error_msg,
-        expected_error_code="value_error.number.not_ge",
+        expected_error_code="greater_than_equal",
     )
 
 

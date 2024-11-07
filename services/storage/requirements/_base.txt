@@ -382,10 +382,23 @@ orjson==3.10.0
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
 packaging==24.0
     # via -r requirements/_base.in
 pamqp==3.3.0
@@ -468,11 +481,24 @@ pydantic-core==2.23.4
     # via pydantic
 pydantic-extra-types==2.9.0
     # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-pydantic-settings==2.6.0
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+    #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
+pydantic-settings==2.6.1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -707,7 +733,7 @@ ujson==5.9.0
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   aiohttp-swagger
-urllib3==2.0.7
+urllib3==2.2.3
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

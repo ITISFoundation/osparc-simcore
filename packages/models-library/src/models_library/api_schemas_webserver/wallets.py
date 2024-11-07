@@ -2,7 +2,14 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, Literal, TypeAlias
 
-from pydantic import ConfigDict, Field, HttpUrl, PlainSerializer, field_validator
+from pydantic import (
+    ConfigDict,
+    Field,
+    HttpUrl,
+    PlainSerializer,
+    ValidationInfo,
+    field_validator,
+)
 
 from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
 from ..users import GroupID
@@ -20,7 +27,7 @@ class WalletGet(OutputSchema):
     created: datetime
     modified: datetime
 
-    model_config = ConfigDict(frozen=False)
+    model_config = ConfigDict(from_attributes=True, frozen=False)
 
 
 class WalletGetWithAvailableCredits(WalletGet):
@@ -139,6 +146,7 @@ class PaymentMethodGet(OutputSchema):
     )
 
     model_config = ConfigDict(
+        frozen=False,
         json_schema_extra={
             "examples": [
                 {
@@ -159,7 +167,7 @@ class PaymentMethodGet(OutputSchema):
                     "autoRecharge": "False",
                 },
             ],
-        }
+        },
     )
 
 
@@ -200,8 +208,8 @@ class ReplaceWalletAutoRecharge(InputSchema):
 
     @field_validator("monthly_limit_in_usd")
     @classmethod
-    def _monthly_limit_greater_than_top_up(cls, v, values):
-        top_up = values["top_up_amount_in_usd"]
+    def _monthly_limit_greater_than_top_up(cls, v, info: ValidationInfo):
+        top_up = info.data["top_up_amount_in_usd"]
         if v is not None and v < top_up:
             msg = "Monthly limit ({v} USD) should be greater than top up amount ({top_up} USD)"
             raise ValueError(msg)

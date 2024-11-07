@@ -59,7 +59,7 @@ async def test_workspaces_workflow(
         },
     )
     added_workspace, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    assert WorkspaceGet.parse_obj(added_workspace)
+    assert WorkspaceGet.model_validate(added_workspace)
 
     # list user workspaces
     url = client.app.router["list_workspaces"].url_for()
@@ -78,7 +78,7 @@ async def test_workspaces_workflow(
     url = client.app.router["get_workspace"].url_for(
         workspace_id=f"{added_workspace['workspaceId']}"
     )
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["workspaceId"] == added_workspace["workspaceId"]
     assert data["name"] == "My first workspace"
@@ -96,7 +96,7 @@ async def test_workspaces_workflow(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert WorkspaceGet.parse_obj(data)
+    assert WorkspaceGet.model_validate(data)
 
     # list user workspaces
     url = client.app.router["list_workspaces"].url_for()

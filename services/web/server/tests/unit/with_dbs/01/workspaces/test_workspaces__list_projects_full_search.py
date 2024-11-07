@@ -82,7 +82,7 @@ async def test_workspaces__list_projects_full_search(
     # List project with full search
     base_url = client.app.router["list_projects_full_search"].url_for()
     url = base_url.with_query({"text": "solution"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == project_1["uuid"]
@@ -104,7 +104,7 @@ async def test_workspaces__list_projects_full_search(
     # List project with full search
     base_url = client.app.router["list_projects_full_search"].url_for()
     url = base_url.with_query({"text": "Orion"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == project_2["uuid"]
@@ -137,7 +137,7 @@ async def test_workspaces__list_projects_full_search(
     # List project with full search
     base_url = client.app.router["list_projects_full_search"].url_for()
     url = base_url.with_query({"text": "Skyline"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == project_3["uuid"]
@@ -147,7 +147,7 @@ async def test_workspaces__list_projects_full_search(
     # List project with full search (it should return data across all workspaces/folders)
     base_url = client.app.router["list_projects_full_search"].url_for()
     url = base_url.with_query({"text": "solution"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     sorted_data = sorted(data, key=lambda x: x["uuid"])
     assert len(sorted_data) == 3
@@ -190,7 +190,7 @@ async def test__list_projects_full_search_with_query_parameters(
     # Full search with text
     base_url = client.app.router["list_projects_full_search"].url_for()
     url = base_url.with_query({"text": "Orion"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == project["uuid"]
@@ -203,7 +203,7 @@ async def test__list_projects_full_search_with_query_parameters(
             "order_by": json.dumps({"field": "uuid", "direction": "desc"}),
         }
     )
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == project["uuid"]
@@ -211,7 +211,7 @@ async def test__list_projects_full_search_with_query_parameters(
     # Full search with tag_ids
     base_url = client.app.router["list_projects_full_search"].url_for()
     url = base_url.with_query({"text": "Orion", "tag_ids": "1,2"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 0
 
@@ -232,7 +232,7 @@ async def test__list_projects_full_search_with_query_parameters(
     # Full search with tag_ids
     base_url = client.app.router["list_projects_full_search"].url_for()
     url = base_url.with_query({"text": "Orion", "tag_ids": f"{added_tag['id']}"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == project["uuid"]

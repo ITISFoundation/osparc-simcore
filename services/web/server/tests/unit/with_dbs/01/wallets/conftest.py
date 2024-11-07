@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator, Iterator
 from copy import deepcopy
 from pathlib import Path
 
+from faker import Faker
 import pytest
 import sqlalchemy as sa
 from aioresponses import aioresponses
@@ -23,6 +24,7 @@ def app_environment(
     app_environment: EnvVarsDict,
     env_devel_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    faker: Faker
 ):
     new_envs = setenvs_from_dict(
         monkeypatch,

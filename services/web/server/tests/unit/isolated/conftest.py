@@ -96,6 +96,7 @@ def mock_env_deployer_pipeline(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 def mock_env_devel_environment(
     mock_env_devel_environment: EnvVarsDict,  # pylint: disable=redefined-outer-name
     monkeypatch: pytest.MonkeyPatch,
+    faker: Faker
 ) -> EnvVarsDict:
     # Overrides to ensure dev-features are enabled testings
     return mock_env_devel_environment | setenvs_from_dict(
@@ -218,8 +219,8 @@ def mock_webserver_service_environment(
             "STORAGE_PORT": os.environ.get("STORAGE_PORT", "8080"),
             "SWARM_STACK_NAME": os.environ.get("SWARM_STACK_NAME", "simcore"),
             "WEBSERVER_LOGLEVEL": os.environ.get("LOG_LEVEL", "WARNING"),
-            "SESSION_COOKIE_MAX_AGE": str(7 * 24 * 60 * 60),
-        },
+            "SESSION_COOKIE_MAX_AGE": str(7 * 24 * 60 * 60)
+        }
     )
 
     return (

@@ -10,6 +10,7 @@ from decimal import Decimal
 from typing import Any, TypeAlias, cast
 from unittest.mock import MagicMock
 
+import pycountry
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
@@ -79,7 +80,7 @@ def create_new_wallet(client: TestClient, faker: Faker) -> Callable:
             },
         )
         data, _ = await assert_status(resp, status.HTTP_201_CREATED)
-        return WalletGet.parse_obj(data)
+        return WalletGet.model_validate(data)
 
     return _create
 
@@ -334,7 +335,7 @@ def setup_user_pre_registration_details_db(
                 address=faker.address().replace("\n", ", "),
                 city=faker.city(),
                 state=faker.state(),
-                country=faker.country(),
+                country=faker.random_element([c.name for c in pycountry.countries]),
                 postal_code=faker.postcode(),
                 created_by=None,
             )

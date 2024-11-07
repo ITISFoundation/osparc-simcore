@@ -36,7 +36,7 @@ async def _do_send_mail(
     WARNING: _do_send_mail is mocked so be careful when changing the signature or name !!
     """
 
-    _logger.debug("Email configuration %s", settings.json(indent=1))
+    _logger.debug("Email configuration %s", settings.model_dump_json(indent=1))
 
     if settings.SMTP_PORT == 587:
         # NOTE: aiosmtplib does not handle port 587 correctly this is a workaround

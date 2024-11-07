@@ -33,7 +33,7 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import NonNegativeFloat, NonNegativeInt, parse_obj_as
+from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -72,13 +72,16 @@ async def test_get_node_resources(
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = parse_obj_as(ServiceResourcesDict, data)
+            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert (
-                node_resources
-                == ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
-            )
+            assert {k: v.model_dump() for k, v in node_resources.items()} == next(
+                iter(
+                    ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                        "examples"
+                    ]
+                )
+            )  # type: ignore
         else:
             assert not data
             assert error
@@ -145,18 +148,22 @@ async def test_replace_node_resources_is_forbidden_by_default(
         response = await client.put(
             f"{url}",
             json=ServiceResourcesDictHelpers.create_jsonable(
-                ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+                ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
             ),
         )
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = parse_obj_as(ServiceResourcesDict, data)
+            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
             assert (
                 node_resources
-                == ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+                == ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
             )
 
 
@@ -183,18 +190,22 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
         response = await client.put(
             f"{url}",
             json=ServiceResourcesDictHelpers.create_jsonable(
-                ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+                ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
             ),
         )
         data, error = await assert_status(response, expected)
         if data:
             assert not error
-            node_resources = parse_obj_as(ServiceResourcesDict, data)
+            node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
             assert (
-                node_resources
-                == ServiceResourcesDictHelpers.Config.schema_extra["examples"][0]
+                {k: v.model_dump() for k, v in node_resources.items()}
+                == ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][0]
             )
 
 
@@ -218,7 +229,9 @@ async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
             f"{url}",
             json=ServiceResourcesDictHelpers.create_jsonable(
                 # NOTE: we apply a different resource set
-                ServiceResourcesDictHelpers.Config.schema_extra["examples"][1]
+                ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                    "examples"
+                ][1]
             ),
         )
         await assert_status(response, expected)
@@ -383,8 +396,8 @@ async def test_create_and_delete_many_nodes_in_parallel(
             self, *args, **kwargs
         ) -> list[DynamicServiceGet]:  # noqa: ARG002
             return [
-                DynamicServiceGet.parse_obj(
-                    DynamicServiceGet.Config.schema_extra["examples"][1]
+                DynamicServiceGet.model_validate(
+                    DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
                     | {"service_uuid": service_uuid, "project_id": user_project["uuid"]}
                 )
                 for service_uuid in self.running_services_uuids
@@ -928,8 +941,7 @@ def mock_storage_calls(aioresponses_mocker: aioresponses, faker: Faker) -> None:
         payload=jsonable_encoder(
             Envelope[list[FileMetaDataGet]](
                 data=[
-                    parse_obj_as(
-                        FileMetaDataGet,
+                    FileMetaDataGet.model_validate(
                         {
                             "file_uuid": file_uuid,
                             "location_id": 0,
@@ -979,7 +991,7 @@ async def test_read_project_nodes_previews(
     assert not error
     assert len(data) == 3
 
-    nodes_previews = parse_obj_as(list[_ProjectNodePreview], data)
+    nodes_previews = TypeAdapter(list[_ProjectNodePreview]).validate_python(data)
 
     # GET node's preview
     for node_preview in nodes_previews:
@@ -995,4 +1007,4 @@ async def test_read_project_nodes_previews(
             status.HTTP_200_OK,
         )
 
-        assert parse_obj_as(_ProjectNodePreview, data) == node_preview
+        assert _ProjectNodePreview.model_validate(data) == node_preview
