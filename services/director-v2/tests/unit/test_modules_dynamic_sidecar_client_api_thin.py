@@ -162,7 +162,7 @@ async def test_post_containers_ports_outputs_dirs(
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
         "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/ports/outputs/dirs",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/ports/outputs/dirs",
         mock_response,
         None,
     )
@@ -216,7 +216,7 @@ async def test_post_containers_networks_attach(
     container_id = "a_container_id"
     mock_request(
         "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/{container_id}/networks:attach",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/{container_id}/networks:attach",
         mock_response,
         None,
     )
@@ -239,7 +239,7 @@ async def test_post_containers_networks_detach(
     container_id = "a_container_id"
     mock_request(
         "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/{container_id}/networks:detach",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/{container_id}/networks:detach",
         mock_response,
         None,
     )
@@ -262,7 +262,7 @@ async def test_put_volumes(
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
         "PUT",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/volumes/{volume_category}",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/volumes/{volume_category}",
         mock_response,
         None,
     )
@@ -371,7 +371,7 @@ async def test_get_containers_inactivity(
     mock_response = Response(status.HTTP_200_OK, json={})
     mock_request(
         "GET",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/activity",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/activity",
         mock_response,
         None,
     )
@@ -388,7 +388,7 @@ async def test_post_disk_reserved_free(
     mock_response = Response(status.HTTP_204_NO_CONTENT)
     mock_request(
         "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/disk/reserved:free",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/disk/reserved:free",
         mock_response,
         None,
     )
@@ -405,7 +405,7 @@ async def test_post_containers_compose_spec(
     mock_response = Response(status.HTTP_202_ACCEPTED)
     mock_request(
         "POST",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers/compose-spec",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/compose-spec",
         mock_response,
         None,
     )
