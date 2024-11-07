@@ -11,7 +11,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import docker
-import docker.models.networks
 import pytest
 from fastapi import FastAPI
 from models_library.projects import ProjectID
@@ -40,25 +39,6 @@ def ensure_service_runs_in_ci(
             "DEFAULT_MAX_MEMORY": f"{int(25 * pow(1024, 2))}",
             "DEFAULT_MAX_NANO_CPUS": f"{int(0.01 * pow(10, 9))}",
         },
-    )
-
-
-@pytest.fixture
-async def with_docker_network(
-    docker_network: Callable[..., Awaitable[dict[str, Any]]],
-) -> dict[str, Any]:
-    return await docker_network()
-
-
-@pytest.fixture
-def configured_docker_network(
-    with_docker_network: dict[str, Any],
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(
-        monkeypatch,
-        {"DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME": with_docker_network["Name"]},
     )
 
 
