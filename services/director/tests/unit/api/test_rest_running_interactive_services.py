@@ -4,7 +4,6 @@
 # pylint: disable=too-many-arguments
 
 import uuid
-from collections.abc import Iterator
 
 import httpx
 import pytest
@@ -14,7 +13,6 @@ from fastapi import status
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.async_utils import _sequential_jobs_contexts
 
 
 def _assert_response_and_unwrap_envelope(got: httpx.Response):
@@ -49,17 +47,6 @@ async def test_running_services_post_and_delete_no_swarm(
     )
     data = resp.json()
     assert resp.status_code == 500, data
-
-
-@pytest.fixture
-def x_simcore_user_agent_header(faker: Faker) -> dict[str, str]:
-    return {"x-simcore-user-agent": faker.pystr()}
-
-
-@pytest.fixture
-def sequential_context_cleaner() -> Iterator[None]:
-    yield
-    _sequential_jobs_contexts.clear()
 
 
 @pytest.mark.parametrize(
