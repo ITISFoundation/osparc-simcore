@@ -63,13 +63,13 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         no_api_version: bool = False,
     ) -> str:
         """formats and returns an url for the request"""
-        api_version = "" if no_api_version else f"/{self.API_VERSION}"
+        api_version = "" if no_api_version else f"{self.API_VERSION}/"
         return f"{dynamic_sidecar_endpoint}{api_version}{postfix}"
 
     async def _get_health_common(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/health", no_api_version=True)
+        url = self._get_url(dynamic_sidecar_endpoint, "health", no_api_version=True)
         return await self.client.get(url, timeout=self._health_request_timeout)
 
     @retry_on_errors()
@@ -88,7 +88,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     async def get_containers(
         self, dynamic_sidecar_endpoint: AnyHttpUrl, *, only_status: bool
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/containers")
+        url = self._get_url(dynamic_sidecar_endpoint, "containers")
         return await self.client.get(url, params={"only_status": only_status})
 
     @retry_on_errors()

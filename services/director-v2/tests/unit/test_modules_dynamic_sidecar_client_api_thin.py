@@ -116,7 +116,7 @@ async def test_get_containers(
     mock_response = Response(status.HTTP_200_OK)
     mock_request(
         "GET",
-        f"{dynamic_sidecar_endpoint}/{thin_client.API_VERSION}/containers?only_status={str(only_status).lower()}",
+        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers?only_status={str(only_status).lower()}",
         mock_response,
         None,
     )
