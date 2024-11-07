@@ -297,7 +297,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
         }
       }
 
-      if (oldParentFolderId !== undefined) {
+      if (oldParentFolderId === undefined) {
         // it was removed, not moved
         // remove it from the cached models
         const modelFound = this.__getModel(folder.getWorkspaceId(), folder.getParentFolderId());
