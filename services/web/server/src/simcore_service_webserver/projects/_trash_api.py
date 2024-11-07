@@ -120,7 +120,7 @@ async def trash_project(
         product_name=product_name,
         project_uuid=project_id,
         project_patch=ProjectPatchExtended(
-            trashed_at=arrow.utcnow().datetime, hidden=not explicit
+            trashed_at=arrow.utcnow().datetime, trashed_explicitly=not explicit
         ),
     )
 
@@ -138,5 +138,5 @@ async def untrash_project(
         user_id=user_id,
         product_name=product_name,
         project_uuid=project_id,
-        project_patch=ProjectPatchExtended(trashed_at=None, hidden=False),
+        project_patch=ProjectPatchExtended(trashed_at=None, trashed_explicitly=False),
     )
