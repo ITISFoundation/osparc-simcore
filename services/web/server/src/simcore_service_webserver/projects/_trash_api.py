@@ -69,7 +69,7 @@ async def trash_project(
     user_id: UserID,
     project_id: ProjectID,
     force_stop_first: bool,
-    explicit: bool = True,
+    explicit: bool,
 ):
     """
 

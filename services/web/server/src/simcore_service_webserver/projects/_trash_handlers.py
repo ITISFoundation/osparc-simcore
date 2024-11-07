@@ -91,6 +91,7 @@ async def trash_project(request: web.Request):
         user_id=user_id,
         project_id=path_params.project_id,
         force_stop_first=query_params.force,
+        explicit=True,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
