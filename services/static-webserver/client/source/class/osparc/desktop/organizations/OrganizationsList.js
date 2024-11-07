@@ -298,7 +298,8 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
             });
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
+          const errorMessage = err["message"] || this.tr("Something went wrong creating ") + name;
+          osparc.FlashMessenger.getInstance().logAs(errorMessage, "ERROR");
           button.setFetching(false);
           console.error(err);
         })
