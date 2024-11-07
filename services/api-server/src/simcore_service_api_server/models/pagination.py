@@ -56,9 +56,7 @@ class OnePage(BaseModel, Generic[T]):
     """
 
     items: Sequence[T]
-    total: NonNegativeInt = Field(
-        default=None, validate_default=True
-    )  # TODO: should be nullable
+    total: NonNegativeInt | None = Field(default=None, validate_default=True)
 
     @field_validator("total", mode="before")
     @classmethod
