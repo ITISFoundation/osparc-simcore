@@ -15,13 +15,13 @@ aioresponses
 alembic
 asgi_lifespan
 click
+datamodel-code-generator[http]
 docker
 faker
 jsonref
 moto[server] # mock out tests based on AWS-S3
-pyinstrument
 parse
-prance
+pyinstrument
 pytest
 pytest-asyncio
 pytest-cov
