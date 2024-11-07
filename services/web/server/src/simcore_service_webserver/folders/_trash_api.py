@@ -75,9 +75,9 @@ async def _batch_update_folders(
     }
 
     if child_folders:
-        await _folders_db.update(
+        await _folders_db.update_batch(
             app,
-            folder_id=child_folders,
+            *child_folders,
             product_name=product_name,
             trashed_at=trashed_at,
             trashed_explicitly=False,
