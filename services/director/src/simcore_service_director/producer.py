@@ -25,6 +25,7 @@ from aiohttp import (
 from fastapi import FastAPI
 from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
+from servicelib.docker_utils import to_datetime
 from settings_library.docker_registry import RegistrySettings
 from tenacity import retry
 from tenacity.retry import retry_if_exception_type
@@ -45,7 +46,6 @@ from .exceptions import ServiceStateSaveError
 from .instrumentation import get_instrumentation
 from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
-from .utils import parse_as_datetime
 
 log = logging.getLogger(__name__)
 
@@ -702,9 +702,7 @@ async def _get_service_state(
     elif task_state in ("running"):
         now = arrow.utcnow().datetime
         # NOTE: task_state_update_time is only used to discrimitate between 'starting' and 'running'
-        task_state_update_time = parse_as_datetime(
-            last_task["Status"]["Timestamp"], default=now
-        )
+        task_state_update_time = to_datetime(last_task["Status"]["Timestamp"])
         time_since_running = now - task_state_update_time
 
         log.debug("Now is %s, time since running mode is %s", now, time_since_running)
