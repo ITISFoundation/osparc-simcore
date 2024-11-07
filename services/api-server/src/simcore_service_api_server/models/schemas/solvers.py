@@ -120,10 +120,10 @@ class SolverPort(BaseModel):
         title="Key name",
     )
     kind: PortKindStr
-    content_schema: dict[str, Any] | None = Field(
+    content_schema: dict[str, Any] = Field(
         None,
         description="jsonschema for the port's value. SEE https://json-schema.org",
-    )
+    )  # TODO: should be nullable
     model_config = ConfigDict(
         extra="ignore",
         json_schema_extra={

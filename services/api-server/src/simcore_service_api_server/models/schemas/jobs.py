@@ -295,14 +295,14 @@ class JobStatus(BaseModel):
     submitted_at: datetime.datetime = Field(
         ..., description="Last modification timestamp of the solver job"
     )
-    started_at: datetime.datetime | None = Field(
+    started_at: datetime.datetime = Field(
         None,
         description="Timestamp that indicate the moment the solver starts execution or None if the event did not occur",
-    )
-    stopped_at: datetime.datetime | None = Field(
+    )  # TODO: should be nullable
+    stopped_at: datetime.datetime = Field(
         None,
         description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
-    )
+    )  # TODO: should be nullable
 
     model_config = ConfigDict(
         json_schema_extra={

@@ -90,8 +90,10 @@ async def create_study_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     hidden: Annotated[bool, Query()] = True,
-    x_simcore_parent_project_uuid: ProjectID | None = Header(default=None),
-    x_simcore_parent_node_id: NodeID | None = Header(default=None),
+    x_simcore_parent_project_uuid: ProjectID = Header(
+        default=None
+    ),  # TODO: should be nullable
+    x_simcore_parent_node_id: NodeID = Header(default=None),  # TODO: should be nullable
 ) -> Job:
     """
     hidden -- if True (default) hides project from UI
@@ -219,7 +221,7 @@ async def start_study_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
-    cluster_id: ClusterID | None = None,
+    cluster_id: ClusterID = None,  # TODO: should be nullable
 ):
     job_name = _compose_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Starting Job '{job_name}'"):

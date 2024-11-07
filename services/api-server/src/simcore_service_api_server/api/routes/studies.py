@@ -84,8 +84,12 @@ async def get_study(
 async def clone_study(
     study_id: StudyID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-    x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
-    x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
+    x_simcore_parent_project_uuid: Annotated[
+        ProjectID, Header()
+    ] = None,  # TODO: should be nullable
+    x_simcore_parent_node_id: Annotated[
+        NodeID, Header()
+    ] = None,  # TODO: should be nullable
 ):
     project: ProjectGet = await webserver_api.clone_project(
         project_id=study_id,
