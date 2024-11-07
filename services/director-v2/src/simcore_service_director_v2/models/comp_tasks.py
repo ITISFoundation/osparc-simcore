@@ -74,13 +74,13 @@ class Image(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
         json_schema_extra={
-            "examples": [
+            "examples": [   # type: ignore
                 {
                     "name": "simcore/services/dynamic/jupyter-octave-python-math",
                     "tag": "1.3.1",
                     "node_requirements": node_req_example,
                 }
-                for node_req_example in NodeRequirements.model_config[
+                for node_req_example in NodeRequirements.model_config[  # type: ignore
                     "json_schema_extra"
                 ]["examples"]
             ]
@@ -237,11 +237,9 @@ class CompTaskAtDB(BaseModel):
                         "pricing_unit_id": 1,
                         "pricing_unit_cost_id": 1,
                     },
-                    "hardware_info": HardwareInfo.model_config["json_schema_extra"][
-                        "examples"
-                    ][0],
+                    "hardware_info": next(iter(HardwareInfo.model_config["json_schema_extra"]["examples"])),    # type: ignore
                 }
-                for image_example in Image.model_config["json_schema_extra"]["examples"]
+                for image_example in Image.model_config["json_schema_extra"]["examples"]    # type: ignore
             ]
         },
     )
