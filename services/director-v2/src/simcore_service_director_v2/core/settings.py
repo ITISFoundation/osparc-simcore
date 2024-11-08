@@ -58,15 +58,13 @@ class DirectorV0Settings(BaseCustomSettings):
 
     @cached_property
     def endpoint(self) -> str:
-        url: str = str(
-            AnyHttpUrl.build(
-                scheme="http",
-                host=self.DIRECTOR_HOST,
-                port=self.DIRECTOR_PORT,
-                path=f"{self.DIRECTOR_V0_VTAG}",
-            )
+        url = AnyHttpUrl.build(  # pylint: disable=no-member
+            scheme="http",
+            host=self.DIRECTOR_HOST,
+            port=self.DIRECTOR_PORT,
+            path=f"{self.DIRECTOR_V0_VTAG}",
         )
-        return url
+        return f"{url}"
 
 
 class ComputationalBackendSettings(BaseCustomSettings):
