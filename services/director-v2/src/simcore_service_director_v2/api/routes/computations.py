@@ -63,7 +63,7 @@ from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
-from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
+from ...modules.comp_scheduler import BaseCompScheduler
 from ...modules.db.repositories.clusters import ClustersRepository
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
@@ -288,7 +288,7 @@ async def _try_start_pipeline(
 )
 # NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
 @run_sequentially_in_context(target_args=["computation.project_id"])
-async def create_computation(  # noqa: PLR0913  # pylint:disable=too-many-positional-arguments
+async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positional-arguments
     computation: ComputationCreate,
     request: Request,
     project_repo: Annotated[

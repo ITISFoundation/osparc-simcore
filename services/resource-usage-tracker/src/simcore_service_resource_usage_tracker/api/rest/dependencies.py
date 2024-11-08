@@ -12,7 +12,7 @@ from fastapi.requests import Request
 from servicelib.fastapi.dependencies import get_app, get_reverse_url_mapper
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ...modules.db.repositories._base import BaseRepository
+from ...services.modules.db.repositories._base import BaseRepository
 
 logger = logging.getLogger(__name__)
 

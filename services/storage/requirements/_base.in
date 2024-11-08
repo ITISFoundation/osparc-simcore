@@ -20,6 +20,7 @@ aiofiles # i/o
 aiohttp # server
 aiohttp-swagger[performance] # server
 aiopg[sa] # db
+opentelemetry-instrumentation-botocore
 packaging
 tenacity
 typer

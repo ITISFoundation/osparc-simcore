@@ -102,7 +102,9 @@ qx.Class.define("osparc.file.FileDrop", {
         }
       }
       return files;
-    }
+    },
+
+    ONE_FILE_ONLY: qx.locale.Manager.tr("Only one file at a time is accepted.") + "<br>" + qx.locale.Manager.tr("Please zip all files together."),
   },
 
   events: {
@@ -299,7 +301,7 @@ qx.Class.define("osparc.file.FileDrop", {
               pos: this.__pointerFileEventToScreenPos(e)
             });
           } else {
-            osparc.FlashMessenger.getInstance().logAs(this.tr("Only one file at a time is accepted."), "ERROR");
+            osparc.FlashMessenger.getInstance().logAs(osparc.file.FileDrop.ONE_FILE_ONLY, "ERROR");
           }
         } else {
           osparc.FlashMessenger.getInstance().logAs(this.tr("Folders are not accepted. You might want to upload a zip file."), "ERROR");

@@ -36,6 +36,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
   },
 
   events: {
+    "highlightEdge": "qx.event.type.Data",
     "linkFieldModified": "qx.event.type.Data",
     "fileRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
@@ -928,6 +929,17 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         nodeUuid: fromNodeId,
         output: fromPortId
       };
+      const highlightEdgeUI = highlight => {
+        this.fireDataEvent("highlightEdge", {
+          highlight,
+          toNodeId: this.getNode().getNodeId(),
+          toPortId,
+          fromNodeId,
+          fromPortId,
+        });
+      };
+      ctrlLink.addListener("mouseover", () => highlightEdgeUI(true));
+      ctrlLink.addListener("mouseout", () => highlightEdgeUI(false));
 
       const workbench = study.getWorkbench();
       const fromNode = workbench.getNode(fromNodeId);

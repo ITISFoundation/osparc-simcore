@@ -46,6 +46,7 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_service_director_v2.core.application import init_app
@@ -65,11 +66,10 @@ from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
-from simcore_service_director_v2.modules.comp_scheduler import background_task
-from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
+from simcore_service_director_v2.modules.comp_scheduler._base_scheduler import (
     BaseCompScheduler,
 )
-from simcore_service_director_v2.modules.comp_scheduler.dask_scheduler import (
+from simcore_service_director_v2.modules.comp_scheduler._dask_scheduler import (
     DaskScheduler,
 )
 from simcore_service_director_v2.modules.dask_client import (
@@ -84,7 +84,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-pytest_simcore_core_services_selection = ["postgres", "rabbit"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = [
     "adminer",
 ]
@@ -103,7 +103,9 @@ def _assert_dask_client_correctly_initialized(
     )
     mocked_dask_client.register_handlers.assert_called_once_with(
         TaskHandlers(
-            cast(DaskScheduler, scheduler)._task_progress_change_handler,
+            cast(
+                DaskScheduler, scheduler
+            )._task_progress_change_handler,  # noqa: SLF001
             cast(DaskScheduler, scheduler)._task_log_change_handler,  # noqa: SLF001
         )
     )
@@ -163,6 +165,7 @@ def minimal_dask_scheduler_config(
     postgres_host_config: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
     rabbit_service: RabbitSettings,
+    redis_service: RedisSettings,
     faker: Faker,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
@@ -202,7 +205,7 @@ def mocked_dask_client(mocker: MockerFixture) -> mock.MagicMock:
 @pytest.fixture
 def mocked_parse_output_data_fct(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.parse_output_data",
+        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.parse_output_data",
         autospec=True,
     )
 
@@ -210,7 +213,7 @@ def mocked_parse_output_data_fct(mocker: MockerFixture) -> mock.Mock:
 @pytest.fixture
 def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.clean_task_output_and_log_files_if_invalid",
+        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.clean_task_output_and_log_files_if_invalid",
         return_value=None,
         autospec=True,
     )
@@ -219,7 +222,15 @@ def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
 @pytest.fixture
 def with_disabled_scheduler_task(mocker: MockerFixture) -> None:
     """disables the scheduler task, note that it needs to be triggered manually then"""
-    mocker.patch.object(background_task, "scheduler_task")
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._task.start_periodic_task",
+        autospec=True,
+    )
+
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler._task.stop_periodic_task",
+        autospec=True,
+    )
 
 
 @pytest.fixture
@@ -229,13 +240,13 @@ async def minimal_app(async_client: httpx.AsyncClient) -> FastAPI:
     # a new thread on which it creates a new loop
     # causing issues downstream with coroutines not
     # being created on the same loop
-    return async_client._transport.app  # type: ignore
+    return async_client._transport.app  # type: ignore  # noqa: SLF001
 
 
 @pytest.fixture
 def mocked_clean_task_output_and_log_files_if_invalid(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.clean_task_output_and_log_files_if_invalid",
+        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.clean_task_output_and_log_files_if_invalid",
         autospec=True,
     )
 
@@ -247,7 +258,7 @@ async def test_scheduler_gracefully_starts_and_stops(
     minimal_app: FastAPI,
 ):
     # check it started correctly
-    assert minimal_app.state.scheduler_task is not None
+    assert minimal_app.state.computational_scheduler_task is not None
 
 
 @pytest.mark.parametrize(
@@ -1055,7 +1066,7 @@ async def test_handling_of_disconnected_dask_scheduler(
 ):
     # this will create a non connected backend issue that will trigger re-connection
     mocked_dask_client_send_task = mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks",
+        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.DaskClient.send_computation_tasks",
         side_effect=backend_error,
     )
     assert mocked_dask_client_send_task
@@ -1360,7 +1371,7 @@ async def test_running_pipeline_triggers_heartbeat(
 @pytest.fixture
 async def mocked_get_or_create_cluster(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.get_or_create_on_demand_cluster",
+        "simcore_service_director_v2.modules.comp_scheduler._dask_scheduler.get_or_create_on_demand_cluster",
         autospec=True,
     )
 

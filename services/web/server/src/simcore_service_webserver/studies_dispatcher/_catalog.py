@@ -97,7 +97,7 @@ async def iter_latest_product_services(
             )
             & (services_meta_data.c.deprecated.is_(None))
             & (services_access_rights.c.gid == EVERYONE_GROUP_ID)
-            & (services_access_rights.c.execute_access == sa.true())
+            & (services_access_rights.c.execute_access.is_(True))
             & (services_access_rights.c.product_name == product_name)
         )
     )
@@ -114,7 +114,8 @@ async def iter_latest_product_services(
                 version=row.version,
                 title=row.name,
                 description=row.description,
-                thumbnail=row.thumbnail or f"{settings.STUDIES_DEFAULT_SERVICE_THUMBNAIL}",
+                thumbnail=row.thumbnail
+                or f"{settings.STUDIES_DEFAULT_SERVICE_THUMBNAIL}",
                 file_extensions=service_filetypes.get(row.key, []),
             )
 
@@ -161,7 +162,7 @@ async def validate_requested_service(
             sa.select(services_consume_filetypes.c.is_guest_allowed)
             .where(
                 (services_consume_filetypes.c.service_key == service_key)
-                & (services_consume_filetypes.c.is_guest_allowed == sa.true())
+                & (services_consume_filetypes.c.is_guest_allowed.is_(True))
             )
             .limit(1)
         )

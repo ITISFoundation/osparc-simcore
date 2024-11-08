@@ -108,6 +108,7 @@ pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
     "rabbit",
+    "redis",
     "storage",
     "redis",
 ]

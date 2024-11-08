@@ -19,6 +19,7 @@ faststream
 opentelemetry-api
 opentelemetry-exporter-otlp
 opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-redis
 opentelemetry-sdk
 psutil
 pydantic

@@ -9,13 +9,13 @@ from pydantic import (
     TypeAdapter,
     ValidationError,
     field_validator,
+    model_validator,
 )
 
 from ..emails import LowerCaseEmailStr
-
-#
-# GROUPS MODELS defined in OPENAPI specs
-#
+from ..users import UserID
+from ..utils.common_validators import create__check_only_one_is_set__root_validator
+from ._base import InputSchema, OutputSchema
 
 
 class GroupAccessRights(BaseModel):
@@ -37,7 +37,7 @@ class GroupAccessRights(BaseModel):
     )
 
 
-class UsersGroup(BaseModel):
+class GroupGet(OutputSchema):
     gid: int = Field(..., description="the group ID")
     label: str = Field(..., description="the group name")
     description: str = Field(..., description="the group description")
@@ -95,11 +95,23 @@ class UsersGroup(BaseModel):
         return None
 
 
-class AllUsersGroups(BaseModel):
-    me: UsersGroup | None = None
-    organizations: list[UsersGroup] | None = None
-    all: UsersGroup | None = None
-    product: UsersGroup | None = None
+class GroupCreate(InputSchema):
+    label: str
+    description: str
+    thumbnail: AnyUrl | None = None
+
+
+class GroupUpdate(InputSchema):
+    label: str | None = None
+    description: str | None = None
+    thumbnail: AnyUrl | None = None
+
+
+class MyGroupsGet(OutputSchema):
+    me: GroupGet
+    organizations: list[GroupGet] | None = None
+    all: GroupGet
+    product: GroupGet | None = None
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -163,6 +175,41 @@ class GroupUserGet(BaseModel):
                 "last_name": "Smith",
                 "gravatar_id": "a1af5c6ecc38e81f29695f01d6ceb540",
                 "gid": "3",
+                "accessRights": {
+                    "read": True,
+                    "write": False,
+                    "delete": False,
+                },
+            }
+        }
+    )
+
+
+class GroupUserAdd(InputSchema):
+    """
+    Identify the user with either `email` or `uid` — only one.
+    """
+
+    uid: UserID | None = None
+    email: LowerCaseEmailStr | None = None
+
+    _check_uid_or_email = model_validator(mode="after")(
+        create__check_only_one_is_set__root_validator(["uid", "email"])
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [{"uid": 42}, {"email": "foo@email.com"}]}
+    )
+
+
+class GroupUserUpdate(InputSchema):
+    # NOTE: since it is a single item, it is required. Cannot
+    # update for the moment partial attributes e.g. {read: False}
+    access_rights: GroupAccessRights
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
                 "accessRights": {
                     "read": True,
                     "write": False,

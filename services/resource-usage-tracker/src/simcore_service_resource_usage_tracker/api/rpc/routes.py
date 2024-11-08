@@ -4,7 +4,7 @@ from models_library.api_schemas_resource_usage_tracker import (
 )
 from servicelib.rabbitmq import RPCRouter
 
-from ...modules.rabbitmq import get_rabbitmq_rpc_server
+from ...services.modules.rabbitmq import get_rabbitmq_rpc_server
 from . import _resource_tracker
 
 ROUTERS: list[RPCRouter] = [

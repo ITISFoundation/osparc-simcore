@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 import pytest
-from simcore_service_resource_usage_tracker.resource_tracker_utils import (
+from simcore_service_resource_usage_tracker.services.utils import (
     compute_service_run_credit_costs,
 )
 

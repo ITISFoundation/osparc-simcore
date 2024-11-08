@@ -32,6 +32,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from starlette import status
 from starlette.testclient import TestClient
 from yarl import URL
@@ -87,6 +88,7 @@ def minimal_configuration(
     postgres_db: sa.engine.Engine,
     postgres_host_config: PostgresTestConfig,
     rabbit_service: RabbitSettings,
+    redis_service: RedisSettings,
     simcore_services_ready: None,
     storage_service: URL,
 ) -> None:

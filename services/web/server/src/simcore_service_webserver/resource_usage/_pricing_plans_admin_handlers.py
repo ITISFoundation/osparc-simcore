@@ -26,9 +26,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
-    CustomResourceUsageTrackerError,
-)
+from servicelib.rabbitmq._errors import RPCServerError
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._constants import RQ_PRODUCT_KEY
@@ -49,8 +47,10 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
         try:
             return await handler(request)
 
-        except CustomResourceUsageTrackerError as exc:
-            raise CustomResourceUsageTrackerError from exc
+        except RPCServerError as exc:
+            # NOTE: This will be improved; we will add a mapping between
+            # RPC errors and user-friendly frontend errors to pass to the frontend.
+            raise RPCServerError from exc
 
     return wrapper
 
