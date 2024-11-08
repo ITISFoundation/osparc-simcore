@@ -21,7 +21,7 @@ from .settings import ApplicationSettings
 _LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 _NOISY_LOGGERS: Final[tuple[str]] = ("werkzeug",)
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
@@ -32,7 +32,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     for name in _NOISY_LOGGERS:
         logging.getLogger(name).setLevel(quiet_level)
 
-    logger.info("app settings: %s", settings.json(indent=1))
+    _logger.info("app settings: %s", settings.json(indent=1))
 
     app = FastAPI(
         debug=settings.DIRECTOR_DEBUG,

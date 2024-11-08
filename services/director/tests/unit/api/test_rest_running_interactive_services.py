@@ -25,30 +25,6 @@ def _assert_response_and_unwrap_envelope(got: httpx.Response):
     return body.get("data"), body.get("error")
 
 
-@pytest.mark.skip(
-    reason="docker_swarm fixture is a session fixture making it bad running together with other tests that require a swarm"
-)
-async def test_running_services_post_and_delete_no_swarm(
-    configure_swarm_stack_name: EnvVarsDict,
-    client: httpx.AsyncClient,
-    push_services,
-    user_id: UserID,
-    project_id: ProjectID,
-    api_version_prefix: str,
-):
-    params = {
-        "user_id": "None",
-        "project_id": "None",
-        "service_uuid": "sdlfkj4",
-        "service_key": "simcore/services/comp/some-key",
-    }
-    resp = await client.post(
-        f"/{api_version_prefix}/running_interactive_services", params=params
-    )
-    data = resp.json()
-    assert resp.status_code == 500, data
-
-
 @pytest.mark.parametrize(
     "save_state, expected_save_state_call", [(True, True), (False, False), (None, True)]
 )
