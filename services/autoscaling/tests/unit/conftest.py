@@ -226,7 +226,7 @@ def app_environment(
             "AUTOSCALING_EC2_SECRET_ACCESS_KEY": faker.pystr(),
             "AUTOSCALING_EC2_INSTANCES": "{}",
             "AUTOSCALING_SSM_ACCESS": "{}",
-            "AUTOSCALING_TRACING": "{}",
+            "AUTOSCALING_TRACING": "null",
             "SSM_ACCESS_KEY_ID": faker.pystr(),
             "SSM_SECRET_ACCESS_KEY": faker.pystr(),
             "EC2_INSTANCES_KEY_NAME": faker.pystr(),
@@ -365,13 +365,6 @@ def disabled_rabbitmq(
 @pytest.fixture
 def disabled_ec2(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AUTOSCALING_EC2_ACCESS", "null")
-
-
-@pytest.fixture
-def disabled_opentelemetry(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv("AUTOSCALING_TRACING", "null")
 
 
 @pytest.fixture

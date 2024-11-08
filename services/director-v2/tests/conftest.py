@@ -190,6 +190,7 @@ def mock_env(
             "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
             "SWARM_STACK_NAME": "pytest-simcore",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
+            "DIRECTOR_V2_TRACING": "null",
         },
     )
 
