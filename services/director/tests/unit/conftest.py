@@ -65,7 +65,10 @@ def configure_swarm_stack_name(
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
-        monkeypatch, envs={"SWARM_STACK_NAME": "test_stack"}
+        monkeypatch,
+        envs={
+            "SWARM_STACK_NAME": "test_stack",
+        },
     )
 
 
@@ -128,7 +131,7 @@ def app_environment(
         monkeypatch,
         {
             **docker_compose_service_environment_dict,
-            # ADD here env-var overrides
+            "DIRECTOR_TRACING": "null",
         },
     )
 
