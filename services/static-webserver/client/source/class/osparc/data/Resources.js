@@ -318,6 +318,11 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/folders/{folderId}"
           },
+          getPageTrashed: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/folders?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}"
+          },
           post: {
             method: "POST",
             url: statics.API + "/folders"
@@ -333,6 +338,14 @@ qx.Class.define("osparc.data.Resources", {
           moveToWorkspace: {
             method: "PUT",
             url: statics.API + "/folders/{folderId}/folders/{workspaceId}"
+          },
+          trash: {
+            method: "POST",
+            url: statics.API + "/folders/{folderId}:trash"
+          },
+          untrash: {
+            method: "POST",
+            url: statics.API + "/folders/{folderId}:untrash"
           },
         }
       },
