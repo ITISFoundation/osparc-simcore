@@ -5500,7 +5500,7 @@ paths:
         '404':
           description: Not such a folder
         '409':
-          description: One or more projects is in use and cannot be trashed
+          description: One or more projects are in use and cannot be trashed
         '503':
           description: Trash service error
   /v0/folders/{folder_id}:untrash:
@@ -5518,6 +5518,57 @@ paths:
           type: integer
           minimum: 0
         name: folder_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/workspace/{workspace_id}:trash:
+    post:
+      tags:
+      - trash
+      - workspaces
+      summary: Trash Workspace
+      operationId: trash_workspace
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
+        in: path
+      - required: false
+        schema:
+          title: Force
+          type: boolean
+          default: false
+        name: force
+        in: query
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          description: Not such a workspace
+        '409':
+          description: One or more projects are in use and cannot be trashed
+        '503':
+          description: Trash service error
+  /v0/workspace/{workspace_id}:untrash:
+    post:
+      tags:
+      - trash
+      - workspaces
+      summary: Untrash Workspace
+      operationId: untrash_workspace
+      parameters:
+      - required: true
+        schema:
+          title: Workspace Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: workspace_id
         in: path
       responses:
         '204':
@@ -5869,7 +5920,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_WorkspacesGroupsBodyParams'
+              $ref: '#/components/schemas/WorkspacesGroupsBodyParams'
         required: true
       responses:
         '200':
@@ -5905,7 +5956,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/_WorkspacesGroupsBodyParams'
+              $ref: '#/components/schemas/WorkspacesGroupsBodyParams'
         required: true
       responses:
         '201':
@@ -13168,6 +13219,24 @@ components:
           title: Modified
           type: string
           format: date-time
+    WorkspacesGroupsBodyParams:
+      title: WorkspacesGroupsBodyParams
+      required:
+      - read
+      - write
+      - delete
+      type: object
+      properties:
+        read:
+          title: Read
+          type: boolean
+        write:
+          title: Write
+          type: boolean
+        delete:
+          title: Delete
+          type: boolean
+      additionalProperties: false
     _ComputationStarted:
       title: _ComputationStarted
       required:
@@ -13264,24 +13333,6 @@ components:
       additionalProperties: false
     _WalletsGroupsBodyParams:
       title: _WalletsGroupsBodyParams
-      required:
-      - read
-      - write
-      - delete
-      type: object
-      properties:
-        read:
-          title: Read
-          type: boolean
-        write:
-          title: Write
-          type: boolean
-        delete:
-          title: Delete
-          type: boolean
-      additionalProperties: false
-    _WorkspacesGroupsBodyParams:
-      title: _WorkspacesGroupsBodyParams
       required:
       - read
       - write
