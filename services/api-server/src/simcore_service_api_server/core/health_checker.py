@@ -71,7 +71,7 @@ class ApiServerHealthChecker:
     def healthy(self) -> bool:
         return self._rabbit_client.healthy and (
             self._health_check_failure_count <= self._allowed_health_check_failures
-        )
+        )  # https://github.com/ITISFoundation/osparc-simcore/pull/6662
 
     @property
     def health_check_failure_count(self) -> NonNegativeInt:
