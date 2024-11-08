@@ -159,6 +159,7 @@ class Cluster(BaseCluster):
     id: ClusterID = Field(..., description="The cluster ID")
 
     model_config = ConfigDict(
+        extra="allow",
         json_schema_extra={
             "examples": [
                 {
@@ -217,7 +218,7 @@ class Cluster(BaseCluster):
                     },
                 },
             ]
-        }
+        },
     )
 
     @model_validator(mode="before")

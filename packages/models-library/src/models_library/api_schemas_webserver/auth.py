@@ -83,9 +83,10 @@ class ApiKeyGet(BaseModel):
     api_secret: str
 
     model_config = ConfigDict(
+        from_attributes=True,
         json_schema_extra={
             "examples": [
                 {"display_name": "myapi", "api_key": "key", "api_secret": "secret"},
             ]
-        }
+        },
     )

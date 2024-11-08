@@ -1,21 +1,18 @@
-from typing import Final
+import datetime
 
 from aiohttp import web
-from pydantic import Field, NonNegativeInt
+from pydantic import AliasChoices, Field
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings
 
 from .._constants import APP_SETTINGS_KEY
 
-_MINUTE: Final[NonNegativeInt] = 60
-_HOUR: Final[NonNegativeInt] = 60 * _MINUTE
-
 
 class DynamicSchedulerSettings(BaseCustomSettings, MixinServiceSettings):
-    DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT: NonNegativeInt = Field(
-        _HOUR + 10,
+    DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT: datetime.timedelta = Field(
+        datetime.timedelta(hours=1, seconds=10),
         description=(
-            "Timeout on stop service request (seconds)"
+            "Timeout on stop service request"
             "ANE: The below will try to help explaining what is happening: "
             "webserver -(stop_service)-> dynamic-scheduler -(relays the stop)-> "
             "director-v* -(save_state)-> service_x"
@@ -23,10 +20,10 @@ class DynamicSchedulerSettings(BaseCustomSettings, MixinServiceSettings):
             "- director-v* requests save_state and uses a 01:00:00 timeout"
             "The +10 seconds is used to make sure the director replies"
         ),
-        envs=[
+        validation_alias=AliasChoices(
             "DIRECTOR_V2_STOP_SERVICE_TIMEOUT",
             "DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT",
-        ],
+        ),
     )
 
 

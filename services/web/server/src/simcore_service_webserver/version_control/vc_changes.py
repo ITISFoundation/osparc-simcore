@@ -31,7 +31,7 @@ def compute_workbench_checksum(workbench: dict[str, Any]) -> SHA1Str:
 
     checksum = compute_sha1_on_small_dataset(
         {
-            k: node.dict(
+            k: node.model_dump(
                 exclude_unset=True,
                 exclude_defaults=True,
                 exclude_none=True,

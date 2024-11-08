@@ -79,7 +79,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
     # List project in workspace
     base_url = client.app.router["list_projects"].url_for()
     url = base_url.with_query({"workspace_id": f"{added_workspace['workspaceId']}"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == project["uuid"]
@@ -88,7 +88,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
 
     # Get project in workspace
     base_url = client.app.router["get_project"].url_for(project_id=project["uuid"])
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["uuid"] == project["uuid"]
     assert data["workspaceId"] == added_workspace["workspaceId"]
@@ -110,7 +110,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
     url = base_url.with_query(
         {"workspace_id": f"{added_workspace['workspaceId']}", "folder_id": "null"}
     )
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["folderId"] == first_folder["folderId"]
@@ -131,7 +131,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
             "folder_id": f"{first_folder['folderId']}",
         }
     )
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == project["uuid"]
@@ -142,7 +142,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
         # Try to list folder that user doesn't have access to
         base_url = client.app.router["list_projects"].url_for()
         url = base_url.with_query({"workspace_id": f"{added_workspace['workspaceId']}"})
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
         _, errors = await assert_status(
             resp,
             status.HTTP_403_FORBIDDEN,
@@ -164,7 +164,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
         url = base_url.with_query(
             {"workspace_id": f"{added_workspace['workspaceId']}", "folder_id": "null"}
         )
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1
 
@@ -176,7 +176,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
                 "folder_id": "none",
             }
         )
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 0
 
@@ -188,7 +188,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
                 "folder_id": f"{first_folder['folderId']}",
             }
         )
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1
         assert data[0]["uuid"] == project["uuid"]
@@ -230,7 +230,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
         url = base_url.with_query(
             {"workspace_id": f"{added_workspace['workspaceId']}", "folder_id": "null"}
         )
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
 
@@ -299,7 +299,7 @@ async def test_workspaces_delete_folders(
     # List project in workspace
     base_url = client.app.router["list_projects"].url_for()
     url = base_url.with_query({"workspace_id": f"{added_workspace['workspaceId']}"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 2
 
@@ -362,6 +362,7 @@ async def test_workspaces_delete_folders(
     # List project in workspace (The projects should have been deleted)
     base_url = client.app.router["list_projects"].url_for()
     url = base_url.with_query({"workspace_id": f"{added_workspace['workspaceId']}"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 0
+

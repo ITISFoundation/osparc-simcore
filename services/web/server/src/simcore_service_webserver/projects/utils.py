@@ -7,7 +7,7 @@ from uuid import UUID, uuid1, uuid5
 
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services import ServiceKey
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 from servicelib.decorators import safe_return
 from yarl import URL
 
@@ -378,7 +378,9 @@ def default_copy_project_name(name: str) -> str:
         new_copy_index = 1
         if current_copy_index := match.group(2):
             # we receive something of type "(23)"
-            new_copy_index = parse_obj_as(int, current_copy_index.strip("()")) + 1
+            new_copy_index = (
+                TypeAdapter(int).validate_python(current_copy_index.strip("()")) + 1
+            )
         return f"{match.group(1)}({new_copy_index})"
     return f"{name} (Copy)"
 

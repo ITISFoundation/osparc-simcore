@@ -6,12 +6,12 @@ import functools
 import logging
 
 from aiohttp import web
+from common_library.errors_classes import OsparcErrorMixin
 from models_library.api_schemas_webserver.resource_usage import PricingUnitGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.resource_tracker import PricingPlanId, PricingUnitId
-from pydantic import BaseModel, Extra
-from pydantic.errors import PydanticErrorMixin
+from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
 
@@ -29,7 +29,7 @@ from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 _logger = logging.getLogger(__name__)
 
 
-class PricingUnitError(PydanticErrorMixin, ValueError):
+class PricingUnitError(OsparcErrorMixin, ValueError):
     ...
 
 
@@ -64,7 +64,7 @@ routes = web.RouteTableDef()
 @_handle_projects_nodes_pricing_unit_exceptions
 async def get_project_node_pricing_unit(request: web.Request):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
     # ensure the project exists
@@ -87,7 +87,7 @@ async def get_project_node_pricing_unit(request: web.Request):
     webserver_pricing_unit_get = PricingUnitGet(
         pricing_unit_id=pricing_unit_get.pricing_unit_id,
         unit_name=pricing_unit_get.unit_name,
-        unit_extra_info=pricing_unit_get.unit_extra_info,  # type: ignore[arg-type]
+        unit_extra_info=pricing_unit_get.unit_extra_info,
         current_cost_per_unit=pricing_unit_get.current_cost_per_unit,
         default=pricing_unit_get.default,
     )
@@ -99,9 +99,7 @@ class _ProjectNodePricingUnitPathParams(BaseModel):
     node_id: NodeID
     pricing_plan_id: PricingPlanId
     pricing_unit_id: PricingUnitId
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 @routes.put(
@@ -113,7 +111,7 @@ class _ProjectNodePricingUnitPathParams(BaseModel):
 @_handle_projects_nodes_pricing_unit_exceptions
 async def connect_pricing_unit_to_project_node(request: web.Request):
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         _ProjectNodePricingUnitPathParams, request
     )

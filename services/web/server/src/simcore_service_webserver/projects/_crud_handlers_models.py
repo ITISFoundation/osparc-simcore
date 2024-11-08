@@ -20,12 +20,12 @@ from models_library.utils.common_validators import (
 from models_library.workspaces import WorkspaceID
 from pydantic import (
     BaseModel,
-    Extra,
+    ConfigDict,
     Field,
     Json,
-    parse_obj_as,
-    root_validator,
-    validator,
+    TypeAdapter,
+    field_validator,
+    model_validator,
 )
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -57,7 +57,7 @@ class ProjectCreateHeaders(BaseModel):
         alias=X_SIMCORE_PARENT_NODE_ID,
     )
 
-    @root_validator
+    @model_validator(mode="before")
     @classmethod
     def check_parent_valid(cls, values: dict[str, Any]) -> dict[str, Any]:
         if (
@@ -71,8 +71,7 @@ class ProjectCreateHeaders(BaseModel):
             raise ValueError(msg)
         return values
 
-    class Config:
-        allow_population_by_field_name = False
+    model_config = ConfigDict(populate_by_name=False)
 
 
 class ProjectCreateParams(BaseModel):
@@ -92,9 +91,7 @@ class ProjectCreateParams(BaseModel):
         default=False,
         description="Enables/disables hidden flag. Hidden projects are by default unlisted",
     )
-
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class ProjectFilters(Filters):
@@ -113,7 +110,7 @@ class ProjectListParams(PageQueryParameters):
         default=None,
         description="Multi column full text search",
         max_length=100,
-        example="My Project",
+        examples=["My Project"],
     )
     folder_id: FolderID | None = Field(
         default=None,
@@ -124,19 +121,19 @@ class ProjectListParams(PageQueryParameters):
         description="Filter projects in specific workspace. Default filtering is a private workspace.",
     )
 
-    @validator("search", pre=True)
+    @field_validator("search", mode="before")
     @classmethod
     def search_check_empty_string(cls, v):
         if not v:
             return None
         return v
 
-    _null_or_none_str_to_none_validator = validator(
-        "folder_id", allow_reuse=True, pre=True
-    )(null_or_none_str_to_none_validator)
+    _null_or_none_str_to_none_validator = field_validator("folder_id", mode="before")(
+        null_or_none_str_to_none_validator
+    )
 
-    _null_or_none_str_to_none_validator2 = validator(
-        "workspace_id", allow_reuse=True, pre=True
+    _null_or_none_str_to_none_validator2 = field_validator(
+        "workspace_id", mode="before"
     )(null_or_none_str_to_none_validator)
 
 
@@ -144,11 +141,11 @@ class ProjectListSortParams(BaseModel):
     order_by: Json[OrderBy] = Field(  # pylint: disable=unsubscriptable-object
         default=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         description="Order by field (type|uuid|name|description|prj_owner|creation_date|last_change_date) and direction (asc|desc). The default sorting order is ascending.",
-        example='{"field": "prj_owner", "direction": "desc"}',
+        examples=['{"field": "prj_owner", "direction": "desc"}'],
         alias="order_by",
     )
 
-    @validator("order_by", check_fields=False)
+    @field_validator("order_by", check_fields=False)
     @classmethod
     def validate_order_by_field(cls, v):
         if v.field not in {
@@ -164,8 +161,7 @@ class ProjectListSortParams(BaseModel):
             raise ValueError(msg)
         return v
 
-    class Config:
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 class ProjectListWithJsonStrParams(
@@ -183,15 +179,15 @@ class ProjectListFullSearchParams(PageQueryParameters):
         default=None,
         description="Multi column full text search, across all folders and workspaces",
         max_length=100,
-        example="My Project",
+        examples=["My Project"],
     )
     tag_ids: str | None = Field(
         default=None,
         description="Search by tag ID (multiple tag IDs may be provided separated by column)",
-        example="1,3",
+        examples=["1,3"],
     )
 
-    _empty_is_none = validator("text", allow_reuse=True, pre=True)(
+    _empty_is_none = field_validator("text", mode="before")(
         empty_str_to_none_pre_validator
     )
 
@@ -205,7 +201,7 @@ class ProjectListFullSearchWithJsonStrParams(
             if self.tag_ids:
                 tag_ids_list = list(map(int, self.tag_ids.split(",")))
                 # Validate that the tag_ids_list is indeed a list of integers
-                parse_obj_as(list[int], tag_ids_list)
+                TypeAdapter(list[int]).validate_python(tag_ids_list)
             else:
                 tag_ids_list = []
         except ValueError as exc:

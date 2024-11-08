@@ -93,7 +93,7 @@ class _OpenProjectQuery(BaseModel):
 @permission_required("project.open")
 @_handle_project_exceptions
 async def open_project(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     query_params: _OpenProjectQuery = parse_request_query_parameters_as(
         _OpenProjectQuery, request
@@ -196,7 +196,7 @@ async def open_project(request: web.Request) -> web.Response:
 @permission_required("project.close")
 @_handle_project_exceptions
 async def close_project(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
@@ -234,7 +234,7 @@ async def close_project(request: web.Request) -> web.Response:
 @login_required
 @permission_required("project.read")
 async def get_project_state(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.parse_obj(request)
+    req_ctx = RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # check that project exists and queries state
@@ -245,4 +245,4 @@ async def get_project_state(request: web.Request) -> web.Response:
         include_state=True,
     )
     project_state = ProjectState(**validated_project["state"])
-    return envelope_json_response(project_state.dict())
+    return envelope_json_response(project_state.model_dump())

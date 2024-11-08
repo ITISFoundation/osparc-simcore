@@ -691,7 +691,7 @@ typing-extensions==4.11.0
     #   types-aiobotocore-ec2
     #   types-aiobotocore-s3
     #   types-aiobotocore-ssm
-urllib3==2.2.1
+urllib3==2.2.3
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

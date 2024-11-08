@@ -58,7 +58,7 @@ async def test_folders_full_workflow(
     url = client.app.router["create_folder"].url_for()
     resp = await client.post(url.path, json={"name": "My first folder"})
     added_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    assert FolderGet.parse_obj(added_folder)
+    assert FolderGet.model_validate(added_folder)
 
     # list user folders
     url = client.app.router["list_folders"].url_for()
@@ -76,9 +76,9 @@ async def test_folders_full_workflow(
     url = client.app.router["get_folder"].url_for(
         folder_id=f"{added_folder['folderId']}"
     )
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert FolderGet.parse_obj(data)
+    assert FolderGet.model_validate(data)
     assert data["folderId"] == added_folder["folderId"]
     assert data["name"] == "My first folder"
 
@@ -93,7 +93,7 @@ async def test_folders_full_workflow(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert FolderGet.parse_obj(data)
+    assert FolderGet.model_validate(data)
 
     # list user folders
     url = client.app.router["list_folders"].url_for()
@@ -157,7 +157,7 @@ async def test_sub_folders_full_workflow(
     # list user specific folder
     base_url = client.app.router["list_folders"].url_for()
     url = base_url.with_query({"folder_id": f"{subfolder_folder['folderId']}"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 0
 
@@ -175,7 +175,7 @@ async def test_sub_folders_full_workflow(
     # list user subfolder folders
     base_url = client.app.router["list_folders"].url_for()
     url = base_url.with_query({"folder_id": f"{subfolder_folder['folderId']}"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["name"] == "My sub sub folder"
@@ -206,12 +206,12 @@ async def test_sub_folders_full_workflow(
         },
     )
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert FolderGet.parse_obj(data)
+    assert FolderGet.model_validate(data)
 
     # list user root folders
     base_url = client.app.router["list_folders"].url_for()
     url = base_url.with_query({"folder_id": "null"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 2
 
@@ -298,7 +298,7 @@ async def test_project_listing_inside_of_private_folder(
     # list project in user private folder
     base_url = client.app.router["list_projects"].url_for()
     url = base_url.with_query({"folder_id": f"{original_user_folder['folderId']}"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == user_project["uuid"]
@@ -310,7 +310,7 @@ async def test_project_listing_inside_of_private_folder(
         # Try to list folder that user doesn't have access to
         base_url = client.app.router["list_projects"].url_for()
         url = base_url.with_query({"folder_id": f"{original_user_folder['folderId']}"})
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
         _, errors = await assert_status(
             resp,
             status.HTTP_403_FORBIDDEN,
@@ -330,7 +330,7 @@ async def test_project_listing_inside_of_private_folder(
         # list new user root folder
         base_url = client.app.router["list_projects"].url_for()
         url = base_url.with_query({"folder_id": "null"})
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1
         assert data[0]["uuid"] == user_project["uuid"]
@@ -353,7 +353,7 @@ async def test_project_listing_inside_of_private_folder(
         # list new user specific folder
         base_url = client.app.router["list_projects"].url_for()
         url = base_url.with_query({"folder_id": f"{new_user_folder['folderId']}"})
-        resp = await client.get(url)
+        resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1
         assert data[0]["uuid"] == user_project["uuid"]
@@ -396,7 +396,7 @@ async def test_folders_deletion(
     url = client.app.router["create_folder"].url_for()
     resp = await client.post(url.path, json={"name": "My first folder"})
     root_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
-    assert FolderGet.parse_obj(root_folder)
+    assert FolderGet.model_validate(root_folder)
 
     # create a subfolder folder
     url = client.app.router["create_folder"].url_for()
@@ -448,14 +448,14 @@ async def test_folders_deletion(
     # list subfolder projects
     base_url = client.app.router["list_projects"].url_for()
     url = base_url.with_query({"folder_id": f"{subfolder_2['folderId']}"})
-    resp = await client.get(url)
+    resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
     assert data[0]["uuid"] == user_project["uuid"]
 
     # list root projects
     base_url = client.app.router["list_projects"].url_for()
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 0
 
@@ -474,13 +474,13 @@ async def test_folders_deletion(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     fire_and_forget_tasks = client.app[APP_FIRE_AND_FORGET_TASKS_KEY]
-    t: asyncio.Task = list(fire_and_forget_tasks)[0]
+    t: asyncio.Task = next(iter(fire_and_forget_tasks))
     assert t.get_name().startswith("fire_and_forget_task_delete_project_task_")
     await t
     assert len(client.app[APP_FIRE_AND_FORGET_TASKS_KEY]) == 0
 
     # list root projects (The project should have been deleted)
     base_url = client.app.router["list_projects"].url_for()
-    resp = await client.get(base_url)
+    resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 0

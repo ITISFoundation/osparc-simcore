@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.clusters import (
     ClusterPing,
 )
 from models_library.users import UserID
-from pydantic import BaseModel, Field, parse_obj_as
+from pydantic import BaseModel, Field, TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -78,7 +78,7 @@ routes = web.RouteTableDef()
 @permission_required("clusters.create")
 @_handle_cluster_exceptions
 async def create_cluster(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     new_cluster = await parse_request_body_as(ClusterCreate, request)
 
     created_cluster = await director_v2_api.create_cluster(
@@ -94,13 +94,13 @@ async def create_cluster(request: web.Request) -> web.Response:
 @permission_required("clusters.read")
 @_handle_cluster_exceptions
 async def list_clusters(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
 
     clusters = await director_v2_api.list_clusters(
         app=request.app,
         user_id=req_ctx.user_id,
     )
-    assert parse_obj_as(list[ClusterGet], clusters) is not None  # nosec
+    assert TypeAdapter(list[ClusterGet]).validate_python(clusters) is not None  # nosec
     return envelope_json_response(clusters)
 
 
@@ -109,7 +109,7 @@ async def list_clusters(request: web.Request) -> web.Response:
 @permission_required("clusters.read")
 @_handle_cluster_exceptions
 async def get_cluster(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ClusterPathParams, request)
 
     cluster = await director_v2_api.get_cluster(
@@ -117,7 +117,7 @@ async def get_cluster(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         cluster_id=path_params.cluster_id,
     )
-    assert parse_obj_as(ClusterGet, cluster) is not None  # nosec
+    assert ClusterGet.model_validate(cluster) is not None  # nosec
     return envelope_json_response(cluster)
 
 
@@ -126,7 +126,7 @@ async def get_cluster(request: web.Request) -> web.Response:
 @permission_required("clusters.write")
 @_handle_cluster_exceptions
 async def update_cluster(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ClusterPathParams, request)
     cluster_patch = await parse_request_body_as(ClusterPatch, request)
 
@@ -137,7 +137,7 @@ async def update_cluster(request: web.Request) -> web.Response:
         cluster_patch=cluster_patch,
     )
 
-    assert parse_obj_as(ClusterGet, updated_cluster) is not None  # nosec
+    assert ClusterGet.model_validate(updated_cluster) is not None  # nosec
     return envelope_json_response(updated_cluster)
 
 
@@ -146,7 +146,7 @@ async def update_cluster(request: web.Request) -> web.Response:
 @permission_required("clusters.delete")
 @_handle_cluster_exceptions
 async def delete_cluster(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ClusterPathParams, request)
 
     await director_v2_api.delete_cluster(
@@ -165,7 +165,7 @@ async def delete_cluster(request: web.Request) -> web.Response:
 @permission_required("clusters.read")
 @_handle_cluster_exceptions
 async def get_cluster_details(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ClusterPathParams, request)
 
     cluster_details = await director_v2_api.get_cluster_details(
@@ -173,7 +173,7 @@ async def get_cluster_details(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         cluster_id=path_params.cluster_id,
     )
-    assert parse_obj_as(ClusterDetails, cluster_details) is not None  # nosec
+    assert ClusterDetails.model_validate(cluster_details) is not None  # nosec
     return envelope_json_response(cluster_details)
 
 
@@ -199,7 +199,7 @@ async def ping_cluster(request: web.Request) -> web.Response:
 @permission_required("clusters.read")
 @_handle_cluster_exceptions
 async def ping_cluster_cluster_id(request: web.Request) -> web.Response:
-    req_ctx = _RequestContext.parse_obj(request)
+    req_ctx = _RequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ClusterPathParams, request)
 
     await director_v2_api.ping_specific_cluster(

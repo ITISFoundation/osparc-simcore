@@ -68,7 +68,7 @@ class StudyUI(BaseModel):
     current_node_id: NodeID | None = Field(default=None, alias="currentNodeId")
     annotations: dict[NodeIDStr, Annotation] | None = None
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
 
     _empty_is_none = field_validator("*", mode="before")(
         empty_str_to_none_pre_validator

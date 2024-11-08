@@ -294,7 +294,7 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
             log_message.user_id,
             message={
                 "event_type": SOCKET_IO_LOG_EVENT,
-                "data": log_message.dict(exclude={"user_id", "channel_name"}),
+                "data": log_message.model_dump(exclude={"user_id", "channel_name"}),
             },
             ignore_queue=True,
         ),
@@ -493,7 +493,7 @@ async def test_instrumentation_workflow(
         mocked_metrics_method,
         mock.call(
             client.app,
-            **rabbit_message.dict(include=set(included_labels)),
+            **rabbit_message.model_dump(include=set(included_labels)),
         ),
     )
 
