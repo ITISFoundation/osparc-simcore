@@ -103,9 +103,9 @@ def _assert_dask_client_correctly_initialized(
     )
     mocked_dask_client.register_handlers.assert_called_once_with(
         TaskHandlers(
-            cast(
+            cast(  # noqa: SLF001
                 DaskScheduler, scheduler
-            )._task_progress_change_handler,  # noqa: SLF001
+            )._task_progress_change_handler,
             cast(DaskScheduler, scheduler)._task_log_change_handler,  # noqa: SLF001
         )
     )
