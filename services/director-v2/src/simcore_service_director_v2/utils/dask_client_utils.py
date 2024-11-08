@@ -216,7 +216,7 @@ async def test_scheduler_endpoint(
     try:
         if _is_dask_scheduler(authentication):
             async with distributed.Client(
-                address=endpoint, timeout=f"{_PING_TIMEOUT_S}", asynchronous=True
+                address=f"{endpoint}", timeout=f"{_PING_TIMEOUT_S}", asynchronous=True
             ) as dask_client:
                 if dask_client.status != _DASK_SCHEDULER_RUNNING_STATE:
                     msg = "internal scheduler is not running!"
