@@ -168,19 +168,21 @@ def app_settings(
     datcore_adapter_service_mock: aioresponses.aioresponses,
     monkeypatch: pytest.MonkeyPatch,
 ) -> Settings:
+    s3_settings_dict = {}
     if external_envfile_dict:
         s3_settings = S3Settings.create_from_envs(**external_envfile_dict)
         if s3_settings.S3_ENDPOINT is None:
             monkeypatch.delenv("S3_ENDPOINT")
-            setenvs_from_dict(
-                monkeypatch,
-                s3_settings.dict(exclude={"S3_ENDPOINT"}),
-            )
+            s3_settings_dict = s3_settings.dict(exclude={"S3_ENDPOINT"})
         else:
-            setenvs_from_dict(
-                monkeypatch,
-                s3_settings.dict(),
-            )
+            s3_settings_dict = s3_settings.dict()
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            **s3_settings_dict,
+            "STORAGE_TRACING": "null",
+        },
+    )
     test_app_settings = Settings.create_from_envs()
     print(f"{test_app_settings.json(indent=2)=}")
     return test_app_settings
