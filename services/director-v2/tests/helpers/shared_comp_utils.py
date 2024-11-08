@@ -64,7 +64,7 @@ async def assert_and_wait_for_pipeline_status(
     MAX_TIMEOUT_S = 5 * MINUTE
 
     async def check_pipeline_state() -> ComputationGet:
-        response = await client.get(url, params={"user_id": user_id})
+        response = await client.get(f"{url}", params={"user_id": user_id})
         assert (
             response.status_code == status.HTTP_200_OK
         ), f"response code is {response.status_code}, error: {response.text}"
@@ -100,4 +100,5 @@ async def assert_and_wait_for_pipeline_status(
             return task_out
 
     # this is only to satisfy pylance
-    raise AssertionError("No computation task generated!")
+    msg = "No computation task generated!"
+    raise AssertionError(msg)

@@ -263,7 +263,9 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
             proxy_service_name,
             target_port=dynamic_sidecar_proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
         )
-        assert proxy_published_port is not None, f"{sidecar_settings.json()=}"
+        assert (
+            proxy_published_port is not None
+        ), f"{sidecar_settings.model_dump_json()=}"
 
         async with scheduler.scheduler._lock:  # noqa: SLF001
             localhost_ip = get_localhost_ip()
@@ -458,7 +460,7 @@ async def assert_retrieve_service(
 
     size_bytes = json_result["data"]["size_bytes"]
     assert size_bytes > 0
-    assert type(size_bytes) == int
+    assert isinstance(size_bytes, int)
 
 
 async def assert_stop_service(

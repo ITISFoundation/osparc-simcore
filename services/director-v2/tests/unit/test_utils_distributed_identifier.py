@@ -132,14 +132,16 @@ class RandomTextResourcesManager(
         return f"{identifier._id}"  # noqa: SLF001
 
     @classmethod
-    def _deserialize_cleanup_context(cls, raw: str | bytes) -> AnEmptyTextCleanupContext:
+    def _deserialize_cleanup_context(
+        cls, raw: str | bytes
+    ) -> AnEmptyTextCleanupContext:
         return AnEmptyTextCleanupContext.model_validate_json(raw)
 
     @classmethod
     def _serialize_cleanup_context(
         cls, cleanup_context: AnEmptyTextCleanupContext
     ) -> str:
-        return cleanup_context.json()
+        return cleanup_context.model_dump_json()
 
     async def is_used(
         self, identifier: UserDefinedID, cleanup_context: AnEmptyTextCleanupContext

@@ -123,7 +123,7 @@ def scheduler_data_from_http_request(
 def mock_service_inspect(
     scheduler_data_from_http_request: ServiceDetails,
 ) -> Mapping[str, Any]:
-    service_details = json.loads(scheduler_data_from_http_request.json())
+    service_details = json.loads(scheduler_data_from_http_request.model_dump_json())
     service_details["compose_spec"] = json.dumps(service_details["compose_spec"])
     return {
         "Spec": {

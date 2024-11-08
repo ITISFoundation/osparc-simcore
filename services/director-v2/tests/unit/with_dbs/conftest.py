@@ -104,7 +104,9 @@ def tasks(
                 "outputs": (
                     {
                         key: (
-                            json.loads(value.json(by_alias=True, exclude_unset=True))
+                            json.loads(
+                                value.model_dump_json(by_alias=True, exclude_unset=True)
+                            )
                             if isinstance(value, BaseModel)
                             else value
                         )

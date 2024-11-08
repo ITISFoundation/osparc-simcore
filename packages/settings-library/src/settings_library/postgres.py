@@ -56,31 +56,27 @@ class PostgresSettings(BaseCustomSettings):
 
     @cached_property
     def dsn(self) -> str:
-        dsn: str = str(
-            PostgresDsn.build(  # pylint: disable=no-member
-                scheme="postgresql",
-                username=self.POSTGRES_USER,
-                password=self.POSTGRES_PASSWORD.get_secret_value(),
-                host=self.POSTGRES_HOST,
-                port=self.POSTGRES_PORT,
-                path=f"{self.POSTGRES_DB}",
-            )
+        dsn = PostgresDsn.build(  # pylint: disable=no-member
+            scheme="postgresql",
+            username=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD.get_secret_value(),
+            host=self.POSTGRES_HOST,
+            port=self.POSTGRES_PORT,
+            path=f"{self.POSTGRES_DB}",
         )
-        return dsn
+        return f"{dsn}"
 
     @cached_property
     def dsn_with_async_sqlalchemy(self) -> str:
-        dsn: str = str(
-            PostgresDsn.build(  # pylint: disable=no-member
-                scheme="postgresql+asyncpg",
-                username=self.POSTGRES_USER,
-                password=self.POSTGRES_PASSWORD.get_secret_value(),
-                host=self.POSTGRES_HOST,
-                port=self.POSTGRES_PORT,
-                path=f"{self.POSTGRES_DB}",
-            )
+        dsn = PostgresDsn.build(  # pylint: disable=no-member
+            scheme="postgresql+asyncpg",
+            username=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD.get_secret_value(),
+            host=self.POSTGRES_HOST,
+            port=self.POSTGRES_PORT,
+            path=f"{self.POSTGRES_DB}",
         )
-        return dsn
+        return f"{dsn}"
 
     @cached_property
     def dsn_with_query(self) -> str:

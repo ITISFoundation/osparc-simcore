@@ -33,7 +33,7 @@ class ProjectsNetworksRepository(BaseRepository):
         )
 
         async with self.db_engine.acquire() as conn:
-            row_data = json.loads(projects_networks_to_insert.json())
+            row_data = json.loads(projects_networks_to_insert.model_dump_json())
             insert_stmt = pg_insert(projects_networks).values(**row_data)
             upsert_snapshot = insert_stmt.on_conflict_do_update(
                 constraint=projects_networks.primary_key, set_=row_data
