@@ -1,7 +1,15 @@
 from datetime import datetime
 from typing import Annotated, TypeAlias
 
-from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt, PositiveInt
+from pydantic import (
+    ConfigDict,
+    Field,
+    HttpUrl,
+    NonNegativeFloat,
+    NonNegativeInt,
+    PlainSerializer,
+    PositiveInt,
+)
 
 from ..basic_types import IDStr, NonNegativeDecimal
 from ..emails import LowerCaseEmailStr
@@ -11,7 +19,10 @@ from ._base import InputSchema, OutputSchema
 
 class GetCreditPrice(OutputSchema):
     product_name: str
-    usd_per_credit: NonNegativeDecimal | None = Field(
+    usd_per_credit: Annotated[
+        NonNegativeDecimal,
+        PlainSerializer(float, return_type=NonNegativeFloat, when_used="json"),
+    ] | None = Field(
         ...,
         description="Price of a credit in USD. "
         "If None, then this product's price is UNDEFINED",

@@ -4,6 +4,18 @@
 include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
 
+# Check that given variables are set and all have non-empty values,
+# die with an error otherwise.
+#
+# Params:
+#   1. Variable name(s) to test.
+#   2. (optional) Error message to print.
+guard-%:
+	@ if [ "${${*}}" = "" ]; then \
+		echo "Environment variable $* not set"; \
+		exit 1; \
+	fi
+
 .PHONY: reqs
 reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
@@ -57,7 +69,8 @@ openapi-client-master.json:
 
 
 define _openapi_diff_inputs
-	$(SCRIPTS_DIR)/openapi-diff.bash $(foreach f,$^,/specs/$f) --fail-on-incompatible --json=/specs/$@
+	$(SCRIPTS_DIR)/openapi-diff.bash diff $(foreach f,$^,/specs/$f) --format json > $@
+	$(SCRIPTS_DIR)/openapi-diff.bash breaking $(foreach f,$^,/specs/$f) --fail-on ERR > /dev/null
 endef
 
 # Examples:
@@ -67,7 +80,9 @@ endef
 openapi-%-diff.json: openapi.json openapi-%.json ## Diffs against newer or older openapi-%.json and checks backwards compatibility
 	$(call _openapi_diff_inputs)
 
-
+openapi-diff.md: guard-OPENAPI_JSON_BASE_URL openapi.json ## Diffs against a remote openapi.json. E.g. OPENAPI_JSON_BASE_URL=https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/api-server/openapi.json
+	$(SCRIPTS_DIR)/openapi-diff.bash diff $(OPENAPI_JSON_BASE_URL) /specs/openapi.json --format markup --flatten-allof --exclude-elements title,description > $@
+	$(SCRIPTS_DIR)/openapi-diff.bash breaking $(OPENAPI_JSON_BASE_URL) /specs/openapi.json --flatten-allof --fail-on ERR
 
 # SEE https://schemathesis.readthedocs.io/en/stable/index.html
 APP_URL:=http://$(get_my_ip).nip.io:8006

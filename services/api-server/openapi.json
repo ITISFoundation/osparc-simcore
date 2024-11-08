@@ -3788,15 +3788,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/WalletGetWithAvailableCredits"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Response Get Job Wallet V0 Solvers  Solver Key  Releases  Version  Jobs  Job Id  Wallet Get"
+                  "$ref": "#/components/schemas/WalletGetWithAvailableCredits"
                 }
               }
             }
@@ -3935,15 +3927,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/PricingUnitGet"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Response Get Job Pricing Unit V0 Solvers  Solver Key  Releases  Version  Jobs  Job Id  Pricing Unit Get"
+                  "$ref": "#/components/schemas/PricingUnitGet"
                 }
               }
             }
@@ -5414,16 +5398,8 @@
             "description": "File name"
           },
           "filesize": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^\\s*(\\d*\\.?\\d+)\\s*(\\w+)?"
-              },
-              {
-                "type": "integer",
-                "minimum": 0
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Filesize",
             "description": "File size in bytes"
           },
@@ -5568,6 +5544,7 @@
           "urls": {
             "items": {
               "type": "string",
+              "maxLength": 65536,
               "minLength": 1,
               "format": "uri"
             },
@@ -5595,7 +5572,8 @@
           "usdPerCredit": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -5934,7 +5912,17 @@
           "metadata",
           "url"
         ],
-        "title": "JobMetadata"
+        "title": "JobMetadata",
+        "example": {
+          "job_id": "3497e4de-0e69-41fb-b08f-7f3875a1ac4b",
+          "metadata": {
+            "bool": "true",
+            "float": "3.14",
+            "int": "42",
+            "str": "hej med dig"
+          },
+          "url": "https://f02b2452-1dd8-4882-b673-af06373b41b3.fake"
+        }
       },
       "JobMetadataUpdate": {
         "properties": {
@@ -5961,7 +5949,15 @@
           }
         },
         "type": "object",
-        "title": "JobMetadataUpdate"
+        "title": "JobMetadataUpdate",
+        "example": {
+          "metadata": {
+            "bool": "true",
+            "float": "3.14",
+            "int": "42",
+            "str": "hej med dig"
+          }
+        }
       },
       "JobOutputs": {
         "properties": {
@@ -6163,6 +6159,7 @@
           },
           "download_link": {
             "type": "string",
+            "maxLength": 65536,
             "minLength": 1,
             "format": "uri",
             "title": "Download Link"
@@ -6204,12 +6201,14 @@
           },
           "docs_url": {
             "type": "string",
+            "maxLength": 65536,
             "minLength": 1,
             "format": "uri",
             "title": "Docs Url"
           },
           "docs_dev_url": {
             "type": "string",
+            "maxLength": 65536,
             "minLength": 1,
             "format": "uri",
             "title": "Docs Dev Url"
@@ -6244,8 +6243,15 @@
             "title": "Items"
           },
           "total": {
-            "type": "integer",
-            "minimum": 0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Total"
           }
         },
@@ -6265,8 +6271,15 @@
             "title": "Items"
           },
           "total": {
-            "type": "integer",
-            "minimum": 0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Total"
           }
         },
@@ -6474,11 +6487,10 @@
             "title": "Unitname"
           },
           "unitExtraInfo": {
-            "type": "object",
-            "title": "Unitextrainfo"
+            "$ref": "#/components/schemas/UnitExtraInfo"
           },
           "currentCostPerUnit": {
-            "type": "string",
+            "type": "number",
             "title": "Currentcostperunit"
           },
           "default": {
@@ -6808,11 +6820,25 @@
             "title": "Uid"
           },
           "title": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Title"
           },
           "description": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Description"
           }
         },
@@ -6868,6 +6894,34 @@
           "key": "input_2",
           "kind": "input"
         }
+      },
+      "UnitExtraInfo": {
+        "properties": {
+          "CPU": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Cpu"
+          },
+          "RAM": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Ram"
+          },
+          "VRAM": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Vram"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "CPU",
+          "RAM",
+          "VRAM"
+        ],
+        "title": "UnitExtraInfo",
+        "description": "Custom information that is propagated to the frontend. Defined fields are mandatory."
       },
       "UploadLinks": {
         "properties": {
@@ -7045,9 +7099,7 @@
         "required": [
           "walletId",
           "name",
-          "description",
           "owner",
-          "thumbnail",
           "status",
           "created",
           "modified",

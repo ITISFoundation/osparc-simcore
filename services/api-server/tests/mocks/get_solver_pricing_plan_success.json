@@ -57,7 +57,11 @@
      {
       "pricingUnitId": 1,
       "unitName": "small",
-      "unitExtraInfo": {},
+      "unitExtraInfo": {
+        "CPU": 2,
+        "RAM": 1239876234,
+        "VRAM": 23454676789
+      },
       "currentCostPerUnit": 50,
       "default": true
      }

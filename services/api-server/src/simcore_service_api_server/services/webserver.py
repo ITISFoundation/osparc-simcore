@@ -408,7 +408,7 @@ class AuthSession:
     @_exception_mapper({status.HTTP_404_NOT_FOUND: PricingUnitNotFoundError})
     async def get_project_node_pricing_unit(
         self, *, project_id: UUID, node_id: UUID
-    ) -> PricingUnitGet | None:
+    ) -> PricingUnitGet:
         response = await self.client.get(
             f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
             cookies=self.session_cookies,
@@ -559,7 +559,7 @@ class AuthSession:
         return data
 
     @_exception_mapper(_WALLET_STATUS_MAP)
-    async def get_project_wallet(self, *, project_id: ProjectID) -> WalletGet | None:
+    async def get_project_wallet(self, *, project_id: ProjectID) -> WalletGet:
         response = await self.client.get(
             f"/projects/{project_id}/wallet",
             cookies=self.session_cookies,
