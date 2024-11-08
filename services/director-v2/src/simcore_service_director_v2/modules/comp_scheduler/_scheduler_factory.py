@@ -47,7 +47,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
                     r.cluster_id if r.cluster_id is not None else DEFAULT_CLUSTER_ID
                 ),
                 run_metadata=r.metadata,
-                mark_for_cancellation=False,
+                mark_for_cancellation=bool(r.cancelled is not None),
                 use_on_demand_clusters=r.use_on_demand_clusters,
             )
             for r in runs
