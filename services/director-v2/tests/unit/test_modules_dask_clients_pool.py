@@ -7,10 +7,10 @@ from random import choice
 from typing import Any, AsyncIterator, Callable, get_args
 from unittest import mock
 
-from common_library.json_serialization import json_dumps
-from common_library.serialization import model_dump_with_secrets
 import pytest
 from _dask_helpers import DaskGatewayServer
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from models_library.clusters import (
@@ -26,7 +26,6 @@ from models_library.clusters import (
 from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.utils_encoders import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
@@ -133,9 +132,10 @@ def default_scheduler_set_as_osparc_gateway(
                     SimpleAuthentication(
                         username=faker.user_name(),
                         password=SecretStr(local_dask_gateway_server.password),
-                    ), show_secrets=True
+                    ),
+                    show_secrets=True,
                 )
-            )
+            ),
         )
 
     return creator

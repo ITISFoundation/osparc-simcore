@@ -4,22 +4,31 @@ from pydantic import BaseModel, SecretStr
 
 
 class Credentials(BaseModel):
-    USERNAME: str | None = None
-    PASSWORD: SecretStr | None = None
+    username: str
+    password: SecretStr
+
+
+class Access(BaseModel):
+    credentials: Credentials
 
 
 @pytest.mark.parametrize(
     "expected,show_secrets",
     [
         (
-            {"USERNAME": "DeepThought", "PASSWORD": "42"},
+            {"credentials": {"username": "DeepThought", "password": "42"}},
             True,
         ),
         (
-            {"USERNAME": "DeepThought", "PASSWORD": "**********"},
+            {"credentials": {"username": "DeepThought", "password": "**********"}},
             False,  # hide secrets
         ),
     ],
 )
 def test_model_dump_with_secrets(expected: dict, show_secrets: bool):
-    assert expected == model_dump_with_secrets(Credentials(USERNAME="DeepThought", PASSWORD=SecretStr("42")), show_secrets=show_secrets)
+    assert expected == model_dump_with_secrets(
+        Access(
+            credentials=Credentials(username="DeepThought", password=SecretStr("42"))
+        ),
+        show_secrets=show_secrets,
+    )
