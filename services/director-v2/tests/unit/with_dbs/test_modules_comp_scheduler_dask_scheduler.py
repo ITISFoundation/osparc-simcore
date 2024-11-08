@@ -1206,7 +1206,7 @@ async def test_handling_scheduling_after_reboot(
     mocked_clean_task_output_fct: mock.MagicMock,
     reboot_state: RebootState,
 ):
-    """After the dask client is rebooted, or that the director-v2 reboots the scheduler
+    """After the dask client is rebooted, or that the director-v2 reboots the dv-2 internal scheduler
     shall continue scheduling correctly. Even though the task might have continued to run
     in the dask-scheduler."""
 
@@ -1276,6 +1276,93 @@ async def test_handling_scheduling_after_reboot(
     await _assert_comp_run_db(
         aiopg_engine, running_project, reboot_state.expected_run_state
     )
+
+
+async def test_handling_cancellation_of_jobs_after_reboot(
+    with_disabled_scheduler_task: None,
+    mocked_dask_client: mock.MagicMock,
+    aiopg_engine: aiopg.sa.engine.Engine,
+    running_project_mark_for_cancellation: RunningProject,
+    scheduler: BaseCompScheduler,
+    mocked_parse_output_data_fct: mock.MagicMock,
+    mocked_clean_task_output_fct: mock.MagicMock,
+):
+    """A running pipeline was cancelled by a user and the DV-2 was restarted BEFORE
+    It could actually cancel the task. On reboot the DV-2 shall recover
+    and actually cancel the pipeline properly"""
+
+    # check initial status
+    await _assert_comp_run_db(
+        aiopg_engine, running_project_mark_for_cancellation, RunningState.STARTED
+    )
+    await _assert_comp_tasks_db(
+        aiopg_engine,
+        running_project_mark_for_cancellation.project.uuid,
+        [t.node_id for t in running_project_mark_for_cancellation.tasks],
+        expected_state=RunningState.STARTED,
+        expected_progress=0,
+    )
+
+    # the backend shall report the tasks as running
+    async def mocked_get_tasks_status(job_ids: list[str]) -> list[DaskClientTaskState]:
+        return [DaskClientTaskState.PENDING_OR_STARTED for j in job_ids]
+
+    mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
+    # Running the scheduler, should actually cancel the run now
+    await run_comp_scheduler(scheduler)
+    mocked_dask_client.abort_computation_task.assert_called()
+    assert mocked_dask_client.abort_computation_task.call_count == len(
+        [
+            t.node_id
+            for t in running_project_mark_for_cancellation.tasks
+            if t.node_class == NodeClass.COMPUTATIONAL
+        ]
+    )
+    # in the DB they are still running, they will be stopped in the next iteration
+    await _assert_comp_tasks_db(
+        aiopg_engine,
+        running_project_mark_for_cancellation.project.uuid,
+        [
+            t.node_id
+            for t in running_project_mark_for_cancellation.tasks
+            if t.node_class == NodeClass.COMPUTATIONAL
+        ],
+        expected_state=RunningState.STARTED,
+        expected_progress=0,
+    )
+    await _assert_comp_run_db(
+        aiopg_engine, running_project_mark_for_cancellation, RunningState.STARTED
+    )
+
+    # the backend shall now report the tasks as aborted
+    async def mocked_get_tasks_status_aborted(
+        job_ids: list[str],
+    ) -> list[DaskClientTaskState]:
+        return [DaskClientTaskState.ABORTED for j in job_ids]
+
+    mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status_aborted
+
+    async def _return_random_task_result(job_id) -> TaskOutputData:
+        raise TaskCancelledError
+
+    mocked_dask_client.get_task_result.side_effect = _return_random_task_result
+    await run_comp_scheduler(scheduler)
+    # now should be stopped
+    await _assert_comp_tasks_db(
+        aiopg_engine,
+        running_project_mark_for_cancellation.project.uuid,
+        [
+            t.node_id
+            for t in running_project_mark_for_cancellation.tasks
+            if t.node_class == NodeClass.COMPUTATIONAL
+        ],
+        expected_state=RunningState.ABORTED,
+        expected_progress=1,
+    )
+    await _assert_comp_run_db(
+        aiopg_engine, running_project_mark_for_cancellation, RunningState.ABORTED
+    )
+    mocked_clean_task_output_fct.assert_called()
 
 
 @pytest.fixture
