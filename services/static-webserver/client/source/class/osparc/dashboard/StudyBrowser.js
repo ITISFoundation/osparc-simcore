@@ -42,6 +42,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   construct: function() {
     this._resourceType = "study";
     this.base(arguments);
+
+    const store = osparc.store.Store.getInstance();
+    this.bind("currentContext", store, "studyBrowserContext");
   },
 
   events: {
@@ -992,7 +995,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __changeContext: function(context, workspaceId = null, folderId = null) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
-        osparc.store.Store.getInstance().setStudyBrowserContext(context);
         if (
           context !== "search" && // reload studies for a new search
           context === this.getCurrentContext() &&
