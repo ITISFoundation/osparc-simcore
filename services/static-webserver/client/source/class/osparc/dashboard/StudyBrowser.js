@@ -877,7 +877,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       this._createResourcesLayout();
-      this.bind("currentContext", this._resourcesContainer, "currentContext");
 
       const list = this._resourcesContainer.getFlatList();
       if (list) {
@@ -993,6 +992,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __changeContext: function(context, workspaceId = null, folderId = null) {
       if (osparc.utils.DisabledPlugins.isFoldersEnabled()) {
+        osparc.store.Store.getInstance().setStudyBrowserContext(context);
         if (
           context !== "search" && // reload studies for a new search
           context === this.getCurrentContext() &&

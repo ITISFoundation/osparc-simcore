@@ -87,13 +87,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       nullable: true,
       apply: "__applyLastModified"
     },
-
-    currentContext: {
-      check: ["studiesAndFolders", "workspaces", "search", "trash"],
-      nullable: false,
-      init: "studiesAndFolders",
-      event: "changeCurrentContext",
-    },
   },
 
   members: {
@@ -153,6 +146,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       folder.bind("parentFolderId", this, "parentFolderId");
       folder.bind("name", this, "title");
       folder.bind("lastModified", this, "lastModified");
+
+      this.__addMenuButton();
     },
 
     __applyWorkspaceId: function(workspaceId) {
@@ -185,7 +180,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       }
     },
 
-    populateMenuButton: function() {
+    __addMenuButton: function() {
       const menuButton = this.getChildControl("menu-button");
       menuButton.setVisibility("visible");
 
@@ -193,7 +188,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         position: "bottom-right"
       });
 
-      if (this.getCurrentContext() === "trash") {
+      const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+      if (studyBrowserContext === "trash") {
         const trashButton = new qx.ui.menu.Button(this.tr("Restore"), "@MaterialIcons/restore_from_trash/16");
         trashButton.addListener("execute", () => this.fireDataEvent("untrashFolderRequested", this.getFolder()), this);
         menu.add(trashButton);
