@@ -20,7 +20,7 @@ from ...core.errors import (
 
 router = APIRouter()
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @router.get("/running_interactive_services")
@@ -29,7 +29,7 @@ async def list_running_services(
     user_id: UserID | None = None,
     project_id: ProjectID | None = None,
 ) -> Envelope[list[dict[str, Any]]]:
-    log.debug(
+    _logger.debug(
         "Client does list_running_services request user_id %s, project_id %s",
         user_id,
         project_id,
@@ -56,7 +56,7 @@ async def start_service(
     service_tag: ServiceVersion | None = None,
     x_simcore_user_agent: str = Header(...),
 ) -> Envelope[dict[str, Any]]:
-    log.debug(
+    _logger.debug(
         "Client does start_service with user_id %s, project_id %s, service %s:%s, service_uuid %s, service_basepath %s, request_simcore_user_agent %s",
         user_id,
         project_id,
@@ -97,7 +97,7 @@ async def get_running_service(
     the_app: Annotated[FastAPI, Depends(get_app)],
     service_uuid: UUID,
 ) -> Envelope[dict[str, Any]]:
-    log.debug(
+    _logger.debug(
         "Client does get_running_service with service_uuid %s",
         service_uuid,
     )
@@ -119,7 +119,7 @@ async def stop_service(
     service_uuid: UUID,
     save_state: bool = True,
 ) -> None:
-    log.debug(
+    _logger.debug(
         "Client does stop_service with service_uuid %s",
         service_uuid,
     )

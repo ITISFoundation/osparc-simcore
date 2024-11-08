@@ -378,7 +378,7 @@ async def get_repo_details(app: FastAPI, image_key: str) -> list[dict[str, Any]]
     results = await limited_gather(
         *[get_image_details(app, image_key, tag) for tag in image_tags],
         reraise=False,
-        log=logger,
+        _logger=logger,
         limit=_MAX_CONCURRENT_CALLS,
     )
     return [result for result in results if not isinstance(result, BaseException)]
@@ -400,7 +400,7 @@ async def list_services(app: FastAPI, service_type: ServiceType) -> list[dict]:
     results = await limited_gather(
         *[get_repo_details(app, repo) for repo in repos],
         reraise=False,
-        log=logger,
+        _logger=logger,
         limit=_MAX_CONCURRENT_CALLS,
     )
 

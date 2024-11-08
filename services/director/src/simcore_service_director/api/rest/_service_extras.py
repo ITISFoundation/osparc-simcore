@@ -11,7 +11,7 @@ from ...core.errors import RegistryConnectionError, ServiceNotAvailableError
 
 router = APIRouter()
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @router.get("/service_extras/{service_key:path}/{service_version}")
@@ -20,7 +20,7 @@ async def list_service_extras(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> Envelope[dict[str, Any]]:
-    log.debug(
+    _logger.debug(
         "Client does service_extras_by_key_version_get request with service_key %s, service_version %s",
         service_key,
         service_version,

@@ -55,7 +55,7 @@ from .instrumentation import get_instrumentation
 from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ServiceState(Enum):
@@ -77,7 +77,7 @@ async def _create_auth(registry_settings: RegistrySettings) -> dict[str, str]:
 async def _check_node_uuid_available(
     client: aiodocker.docker.Docker, node_uuid: str
 ) -> None:
-    log.debug("Checked if UUID %s is already in use", node_uuid)
+    _logger.debug("Checked if UUID %s is already in use", node_uuid)
     # check if service with same uuid already exists
     try:
         # not filtering by "swarm_stack_name" label because it's safer
@@ -91,7 +91,7 @@ async def _check_node_uuid_available(
         raise GenericDockerError(err=msg) from err
     if list_of_running_services_w_uuid:
         raise ServiceUUIDInUseError(service_uuid=node_uuid)
-    log.debug("UUID %s is free", node_uuid)
+    _logger.debug("UUID %s is free", node_uuid)
 
 
 def _check_setting_correctness(setting: dict) -> None:
@@ -103,7 +103,7 @@ def _check_setting_correctness(setting: dict) -> None:
 def _parse_mount_settings(settings: list[dict]) -> list[dict]:
     mounts = []
     for s in settings:
-        log.debug("Retrieved mount settings %s", s)
+        _logger.debug("Retrieved mount settings %s", s)
         mount = {}
         mount["ReadOnly"] = True
         if "ReadOnly" in s and s["ReadOnly"] in ["false", "False", False]:
@@ -113,12 +113,12 @@ def _parse_mount_settings(settings: list[dict]) -> list[dict]:
             if field in s:
                 mount[field] = s[field]
             else:
-                log.warning(
+                _logger.warning(
                     "Mount settings have wrong format. Required keys [Source, Target, Type]"
                 )
                 continue
 
-        log.debug("Append mount settings %s", mount)
+        _logger.debug("Append mount settings %s", mount)
         mounts.append(mount)
 
     return mounts
@@ -130,13 +130,13 @@ _ENV_NUM_ELEMENTS: Final[int] = 2
 def _parse_env_settings(settings: list[str]) -> dict:
     envs = {}
     for s in settings:
-        log.debug("Retrieved env settings %s", s)
+        _logger.debug("Retrieved env settings %s", s)
         if "=" in s:
             parts = s.split("=")
             if len(parts) == _ENV_NUM_ELEMENTS:
                 envs.update({parts[0]: parts[1]})
 
-        log.debug("Parsed env settings %s", s)
+        _logger.debug("Parsed env settings %s", s)
 
     return envs
 
@@ -151,7 +151,7 @@ async def _read_service_settings(
         else None
     )
 
-    log.debug("Retrieved %s settings: %s", settings_name, pformat(settings))
+    _logger.debug("Retrieved %s settings: %s", settings_name, pformat(settings))
     return settings
 
 
@@ -187,7 +187,7 @@ async def _create_docker_service_params(
         app, service_key, service_tag, SERVICE_REVERSE_PROXY_SETTINGS
     )
     service_name = registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
-    log.debug("Converting labels to docker runtime parameters")
+    _logger.debug("Converting labels to docker runtime parameters")
     service_default_envs = {
         "POSTGRES_ENDPOINT": app_settings.DIRECTOR_POSTGRES.dsn,
         "POSTGRES_USER": app_settings.DIRECTOR_POSTGRES.POSTGRES_USER,
@@ -317,7 +317,7 @@ async def _create_docker_service_params(
         "networks": [internal_network_id] if internal_network_id else [],
     }
     if app_settings.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS:
-        log.debug(
+        _logger.debug(
             "adding custom constraints %s ",
             app_settings.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS,
         )
@@ -439,14 +439,14 @@ async def _create_docker_service_params(
         ):  # python-API compatible
             docker_params["task_template"]["Placement"]["Constraints"] += param["value"]
         elif param["name"] == "env":
-            log.debug("Found env parameter %s", param["value"])
+            _logger.debug("Found env parameter %s", param["value"])
             env_settings = _parse_env_settings(param["value"])
             if env_settings:
                 docker_params["task_template"]["ContainerSpec"]["Env"].update(
                     env_settings
                 )
         elif param["name"] == "mount":
-            log.debug("Found mount parameter %s", param["value"])
+            _logger.debug("Found mount parameter %s", param["value"])
             mount_settings: list[dict] = _parse_mount_settings(param["value"])
             if mount_settings:
                 docker_params["task_template"]["ContainerSpec"]["Mounts"].extend(
@@ -491,7 +491,7 @@ async def _create_docker_service_params(
     }
     docker_params["task_template"]["ContainerSpec"]["Env"].update(resource_limits)
 
-    log.debug(
+    _logger.debug(
         "Converted labels to docker runtime parameters: %s", pformat(docker_params)
     )
     return docker_params
@@ -500,11 +500,11 @@ async def _create_docker_service_params(
 def _get_service_entrypoint(
     service_boot_parameters_labels: list[dict[str, Any]]
 ) -> str:
-    log.debug("Getting service entrypoint")
+    _logger.debug("Getting service entrypoint")
     for param in service_boot_parameters_labels:
         _check_setting_correctness(param)
         if param["name"] == "entry_point":
-            log.debug("Service entrypoint is %s", param["value"])
+            _logger.debug("Service entrypoint is %s", param["value"])
             assert isinstance(param["value"], str)  # nosec
             return param["value"]
     return ""
@@ -536,7 +536,7 @@ async def _get_swarm_network(
 async def _get_docker_image_port_mapping(
     service: dict,
 ) -> tuple[str | None, int | None]:
-    log.debug("getting port published by service: %s", service["Spec"]["Name"])
+    _logger.debug("getting port published by service: %s", service["Spec"]["Name"])
 
     published_ports = []
     target_ports = []
@@ -548,7 +548,7 @@ async def _get_docker_image_port_mapping(
                 published_ports.append(port["PublishedPort"])
                 target_ports.append(port["TargetPort"])
 
-    log.debug("Service %s publishes: %s ports", service["ID"], published_ports)
+    _logger.debug("Service %s publishes: %s ports", service["ID"], published_ports)
     published_port = None
     target_port = None
     if published_ports:
@@ -578,7 +578,7 @@ async def _pass_port_to_service(
         _check_setting_correctness(param)
         if param["name"] == "published_host":
             route = param["value"]
-            log.debug(
+            _logger.debug(
                 "Service needs to get published host %s:%s using route %s",
                 app_settings.DIRECTOR_PUBLISHED_HOST_NAME,
                 port,
@@ -589,11 +589,11 @@ async def _pass_port_to_service(
                 "hostname": str(app_settings.DIRECTOR_PUBLISHED_HOST_NAME),
                 "port": str(port),
             }
-            log.debug("creating request %s and query %s", service_url, query_string)
+            _logger.debug("creating request %s and query %s", service_url, query_string)
             async with session.post(service_url, data=query_string) as response:
-                log.debug("query response: %s", await response.text())
+                _logger.debug("query response: %s", await response.text())
             return
-    log.debug("service %s does not need to know its external port", service_name)
+    _logger.debug("service %s does not need to know its external port", service_name)
 
 
 async def _create_network_name(service_name: str, node_uuid: str) -> str:
@@ -603,7 +603,7 @@ async def _create_network_name(service_name: str, node_uuid: str) -> str:
 async def _create_overlay_network_in_swarm(
     client: aiodocker.docker.Docker, service_name: str, node_uuid: str
 ) -> str:
-    log.debug(
+    _logger.debug(
         "Creating overlay network for service %s with uuid %s", service_name, node_uuid
     )
     network_name = await _create_network_name(service_name, node_uuid)
@@ -614,7 +614,7 @@ async def _create_overlay_network_in_swarm(
             "Labels": {_to_simcore_runtime_docker_label_key("node_id"): node_uuid},
         }
         docker_network = await client.networks.create(network_config)
-        log.debug(
+        _logger.debug(
             "Network %s created for service %s with uuid %s",
             network_name,
             service_name,
@@ -629,7 +629,7 @@ async def _create_overlay_network_in_swarm(
 async def _remove_overlay_network_of_swarm(
     client: aiodocker.docker.Docker, node_uuid: str
 ) -> None:
-    log.debug("Removing overlay network for service with uuid %s", node_uuid)
+    _logger.debug("Removing overlay network for service with uuid %s", node_uuid)
     try:
         networks = await client.networks.list()
         networks = [
@@ -640,12 +640,12 @@ async def _remove_overlay_network_of_swarm(
             and x["Labels"][_to_simcore_runtime_docker_label_key("node_id")]
             == node_uuid
         ]
-        log.debug("Found %s networks with uuid %s", len(networks), node_uuid)
+        _logger.debug("Found %s networks with uuid %s", len(networks), node_uuid)
         # remove any network in the list (should be only one)
         for network in networks:
             docker_network = aiodocker.networks.DockerNetwork(client, network["Id"])
             await docker_network.delete()
-        log.debug("Removed %s networks with uuid %s", len(networks), node_uuid)
+        _logger.debug("Removed %s networks with uuid %s", len(networks), node_uuid)
     except aiodocker.DockerError as err:
         msg = "Error while removing networks"
         raise GenericDockerError(err=msg) from err
@@ -656,7 +656,7 @@ async def _get_service_state(
 ) -> tuple[ServiceState, str]:
     # some times one has to wait until the task info is filled
     service_name = service["Spec"]["Name"]
-    log.debug("Getting service %s state", service_name)
+    _logger.debug("Getting service %s state", service_name)
     tasks = await client.tasks.list(filters={"service": service_name})
 
     # wait for tasks
@@ -676,17 +676,17 @@ async def _get_service_state(
     last_task = sorted(tasks, key=lambda task: task["UpdatedAt"])[-1]
     task_state = last_task["Status"]["State"]
 
-    log.debug("%s %s", service["ID"], task_state)
+    _logger.debug("%s %s", service["ID"], task_state)
 
     last_task_state = ServiceState.STARTING  # default
     last_task_error_msg = last_task["Status"].get("Err", "")
     if task_state in ("failed"):
         # check if it failed already the max number of attempts we allow for
         if len(tasks) < app_settings.DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS:
-            log.debug("number of tasks: %s", len(tasks))
+            _logger.debug("number of tasks: %s", len(tasks))
             last_task_state = ServiceState.STARTING
         else:
-            log.error(
+            _logger.error(
                 "service %s failed with %s after %s trials",
                 service_name,
                 last_task["Status"],
@@ -694,7 +694,7 @@ async def _get_service_state(
             )
             last_task_state = ServiceState.FAILED
     elif task_state in ("rejected"):
-        log.error("service %s failed with %s", service_name, last_task["Status"])
+        _logger.error("service %s failed with %s", service_name, last_task["Status"])
         last_task_state = ServiceState.FAILED
     elif task_state in ("pending"):
         last_task_state = ServiceState.PENDING
@@ -708,7 +708,9 @@ async def _get_service_state(
         task_state_update_time = to_datetime(last_task["Status"]["Timestamp"])
         time_since_running = now - task_state_update_time
 
-        log.debug("Now is %s, time since running mode is %s", now, time_since_running)
+        _logger.debug(
+            "Now is %s, time since running mode is %s", now, time_since_running
+        )
         if time_since_running > timedelta(
             seconds=app_settings.DIRECTOR_SERVICES_STATE_MONITOR_S
         ):
@@ -718,7 +720,7 @@ async def _get_service_state(
 
     elif task_state in ("complete", "shutdown"):
         last_task_state = ServiceState.COMPLETE
-    log.debug("service running state is %s", last_task_state)
+    _logger.debug("service running state is %s", last_task_state)
     return (last_task_state, last_task_error_msg)
 
 
@@ -727,7 +729,7 @@ async def _wait_until_service_running_or_failed(
 ) -> None:
     # some times one has to wait until the task info is filled
     service_name = service["Spec"]["Name"]
-    log.debug("Waiting for service %s to start", service_name)
+    _logger.debug("Waiting for service %s to start", service_name)
     while True:
         tasks = await client.tasks.list(filters={"service": service_name})
         # only keep the ones with the right service ID (we're being a bit picky maybe)
@@ -736,9 +738,9 @@ async def _wait_until_service_running_or_failed(
         if tasks:
             last_task = tasks[0]
             task_state = last_task["Status"]["State"]
-            log.debug("%s %s", service["ID"], task_state)
+            _logger.debug("%s %s", service["ID"], task_state)
             if task_state in ("failed", "rejected"):
-                log.error(
+                _logger.error(
                     "Error while waiting for service with %s", last_task["Status"]
                 )
                 raise ServiceStartTimeoutError(
@@ -748,7 +750,7 @@ async def _wait_until_service_running_or_failed(
                 break
         # allows dealing with other events instead of wasting time here
         await asyncio.sleep(1)  # 1s
-    log.debug("Waited for service %s to start", service_name)
+    _logger.debug("Waited for service %s to start", service_name)
 
 
 async def _get_repos_from_key(app: FastAPI, service_key: str) -> dict[str, list[str]]:
@@ -756,11 +758,11 @@ async def _get_repos_from_key(app: FastAPI, service_key: str) -> dict[str, list[
     list_of_images = {
         service_key: await registry_proxy.list_image_tags(app, service_key)
     }
-    log.debug("entries %s", list_of_images)
+    _logger.debug("entries %s", list_of_images)
     if not list_of_images[service_key]:
         raise ServiceNotAvailableError(service_name=service_key)
 
-    log.debug(
+    _logger.debug(
         "Service %s has the following list of images available: %s",
         service_key,
         list_of_images,
@@ -816,7 +818,7 @@ async def _find_service_tag(
             service_name=service_key, service_tag=service_tag
         )
 
-    log.debug("Service tag found is %s ", service_tag)
+    _logger.debug("Service tag found is %s ", service_tag)
     assert tag is not None  # nosec
     return tag
 
@@ -849,7 +851,7 @@ async def _start_docker_service(
         internal_network_id=internal_network_id,
         request_simcore_user_agent=request_simcore_user_agent,
     )
-    log.debug(
+    _logger.debug(
         "Starting docker service %s:%s using parameters %s",
         service_key,
         service_tag,
@@ -862,7 +864,7 @@ async def _start_docker_service(
             # error while starting service
             msg = f"Error while starting service: {service!s}"
             raise DirectorRuntimeError(msg=msg)
-        log.debug("Service started now waiting for it to run")
+        _logger.debug("Service started now waiting for it to run")
 
         # get the full info from docker
         service = await client.services.inspect(service["ID"])
@@ -872,7 +874,7 @@ async def _start_docker_service(
         )
 
         # wait for service to start
-        log.debug("Service %s successfully started", service_name)
+        _logger.debug("Service %s successfully started", service_name)
         # the docker swarm maybe opened some random port to access the service, get the latest version of the service
         service = await client.services.inspect(service["ID"])
         published_port, target_port = await _get_docker_image_port_mapping(
@@ -911,11 +913,11 @@ async def _start_docker_service(
         }
 
     except ServiceStartTimeoutError:
-        log.exception("Service failed to start")
+        _logger.exception("Service failed to start")
         await _silent_service_cleanup(app, node_uuid)
         raise
     except aiodocker.DockerError as err:
-        log.exception("Unexpected error")
+        _logger.exception("Unexpected error")
         await _silent_service_cleanup(app, node_uuid)
         raise ServiceNotAvailableError(
             service_name=service_key, service_tag=service_tag
@@ -937,14 +939,14 @@ async def _create_node(
     node_base_path: str,
     request_simcore_user_agent: str,
 ) -> list[dict]:  # pylint: disable=R0913, R0915
-    log.debug(
+    _logger.debug(
         "Creating %s docker services for node %s and base path %s for user %s",
         len(list_of_services),
         node_uuid,
         node_base_path,
         user_id,
     )
-    log.debug("Services %s will be started", list_of_services)
+    _logger.debug("Services %s will be started", list_of_services)
 
     # if the service uses several docker images, a network needs to be setup to connect them together
     inter_docker_network_id = None
@@ -953,7 +955,7 @@ async def _create_node(
         inter_docker_network_id = await _create_overlay_network_in_swarm(
             client, service_name, node_uuid
         )
-        log.debug("Created docker network in swarm for service %s", service_name)
+        _logger.debug("Created docker network in swarm for service %s", service_name)
 
     containers_meta_data = []
     for service in list_of_services:
@@ -1014,7 +1016,7 @@ async def start_service(
     request_simcore_user_agent: str,
 ) -> dict:
     app_settings = get_application_settings(app)
-    log.debug(
+    _logger.debug(
         "starting service %s:%s using uuid %s, basepath %s",
         service_key,
         service_tag,
@@ -1026,11 +1028,11 @@ async def start_service(
         await _check_node_uuid_available(client, node_uuid)
         list_of_images = await _get_repos_from_key(app, service_key)
         service_tag = await _find_service_tag(list_of_images, service_key, service_tag)
-        log.debug("Found service to start %s:%s", service_key, service_tag)
+        _logger.debug("Found service to start %s:%s", service_key, service_tag)
         list_of_services_to_start = [{"key": service_key, "tag": service_tag}]
         # find the service dependencies
         list_of_dependencies = await _get_dependant_repos(app, service_key, service_tag)
-        log.debug("Found service dependencies: %s", list_of_dependencies)
+        _logger.debug("Found service dependencies: %s", list_of_dependencies)
         if list_of_dependencies:
             list_of_services_to_start.extend(list_of_dependencies)
 
@@ -1201,7 +1203,7 @@ async def _save_service_state(
                 #   METHOD NOT ALLOWED https://httpstatuses.com/405
                 #   NOT FOUND https://httpstatuses.com/404
                 #
-                log.warning(
+                _logger.warning(
                     "Service '%s' does not seem to implement save state functionality: %s. Skipping save",
                     service_host_name,
                     err,
@@ -1210,7 +1212,7 @@ async def _save_service_state(
                 # upss ... could service had troubles saving, reraise
                 raise
         else:
-            log.info(
+            _logger.info(
                 "Service '%s' successfully saved its state: %s",
                 service_host_name,
                 f"{response}",
@@ -1220,7 +1222,7 @@ async def _save_service_state(
 @run_sequentially_in_context(target_args=["node_uuid"])
 async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> None:
     app_settings = get_application_settings(app)
-    log.debug(
+    _logger.debug(
         "stopping service with node_uuid=%s, save_state=%s", node_uuid, save_state
     )
 
@@ -1243,7 +1245,7 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
         if not list_running_services_with_uuid:
             raise ServiceUUIDNotFoundError(service_uuid=node_uuid)
 
-        log.debug("found service(s) with uuid %s", list_running_services_with_uuid)
+        _logger.debug("found service(s) with uuid %s", list_running_services_with_uuid)
 
         # save the state of the main service if it can
         service_details = await get_service_details(app, node_uuid)
@@ -1263,7 +1265,7 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
 
         # If state save is enforced
         if save_state:
-            log.debug("saving state of service %s...", service_host_name)
+            _logger.debug("saving state of service %s...", service_host_name)
             try:
                 await _save_service_state(
                     service_host_name, session=get_client_session(app)
@@ -1277,7 +1279,7 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
                 ) from err
 
             except ClientError as err:
-                log.warning(
+                _logger.warning(
                     "Could not save state because %s is unreachable [%s]."
                     "Resuming stop_service.",
                     service_host_name,
@@ -1286,9 +1288,9 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
 
         # remove the services
         try:
-            log.debug("removing services ...")
+            _logger.debug("removing services ...")
             for service in list_running_services_with_uuid:
-                log.debug("removing %s", service["Spec"]["Name"])
+                _logger.debug("removing %s", service["Spec"]["Name"])
                 await client.services.delete(service["Spec"]["Name"])
 
         except aiodocker.DockerError as err:
@@ -1296,9 +1298,9 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
             raise GenericDockerError(err=msg) from err
 
         # remove network(s)
-        log.debug("removed services, now removing network...")
+        _logger.debug("removed services, now removing network...")
         await _remove_overlay_network_of_swarm(client, node_uuid)
-        log.debug("removed network")
+        _logger.debug("removed network")
 
         if app_settings.DIRECTOR_MONITORING_ENABLED:
             get_instrumentation(app).services_stopped.labels(

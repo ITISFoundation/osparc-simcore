@@ -13,7 +13,7 @@ from ...core.errors import RegistryConnectionError, ServiceNotAvailableError
 
 router = APIRouter()
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class _ErrorMessage(BaseModel):
@@ -38,7 +38,7 @@ async def list_services(
     the_app: Annotated[FastAPI, Depends(get_app)],
     service_type: ServiceType | None = None,
 ) -> Envelope[list[dict[str, Any]]]:
-    log.debug(
+    _logger.debug(
         "Client does list_services request with service_type %s",
         service_type,
     )
@@ -73,7 +73,7 @@ async def list_service_labels(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> Envelope[dict[str, Any]]:
-    log.debug(
+    _logger.debug(
         "Retrieving service labels with service_key %s, service_version %s",
         service_key,
         service_version,
@@ -101,7 +101,7 @@ async def get_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> Envelope[list[dict[str, Any]]]:
-    log.debug(
+    _logger.debug(
         "Client does get_service with service_key %s, service_version %s",
         service_key,
         service_version,
