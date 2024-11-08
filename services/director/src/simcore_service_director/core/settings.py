@@ -3,16 +3,10 @@ import warnings
 from typing import cast
 
 from fastapi import FastAPI
-from models_library.basic_types import (
-    BootModeEnum,
-    BuildTargetEnum,
-    LogLevel,
-    PortInt,
-    VersionTag,
-)
-from pydantic import Field, NonNegativeInt, PositiveInt, validator
+from models_library.basic_types import LogLevel, PortInt, VersionTag
+from pydantic import Field, NonNegativeInt, validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
-from settings_library.base import BaseCustomSettings
+from settings_library.application import BaseApplicationSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.postgres import PostgresSettings
 from settings_library.tracing import TracingSettings
@@ -21,32 +15,11 @@ from settings_library.utils_logging import MixinLoggingSettings
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 
 
-class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
-    # CODE STATICS ---------------------------------------------------------
+class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     API_VERSION: str = API_VERSION
     APP_NAME: str = APP_NAME
     API_VTAG: VersionTag = API_VTAG
 
-    # IMAGE BUILDTIME ------------------------------------------------------
-    # @Makefile
-    SC_BUILD_DATE: str | None = None
-    SC_BUILD_TARGET: BuildTargetEnum | None = None
-    SC_VCS_REF: str | None = None
-    SC_VCS_URL: str | None = None
-
-    # @Dockerfile
-    SC_BOOT_MODE: BootModeEnum | None = None
-    SC_BOOT_TARGET: BuildTargetEnum | None = None
-    SC_HEALTHCHECK_TIMEOUT: PositiveInt | None = Field(
-        None,
-        description="If a single run of the check takes longer than timeout seconds "
-        "then the check is considered to have failed."
-        "It takes retries consecutive failures of the health check for the container to be considered unhealthy.",
-    )
-    SC_USER_ID: int | None = None
-    SC_USER_NAME: str | None = None
-
-    # RUNTIME  -----------------------------------------------------------
     DIRECTOR_DEBUG: bool = Field(
         default=False, description="Debug mode", env=["DIRECTOR_DEBUG", "DEBUG"]
     )

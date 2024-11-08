@@ -42,6 +42,11 @@ VERSION_REG = re.compile(
 
 logger = logging.getLogger(__name__)
 
+#
+# NOTE: if you are refactoring this module,
+# please consider reusing packages/pytest-simcore/src/pytest_simcore/helpers/docker_registry.py
+#
+
 
 class ServiceType(enum.Enum):
     ALL = ""
@@ -375,10 +380,11 @@ async def get_image_details(
 async def get_repo_details(app: FastAPI, image_key: str) -> list[dict[str, Any]]:
 
     image_tags = await list_image_tags(app, image_key)
+
     results = await limited_gather(
         *[get_image_details(app, image_key, tag) for tag in image_tags],
         reraise=False,
-        _logger=logger,
+        log=logger,
         limit=_MAX_CONCURRENT_CALLS,
     )
     return [result for result in results if not isinstance(result, BaseException)]
@@ -400,7 +406,7 @@ async def list_services(app: FastAPI, service_type: ServiceType) -> list[dict]:
     results = await limited_gather(
         *[get_repo_details(app, repo) for repo in repos],
         reraise=False,
-        _logger=logger,
+        log=logger,
         limit=_MAX_CONCURRENT_CALLS,
     )
 
