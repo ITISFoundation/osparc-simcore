@@ -85,7 +85,7 @@ async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayS
 
             async with cluster.get_client() as client:
                 print(f"--> created new client {client=}, submitting a job")
-                res = await client.submit(lambda x: x + 1, 1)  # type: ignore
+                res = await client.submit(lambda x: x + 1, 1)
                 assert res == 2
 
             print(f"--> scaling cluster {cluster=} back to 0")
@@ -155,7 +155,7 @@ async def test_get_cluster_details(
         authentication=SimpleAuthentication(
             username=gateway_username,
             password=SecretStr(local_dask_gateway_server.password),
-        ).dict(by_alias=True),
+        ).model_dump(mode="json", by_alias=True),
     )
     # in its present state, the cluster should have no workers
     cluster_out = await _get_cluster_details(
