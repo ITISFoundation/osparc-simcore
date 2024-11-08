@@ -2,7 +2,6 @@
 
 """
 
-import functools
 import logging
 
 from aiohttp import web
@@ -14,7 +13,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
+from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
@@ -22,26 +21,16 @@ from ..models import RequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
+from ._exceptions_handlers import handle_plugin_requests_exceptions
 from ._groups_api import WorkspaceGroupGet
 from ._workspaces_handlers import WorkspacesPathParams
-from .errors import WorkspaceAccessForbiddenError, WorkspaceGroupNotFoundError
 
 _logger = logging.getLogger(__name__)
 
 
-def _handle_workspaces_groups_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except WorkspaceGroupNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-
-        except WorkspaceAccessForbiddenError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
-
-    return wrapper
+class _RequestContext(BaseModel):
+    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
+    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
 
 
 #
@@ -74,7 +63,7 @@ class _WorkspacesGroupsBodyParams(BaseModel):
 )
 @login_required
 @permission_required("workspaces.*")
-@_handle_workspaces_groups_exceptions
+@handle_plugin_requests_exceptions
 async def create_workspace_group(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_WorkspacesGroupsPathParams, request)
@@ -97,7 +86,7 @@ async def create_workspace_group(request: web.Request):
 @routes.get(f"/{VTAG}/workspaces/{{workspace_id}}/groups", name="list_workspace_groups")
 @login_required
 @permission_required("workspaces.*")
-@_handle_workspaces_groups_exceptions
+@handle_plugin_requests_exceptions
 async def list_workspace_groups(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
@@ -120,7 +109,7 @@ async def list_workspace_groups(request: web.Request):
 )
 @login_required
 @permission_required("workspaces.*")
-@_handle_workspaces_groups_exceptions
+@handle_plugin_requests_exceptions
 async def replace_workspace_group(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_WorkspacesGroupsPathParams, request)
@@ -144,7 +133,7 @@ async def replace_workspace_group(request: web.Request):
 )
 @login_required
 @permission_required("workspaces.*")
-@_handle_workspaces_groups_exceptions
+@handle_plugin_requests_exceptions
 async def delete_workspace_group(request: web.Request):
     req_ctx = RequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(_WorkspacesGroupsPathParams, request)
