@@ -13,6 +13,10 @@ aiosignal==1.3.1
     #   aiohttp
 antlr4-python3-runtime==4.13.2
     # via moto
+async-timeout==4.0.3
+    # via
+    #   -c requirements/_base.txt
+    #   redis
 attrs==23.2.0
     # via
     #   -c requirements/_base.txt

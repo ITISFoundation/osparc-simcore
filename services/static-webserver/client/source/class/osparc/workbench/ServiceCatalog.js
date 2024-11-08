@@ -300,10 +300,7 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
     __showServiceDetails: async function() {
       const serviceMetadata = await this.__getSelectedService();
       const serviceDetails = new osparc.info.ServiceLarge(serviceMetadata);
-      const title = this.tr("Service information");
-      const width = osparc.info.CardLarge.WIDTH;
-      const height = osparc.info.CardLarge.HEIGHT;
-      osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+      osparc.info.ServiceLarge.popUpInWindow(serviceDetails);
     },
 
     __onCancel: function() {

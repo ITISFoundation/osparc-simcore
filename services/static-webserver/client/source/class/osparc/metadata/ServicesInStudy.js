@@ -147,10 +147,7 @@ qx.Class.define("osparc.metadata.ServicesInStudy", {
             studyId: this._studyData["uuid"],
             label: node["label"]
           });
-          const title = this.tr("Service information");
-          const width = osparc.info.CardLarge.WIDTH;
-          const height = osparc.info.CardLarge.HEIGHT;
-          osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+          osparc.info.ServiceLarge.popUpInWindow(serviceDetails);
         }, this);
         this._servicesGrid.add(infoButton, {
           row: i,

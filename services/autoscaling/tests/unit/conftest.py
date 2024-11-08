@@ -226,6 +226,7 @@ def app_environment(
             "AUTOSCALING_EC2_SECRET_ACCESS_KEY": faker.pystr(),
             "AUTOSCALING_EC2_INSTANCES": "{}",
             "AUTOSCALING_SSM_ACCESS": "{}",
+            "AUTOSCALING_TRACING": "null",
             "SSM_ACCESS_KEY_ID": faker.pystr(),
             "SSM_SECRET_ACCESS_KEY": faker.pystr(),
             "EC2_INSTANCES_KEY_NAME": faker.pystr(),

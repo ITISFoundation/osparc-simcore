@@ -101,7 +101,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       createOrgBtn.addListener("execute", function() {
         const newOrg = true;
         const orgEditor = new osparc.editor.OrganizationEditor(newOrg);
-        const title = this.tr("Organization Details Editor");
+        const title = this.tr("New Organization");
         const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
         orgEditor.addListener("createOrg", () => {
           this.__createOrganization(win, orgEditor.getChildControl("create"), orgEditor);
@@ -139,7 +139,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("label", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
-          ctrl.bindProperty("nMembers", "contact", null, item, id);
+          ctrl.bindProperty("nMembers", "role", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
         },
         configureItem: item => {
@@ -238,6 +238,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       const name = org.getLabel();
       const msg = this.tr("Are you sure you want to delete ") + name + "?";
       const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete Organization"),
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });
@@ -297,7 +298,8 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
             });
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
+          const errorMessage = err["message"] || this.tr("Something went wrong creating ") + name;
+          osparc.FlashMessenger.getInstance().logAs(errorMessage, "ERROR");
           button.setFetching(false);
           console.error(err);
         })

@@ -122,6 +122,15 @@ qx.Class.define("osparc.workbench.EdgeUI", {
       }
     },
 
+    setHighlighted: function(highlight) {
+      if (highlight) {
+        const strongColor = qx.theme.manager.Color.getInstance().resolve("strong-main");
+        osparc.wrapper.Svg.updateCurveColor(this.getRepresentation(), strongColor);
+      } else {
+        this.__updateEdgeState();
+      }
+    },
+
     getEdgeId: function() {
       return this.getEdge().getEdgeId();
     },

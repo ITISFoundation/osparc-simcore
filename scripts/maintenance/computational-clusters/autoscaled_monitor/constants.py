@@ -22,6 +22,7 @@ DEFAULT_DYNAMIC_EC2_FORMAT: Final[str] = r"osparc-dynamic-autoscaled-worker-{key
 DEPLOY_SSH_KEY_PARSER: Final[parse.Parser] = parse.compile(
     r"{prefix}-{random_name}.pem"
 )
+UNIFIED_SSH_KEY_PARSE: Final[parse.Parser] = parse.compile("sshkey.pem")
 
 MINUTE: Final[int] = 60
 HOUR: Final[int] = 60 * MINUTE

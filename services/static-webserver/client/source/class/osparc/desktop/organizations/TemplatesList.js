@@ -70,7 +70,7 @@ qx.Class.define("osparc.desktop.organizations.TemplatesList", {
       const templatesModel = this.__templatesModel = new qx.data.Array();
       const templatesCtrl = new qx.data.controller.List(templatesModel, templatesUIList, "name");
       templatesCtrl.setDelegate({
-        createItem: () => new osparc.desktop.organizations.SharedResourceListItem(),
+        createItem: () => new osparc.desktop.organizations.SharedResourceListItem("template"),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("uuid", "model", null, item, id);
           ctrl.bindProperty("uuid", "key", null, item, id);

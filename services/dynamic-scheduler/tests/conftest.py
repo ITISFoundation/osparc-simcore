@@ -74,7 +74,10 @@ def app_environment(
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
-        {**docker_compose_service_dynamic_scheduler_env_vars},
+        {
+            **docker_compose_service_dynamic_scheduler_env_vars,
+            "DYNAMIC_SCHEDULER_TRACING": "null",
+        },
     )
 
 

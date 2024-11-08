@@ -12,11 +12,11 @@ from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import UserWorkspaceAccessRightsDB, WorkspaceID
 from pydantic import NonNegativeInt
-from simcore_service_webserver.projects._db_utils import PermissionStr
-from simcore_service_webserver.workspaces.errors import WorkspaceAccessForbiddenError
 
+from ..projects._db_utils import PermissionStr
 from ..users.api import get_user
 from . import _workspaces_db as db
+from .errors import WorkspaceAccessForbiddenError
 
 _logger = logging.getLogger(__name__)
 

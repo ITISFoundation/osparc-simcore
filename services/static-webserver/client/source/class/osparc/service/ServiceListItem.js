@@ -161,10 +161,7 @@ qx.Class.define("osparc.service.ServiceListItem", {
       osparc.store.Services.getService(key, version)
         .then(serviceMetadata => {
           const serviceDetails = new osparc.info.ServiceLarge(serviceMetadata);
-          const title = this.tr("Service information");
-          const width = osparc.info.CardLarge.WIDTH;
-          const height = osparc.info.CardLarge.HEIGHT;
-          osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+          osparc.info.ServiceLarge.popUpInWindow(serviceDetails);
         });
     },
 

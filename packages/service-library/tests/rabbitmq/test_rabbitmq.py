@@ -266,7 +266,11 @@ async def test_subscribe_fail_then_success(
         message = entry.args[2]
         if message.headers == {}:
             original_message_count += 1
-        if message.headers and message.headers["x-death"][0]["count"] == 1:
+        if (
+            message.headers
+            and "x-death" in message.headers
+            and message.headers["x-death"][0]["count"] == 1
+        ):
             requeued_message_count += 1
 
     assert original_message_count == topics_count
