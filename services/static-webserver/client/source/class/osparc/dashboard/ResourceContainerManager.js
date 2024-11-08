@@ -424,6 +424,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __createFolderCard: function(folder) {
       const card = new osparc.dashboard.FolderButtonItem(folder);
       this.bind("currentContext", card, "currentContext");
+      card.populateMenuButton();
       [
         "folderSelected",
         "folderUpdated",

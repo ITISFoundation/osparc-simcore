@@ -92,7 +92,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       check: ["studiesAndFolders", "workspaces", "search", "trash"],
       nullable: false,
       init: "studiesAndFolders",
-      event: "changeCurrentContext"
+      event: "changeCurrentContext",
     },
   },
 
@@ -153,8 +153,6 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       folder.bind("parentFolderId", this, "parentFolderId");
       folder.bind("name", this, "title");
       folder.bind("lastModified", this, "lastModified");
-
-      this.__addMenuButton();
     },
 
     __applyWorkspaceId: function(workspaceId) {
@@ -187,7 +185,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       }
     },
 
-    __addMenuButton: function() {
+    populateMenuButton: function() {
       const menuButton = this.getChildControl("menu-button");
       menuButton.setVisibility("visible");
 
@@ -198,6 +196,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
       if (this.getCurrentContext() === "trash") {
         const trashButton = new qx.ui.menu.Button(this.tr("Restore"), "@MaterialIcons/restore_from_trash/16");
         trashButton.addListener("execute", () => this.fireDataEvent("untrashFolderRequested", this.getFolderId()), this);
+        menu.add(trashButton);
 
         menu.addSeparator();
 
