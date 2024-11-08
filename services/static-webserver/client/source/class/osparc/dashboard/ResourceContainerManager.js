@@ -49,6 +49,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
   },
 
   properties: {
+    currentContext: {
+      check: ["studiesAndFolders", "workspaces", "search", "trash"],
+      nullable: false,
+      init: "studiesAndFolders",
+      event: "changeCurrentContext"
+    },
+
     mode: {
       check: ["grid", "list"],
       init: "grid",
@@ -76,6 +83,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "folderUpdated": "qx.event.type.Data",
     "moveFolderToRequested": "qx.event.type.Data",
     "trashFolderRequested": "qx.event.type.Data",
+    "untrashFolderRequested": "qx.event.type.Data",
     "deleteFolderRequested": "qx.event.type.Data",
     "workspaceSelected": "qx.event.type.Data",
     "workspaceUpdated": "qx.event.type.Data",
@@ -415,11 +423,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     __createFolderCard: function(folder) {
       const card = new osparc.dashboard.FolderButtonItem(folder);
+      this.bind("currentContext", card, "currentContext");
       [
         "folderSelected",
         "folderUpdated",
         "moveFolderToRequested",
         "trashFolderRequested",
+        "untrashFolderRequested",
         "deleteFolderRequested",
       ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
       return card;

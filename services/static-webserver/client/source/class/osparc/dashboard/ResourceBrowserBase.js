@@ -268,6 +268,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("folderUpdated", e => this._folderUpdated(e.getData()));
       resourcesContainer.addListener("moveFolderToRequested", e => this._moveFolderToRequested(e.getData()));
       resourcesContainer.addListener("trashFolderRequested", e => this._trashFolderRequested(e.getData()));
+      resourcesContainer.addListener("untrashFolderRequested", e => this._untrashFolderRequested(e.getData()));
       resourcesContainer.addListener("deleteFolderRequested", e => this._deleteFolderRequested(e.getData()));
       resourcesContainer.addListener("folderSelected", e => {
         const folderId = e.getData();
@@ -489,6 +490,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _trashFolderRequested: function(folderId) {
+      throw new Error("Abstract method called!");
+    },
+
+    _untrashFolderRequested: function(folderId) {
       throw new Error("Abstract method called!");
     },
 

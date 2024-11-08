@@ -548,6 +548,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => console.error(err));
     },
 
+    _untrashFolderRequested: function(folderId) {
+      osparc.store.Folders.getInstance().untrashFolder(folderId)
+        .then(() => this.__reloadFolders())
+        .catch(err => console.error(err));
+    },
+
     _deleteFolderRequested: function(folderId) {
       osparc.store.Folders.getInstance().deleteFolder(folderId, this.getCurrentWorkspaceId())
         .then(() => this.__reloadFolders())
@@ -871,6 +877,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       this._createResourcesLayout();
+      this.bind("currentContext", this._resourcesContainer, "currentContext");
 
       const list = this._resourcesContainer.getFlatList();
       if (list) {
