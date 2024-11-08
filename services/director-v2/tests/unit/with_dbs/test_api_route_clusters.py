@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import json
 import random
 from collections.abc import Callable, Iterator
 from typing import Any
@@ -11,6 +10,7 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from _dask_helpers import DaskGatewayServer
+from common_library.serialization import model_dump_with_secrets
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from httpx import URL
@@ -32,7 +32,6 @@ from models_library.clusters import (
 )
 from pydantic import AnyHttpUrl, SecretStr, TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.utils_encoders import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from starlette import status
 
@@ -313,15 +312,15 @@ async def test_create_cluster(
         authentication=cluster_simple_authentication(),
         name=faker.name(),
         type=random.choice(list(ClusterType)),
+        owner=faker.pyint(min_value=1),
     )
     response = await async_client.post(
         create_cluster_url,
-        json=json.loads(
-            cluster_data.model_dump_json(
-                by_alias=True,
-                exclude_unset=True,
-                encoder=create_json_encoder_wo_secrets(ClusterCreate),
-            )
+        json=model_dump_with_secrets(
+            cluster_data,
+            show_secrets=True,
+            by_alias=True,
+            exclude_unset=True,
         ),
     )
     assert response.status_code == status.HTTP_201_CREATED, f"received: {response.text}"
@@ -360,10 +359,8 @@ async def test_update_own_cluster(
     # try to modify one that does not exist
     response = await async_client.patch(
         f"/v2/clusters/15615165165165?user_id={user_1['id']}",
-        json=json.loads(
-            ClusterPatch().model_dump_json(
-                **_PATCH_EXPORT, encoder=create_json_encoder_wo_secrets(ClusterPatch)
-            )
+        json=model_dump_with_secrets(
+            ClusterPatch(), show_secrets=True, **_PATCH_EXPORT
         ),
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -382,10 +379,8 @@ async def test_update_own_cluster(
     # now we modify nothing
     response = await async_client.patch(
         f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}",
-        json=json.loads(
-            ClusterPatch().model_dump_json(
-                **_PATCH_EXPORT, encoder=create_json_encoder_wo_secrets(ClusterPatch)
-            )
+        json=model_dump_with_secrets(
+            ClusterPatch(), show_secrets=True, **_PATCH_EXPORT
         ),
     )
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
@@ -402,10 +397,8 @@ async def test_update_own_cluster(
         ClusterPatch(endpoint=faker.uri()),
         ClusterPatch(authentication=cluster_simple_authentication()),
     ]:
-        jsonable_cluster_patch = json.loads(
-            cluster_patch.json(
-                **_PATCH_EXPORT, encoder=create_json_encoder_wo_secrets(ClusterPatch)
-            )
+        jsonable_cluster_patch = model_dump_with_secrets(
+            cluster_patch, show_secrets=True, **_PATCH_EXPORT
         )
         print(f"--> patching cluster with {jsonable_cluster_patch}")
         response = await async_client.patch(
@@ -450,11 +443,7 @@ async def test_update_own_cluster(
     cluster_patch = ClusterPatch(owner=user_2["primary_gid"])
     response = await async_client.patch(
         f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}",
-        json=json.loads(
-            cluster_patch.model_dump_json(
-                **_PATCH_EXPORT, encoder=create_json_encoder_wo_secrets(ClusterPatch)
-            )
-        ),
+        json=model_dump_with_secrets(cluster_patch, show_secrets=True, **_PATCH_EXPORT),
     )
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
     returned_cluster = ClusterGet.model_validate(response.json())
@@ -472,11 +461,7 @@ async def test_update_own_cluster(
     )
     response = await async_client.patch(
         f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}",
-        json=json.loads(
-            cluster_patch.model_dump_json(
-                **_PATCH_EXPORT, encoder=create_json_encoder_wo_secrets(ClusterPatch)
-            )
-        ),
+        json=model_dump_with_secrets(cluster_patch, show_secrets=True, **_PATCH_EXPORT),
     )
     assert (
         response.status_code == status.HTTP_403_FORBIDDEN
@@ -496,10 +481,8 @@ async def test_update_default_cluster_fails(
     # try to modify one that does not exist
     response = await async_client.patch(
         f"/v2/clusters/default?user_id={user_1['id']}",
-        json=json.loads(
-            ClusterPatch().model_dump_json(
-                **_PATCH_EXPORT, encoder=create_json_encoder_wo_secrets(ClusterPatch)
-            )
+        json=model_dump_with_secrets(
+            ClusterPatch(), show_secrets=True, **_PATCH_EXPORT
         ),
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -568,11 +551,8 @@ async def test_update_another_cluster(
     ]:
         response = await async_client.patch(
             f"/v2/clusters/{the_cluster.id}?user_id={user_2['id']}",
-            json=json.loads(
-                cluster_patch.json(
-                    **_PATCH_EXPORT,
-                    encoder=create_json_encoder_wo_secrets(ClusterPatch),
-                )
+            json=model_dump_with_secrets(
+                cluster_patch, show_secrets=True, **_PATCH_EXPORT
             ),
         )
         assert (
@@ -591,11 +571,8 @@ async def test_update_another_cluster(
         cluster_patch = ClusterPatch(accessRights={user_3["primary_gid"]: rights})
         response = await async_client.patch(
             f"/v2/clusters/{the_cluster.id}?user_id={user_2['id']}",
-            json=json.loads(
-                cluster_patch.model_dump_json(
-                    **_PATCH_EXPORT,
-                    encoder=create_json_encoder_wo_secrets(ClusterPatch),
-                )
+            json=model_dump_with_secrets(
+                cluster_patch, show_secrets=True, **_PATCH_EXPORT
             ),
         )
         assert (
@@ -612,11 +589,8 @@ async def test_update_another_cluster(
         cluster_patch = ClusterPatch(accessRights={user_3["primary_gid"]: rights})
         response = await async_client.patch(
             f"/v2/clusters/{the_cluster.id}?user_id={user_2['id']}",
-            json=json.loads(
-                cluster_patch.model_dump_json(
-                    **_PATCH_EXPORT,
-                    encoder=create_json_encoder_wo_secrets(ClusterPatch),
-                )
+            json=model_dump_with_secrets(
+                cluster_patch, show_secrets=True, **_PATCH_EXPORT
             ),
         )
         assert (
@@ -745,10 +719,8 @@ async def test_ping_invalid_cluster_raises_422(
     )
     response = await async_client.post(
         "/v2/clusters:ping",
-        json=json.loads(
-            some_fake_cluster.model_dump_json(
-                by_alias=True, encoder=create_json_encoder_wo_secrets(ClusterPing)
-            )
+        json=model_dump_with_secrets(
+            some_fake_cluster, show_secrets=True, by_alias=True
         ),
     )
     with pytest.raises(httpx.HTTPStatusError):
@@ -773,12 +745,7 @@ async def test_ping_cluster(
     )
     response = await async_client.post(
         "/v2/clusters:ping",
-        json=json.loads(
-            valid_cluster.model_dump_json(
-                by_alias=True,
-                encoder=create_json_encoder_wo_secrets(SimpleAuthentication),
-            )
-        ),
+        json=model_dump_with_secrets(valid_cluster, show_secrets=True, alias=True),
     )
     response.raise_for_status()
     assert response.status_code == status.HTTP_204_NO_CONTENT
