@@ -218,7 +218,7 @@ async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
 @pytest.fixture()
 async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncClient]:
     async with httpx.AsyncClient(
-        app=initialized_app,
+        transport=httpx.ASGITransport(app=initialized_app),
         base_url="http://director-v2.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
