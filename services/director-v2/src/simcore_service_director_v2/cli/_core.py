@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceType
 from models_library.services_enums import ServiceBootType, ServiceState
-from pydantic import AnyHttpUrl, BaseModel, PositiveInt, TypeAdapter
+from pydantic import AnyHttpUrl, BaseModel, PositiveInt
 from rich.live import Live
 from rich.table import Table
 from servicelib.services_utils import get_service_from_key
@@ -52,14 +52,14 @@ async def _initialized_app(only_db: bool = False) -> AsyncIterator[FastAPI]:
 ### PROJECT SAVE STATE
 
 
-def _get_dynamic_sidecar_endpoint(
-    settings: AppSettings, node_id: NodeIDStr
-) -> AnyHttpUrl:
+def _get_dynamic_sidecar_endpoint(settings: AppSettings, node_id: NodeIDStr) -> str:
     dynamic_sidecar_names = DynamicSidecarNamesHelper.make(NodeID(node_id))
     hostname = dynamic_sidecar_names.service_name_dynamic_sidecar
     port = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT
-    url: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(f"http://{hostname}:{port}")  # NOSONAR
-    return url
+    url = AnyHttpUrl.build(  # pylint: disable=no-member
+        scheme="http", host=hostname, port=port
+    )
+    return f"{url}"
 
 
 async def _save_node_state(

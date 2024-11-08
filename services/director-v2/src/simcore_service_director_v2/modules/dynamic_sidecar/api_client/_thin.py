@@ -5,7 +5,6 @@ from fastapi import FastAPI, status
 from httpx import Response, Timeout
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
-from pydantic import AnyHttpUrl
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.fastapi.http_client_thin import (
     BaseThinClient,
@@ -57,7 +56,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
 
     def _get_url(
         self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        dynamic_sidecar_endpoint: str,
         postfix: str,
         *,
         no_api_version: bool = False,
@@ -66,27 +65,23 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
         api_version = "" if no_api_version else f"{self.API_VERSION}/"
         return f"{dynamic_sidecar_endpoint}{api_version}{postfix}"
 
-    async def _get_health_common(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> Response:
+    async def _get_health_common(self, dynamic_sidecar_endpoint: str) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "health", no_api_version=True)
         return await self.client.get(url, timeout=self._health_request_timeout)
 
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
-    async def get_health(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Response:
+    async def get_health(self, dynamic_sidecar_endpoint: str) -> Response:
         return await self._get_health_common(dynamic_sidecar_endpoint)
 
     @expect_status(status.HTTP_200_OK)
-    async def get_health_no_retry(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> Response:
+    async def get_health_no_retry(self, dynamic_sidecar_endpoint: str) -> Response:
         return await self._get_health_common(dynamic_sidecar_endpoint)
 
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def get_containers(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl, *, only_status: bool
+        self, dynamic_sidecar_endpoint: str, *, only_status: bool
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "containers")
         return await self.client.get(url, params={"only_status": only_status})
@@ -95,7 +90,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def patch_containers_ports_io(
         self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        dynamic_sidecar_endpoint: str,
         *,
         enable_outputs: bool,
         enable_inputs: bool,
@@ -108,7 +103,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @retry_on_errors()
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def post_containers_ports_outputs_dirs(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl, *, outputs_labels: dict[str, Any]
+        self, dynamic_sidecar_endpoint: str, *, outputs_labels: dict[str, Any]
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "containers/ports/outputs/dirs")
         return await self.client.post(url, json={"outputs_labels": outputs_labels})
@@ -116,7 +111,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def get_containers_name(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl, *, dynamic_sidecar_network_name: str
+        self, dynamic_sidecar_endpoint: str, *, dynamic_sidecar_network_name: str
     ) -> Response:
         filters = json.dumps(
             {
@@ -133,7 +128,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def post_containers_networks_attach(
         self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        dynamic_sidecar_endpoint: str,
         *,
         container_id: str,
         network_id: str,
@@ -152,7 +147,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def post_containers_networks_detach(
         self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        dynamic_sidecar_endpoint: str,
         *,
         container_id: str,
         network_id: str,
@@ -170,7 +165,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_compose_spec(
         self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        dynamic_sidecar_endpoint: str,
         *,
         compose_spec: str,
     ) -> Response:
@@ -181,7 +176,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks(
         self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        dynamic_sidecar_endpoint: str,
         *,
         metrics_params: CreateServiceMetricsAdditionalParams,
     ) -> Response:
@@ -193,7 +188,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_down(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+        self, dynamic_sidecar_endpoint: str
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "containers:down")
         return await self.client.post(url)
@@ -201,7 +196,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_state_restore(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+        self, dynamic_sidecar_endpoint: str
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "containers/state:restore")
         return await self.client.post(url)
@@ -209,7 +204,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_state_save(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+        self, dynamic_sidecar_endpoint: str
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "containers/state:save")
         return await self.client.post(url)
@@ -217,7 +212,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_images_pull(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+        self, dynamic_sidecar_endpoint: str
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "containers/images:pull")
         return await self.client.post(url)
@@ -226,7 +221,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_ports_inputs_pull(
         self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        dynamic_sidecar_endpoint: str,
         port_keys: list[str] | None = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
@@ -237,7 +232,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_ports_outputs_pull(
         self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        dynamic_sidecar_endpoint: str,
         port_keys: list[str] | None = None,
     ) -> Response:
         port_keys = [] if port_keys is None else port_keys
@@ -247,7 +242,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_ports_outputs_push(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+        self, dynamic_sidecar_endpoint: str
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "containers/ports/outputs:push")
         return await self.client.post(url)
@@ -255,7 +250,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @retry_on_errors()
     @expect_status(status.HTTP_202_ACCEPTED)
     async def post_containers_tasks_restart(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
+        self, dynamic_sidecar_endpoint: str
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "containers:restart")
         return await self.client.post(url)
@@ -264,7 +259,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def put_volumes(
         self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        dynamic_sidecar_endpoint: str,
         volume_category: VolumeCategory,
         volume_status: VolumeStatus,
     ) -> Response:
@@ -275,7 +270,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
     async def proxy_config_load(
-        self, proxy_endpoint: AnyHttpUrl, proxy_configuration: dict[str, Any]
+        self, proxy_endpoint: str, proxy_configuration: dict[str, Any]
     ) -> Response:
         url = self._get_url(proxy_endpoint, "load", no_api_version=True)
         return await self.client.post(url, json=proxy_configuration)
@@ -284,7 +279,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @expect_status(status.HTTP_200_OK)
     async def get_containers_activity(
         self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        dynamic_sidecar_endpoint: str,
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "containers/activity")
         return await self.client.get(url)
@@ -293,7 +288,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     @expect_status(status.HTTP_204_NO_CONTENT)
     async def post_disk_reserved_free(
         self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
+        dynamic_sidecar_endpoint: str,
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "disk/reserved:free")
         return await self.client.post(url)
