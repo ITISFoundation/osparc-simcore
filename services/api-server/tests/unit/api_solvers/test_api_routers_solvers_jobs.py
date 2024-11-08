@@ -309,6 +309,8 @@ async def test_run_solver_job(
         "contact",
         "inputs",
         "outputs",
+        "classifiers",
+        "owner",
     } == set(oas["components"]["schemas"]["ServiceGet"]["required"])
 
     example = next(
