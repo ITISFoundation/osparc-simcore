@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, PositiveInt, validator
 
 from .users import GroupID, UserID
 from .utils.enums import StrAutoEnum
+from .workspaces import WorkspaceID
 
 FolderID: TypeAlias = PositiveInt
 
@@ -61,7 +62,7 @@ class FolderDB(BaseModel):
     )
 
     user_id: UserID | None
-    folder_id: FolderID | None
+    workspace_id: WorkspaceID | None
 
     class Config:
         orm_mode = True
