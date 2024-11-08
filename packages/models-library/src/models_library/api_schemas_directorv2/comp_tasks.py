@@ -18,7 +18,17 @@ class ComputationGet(ComputationTask):
     stop_url: AnyHttpUrl | None = Field(
         None, description="the link where to stop the task"
     )
-    model_config = ConfigDict(json_schema_extra={"examples": []})
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                x | {"url": "http://example.com"}  # type:ignore[operator]
+                for x in ComputationTask.model_config[  # type:ignore[index,union-attr]
+                    "json_schema_extra"
+                ]["examples"]
+            ]
+        }
+    )
 
 
 class ComputationCreate(BaseModel):
