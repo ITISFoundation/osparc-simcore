@@ -147,7 +147,7 @@ def mocked_director_service_fcts(
                 r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+$"
             ),
             name="get_service",
-        ).respond(json={"data": [fake_service_details.model_dump(by_alias=True)]})
+        ).respond(json={"data": [fake_service_details.model_dump(mode="json", by_alias=True)]})
         respx_mock.get(
             re.compile(
                 r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/labels"
@@ -160,7 +160,7 @@ def mocked_director_service_fcts(
                 r"/service_extras/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
             ),
             name="get_service_extras",
-        ).respond(json={"data": fake_service_extras.model_dump(by_alias=True)})
+        ).respond(json={"data": fake_service_extras.model_dump(mode="json", by_alias=True)})
 
         yield respx_mock
 
@@ -231,7 +231,7 @@ def mocked_catalog_service_fcts_deprecated(
                         "key": urllib.parse.unquote(service_key),
                         "version": service_version,
                         "deprecated": (
-                            datetime.datetime.now(tz=datetime.timezone.utc)
+                            datetime.datetime.now(tz=datetime.UTC)
                             - datetime.timedelta(days=1)
                         ).isoformat(),
                     }
@@ -468,6 +468,7 @@ def project_nodes_overrides(request: pytest.FixtureRequest) -> dict[str, Any]:
     return request.param
 
 
+@pytest.mark.testit
 async def test_create_computation_with_wallet(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
