@@ -10,6 +10,7 @@ from ..exceptions_handlers import (
 from .errors import (
     WorkspaceAccessForbiddenError,
     WorkspaceGroupNotFoundError,
+    WorkspaceNotFoundError,
     WorkspacesValueError,
 )
 
@@ -24,6 +25,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     WorkspaceAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         "Does not have access to this workspace",
+    ),
+    WorkspaceNotFoundError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        "Workspace not found. {reason}",
     ),
 }
 

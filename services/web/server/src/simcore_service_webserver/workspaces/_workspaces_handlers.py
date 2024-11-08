@@ -1,4 +1,3 @@
-import functools
 import logging
 
 from aiohttp import web
@@ -26,7 +25,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.aiohttp.typing_extension import Handler
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -37,29 +35,10 @@ from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _workspaces_api
-from .errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
+from ._exceptions_handlers import handle_plugin_requests_exceptions
 
 _logger = logging.getLogger(__name__)
 
-
-def handle_workspaces_exceptions(handler: Handler):
-    @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
-        try:
-            return await handler(request)
-
-        except WorkspaceNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
-
-        except WorkspaceAccessForbiddenError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
-
-    return wrapper
-
-
-#
-# workspaces COLLECTION -------------------------
-#
 
 routes = web.RouteTableDef()
 
@@ -95,7 +74,7 @@ class WorkspacesListQueryParams(
 @routes.post(f"/{VTAG}/workspaces", name="create_workspace")
 @login_required
 @permission_required("workspaces.*")
-@handle_workspaces_exceptions
+@handle_plugin_requests_exceptions
 async def create_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)
     body_params = await parse_request_body_as(CreateWorkspaceBodyParams, request)
@@ -115,7 +94,7 @@ async def create_workspace(request: web.Request):
 @routes.get(f"/{VTAG}/workspaces", name="list_workspaces")
 @login_required
 @permission_required("workspaces.*")
-@handle_workspaces_exceptions
+@handle_plugin_requests_exceptions
 async def list_workspaces(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)
     query_params: WorkspacesListQueryParams = parse_request_query_parameters_as(
@@ -149,7 +128,7 @@ async def list_workspaces(request: web.Request):
 @routes.get(f"/{VTAG}/workspaces/{{workspace_id}}", name="get_workspace")
 @login_required
 @permission_required("workspaces.*")
-@handle_workspaces_exceptions
+@handle_plugin_requests_exceptions
 async def get_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
@@ -170,7 +149,7 @@ async def get_workspace(request: web.Request):
 )
 @login_required
 @permission_required("workspaces.*")
-@handle_workspaces_exceptions
+@handle_plugin_requests_exceptions
 async def replace_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
@@ -194,7 +173,7 @@ async def replace_workspace(request: web.Request):
 )
 @login_required
 @permission_required("workspaces.*")
-@handle_workspaces_exceptions
+@handle_plugin_requests_exceptions
 async def delete_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.parse_obj(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
