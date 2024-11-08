@@ -20,14 +20,14 @@ qx.Class.define("osparc.info.ServiceLarge", {
   extend: osparc.info.CardLarge,
 
   /**
-    * @param serviceData {Object} Serialized Service Object
+    * @param metadata {Object} Serialized Service Object
     * @param instance {Object} instance related data
     * @param openOptions {Boolean} open edit options in new window or fire event
     */
-  construct: function(serviceData, instance = null, openOptions = true) {
+  construct: function(metadata, instance = null, openOptions = true) {
     this.base(arguments);
 
-    this.setService(serviceData);
+    this.setService(metadata);
 
     if (instance) {
       if ("nodeId" in instance) {
@@ -77,6 +77,19 @@ qx.Class.define("osparc.info.ServiceLarge", {
       init: null,
       nullable: true
     }
+  },
+
+  statics: {
+    popUpInWindow: function(serviceLarge) {
+      const metadata = serviceLarge.getService();
+      const versionDisplay = osparc.service.Utils.extractVersionDisplay(metadata);
+      const title = `${metadata["name"]} ${versionDisplay}`;
+      const width = osparc.info.CardLarge.WIDTH;
+      const height = osparc.info.CardLarge.HEIGHT;
+      osparc.ui.window.Window.popUpInWindow(serviceLarge, title, width, height).set({
+        maxHeight: height
+      });
+    },
   },
 
   members: {
