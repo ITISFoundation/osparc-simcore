@@ -31,6 +31,17 @@ qx.Class.define("osparc.store.Folders", {
     "folderMoved": "qx.event.type.Data",
   },
 
+  statics: {
+    curateOrderBy: function(orderBy) {
+      const curatedOrderBy = osparc.utils.Utils.deepCloneObject(orderBy);
+      if (curatedOrderBy.field !== "name") {
+        // only "modified_at" and "name" supported
+        curatedOrderBy.field = "modified_at";
+      }
+      return curatedOrderBy;
+    },
+  },
+
   members: {
     foldersCached: null,
 
@@ -48,12 +59,7 @@ qx.Class.define("osparc.store.Folders", {
         });
       }
 
-      const curatedOrderBy = osparc.utils.Utils.deepCloneObject(orderBy);
-      if (curatedOrderBy.field !== "name") {
-        // only "modified_at" and "name" supported
-        curatedOrderBy.field = "modified_at";
-      }
-
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
       const params = {
         url: {
           workspaceId,
@@ -65,6 +71,33 @@ qx.Class.define("osparc.store.Folders", {
         .then(foldersData => {
           const folders = [];
           foldersData.forEach(folderData => {
+            const folder = this.__addToCache(folderData);
+            folders.push(folder);
+          });
+          return folders;
+        });
+    },
+
+    fetchTrashedFolders: function(orderBy = {
+      field: "modified_at",
+      direction: "desc"
+    }) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          resolve([]);
+        });
+      }
+
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
+      const params = {
+        url: {
+          orderBy: JSON.stringify(curatedOrderBy),
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("folders", params, "getPageTrashed")
+        .then(trashedFoldersData => {
+          const folders = [];
+          trashedFoldersData.forEach(folderData => {
             const folder = this.__addToCache(folderData);
             folders.push(folder);
           });
