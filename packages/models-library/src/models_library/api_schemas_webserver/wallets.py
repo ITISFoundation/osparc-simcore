@@ -20,9 +20,9 @@ from ._base import InputSchema, OutputSchema
 class WalletGet(OutputSchema):
     wallet_id: WalletID
     name: IDStr
-    description: str | None = None
+    description: str | None
     owner: GroupID
-    thumbnail: str | None = None
+    thumbnail: str | None
     status: WalletStatus
     created: datetime
     modified: datetime
