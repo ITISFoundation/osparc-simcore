@@ -280,9 +280,10 @@ def test_scheduler_raises_exception_for_missing_dependencies(
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
 
-    with pytest.raises(ConfigurationError):
-        with TestClient(app, raise_server_exceptions=True) as _:
-            pass
+    with pytest.raises(ConfigurationError), TestClient(
+        app, raise_server_exceptions=True
+    ) as _:
+        pass
 
 
 async def test_empty_pipeline_is_not_scheduled(
@@ -1029,11 +1030,9 @@ async def test_task_progress_triggers(
                 parent_project_id=None,
             ),
         )
-        await cast(
+        await cast(  # noqa: SLF001
             DaskScheduler, scheduler
-        )._task_progress_change_handler(  # noqa: SLF001
-            progress_event.json()
-        )
+        )._task_progress_change_handler(progress_event.json())
         # NOTE: not sure whether it should switch to STARTED.. it would make sense
         await _assert_comp_tasks_db(
             aiopg_engine,
