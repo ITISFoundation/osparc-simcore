@@ -119,6 +119,7 @@ def app_environment(
     envs = setenvs_from_dict(
         monkeypatch,
         {
+            "CLUSTERS_KEEPER_TRACING": "null",
             "CLUSTERS_KEEPER_EC2_ACCESS": "{}",
             "CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID": faker.pystr(),
             "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY": faker.pystr(),

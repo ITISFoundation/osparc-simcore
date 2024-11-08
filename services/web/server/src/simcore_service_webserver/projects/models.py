@@ -53,6 +53,7 @@ class ProjectDB(BaseModel):
     hidden: bool
     workspace_id: WorkspaceID | None
     trashed_at: datetime | None
+    trashed_explicitly: bool = False
 
     class Config:
         orm_mode = True
@@ -101,7 +102,8 @@ class UserProjectAccessRightsWithWorkspace(BaseModel):
 
 class ProjectPatchExtended(ProjectPatch):
     # Only used internally
-    trashed_at: datetime | None = None
+    trashed_at: datetime | None
+    trashed_explicitly: bool
 
     class Config:
         allow_population_by_field_name = True

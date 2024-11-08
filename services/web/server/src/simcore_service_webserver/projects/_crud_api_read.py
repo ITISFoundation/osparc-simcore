@@ -115,8 +115,8 @@ async def list_projects(  # pylint: disable=too-many-arguments
         # attrs
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
         filter_by_services=user_available_services,
-        trashed=trashed,
-        hidden=show_hidden,
+        filter_trashed=trashed,
+        filter_hidden=show_hidden,
         # composed attrs
         search=search,
         # pagination
