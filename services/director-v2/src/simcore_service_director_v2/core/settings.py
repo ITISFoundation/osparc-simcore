@@ -6,13 +6,7 @@ import datetime
 from functools import cached_property
 
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
-from models_library.basic_types import (
-    BootModeEnum,
-    BuildTargetEnum,
-    LogLevel,
-    PortInt,
-    VersionTag,
-)
+from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.clusters import (
     DEFAULT_CLUSTER_ID,
     Cluster,
@@ -66,10 +60,10 @@ class DirectorV0Settings(BaseCustomSettings):
     def endpoint(self) -> str:
         url: str = str(
             AnyHttpUrl.build(
-                scheme='http',
+                scheme="http",
                 host=self.DIRECTOR_HOST,
                 port=self.DIRECTOR_PORT,
-                path=f"/{self.DIRECTOR_V0_VTAG}",
+                path=f"{self.DIRECTOR_V0_VTAG}",
             )
         )
         return url
@@ -244,8 +238,7 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
         description="settings for the private registry deployed with the platform",
     )
     DIRECTOR_V2_DOCKER_HUB_REGISTRY: RegistrySettings | None = Field(
-        default=None,
-        description="public DockerHub registry settings"
+        default=None, description="public DockerHub registry settings"
     )
 
     DIRECTOR_V2_RESOURCE_USAGE_TRACKER: ResourceUsageTrackerSettings = Field(
