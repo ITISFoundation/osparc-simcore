@@ -104,9 +104,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         !osparc.service.Utils.canIWrite(this.getService()["accessRights"]) &&
         description.getChildren().length > 1
       ) {
-        // Show description only
-        vBox.add(description.getChildren()[1]);
-        // And copy Id buttons too
+        // Show also the copy Id buttons too
         const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
         if (this.getNodeId()) {
           const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
@@ -129,6 +127,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
           buttonsLayout.add(copyMetadataButton);
           vBox.add(buttonsLayout);
         }
+        // Show description only
+        vBox.add(description.getChildren()[1]);
       } else {
         const title = this.__createTitle();
         const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
