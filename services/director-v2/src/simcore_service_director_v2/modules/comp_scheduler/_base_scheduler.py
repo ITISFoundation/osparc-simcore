@@ -21,6 +21,7 @@ from typing import Final
 import arrow
 import networkx as nx
 from aiopg.sa.engine import Engine
+from fastapi import FastAPI
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -31,7 +32,9 @@ from networkx.classes.reportviews import InDegreeView
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
+from servicelib.redis_utils import exclusive
 from servicelib.utils import limited_gather
+from simcore_service_director_v2.modules.redis import get_redis_client_manager
 
 from ...constants import UNDEFINED_STR_METADATA
 from ...core.errors import (
@@ -226,16 +229,23 @@ class BaseCompScheduler(ABC):
             # ensure the scheduler starts right away
             self._wake_up_scheduler_now()
 
-    async def schedule_all_pipelines(self) -> None:
+    async def schedule_all_pipelines(self, app: FastAPI) -> None:
         self.wake_up_event.clear()
         # if one of the task throws, the other are NOT cancelled which is what we want
+        redis_clients_manager = get_redis_client_manager(app)
+        lock_key_prefix = f"{app.title}:computational_scheduler"
         await limited_gather(
             *(
-                self._schedule_pipeline(
-                    user_id=user_id,
-                    project_id=project_id,
-                    iteration=iteration,
-                    pipeline_params=pipeline_params,
+                exclusive(
+                    redis_clients_manager.client(RedisDatabase.LOCKS),
+                    lock_key=f"{lock_key_prefix}_{user_id}:{project_id}",
+                )(
+                    self._schedule_pipeline(
+                        user_id=user_id,
+                        project_id=project_id,
+                        iteration=iteration,
+                        pipeline_params=pipeline_params,
+                    )
                 )
                 for (
                     user_id,
