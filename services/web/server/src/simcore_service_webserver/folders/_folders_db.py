@@ -5,7 +5,8 @@
 """
 
 import logging
-from typing import cast
+from datetime import datetime
+from typing import Any, Final, cast
 
 from aiohttp import web
 from models_library.folders import FolderDB, FolderID
@@ -28,6 +29,17 @@ from .errors import FolderAccessForbiddenError, FolderNotFoundError
 _logger = logging.getLogger(__name__)
 
 
+class UnSet:
+    ...
+
+
+_unset: Final = UnSet()
+
+
+def as_dict_exclude_unset(**params) -> dict[str, Any]:
+    return {k: v for k, v in params.items() if not isinstance(v, UnSet)}
+
+
 _SELECTION_ARGS = (
     folders_v2.c.folder_id,
     folders_v2.c.name,
@@ -35,6 +47,7 @@ _SELECTION_ARGS = (
     folders_v2.c.created_by_gid,
     folders_v2.c.created,
     folders_v2.c.modified,
+    folders_v2.c.trashed_at,
     folders_v2.c.user_id,
     folders_v2.c.workspace_id,
 )
@@ -80,14 +93,16 @@ async def list_(
     user_id: UserID | None,
     workspace_id: WorkspaceID | None,
     product_name: ProductName,
+    trashed: bool | None,
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
 ) -> tuple[int, list[FolderDB]]:
     """
     content_of_folder_id - Used to filter in which folder we want to list folders. None means root folder.
+    trashed - If set to true, it returns folders **explicitly** trashed, if false then non-trashed folders.
     """
-    assert not (
+    assert not (  # nosec
         user_id is not None and workspace_id is not None
     ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
 
@@ -105,6 +120,16 @@ async def list_(
     else:
         assert workspace_id  # nosec
         base_query = base_query.where(folders_v2.c.workspace_id == workspace_id)
+
+    if trashed is not None:
+        base_query = base_query.where(
+            (
+                (folders_v2.c.trashed_at.is_not(None))
+                & (folders_v2.c.trashed_explicitly.is_(True))
+            )
+            if trashed
+            else folders_v2.c.trashed_at.is_(None)
+        )
 
     # Select total count from base_query
     subquery = base_query.subquery()
@@ -188,32 +213,89 @@ async def get_for_user_or_workspace(
         return FolderDB.from_orm(row)
 
 
+async def _update_impl(
+    app: web.Application,
+    folders_id_or_ids: FolderID | set[FolderID],
+    product_name: ProductName,
+    # updatable columns
+    name: str | UnSet = _unset,
+    parent_folder_id: FolderID | None | UnSet = _unset,
+    trashed_at: datetime | None | UnSet = _unset,
+    trashed_explicitly: bool | UnSet = _unset,
+) -> FolderDB:
+    """
+    Batch/single patch of folder/s
+    """
+    # NOTE: exclude unset can also be done using a pydantic model and dict(exclude_unset=True)
+    updated = as_dict_exclude_unset(
+        name=name,
+        parent_folder_id=parent_folder_id,
+        trashed_at=trashed_at,
+        trashed_explicitly=trashed_explicitly,
+    )
+
+    query = (
+        (folders_v2.update().values(modified=func.now(), **updated))
+        .where(folders_v2.c.product_name == product_name)
+        .returning(*_SELECTION_ARGS)
+    )
+
+    if isinstance(folders_id_or_ids, set):
+        # batch-update
+        query = query.where(folders_v2.c.folder_id.in_(list(folders_id_or_ids)))
+    else:
+        # single-update
+        query = query.where(folders_v2.c.folder_id == folders_id_or_ids)
+
+    async with get_database_engine(app).acquire() as conn:
+        result = await conn.execute(query)
+        row = await result.first()
+        if row is None:
+            raise FolderNotFoundError(reason=f"Folder {folders_id_or_ids} not found.")
+        return FolderDB.from_orm(row)
+
+
+async def update_batch(
+    app: web.Application,
+    *folder_id: FolderID,
+    product_name: ProductName,
+    # updatable columns
+    name: str | UnSet = _unset,
+    parent_folder_id: FolderID | None | UnSet = _unset,
+    trashed_at: datetime | None | UnSet = _unset,
+    trashed_explicitly: bool | UnSet = _unset,
+) -> FolderDB:
+    return await _update_impl(
+        app=app,
+        folders_id_or_ids=set(folder_id),
+        product_name=product_name,
+        name=name,
+        parent_folder_id=parent_folder_id,
+        trashed_at=trashed_at,
+        trashed_explicitly=trashed_explicitly,
+    )
+
+
 async def update(
     app: web.Application,
     *,
     folder_id: FolderID,
-    name: str,
-    parent_folder_id: FolderID | None,
     product_name: ProductName,
+    # updatable columns
+    name: str | UnSet = _unset,
+    parent_folder_id: FolderID | None | UnSet = _unset,
+    trashed_at: datetime | None | UnSet = _unset,
+    trashed_explicitly: bool | UnSet = _unset,
 ) -> FolderDB:
-    async with get_database_engine(app).acquire() as conn:
-        result = await conn.execute(
-            folders_v2.update()
-            .values(
-                name=name,
-                parent_folder_id=parent_folder_id,
-                modified=func.now(),
-            )
-            .where(
-                (folders_v2.c.folder_id == folder_id)
-                & (folders_v2.c.product_name == product_name)
-            )
-            .returning(*_SELECTION_ARGS)
-        )
-        row = await result.first()
-        if row is None:
-            raise FolderNotFoundError(reason=f"Folder {folder_id} not found.")
-        return FolderDB.from_orm(row)
+    return await _update_impl(
+        app=app,
+        folders_id_or_ids=folder_id,
+        product_name=product_name,
+        name=name,
+        parent_folder_id=parent_folder_id,
+        trashed_at=trashed_at,
+        trashed_explicitly=trashed_explicitly,
+    )
 
 
 async def delete_recursively(
@@ -231,6 +313,7 @@ async def delete_recursively(
             & (folders_v2.c.product_name == product_name)
         )
         folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
+
         # Step 2: Define the recursive case
         folder_alias = aliased(folders_v2)
         recursive_query = select(
@@ -241,8 +324,10 @@ async def delete_recursively(
                 folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
             )
         )
+
         # Step 3: Combine base and recursive cases into a CTE
         folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
+
         # Step 4: Execute the query to get all descendants
         final_query = select(folder_hierarchy_cte)
         result = await conn.execute(final_query)
@@ -320,8 +405,7 @@ async def get_projects_recursively_only_if_user_is_owner(
         result = await conn.execute(query)
 
         rows = await result.fetchall() or []
-        results = [ProjectID(row[0]) for row in rows]
-        return results
+        return [ProjectID(row[0]) for row in rows]
 
 
 async def get_folders_recursively(
@@ -339,6 +423,7 @@ async def get_folders_recursively(
             & (folders_v2.c.product_name == product_name)
         )
         folder_hierarchy_cte = base_query.cte(name="folder_hierarchy", recursive=True)
+
         # Step 2: Define the recursive case
         folder_alias = aliased(folders_v2)
         recursive_query = select(
@@ -349,8 +434,10 @@ async def get_folders_recursively(
                 folder_alias.c.parent_folder_id == folder_hierarchy_cte.c.folder_id,
             )
         )
+
         # Step 3: Combine base and recursive cases into a CTE
         folder_hierarchy_cte = folder_hierarchy_cte.union_all(recursive_query)
+
         # Step 4: Execute the query to get all descendants
         final_query = select(folder_hierarchy_cte)
         result = await conn.execute(final_query)

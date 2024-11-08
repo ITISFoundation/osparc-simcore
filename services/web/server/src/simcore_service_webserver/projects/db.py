@@ -362,9 +362,9 @@ class ProjectDBAPI(BaseProjectDB):
         search: str | None = None,
         filter_by_project_type: ProjectType | None = None,
         filter_by_services: list[dict] | None = None,
-        published: bool | None = False,
-        hidden: bool | None = False,
-        trashed: bool | None = False,
+        filter_published: bool | None = False,
+        filter_hidden: bool | None = False,
+        filter_trashed: bool | None = False,
         # pagination
         offset: int | None = 0,
         limit: int | None = None,
@@ -442,16 +442,21 @@ class ProjectDBAPI(BaseProjectDB):
                     projects.c.type == filter_by_project_type.value
                 )
 
-            if hidden is not None:
-                attributes_filters.append(projects.c.hidden.is_(hidden))
+            if filter_hidden is not None:
+                attributes_filters.append(projects.c.hidden.is_(filter_hidden))
 
-            if published is not None:
-                attributes_filters.append(projects.c.published.is_(published))
+            if filter_published is not None:
+                attributes_filters.append(projects.c.published.is_(filter_published))
 
-            if trashed is not None:
+            if filter_trashed is not None:
                 attributes_filters.append(
-                    projects.c.trashed_at.is_not(None)
-                    if trashed
+                    # marked explicitly as trashed
+                    (
+                        projects.c.trashed_at.is_not(None)
+                        & projects.c.trashed_explicitly.is_(True)
+                    )
+                    if filter_trashed
+                    # not marked as trashed
                     else projects.c.trashed_at.is_(None)
                 )
             query = query.where(sa.and_(*attributes_filters))

@@ -2,7 +2,7 @@ openapi: 3.0.2
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.44.0
+  version: 0.45.0
 servers:
 - url: ''
   description: webserver
@@ -2626,6 +2626,27 @@ paths:
         example: '{"field": "name", "direction": "desc"}'
         name: order_by
         in: query
+      - description: "{\n \"title\": \"FolderFilters\",\n \"description\": \"Encoded\
+          \ as JSON. Each available filter can have its own logic (should be well\
+          \ documented)\\nInspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.\"\
+          ,\n \"type\": \"object\",\n \"properties\": {\n  \"trashed\": {\n   \"title\"\
+          : \"Trashed\",\n   \"description\": \"Set to true to list trashed, false\
+          \ to list non-trashed (default), None to list all\",\n   \"default\": false,\n\
+          \   \"type\": \"boolean\"\n  }\n }\n}"
+        required: false
+        schema:
+          title: Filters
+          type: string
+          description: "{\n \"title\": \"FolderFilters\",\n \"description\": \"Encoded\
+            \ as JSON. Each available filter can have its own logic (should be well\
+            \ documented)\\nInspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.\"\
+            ,\n \"type\": \"object\",\n \"properties\": {\n  \"trashed\": {\n   \"\
+            title\": \"Trashed\",\n   \"description\": \"Set to true to list trashed,\
+            \ false to list non-trashed (default), None to list all\",\n   \"default\"\
+            : false,\n   \"type\": \"boolean\"\n  }\n }\n}"
+          format: json-string
+        name: filters
+        in: query
       - required: false
         schema:
           title: Limit
@@ -3056,10 +3077,24 @@ paths:
         example: '{"field": "last_change_date", "direction": "desc"}'
         name: order_by
         in: query
-      - required: false
+      - description: "{\n \"title\": \"ProjectFilters\",\n \"description\": \"Encoded\
+          \ as JSON. Each available filter can have its own logic (should be well\
+          \ documented)\\nInspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.\"\
+          ,\n \"type\": \"object\",\n \"properties\": {\n  \"trashed\": {\n   \"title\"\
+          : \"Trashed\",\n   \"description\": \"Set to true to list trashed, false\
+          \ to list non-trashed (default), None to list all\",\n   \"default\": false,\n\
+          \   \"type\": \"boolean\"\n  }\n }\n}"
+        required: false
         schema:
           title: Filters
           type: string
+          description: "{\n \"title\": \"ProjectFilters\",\n \"description\": \"Encoded\
+            \ as JSON. Each available filter can have its own logic (should be well\
+            \ documented)\\nInspired by Docker API https://docs.docker.com/engine/api/v1.43/#tag/Container/operation/ContainerList.\"\
+            ,\n \"type\": \"object\",\n \"properties\": {\n  \"trashed\": {\n   \"\
+            title\": \"Trashed\",\n   \"description\": \"Set to true to list trashed,\
+            \ false to list non-trashed (default), None to list all\",\n   \"default\"\
+            : false,\n   \"type\": \"boolean\"\n  }\n }\n}"
           format: json-string
         name: filters
         in: query
@@ -4328,7 +4363,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
+          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -5406,6 +5441,57 @@ paths:
           type: string
           format: uuid
         name: project_id
+        in: path
+      responses:
+        '204':
+          description: Successful Response
+  /v0/folders/{folder_id}:trash:
+    post:
+      tags:
+      - trash
+      - folders
+      summary: Trash Folder
+      operationId: trash_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
+        in: path
+      - required: false
+        schema:
+          title: Force
+          type: boolean
+          default: false
+        name: force
+        in: query
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          description: Not such a folder
+        '409':
+          description: One or more projects is in use and cannot be trashed
+        '503':
+          description: Trash service error
+  /v0/folders/{folder_id}:untrash:
+    post:
+      tags:
+      - trash
+      - folders
+      summary: Untrash Folder
+      operationId: untrash_folder
+      parameters:
+      - required: true
+        schema:
+          title: Folder Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        name: folder_id
         in: path
       responses:
         '204':
@@ -8425,6 +8511,10 @@ components:
           format: date-time
         modifiedAt:
           title: Modifiedat
+          type: string
+          format: date-time
+        trashedAt:
+          title: Trashedat
           type: string
           format: date-time
         owner:
@@ -12583,28 +12673,25 @@ components:
             type: string
           - type: string
           default: UNDEFINED
+        resource_id:
+          title: Resource Id
+          anyOf:
+          - enum:
+            - ''
+            type: string
+          - type: string
+          default: ''
+        user_from_id:
+          title: User From Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
         id:
           title: Id
           type: string
         read:
           title: Read
           type: boolean
-        resource_id:
-          title: Resource ID
-          anyOf:
-          - enum:
-            - ""
-            type: string
-          - type: string
-          default: ""
-        user_from_id:
-          title: User ID of the one creating it
-          anyOf:
-          - enum:
-            - None
-            type: integer
-          - type: integer
-          default: None
     UserNotificationCreate:
       title: UserNotificationCreate
       required:
@@ -12645,21 +12732,18 @@ components:
           - type: string
           default: UNDEFINED
         resource_id:
-          title: Resource ID
+          title: Resource Id
           anyOf:
           - enum:
-            - ""
+            - ''
             type: string
           - type: string
-          default: ""
+          default: ''
         user_from_id:
-          title: User ID of the one creating it
-          anyOf:
-          - enum:
-            - None
-            type: integer
-          - type: integer
-          default: None
+          title: User From Id
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
     UserNotificationPatch:
       title: UserNotificationPatch
       required:

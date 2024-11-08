@@ -190,6 +190,7 @@ class Project(BaseProjectModel):
         default=None,
         alias="trashedAt",
     )
+    trashed_explicitly: bool = Field(default=False, alias="trashedExplicitly")
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"

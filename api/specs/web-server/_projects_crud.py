@@ -32,6 +32,7 @@ from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._common_models import ProjectPathParams
 from simcore_service_webserver.projects._crud_handlers import ProjectCreateParams
 from simcore_service_webserver.projects._crud_handlers_models import (
+    ProjectFilters,
     ProjectListFullSearchParams,
     ProjectListParams,
 )
@@ -83,7 +84,10 @@ async def list_projects(
             example='{"field": "last_change_date", "direction": "desc"}',
         ),
     ] = '{"field": "last_change_date", "direction": "desc"}',
-    filters: Annotated[Json | None, Query()] = None,
+    filters: Annotated[
+        Json | None,
+        Query(description=ProjectFilters.schema_json(indent=1)),
+    ] = None,
 ):
     ...
 
