@@ -4,7 +4,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import random
 from collections.abc import AsyncIterator, Callable
 from contextlib import AsyncExitStack
 from copy import deepcopy
@@ -160,7 +159,7 @@ async def test_list_groups(
             )
             response = await client.patch(
                 f"{url}",
-                json={"access_rights": {"read": True, "write": True, "delete": True}},
+                json={"accessRights": {"read": True, "write": True, "delete": True}},
             )
             await assert_status(response, status.HTTP_403_FORBIDDEN)
 
@@ -285,6 +284,7 @@ async def test_add_remove_users_from_group(
     logged_user: UserInfoDict,
     user_role: UserRole,
     expected: ExpectedResponse,
+    faker: Faker,
 ):
     assert client.app
     new_group = {
@@ -295,7 +295,7 @@ async def test_add_remove_users_from_group(
     }
 
     # check that our group does not exist
-    url = client.app.router["get_group_users"].url_for(gid=new_group["gid"])
+    url = client.app.router["get_all_group_users"].url_for(gid=new_group["gid"])
     assert f"{url}" == f"/{API_VTAG}/groups/{new_group['gid']}/users"
     resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected.not_found)
@@ -323,7 +323,7 @@ async def test_add_remove_users_from_group(
         assert assigned_group["accessRights"] == _DEFAULT_GROUP_OWNER_ACCESS_RIGHTS
 
     # check that our user is in the group of users
-    get_group_users_url = client.app.router["get_group_users"].url_for(
+    get_group_users_url = client.app.router["get_all_group_users"].url_for(
         gid=f"{assigned_group['gid']}"
     )
     assert (
@@ -345,7 +345,7 @@ async def test_add_remove_users_from_group(
     assert (
         f"{add_group_user_url}" == f"/{API_VTAG}/groups/{assigned_group['gid']}/users"
     )
-    num_new_users = random.randint(1, 10)
+    num_new_users = faker.random_int(1, 10)
     created_users_list = []
 
     async with AsyncExitStack() as users_stack:

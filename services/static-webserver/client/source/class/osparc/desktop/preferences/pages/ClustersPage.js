@@ -352,6 +352,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const name = cluster.getName();
       const msg = this.tr("Are you sure you want to delete ") + name + "?";
       const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete Cluster"),
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });
@@ -487,12 +488,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       };
       osparc.data.Resources.fetch("clusters", "patch", params)
         .then(() => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Member(s) added"));
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Cluster successfully shared"));
           osparc.store.Store.getInstance().reset("clusters");
           this.__reloadClusters(true);
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong with the invitation"), "ERROR");
+          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong sharing the Cluster"), "ERROR");
           console.error(err);
         });
     },

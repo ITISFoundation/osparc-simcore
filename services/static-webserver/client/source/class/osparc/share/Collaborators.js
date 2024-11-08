@@ -357,9 +357,10 @@ qx.Class.define("osparc.share.Collaborators", {
         // check also user is not "prjOwner". Backend will silently not let the frontend remove that user.
         (this._serializedDataCopy["prjOwner"] !== osparc.auth.Data.getInstance().getEmail())
       ) {
-        const leaveButton = new qx.ui.form.Button(this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({
+        const leaveText = this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({
           firstUpperCase: true
-        })).set({
+        });
+        const leaveButton = new qx.ui.form.Button(leaveText).set({
           allowGrowX: false,
           visibility: Object.keys(this._serializedDataCopy["accessRights"]).includes(myGid.toString()) ? "visible" : "excluded"
         });
@@ -370,6 +371,7 @@ qx.Class.define("osparc.share.Collaborators", {
             msg += this.tr("If you remove yourself, there won't be any other Owners.");
           }
           const win = new osparc.ui.window.Confirmation(msg).set({
+            caption: leaveText,
             confirmText: this.tr("Leave"),
             confirmAction: "delete"
           });

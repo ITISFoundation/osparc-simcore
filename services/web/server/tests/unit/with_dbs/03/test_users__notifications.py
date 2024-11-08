@@ -198,6 +198,8 @@ async def test_list_user_notifications(
                 "date": "2023-02-23T16:23:13.122Z",
                 "product": "osparc",
                 "read": True,
+                "resource_id": "3fb96d89-ff5d-4d27-b5aa-d20d46e20e12",
+                "user_from_id": "2",
             },
             id="with_extra_params_that_will_get_overwritten",
         ),
@@ -267,6 +269,8 @@ async def test_create_user_notification_capped_list_length(
                     "text": "You're now member of a new Organization",
                     "date": "2023-02-23T16:23:13.122Z",
                     "product": "osparc",
+                    "resource_id": "3fb96d89-ff5d-4d27-b5aa-d20d46e20e12",
+                    "user_from_id": "2",
                 },
             )
             for _ in range(notification_count)

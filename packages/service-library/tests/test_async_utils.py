@@ -8,7 +8,7 @@ import random
 from collections import deque
 from dataclasses import dataclass
 from time import time
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from faker import Faker
@@ -59,24 +59,25 @@ def _compensate_for_slow_systems(number: float) -> float:
 
 
 async def test_context_aware_dispatch(
-    sleep_duration: float,
-    ensure_run_in_sequence_context_is_empty: None,
+    sleep_duration: float, ensure_run_in_sequence_context_is_empty: None, faker: Faker
 ) -> None:
     @run_sequentially_in_context(target_args=["c1", "c2", "c3"])
     async def orderly(c1: Any, c2: Any, c3: Any, control: Any) -> None:
         _ = (c1, c2, c3)
         await asyncio.sleep(sleep_duration)
 
-        context = dict(c1=c1, c2=c2, c3=c3)
+        context = {"c1": c1, "c2": c2, "c3": c3}
         await locked_stores[make_key_from_context(context)].push(control)
 
     def make_key_from_context(context: dict) -> str:
         return ".".join([f"{k}:{v}" for k, v in context.items()])
 
     def make_context():
-        return dict(
-            c1=random.randint(0, 10), c2=random.randint(0, 10), c3=random.randint(0, 10)
-        )
+        return {
+            "c1": faker.random_int(0, 10),
+            "c2": faker.random_int(0, 10),
+            "c3": faker.random_int(0, 10),
+        }
 
     contexts = [make_context() for _ in range(10)]
 
@@ -116,7 +117,8 @@ async def test_context_aware_function_sometimes_fails(
     @run_sequentially_in_context(target_args=["will_fail"])
     async def sometimes_failing(will_fail: bool) -> bool:
         if will_fail:
-            raise DidFailException("I was instructed to fail")
+            msg = "I was instructed to fail"
+            raise DidFailException(msg)
         return True
 
     for x in range(100):
@@ -201,7 +203,7 @@ async def test_nested_object_attribute(
 
     @run_sequentially_in_context(target_args=["object_with_props.attr1"])
     async def test_attribute(
-        object_with_props: ObjectWithPropos, other_attr: Optional[int] = None
+        object_with_props: ObjectWithPropos, other_attr: int | None = None
     ) -> str:
         return object_with_props.attr1
 

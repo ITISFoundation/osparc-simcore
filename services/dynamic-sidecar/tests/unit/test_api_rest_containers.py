@@ -5,7 +5,6 @@
 
 import asyncio
 import json
-import random
 from collections.abc import AsyncIterable
 from inspect import signature
 from pathlib import Path
@@ -304,9 +303,9 @@ async def attachable_networks_and_ids(faker: Faker) -> AsyncIterable[dict[str, s
 
 
 @pytest.fixture
-def mock_aiodocker_containers_get(mocker: MockerFixture) -> int:
+def mock_aiodocker_containers_get(mocker: MockerFixture, faker: Faker) -> int:
     """raises a DockerError with a random HTTP status which is also returned"""
-    mock_status_code = random.randint(1, 999)  # noqa: S311
+    mock_status_code = faker.random_int(1, 999)
 
     async def mock_get(*args: str, **kwargs: Any) -> None:
         raise aiodocker.exceptions.DockerError(

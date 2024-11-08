@@ -1,11 +1,13 @@
 # pylint: disable=all
 
 
+import importlib
 import random
 import string
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Iterator
 
+import pip
 import pytest
 from fastapi import FastAPI
 from pydantic import ValidationError
@@ -49,6 +51,7 @@ async def test_valid_tracing_settings(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
+    uninstrument_opentelemetry: Iterator[None],
 ):
     tracing_settings = TracingSettings()
     setup_tracing(
@@ -84,6 +87,7 @@ async def test_invalid_tracing_settings(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
+    uninstrument_opentelemetry: Iterator[None],
 ):
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
@@ -93,3 +97,63 @@ async def test_invalid_tracing_settings(
             tracing_settings=tracing_settings,
             service_name="Mock-Openetlemetry-Pytest",
         )
+
+
+def install_package(package):
+    pip.main(["install", package])
+
+
+def uninstall_package(package):
+    pip.main(["uninstall", "-y", package])
+
+
+@pytest.fixture(scope="function")
+def manage_package(request):
+    package, importname = request.param
+    install_package(package)
+    yield importname
+    uninstall_package(package)
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in, manage_package",
+    [
+        (
+            ("http://opentelemetry-collector", 4318),
+            (
+                "opentelemetry-instrumentation-botocore",
+                "opentelemetry.instrumentation.botocore",
+            ),
+        ),
+        (
+            ("http://opentelemetry-collector", "4318"),
+            (
+                "opentelemetry-instrumentation-aiopg",
+                "opentelemetry.instrumentation.aiopg",
+            ),
+        ),
+    ],
+    indirect=True,
+)
+async def test_tracing_setup_package_detection(
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: Callable[[], None],
+    tracing_settings_in: Callable[[], dict[str, Any]],
+    uninstrument_opentelemetry: Iterator[None],
+    manage_package,
+):
+    package_name = manage_package
+    importlib.import_module(package_name)
+    #
+    tracing_settings = TracingSettings()
+    setup_tracing(
+        mocked_app,
+        tracing_settings=tracing_settings,
+        service_name="Mock-Openetlemetry-Pytest",
+    )
+    # idempotency
+    setup_tracing(
+        mocked_app,
+        tracing_settings=tracing_settings,
+        service_name="Mock-Openetlemetry-Pytest",
+    )

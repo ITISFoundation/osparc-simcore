@@ -53,7 +53,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       orgModel.bind("thumbnail", organizationListItem, "thumbnail");
       orgModel.bind("label", organizationListItem, "title");
       orgModel.bind("description", organizationListItem, "subtitle");
-      orgModel.bind("nMembers", organizationListItem, "contact");
+      orgModel.bind("nMembers", organizationListItem, "role");
       orgModel.bind("accessRights", organizationListItem, "accessRights");
 
       // set orgModel to the tab views
