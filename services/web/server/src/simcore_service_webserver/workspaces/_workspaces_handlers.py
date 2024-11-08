@@ -7,18 +7,10 @@ from models_library.api_schemas_webserver.workspaces import (
     WorkspaceGet,
     WorkspaceGetPage,
 )
-from models_library.basic_types import IDStr
-from models_library.rest_base import RequestParameters, StrictRequestParameters
-from models_library.rest_ordering import (
-    OrderBy,
-    OrderDirection,
-    create_ordering_query_model_classes,
-)
-from models_library.rest_pagination import Page, PageQueryParameters
+from models_library.rest_ordering import OrderBy
+from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from models_library.users import UserID
-from models_library.workspaces import WorkspaceID
-from pydantic import Field, parse_obj_as
+from pydantic import parse_obj_as
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -26,49 +18,24 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._constants import RQ_PRODUCT_KEY
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _workspaces_api
 from ._exceptions_handlers import handle_plugin_requests_exceptions
+from ._models import (
+    WorkspacesListQueryParams,
+    WorkspacesPathParams,
+    WorkspacesRequestContext,
+)
 
 _logger = logging.getLogger(__name__)
 
 
 routes = web.RouteTableDef()
-
-
-class WorkspacesRequestContext(RequestParameters):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
-
-
-class WorkspacesPathParams(StrictRequestParameters):
-    workspace_id: WorkspaceID
-
-
-WorkspacesListOrderQueryParams: type[
-    RequestParameters
-] = create_ordering_query_model_classes(
-    ordering_fields={
-        "modified_at",
-        "name",
-    },
-    default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
-    ordering_fields_api_to_column_map={"modified_at": "modified"},
-)
-
-
-class WorkspacesListQueryParams(
-    PageQueryParameters,
-    WorkspacesListOrderQueryParams,  # type: ignore[misc, valid-type]
-):
-    ...
 
 
 @routes.post(f"/{VTAG}/workspaces", name="create_workspace")
