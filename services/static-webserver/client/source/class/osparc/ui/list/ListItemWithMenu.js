@@ -80,27 +80,29 @@ qx.Class.define("osparc.ui.list.ListItemWithMenu", {
         return;
       }
 
+      this._setRole();
+
       this._getInfoButton();
 
       this.__applyOptions();
     },
 
-    _setSubtitle: function() {
+    _setRole: function() {
       const accessRights = this.getAccessRights();
-      const subtitle = this.getChildControl("contact");
+      const role = this.getChildControl("role");
       if (
         "getDelete" in accessRights && accessRights.getDelete()
       ) {
-        subtitle.setValue(osparc.data.Roles.ORG[3].label);
+        role.setValue(osparc.data.Roles.ORG[3].label);
       } else if ("getWrite" in accessRights && accessRights.getWrite()) {
-        subtitle.setValue(osparc.data.Roles.ORG[2].label);
+        role.setValue(osparc.data.Roles.ORG[2].label);
       } else if (
         ("getRead" in accessRights && accessRights.getRead()) ||
         ("getExecute" in accessRights && accessRights.getExecute())
       ) {
-        subtitle.setValue(osparc.data.Roles.ORG[1].label);
+        role.setValue(osparc.data.Roles.ORG[1].label);
       } else {
-        subtitle.setValue(osparc.data.Roles.ORG[0].label);
+        role.setValue(osparc.data.Roles.ORG[0].label);
       }
     },
 

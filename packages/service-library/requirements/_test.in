@@ -13,6 +13,7 @@
 # testing
 
 asgi_lifespan
+botocore
 coverage
 docker
 faker
@@ -20,6 +21,7 @@ flaky
 numpy
 openapi-spec-validator
 pillow
+pip
 pytest
 pytest-aiohttp
 pytest-asyncio

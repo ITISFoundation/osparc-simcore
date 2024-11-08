@@ -28,6 +28,7 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
     grid.setColumnFlex(1, 1);
 
     this.set({
+      appearance: "node-ui-cap",
       layout: grid,
       showMinimize: false,
       showMaximize: false,
@@ -84,11 +85,6 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
       nullable: false
     },
 
-    appearance: {
-      init: "window-small-cap",
-      refine: true
-    },
-
     isMovable: {
       check: "Boolean",
       init: true,
@@ -113,8 +109,8 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
     },
 
     captionHeight: function() {
-      return osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
-        osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
+      return osparc.theme.Appearance.appearances["node-ui-cap/captionbar"].style().height ||
+        osparc.theme.Appearance.appearances["node-ui-cap/captionbar"].style().minHeight;
     }
   },
 

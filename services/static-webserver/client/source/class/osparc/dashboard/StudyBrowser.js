@@ -115,6 +115,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
           // "Starting..." page
           this._hideLoadingPage();
+
+          // since all the resources (templates, users, orgs...) were already loaded, notifications can be built
+          osparc.data.Resources.get("notifications")
+            .then(notifications => {
+              osparc.notification.Notifications.getInstance().addNotifications(notifications);
+            });
         })
         .catch(err => {
           console.error(err);
@@ -449,6 +455,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __showMoveToWorkspaceWarningMessage: function() {
       const msg = this.tr("The permissions will be taken from the new workspace.");
       const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Move"),
         confirmText: this.tr("Move"),
       });
       win.open();
@@ -1718,9 +1725,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createConfirmWindow: function(studyNames) {
       const rUSure = this.tr("Are you sure you want to delete");
-      const studiesText = osparc.product.Utils.getStudyAlias({plural: true});
-      const msg = rUSure + (studyNames.length > 1 ? ` ${studyNames.length} ${studiesText} ?` : ` <b>${studyNames[0]}</b>?`)
+      const studyAlias = osparc.product.Utils.getStudyAlias({plural: studyNames.length > 1});
+      const msg = rUSure + (studyNames.length > 1 ? ` ${studyNames.length} ${studyAlias}?` : ` <b>${studyNames[0]}</b>?`)
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete") + " " + studyAlias,
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });

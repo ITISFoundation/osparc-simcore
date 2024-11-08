@@ -21,12 +21,13 @@ log = logging.getLogger(__name__)
 
 
 async def setup_s3_client(app) -> AsyncGenerator[None, None]:
-    with log_context(log, logging.DEBUG, msg=f"setup {__name__}.setup.cleanup_ctx"):
+    client = None
+
+    with log_context(log, logging.DEBUG, msg="setup.s3_client.cleanup_ctx"):
         storage_settings: Settings = app[APP_CONFIG_KEY]
         storage_s3_settings = storage_settings.STORAGE_S3
         assert storage_s3_settings  # nosec
 
-        client = None
         async for attempt in AsyncRetrying(
             wait=wait_fixed(RETRY_WAIT_SECS),
             before_sleep=before_sleep_log(log, logging.WARNING),
@@ -45,17 +46,21 @@ async def setup_s3_client(app) -> AsyncGenerator[None, None]:
             assert client  # nosec
             app[APP_S3_KEY] = client
 
-            yield
-            # tear-down
+    yield
+
+    with log_context(log, logging.DEBUG, msg="teardown.s3_client.cleanup_ctx"):
+        if client:
             await client.close()
 
 
 async def setup_s3_bucket(app: web.Application):
-    storage_s3_settings = app[APP_CONFIG_KEY].STORAGE_S3
-    client = get_s3_client(app)
-    await client.create_bucket(
-        bucket=storage_s3_settings.S3_BUCKET_NAME, region=storage_s3_settings.S3_REGION
-    )
+    with log_context(log, logging.DEBUG, msg="setup.s3_bucket.cleanup_ctx"):
+        storage_s3_settings = app[APP_CONFIG_KEY].STORAGE_S3
+        client = get_s3_client(app)
+        await client.create_bucket(
+            bucket=storage_s3_settings.S3_BUCKET_NAME,
+            region=storage_s3_settings.S3_REGION,
+        )
     yield
 
 

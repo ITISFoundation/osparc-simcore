@@ -454,6 +454,8 @@ paths:
       tags:
       - groups
       summary: List Groups
+      description: List all groups (organizations, primary, everyone and products)
+        I belong to
       operationId: list_groups
       responses:
         '200':
@@ -461,24 +463,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_AllUsersGroups_'
+                $ref: '#/components/schemas/Envelope_MyGroupsGet_'
     post:
       tags:
       - groups
       summary: Create Group
+      description: Creates an organization group
       operationId: create_group
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupCreate'
+        required: true
       responses:
         '201':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UsersGroup_'
+                $ref: '#/components/schemas/Envelope_GroupGet_'
   /v0/groups/{gid}:
     get:
       tags:
       - groups
       summary: Get Group
+      description: Get an organization group
       operationId: get_group
       parameters:
       - required: true
@@ -495,11 +505,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UsersGroup_'
+                $ref: '#/components/schemas/Envelope_GroupGet_'
     delete:
       tags:
       - groups
       summary: Delete Group
+      description: Deletes organization groups
       operationId: delete_group
       parameters:
       - required: true
@@ -517,6 +528,7 @@ paths:
       tags:
       - groups
       summary: Update Group
+      description: Updates organization groups
       operationId: update_group
       parameters:
       - required: true
@@ -531,7 +543,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UsersGroup'
+              $ref: '#/components/schemas/GroupUpdate'
         required: true
       responses:
         '200':
@@ -539,13 +551,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_UsersGroup_'
+                $ref: '#/components/schemas/Envelope_GroupGet_'
   /v0/groups/{gid}/users:
     get:
       tags:
       - groups
-      summary: Get Group Users
-      operationId: get_group_users
+      summary: Get All Group Users
+      description: Gets users in organization groups
+      operationId: get_all_group_users
       parameters:
       - required: true
         schema:
@@ -566,6 +579,7 @@ paths:
       tags:
       - groups
       summary: Add Group User
+      description: Adds a user to an organization group
       operationId: add_group_user
       parameters:
       - required: true
@@ -580,7 +594,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupUserGet'
+              $ref: '#/components/schemas/GroupUserAdd'
         required: true
       responses:
         '204':
@@ -590,6 +604,7 @@ paths:
       tags:
       - groups
       summary: Get Group User
+      description: Gets specific user in an organization group
       operationId: get_group_user
       parameters:
       - required: true
@@ -619,6 +634,7 @@ paths:
       tags:
       - groups
       summary: Delete Group User
+      description: Removes a user from an organization group
       operationId: delete_group_user
       parameters:
       - required: true
@@ -644,6 +660,7 @@ paths:
       tags:
       - groups
       summary: Update Group User
+      description: Updates user (access-rights) to an organization group
       operationId: update_group_user
       parameters:
       - required: true
@@ -666,7 +683,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GroupUserGet'
+              $ref: '#/components/schemas/GroupUserUpdate'
         required: true
       responses:
         '200':
@@ -4311,7 +4328,7 @@ paths:
         '403':
           description: ProjectInvalidRightsError
         '404':
-          description: UserDefaultWalletNotFoundError, ProjectNotFoundError
+          description: ProjectNotFoundError, UserDefaultWalletNotFoundError
         '409':
           description: ProjectTooManyProjectOpenedError
         '422':
@@ -6022,54 +6039,6 @@ components:
         queued:
           title: Queued
           type: boolean
-    AllUsersGroups:
-      title: AllUsersGroups
-      type: object
-      properties:
-        me:
-          $ref: '#/components/schemas/UsersGroup'
-        organizations:
-          title: Organizations
-          type: array
-          items:
-            $ref: '#/components/schemas/UsersGroup'
-        all:
-          $ref: '#/components/schemas/UsersGroup'
-        product:
-          $ref: '#/components/schemas/UsersGroup'
-      example:
-        me:
-          gid: '27'
-          label: A user
-          description: A very special user
-          accessRights:
-            read: true
-            write: true
-            delete: true
-        organizations:
-        - gid: '15'
-          label: ITIS Foundation
-          description: The Foundation for Research on Information Technologies in
-            Society
-          accessRights:
-            read: true
-            write: false
-            delete: false
-        - gid: '16'
-          label: Blue Fundation
-          description: Some foundation
-          accessRights:
-            read: true
-            write: false
-            delete: false
-        all:
-          gid: '0'
-          label: All
-          description: Open to all users
-          accessRights:
-            read: true
-            write: false
-            delete: false
     Annotation:
       title: Annotation
       required:
@@ -7134,14 +7103,6 @@ components:
       type: object
       properties: {}
       additionalProperties: false
-    Envelope_AllUsersGroups_:
-      title: Envelope[AllUsersGroups]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/AllUsersGroups'
-        error:
-          title: Error
     Envelope_AnyUrl_:
       title: Envelope[AnyUrl]
       type: object
@@ -7290,6 +7251,14 @@ components:
           $ref: '#/components/schemas/GetWalletAutoRecharge'
         error:
           title: Error
+    Envelope_GroupGet_:
+      title: Envelope[GroupGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GroupGet'
+        error:
+          title: Error
     Envelope_GroupUserGet_:
       title: Envelope[GroupUserGet]
       type: object
@@ -7336,6 +7305,14 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/LoginNextPage'
+        error:
+          title: Error
+    Envelope_MyGroupsGet_:
+      title: Envelope[MyGroupsGet]
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/MyGroupsGet'
         error:
           title: Error
     Envelope_NodeCreated_:
@@ -7585,14 +7562,6 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/UserProfile'
-        error:
-          title: Error
-    Envelope_UsersGroup_:
-      title: Envelope[UsersGroup]
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/UsersGroup'
         error:
           title: Error
     Envelope_WalletGetWithAvailableCredits_:
@@ -8657,6 +8626,91 @@ components:
           title: Delete
           type: boolean
       description: defines acesss rights for the user
+    GroupCreate:
+      title: GroupCreate
+      required:
+      - label
+      - description
+      type: object
+      properties:
+        label:
+          title: Label
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+    GroupGet:
+      title: GroupGet
+      required:
+      - gid
+      - label
+      - description
+      - accessRights
+      type: object
+      properties:
+        gid:
+          title: Gid
+          type: integer
+          description: the group ID
+        label:
+          title: Label
+          type: string
+          description: the group name
+        description:
+          title: Description
+          type: string
+          description: the group description
+        thumbnail:
+          title: Thumbnail
+          maxLength: 65536
+          minLength: 1
+          type: string
+          description: url to the group thumbnail
+          format: uri
+        accessRights:
+          $ref: '#/components/schemas/GroupAccessRights'
+        inclusionRules:
+          title: Inclusionrules
+          type: object
+          additionalProperties:
+            type: string
+          description: Maps user's column and regular expression
+    GroupUpdate:
+      title: GroupUpdate
+      type: object
+      properties:
+        label:
+          title: Label
+          type: string
+        description:
+          title: Description
+          type: string
+        thumbnail:
+          title: Thumbnail
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+    GroupUserAdd:
+      title: GroupUserAdd
+      type: object
+      properties:
+        uid:
+          title: Uid
+          exclusiveMinimum: true
+          type: integer
+          minimum: 0
+        email:
+          title: Email
+          type: string
+          format: email
+      description: "Identify the user with either `email` or `uid` \u2014 only one."
     GroupUserGet:
       title: GroupUserGet
       required:
@@ -8697,6 +8751,19 @@ components:
         last_name: Smith
         gravatar_id: a1af5c6ecc38e81f29695f01d6ceb540
         gid: '3'
+        accessRights:
+          read: true
+          write: false
+          delete: false
+    GroupUserUpdate:
+      title: GroupUserUpdate
+      required:
+      - accessRights
+      type: object
+      properties:
+        accessRights:
+          $ref: '#/components/schemas/GroupAccessRights'
+      example:
         accessRights:
           read: true
           write: false
@@ -8993,6 +9060,57 @@ components:
           type: string
           format: color
       additionalProperties: false
+    MyGroupsGet:
+      title: MyGroupsGet
+      required:
+      - me
+      - all
+      type: object
+      properties:
+        me:
+          $ref: '#/components/schemas/GroupGet'
+        organizations:
+          title: Organizations
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupGet'
+        all:
+          $ref: '#/components/schemas/GroupGet'
+        product:
+          $ref: '#/components/schemas/GroupGet'
+      example:
+        me:
+          gid: '27'
+          label: A user
+          description: A very special user
+          accessRights:
+            read: true
+            write: true
+            delete: true
+        organizations:
+        - gid: '15'
+          label: ITIS Foundation
+          description: The Foundation for Research on Information Technologies in
+            Society
+          accessRights:
+            read: true
+            write: false
+            delete: false
+        - gid: '16'
+          label: Blue Fundation
+          description: Some foundation
+          accessRights:
+            read: true
+            write: false
+            delete: false
+        all:
+          gid: '0'
+          label: All
+          description: Open to all users
+          accessRights:
+            read: true
+            write: false
+            delete: false
     NoAuthentication:
       title: NoAuthentication
       type: object
@@ -10156,7 +10274,7 @@ components:
           - ADMIN
           type: string
         groups:
-          $ref: '#/components/schemas/AllUsersGroups'
+          $ref: '#/components/schemas/MyGroupsGet'
         gravatar_id:
           title: Gravatar Id
           type: string
@@ -12471,6 +12589,22 @@ components:
         read:
           title: Read
           type: boolean
+        resource_id:
+          title: Resource ID
+          anyOf:
+          - enum:
+            - ""
+            type: string
+          - type: string
+          default: ""
+        user_from_id:
+          title: User ID of the one creating it
+          anyOf:
+          - enum:
+            - None
+            type: integer
+          - type: integer
+          default: None
     UserNotificationCreate:
       title: UserNotificationCreate
       required:
@@ -12510,6 +12644,22 @@ components:
             type: string
           - type: string
           default: UNDEFINED
+        resource_id:
+          title: Resource ID
+          anyOf:
+          - enum:
+            - ""
+            type: string
+          - type: string
+          default: ""
+        user_from_id:
+          title: User ID of the one creating it
+          anyOf:
+          - enum:
+            - None
+            type: integer
+          - type: integer
+          default: None
     UserNotificationPatch:
       title: UserNotificationPatch
       required:
@@ -12587,42 +12737,6 @@ components:
       - DELETED
       type: string
       description: An enumeration.
-    UsersGroup:
-      title: UsersGroup
-      required:
-      - gid
-      - label
-      - description
-      - accessRights
-      type: object
-      properties:
-        gid:
-          title: Gid
-          type: integer
-          description: the group ID
-        label:
-          title: Label
-          type: string
-          description: the group name
-        description:
-          title: Description
-          type: string
-          description: the group description
-        thumbnail:
-          title: Thumbnail
-          maxLength: 65536
-          minLength: 1
-          type: string
-          description: url to the group thumbnail
-          format: uri
-        accessRights:
-          $ref: '#/components/schemas/GroupAccessRights'
-        inclusionRules:
-          title: Inclusionrules
-          type: object
-          additionalProperties:
-            type: string
-          description: Maps user's column and regular expression
     Viewer:
       title: Viewer
       required:

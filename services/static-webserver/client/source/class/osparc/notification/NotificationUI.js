@@ -113,36 +113,98 @@ qx.Class.define("osparc.notification.NotificationUI", {
     },
 
     __applyNotification: function(notification) {
+      let resourceId = null;
+      if (notification.getResourceId()) {
+        resourceId = notification.getResourceId();
+      } else if (notification.getActionablePath()) {
+        // extract it from the actionable path
+        const actionablePath = notification.getActionablePath();
+        resourceId = actionablePath.split("/")[1];
+      }
+      const userFromId = notification.getUserFromId();
+
       const icon = this.getChildControl("icon");
-      notification.bind("category", icon, "source", {
-        converter: value => {
-          let source = "";
-          switch (value) {
-            case "NEW_ORGANIZATION":
-              source = "@FontAwesome5Solid/users/14";
-              break;
-            case "STUDY_SHARED":
-              source = "@FontAwesome5Solid/file/14";
-              break;
-            case "TEMPLATE_SHARED":
-              source = "@FontAwesome5Solid/copy/14";
-              break;
-            case "ANNOTATION_NOTE":
-              source = "@FontAwesome5Solid/file/14";
-              break;
-            case "WALLET_SHARED":
-              source = "@MaterialIcons/account_balance_wallet/14";
-              break;
+      const titleLabel = this.getChildControl("title");
+      titleLabel.setValue(notification.getTitle());
+      const descriptionLabel = this.getChildControl("text");
+      descriptionLabel.setValue(notification.getText());
+
+      switch (notification.getCategory()) {
+        case "NEW_ORGANIZATION":
+          icon.setSource("@FontAwesome5Solid/users/14");
+          if (resourceId) {
+            osparc.store.Store.getInstance().getGroup(resourceId)
+              .then(group => descriptionLabel.setValue("You're now member of '" + group["label"] + "'"))
+              .catch(() => this.setEnabled(false));
           }
-          return source;
-        }
-      });
-
-      const title = this.getChildControl("title");
-      notification.bind("title", title, "value");
-
-      const text = this.getChildControl("text");
-      notification.bind("text", text, "value");
+          break;
+        case "STUDY_SHARED":
+          icon.setSource("@FontAwesome5Solid/file/14");
+          if (resourceId) {
+            const params = {
+              url: {
+                "studyId": resourceId
+              }
+            };
+            osparc.data.Resources.getOne("studies", params)
+              .then(study => {
+                const studyAlias = osparc.product.Utils.getStudyAlias({
+                  firstUpperCase: true
+                });
+                titleLabel.setValue(`${studyAlias} '${study["name"]}'`);
+              })
+              .catch(() => this.setEnabled(false));
+          }
+          if (userFromId) {
+            const user = osparc.store.Store.getInstance().getUser(userFromId);
+            if (user) {
+              descriptionLabel.setValue("was shared by " + user["label"]);
+            }
+          }
+          break;
+        case "TEMPLATE_SHARED":
+          icon.setSource("@FontAwesome5Solid/copy/14");
+          if (resourceId) {
+            const template = osparc.store.Store.getInstance().getTemplate(resourceId);
+            if (template) {
+              const templateAlias = osparc.product.Utils.getTemplateAlias({
+                firstUpperCase: true
+              });
+              titleLabel.setValue(`${templateAlias} '${template["name"]}'`);
+            } else {
+              this.setEnabled(false);
+            }
+          }
+          if (userFromId) {
+            const user = osparc.store.Store.getInstance().getUser(userFromId);
+            if (user) {
+              descriptionLabel.setValue("was shared by " + user["label"]);
+            }
+          }
+          break;
+        case "ANNOTATION_NOTE":
+          icon.setSource("@FontAwesome5Solid/file/14");
+          if (resourceId) {
+            const params = {
+              url: {
+                "studyId": resourceId
+              }
+            };
+            osparc.data.Resources.getOne("studies", params)
+              .then(study => titleLabel.setValue(`Note added in '${study["name"]}'`))
+              .catch(() => this.setEnabled(false));
+          }
+          if (userFromId) {
+            const user = osparc.store.Store.getInstance().getUser(userFromId);
+            if (user) {
+              descriptionLabel.setValue("was added by " + user["label"]);
+            }
+          }
+          break;
+        case "WALLET_SHARED":
+          icon.setSource("@MaterialIcons/account_balance_wallet/14");
+          break;
+      }
 
       const date = this.getChildControl("date");
       notification.bind("date", date, "value", {
@@ -166,23 +228,11 @@ qx.Class.define("osparc.notification.NotificationUI", {
       }
 
       this.fireEvent("notificationTapped");
+      osparc.notification.Notifications.markAsRead(notification);
+      this.__openActionablePath(notification);
+    },
 
-      if (notification.isRead() === false) {
-        // set as read
-        const params = {
-          url: {
-            notificationId: notification.getId()
-          },
-          data: {
-            "read": true
-          }
-        };
-        osparc.data.Resources.fetch("notifications", "patch", params)
-          .then(() => notification.setRead(true))
-          .catch(() => notification.setRead(false));
-      }
-
-      // open actionable path
+    __openActionablePath: function(notification) {
       const actionablePath = notification.getActionablePath();
       const items = actionablePath.split("/");
       const resourceId = items.pop();
@@ -255,6 +305,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
         if (myAccountWindow.openWallets()) {
           const msg = this.tr("Do you want to make it the default Credit Account?");
           const win = new osparc.ui.window.Confirmation(msg).set({
+            caption: this.tr("Default Credit Account"),
             confirmAction: "create"
           });
           win.center();

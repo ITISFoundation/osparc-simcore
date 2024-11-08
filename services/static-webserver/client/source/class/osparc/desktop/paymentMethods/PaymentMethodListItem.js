@@ -184,6 +184,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodListItem", {
     __deletePressed: function() {
       const msg = this.tr("Are you sure you want to delete the Payment Method?");
       const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete Payment Method"),
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });

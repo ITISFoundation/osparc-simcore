@@ -29,6 +29,8 @@ attrs==24.2.0
     #   jsonschema
     #   pytest-docker
     #   referencing
+botocore==1.35.50
+    # via -r requirements/_test.in
 certifi==2024.8.30
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -91,6 +93,8 @@ idna==3.10
     #   yarl
 iniconfig==2.0.0
     # via pytest
+jmespath==1.0.1
+    # via botocore
 jsonschema==4.23.0
     # via
     #   -c requirements/_aiohttp.txt
@@ -141,6 +145,8 @@ pathable==0.4.3
     #   jsonschema-path
 pillow==10.4.0
     # via -r requirements/_test.in
+pip==24.3.1
+    # via -r requirements/_test.in
 pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
@@ -188,6 +194,7 @@ pytest-xdist==3.6.1
 python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
+    #   botocore
     #   faker
 python-dotenv==1.0.1
     # via
@@ -265,6 +272,7 @@ urllib3==2.2.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
+    #   botocore
     #   docker
     #   requests
 yarl==1.12.1

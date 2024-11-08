@@ -31,10 +31,10 @@ from simcore_postgres_database.models.resource_tracker_pricing_units import (
     resource_tracker_pricing_units,
 )
 from simcore_postgres_database.models.services import services_meta_data
-from simcore_service_resource_usage_tracker.modules.db.repositories.resource_tracker import (
+from simcore_service_resource_usage_tracker.services.modules.db.repositories.resource_tracker import (
     ResourceTrackerRepository,
 )
-from simcore_service_resource_usage_tracker.resource_tracker_process_messages import (
+from simcore_service_resource_usage_tracker.services.process_message_running_service import (
     _process_heartbeat_event,
     _process_start_event,
     _process_stop_event,

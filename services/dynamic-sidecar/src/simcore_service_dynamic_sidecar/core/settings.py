@@ -153,7 +153,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DY_SIDECAR_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
-        default={},
+        default_factory=dict,
         validation_alias=AliasChoices(
             "DY_SIDECAR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
         ),

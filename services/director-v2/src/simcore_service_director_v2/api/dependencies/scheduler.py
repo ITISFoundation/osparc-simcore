@@ -1,7 +1,7 @@
 from fastapi import Depends, FastAPI, Request
 
 from ...core.settings import ComputationalBackendSettings
-from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
+from ...modules.comp_scheduler import BaseCompScheduler
 from . import get_app
 
 

@@ -42,7 +42,7 @@ class DeferredFloat:
 
         self._value = float(value)
 
-    def to_flaot(self) -> float:
+    def to_float(self) -> float:
         if not isinstance(self._value, float):
             msg = "Value must be a float or an int."
             raise TypeError(msg)

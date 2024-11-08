@@ -15,23 +15,39 @@ from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-
 from opentelemetry.instrumentation.aiohttp_server import (
     middleware as aiohttp_server_opentelemetry_middleware,  # pylint:disable=no-name-in-module
 )
-from opentelemetry.instrumentation.aiopg import (  # pylint:disable=no-name-in-module
-    AiopgInstrumentor,
-)
-from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from servicelib.logging_utils import log_context
 from settings_library.tracing import TracingSettings
 
 _logger = logging.getLogger(__name__)
+try:
+    from opentelemetry.instrumentation.botocore import (  # type: ignore[import-not-found]
+        BotocoreInstrumentor,
+    )
+
+    HAS_BOTOCORE = True
+except ImportError:
+    HAS_BOTOCORE = False
+try:
+    from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
+
+    HAS_AIOPG = True
+except ImportError:
+    HAS_AIOPG = False
+try:
+    from opentelemetry.instrumentation.requests import RequestsInstrumentor
+
+    HAS_REQUESTS = True
+except ImportError:
+    HAS_REQUESTS = False
 
 
 def setup_tracing(
     app: web.Application,
     tracing_settings: TracingSettings,
     service_name: str,
-    instrument_aiopg: bool = False,  # noqa: FBT001, FBT002
 ) -> None:
     """
     Sets up this service for a distributed tracing system (opentelemetry)
@@ -91,6 +107,24 @@ def setup_tracing(
 
     # Instrument aiohttp client
     AioHttpClientInstrumentor().instrument()
-    if instrument_aiopg:
-        AiopgInstrumentor().instrument()
-    RequestsInstrumentor().instrument()
+    if HAS_AIOPG:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add aio-pg opentelemetry autoinstrumentation...",
+        ):
+            AiopgInstrumentor().instrument()
+    if HAS_BOTOCORE:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add botocore opentelemetry autoinstrumentation...",
+        ):
+            BotocoreInstrumentor().instrument()
+    if HAS_REQUESTS:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add requests opentelemetry autoinstrumentation...",
+        ):
+            RequestsInstrumentor().instrument()
