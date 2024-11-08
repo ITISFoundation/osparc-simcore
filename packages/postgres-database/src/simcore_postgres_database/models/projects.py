@@ -5,7 +5,7 @@ import enum
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
-from sqlalchemy.sql import func
+from sqlalchemy.sql import expression, func
 
 from .base import metadata
 
@@ -145,7 +145,16 @@ projects = sa.Table(
         "trashed_at",
         sa.DateTime(timezone=True),
         nullable=True,
-        doc="Timestamp indicating when the project was marked as trashed, or null otherwise.",
+        comment="The date and time when the project was marked as trashed. "
+        "Null if the project has not been trashed [default].",
+    ),
+    sa.Column(
+        "trashed_explicitly",
+        sa.Boolean,
+        nullable=False,
+        server_default=expression.false(),
+        comment="Indicates whether the project was explicitly trashed by the user (true)"
+        " or inherited its trashed status from a parent (false) [default].",
     ),
     sa.Column(
         "workspace_id",
