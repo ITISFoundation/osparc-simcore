@@ -69,6 +69,7 @@ async def trash_project(
     user_id: UserID,
     project_id: ProjectID,
     force_stop_first: bool,
+    explicit: bool,
 ):
     """
 
@@ -113,13 +114,14 @@ async def trash_project(
             product_name=product_name,
         )
 
-    # mark as trash
     await projects_api.patch_project(
         app,
         user_id=user_id,
         product_name=product_name,
         project_uuid=project_id,
-        project_patch=ProjectPatchExtended(trashed_at=arrow.utcnow().datetime),
+        project_patch=ProjectPatchExtended(
+            trashed_at=arrow.utcnow().datetime, trashed_explicitly=explicit
+        ),
     )
 
 
@@ -136,5 +138,5 @@ async def untrash_project(
         user_id=user_id,
         product_name=product_name,
         project_uuid=project_id,
-        project_patch=ProjectPatchExtended(trashed_at=None),
+        project_patch=ProjectPatchExtended(trashed_at=None, trashed_explicitly=False),
     )

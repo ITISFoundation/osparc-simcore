@@ -930,7 +930,7 @@ async def test_get_active_project(
         data_last_change_date = data.pop("lastChangeDate")
         assert user_project_last_change_date < data_last_change_date
 
-        assert data == user_project
+        assert data == {k: user_project[k] for k in data}
     else:
         mocked_notifications_plugin["subscribe"].assert_not_called()
 

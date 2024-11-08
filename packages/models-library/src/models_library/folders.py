@@ -29,6 +29,10 @@ class FolderDB(BaseModel):
         ...,
         description="Timestamp of last modification",
     )
+    trashed_at: datetime | None = Field(
+        ...,
+    )
+
     user_id: UserID | None
     workspace_id: WorkspaceID | None
 
