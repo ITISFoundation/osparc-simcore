@@ -7,13 +7,16 @@ import copy
 import random
 from collections import deque
 from dataclasses import dataclass
+from datetime import timedelta
 from time import time
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 from faker import Faker
 from servicelib.async_utils import (
     _sequential_jobs_contexts,
+    notify_when_over_threshold,
     run_sequentially_in_context,
 )
 
@@ -224,3 +227,64 @@ async def test_different_contexts(
             assert i == await test_multiple_context_calls(i)
 
     assert len(_sequential_jobs_contexts) == RETRIES
+
+
+async def test_notify_when_over_threshold():
+
+    notification_spy = Mock()
+
+    async def notification() -> None:
+        notification_spy()
+        print("notified")
+
+    async def _worker(
+        *, sleep_for: float, raise_error: type[BaseException] | None = None
+    ) -> float:
+        await asyncio.sleep(sleep_for)
+
+        if raise_error:
+            raise raise_error
+
+        return sleep_for
+
+    # 1. finish after
+    result = await notify_when_over_threshold(
+        _worker(sleep_for=0.5),
+        notification_hook=notification,
+        notify_after=timedelta(seconds=0.1),
+    )
+    assert isinstance(result, float)
+    assert result == 0.5
+    assert notification_spy.call_count == 1
+
+    # 2. finish before
+    notification_spy.reset_mock()
+    await notify_when_over_threshold(
+        _worker(sleep_for=0.1),
+        notification_hook=notification,
+        notify_after=timedelta(seconds=0.2),
+    )
+    await asyncio.sleep(0.2)
+    assert notification_spy.call_count == 0
+
+    # 3. raise error before notification
+    for notification_type in (RuntimeError, asyncio.CancelledError):
+        notification_spy.reset_mock()
+        with pytest.raises(notification_type):
+            await notify_when_over_threshold(
+                _worker(sleep_for=0, raise_error=notification_type),
+                notification_hook=notification,
+                notify_after=timedelta(seconds=0.2),
+            )
+        assert notification_spy.call_count == 0
+
+    # 4. raise after notification
+    for notification_type in (RuntimeError, asyncio.CancelledError):
+        notification_spy.reset_mock()
+        with pytest.raises(notification_type):
+            await notify_when_over_threshold(
+                _worker(sleep_for=0.2, raise_error=notification_type),
+                notification_hook=notification,
+                notify_after=timedelta(seconds=0.1),
+            )
+        assert notification_spy.call_count == 1

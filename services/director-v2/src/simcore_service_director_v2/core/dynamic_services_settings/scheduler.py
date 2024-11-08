@@ -111,6 +111,19 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         ),
     )
 
+    DYNAMIC_SIDECAR_API_STATES_RESTORE_NOTIFICATION_THRESHOLD: float = Field(
+        0.8,
+        gt=0,
+        le=1,
+        description=(
+            "threshold used to figure out when to send out a notification that it's"
+            "taking too much time to recover the states for the service. "
+            "The message should inform the user that if adding more "
+            "data they will not be able to open the service since the platform "
+            "will timeout the recovery operation after a certain amount of time"
+        ),
+    )
+
     DYNAMIC_SIDECAR_API_USER_SERVICES_PULLING_TIMEOUT: PositiveFloat = Field(
         60.0 * _MINUTE,
         description="before starting the user services pull all the images in parallel",
@@ -166,3 +179,11 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL: timedelta = Field(
         timedelta(0), description="time to sleep before removing a container"
     )
+
+    @property
+    def states_restore_notification_timeout(self) -> timedelta:
+        """threshold to notify frontend about the size of the workspace getting too big"""
+        return timedelta(
+            seconds=self.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT
+            * self.DYNAMIC_SIDECAR_API_STATES_RESTORE_NOTIFICATION_THRESHOLD
+        )

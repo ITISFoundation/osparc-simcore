@@ -1,14 +1,18 @@
 import asyncio
 import logging
-from collections import deque
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass
+from datetime import timedelta
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Deque
+from typing import TYPE_CHECKING, Any, Coroutine, Final, TypeVar
+
+from pydantic import NonNegativeFloat
+from servicelib.background_task import cancel_task
 
 from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     Queue = asyncio.Queue
@@ -51,7 +55,7 @@ async def _safe_cancel(context: Context) -> None:
                 await context.task
     except RuntimeError as e:
         if "Event loop is closed" in f"{e}":
-            logger.warning("event loop is closed and could not cancel %s", context)
+            _logger.warning("event loop is closed and could not cancel %s", context)
         else:
             raise
 
@@ -62,7 +66,7 @@ async def cancel_sequential_workers() -> None:
         await _safe_cancel(context)
 
     _sequential_jobs_contexts.clear()
-    logger.info("All run_sequentially_in_context pending workers stopped")
+    _logger.info("All run_sequentially_in_context pending workers stopped")
 
 
 # NOTE: If you get funny mismatches with mypy in returned values it might be due to this decorator.
@@ -118,22 +122,22 @@ def run_sequentially_in_context(
             search_args = dict(zip(arg_names, args))
             search_args.update(kwargs)
 
-            key_parts: Deque[str] = deque()
+            key_parts: list[str] = []
             for arg in target_args:
                 sub_args = arg.split(".")
                 main_arg = sub_args[0]
                 if main_arg not in search_args:
-                    raise ValueError(
+                    msg = (
                         f"Expected '{main_arg}' in '{decorated_function.__name__}'"
                         f" arguments. Got '{search_args}'"
                     )
+                    raise ValueError(msg)
                 context_key = search_args[main_arg]
                 for attribute in sub_args[1:]:
                     potential_key = getattr(context_key, attribute)
                     if not potential_key:
-                        raise ValueError(
-                            f"Expected '{attribute}' attribute in '{context_key.__name__}' arguments."
-                        )
+                        msg = f"Expected '{attribute}' attribute in '{context_key.__name__}' arguments."
+                        raise ValueError(msg)
                     context_key = potential_key
 
                 key_parts.append(f"{decorated_function.__name__}_{context_key}")
@@ -200,3 +204,35 @@ def run_sequentially_in_context(
         return wrapper
 
     return decorator
+
+
+T = TypeVar("T")
+_CANCELLATION_TIMEOUT: Final[NonNegativeFloat] = 0.1
+
+
+async def _monitor_task(
+    notification_hook: Callable[[], Awaitable[None]], notify_after: timedelta
+) -> None:
+    await asyncio.sleep(notify_after.total_seconds())
+    await notification_hook()
+
+
+async def notify_when_over_threshold(
+    task: Coroutine[Any, Any, T],
+    *,
+    notification_hook: Callable[[], Awaitable[None]],
+    notify_after: timedelta,
+) -> T:
+    monitor_task = asyncio.create_task(_monitor_task(notification_hook, notify_after))
+
+    try:
+        result = await task
+        await cancel_task(monitor_task, timeout=_CANCELLATION_TIMEOUT)
+    except asyncio.CancelledError:
+        await cancel_task(monitor_task, timeout=_CANCELLATION_TIMEOUT)
+        raise
+    except Exception:
+        await cancel_task(monitor_task, timeout=_CANCELLATION_TIMEOUT)
+        raise
+
+    return result
