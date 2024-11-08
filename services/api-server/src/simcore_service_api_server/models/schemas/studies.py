@@ -1,7 +1,7 @@
 from typing import Annotated, TypeAlias
 
 from models_library import projects, projects_nodes_io
-from pydantic import AnyUrl, BaseModel, Field, StringConstraints
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, StringConstraints
 
 from .. import api_resources
 from . import solvers
@@ -27,6 +27,22 @@ class StudyPort(solvers.SolverPort):
         description="port identifier name."
         "Correponds to the UUID of the parameter/probe node in the study",
         title="Key name",
+    )
+    model_config = ConfigDict(
+        extra="ignore",
+        json_schema_extra={
+            "example": {
+                "key": "f763658f-a89a-4a90-ace4-c44631290f12",
+                "kind": "input",
+                "content_schema": {
+                    "title": "Sleep interval",
+                    "type": "integer",
+                    "x_unit": "second",
+                    "minimum": 0,
+                    "maximum": 5,
+                },
+            }
+        },
     )
 
 
