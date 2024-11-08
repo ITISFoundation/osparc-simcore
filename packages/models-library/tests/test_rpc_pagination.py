@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 from models_library.rpc_pagination import PageRpc
-from shared_examples import RPC_PAGE_EXAMPLES
+from pytest_simcore.examples.models_library import RPC_PAGE_EXAMPLES
 
 
 @pytest.mark.parametrize("example", RPC_PAGE_EXAMPLES)

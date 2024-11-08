@@ -3,7 +3,7 @@ from copy import deepcopy
 import pytest
 from models_library.rest_pagination import Page, PageMetaInfoLimitOffset
 from pydantic.main import BaseModel
-from shared_examples import PAGE_EXAMPLES
+from pytest_simcore.examples.models_library import PAGE_EXAMPLES
 
 
 @pytest.mark.parametrize(

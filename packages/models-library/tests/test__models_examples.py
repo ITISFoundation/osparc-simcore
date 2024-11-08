@@ -7,12 +7,12 @@ import pytest
 from models_library.rest_pagination import Page
 from models_library.rpc_pagination import PageRpc
 from pydantic import BaseModel
+from pytest_simcore.examples.models_library import PAGE_EXAMPLES, RPC_PAGE_EXAMPLES
 from pytest_simcore.pydantic_models import (
     ModelExample,
     iter_examples,
     walk_model_examples_in_package,
 )
-from shared_examples import PAGE_EXAMPLES, RPC_PAGE_EXAMPLES
 
 GENERIC_EXAMPLES: list[ModelExample] = [
     *iter_examples(model_cls=Page[str], examples=PAGE_EXAMPLES),
