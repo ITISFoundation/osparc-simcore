@@ -30,6 +30,11 @@ qx.Class.define("osparc.editor.OrganizationEditor", {
     this.getChildControl("description");
     this.getChildControl("thumbnail");
     newOrg ? this.getChildControl("create") : this.getChildControl("save");
+
+    this.addListener("appear", () => {
+      title.focus();
+      title.activate();
+    });
   },
 
   properties: {

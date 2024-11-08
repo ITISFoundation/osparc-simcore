@@ -358,7 +358,8 @@ qx.Class.define("osparc.desktop.organizations.MembersList", {
           }
         })
         .catch(err => {
-          osparc.FlashMessenger.getInstance().logAs(this.tr("Something went wrong adding the user"), "ERROR");
+          const errorMessage = err["message"] || this.tr("Something went wrong adding the user");
+          osparc.FlashMessenger.getInstance().logAs(errorMessage, "ERROR");
           console.error(err);
         });
     },
