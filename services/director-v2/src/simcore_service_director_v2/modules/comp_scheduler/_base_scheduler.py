@@ -34,6 +34,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.redis_utils import exclusive
 from servicelib.utils import limited_gather
+from settings_library.redis import RedisDatabase
 from simcore_service_director_v2.modules.redis import get_redis_client_manager
 
 from ...constants import UNDEFINED_STR_METADATA
