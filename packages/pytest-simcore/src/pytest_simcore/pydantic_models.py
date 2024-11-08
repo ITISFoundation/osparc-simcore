@@ -70,10 +70,14 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
     def _is_model_cls(obj) -> bool:
         with suppress(TypeError):
             # NOTE: issubclass( dict[models_library.services.ConstrainedStrValue, models_library.services.ServiceInput] ) raises TypeError
+            is_parametrized = False
+            if hasattr(obj, "__parameters__"):
+                is_parametrized = len(obj.__parameters__) == 0
             return (
                 obj is not BaseModel
                 and inspect.isclass(obj)
                 and issubclass(obj, BaseModel)
+                and not is_parametrized
             )
         return False
 

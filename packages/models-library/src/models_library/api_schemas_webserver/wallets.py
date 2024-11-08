@@ -2,7 +2,14 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, Literal, TypeAlias
 
-from pydantic import ConfigDict, Field, HttpUrl, PlainSerializer, ValidationInfo, field_validator
+from pydantic import (
+    ConfigDict,
+    Field,
+    HttpUrl,
+    PlainSerializer,
+    ValidationInfo,
+    field_validator,
+)
 
 from ..basic_types import AmountDecimal, IDStr, NonNegativeDecimal
 from ..users import GroupID
@@ -20,10 +27,7 @@ class WalletGet(OutputSchema):
     created: datetime
     modified: datetime
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        frozen=False
-    )
+    model_config = ConfigDict(from_attributes=True, frozen=False)
 
 
 class WalletGetWithAvailableCredits(WalletGet):
@@ -163,7 +167,7 @@ class PaymentMethodGet(OutputSchema):
                     "autoRecharge": "False",
                 },
             ],
-        }
+        },
     )
 
 

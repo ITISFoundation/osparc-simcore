@@ -208,6 +208,9 @@
     "thumbnail": "",
     "creationDate": "2024-05-30T10:29:54.150Z",
     "lastChangeDate": "2024-05-30T10:29:54.150Z",
+    "workspaceId": 3,
+    "folderId": 12,
+    "trashedAt": "2024-05-30T10:30:54.137359",
     "workbench": {
      "45043872-d6d3-530b-bf40-67bfde79191c": {
       "key": "simcore/services/dynamic/jupyter-math",
