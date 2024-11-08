@@ -177,7 +177,7 @@ async def test_publish_service_resource_tracking_started(
         RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
     )
     random_service_run_id = faker.pystr()
-    before_publication_time = datetime.datetime.now(datetime.timezone.utc)
+    before_publication_time = datetime.datetime.now(datetime.UTC)
     await publish_service_resource_tracking_started(
         publisher,
         service_run_id=random_service_run_id,
@@ -205,9 +205,11 @@ async def test_publish_service_resource_tracking_started(
         service_resources={},
         service_additional_metadata=faker.pydict(),
     )
-    after_publication_time = datetime.datetime.now(datetime.timezone.utc)
+    after_publication_time = datetime.datetime.now(datetime.UTC)
     received_messages = await _assert_message_received(
-        mocked_message_parser, 1, RabbitResourceTrackingStartedMessage.model_validate_json
+        mocked_message_parser,
+        1,
+        RabbitResourceTrackingStartedMessage.model_validate_json,
     )
     assert isinstance(received_messages[0], RabbitResourceTrackingStartedMessage)
     assert received_messages[0].service_run_id == random_service_run_id
@@ -231,7 +233,7 @@ async def test_publish_service_resource_tracking_stopped(
         RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
     )
     random_service_run_id = faker.pystr()
-    before_publication_time = datetime.datetime.now(datetime.timezone.utc)
+    before_publication_time = datetime.datetime.now(datetime.UTC)
     await publish_service_resource_tracking_stopped(
         publisher,
         service_run_id=random_service_run_id,
@@ -239,9 +241,11 @@ async def test_publish_service_resource_tracking_stopped(
             list(SimcorePlatformStatus)
         ),
     )
-    after_publication_time = datetime.datetime.now(datetime.timezone.utc)
+    after_publication_time = datetime.datetime.now(datetime.UTC)
     received_messages = await _assert_message_received(
-        mocked_message_parser, 1, RabbitResourceTrackingStoppedMessage.model_validate_json
+        mocked_message_parser,
+        1,
+        RabbitResourceTrackingStoppedMessage.model_validate_json,
     )
     assert isinstance(received_messages[0], RabbitResourceTrackingStoppedMessage)
     assert received_messages[0].service_run_id == random_service_run_id
@@ -265,14 +269,16 @@ async def test_publish_service_resource_tracking_heartbeat(
         RabbitResourceTrackingBaseMessage.get_channel_name(), mocked_message_parser
     )
     random_service_run_id = faker.pystr()
-    before_publication_time = datetime.datetime.now(datetime.timezone.utc)
+    before_publication_time = datetime.datetime.now(datetime.UTC)
     await publish_service_resource_tracking_heartbeat(
         publisher,
         service_run_id=random_service_run_id,
     )
-    after_publication_time = datetime.datetime.now(datetime.timezone.utc)
+    after_publication_time = datetime.datetime.now(datetime.UTC)
     received_messages = await _assert_message_received(
-        mocked_message_parser, 1, RabbitResourceTrackingHeartbeatMessage.model_validate_json
+        mocked_message_parser,
+        1,
+        RabbitResourceTrackingHeartbeatMessage.model_validate_json,
     )
     assert isinstance(received_messages[0], RabbitResourceTrackingHeartbeatMessage)
     assert received_messages[0].service_run_id == random_service_run_id
