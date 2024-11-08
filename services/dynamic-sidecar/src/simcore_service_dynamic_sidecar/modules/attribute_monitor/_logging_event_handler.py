@@ -1,5 +1,3 @@
-# pylint:disable=no-member
-
 import logging
 import stat
 from asyncio import CancelledError, Task, create_task, get_event_loop
@@ -70,7 +68,7 @@ class _LoggingEventHandlerProcess:
             self._process = aioprocessing.AioProcess(
                 target=self._process_worker, daemon=True
             )
-            self._process.start()
+            self._process.start()  # pylint:disable=no-member
 
     def _stop_process(self) -> None:
         with log_context(
@@ -175,7 +173,7 @@ class LoggingEventHandlerObserver:
                 try:
                     self._health_check_queue.get_nowait()
                     heart_beat_count += 1
-                except Empty:  # noqa: PERF203
+                except Empty:
                     break
 
             if heart_beat_count == 0:

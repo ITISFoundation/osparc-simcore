@@ -73,7 +73,6 @@ class DBContextManager:
         settings = NodePortsSettings.create_from_envs()
         dsn = DataSourceName(
             application_name=f"{__name__}_{socket.gethostname()}_{os.getpid()}",
-            # pylint:disable=no-member
             database=settings.POSTGRES_SETTINGS.POSTGRES_DB,
             user=settings.POSTGRES_SETTINGS.POSTGRES_USER,
             password=settings.POSTGRES_SETTINGS.POSTGRES_PASSWORD.get_secret_value(),

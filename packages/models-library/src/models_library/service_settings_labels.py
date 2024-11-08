@@ -3,7 +3,7 @@
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from common_library.json_serialization import json_dumps
 from pydantic import (
@@ -317,13 +317,14 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    containers_allowed_outgoing_permit_list: None | (
-        Json[dict[str, list[NATRule]]]
-    ) = Field(
-        None,
-        alias="simcore.service.containers-allowed-outgoing-permit-list",
-        description="allow internet access to certain domain names and ports per container",
-    )
+    containers_allowed_outgoing_permit_list: Annotated[
+        None | (Json[dict[str, list[NATRule]]]),
+        Field(
+            None,
+            alias="simcore.service.containers-allowed-outgoing-permit-list",
+            description="allow internet access to certain domain names and ports per container",
+        ),
+    ]
 
     containers_allowed_outgoing_internet: Json[set[str]] | None = Field(
         None,
@@ -456,7 +457,6 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @model_validator(mode="after")
     def _not_allowed_in_both_specs(self):
-        # pylint:disable=no-member
         match_keys = {
             "containers_allowed_outgoing_internet",
             "containers_allowed_outgoing_permit_list",

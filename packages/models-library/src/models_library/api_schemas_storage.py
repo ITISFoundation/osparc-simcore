@@ -311,13 +311,12 @@ class FileUploadCompleteFutureResponse(BaseModel):
 
 
 class FoldersBody(BaseModel):
-    source: dict[str, Any] = Field(default_factory=dict)
-    destination: dict[str, Any] = Field(default_factory=dict)
-    nodes_map: dict[NodeID, NodeID] = Field(default_factory=dict)
+    source: Annotated[dict[str, Any], Field(default_factory=dict)]
+    destination: Annotated[dict[str, Any], Field(default_factory=dict)]
+    nodes_map: Annotated[dict[NodeID, NodeID], Field(default_factory=dict)]
 
     @model_validator(mode="after")
-    def ensure_consistent_entries(self) -> Self:
-        # pylint:disable=no-member
+    def ensure_consistent_entries(self: Self) -> Self:
         source_node_keys = (NodeID(n) for n in self.source.get("workbench", {}))
         if set(source_node_keys) != set(self.nodes_map.keys()):
             msg = "source project nodes do not fit with nodes_map entries"
