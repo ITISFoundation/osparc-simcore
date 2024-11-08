@@ -46,7 +46,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     "folderSelected": "qx.event.type.Data",
     "folderUpdated": "qx.event.type.Data",
     "moveFolderToRequested": "qx.event.type.Data",
-    "deleteFolderRequested": "qx.event.type.Data"
+    "trashFolderRequested": "qx.event.type.Data",
+    "deleteFolderRequested": "qx.event.type.Data",
   },
 
   properties: {
@@ -196,6 +197,10 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
       menu.addSeparator();
 
+      const trashButton = new qx.ui.menu.Button(this.tr("Trash"), "@FontAwesome5Solid/trash/12");
+      trashButton.addListener("execute", () => this.__trashFolderRequested(), this);
+      menu.add(trashButton);
+
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
       deleteButton.addListener("execute", () => this.__deleteFolderRequested(), this);
       menu.add(deleteButton);
@@ -235,6 +240,24 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         win.close();
       });
       folderEditor.addListener("cancel", () => win.close());
+    },
+
+    __trashFolderRequested: function() {
+      const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+      let msg = this.tr("Are you sure you want to move the Folder and all its content to the trash?");
+      msg += "<br><br>" + this.tr("It will be permanently deleted after ") + trashDays + " days.";
+      const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Move to Trash"),
+        confirmText: this.tr("Move to Trash"),
+        confirmAction: "delete"
+      });
+      confirmationWin.center();
+      confirmationWin.open();
+      confirmationWin.addListener("close", () => {
+        if (confirmationWin.getConfirmed()) {
+          this.fireDataEvent("trashFolderRequested", this.getFolderId());
+        }
+      }, this);
     },
 
     __deleteFolderRequested: function() {

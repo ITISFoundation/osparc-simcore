@@ -122,6 +122,23 @@ qx.Class.define("osparc.store.Folders", {
         });
     },
 
+    trashFolder: function(folderId, workspaceId) {
+      const params = {
+        "url": {
+          folderId
+        }
+      };
+      return osparc.data.Resources.getInstance().fetch("folders", "trash", params)
+        .then(() => {
+          const folder = this.getFolder(folderId);
+          if (folder) {
+            this.__deleteFromCache(folderId, workspaceId);
+            this.fireDataEvent("folderRemoved", folder);
+          }
+        })
+        .catch(console.error);
+    },
+
     deleteFolder: function(folderId, workspaceId) {
       const params = {
         "url": {
