@@ -46,6 +46,7 @@ class CompRunsAtDB(BaseModel):
     modified: datetime.datetime
     started: datetime.datetime | None
     ended: datetime.datetime | None
+    cancelled: datetime.datetime | None
     metadata: RunMetadataDict = RunMetadataDict()
     use_on_demand_clusters: bool
 
@@ -96,6 +97,7 @@ class CompRunsAtDB(BaseModel):
                     "result": "NOT_STARTED",
                     "created": "2021-03-01 13:07:34.19161",
                     "modified": "2021-03-01 13:07:34.19161",
+                    "cancelled": None,
                     "use_on_demand_clusters": False,
                 },
                 {
@@ -109,6 +111,7 @@ class CompRunsAtDB(BaseModel):
                     "modified": "2021-03-01 13:07:34.19161",
                     "started": "2021-03-01 8:07:34.19161",
                     "ended": "2021-03-01 13:07:34.10",
+                    "cancelled": None,
                     "metadata": {
                         "node_id_names_map": {},
                         "product_name": "osparc",
