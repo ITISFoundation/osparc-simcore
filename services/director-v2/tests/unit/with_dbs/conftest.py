@@ -92,7 +92,7 @@ def tasks(
                 "inputs": (
                     {
                         key: (
-                            json.loads(value.json(by_alias=True, exclude_unset=True))
+                            value.model_dump(by_alias=True, exclude_unset=True)
                             if isinstance(value, BaseModel)
                             else value
                         )
@@ -113,9 +113,9 @@ def tasks(
                     if node_data.outputs
                     else {}
                 ),
-                "image": Image(name=node_data.key, tag=node_data.version).dict(  # type: ignore
+                "image": Image(name=node_data.key, tag=node_data.version).model_dump(
                     by_alias=True, exclude_unset=True
-                ),  # type: ignore
+                ),
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
                 "submit": datetime.datetime.now(tz=datetime.UTC),
