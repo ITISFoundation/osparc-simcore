@@ -72,7 +72,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True, description="settings for opentelemetry tracing"
     )
 
-    # migrated settings
     DIRECTOR_DEFAULT_MAX_NANO_CPUS: NonNegativeInt = Field(default=0)
     DIRECTOR_DEFAULT_MAX_MEMORY: NonNegativeInt = Field(default=0)
     DIRECTOR_REGISTRY_CACHING: bool = Field(
@@ -91,7 +90,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_SERVICES_STATE_MONITOR_S: int = 8
 
     DIRECTOR_TRAEFIK_SIMCORE_ZONE: str = Field(
-        default="internal_simcore_stack",
+        ...,
         env=["DIRECTOR_TRAEFIK_SIMCORE_ZONE", "TRAEFIK_SIMCORE_ZONE"],
     )
 
@@ -112,12 +111,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         env=["DIRECTOR_SWARM_STACK_NAME", "SWARM_STACK_NAME"],
     )
 
-    # used to find the right network name
     DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME: str | None = Field(
-        default=None,
+        # used to find the right network name
+        ...,
         env=["DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME", "SIMCORE_SERVICES_NETWORK_NAME"],
     )
-    # useful when developing with an alternative registry namespace
 
     DIRECTOR_MONITORING_ENABLED: bool = Field(
         ..., env=["DIRECTOR_MONITORING_ENABLED", "MONITORING_ENABLED"]
