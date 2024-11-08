@@ -55,7 +55,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
     ProjectNodesRepo,
 )
-from simcore_postgres_database.webserver_models import ProjectType, projects
+from simcore_postgres_database.webserver_models import ProjectType, projects, users
 from sqlalchemy import func, literal_column
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -350,7 +350,7 @@ class ProjectDBAPI(BaseProjectDB):
         ).group_by(project_to_groups.c.project_uuid)
     ).subquery("access_rights_subquery")
 
-    async def list_projects(  # pylint: disable=too-many-arguments
+    async def list_projects(  # pylint: disable=too-many-arguments,too-many-statements,too-many-branches
         self,
         *,
         product_name: ProductName,
@@ -455,8 +455,12 @@ class ProjectDBAPI(BaseProjectDB):
                         & (projects_to_products.c.product_name == product_name)
                     )
                 )
+                if filter_by_text is not None:
+                    private_workspace_query = private_workspace_query.join(
+                        users, users.c.id == projects.c.prj_owner, isouter=True
+                    )
             else:
-                private_workspace_query = sa.select()
+                private_workspace_query = None
 
             ###
             # Shared workspace query
@@ -515,6 +519,11 @@ class ProjectDBAPI(BaseProjectDB):
                             None
                         )  # <-- All shared workspaces
                     )
+                if filter_by_text is not None:
+                    shared_workspace_query = shared_workspace_query.join(
+                        users, users.c.id == projects.c.prj_owner, isouter=True
+                    )
+
                 else:
                     assert (
                         workspace_query.workspace_scope == WorkspaceScope.SHARED
@@ -525,7 +534,7 @@ class ProjectDBAPI(BaseProjectDB):
                     )
 
             else:
-                shared_workspace_query = sa.select()
+                shared_workspace_query = None
 
             ###
             # Attributes Filters
@@ -566,6 +575,7 @@ class ProjectDBAPI(BaseProjectDB):
                     (projects.c.name.ilike(f"%{filter_by_text}%"))
                     | (projects.c.description.ilike(f"%{filter_by_text}%"))
                     | (projects.c.uuid.ilike(f"%{filter_by_text}%"))
+                    | (users.c.name.ilike(f"%{filter_by_text}%"))
                 )
 
             if folder_query.folder_scope is not FolderScope.ALL:
@@ -575,26 +585,33 @@ class ProjectDBAPI(BaseProjectDB):
                     )
                 else:
                     assert folder_query.folder_scope == FolderScope.ROOT  # nosec
-                    attributes_filters.append(
-                        projects_to_folders.c.folder_id
-                        == projects_to_folders.c.folder_id.is_(None)
-                    )
-
-            private_workspace_query = private_workspace_query.where(
-                sa.and_(*attributes_filters)
-            )
-            shared_workspace_query = shared_workspace_query.where(
-                sa.and_(*attributes_filters)
-            )
+                    attributes_filters.append(projects_to_folders.c.folder_id.is_(None))
 
             ###
             # Combined
             ###
 
-            combined_query = sa.union_all(
-                private_workspace_query, shared_workspace_query
-            )
+            combined_query = None
+            if (
+                private_workspace_query is not None
+                and shared_workspace_query is not None
+            ):
+                combined_query = sa.union_all(
+                    private_workspace_query.where(sa.and_(*attributes_filters)),
+                    shared_workspace_query.where(sa.and_(*attributes_filters)),
+                )
+            elif private_workspace_query is not None:
+                combined_query = private_workspace_query.where(
+                    sa.and_(*attributes_filters)
+                )
+            elif shared_workspace_query is not None:
+                combined_query = shared_workspace_query.where(
+                    sa.and_(*attributes_filters)
+                )
 
+            if combined_query is None:
+                msg = "No valid queries were provided to combine."
+                raise ValueError(msg)
             count_query = sa.select(func.count()).select_from(combined_query.subquery())
             total_count = await conn.scalar(count_query)
 
