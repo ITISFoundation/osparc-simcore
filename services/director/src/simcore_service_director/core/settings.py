@@ -53,10 +53,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_REMOTE_DEBUG_PORT: PortInt = PortInt(3000)
 
     DIRECTOR_LOGLEVEL: LogLevel = Field(
-        LogLevel.INFO, env=["DIRECTOR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
+        ..., env=["DIRECTOR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"]
     )
     DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        default=False,
+        ...,
         env=[
             "DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED",
             "LOG_FORMAT_LOCAL_DEV_ENABLED",
@@ -76,20 +76,15 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     DIRECTOR_DEFAULT_MAX_NANO_CPUS: NonNegativeInt = Field(default=0)
     DIRECTOR_DEFAULT_MAX_MEMORY: NonNegativeInt = Field(default=0)
     DIRECTOR_REGISTRY_CACHING: bool = Field(
-        default=True, description="cache the docker registry internally"
+        ..., description="cache the docker registry internally"
     )
     DIRECTOR_REGISTRY_CACHING_TTL: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=15),
-        description="cache time to live value (defaults to 15 minutes)",
+        ..., description="cache time to live value (defaults to 15 minutes)"
     )
-    DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: str = ""
 
-    DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[
-        str, str
-    ] = Field(default_factory=dict)
-    DIRECTOR_SELF_SIGNED_SSL_SECRET_ID: str = ""
-    DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME: str = ""
-    DIRECTOR_SELF_SIGNED_SSL_FILENAME: str = ""
+    DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: str | None
+
+    DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[str, str]
 
     DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS: int = 10
     DIRECTOR_SERVICES_RESTART_POLICY_DELAY_S: int = 12
@@ -105,19 +100,15 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="settings for the private registry deployed with the platform",
     )
 
-    DIRECTOR_EXTRA_HOSTS_SUFFIX: str = Field(
-        default="undefined", env=["DIRECTOR_EXTRA_HOSTS_SUFFIX", "EXTRA_HOSTS_SUFFIX"]
-    )
-
     DIRECTOR_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
     STORAGE_ENDPOINT: str = Field(..., description="storage endpoint without scheme")
 
     DIRECTOR_PUBLISHED_HOST_NAME: str = Field(
-        default="", env=["DIRECTOR_PUBLISHED_HOST_NAME", "PUBLISHED_HOST_NAME"]
+        ..., env=["DIRECTOR_PUBLISHED_HOST_NAME", "PUBLISHED_HOST_NAME"]
     )
 
     DIRECTOR_SWARM_STACK_NAME: str = Field(
-        default="undefined-please-check",
+        ...,
         env=["DIRECTOR_SWARM_STACK_NAME", "SWARM_STACK_NAME"],
     )
 
@@ -129,7 +120,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # useful when developing with an alternative registry namespace
 
     DIRECTOR_MONITORING_ENABLED: bool = Field(
-        default=False, env=["DIRECTOR_MONITORING_ENABLED", "MONITORING_ENABLED"]
+        ..., env=["DIRECTOR_MONITORING_ENABLED", "MONITORING_ENABLED"]
     )
 
     @validator("DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")

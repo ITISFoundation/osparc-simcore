@@ -53,7 +53,6 @@ from .core.errors import (
 from .core.settings import ApplicationSettings, get_application_settings
 from .instrumentation import get_instrumentation
 from .services_common import ServicesCommonSettings
-from .system_utils import get_system_extra_hosts_raw
 
 _logger = logging.getLogger(__name__)
 
@@ -205,7 +204,6 @@ async def _create_docker_service_params(
             "SIMCORE_NODE_BASEPATH": node_base_path or "",
             "SIMCORE_HOST_NAME": service_name,
         },
-        "Hosts": get_system_extra_hosts_raw(app_settings.DIRECTOR_EXTRA_HOSTS_SUFFIX),
         "Init": True,
         "Labels": {
             _to_simcore_runtime_docker_label_key("user_id"): user_id,
@@ -225,28 +223,6 @@ async def _create_docker_service_params(
         },
         "Mounts": [],
     }
-
-    if (
-        app_settings.DIRECTOR_SELF_SIGNED_SSL_FILENAME
-        and app_settings.DIRECTOR_SELF_SIGNED_SSL_SECRET_ID
-        and app_settings.DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME
-    ):
-        # Note: this is useful for S3 client in case of self signed certificate
-        container_spec["Env"][
-            "SSL_CERT_FILE"
-        ] = app_settings.DIRECTOR_SELF_SIGNED_SSL_FILENAME
-        container_spec["Secrets"] = [
-            {
-                "SecretID": app_settings.DIRECTOR_SELF_SIGNED_SSL_SECRET_ID,
-                "SecretName": app_settings.DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME,
-                "File": {
-                    "Name": app_settings.DIRECTOR_SELF_SIGNED_SSL_FILENAME,
-                    "Mode": 444,
-                    "UID": "0",
-                    "GID": "0",
-                },
-            }
-        ]
 
     # SEE https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     docker_params: dict[str, Any] = {
@@ -586,7 +562,7 @@ async def _pass_port_to_service(
             )
             service_url = "http://" + service_name + "/" + route  # NOSONAR
             query_string = {
-                "hostname": str(app_settings.DIRECTOR_PUBLISHED_HOST_NAME),
+                "hostname": app_settings.DIRECTOR_PUBLISHED_HOST_NAME,
                 "port": str(port),
             }
             _logger.debug("creating request %s and query %s", service_url, query_string)
