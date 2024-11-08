@@ -164,7 +164,9 @@ qx.Class.define("osparc.service.ServiceListItem", {
           const title = this.tr("Service information");
           const width = osparc.info.CardLarge.WIDTH;
           const height = osparc.info.CardLarge.HEIGHT;
-          osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+          osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height).set({
+            maxHeight: height
+          });
         });
     },
 

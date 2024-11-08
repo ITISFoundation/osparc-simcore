@@ -23,10 +23,12 @@ qx.Class.define("osparc.notification.Notification", {
 
     this.set({
       id: notificationObj.id,
+      resourceId: notificationObj.resource_id ? notificationObj.resource_id : null,
       category: notificationObj.category,
       actionablePath: notificationObj.actionable_path,
       title: notificationObj.title,
       text: notificationObj.text,
+      userFromId: notificationObj.user_from_id ? notificationObj.user_from_id : null,
       date: new Date(notificationObj.date),
       read: ["true", "True", true].includes(notificationObj.read)
     });
@@ -38,6 +40,13 @@ qx.Class.define("osparc.notification.Notification", {
       init: null,
       nullable: false,
       event: "changeId"
+    },
+
+    resourceId: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeResourceId"
     },
 
     category: {
@@ -72,6 +81,13 @@ qx.Class.define("osparc.notification.Notification", {
       init: null,
       nullable: false,
       event: "changeText"
+    },
+
+    userFromId: {
+      check: "Number",
+      init: null,
+      nullable: true,
+      event: "changeUserFromId"
     },
 
     date: {

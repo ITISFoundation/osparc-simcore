@@ -139,7 +139,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("label", "title", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
-          ctrl.bindProperty("nMembers", "contact", null, item, id);
+          ctrl.bindProperty("nMembers", "role", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
         },
         configureItem: item => {
@@ -238,6 +238,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       const name = org.getLabel();
       const msg = this.tr("Are you sure you want to delete ") + name + "?";
       const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: this.tr("Delete Organization"),
         confirmText: this.tr("Delete"),
         confirmAction: "delete"
       });
