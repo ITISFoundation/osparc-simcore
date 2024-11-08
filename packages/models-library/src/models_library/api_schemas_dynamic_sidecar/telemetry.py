@@ -58,7 +58,7 @@ class DiskUsage(BaseModel):
     used_percent: float = Field(
         ge=0.00,
         le=100.00,
-        description="Percent of used space ree:ative to the total space",
+        description="Percent of used space relative to the total space",
     )
 
     @model_validator(mode="before")
