@@ -83,11 +83,11 @@ class ProjectGet(OutputSchema):
     quality: dict[str, Any] = Field(
         default_factory=dict, json_schema_extra={"default": {}}
     )
-    dev: dict | None = None
+    dev: dict | None
     permalink: ProjectPermalink | None = None
-    workspace_id: WorkspaceID | None = None
-    folder_id: FolderID | None = None
-    trashed_at: datetime | None = None
+    workspace_id: WorkspaceID | None
+    folder_id: FolderID | None
+    trashed_at: datetime | None
 
     _empty_description = field_validator("description", mode="before")(
         none_to_empty_str_pre_validator

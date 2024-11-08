@@ -73,6 +73,10 @@ NEW_PROJECT = HttpApiCallCapture(
                 "locked": {"value": False, "status": "CLOSED"},
                 "state": {"value": "NOT_STARTED"},
             },
+            "dev": None,
+            "workspace_id": None,
+            "folder_id": None,
+            "trashed_at": None,
         },
         "error": None,
     },
@@ -106,6 +110,9 @@ GET_PROJECT = HttpApiCallCapture(
                 "locked": {"value": False, "status": "CLOSED"},
                 "state": {"value": "NOT_STARTED"},
             },
+            "workspace_id": None,
+            "folder_id": None,
+            "trashed_at": None,
         }
     },
 )
@@ -145,6 +152,9 @@ OPEN_PROJECT = HttpApiCallCapture(
                 },
                 "state": {"value": "NOT_STARTED"},
             },
+            "workspace_id": None,
+            "folder_id": None,
+            "trashed_at": None,
         }
     },
 )
@@ -272,6 +282,9 @@ REPLACE_PROJECT = HttpApiCallCapture(
                 },
                 "state": {"value": "NOT_STARTED"},
             },
+            "workspace_id": None,
+            "folder_id": None,
+            "trashed_at": None,
         }
     },
 )
@@ -462,6 +475,9 @@ REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
             },
             "accessRights": {"2": {"read": True, "write": True, "delete": True}},
             "dev": {},
+            "workspace_id": None,
+            "folder_id": None,
+            "trashed_at": None,
             "classifiers": [],
             "ui": {
                 "mode": "workbench",
@@ -660,6 +676,9 @@ LIST_PROJECTS = HttpApiCallCapture(
                 },
                 "classifiers": [],
                 "dev": {},
+                "workspace_id": None,
+                "folder_id": None,
+                "trashed_at": None,
                 "quality": {
                     "enabled": True,
                     "tsr_target": {
@@ -907,6 +926,9 @@ CREATE_FROM_TEMPLATE__TASK_RESULT = HttpApiCallCapture(
             },
             "classifiers": [],
             "dev": {},
+            "workspace_id": None,
+            "folder_id": None,
+            "trashed_at": None,
             "quality": {
                 "enabled": True,
                 "tsr_target": {
