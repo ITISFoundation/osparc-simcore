@@ -41,8 +41,8 @@ def ensure_service_runs_in_ci(
     return app_environment | setenvs_from_dict(
         monkeypatch,
         envs={
-            "DEFAULT_MAX_MEMORY": f"{int(25 * pow(1024, 2))}",
-            "DEFAULT_MAX_NANO_CPUS": f"{int(0.01 * pow(10, 9))}",
+            "DIRECTOR_DEFAULT_MAX_MEMORY": f"{int(25 * pow(1024, 2))}",
+            "DIRECTOR_DEFAULT_MAX_NANO_CPUS": f"{int(0.01 * pow(10, 9))}",
         },
     )
 

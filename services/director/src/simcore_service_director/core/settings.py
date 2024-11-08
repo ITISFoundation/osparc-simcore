@@ -10,7 +10,7 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from pydantic import ByteSize, Field, PositiveInt, parse_obj_as, validator
+from pydantic import Field, NonNegativeInt, PositiveInt, validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -73,14 +73,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # migrated settings
-    DIRECTOR_DEFAULT_MAX_NANO_CPUS: PositiveInt = Field(
-        default=1 * pow(10, 9),
-        env=["DIRECTOR_DEFAULT_MAX_NANO_CPUS", "DEFAULT_MAX_NANO_CPUS"],
-    )
-    DIRECTOR_DEFAULT_MAX_MEMORY: PositiveInt = Field(
-        default=parse_obj_as(ByteSize, "2GiB"),
-        env=["DIRECTOR_DEFAULT_MAX_MEMORY", "DEFAULT_MAX_MEMORY"],
-    )
+    DIRECTOR_DEFAULT_MAX_NANO_CPUS: NonNegativeInt = Field(default=0)
+    DIRECTOR_DEFAULT_MAX_MEMORY: NonNegativeInt = Field(default=0)
     DIRECTOR_REGISTRY_CACHING: bool = Field(
         default=True, description="cache the docker registry internally"
     )
