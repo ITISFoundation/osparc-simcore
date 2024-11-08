@@ -493,7 +493,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _untrashFolderRequested: function(folderId) {
+    _untrashFolderRequested: function(folder) {
       throw new Error("Abstract method called!");
     },
 

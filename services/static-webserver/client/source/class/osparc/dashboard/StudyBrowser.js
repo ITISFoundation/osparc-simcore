@@ -548,8 +548,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .catch(err => console.error(err));
     },
 
-    _untrashFolderRequested: function(folderId) {
-      osparc.store.Folders.getInstance().untrashFolder(folderId)
+    _untrashFolderRequested: function(folder) {
+      osparc.store.Folders.getInstance().untrashFolder(folder)
         .then(() => this.__reloadFolders())
         .catch(err => console.error(err));
     },

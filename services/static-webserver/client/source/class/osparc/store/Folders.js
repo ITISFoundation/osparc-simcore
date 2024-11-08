@@ -139,19 +139,16 @@ qx.Class.define("osparc.store.Folders", {
         .catch(console.error);
     },
 
-    untrashFolder: function(folderId, workspaceId) {
+    untrashFolder: function(folder) {
       const params = {
         "url": {
-          folderId
+          folderId: folder.getFolderId(),
         }
       };
-      return osparc.data.Resources.getInstance().fetch("folders", "trash", params)
+      return osparc.data.Resources.getInstance().fetch("folders", "untrash", params)
         .then(() => {
-          console.log("untrashed");
-          /*
-          const folder = this.__addToCache(folderData);
+          this.foldersCached.unshift(folder);
           this.fireDataEvent("folderAdded", folder);
-          */
         })
         .catch(console.error);
     },

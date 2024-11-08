@@ -195,7 +195,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
       if (this.getCurrentContext() === "trash") {
         const trashButton = new qx.ui.menu.Button(this.tr("Restore"), "@MaterialIcons/restore_from_trash/16");
-        trashButton.addListener("execute", () => this.fireDataEvent("untrashFolderRequested", this.getFolderId()), this);
+        trashButton.addListener("execute", () => this.fireDataEvent("untrashFolderRequested", this.getFolder()), this);
         menu.add(trashButton);
 
         menu.addSeparator();
