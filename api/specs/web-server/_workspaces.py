@@ -17,12 +17,12 @@ from models_library.api_schemas_webserver.workspaces import (
     WorkspaceGet,
 )
 from models_library.generics import Envelope
-from models_library.workspaces import WorkspaceID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.workspaces._groups_api import WorkspaceGroupGet
-from simcore_service_webserver.workspaces._groups_handlers import (
-    _WorkspacesGroupsBodyParams,
-    _WorkspacesGroupsPathParams,
+from simcore_service_webserver.workspaces._models import (
+    WorkspacesGroupsBodyParams,
+    WorkspacesGroupsPathParams,
+    WorkspacesPathParams,
 )
 
 router = APIRouter(
@@ -40,7 +40,9 @@ router = APIRouter(
     response_model=Envelope[WorkspaceGet],
     status_code=status.HTTP_201_CREATED,
 )
-async def create_workspace(_body: CreateWorkspaceBodyParams):
+async def create_workspace(
+    _b: CreateWorkspaceBodyParams,
+):
     ...
 
 
@@ -56,7 +58,9 @@ async def list_workspaces():
     "/workspaces/{workspace_id}",
     response_model=Envelope[WorkspaceGet],
 )
-async def get_workspace(workspace_id: WorkspaceID):
+async def get_workspace(
+    _p: Annotated[WorkspacesPathParams, Depends()],
+):
     ...
 
 
@@ -64,7 +68,10 @@ async def get_workspace(workspace_id: WorkspaceID):
     "/workspaces/{workspace_id}",
     response_model=Envelope[WorkspaceGet],
 )
-async def replace_workspace(workspace_id: WorkspaceID, _body: PutWorkspaceBodyParams):
+async def replace_workspace(
+    _p: Annotated[WorkspacesPathParams, Depends()],
+    _b: PutWorkspaceBodyParams,
+):
     ...
 
 
@@ -72,7 +79,9 @@ async def replace_workspace(workspace_id: WorkspaceID, _body: PutWorkspaceBodyPa
     "/workspaces/{workspace_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_workspace(workspace_id: WorkspaceID):
+async def delete_workspace(
+    _p: Annotated[WorkspacesPathParams, Depends()],
+):
     ...
 
 
@@ -87,8 +96,8 @@ _extra_tags: list[str | Enum] = ["groups"]
     tags=_extra_tags,
 )
 async def create_workspace_group(
-    _path_parms: Annotated[_WorkspacesGroupsPathParams, Depends()],
-    _body: _WorkspacesGroupsBodyParams,
+    _p: Annotated[WorkspacesGroupsPathParams, Depends()],
+    _b: WorkspacesGroupsBodyParams,
 ):
     ...
 
@@ -98,7 +107,9 @@ async def create_workspace_group(
     response_model=Envelope[list[WorkspaceGroupGet]],
     tags=_extra_tags,
 )
-async def list_workspace_groups(workspace_id: WorkspaceID):
+async def list_workspace_groups(
+    _p: Annotated[WorkspacesPathParams, Depends()],
+):
     ...
 
 
@@ -108,8 +119,8 @@ async def list_workspace_groups(workspace_id: WorkspaceID):
     tags=_extra_tags,
 )
 async def replace_workspace_group(
-    _path_parms: Annotated[_WorkspacesGroupsPathParams, Depends()],
-    _body: _WorkspacesGroupsBodyParams,
+    _p: Annotated[WorkspacesGroupsPathParams, Depends()],
+    _b: WorkspacesGroupsBodyParams,
 ):
     ...
 
@@ -120,6 +131,6 @@ async def replace_workspace_group(
     tags=_extra_tags,
 )
 async def delete_workspace_group(
-    _path_parms: Annotated[_WorkspacesGroupsPathParams, Depends()]
+    _p: Annotated[WorkspacesGroupsPathParams, Depends()],
 ):
     ...
