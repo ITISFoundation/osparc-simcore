@@ -5,7 +5,7 @@
 from typing import Any
 
 import pytest
-from models_library.basic_types import LogLevel
+from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import ValidationError
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.base import DefaultFromEnvFactoryError
@@ -18,7 +18,7 @@ from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     PlacementSettings,
     RCloneSettings,
 )
-from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
+from simcore_service_director_v2.core.settings import AppSettings
 
 
 def _get_backend_type_options() -> set[str]:
