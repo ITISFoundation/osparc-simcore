@@ -469,7 +469,7 @@ def from_node_reqs_to_dask_resources(
     node_reqs: NodeRequirements,
 ) -> dict[str, int | float]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
-    dask_resources: dict[str, int | float] = node_reqs.dict(
+    dask_resources: dict[str, int | float] = node_reqs.model_dump(
         exclude_unset=True,
         by_alias=True,
         exclude_none=True,
@@ -551,9 +551,9 @@ def _to_human_readable_resource_values(resources: dict[str, Any]) -> dict[str, A
     for res_name, res_value in resources.items():
         if "RAM" in res_name:
             try:
-                human_readable_resources[res_name] = TypeAdapter(ByteSize).validate_python(
-                    res_value
-                ).human_readable()
+                human_readable_resources[res_name] = (
+                    TypeAdapter(ByteSize).validate_python(res_value).human_readable()
+                )
             except ValidationError:
                 _logger.warning(
                     "could not parse %s:%s, please check what changed in how Dask prepares resources!",

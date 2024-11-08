@@ -463,7 +463,7 @@ async def projects_networks_db(
     engine: Engine = initialized_app.state.engine
 
     async with engine.acquire() as conn:
-        row_data = projects_networks_to_insert.dict()
+        row_data = projects_networks_to_insert.model_dump()
         insert_stmt = pg_insert(projects_networks).values(**row_data)
         upsert_snapshot = insert_stmt.on_conflict_do_update(
             constraint=projects_networks.primary_key, set_=row_data
@@ -841,7 +841,9 @@ async def _assert_push_non_file_outputs(
         Client(
             app=initialized_app,
             async_client=director_v2_client,
-            base_url=TypeAdapter(AnyHttpUrl).validate_python(f"{director_v2_client.base_url}"),
+            base_url=TypeAdapter(AnyHttpUrl).validate_python(
+                f"{director_v2_client.base_url}"
+            ),
         ),
         task_id,
         task_timeout=60,

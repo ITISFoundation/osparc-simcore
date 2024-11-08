@@ -4,7 +4,6 @@
 
 
 import json
-from collections.abc import Mapping
 from typing import Any, cast
 from unittest.mock import Mock
 
@@ -471,7 +470,7 @@ async def test_get_dynamic_proxy_spec(
             rpc_client=Mock(),
         )
 
-        exclude_keys: Mapping[int | str, Any] = {
+        exclude_keys = {
             "Labels": True,
             "TaskTemplate": {"ContainerSpec": {"Env": True}},
         }
@@ -512,29 +511,31 @@ async def test_get_dynamic_proxy_spec(
             )
         )
 
-        assert dynamic_sidecar_spec.dict(
-            exclude=exclude_keys
-        ) == expected_dynamic_sidecar_spec_model.dict(exclude=exclude_keys)
-        assert dynamic_sidecar_spec.Labels
-        assert expected_dynamic_sidecar_spec_model.Labels
-        assert sorted(dynamic_sidecar_spec.Labels.keys()) == sorted(
-            expected_dynamic_sidecar_spec_model.Labels.keys()
+        assert dynamic_sidecar_spec.model_dump(
+            exclude=exclude_keys  # type: ignore[arg-type]
+        ) == expected_dynamic_sidecar_spec_model.model_dump(
+            exclude=exclude_keys  # type: ignore[arg-type]
+        )
+        assert dynamic_sidecar_spec.labels
+        assert expected_dynamic_sidecar_spec_model.labels
+        assert sorted(dynamic_sidecar_spec.labels.keys()) == sorted(
+            expected_dynamic_sidecar_spec_model.labels.keys()
         )
 
         assert (
-            dynamic_sidecar_spec.Labels["io.simcore.scheduler-data"]
-            == expected_dynamic_sidecar_spec_model.Labels["io.simcore.scheduler-data"]
+            dynamic_sidecar_spec.labels["io.simcore.scheduler-data"]
+            == expected_dynamic_sidecar_spec_model.labels["io.simcore.scheduler-data"]
         )
 
-        assert dynamic_sidecar_spec.Labels == expected_dynamic_sidecar_spec_model.Labels
+        assert dynamic_sidecar_spec.labels == expected_dynamic_sidecar_spec_model.labels
 
         dynamic_sidecar_spec_accumulated = dynamic_sidecar_spec
 
     # check reference after multiple runs
     assert dynamic_sidecar_spec_accumulated is not None
     assert (
-        dynamic_sidecar_spec_accumulated.dict()
-        == expected_dynamic_sidecar_spec_model.dict()
+        dynamic_sidecar_spec_accumulated.model_dump()
+        == expected_dynamic_sidecar_spec_model.model_dump()
     )
 
 
@@ -569,10 +570,10 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         rpc_client=Mock(),
     )
     assert dynamic_sidecar_spec
-    dynamic_sidecar_spec_dict = dynamic_sidecar_spec.dict()
+    dynamic_sidecar_spec_dict = dynamic_sidecar_spec.model_dump()
     expected_dynamic_sidecar_spec_dict = AioDockerServiceSpec.model_validate(
         expected_dynamic_sidecar_spec
-    ).dict()
+    ).model_dump()
     # ensure some entries are sorted the same to prevent flakyness
     for sorted_dict in [dynamic_sidecar_spec_dict, expected_dynamic_sidecar_spec_dict]:
         for key in ["DY_SIDECAR_STATE_EXCLUDE", "DY_SIDECAR_STATE_PATHS"]:
@@ -604,8 +605,10 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     )
     assert user_aiodocker_service_spec
 
-    orig_dict = dynamic_sidecar_spec.dict(by_alias=True, exclude_unset=True)
-    user_dict = user_aiodocker_service_spec.dict(by_alias=True, exclude_unset=True)
+    orig_dict = dynamic_sidecar_spec.model_dump(by_alias=True, exclude_unset=True)
+    user_dict = user_aiodocker_service_spec.model_dump(
+        by_alias=True, exclude_unset=True
+    )
 
     another_merged_dict = nested_update(
         orig_dict,

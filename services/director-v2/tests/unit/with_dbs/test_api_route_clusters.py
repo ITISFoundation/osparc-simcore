@@ -94,7 +94,9 @@ async def test_list_clusters(
     # there is no cluster at the moment, the list shall contain the default cluster
     response = await async_client.get(list_clusters_url)
     assert response.status_code == status.HTTP_200_OK
-    returned_clusters_list = TypeAdapter(list[ClusterGet]).validate_python(response.json())
+    returned_clusters_list = TypeAdapter(list[ClusterGet]).validate_python(
+        response.json()
+    )
     assert (
         len(returned_clusters_list) == 1
     ), f"no default cluster in {returned_clusters_list=}"
@@ -109,7 +111,9 @@ async def test_list_clusters(
 
     response = await async_client.get(list_clusters_url)
     assert response.status_code == status.HTTP_200_OK
-    returned_clusters_list = TypeAdapter(list[ClusterGet]).validate_python(response.json())
+    returned_clusters_list = TypeAdapter(list[ClusterGet]).validate_python(
+        response.json()
+    )
     assert (
         len(returned_clusters_list) == NUM_CLUSTERS + 1
     )  # the default cluster comes on top of the NUM_CLUSTERS
@@ -121,7 +125,9 @@ async def test_list_clusters(
     user_2 = registered_user()
     response = await async_client.get(f"/v2/clusters?user_id={user_2['id']}")
     assert response.status_code == status.HTTP_200_OK
-    returned_clusters_list = TypeAdapter(list[ClusterGet]).validate_python(response.json())
+    returned_clusters_list = TypeAdapter(list[ClusterGet]).validate_python(
+        response.json()
+    )
     assert (
         len(returned_clusters_list) == 1
     ), f"no default cluster in {returned_clusters_list=}"
@@ -189,9 +195,9 @@ async def test_get_cluster(
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
     returned_cluster = ClusterGet.model_validate(response.json())
     assert returned_cluster
-    assert the_cluster.dict(exclude={"authentication"}) == returned_cluster.dict(
+    assert the_cluster.model_dump(
         exclude={"authentication"}
-    )
+    ) == returned_cluster.model_dump(exclude={"authentication"})
 
     user_2 = registered_user()
     # getting the same cluster for user 2 shall return 403
@@ -322,9 +328,9 @@ async def test_create_cluster(
     created_cluster = ClusterGet.model_validate(response.json())
     assert created_cluster
 
-    assert cluster_data.dict(
+    assert cluster_data.model_dump(
         exclude={"id", "owner", "access_rights", "authentication"}
-    ) == created_cluster.dict(
+    ) == created_cluster.model_dump(
         exclude={"id", "owner", "access_rights", "authentication"}
     )
 
@@ -413,7 +419,9 @@ async def test_update_own_cluster(
         )
         assert returned_cluster.model_dump(
             exclude={"authentication": {"password"}}
-        ) == expected_modified_cluster.model_dump(exclude={"authentication": {"password"}})
+        ) == expected_modified_cluster.model_dump(
+            exclude={"authentication": {"password"}}
+        )
 
     # we can change the access rights, the owner rights are always kept
     user_2 = registered_user()
@@ -435,7 +443,9 @@ async def test_update_own_cluster(
         expected_modified_cluster.access_rights[user_2["primary_gid"]] = rights
         assert returned_cluster.model_dump(
             exclude={"authentication": {"password"}}
-        ) == expected_modified_cluster.model_dump(exclude={"authentication": {"password"}})
+        ) == expected_modified_cluster.model_dump(
+            exclude={"authentication": {"password"}}
+        )
     # we can change the owner since we are admin
     cluster_patch = ClusterPatch(owner=user_2["primary_gid"])
     response = await async_client.patch(
@@ -729,7 +739,8 @@ async def test_ping_invalid_cluster_raises_422(
     # calling with correct data but non existing cluster also raises
     some_fake_cluster = ClusterPing(
         endpoint=faker.url(),
-        authentication=TypeAdapter(ClusterAuthentication).validate_python(cluster_simple_authentication()
+        authentication=TypeAdapter(ClusterAuthentication).validate_python(
+            cluster_simple_authentication()
         ),
     )
     response = await async_client.post(
@@ -750,10 +761,14 @@ async def test_ping_cluster(
     local_dask_gateway_server: DaskGatewayServer,
 ):
     valid_cluster = ClusterPing(
-        endpoint=TypeAdapter(AnyHttpUrl).validate_python(local_dask_gateway_server.address),
+        endpoint=TypeAdapter(AnyHttpUrl).validate_python(
+            local_dask_gateway_server.address
+        ),
         authentication=SimpleAuthentication(
             username="pytest_user",
-            password=TypeAdapter(SecretStr).validate_python(local_dask_gateway_server.password),
+            password=TypeAdapter(SecretStr).validate_python(
+                local_dask_gateway_server.password
+            ),
         ),
     )
     response = await async_client.post(
@@ -791,7 +806,9 @@ async def test_ping_specific_cluster(
             endpoint=local_dask_gateway_server.address,
             authentication=SimpleAuthentication(
                 username="pytest_user",
-                password=TypeAdapter(SecretStr).validate_python(local_dask_gateway_server.password),
+                password=TypeAdapter(SecretStr).validate_python(
+                    local_dask_gateway_server.password
+                ),
             ),
         )
         for n in range(111)

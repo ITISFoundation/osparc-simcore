@@ -67,7 +67,7 @@ def mock_env(
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "1",
             "COMPUTATIONAL_BACKEND_ENABLED": "1",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
-            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": dask_scheduler_auth.json(),
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": dask_scheduler_auth.model_dump_json(),
             "DYNAMIC_SIDECAR_IMAGE": dynamic_sidecar_docker_image_name,
             "SIMCORE_SERVICES_NETWORK_NAME": "test_swarm_network_name",
             "SWARM_STACK_NAME": "test_mocked_stack_name",

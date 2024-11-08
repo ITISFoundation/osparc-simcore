@@ -43,8 +43,8 @@ async def assert_computation_task_out_obj(
     assert task_out.iteration == iteration
     assert task_out.cluster_id == cluster_id
     # check pipeline details contents
-    received_task_out_pipeline = task_out.pipeline_details.dict()
-    expected_task_out_pipeline = exp_pipeline_details.dict()
+    received_task_out_pipeline = task_out.pipeline_details.model_dump()
+    expected_task_out_pipeline = exp_pipeline_details.model_dump()
     assert received_task_out_pipeline == expected_task_out_pipeline
 
 

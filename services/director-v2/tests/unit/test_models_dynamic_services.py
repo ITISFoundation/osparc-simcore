@@ -138,7 +138,7 @@ def test_running_service_details_make_status(
     print(running_service_details)
     assert running_service_details
 
-    running_service_details_dict = running_service_details.dict(
+    running_service_details_dict = running_service_details.model_dump(
         exclude_unset=True, by_alias=True
     )
 

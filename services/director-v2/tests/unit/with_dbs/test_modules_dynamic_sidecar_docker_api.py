@@ -393,7 +393,7 @@ def test_settings__valid_network_names(
     monkeypatch: pytest.MonkeyPatch,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
 ) -> None:
-    items = dynamic_services_scheduler_settings.dict()
+    items = dynamic_services_scheduler_settings.model_dump()
     items["SIMCORE_SERVICES_NETWORK_NAME"] = simcore_services_network_name
 
     # validate network names

@@ -535,7 +535,7 @@ async def prepare_services_environment(
         )
     )
     service_outputs_labels = json.loads(
-        simcore_service_labels.dict().get("io.simcore.outputs", "{}")
+        simcore_service_labels.model_dump().get("io.simcore.outputs", "{}")
     ).get("outputs", {})
     _logger.debug(
         "Creating dirs from service outputs labels: %s",
@@ -563,7 +563,7 @@ async def get_allow_metrics_collection(
             bool, AllowMetricsCollectionFrontendUserPreference.get_default_value()
         )
 
-    allow_metrics_collection = AllowMetricsCollectionFrontendUserPreference.model_validate(
-        preference
+    allow_metrics_collection = (
+        AllowMetricsCollectionFrontendUserPreference.model_validate(preference)
     )
     return allow_metrics_collection.value

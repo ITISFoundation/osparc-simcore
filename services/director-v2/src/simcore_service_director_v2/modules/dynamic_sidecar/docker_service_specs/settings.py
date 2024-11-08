@@ -399,7 +399,7 @@ def _patch_target_service_into_env_vars(
 def _get_boot_options(
     service_labels: SimcoreServiceLabels,
 ) -> dict[EnvVarKey, BootOption] | None:
-    as_dict = service_labels.dict()
+    as_dict = service_labels.model_dump()
     boot_options_encoded = as_dict.get("io.simcore.boot-options", None)
     if boot_options_encoded is None:
         return None
