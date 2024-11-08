@@ -1,6 +1,6 @@
 import datetime
 from contextlib import suppress
-from typing import Any
+from typing import Annotated, Any
 
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
 from models_library.api_schemas_directorv2.services import NodeRequirements
@@ -19,6 +19,7 @@ from pydantic import (
     ByteSize,
     ConfigDict,
     Field,
+    PlainSerializer,
     PositiveInt,
     TypeAdapter,
     ValidationInfo,
@@ -74,7 +75,7 @@ class Image(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
         json_schema_extra={
-            "examples": [   # type: ignore
+            "examples": [  # type: ignore
                 {
                     "name": "simcore/services/dynamic/jupyter-octave-python-math",
                     "tag": "1.3.1",
@@ -115,7 +116,7 @@ class NodeSchema(BaseModel):
 
 class CompTaskAtDB(BaseModel):
     project_id: ProjectID
-    node_id: NodeID
+    node_id: Annotated[NodeID, PlainSerializer(str, return_type=str)]
     job_id: str | None = Field(default=None, description="The worker job ID")
     node_schema: NodeSchema = Field(..., alias="schema")
     inputs: InputsDict | None = Field(..., description="the inputs payload")
@@ -177,7 +178,9 @@ class CompTaskAtDB(BaseModel):
         return v
 
     def to_db_model(self, **exclusion_rules) -> dict[str, Any]:
-        comp_task_dict = self.model_dump(by_alias=True, exclude_unset=True, **exclusion_rules)
+        comp_task_dict = self.model_dump(
+            by_alias=True, exclude_unset=True, **exclusion_rules
+        )
         if "state" in comp_task_dict:
             comp_task_dict["state"] = RUNNING_STATE_TO_DB[comp_task_dict["state"]].value
         return comp_task_dict
@@ -237,9 +240,9 @@ class CompTaskAtDB(BaseModel):
                         "pricing_unit_id": 1,
                         "pricing_unit_cost_id": 1,
                     },
-                    "hardware_info": next(iter(HardwareInfo.model_config["json_schema_extra"]["examples"])),    # type: ignore
+                    "hardware_info": next(iter(HardwareInfo.model_config["json_schema_extra"]["examples"])),  # type: ignore
                 }
-                for image_example in Image.model_config["json_schema_extra"]["examples"]    # type: ignore
+                for image_example in Image.model_config["json_schema_extra"]["examples"]  # type: ignore
             ]
         },
     )
