@@ -1,7 +1,14 @@
 from typing import Any, TypeAlias
 
 from models_library.basic_types import IDStr
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, field_validator
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    BaseModel,
+    Field,
+    ValidationInfo,
+    field_validator,
+)
 
 from ..clusters import ClusterID
 from ..projects import ProjectID
@@ -52,16 +59,18 @@ class ComputationCreate(BaseModel):
 
     @field_validator("product_name")
     @classmethod
-    def ensure_product_name_defined_if_computation_starts(cls, v, values):
-        if "start_pipeline" in values and values["start_pipeline"] and v is None:
+    def _ensure_product_name_defined_if_computation_starts(
+        cls, v, info: ValidationInfo
+    ):
+        if info.data.get("start_pipeline") and v is None:
             msg = "product_name must be set if computation shall start!"
             raise ValueError(msg)
         return v
 
     @field_validator("use_on_demand_clusters")
     @classmethod
-    def ensure_expected_options(cls, v, values):
-        if v is True and ("cluster_id" in values and values["cluster_id"] is not None):
+    def _ensure_expected_options(cls, v, info: ValidationInfo):
+        if v and info.data.get("cluster_id") is not None:
             msg = "cluster_id cannot be set if use_on_demand_clusters is set"
             raise ValueError(msg)
         return v
