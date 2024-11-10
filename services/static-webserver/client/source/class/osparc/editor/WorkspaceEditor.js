@@ -133,7 +133,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           });
           control.addListener("execute", () => {
             if (this.__validator.validate()) {
-              this.__createWorkspace(control);
+              this.__createWorkspaceClicked(control);
             }
           }, this);
           buttons.addAt(control, 1);
@@ -169,20 +169,24 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
       return control || this.base(arguments, id);
     },
 
-    __createWorkspace: function(createButton) {
+    __createWorkspaceClicked: function(createButton) {
       createButton.setFetching(true);
-      const newWorkspaceData = {
-        name: this.getLabel(),
-        description: this.getDescription(),
-        thumbnail: this.getThumbnail(),
-      };
-      osparc.store.Workspaces.getInstance().postWorkspace(newWorkspaceData)
+      this.__createWorkspace()
         .then(newWorkspace => this.fireDataEvent("workspaceCreated", newWorkspace))
         .catch(err => {
           console.error(err);
           osparc.FlashMessenger.logAs(err.message, "ERROR");
         })
         .finally(() => createButton.setFetching(false));
+    },
+
+    __createWorkspace: function() {
+      const newWorkspaceData = {
+        name: this.getLabel(),
+        description: this.getDescription(),
+        thumbnail: this.getThumbnail(),
+      };
+      return osparc.store.Workspaces.getInstance().postWorkspace(newWorkspaceData)
     },
 
     __editWorkspace: function(editButton) {
