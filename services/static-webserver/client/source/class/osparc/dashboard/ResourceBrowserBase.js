@@ -95,7 +95,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return isLogged;
     },
 
-    startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
+    startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false, skipStudyOptions = false) {
       if (!osparc.dashboard.ResourceBrowserBase.checkLoggedIn()) {
         return;
       }
@@ -116,7 +116,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         };
         osparc.data.Resources.fetch("studies", "getWallet", params)
           .then(wallet => {
-            if (isStudyCreation || wallet === null || osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null) {
+            if (
+              !skipStudyOptions &&
+              (
+                isStudyCreation ||
+                wallet === null ||
+                osparc.desktop.credits.Utils.getWallet(wallet["walletId"]) === null
+              )
+            ) {
               // pop up study options if the study was just created or if it has no wallet assigned or user has no access to it
               const resourceSelector = new osparc.study.StudyOptions(studyId);
               const win = osparc.study.StudyOptions.popUpInWindow(resourceSelector);
@@ -456,11 +463,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false) {
+    _startStudyById: function(studyId, openCB, cancelCB, isStudyCreation = false, skipStudyOptions = false) {
       if (isStudyCreation) {
         this.fireDataEvent("changeTab", "studiesTab");
       }
-      this.self().startStudyById(studyId, openCB, cancelCB, isStudyCreation);
+      this.self().startStudyById(studyId, openCB, cancelCB, isStudyCreation, skipStudyOptions);
     },
 
     _createStudyFromTemplate: function() {
