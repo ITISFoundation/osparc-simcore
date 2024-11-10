@@ -42,7 +42,6 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
       this.setWorkspace(workspace);
     } else {
       // creating
-      this.__creatingWorkspace = true;
       this.getChildControl("cancel").addListener("execute", () => {
         osparc.store.Workspaces.getInstance().deleteWorkspace(this.getWorkspace().getWorkspaceId())
         this.fireEvent("cancel");
@@ -51,6 +50,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
       this.__createWorkspace()
         .then(newWorkspace => {
           this.setWorkspace(newWorkspace);
+          this.fireDataEvent("workspaceCreated", newWorkspace)
           const permissionsView = new osparc.share.CollaboratorsWorkspace(newWorkspace);
           permissionsView.addListener("updateAccessRights", () => this.fireDataEvent("updateAccessRights", newWorkspace.getWorkspaceId()), this);
           this._addAt(permissionsView, this.self().POS.SHARING);
@@ -109,8 +109,6 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
   },
 
   members: {
-    __creatingWorkspace: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -225,13 +223,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           thumbnail: this.getThumbnail(),
         };
         osparc.store.Workspaces.getInstance().putWorkspace(this.getWorkspace().getWorkspaceId(), updateData)
-          .then(() => {
-            if (this.__creatingWorkspace) {
-              this.fireDataEvent("workspaceCreated", this.getWorkspace())
-            } else {
-              this.fireEvent("workspaceUpdated");
-            }
-          })
+          .then(() => this.fireEvent("workspaceUpdated"))
           .catch(err => {
             console.error(err);
             osparc.FlashMessenger.logAs(err.message, "ERROR");

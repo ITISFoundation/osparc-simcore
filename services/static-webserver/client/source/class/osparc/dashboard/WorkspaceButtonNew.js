@@ -57,7 +57,6 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
         const title = this.tr("New Workspace");
         const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 500, 500);
         workspaceEditor.addListener("workspaceCreated", e => {
-          win.close();
           const newWorkspace = e.getData();
           this.fireDataEvent("workspaceCreated", newWorkspace.getWorkspaceId(), this);
         });
