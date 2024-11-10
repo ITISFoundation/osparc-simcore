@@ -105,11 +105,9 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           break;
         }
         case "description": {
-          control = new qx.ui.form.TextArea().set({
+          control = new qx.ui.form.TextField().set({
             font: "text-14",
             placeholder: this.tr("Description"),
-            autoSize: true,
-            minHeight: 70,
           });
           this.bind("description", control, "value");
           control.bind("value", this, "description");
