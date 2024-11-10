@@ -33,20 +33,41 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
     manager.add(title);
     this.getChildControl("description");
     this.getChildControl("thumbnail");
-    workspace ? this.getChildControl("save") : this.getChildControl("create");
     if (workspace) {
-      this.__workspaceId = workspace.getWorkspaceId();
-      this.set({
-        label: workspace.getName(),
-        description: workspace.getDescription(),
-        thumbnail: workspace.getThumbnail(),
-      });
+      // editing
+      this.getChildControl("cancel").addListener("execute", () => {
+        this.fireEvent("cancel");
+      }, this);
+      this.getChildControl("save");
+      this.setWorkspace(workspace);
+    } else {
+      // creating
+      this.__creatingWorkspace = true;
+      this.getChildControl("cancel").addListener("execute", () => {
+        osparc.store.Workspaces.getInstance().deleteWorkspace(this.getWorkspace().getWorkspaceId())
+        this.fireEvent("cancel");
+      }, this);
+      this.getChildControl("create");
+      this.__createWorkspace()
+        .then(newWorkspace => {
+          this.setWorkspace(newWorkspace);
+          const permissionsView = new osparc.share.CollaboratorsWorkspace(newWorkspace);
+          permissionsView.addListener("updateAccessRights", () => this.fireDataEvent("updateAccessRights", newWorkspace.getWorkspaceId()), this);
+          this._addAt(permissionsView, this.self().POS.SHARING);
+        });
     }
 
     this.addListener("appear", this.__onAppear, this);
   },
 
   properties: {
+    workspace: {
+      check: "osparc.data.model.Workspace",
+      init: null,
+      nullable: false,
+      apply: "__applyWorkspace"
+    },
+
     label: {
       check: "String",
       init: "",
@@ -72,11 +93,23 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
   events: {
     "workspaceCreated": "qx.event.type.Data",
     "workspaceUpdated": "qx.event.type.Event",
+    "updateAccessRights": "qx.event.type.Event",
     "cancel": "qx.event.type.Event"
   },
 
+  statics: {
+    POS: {
+      INTRO: 0,
+      TITLE: 1,
+      DESCRIPTION: 2,
+      THUMBNAIL: 3,
+      SHARING: 4,
+      BUTTONS: 5,
+    }
+  },
+
   members: {
-    __workspaceId: null,
+    __creatingWorkspace: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -89,7 +122,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
             rich: true,
             wrap: true
           });
-          this._add(control);
+          this._addAt(control, this.self().POS.INTRO);
           break;
         }
         case "title": {
@@ -101,7 +134,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           });
           this.bind("label", control, "value");
           control.bind("value", this, "label");
-          this._add(control);
+          this._addAt(control, this.self().POS.TITLE);
           break;
         }
         case "description": {
@@ -111,7 +144,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           });
           this.bind("description", control, "value");
           control.bind("value", this, "description");
-          this._add(control);
+          this._addAt(control, this.self().POS.DESCRIPTION);
           break;
         }
         case "thumbnail": {
@@ -121,45 +154,44 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           });
           this.bind("thumbnail", control, "value");
           control.bind("value", this, "thumbnail");
-          this._add(control);
+          this._addAt(control, this.self().POS.THUMBNAIL);
+          break;
+        }
+        case "buttons-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
+            alignX: "right"
+          }));
+          this._addAt(control, this.self().POS.BUTTONS);
           break;
         }
         case "create": {
-          const buttons = this.getChildControl("buttonsLayout");
+          const buttons = this.getChildControl("buttons-layout");
           control = new osparc.ui.form.FetchButton(this.tr("Create")).set({
             appearance: "form-button"
           });
           control.addListener("execute", () => {
-            if (this.__validator.validate()) {
-              this.__createWorkspaceClicked(control);
-            }
+            this.__saveWorkspace(control);
           }, this);
           buttons.addAt(control, 1);
           break;
         }
         case "save": {
-          const buttons = this.getChildControl("buttonsLayout");
+          const buttons = this.getChildControl("buttons-layout");
           control = new osparc.ui.form.FetchButton(this.tr("Save")).set({
             appearance: "form-button"
           });
           control.addListener("execute", () => {
-            if (this.__validator.validate()) {
-              this.__editWorkspace(control);
-            }
+            this.__saveWorkspace(control);
           }, this);
           buttons.addAt(control, 1);
           break;
         }
-        case "buttonsLayout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
-            alignX: "right"
-          }));
-          const cancelButton = new qx.ui.form.Button(this.tr("Cancel")).set({
+        case "cancel": {
+          const buttons = this.getChildControl("buttons-layout");
+          control = new qx.ui.form.Button(this.tr("Cancel")).set({
             appearance: "form-button-text"
           });
-          cancelButton.addListener("execute", () => this.fireEvent("cancel"), this);
-          control.addAt(cancelButton, 0);
-          this._add(control);
+          buttons.addAt(control, 0);
           break;
         }
       }
@@ -167,40 +199,45 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
       return control || this.base(arguments, id);
     },
 
-    __createWorkspaceClicked: function(createButton) {
-      createButton.setFetching(true);
-      this.__createWorkspace()
-        .then(newWorkspace => this.fireDataEvent("workspaceCreated", newWorkspace))
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        })
-        .finally(() => createButton.setFetching(false));
+    __applyWorkspace: function(workspace) {
+      this.set({
+        label: workspace.getName(),
+        description: workspace.getDescription(),
+        thumbnail: workspace.getThumbnail(),
+      });
     },
 
     __createWorkspace: function() {
       const newWorkspaceData = {
-        name: this.getLabel(),
+        name: this.getLabel() || "New Workspace",
         description: this.getDescription(),
         thumbnail: this.getThumbnail(),
       };
       return osparc.store.Workspaces.getInstance().postWorkspace(newWorkspaceData)
     },
 
-    __editWorkspace: function(editButton) {
-      editButton.setFetching(true);
-      const updateData = {
-        name: this.getLabel(),
-        description: this.getDescription(),
-        thumbnail: this.getThumbnail(),
-      };
-      osparc.store.Workspaces.getInstance().putWorkspace(this.__workspaceId, updateData)
-        .then(() => this.fireEvent("workspaceUpdated"))
-        .catch(err => {
-          console.error(err);
-          osparc.FlashMessenger.logAs(err.message, "ERROR");
-        })
-        .finally(() => editButton.setFetching(false));
+    __saveWorkspace: function(editButton) {
+      if (this.__validator.validate()) {
+        editButton.setFetching(true);
+        const updateData = {
+          name: this.getLabel(),
+          description: this.getDescription(),
+          thumbnail: this.getThumbnail(),
+        };
+        osparc.store.Workspaces.getInstance().putWorkspace(this.getWorkspace().getWorkspaceId(), updateData)
+          .then(() => {
+            if (this.__creatingWorkspace) {
+              this.fireDataEvent("workspaceCreated", this.getWorkspace())
+            } else {
+              this.fireEvent("workspaceUpdated");
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
+          })
+          .finally(() => editButton.setFetching(false));
+      }
     },
 
     __onAppear: function() {

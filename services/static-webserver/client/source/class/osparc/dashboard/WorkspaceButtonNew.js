@@ -46,26 +46,23 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
   },
 
   events: {
-    "createWorkspace": "qx.event.type.Data",
-    "updateWorkspace": "qx.event.type.Data"
+    "workspaceCreated": "qx.event.type.Data",
+    "workspaceUpdated": "qx.event.type.Data"
   },
 
   members: {
     __itemSelected: function(newVal) {
       if (newVal) {
-        const workspaceCreator = new osparc.editor.WorkspaceEditor();
+        const workspaceEditor = new osparc.editor.WorkspaceEditor();
         const title = this.tr("New Workspace");
-        const win = osparc.ui.window.Window.popUpInWindow(workspaceCreator, title, 300, 200);
-        workspaceCreator.addListener("workspaceCreated", e => {
+        const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 500, 500);
+        workspaceEditor.addListener("workspaceCreated", e => {
           win.close();
           const newWorkspace = e.getData();
-          this.fireDataEvent("createWorkspace", newWorkspace.getWorkspaceId(), this);
-          const permissionsView = new osparc.share.CollaboratorsWorkspace(newWorkspace);
-          const title2 = qx.locale.Manager.tr("Share Workspace");
-          osparc.ui.window.Window.popUpInWindow(permissionsView, title2, 500, 500);
-          permissionsView.addListener("updateAccessRights", () => this.fireDataEvent("updateWorkspace", newWorkspace.getWorkspaceId()), this);
+          this.fireDataEvent("workspaceCreated", newWorkspace.getWorkspaceId(), this);
         });
-        workspaceCreator.addListener("cancel", () => win.close());
+        workspaceEditor.addListener("updateAccessRights", () => this.fireDataEvent("workspaceUpdated", workspaceEditor.getWorkspace()), this);
+        workspaceEditor.addListener("cancel", () => win.close());
       }
       this.setValue(false);
     }

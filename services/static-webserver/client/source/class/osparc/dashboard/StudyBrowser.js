@@ -374,8 +374,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       newWorkspaceCard.setCardKey("new-workspace");
       newWorkspaceCard.subscribeToFilterGroup("searchBarFilter");
       [
-        "createWorkspace",
-        "updateWorkspace"
+        "workspaceCreated",
+        "workspaceUpdated",
       ].forEach(e => {
         newWorkspaceCard.addListener(e, () => {
           this.__reloadWorkspaces();
