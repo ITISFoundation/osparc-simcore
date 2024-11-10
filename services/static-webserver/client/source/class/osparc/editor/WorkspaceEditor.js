@@ -33,27 +33,20 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
     manager.add(title);
     this.getChildControl("description");
     this.getChildControl("thumbnail");
+    this.getChildControl("cancel");
+    const saveButton = this.getChildControl("save");
     if (workspace) {
       // editing
-      this.getChildControl("cancel").addListener("execute", () => {
-        this.fireEvent("cancel");
-      }, this);
-      this.getChildControl("save");
       this.setWorkspace(workspace);
     } else {
       // creating
-      this.getChildControl("cancel").addListener("execute", () => {
-        osparc.store.Workspaces.getInstance().deleteWorkspace(this.getWorkspace().getWorkspaceId())
-        this.fireEvent("cancel");
-      }, this);
-      this.getChildControl("create");
+      this.__creatingWorkspace = true;
+      saveButton.setLabel(this.tr("Create"));
       this.__createWorkspace()
         .then(newWorkspace => {
           this.setWorkspace(newWorkspace);
-          this.fireDataEvent("workspaceCreated", newWorkspace)
-          const permissionsView = new osparc.share.CollaboratorsWorkspace(newWorkspace);
-          permissionsView.addListener("updateAccessRights", () => this.fireDataEvent("updateAccessRights", newWorkspace.getWorkspaceId()), this);
-          this._addAt(permissionsView, this.self().POS.SHARING);
+          this.fireDataEvent("workspaceCreated", newWorkspace);
+          this.getChildControl("sharing");
         });
     }
 
@@ -109,6 +102,8 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
   },
 
   members: {
+    __creatingWorkspace: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -155,6 +150,12 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           this._addAt(control, this.self().POS.THUMBNAIL);
           break;
         }
+        case "sharing": {
+          control = new osparc.share.CollaboratorsWorkspace(this.getWorkspace());
+          control.addListener("updateAccessRights", () => this.fireDataEvent("updateAccessRights", this.getWorkspace().getWorkspaceId()), this);
+          this._addAt(control, this.self().POS.SHARING);
+          break;
+        }
         case "buttons-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
             alignX: "right"
@@ -162,25 +163,12 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           this._addAt(control, this.self().POS.BUTTONS);
           break;
         }
-        case "create": {
-          const buttons = this.getChildControl("buttons-layout");
-          control = new osparc.ui.form.FetchButton(this.tr("Create")).set({
-            appearance: "form-button"
-          });
-          control.addListener("execute", () => {
-            this.__saveWorkspace(control);
-          }, this);
-          buttons.addAt(control, 1);
-          break;
-        }
         case "save": {
           const buttons = this.getChildControl("buttons-layout");
           control = new osparc.ui.form.FetchButton(this.tr("Save")).set({
             appearance: "form-button"
           });
-          control.addListener("execute", () => {
-            this.__saveWorkspace(control);
-          }, this);
+          control.addListener("execute", () => this.__saveWorkspace(control), this);
           buttons.addAt(control, 1);
           break;
         }
@@ -189,6 +177,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           control = new qx.ui.form.Button(this.tr("Cancel")).set({
             appearance: "form-button-text"
           });
+          control.addListener("execute", () => this.cancel(), this);
           buttons.addAt(control, 0);
           break;
         }
@@ -230,6 +219,13 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           })
           .finally(() => editButton.setFetching(false));
       }
+    },
+
+    cancel: function() {
+      if (this.__creatingWorkspace) {
+        osparc.store.Workspaces.getInstance().deleteWorkspace(this.getWorkspace().getWorkspaceId());
+      }
+      this.fireEvent("cancel");
     },
 
     __onAppear: function() {
