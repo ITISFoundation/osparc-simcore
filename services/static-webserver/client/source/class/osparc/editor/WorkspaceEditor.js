@@ -45,7 +45,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
       this.__createWorkspace()
         .then(newWorkspace => {
           this.setWorkspace(newWorkspace);
-          this.fireDataEvent("workspaceCreated", newWorkspace);
+          this.fireDataEvent("workspaceCreated");
           this.getChildControl("sharing");
         });
     }
@@ -84,7 +84,8 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
   },
 
   events: {
-    "workspaceCreated": "qx.event.type.Data",
+    "workspaceCreated": "qx.event.type.Event",
+    "workspaceDeleted": "qx.event.type.Event",
     "workspaceUpdated": "qx.event.type.Event",
     "updateAccessRights": "qx.event.type.Event",
     "cancel": "qx.event.type.Event"
@@ -223,7 +224,12 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
 
     cancel: function() {
       if (this.__creatingWorkspace) {
-        osparc.store.Workspaces.getInstance().deleteWorkspace(this.getWorkspace().getWorkspaceId());
+        osparc.store.Workspaces.getInstance().deleteWorkspace(this.getWorkspace().getWorkspaceId())
+          .then(() => this.fireEvent("workspaceDeleted"))
+          .catch(err => {
+            console.error(err);
+            osparc.FlashMessenger.logAs(err.message, "ERROR");
+          });
       }
       this.fireEvent("cancel");
     },

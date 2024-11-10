@@ -46,8 +46,9 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
   },
 
   events: {
-    "workspaceCreated": "qx.event.type.Data",
-    "workspaceUpdated": "qx.event.type.Data"
+    "workspaceCreated": "qx.event.type.Event",
+    "workspaceDeleted": "qx.event.type.Event",
+    "workspaceUpdated": "qx.event.type.Event",
   },
 
   members: {
@@ -55,16 +56,17 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
       if (newVal) {
         const workspaceEditor = new osparc.editor.WorkspaceEditor();
         const title = this.tr("New Workspace");
-        const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 500, 500);
-        workspaceEditor.addListener("workspaceCreated", e => {
-          const newWorkspace = e.getData();
-          this.fireDataEvent("workspaceCreated", newWorkspace.getWorkspaceId(), this);
+        const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 500, 500).set({
+          modal: true,
+          clickAwayClose: false,
         });
+        workspaceEditor.addListener("workspaceCreated", () => this.fireEvent("workspaceCreated"));
+        workspaceEditor.addListener("workspaceDeleted", () => this.fireEvent("workspaceDeleted"));
         workspaceEditor.addListener("workspaceUpdated", () => {
           win.close();
-          this.fireDataEvent("workspaceUpdated", workspaceEditor.getWorkspace());
+          this.fireEvent("workspaceUpdated");
         }, this);
-        workspaceEditor.addListener("updateAccessRights", () => this.fireDataEvent("workspaceUpdated", workspaceEditor.getWorkspace()), this);
+        workspaceEditor.addListener("updateAccessRights", () => this.fireEvent("workspaceUpdated"));
         win.getChildControl("close-button").addListener("tap", () => workspaceEditor.cancel());
         workspaceEditor.addListener("cancel", () => win.close());
       }
