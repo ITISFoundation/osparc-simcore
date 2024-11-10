@@ -60,6 +60,10 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonNew", {
           const newWorkspace = e.getData();
           this.fireDataEvent("workspaceCreated", newWorkspace.getWorkspaceId(), this);
         });
+        workspaceEditor.addListener("workspaceUpdated", () => {
+          win.close();
+          this.fireDataEvent("workspaceUpdated", workspaceEditor.getWorkspace());
+        }, this);
         workspaceEditor.addListener("updateAccessRights", () => this.fireDataEvent("workspaceUpdated", workspaceEditor.getWorkspace()), this);
         workspaceEditor.addListener("cancel", () => win.close());
       }
