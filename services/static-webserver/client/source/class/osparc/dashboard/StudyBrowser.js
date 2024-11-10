@@ -1410,7 +1410,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getBillingMenuButton: function(card) {
-      const text = osparc.utils.Utils.capitalize(this.tr("Billing Settings..."));
+      const text = osparc.utils.Utils.capitalize(this.tr("Tier Settings..."));
       const studyBillingSettingsButton = new qx.ui.menu.Button(text);
       studyBillingSettingsButton["billingSettingsButton"] = true;
       studyBillingSettingsButton.addListener("tap", () => card.openBilling(), this);
