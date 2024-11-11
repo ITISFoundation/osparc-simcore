@@ -97,7 +97,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           this._addAt(control, 0);
           break;
         case "title-field":
-          control = new qx.ui.form.TextField(this.__studyData["name"]).set({
+          control = new qx.ui.form.TextField().set({
             maxWidth: 220
           });
           this.getChildControl("title-layout").add(control);
@@ -228,6 +228,9 @@ qx.Class.define("osparc.study.StudyOptions", {
       const store = osparc.store.Store.getInstance();
 
       const titleField = this.getChildControl("title-field");
+      if (this.__studyData) {
+        titleField.setValue(this.__studyData["name"]);
+      }
       titleField.addListener("appear", () => {
         titleField.focus();
         titleField.activate();
@@ -294,14 +297,14 @@ qx.Class.define("osparc.study.StudyOptions", {
 
       // first, update the name if necessary
       const titleSelection = this.getChildControl("title-field").getValue();
-      if (this.__studyData["name"] !== titleSelection) {
+      if (this.__studyData && this.__studyData["name"] !== titleSelection) {
         await this.__updateName(this.__studyData, titleSelection);
       }
 
       // second, update the wallet if necessary
       const store = osparc.store.Store.getInstance();
       const walletSelection = this.getChildControl("wallet-selector").getSelection();
-      if (walletSelection.length && walletSelection[0]["walletId"]) {
+      if (this.__studyId && walletSelection.length && walletSelection[0]["walletId"]) {
         const params = {
           url: {
             "studyId": this.__studyId,
