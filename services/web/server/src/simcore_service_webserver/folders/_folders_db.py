@@ -92,7 +92,7 @@ async def create(
         return FolderDB.from_orm(row)
 
 
-async def list_(  # pylint: disable=too-many-arguments,too-many-statements,too-many-branches
+async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     app: web.Application,
     *,
     product_name: ProductName,
