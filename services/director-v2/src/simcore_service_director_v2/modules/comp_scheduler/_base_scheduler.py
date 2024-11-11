@@ -12,6 +12,7 @@ The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 """
 
 import asyncio
+import contextlib
 import datetime
 import logging
 from abc import ABC, abstractmethod
@@ -31,7 +32,7 @@ from networkx.classes.reportviews import InDegreeView
 from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
-from servicelib.redis import RedisClientSDK
+from servicelib.redis import CouldNotAcquireLockError, RedisClientSDK
 from servicelib.redis_utils import exclusive
 from servicelib.utils import limited_gather
 
@@ -231,10 +232,27 @@ class BaseCompScheduler(ABC):
 
     async def schedule_all_pipelines(self) -> None:
         self.wake_up_event.clear()
-        # if one of the task throws, the other are NOT cancelled which is what we want
+        # this task might be distributed among multiple replicas of director-v2,
+        # we do not care if CouldNotAcquireLockError raises as that means another dv-2 is taking
+        # care of it
+
+        async def _distributed_schedule_pipeline(
+            user_id: UserID,
+            project_id: ProjectID,
+            iteration: Iteration,
+            pipeline_params: ScheduledPipelineParams,
+        ) -> None:
+            with contextlib.suppress(CouldNotAcquireLockError):
+                return await self._schedule_pipeline(
+                    user_id=user_id,
+                    project_id=project_id,
+                    iteration=iteration,
+                    pipeline_params=pipeline_params,
+                )
+
         await limited_gather(
             *(
-                self._schedule_pipeline(
+                _distributed_schedule_pipeline(
                     user_id=user_id,
                     project_id=project_id,
                     iteration=iteration,
@@ -246,7 +264,6 @@ class BaseCompScheduler(ABC):
                     iteration,
                 ), pipeline_params in self.scheduled_pipelines.items()
             ),
-            reraise=False,
             log=_logger,
             limit=40,
             tasks_group_prefix="computational-scheduled-pipeline",

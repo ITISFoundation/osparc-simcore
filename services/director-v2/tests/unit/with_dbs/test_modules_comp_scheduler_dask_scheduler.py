@@ -156,7 +156,12 @@ async def _assert_comp_tasks_db(
 
 
 async def run_comp_scheduler(scheduler: BaseCompScheduler) -> None:
-    await scheduler.schedule_all_pipelines()
+    # NOTE: this simulates having 3 schedulers running in parallel
+    await asyncio.gather(
+        scheduler.schedule_all_pipelines(),
+        scheduler.schedule_all_pipelines(),
+        scheduler.schedule_all_pipelines(),
+    )
 
 
 @pytest.fixture
@@ -185,7 +190,6 @@ def minimal_dask_scheduler_config(
 def scheduler(
     minimal_dask_scheduler_config: None,
     aiopg_engine: aiopg.sa.engine.Engine,
-    # dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
 ) -> BaseCompScheduler:
     assert minimal_app.state.scheduler is not None
