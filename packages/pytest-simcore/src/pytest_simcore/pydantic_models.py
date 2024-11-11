@@ -35,6 +35,15 @@ class ModelExample(NamedTuple):
     example_data: Any
 
 
+def iter_examples(
+    *, model_cls: type[BaseModel], examples: list[Any]
+) -> Iterator[ModelExample]:
+    for k, data in enumerate(examples):
+        yield ModelExample(
+            model_cls=model_cls, example_name=f"example_{k}", example_data=data
+        )
+
+
 def walk_model_examples_in_package(package: ModuleType) -> Iterator[ModelExample]:
     """Walks recursively all sub-modules and collects BaseModel.Config examples"""
     assert inspect.ismodule(package)
@@ -70,10 +79,14 @@ def iter_model_examples_in_module(module: object) -> Iterator[ModelExample]:
     def _is_model_cls(obj) -> bool:
         with suppress(TypeError):
             # NOTE: issubclass( dict[models_library.services.ConstrainedStrValue, models_library.services.ServiceInput] ) raises TypeError
+            is_parametrized = False
+            if hasattr(obj, "__parameters__"):
+                is_parametrized = len(obj.__parameters__) == 0
             return (
                 obj is not BaseModel
                 and inspect.isclass(obj)
                 and issubclass(obj, BaseModel)
+                and not is_parametrized
             )
         return False
 

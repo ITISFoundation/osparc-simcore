@@ -345,7 +345,6 @@ def test_parse_from_mixed_envs(
             POSTGRES_USER=test
             POSTGRES_PASSWORD=ssh
             POSTGRES_DB=db
-            POSTGRES_CLIENT_NAME=client-name
         """
 
     with monkeypatch.context():

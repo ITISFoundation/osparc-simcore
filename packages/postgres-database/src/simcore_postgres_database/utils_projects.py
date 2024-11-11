@@ -2,15 +2,15 @@ import uuid
 from datetime import UTC, datetime
 
 import sqlalchemy as sa
+from common_library.errors_classes import OsparcErrorMixin
 from pydantic import TypeAdapter
-from pydantic.errors import PydanticErrorMixin
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .models.projects import projects
 from .utils_repos import transaction_context
 
 
-class DBBaseProjectError(PydanticErrorMixin, Exception):
+class DBBaseProjectError(OsparcErrorMixin, Exception):
     msg_template: str = "Project utils unexpected error"
 
 

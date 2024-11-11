@@ -54,7 +54,7 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
 def _is_auto_default_from_env_enabled(field: FieldInfo) -> bool:
     return bool(
         field.json_schema_extra is not None
-        and field.json_schema_extra.get("auto_default_from_env", False)
+        and field.json_schema_extra.get("auto_default_from_env", False)  # type: ignore[union-attr]
     )
 
 
@@ -171,7 +171,7 @@ class BaseCustomSettings(BaseSettings):
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: BaseSettings,
+        settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
@@ -180,7 +180,9 @@ class BaseCustomSettings(BaseSettings):
         assert env_settings  # nosec
         return (
             init_settings,
-            EnvSettingsWithAutoDefaultSource(settings_cls, env_settings=env_settings),
+            EnvSettingsWithAutoDefaultSource(
+                settings_cls, env_settings=env_settings  # type:ignore[arg-type]
+            ),
             dotenv_settings,
             file_secret_settings,
         )

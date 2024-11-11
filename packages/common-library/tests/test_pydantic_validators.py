@@ -3,7 +3,7 @@ from typing import Annotated
 
 import pytest
 from common_library.pydantic_validators import (
-    validate_legacy_timedelta_str,
+    _validate_legacy_timedelta_str,
     validate_numeric_string_as_timedelta,
 )
 from faker import Faker
@@ -16,7 +16,7 @@ def test_validate_legacy_timedelta(monkeypatch: pytest.MonkeyPatch, faker: Faker
     class Settings(BaseSettings):
         APP_NAME: str
         REQUEST_TIMEOUT: Annotated[
-            timedelta, BeforeValidator(validate_legacy_timedelta_str)
+            timedelta, BeforeValidator(_validate_legacy_timedelta_str)
         ] = Field(default=timedelta(hours=1))
 
         model_config = SettingsConfigDict()

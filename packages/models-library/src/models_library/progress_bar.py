@@ -12,8 +12,8 @@ class ProgressStructuredMessage(BaseModel):
     description: IDStr
     current: float
     total: int
-    unit: str | None
-    sub: "ProgressStructuredMessage | None"
+    unit: str | None = None
+    sub: "ProgressStructuredMessage | None" = None
 
     model_config = ConfigDict(
         json_schema_extra={

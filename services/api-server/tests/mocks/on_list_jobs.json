@@ -101,6 +101,9 @@
      "thumbnail": "https://via.placeholder.com/170x120.png",
      "creationDate": "2023-06-22T18:42:35.506Z",
      "lastChangeDate": "2023-06-22T18:42:35.506Z",
+     "workspaceId": 7,
+     "folderId": 1,
+     "trashedAt": "2023-06-22T18:42:36.506Z",
      "workbench": {
       "05c7ed3b-0be1-5077-8065-fb55f5e59ff3": {
        "key": "simcore/services/comp/itis/sleeper",
@@ -171,6 +174,9 @@
      "thumbnail": "https://via.placeholder.com/170x120.png",
      "creationDate": "2023-06-22T18:42:32.201Z",
      "lastChangeDate": "2023-06-22T18:42:32.201Z",
+     "workspaceId": 4,
+     "folderId": 8,
+     "trashedAt": "2023-06-22T18:42:33.201Z",
      "workbench": {
       "34805d7e-c2d0-561f-831f-c74a28fc9bd1": {
        "key": "simcore/services/comp/itis/sleeper",

@@ -1,8 +1,7 @@
-from typing import Dict
 from uuid import uuid4
 
 import pytest
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ValidationError
 from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 
 
@@ -23,7 +22,7 @@ def test_valid_port_link():
         {"nodeUuid": f"{uuid4()}", "output": "some:key"},
     ],
 )
-def test_invalid_port_link(port_link: Dict[str, str]):
+def test_invalid_port_link(port_link: dict[str, str]):
     with pytest.raises(ValidationError):
         PortLink(**port_link)
 
@@ -36,7 +35,7 @@ def test_invalid_port_link(port_link: Dict[str, str]):
         {"label": "some stuff"},
     ],
 )
-def test_invalid_download_link(download_link: Dict[str, str]):
+def test_invalid_download_link(download_link: dict[str, str]):
     with pytest.raises(ValidationError):
         DownloadLink(**download_link)
 
@@ -49,6 +48,6 @@ def test_invalid_download_link(download_link: Dict[str, str]):
         {"path": "/somefile/blahblah:"},
     ],
 )
-def test_invalid_file_link(file_link: Dict[str, str]):
+def test_invalid_file_link(file_link: dict[str, str]):
     with pytest.raises(ValidationError):
         FileLink(**file_link)

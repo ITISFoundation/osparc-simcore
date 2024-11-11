@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Final, Self
+from typing import Annotated, Final, Self
 
 from pydantic import Field, NonNegativeInt, PositiveInt, SecretStr, model_validator
 
@@ -32,13 +32,13 @@ class StorageAuthSettings(StorageSettings):
 
 
 class NodePortsSettings(BaseCustomSettings):
-    NODE_PORTS_STORAGE_AUTH: StorageAuthSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    NODE_PORTS_STORAGE_AUTH: Annotated[
+        StorageAuthSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
-    POSTGRES_SETTINGS: PostgresSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    POSTGRES_SETTINGS: Annotated[
+        PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
     NODE_PORTS_MULTIPART_UPLOAD_COMPLETION_TIMEOUT_S: NonNegativeInt = int(
         timedelta(minutes=5).total_seconds()

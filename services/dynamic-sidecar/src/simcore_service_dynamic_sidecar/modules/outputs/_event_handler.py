@@ -1,5 +1,3 @@
-# pylint:disable=no-member
-
 import logging
 from asyncio import CancelledError, Task, create_task, get_event_loop
 from asyncio import sleep as async_sleep
@@ -97,7 +95,7 @@ class _EventHandlerProcess:
             self._process = aioprocessing.AioProcess(
                 target=self._process_worker, daemon=True
             )
-            self._process.start()
+            self._process.start()  # pylint:disable=no-member
 
     def stop_process(self) -> None:
         # NOTE: runs in asyncio thread

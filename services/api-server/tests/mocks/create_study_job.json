@@ -82,6 +82,9 @@
     "lastChangeDate": "2024-05-14T09:43:20.099Z",
     "workbench": {},
     "prjOwner": "frubio@example.net",
+    "workspaceId": 23,
+    "folderId": 4,
+    "trashedAt": "2024-05-14T09:55:20.099Z",
     "accessRights": {
      "3": {
       "read": true,

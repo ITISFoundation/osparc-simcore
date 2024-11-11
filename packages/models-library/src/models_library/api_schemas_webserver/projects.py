@@ -107,7 +107,9 @@ class ProjectReplace(InputSchema):
     uuid: ProjectID
     name: ShortTruncatedStr
     description: LongTruncatedStr
-    thumbnail: Annotated[HttpUrl | None, BeforeValidator(empty_str_to_none_pre_validator)] = Field(default=None)
+    thumbnail: Annotated[
+        HttpUrl | None, BeforeValidator(empty_str_to_none_pre_validator)
+    ] = Field(default=None)
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
     workbench: NodesDict
@@ -127,13 +129,15 @@ class ProjectReplace(InputSchema):
 class ProjectPatch(InputSchema):
     name: ShortTruncatedStr | None = Field(default=None)
     description: LongTruncatedStr | None = Field(default=None)
-    thumbnail: Annotated[HttpUrl | None, BeforeValidator(empty_str_to_none_pre_validator)] = Field(default=None)
+    thumbnail: Annotated[
+        HttpUrl | None, BeforeValidator(empty_str_to_none_pre_validator)
+    ] = Field(default=None)
     access_rights: dict[GroupIDStr, AccessRights] | None = Field(default=None)
     classifiers: list[ClassifierID] | None = Field(default=None)
     dev: dict | None = Field(default=None)
     ui: StudyUI | None = Field(default=None)
     quality: dict[str, Any] | None = Field(default=None)
-    
+
 
 __all__: tuple[str, ...] = (
     "EmptyModel",

@@ -13,9 +13,9 @@ from models_library.projects_nodes_io import StorageFileID
 from pydantic import (
     AnyUrl,
     BaseModel,
-    ByteSize,
     ConfigDict,
     Field,
+    NonNegativeInt,
     StringConstraints,
     TypeAdapter,
     ValidationInfo,
@@ -33,7 +33,7 @@ class ClientFile(BaseModel):
     """Represents a file stored on the client side"""
 
     filename: FileName = Field(..., description="File name")
-    filesize: ByteSize = Field(..., description="File size in bytes")
+    filesize: NonNegativeInt = Field(..., description="File size in bytes")
     sha256_checksum: SHA256Str = Field(..., description="SHA256 checksum")
 
 
@@ -166,8 +166,10 @@ class UploadLinks(BaseModel):
 
 
 class FileUploadData(BaseModel):
-    chunk_size: ByteSize
-    urls: list[AnyUrl]
+    chunk_size: NonNegativeInt
+    urls: list[
+        Annotated[AnyUrl, StringConstraints(max_length=65536)]
+    ]  # maxlength added for backwards compatibility
     links: UploadLinks
 
 

@@ -1,4 +1,5 @@
 from typing import Annotated
+
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 from .services_types import ServiceKey, ServiceVersion
@@ -8,10 +9,13 @@ from .utils.common_validators import empty_str_to_none_pre_validator
 class ServiceKeyVersion(BaseModel):
     """Service `key-version` pair uniquely identifies a service"""
 
-    key: ServiceKey = Field(
-        ...,
-        description="distinctive name for the node based on the docker registry path",
-    )
+    key: Annotated[
+        ServiceKey,
+        Field(
+            ...,
+            description="distinctive name for the node based on the docker registry path",
+        ),
+    ]
     version: ServiceVersion = Field(
         ...,
         description="service version number",

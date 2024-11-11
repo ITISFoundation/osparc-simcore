@@ -93,7 +93,8 @@ def create__check_only_one_is_set__root_validator(alternative_field_names: list[
         assert set(alternative_field_names).issubset(cls.__fields__)  # nosec
 
         got = {
-            field_name: values.get(field_name) for field_name in alternative_field_names
+            field_name: getattr(values, field_name)
+            for field_name in alternative_field_names
         }
 
         if not functools.reduce(operator.xor, (v is not None for v in got.values())):
