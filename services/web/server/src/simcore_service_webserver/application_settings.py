@@ -22,7 +22,6 @@ from pydantic import (
 )
 from pydantic.fields import Field
 from pydantic.types import PositiveInt
-from pydantic_settings import SettingsConfigDict
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
@@ -279,21 +278,23 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "Currently this is a system plugin and cannot be disabled",
     )
 
-    @model_validator(mode="after")
+    @model_validator(mode="before")
     @classmethod
-    def build_vcs_release_url_if_unset(cls, v):
-        release_url = v.SIMCORE_VCS_RELEASE_URL
+    def build_vcs_release_url_if_unset(cls, values):
+        release_url = values.get("SIMCORE_VCS_RELEASE_URL")
 
-        if release_url is None and (vsc_release_tag := v.SIMCORE_VCS_RELEASE_TAG):
+        if release_url is None and (
+            vsc_release_tag := values.get("SIMCORE_VCS_RELEASE_TAG")
+        ):
             if vsc_release_tag == "latest":
                 release_url = (
                     "https://github.com/ITISFoundation/osparc-simcore/commits/master/"
                 )
             else:
                 release_url = f"https://github.com/ITISFoundation/osparc-simcore/releases/tag/{vsc_release_tag}"
-            v.SIMCORE_VCS_RELEASE_URL = release_url
+            values["SIMCORE_VCS_RELEASE_URL"] = release_url
 
-        return v
+        return values
 
     @field_validator(
         # List of plugins under-development (keep up-to-date)
