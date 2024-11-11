@@ -23,28 +23,17 @@ qx.Class.define("osparc.study.StudyOptions", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.__studyId = studyId;
-
-    const params = {
-      url: {
-        studyId
-      }
-    };
-    Promise.all([
-      osparc.data.Resources.getOne("studies", params),
-      osparc.data.Resources.fetch("studies", "getWallet", params)
-    ])
-      .then(values => {
-        const studyData = values[0];
-        this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
-        if (values[1] && "walletId" in values[1]) {
-          this.__projectWalletId = values[1]["walletId"];
-        }
-        this.__buildLayout();
-      });
+    this.setStudyId(studyId);
   },
 
   properties: {
+    studyId: {
+      check: "String",
+      init: null,
+      nullable: false,
+      apply: "__fetchStudy"
+    },
+
     wallet: {
       check: "osparc.data.model.Wallet",
       init: null,
@@ -93,9 +82,8 @@ qx.Class.define("osparc.study.StudyOptions", {
   },
 
   members: {
-    __studyId: null,
     __studyData: null,
-    __projectWalletId: null,
+    __studyWalletId: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -105,7 +93,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           this._addAt(control, 0);
           break;
         case "title-field":
-          control = new qx.ui.form.TextField(this.__studyData["name"]).set({
+          control = new qx.ui.form.TextField().set({
             maxWidth: 220
           });
           this.getChildControl("title-layout").add(control);
@@ -192,6 +180,27 @@ qx.Class.define("osparc.study.StudyOptions", {
       return control || this.base(arguments, id);
     },
 
+    __fetchStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      Promise.all([
+        osparc.data.Resources.getOne("studies", params),
+        osparc.data.Resources.fetch("studies", "getWallet", params)
+      ])
+        .then(values => {
+          const studyData = values[0];
+          this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+
+          if (values[1] && "walletId" in values[1]) {
+            this.__studyWalletId = values[1]["walletId"];
+          }
+          this.__buildLayout();
+        });
+    },
+
     __applyWallet: function(wallet) {
       if (wallet) {
         const walletSelector = this.getChildControl("wallet-selector");
@@ -214,15 +223,16 @@ qx.Class.define("osparc.study.StudyOptions", {
     __buildTopSummaryLayout: function() {
       const store = osparc.store.Store.getInstance();
 
-      this._createChildControlImpl("title-label");
       const titleField = this.getChildControl("title-field");
+      if (this.__studyData) {
+        titleField.setValue(this.__studyData["name"]);
+      }
       titleField.addListener("appear", () => {
         titleField.focus();
         titleField.activate();
       });
 
       // Wallet Selector
-      this._createChildControlImpl("wallet-selector-label");
       const walletSelector = this.getChildControl("wallet-selector");
 
       const wallets = store.getWallets();
@@ -241,8 +251,8 @@ qx.Class.define("osparc.study.StudyOptions", {
         }
       });
       const preferredWallet = store.getPreferredWallet();
-      if (wallets.find(wallet => wallet.getWalletId() === parseInt(this.__projectWalletId))) {
-        selectWallet(this.__projectWalletId);
+      if (wallets.find(wallet => wallet.getWalletId() === parseInt(this.__studyWalletId))) {
+        selectWallet(this.__studyWalletId);
       } else if (preferredWallet) {
         selectWallet(preferredWallet.getWalletId());
       } else if (!osparc.desktop.credits.Utils.autoSelectActiveWallet(walletSelector)) {
@@ -283,17 +293,18 @@ qx.Class.define("osparc.study.StudyOptions", {
 
       // first, update the name if necessary
       const titleSelection = this.getChildControl("title-field").getValue();
-      if (this.__studyData["name"] !== titleSelection) {
+      if (this.__studyData && this.__studyData["name"] !== titleSelection) {
         await this.__updateName(this.__studyData, titleSelection);
       }
 
       // second, update the wallet if necessary
       const store = osparc.store.Store.getInstance();
       const walletSelection = this.getChildControl("wallet-selector").getSelection();
-      if (walletSelection.length && walletSelection[0]["walletId"]) {
+      const studyId = this.getStudyId();
+      if (studyId && walletSelection.length && walletSelection[0]["walletId"]) {
         const params = {
           url: {
-            "studyId": this.__studyData["uuid"],
+            studyId,
             "walletId": walletSelection[0]["walletId"]
           }
         };
