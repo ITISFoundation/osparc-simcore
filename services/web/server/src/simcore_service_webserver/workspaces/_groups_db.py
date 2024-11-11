@@ -55,7 +55,7 @@ async def create_workspace_group(
     delete: bool,
 ) -> WorkspaceGroupGetDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(
+        result = await conn.stream(
             workspaces_access_rights.insert()
             .values(
                 workspace_id=workspace_id,
@@ -68,7 +68,7 @@ async def create_workspace_group(
             )
             .returning(literal_column("*"))
         )
-        row = result.first()
+        row = await result.first()
         return WorkspaceGroupGetDB.from_orm(row)
 
 
@@ -120,8 +120,8 @@ async def get_workspace_group(
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(stmt)
-        row = result.first()
+        result = await conn.stream(stmt)
+        row = await result.first()
         if row is None:
             raise WorkspaceGroupNotFoundError(
                 workspace_id=workspace_id, group_id=group_id
@@ -140,7 +140,7 @@ async def update_workspace_group(
     delete: bool,
 ) -> WorkspaceGroupGetDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(
+        result = await conn.stream(
             workspaces_access_rights.update()
             .values(
                 read=read,
@@ -153,7 +153,7 @@ async def update_workspace_group(
             )
             .returning(literal_column("*"))
         )
-        row = result.first()
+        row = await result.first()
         if row is None:
             raise WorkspaceGroupNotFoundError(
                 workspace_id=workspace_id, group_id=group_id

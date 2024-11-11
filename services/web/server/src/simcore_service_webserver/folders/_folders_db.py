@@ -74,7 +74,7 @@ async def create(
     ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(
+        result = await conn.stream(
             folders_v2.insert()
             .values(
                 name=folder_name,
@@ -88,7 +88,7 @@ async def create(
             )
             .returning(*_SELECTION_ARGS)
         )
-        row = result.first()
+        row = await result.first()
         return FolderDB.from_orm(row)
 
 
@@ -174,8 +174,8 @@ async def get(
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(query)
-        row = result.first()
+        result = await conn.stream(query)
+        row = await result.first()
         if row is None:
             raise FolderAccessForbiddenError(
                 reason=f"Folder {folder_id} does not exist.",
@@ -211,8 +211,8 @@ async def get_for_user_or_workspace(
         query = query.where(folders_v2.c.workspace_id == workspace_id)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(query)
-        row = result.first()
+        result = await conn.stream(query)
+        row = await result.first()
         if row is None:
             raise FolderAccessForbiddenError(
                 reason=f"User does not have access to the folder {folder_id}. Or folder does not exist.",
@@ -257,8 +257,8 @@ async def update(
         query = query.where(folders_v2.c.folder_id == folders_id_or_ids)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(query)
-        row = result.first()
+        result = await conn.stream(query)
+        row = await result.first()
         if row is None:
             raise FolderNotFoundError(reason=f"Folder {folders_id_or_ids} not found.")
         return FolderDB.from_orm(row)

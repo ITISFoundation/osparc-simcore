@@ -59,7 +59,7 @@ async def create_workspace(
     thumbnail: str | None,
 ) -> WorkspaceDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(
+        result = await conn.stream(
             workspaces.insert()
             .values(
                 name=name,
@@ -72,7 +72,7 @@ async def create_workspace(
             )
             .returning(*_SELECTION_ARGS)
         )
-        row = result.first()
+        row = await result.first()
         return WorkspaceDB.from_orm(row)
 
 
@@ -157,8 +157,7 @@ async def list_workspaces_for_user(
     list_query = list_query.offset(offset).limit(limit)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        count_result = await conn.execute(count_query)
-        total_count = count_result.scalar()
+        total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
         items: list[UserWorkspaceAccessRightsDB] = [
@@ -194,8 +193,8 @@ async def get_workspace_for_user(
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(base_query)
-        row = result.first()
+        result = await conn.stream(base_query)
+        row = await result.first()
         if row is None:
             raise WorkspaceAccessForbiddenError(
                 reason=f"User {user_id} does not have access to the workspace {workspace_id}. Or workspace does not exist.",
@@ -214,7 +213,7 @@ async def update_workspace(
     product_name: ProductName,
 ) -> WorkspaceDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(
+        result = await conn.stream(
             workspaces.update()
             .values(
                 name=name,
@@ -228,7 +227,7 @@ async def update_workspace(
             )
             .returning(*_SELECTION_ARGS)
         )
-        row = result.first()
+        row = await result.first()
         if row is None:
             raise WorkspaceNotFoundError(reason=f"Workspace {workspace_id} not found.")
         return WorkspaceDB.from_orm(row)
