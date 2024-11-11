@@ -3,7 +3,7 @@ import functools
 import logging
 from collections.abc import Awaitable, Callable
 from datetime import timedelta
-from typing import Any
+from typing import Any, ParamSpec, TypeVar
 
 import arrow
 
@@ -12,10 +12,13 @@ from .redis import CouldNotAcquireLockError, RedisClientSDK
 
 _logger = logging.getLogger(__file__)
 
+P = ParamSpec("P")
+R = TypeVar("R")
+
 
 def exclusive(
     redis: RedisClientSDK, *, lock_key: str, lock_value: bytes | str | None = None
-):
+) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
     """
     Define a method to run exclusively across
     processes by leveraging a Redis Lock.
@@ -26,9 +29,9 @@ def exclusive(
     lock_value: some additional data that can be retrieved by another client
     """
 
-    def decorator(func):
+    def decorator(func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
         @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             async with redis.lock_context(lock_key=lock_key, lock_value=lock_value):
                 return await func(*args, **kwargs)
 
