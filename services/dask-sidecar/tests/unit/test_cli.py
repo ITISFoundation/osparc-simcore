@@ -30,4 +30,4 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
 
     print(result.output)
     settings = Settings.model_validate_json(result.output)
-    assert settings == Settings.create_from_envs()
+    assert settings.model_dump() == Settings.create_from_envs().model_dump()
