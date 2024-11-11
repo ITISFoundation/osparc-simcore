@@ -8,6 +8,7 @@ from models_library.api_schemas_catalog.services_specifications import (
 from models_library.basic_types import LogLevel
 from models_library.services_resources import ResourcesDict, ResourceValue
 from pydantic import AliasChoices, ByteSize, Field, PositiveInt, TypeAdapter
+from pydantic_settings import SettingsConfigDict
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
@@ -47,20 +48,20 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
         validation_alias=AliasChoices(
-            "CATALOG_LOG_LEVEL", "CATALOG_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+            "CATALOG_LOGLEVEL", "LOG_LEVEL", "CATALOG_LOG_LEVEL", "LOGLEVEL"
         ),
     )
     CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         validation_alias=AliasChoices(
-            "CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
+            "LOG_FORMAT_LOCAL_DEV_ENABLED", "CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED"
         ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     CATALOG_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
         validation_alias=AliasChoices(
-            "CATALOG_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            "LOG_FILTER_MAPPING", "CATALOG_LOG_FILTER_MAPPING"
         ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
@@ -101,3 +102,5 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True},
         description="settings for opentelemetry tracing",
     )
+
+    model_config = SettingsConfigDict(extra="allow")
