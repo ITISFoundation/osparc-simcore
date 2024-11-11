@@ -8,22 +8,28 @@ import logging
 from datetime import datetime
 from typing import Any, Final, cast
 
+import sqlalchemy as sa
 from aiohttp import web
-from models_library.folders import FolderDB, FolderID
+from models_library.folders import FolderDB, FolderID, FolderQuery, FolderScope
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import GroupID, UserID
-from models_library.workspaces import WorkspaceID
+from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
+from simcore_postgres_database.models.workspaces_access_rights import (
+    workspaces_access_rights,
+)
+from simcore_postgres_database.utils import assemble_array_groups
 from sqlalchemy import func
 from sqlalchemy.orm import aliased
-from sqlalchemy.sql import asc, desc, select
+from sqlalchemy.sql import ColumnElement, CompoundSelect, Select, asc, desc, select
 
 from ..db.plugin import get_database_engine
+from ..groups.api import list_all_user_groups
 from .errors import FolderAccessForbiddenError, FolderNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -86,60 +92,149 @@ async def create(
         return FolderDB.from_orm(row)
 
 
-async def list_(
+async def list_(  # pylint: disable=too-many-arguments,too-many-statements,too-many-branches
     app: web.Application,
     *,
-    content_of_folder_id: FolderID | None,
-    user_id: UserID | None,
-    workspace_id: WorkspaceID | None,
     product_name: ProductName,
-    trashed: bool | None,
+    user_id: UserID,
+    # hierarchy filters
+    folder_query: FolderQuery,
+    workspace_query: WorkspaceQuery,
+    # attribute filters
+    filter_trashed: bool | None,
+    # pagination
     offset: NonNegativeInt,
     limit: int,
+    # order
     order_by: OrderBy,
 ) -> tuple[int, list[FolderDB]]:
     """
-    content_of_folder_id - Used to filter in which folder we want to list folders. None means root folder.
+    Assumptions -
+
+    folder_query - Used to filter in which folder we want to list folders. None means root folder.
     trashed - If set to true, it returns folders **explicitly** trashed, if false then non-trashed folders.
     """
-    assert not (  # nosec
-        user_id is not None and workspace_id is not None
-    ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
+    # assert not (  # nosec
+    #     user_id is not None and workspace_id is not None
+    # ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
 
-    base_query = (
-        select(*_SELECTION_ARGS)
-        .select_from(folders_v2)
-        .where(
-            (folders_v2.c.product_name == product_name)
-            & (folders_v2.c.parent_folder_id == content_of_folder_id)
+    workspace_access_rights_subquery = (
+        sa.select(
+            workspaces_access_rights.c.workspace_id,
+            sa.func.jsonb_object_agg(
+                workspaces_access_rights.c.gid,
+                sa.func.jsonb_build_object(
+                    "read",
+                    workspaces_access_rights.c.read,
+                    "write",
+                    workspaces_access_rights.c.write,
+                    "delete",
+                    workspaces_access_rights.c.delete,
+                ),
+            )
+            .filter(workspaces_access_rights.c.read)
+            .label("access_rights"),
+        ).group_by(workspaces_access_rights.c.workspace_id)
+    ).subquery("workspace_access_rights_subquery")
+
+    if workspace_query.workspace_scope is not WorkspaceScope.SHARED:
+        assert workspace_query.workspace_scope in (  # nosec
+            WorkspaceScope.PRIVATE,
+            WorkspaceScope.ALL,
         )
-    )
 
-    if user_id:
-        base_query = base_query.where(folders_v2.c.user_id == user_id)
+        private_workspace_query = (
+            select(*_SELECTION_ARGS)
+            .select_from(folders_v2)
+            .where(
+                (folders_v2.c.product_name == product_name)
+                & (folders_v2.c.user_id == user_id)
+            )
+        )
     else:
-        assert workspace_id  # nosec
-        base_query = base_query.where(folders_v2.c.workspace_id == workspace_id)
+        private_workspace_query = None
 
-    if trashed is not None:
-        base_query = base_query.where(
+    if workspace_query.workspace_scope is not WorkspaceScope.PRIVATE:
+        assert workspace_query.workspace_scope in (  # nosec
+            WorkspaceScope.SHARED,
+            WorkspaceScope.ALL,
+        )
+        _user_groups = await list_all_user_groups(app, user_id=user_id)
+        _user_groups_ids = [group.gid for group in _user_groups]
+
+        shared_workspace_query = (
+            select(*_SELECTION_ARGS)
+            .select_from(
+                folders_v2.join(
+                    workspace_access_rights_subquery,
+                    folders_v2.c.workspace_id
+                    == workspace_access_rights_subquery.c.workspace_id,
+                )
+            )
+            .where(
+                (folders_v2.c.product_name == product_name)
+                & (
+                    folders_v2.c.user_id.is_(None)
+                    & (
+                        sa.text(
+                            f"jsonb_exists_any(workspace_access_rights_subquery.access_rights, {assemble_array_groups(_user_groups_ids)})"
+                        )
+                    )
+                )
+            )
+        )
+    else:
+        shared_workspace_query = None
+
+    attributes_filters: list[ColumnElement] = []
+
+    if filter_trashed is not None:
+        attributes_filters.append(
             (
                 (folders_v2.c.trashed_at.is_not(None))
                 & (folders_v2.c.trashed_explicitly.is_(True))
             )
-            if trashed
+            if filter_trashed
             else folders_v2.c.trashed_at.is_(None)
         )
+    if folder_query.folder_scope is not FolderScope.ALL:
+        if folder_query.folder_scope == FolderScope.SPECIFIC:
+            attributes_filters.append(
+                projects_to_folders.c.folder_id == folder_query.folder_id
+            )
+        else:
+            assert folder_query.folder_scope == FolderScope.ROOT  # nosec
+            attributes_filters.append(projects_to_folders.c.folder_id.is_(None))
+
+    ###
+    # Combined
+    ###
+
+    combined_query: CompoundSelect | Select | None = None
+    if private_workspace_query is not None and shared_workspace_query is not None:
+        combined_query = sa.union_all(
+            private_workspace_query.where(sa.and_(*attributes_filters)),
+            shared_workspace_query.where(sa.and_(*attributes_filters)),
+        )
+    elif private_workspace_query is not None:
+        combined_query = private_workspace_query.where(sa.and_(*attributes_filters))
+    elif shared_workspace_query is not None:
+        combined_query = shared_workspace_query.where(sa.and_(*attributes_filters))
+
+    if combined_query is None:
+        msg = f"No valid queries were provided to combine. Workspace scope: {workspace_query.workspace_scope}"
+        raise ValueError(msg)
 
     # Select total count from base_query
-    subquery = base_query.subquery()
-    count_query = select(func.count()).select_from(subquery)
+    count_query = select(func.count()).select_from(combined_query.subquery())
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
-        list_query = base_query.order_by(asc(getattr(folders_v2.c, order_by.field)))
+        list_query = combined_query.order_by(asc(getattr(folders_v2.c, order_by.field)))
     else:
-        list_query = base_query.order_by(desc(getattr(folders_v2.c, order_by.field)))
+        list_query = combined_query.order_by(
+            desc(getattr(folders_v2.c, order_by.field))
+        )
     list_query = list_query.offset(offset).limit(limit)
 
     async with get_database_engine(app).acquire() as conn:
