@@ -47,7 +47,7 @@ from ...core.errors import (
 )
 from ...core.settings import ComputationalBackendSettings
 from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_runs import CompRunsAtDB, RunMetadataDict
+from ...models.comp_runs import RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...utils.comp_scheduler import (
     COMPLETED_STATES,
@@ -131,7 +131,7 @@ async def _triage_changed_tasks(
 class ScheduledPipelineParams:
     cluster_id: ClusterID
     run_metadata: RunMetadataDict
-    mark_for_cancellation: bool = False
+    mark_for_cancellation: datetime.datetime | None
     use_on_demand_clusters: bool
 
 
@@ -169,7 +169,7 @@ class BaseCompScheduler(ABC):
             return
 
         runs_repo = CompRunsRepository.instance(self.db_engine)
-        new_run: CompRunsAtDB = await runs_repo.create(
+        new_run = await runs_repo.create(
             user_id=user_id,
             project_id=project_id,
             cluster_id=cluster_id,
@@ -182,6 +182,7 @@ class BaseCompScheduler(ABC):
             cluster_id=cluster_id,
             run_metadata=new_run.metadata,
             use_on_demand_clusters=use_on_demand_clusters,
+            mark_for_cancellation=None,
         )
         await publish_project_log(
             self.rabbitmq_client,
@@ -212,11 +213,18 @@ class BaseCompScheduler(ABC):
             selected_iteration = iteration
 
         # mark the scheduled pipeline for stopping
-        self.scheduled_pipelines[
-            (user_id, project_id, selected_iteration)
-        ].mark_for_cancellation = True
-        # ensure the scheduler starts right away
-        self._wake_up_scheduler_now()
+        updated_comp_run = await CompRunsRepository.instance(
+            self.db_engine
+        ).mark_for_cancellation(
+            user_id=user_id, project_id=project_id, iteration=selected_iteration
+        )
+        if updated_comp_run:
+            assert updated_comp_run.cancelled is not None  # nosec
+            self.scheduled_pipelines[
+                (user_id, project_id, selected_iteration)
+            ].mark_for_cancellation = updated_comp_run.cancelled
+            # ensure the scheduler starts right away
+            self._wake_up_scheduler_now()
 
     async def schedule_all_pipelines(self) -> None:
         self.wake_up_event.clear()
@@ -343,7 +351,7 @@ class BaseCompScheduler(ABC):
             if task.last_heartbeat is None:
                 assert task.start  # nosec
                 return bool(
-                    (utc_now - task.start.replace(tzinfo=datetime.timezone.utc))
+                    (utc_now - task.start.replace(tzinfo=datetime.UTC))
                     > self.service_runtime_heartbeat_interval
                 )
             return bool(
