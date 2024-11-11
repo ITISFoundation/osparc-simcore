@@ -31,7 +31,6 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "background-card-overlay": "rgba(25, 33, 37, 0.8)",
     "background-workspace-card-overlay": "rgb(35, 93, 122)",
 
-    "primary-background-color": "rgba(0, 20, 46, 1)",
     "navigation_bar_background_color": "rgba(1, 18, 26, 0.8)",
     "tab_navigation_bar_background_color": "c00",
     "fab_text": "contrasted-text-dark",
