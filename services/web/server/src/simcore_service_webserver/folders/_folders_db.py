@@ -111,12 +111,9 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     """
     Assumptions -
 
-    folder_query - Used to filter in which folder we want to list folders. None means root folder.
+    folder_query - Used to filter in which folder we want to list folders.
     trashed - If set to true, it returns folders **explicitly** trashed, if false then non-trashed folders.
     """
-    # assert not (  # nosec
-    #     user_id is not None and workspace_id is not None
-    # ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
 
     workspace_access_rights_subquery = (
         sa.select(
