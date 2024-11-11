@@ -92,9 +92,8 @@ async def list_workspace_groups(
     )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        result = await conn.execute(stmt)
-        rows = result.fetchall() or []
-        return [WorkspaceGroupGetDB.from_orm(row) for row in rows]
+        result = await conn.stream(stmt)
+        return [WorkspaceGroupGetDB.from_orm(row) async for row in result]
 
 
 async def get_workspace_group(
