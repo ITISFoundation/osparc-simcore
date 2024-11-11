@@ -2,7 +2,7 @@ import logging
 
 import pytest
 from models_library.rest_filters import Filters, FiltersQueryParameters
-from pydantic import Extra, ValidationError
+from pydantic import ConfigDict, ValidationError
 
 
 # 1. create filter model
@@ -12,8 +12,7 @@ class CustomFilter(Filters):
 
 
 class CustomFilterStrict(CustomFilter):
-    class Config(CustomFilter.Config):
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
 
 def test_custom_filter_query_parameters():
@@ -21,12 +20,12 @@ def test_custom_filter_query_parameters():
     # 2. use generic as query parameters
     logging.info(
         "json schema is for the query \n %s",
-        FiltersQueryParameters[CustomFilter].schema_json(indent=1),
+        FiltersQueryParameters[CustomFilter].model_json_schema(),
     )
 
     # lets filter only is_trashed and unset is_hidden
     custom_filter = CustomFilter(is_trashed=True)
-    assert custom_filter.json() == '{"is_trashed": true, "is_hidden": null}'
+    assert custom_filter.model_dump_json() == '{"is_trashed":true,"is_hidden":null}'
 
     # default to None (optional)
     query_param = FiltersQueryParameters[CustomFilter]()
@@ -56,9 +55,8 @@ def test_invalid_filter_query_is_ignored():
     assert query_param.filters == CustomFilter(is_hidden=True)
 
 
-@pytest.mark.xfail
 def test_invalid_filter_query_fails():
-    # NOTE: this should fail according to pydantic manual but it does not
+    # with pydantic1 this used to not pass but now passes
     url_query_value = '{"undefined_filter": true, "is_hidden": true}'
 
     with pytest.raises(ValidationError):

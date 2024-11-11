@@ -1,7 +1,7 @@
 from typing import Any, TypeAlias
 
 from models_library.basic_types import IDStr
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, field_validator
+from pydantic import AnyHttpUrl, AnyUrl, BaseModel, ConfigDict, Field, field_validator
 
 from ..clusters import ClusterID
 from ..projects import ProjectID
@@ -17,6 +17,17 @@ class ComputationGet(ComputationTask):
     )
     stop_url: AnyHttpUrl | None = Field(
         None, description="the link where to stop the task"
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                x | {"url": "http://url.local"}  # type:ignore[operator]
+                for x in ComputationTask.model_config[  # type:ignore[index,union-attr]
+                    "json_schema_extra"
+                ]["examples"]
+            ]
+        }
     )
 
 

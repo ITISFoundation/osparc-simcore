@@ -5,7 +5,6 @@ For twilio SMS services:
     SEE https://support.twilio.com/hc/en-us/articles/223136027-Auth-Tokens-and-How-to-Change-Them
 """
 
-
 from typing import Annotated, TypeAlias
 
 from pydantic import BeforeValidator, Field, StringConstraints, TypeAdapter
@@ -42,5 +41,5 @@ class TwilioSettings(BaseCustomSettings):
         )
         return any(
             phone_number_wo_international_code.startswith(code)
-            for code in self.TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT
+            for code in self.TWILIO_COUNTRY_CODES_W_ALPHANUMERIC_SID_SUPPORT  # pylint:disable=not-an-iterable
         )
