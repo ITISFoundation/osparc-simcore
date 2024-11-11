@@ -32,7 +32,6 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "background-workspace-card-overlay": "rgb(35, 93, 122)",
 
     "navigation_bar_background_color": "rgba(1, 18, 26, 0.8)",
-    "tab_navigation_bar_background_color": "c00",
     "fab_text": "contrasted-text-dark",
     "fab-background": "rgba(255, 255, 255, 0.2)",
     "input_background": "#213248",
@@ -163,6 +162,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "workbench-edge-comp-active": "#777777",
     "workbench-edge-api-active": "#BBBBBB",
     "workbench-start-hint": "#505050",
+    "workbench-view-navbar": "c00",
     "workbench-view-splitter": "#000000",
 
     "node-background": "rgba(113, 157, 181, 0.5)",

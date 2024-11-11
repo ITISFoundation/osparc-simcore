@@ -315,7 +315,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const topBar = tabViewPrimary.getChildControl("bar");
       topBar.set({
         height: this.self().TAB_BUTTON_HEIGHT,
-        backgroundColor: "tab_navigation_bar_background_color"
+        backgroundColor: "workbench-view-navbar"
       });
       this.__addTopBarSpacer(topBar);
 
@@ -385,7 +385,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const topBar = tabViewSecondary.getChildControl("bar");
       topBar.set({
         height: this.self().TAB_BUTTON_HEIGHT,
-        backgroundColor: "tab_navigation_bar_background_color"
+        backgroundColor: "workbench-view-navbar"
       });
       this.__addTopBarSpacer(topBar);
 
@@ -420,7 +420,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       topBar.set({
         height: this.self().TAB_BUTTON_HEIGHT,
         alignY: "top",
-        backgroundColor: "tab_navigation_bar_background_color"
+        backgroundColor: "workbench-view-navbar"
       });
       this.__addTopBarSpacer(topBar);
 
@@ -476,7 +476,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __addTopBarSpacer: function(tabViewTopBar) {
       const spacer = new qx.ui.core.Widget().set({
-        backgroundColor: "tab_navigation_bar_background_color"
+        backgroundColor: "workbench-view-navbar"
       });
       tabViewTopBar.add(spacer, {
         flex: 1
@@ -485,7 +485,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __createCollapsibleViewSpacer: function() {
       const spacer = new qx.ui.core.Widget().set({
-        backgroundColor: "tab_navigation_bar_background_color",
+        backgroundColor: "workbench-view-navbar",
         height: this.self().TAB_BUTTON_HEIGHT
       });
       return spacer;

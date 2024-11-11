@@ -32,7 +32,6 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "background-workspace-card-overlay": "rgb(165, 223, 252)",
 
     "navigation_bar_background_color": "rgba(229, 229, 229, 0.8)",
-    "tab_navigation_bar_background_color": "c00",
     "fab_text": "contrasted-text-dark",
     "fab-background": "rgba(255, 255, 255, 0.2)",
     "input_background": "rgba(209, 214, 218, 1)",
@@ -120,7 +119,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "border-disabled": "background-main",
 
     // separator
-    "border-separator": "fab-background",
+    "border-separator": "background-main-3",
 
     // tooltip
     "tooltip": "flash_message_bg",
@@ -164,7 +163,8 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "workbench-edge-comp-active": "#888888",
     "workbench-edge-api-active": "#444444",
     "workbench-start-hint": "#AFAFAF",
-    "workbench-view-splitter": "#DDDDDD",
+    "workbench-view-navbar": "c02",
+    "workbench-view-splitter": "background-main-3",
 
     "node-background": "rgba(113, 157, 181, 0.35)",
     "node-selected-background": "strong-main",
