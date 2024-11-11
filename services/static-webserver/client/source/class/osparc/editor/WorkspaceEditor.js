@@ -197,12 +197,16 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
     },
 
     __createWorkspace: function() {
+      const workspaceStore = osparc.store.Workspaces.getInstance();
+      const workspaces = workspaceStore.getWorkspaces();
+      const existingNames = workspaces.map(workspace => workspace.getName());
+      const defaultName = osparc.utils.Utils.getUniqueName("New Workspace", existingNames)
       const newWorkspaceData = {
-        name: this.getLabel() || "New Workspace",
+        name: this.getLabel() || defaultName,
         description: this.getDescription(),
         thumbnail: this.getThumbnail(),
       };
-      return osparc.store.Workspaces.getInstance().postWorkspace(newWorkspaceData)
+      return workspaceStore.postWorkspace(newWorkspaceData)
     },
 
     __saveWorkspace: function(editButton) {

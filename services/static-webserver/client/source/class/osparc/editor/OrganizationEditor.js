@@ -18,7 +18,7 @@
 qx.Class.define("osparc.editor.OrganizationEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newOrg = true) {
+  construct: function(organization) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(8));
@@ -29,7 +29,27 @@ qx.Class.define("osparc.editor.OrganizationEditor", {
     manager.add(title);
     this.getChildControl("description");
     this.getChildControl("thumbnail");
-    newOrg ? this.getChildControl("create") : this.getChildControl("save");
+    organization ? this.getChildControl("save") : this.getChildControl("create");
+
+    if (organization) {
+      organization.bind("gid", this, "gid");
+      organization.bind("label", this, "label");
+      organization.bind("description", this, "description");
+      organization.bind("thumbnail", this, "thumbnail", {
+        converter: val => val ? val : ""
+      });
+    } else {
+      osparc.store.Store.getInstance().getGroupsOrganizations()
+        .then(orgs => {
+          const existingNames = orgs.map(org => org["label"]);
+          const defaultName = osparc.utils.Utils.getUniqueName("New Organization", existingNames)
+          title.setValue(defaultName);
+        })
+        .catch(err => {
+          console.error(err);
+          title.setValue("New Organization");
+        });
+    }
 
     this.addListener("appear", () => {
       title.focus();
