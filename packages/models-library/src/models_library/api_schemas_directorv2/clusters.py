@@ -129,7 +129,7 @@ class ClusterCreate(BaseCluster):
                     "type": ClusterTypeInModel.ON_PREMISE,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
-                        "type": "simple",
+                        "discriminator_type": "simple",
                         "username": "someuser",
                         "password": "somepassword",
                     },
@@ -141,14 +141,14 @@ class ClusterCreate(BaseCluster):
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
-                        "type": "simple",
+                        "discriminator_type": "simple",
                         "username": "someuser",
                         "password": "somepassword",
                     },
                     "accessRights": {
-                        154: CLUSTER_ADMIN_RIGHTS,  # type: ignore[dict-item]
-                        12: CLUSTER_MANAGER_RIGHTS,  # type: ignore[dict-item]
-                        7899: CLUSTER_USER_RIGHTS,  # type: ignore[dict-item]
+                        "154": CLUSTER_ADMIN_RIGHTS.model_dump(),
+                        "12": CLUSTER_MANAGER_RIGHTS.model_dump(),
+                        "7899": CLUSTER_USER_RIGHTS.model_dump(),
                     },
                 },
             ]
@@ -192,9 +192,9 @@ class ClusterPatch(BaseCluster):
                 },
                 {
                     "accessRights": {
-                        154: CLUSTER_ADMIN_RIGHTS,  # type: ignore[dict-item]
-                        12: CLUSTER_MANAGER_RIGHTS,  # type: ignore[dict-item]
-                        7899: CLUSTER_USER_RIGHTS,  # type: ignore[dict-item]
+                        "154": CLUSTER_ADMIN_RIGHTS.model_dump(),
+                        "12": CLUSTER_MANAGER_RIGHTS.model_dump(),
+                        "7899": CLUSTER_USER_RIGHTS.model_dump(),
                     },
                 },
             ]
