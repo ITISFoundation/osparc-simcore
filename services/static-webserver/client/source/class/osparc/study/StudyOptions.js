@@ -228,7 +228,6 @@ qx.Class.define("osparc.study.StudyOptions", {
     __buildTopSummaryLayout: function() {
       const store = osparc.store.Store.getInstance();
 
-      this._createChildControlImpl("title-label");
       const titleField = this.getChildControl("title-field");
       titleField.addListener("appear", () => {
         titleField.focus();
@@ -236,7 +235,6 @@ qx.Class.define("osparc.study.StudyOptions", {
       });
 
       // Wallet Selector
-      this._createChildControlImpl("wallet-selector-label");
       const walletSelector = this.getChildControl("wallet-selector");
 
       const wallets = store.getWallets();
