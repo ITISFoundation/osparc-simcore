@@ -176,7 +176,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       }
     },
 
-    reloadOrganizations: function() {
+    reloadOrganizations: function(orgId) {
       this.__orgsUIList.resetSelection();
       const orgsModel = this.__orgsModel;
       orgsModel.removeAll();
@@ -199,6 +199,9 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
           orgsList.sort(this.self().sortOrganizations);
           orgsList.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
           this.setOrganizationsLoaded(true);
+          if (orgId) {
+            this.fireDataEvent("organizationSelected", orgId);
+          }
         });
     },
 
@@ -287,14 +290,15 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         }
       };
       osparc.data.Resources.fetch("organizations", "post", params)
-        .then(() => {
+        .then(org => {
           osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
           button.setFetching(false);
           osparc.store.Store.getInstance().reset("organizations");
           // reload "profile", "organizations" are part of the information in this endpoint
           osparc.data.Resources.getOne("profile", {}, null, false)
             .then(() => {
-              this.reloadOrganizations();
+              // open it
+              this.reloadOrganizations(org["gid"]);
             });
         })
         .catch(err => {
