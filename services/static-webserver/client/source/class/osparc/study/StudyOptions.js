@@ -24,7 +24,6 @@ qx.Class.define("osparc.study.StudyOptions", {
     this._setLayout(new qx.ui.layout.VBox(15));
 
     if (studyId) {
-      this.__studyId = studyId;
       this.setStudyId(studyId);
     }
   },
@@ -34,7 +33,7 @@ qx.Class.define("osparc.study.StudyOptions", {
       check: "String",
       init: null,
       nullable: false,
-      apply: "__applyStudyId"
+      apply: "__fetchStudy"
     },
 
     wallet: {
@@ -85,7 +84,6 @@ qx.Class.define("osparc.study.StudyOptions", {
   },
 
   members: {
-    __studyId: null,
     __studyData: null,
     __studyWalletId: null,
 
@@ -184,7 +182,7 @@ qx.Class.define("osparc.study.StudyOptions", {
       return control || this.base(arguments, id);
     },
 
-    __applyStudyId: function(studyId) {
+    __fetchStudy: function(studyId) {
       const params = {
         url: {
           studyId
@@ -304,10 +302,11 @@ qx.Class.define("osparc.study.StudyOptions", {
       // second, update the wallet if necessary
       const store = osparc.store.Store.getInstance();
       const walletSelection = this.getChildControl("wallet-selector").getSelection();
-      if (this.__studyId && walletSelection.length && walletSelection[0]["walletId"]) {
+      const studyId = this.getStudyId();
+      if (studyId && walletSelection.length && walletSelection[0]["walletId"]) {
         const params = {
           url: {
-            "studyId": this.__studyId,
+            studyId,
             "walletId": walletSelection[0]["walletId"]
           }
         };
