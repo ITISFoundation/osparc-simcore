@@ -59,7 +59,7 @@ from simcore_postgres_database.webserver_models import ProjectType, projects, us
 from sqlalchemy import func, literal_column
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.sql import and_
+from sqlalchemy.sql import ColumnElement, CompoundSelect, Select, and_
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -540,14 +540,7 @@ class ProjectDBAPI(BaseProjectDB):
             # Attributes Filters
             ###
 
-            attributes_filters = []
-            if filter_tag_ids_list:
-                attributes_filters.append(
-                    sa.func.coalesce(
-                        project_tags_subquery.c.tags,
-                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
-                    ).op("@>")(filter_tag_ids_list)
-                )
+            attributes_filters: list[ColumnElement] = []
             if filter_by_project_type is not None:
                 attributes_filters.append(
                     projects.c.type == filter_by_project_type.value
@@ -577,7 +570,13 @@ class ProjectDBAPI(BaseProjectDB):
                     | (projects.c.uuid.ilike(f"%{filter_by_text}%"))
                     | (users.c.name.ilike(f"%{filter_by_text}%"))
                 )
-
+            if filter_tag_ids_list:
+                attributes_filters.append(
+                    sa.func.coalesce(
+                        project_tags_subquery.c.tags,
+                        sa.cast(sa.text("'{}'"), sa.ARRAY(sa.Integer)),
+                    ).op("@>")(filter_tag_ids_list)
+                )
             if folder_query.folder_scope is not FolderScope.ALL:
                 if folder_query.folder_scope == FolderScope.SPECIFIC:
                     attributes_filters.append(
@@ -591,7 +590,7 @@ class ProjectDBAPI(BaseProjectDB):
             # Combined
             ###
 
-            combined_query = None
+            combined_query: CompoundSelect | Select | None = None
             if (
                 private_workspace_query is not None
                 and shared_workspace_query is not None
