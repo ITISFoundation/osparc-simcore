@@ -185,7 +185,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
           const workspace = this.getWorkspace();
           const workspaceEditor = new osparc.editor.WorkspaceEditor(workspace);
           const title = this.tr("Edit Workspace");
-          const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 300, 200);
+          const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 300, 150);
           workspaceEditor.addListener("workspaceUpdated", () => {
             win.close();
             this.fireDataEvent("workspaceUpdated", workspace.getWorkspaceId());

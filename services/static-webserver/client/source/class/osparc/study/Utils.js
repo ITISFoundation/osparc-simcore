@@ -116,7 +116,8 @@ qx.Class.define("osparc.study.Utils", {
               newStudyLabel = metadata["name"];
             }
             if (existingStudies) {
-              const title = osparc.utils.Utils.getUniqueStudyName(newStudyLabel, existingStudies);
+              const existingNames = existingStudies.map(study => study["name"]);
+              const title = osparc.utils.Utils.getUniqueName(newStudyLabel, existingNames);
               minStudyData["name"] = title;
             } else {
               minStudyData["name"] = newStudyLabel;
@@ -234,7 +235,7 @@ qx.Class.define("osparc.study.Utils", {
                   // update task
                   osparc.widget.ProgressSequence.updateTaskProgress(existingTask, {
                     value: percent,
-                    progressLabel: percent*100 + "%"
+                    progressLabel: parseFloat((percent*100).toFixed(2)) + "%"
                   });
                 } else {
                   // new task
