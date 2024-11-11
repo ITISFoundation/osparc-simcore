@@ -54,7 +54,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.resource_tracker import HardwareInfo
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize, SecretStr
+from pydantic import AnyUrl, ByteSize, SecretStr, TypeAdapter
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -375,7 +375,7 @@ def _mocked_node_ports(mocker: MockerFixture) -> None:
     )
     mocker.patch(
         "simcore_service_director_v2.modules.dask_client.dask_utils.compute_service_log_file_upload_link",
-        return_value=parse_obj_as(AnyUrl, "file://undefined"),
+        return_value=TypeAdapter(AnyUrl).validate_python("file://undefined"),
     )
 
 
