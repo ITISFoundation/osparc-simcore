@@ -39,7 +39,14 @@ qx.Class.define("osparc.dashboard.MoveResourceTo", {
         const item = selection.getItem(0);
         this.__selectedWorkspaceId = item.getWorkspaceId();
         this.__selectedFolderId = item.getFolderId();
-        moveButton.setEnabled(this.__currentWorkspaceId !== this.__selectedWorkspaceId || this.__currentFolderId !== this.__selectedFolderId);
+        if (this.__selectedWorkspaceId === -1) {
+          // "Shared Workspaces"
+          moveButton.setEnabled(false);
+        } else {
+          // In principle, valid location
+          // disable if it's the current location
+          moveButton.setEnabled(this.__currentWorkspaceId !== this.__selectedWorkspaceId || this.__currentFolderId !== this.__selectedFolderId);
+        }
       }
     }, this);
     moveButton.addListener("execute", () => {

@@ -83,6 +83,7 @@ def app_environment(
             "PAYMENTS_ACCESS_TOKEN_SECRET_KEY": secret_key,
             "PAYMENTS_USERNAME": faker.user_name(),
             "PAYMENTS_PASSWORD": faker.password(),
+            "PAYMENTS_TRACING": "null",
         },
     )
 
