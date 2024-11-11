@@ -5,12 +5,12 @@ import logging
 from aiohttp import web
 from models_library.access_rights import AccessRights
 from models_library.api_schemas_webserver.folders_v2 import FolderGet, FolderGetPage
-from models_library.folders import FolderID
+from models_library.folders import FolderID, FolderQuery, FolderScope
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
-from models_library.workspaces import WorkspaceID
+from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -166,6 +166,11 @@ async def list_folders(
         )
         workspace_is_private = False
         user_folder_access_rights = user_workspace_access_rights.my_access_rights
+        _workspace_query = WorkspaceQuery(
+            workspace_scope=WorkspaceScope.SHARED, workspace_id=workspace_id
+        )
+    else:
+        _workspace_query = WorkspaceQuery(workspace_scope=WorkspaceScope.PRIVATE)
 
     if folder_id:
         # Check user access to folder
@@ -176,14 +181,19 @@ async def list_folders(
             user_id=user_id if workspace_is_private else None,
             workspace_id=workspace_id,
         )
+        _folder_query = FolderQuery(
+            folder_scope=FolderScope.SPECIFIC, folder_id=folder_id
+        )
+    else:
+        _folder_query = FolderQuery(folder_scope=FolderScope.ROOT)
 
     total_count, folders = await folders_db.list_(
         app,
-        content_of_folder_id=folder_id,
-        user_id=user_id if workspace_is_private else None,
-        workspace_id=workspace_id,
         product_name=product_name,
-        trashed=trashed,
+        user_id=user_id,
+        folder_query=_folder_query,
+        workspace_query=_workspace_query,
+        filter_trashed=trashed,
         offset=offset,
         limit=limit,
         order_by=order_by,
