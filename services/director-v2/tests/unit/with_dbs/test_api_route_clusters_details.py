@@ -155,7 +155,7 @@ async def test_get_cluster_details(
         authentication=SimpleAuthentication(
             username=gateway_username,
             password=SecretStr(local_dask_gateway_server.password),
-        ).model_dump(mode="json", by_alias=True),
+        ).model_dump(by_alias=True),
     )
     # in its present state, the cluster should have no workers
     cluster_out = await _get_cluster_details(
