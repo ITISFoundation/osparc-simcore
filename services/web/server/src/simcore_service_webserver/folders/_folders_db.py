@@ -197,11 +197,11 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     if folder_query.folder_scope is not FolderScope.ALL:
         if folder_query.folder_scope == FolderScope.SPECIFIC:
             attributes_filters.append(
-                projects_to_folders.c.folder_id == folder_query.folder_id
+                folders_v2.c.parent_folder_id == folder_query.folder_id
             )
         else:
             assert folder_query.folder_scope == FolderScope.ROOT  # nosec
-            attributes_filters.append(projects_to_folders.c.folder_id.is_(None))
+            attributes_filters.append(folders_v2.c.parent_folder_id.is_(None))
 
     ###
     # Combined
