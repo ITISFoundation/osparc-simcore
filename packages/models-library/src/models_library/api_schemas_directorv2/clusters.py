@@ -114,7 +114,9 @@ class ClusterDetailsGet(ClusterDetails):
 
 class ClusterCreate(BaseCluster):
     owner: GroupID | None = None  # type: ignore[assignment]
-    authentication: ExternalClusterAuthentication
+    authentication: ExternalClusterAuthentication = Field(
+        discriminator="discriminator_type"
+    )
     access_rights: dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
     )
@@ -174,7 +176,7 @@ class ClusterPatch(BaseCluster):
     owner: GroupID | None = None  # type: ignore[assignment]
     thumbnail: HttpUrl | None = None
     endpoint: AnyUrl | None = None  # type: ignore[assignment]
-    authentication: ExternalClusterAuthentication | None = None  # type: ignore[assignment]
+    authentication: ExternalClusterAuthentication | None = Field(None, discriminator="discriminator_type")  # type: ignore[assignment]
     access_rights: dict[GroupID, ClusterAccessRights] | None = Field(  # type: ignore[assignment]
         default=None, alias="accessRights"
     )
@@ -203,5 +205,7 @@ class ClusterPatch(BaseCluster):
 class ClusterPing(BaseModel):
     endpoint: AnyHttpUrl
     authentication: ClusterAuthentication = Field(
-        ..., description="Dask gateway authentication"
+        ...,
+        description="Dask gateway authentication",
+        discriminator="discriminator_type",
     )

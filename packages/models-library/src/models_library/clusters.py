@@ -42,13 +42,13 @@ CLUSTER_NO_RIGHTS = ClusterAccessRights(read=False, write=False, delete=False)
 
 
 class BaseAuthentication(BaseModel):
-    type: str
+    discriminator_type: str
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class SimpleAuthentication(BaseAuthentication):
-    type: Literal["simple"] = "simple"
+    discriminator_type: Literal["simple"] = "simple"
     username: str
     password: SecretStr
 
@@ -56,7 +56,7 @@ class SimpleAuthentication(BaseAuthentication):
         json_schema_extra={
             "examples": [
                 {
-                    "type": "simple",
+                    "discriminator_type": "simple",
                     "username": "someuser",
                     "password": "somepassword",
                 },
@@ -66,13 +66,13 @@ class SimpleAuthentication(BaseAuthentication):
 
 
 class KerberosAuthentication(BaseAuthentication):
-    type: Literal["kerberos"] = "kerberos"
+    discriminator_type: Literal["kerberos"] = "kerberos"
 
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
                 {
-                    "type": "kerberos",
+                    "discriminator_type": "kerberos",
                 },
             ]
         }
@@ -80,26 +80,31 @@ class KerberosAuthentication(BaseAuthentication):
 
 
 class JupyterHubTokenAuthentication(BaseAuthentication):
-    type: Literal["jupyterhub"] = "jupyterhub"
+    discriminator_type: Literal["jupyterhub"] = "jupyterhub"
     api_token: str
 
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
-                {"type": "jupyterhub", "api_token": "some_jupyterhub_token"},
+                {
+                    "discriminator_type": "jupyterhub",
+                    "api_token": "some_jupyterhub_token",
+                },
             ]
         }
     )
 
 
 class NoAuthentication(BaseAuthentication):
-    type: Literal["none"] = "none"
+    discriminator_type: Literal["none"] = "none"
 
-    model_config = ConfigDict(json_schema_extra={"examples": [{"type": "none"}]})
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [{"discriminator_type": "none"}]}
+    )
 
 
 class TLSAuthentication(BaseAuthentication):
-    type: Literal["tls"] = "tls"
+    discriminator_type: Literal["tls"] = "tls"
     tls_ca_file: Path
     tls_client_cert: Path
     tls_client_key: Path
@@ -108,7 +113,7 @@ class TLSAuthentication(BaseAuthentication):
         json_schema_extra={
             "examples": [
                 {
-                    "type": "tls",
+                    "discriminator_type": "tls",
                     "tls_ca_file": "/path/to/ca_file",
                     "tls_client_cert": "/path/to/cert_file",
                     "tls_client_key": "/path/to/key_file",
@@ -140,7 +145,9 @@ class BaseCluster(BaseModel):
     )
     endpoint: AnyUrl
     authentication: ClusterAuthentication = Field(
-        ..., description="Dask gateway authentication"
+        ...,
+        description="Dask gateway authentication",
+        discriminator="discriminator_type",
     )
     access_rights: dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
 
@@ -169,7 +176,7 @@ class Cluster(BaseCluster):
                     "owner": 1456,
                     "endpoint": "tcp://default-dask-scheduler:8786",
                     "authentication": {
-                        "type": "simple",
+                        "discriminator_type": "simple",
                         "username": "someuser",
                         "password": "somepassword",
                     },
@@ -181,7 +188,7 @@ class Cluster(BaseCluster):
                     "owner": 12,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
-                        "type": "simple",
+                        "discriminator_type": "simple",
                         "username": "someuser",
                         "password": "somepassword",
                     },
@@ -193,7 +200,7 @@ class Cluster(BaseCluster):
                     "type": ClusterTypeInModel.AWS,
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
-                    "authentication": {"type": "kerberos"},
+                    "authentication": {"discriminator_type": "kerberos"},
                     "access_rights": {
                         154: CLUSTER_ADMIN_RIGHTS,  # type: ignore[dict-item]
                         12: CLUSTER_MANAGER_RIGHTS,  # type: ignore[dict-item]
@@ -208,7 +215,7 @@ class Cluster(BaseCluster):
                     "owner": 2321,
                     "endpoint": "https://registry.osparc-development.fake2.dev",
                     "authentication": {
-                        "type": "jupyterhub",
+                        "discriminator_type": "jupyterhub",
                         "api_token": "some_fake_token",
                     },
                     "access_rights": {
