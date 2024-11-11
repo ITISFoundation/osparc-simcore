@@ -251,19 +251,19 @@ def expected_dynamic_sidecar_spec(
                     "NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS": "3",
                     "DYNAMIC_SIDECAR_LOG_LEVEL": "DEBUG",
                     "DY_DEPLOYMENT_REGISTRY_SETTINGS": (
-                        '{"REGISTRY_AUTH": false, "REGISTRY_PATH": null, '
-                        '"REGISTRY_URL": "foo.bar.com", "REGISTRY_USER": '
-                        '"test", "REGISTRY_PW": "test", "REGISTRY_SSL": false}'
+                        '{"REGISTRY_AUTH":false,"REGISTRY_PATH":null,'
+                        '"REGISTRY_URL":"foo.bar.com","REGISTRY_USER":'
+                        '"test","REGISTRY_PW":"test","REGISTRY_SSL":false}'
                     ),
                     "DY_DOCKER_HUB_REGISTRY_SETTINGS": "null",
                     "DY_SIDECAR_AWS_S3_CLI_SETTINGS": (
-                        '{"AWS_S3_CLI_S3": {"S3_ACCESS_KEY": "12345678", "S3_BUCKET_NAME": "simcore", '
-                        '"S3_ENDPOINT": "http://172.17.0.1:9001", "S3_REGION": "us-east-1", "S3_SECRET_KEY": "12345678"}}'
+                        '{"AWS_S3_CLI_S3":{"S3_ACCESS_KEY":"12345678","S3_BUCKET_NAME":"simcore",'
+                        '"S3_ENDPOINT":"http://172.17.0.1:9001/","S3_REGION":"us-east-1","S3_SECRET_KEY":"12345678"}}'
                     ),
                     "DY_SIDECAR_CALLBACKS_MAPPING": (
-                        '{"metrics": {"service": "rt-web", "command": "ls", "timeout": 1.0}, "before_shutdown"'
-                        ': [{"service": "rt-web", "command": "ls", "timeout": 1.0}, {"service": "s4l-core", '
-                        '"command": ["ls", "-lah"], "timeout": 1.0}], "inactivity": null}'
+                        '{"metrics":{"service":"rt-web","command":"ls","timeout":1.0},"before_shutdown"'
+                        ':[{"service":"rt-web","command":"ls","timeout":1.0},{"service":"s4l-core",'
+                        '"command":["ls","-lah"],"timeout":1.0}],"inactivity":null}'
                     ),
                     "DY_SIDECAR_SERVICE_KEY": "simcore/services/dynamic/3dviewer",
                     "DY_SIDECAR_SERVICE_VERSION": "2.4.5",
@@ -579,13 +579,13 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
         for key in ["DY_SIDECAR_STATE_EXCLUDE", "DY_SIDECAR_STATE_PATHS"]:
             # this is a json of a list
             assert isinstance(
-                sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key], str
+                sorted_dict["task_template"]["container_spec"]["env"][key], str
             )
             unsorted_list = json.loads(
-                sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key]
+                sorted_dict["task_template"]["container_spec"]["env"][key]
             )
             assert isinstance(unsorted_list, list)
-            sorted_dict["TaskTemplate"]["ContainerSpec"]["Env"][key] = json.dumps(
+            sorted_dict["task_template"]["container_spec"]["env"][key] = json.dumps(
                 unsorted_list.sort()
             )
     assert dynamic_sidecar_spec_dict == expected_dynamic_sidecar_spec_dict
