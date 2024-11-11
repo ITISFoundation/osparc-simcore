@@ -1079,13 +1079,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const nodeOptions = new osparc.widget.NodeOptions(node);
       nodeOptions.buildLayout();
-      [
-        "versionChanged",
-        "bootModeChanged",
-        "limitsChanged"
-      ].forEach(eventName => {
-        nodeOptions.addListener(eventName, () => this.__populateSecondaryColumn(node));
-      });
 
       return nodeOptions;
     },
