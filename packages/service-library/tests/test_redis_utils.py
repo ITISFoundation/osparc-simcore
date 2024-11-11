@@ -41,17 +41,20 @@ async def _contained_client(
     ],
     lock_name: str,
     task_duration: float,
+    faker: Faker,
 ) -> None:
     async with get_redis_client_sdk(RedisDatabase.RESOURCES) as redis_client_sdk:
         assert not await _is_locked(redis_client_sdk, lock_name)
 
         @exclusive(redis_client_sdk, lock_key=lock_name)
-        async def _some_task() -> None:
+        async def _some_task(some_int: int, *, some_str: str) -> None:
             assert await _is_locked(redis_client_sdk, lock_name)
+            assert some_int
+            assert some_str is not None
             await asyncio.sleep(task_duration)
             assert await _is_locked(redis_client_sdk, lock_name)
 
-        await _some_task()
+        await _some_task(faker.random_int(), some_str=faker.pystr())
 
         assert not await _is_locked(redis_client_sdk, lock_name)
 
@@ -63,8 +66,9 @@ async def test_exclusive_sequentially(
     ],
     lock_name: str,
     task_duration: float,
+    faker: Faker,
 ):
-    await _contained_client(get_redis_client_sdk, lock_name, task_duration)
+    await _contained_client(get_redis_client_sdk, lock_name, task_duration, faker)
 
 
 async def test_exclusive_parallel_lock_is_released_and_reacquired(
@@ -72,11 +76,14 @@ async def test_exclusive_parallel_lock_is_released_and_reacquired(
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
     ],
     lock_name: str,
+    faker: Faker,
 ):
     parallel_tasks = 10
     results = await logged_gather(
         *[
-            _contained_client(get_redis_client_sdk, lock_name, task_duration=0.1)
+            _contained_client(
+                get_redis_client_sdk, lock_name, task_duration=0.1, faker=faker
+            )
             for _ in range(parallel_tasks)
         ],
         reraise=False
