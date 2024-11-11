@@ -66,7 +66,9 @@ async def stop_dynamic_service(
         await services.stop_dynamic_service(
             get_rabbitmq_rpc_client(app),
             dynamic_service_stop=dynamic_service_stop,
-            timeout_s=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
+            timeout_s=int(
+                settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT.total_seconds()
+            ),
         )
 
 
