@@ -160,13 +160,12 @@ async def list_workspaces_for_user(
         count_result = await conn.execute(count_query)
         total_count = count_result.scalar()
 
-        result = await conn.execute(list_query)
-        rows = result.fetchall() or []
-        results: list[UserWorkspaceAccessRightsDB] = [
-            UserWorkspaceAccessRightsDB.from_orm(row) for row in rows
+        result = await conn.stream(list_query)
+        workspaces: list[UserWorkspaceAccessRightsDB] = [
+            UserWorkspaceAccessRightsDB.from_orm(row) async for row in result
         ]
 
-        return cast(int, total_count), results
+        return cast(int, total_count), workspaces
 
 
 async def get_workspace_for_user(
