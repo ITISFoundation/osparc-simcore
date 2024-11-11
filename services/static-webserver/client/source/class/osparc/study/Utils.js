@@ -235,7 +235,7 @@ qx.Class.define("osparc.study.Utils", {
                   // update task
                   osparc.widget.ProgressSequence.updateTaskProgress(existingTask, {
                     value: percent,
-                    progressLabel: percent*100 + "%"
+                    progressLabel: parseFloat((percent*100).toFixed(2)) + "%"
                   });
                 } else {
                   // new task
