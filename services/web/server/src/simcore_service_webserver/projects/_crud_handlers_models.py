@@ -4,7 +4,7 @@ Standard methods or CRUD that states for Create+Read(Get&List)+Update+Delete
 
 """
 
-from typing import Any
+from typing import Annotated, Any
 
 from models_library.basic_types import IDStr
 from models_library.folders import FolderID
@@ -181,11 +181,14 @@ class ProjectListFullSearchParams(PageQueryParameters):
         max_length=100,
         examples=["My Project"],
     )
-    tag_ids: str | None = Field(
-        default=None,
-        description="Search by tag ID (multiple tag IDs may be provided separated by column)",
-        examples=["1,3"],
-    )
+    tag_ids: Annotated[
+        str | None,
+        Field(
+            default=None,
+            description="Search by tag ID (multiple tag IDs may be provided separated by column)",
+            examples=["1,3"],
+        ),
+    ]
 
     _empty_is_none = field_validator("text", mode="before")(
         empty_str_to_none_pre_validator

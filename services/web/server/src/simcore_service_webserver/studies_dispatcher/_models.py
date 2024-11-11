@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from aiopg.sa.result import RowProxy
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field, HttpUrl, PositiveInt, TypeAdapter
@@ -7,7 +9,7 @@ class ServiceInfo(BaseModel):
     key: ServiceKey
     version: ServiceVersion
 
-    label: str = Field(..., description="Display name")
+    label: Annotated[str, Field(..., description="Display name")]
 
     thumbnail: HttpUrl = Field(
         default=TypeAdapter(HttpUrl).validate_python(

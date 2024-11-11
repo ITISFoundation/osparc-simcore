@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Annotated, Final
 
 from aiohttp import web
 from pydantic import AliasChoices, PositiveInt, field_validator
@@ -17,15 +17,18 @@ _DAY: Final[int] = 24 * _HOUR
 
 class SessionSettings(BaseCustomSettings, MixinSessionSettings):
 
-    SESSION_SECRET_KEY: SecretStr = Field(
-        ...,
-        description="Secret key to encrypt cookies. "
-        'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
-        min_length=44,
-        validation_alias=AliasChoices(
-            "SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"
+    SESSION_SECRET_KEY: Annotated[
+        SecretStr,
+        Field(
+            ...,
+            description="Secret key to encrypt cookies. "
+            'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
+            min_length=44,
+            validation_alias=AliasChoices(
+                "SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"
+            ),
         ),
-    )
+    ]
 
     SESSION_ACCESS_TOKENS_EXPIRATION_INTERVAL_SECS: int = Field(
         30 * _MINUTE,
@@ -37,10 +40,13 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
     # - Defaults taken from https://github.com/aio-libs/aiohttp-session/blob/master/aiohttp_session/cookie_storage.py#L20-L26
     #
 
-    SESSION_COOKIE_MAX_AGE: PositiveInt | None = Field(
-        default=None,
-        description="Max-Age attribute. Maximum age for session data, int seconds or None for “session cookie” which last until you close your browser.",
-    )
+    SESSION_COOKIE_MAX_AGE: Annotated[
+        PositiveInt | None,
+        Field(
+            default=None,
+            description="Max-Age attribute. Maximum age for session data, int seconds or None for “session cookie” which last until you close your browser.",
+        ),
+    ]
     SESSION_COOKIE_SAMESITE: str | None = Field(
         default=None,
         description="SameSite attribute lets servers specify whether/when cookies are sent with cross-site requests",
@@ -54,10 +60,8 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
         default=True,
         description="This prevents JavaScript from accessing the session cookie",
     )
-    
-    model_config = SettingsConfigDict(
-        extra="allow"
-    )
+
+    model_config = SettingsConfigDict(extra="allow")
 
     @field_validator("SESSION_SECRET_KEY")
     @classmethod

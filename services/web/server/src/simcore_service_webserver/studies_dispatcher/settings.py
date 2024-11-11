@@ -1,5 +1,4 @@
 from datetime import timedelta
-from typing import Annotated
 
 from aiohttp import web
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta

@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 from aiohttp import web
 from common_library.pydantic_fields_extension import is_nullable
@@ -114,11 +114,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_CREDIT_COMPUTATION_ENABLED: bool = Field(
         default=False, description="Enables credit computation features."
     )
-    WEBSERVER_LOGLEVEL: LogLevel = Field(
-        default=LogLevel.WARNING.value,
-        validation_alias=AliasChoices("WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
-        # NOTE: suffix '_LOGLEVEL' is used overall
-    )
+    WEBSERVER_LOGLEVEL: Annotated[
+        LogLevel,
+        Field(
+            default=LogLevel.WARNING.value,
+            validation_alias=AliasChoices(
+                "WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+            ),
+            # NOTE: suffix '_LOGLEVEL' is used overall
+        ),
+    ]
     WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         validation_alias=AliasChoices(
@@ -187,9 +192,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="invitations plugin",
     )
 
-    WEBSERVER_LOGIN: LoginSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}, description="login plugin"
-    )
+    WEBSERVER_LOGIN: Annotated[
+        LoginSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="login plugin",
+        ),
+    ]
 
     WEBSERVER_PAYMENTS: PaymentsSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True},
@@ -221,9 +230,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="scicrunch plugin",
         json_schema_extra={"auto_default_from_env": True},
     )
-    WEBSERVER_SESSION: SessionSettings = Field(
-        description="session plugin", json_schema_extra={"auto_default_from_env": True}
-    )
+    WEBSERVER_SESSION: Annotated[
+        SessionSettings,
+        Field(
+            description="session plugin",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
 
     WEBSERVER_STATICWEB: StaticWebserverModuleSettings | None = Field(
         description="static-webserver service plugin",

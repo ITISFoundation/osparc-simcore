@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Final, Literal
+from typing import Annotated, Final, Literal
 
 from aiohttp import web
 from pydantic import BaseModel, ValidationInfo, field_validator
@@ -21,11 +21,14 @@ APP_LOGIN_OPTIONS_KEY = f"{__name__}.APP_LOGIN_OPTIONS_KEY"
 
 
 class LoginSettings(BaseCustomSettings):
-    LOGIN_ACCOUNT_DELETION_RETENTION_DAYS: PositiveInt = Field(
-        default=30,
-        description="Retention time (in days) of all the data after a user has requested the deletion of their account"
-        "NOTE: exposed to the front-end as `to_client_statics`",
-    )
+    LOGIN_ACCOUNT_DELETION_RETENTION_DAYS: Annotated[
+        PositiveInt,
+        Field(
+            default=30,
+            description="Retention time (in days) of all the data after a user has requested the deletion of their account"
+            "NOTE: exposed to the front-end as `to_client_statics`",
+        ),
+    ]
 
     LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool = Field(
         default=True,
@@ -44,10 +47,13 @@ class LoginSettings(BaseCustomSettings):
         default=120, description="Expiration time for code [sec]"
     )
 
-    LOGIN_2FA_REQUIRED: bool = Field(
-        default=False,
-        description="If true, it enables two-factor authentication (2FA)",
-    )
+    LOGIN_2FA_REQUIRED: Annotated[
+        bool,
+        Field(
+            default=False,
+            description="If true, it enables two-factor authentication (2FA)",
+        ),
+    ]
 
     LOGIN_PASSWORD_MIN_LENGTH: PositiveInt = Field(
         default=12,

@@ -4,7 +4,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Final, TypeAlias
+from typing import Annotated, Any, Final, TypeAlias
 from uuid import UUID
 
 from models_library.basic_types import ConstrainedStr
@@ -77,7 +77,7 @@ class BaseProjectModel(BaseModel):
     last_change_date: datetime = Field(...)
 
     # Pipeline of nodes (SEE projects_nodes.py)
-    workbench: NodesDict = Field(..., description="Project's pipeline")
+    workbench: Annotated[NodesDict, Field(..., description="Project's pipeline")]
 
     # validators
     _empty_thumbnail_is_none = field_validator("thumbnail", mode="before")(

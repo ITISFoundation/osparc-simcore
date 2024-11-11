@@ -15,7 +15,7 @@
 """
 
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 from aiohttp import ClientSession
 from pydantic import BaseModel, Field, RootModel
@@ -41,7 +41,7 @@ class FieldItem(BaseModel):
 
 
 class ResourceView(BaseModel):
-    resource_fields: list[FieldItem] = Field([], alias="fields")
+    resource_fields: Annotated[list[FieldItem], Field([], alias="fields")]
     version: int
     curation_status: str
     last_curated_version: int
@@ -60,7 +60,8 @@ class ResourceView(BaseModel):
         for field in self.resource_fields:
             if field.field_name == fieldname:
                 return field.value
-        raise ValueError(f"Cannot file expected field {fieldname}")
+        msg = f"Cannot file expected field {fieldname}"
+        raise ValueError(msg)
 
     def get_name(self):
         return str(self._get_field("Resource Name"))
