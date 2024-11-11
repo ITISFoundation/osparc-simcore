@@ -104,7 +104,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
         converter: val => val ? val : ""
       });
       const title = this.tr("Organization Details Editor");
-      const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
+      const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 200);
       orgEditor.addListener("updateOrg", () => {
         this.__updateOrganization(win, orgEditor.getChildControl("save"), orgEditor);
       });
