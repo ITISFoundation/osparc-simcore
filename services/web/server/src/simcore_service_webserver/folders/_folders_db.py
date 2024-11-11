@@ -153,10 +153,9 @@ async def list_(
         count_result = await conn.execute(count_query)
         total_count = count_result.scalar()
 
-        result = await conn.execute(list_query)
-        rows = result.fetchall() or []
-        results: list[FolderDB] = [FolderDB.from_orm(row) for row in rows]
-        return cast(int, total_count), results
+        result = await conn.stream(list_query)
+        folders: list[FolderDB] = [FolderDB.from_orm(row) async for row in result]
+        return cast(int, total_count), folders
 
 
 async def get(
@@ -346,10 +345,9 @@ async def delete_recursively(
 
         # Step 4: Execute the query to get all descendants
         final_query = select(folder_hierarchy_cte)
-        result = await conn.execute(final_query)
-        rows = (  # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
-            result.fetchall() or []
-        )
+        result = await conn.stream(final_query)
+        # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
+        rows = [row async for row in result.fetchall()]
 
         # Sort folders so that child folders come first
         sorted_folders = sorted(
@@ -405,12 +403,9 @@ async def get_projects_recursively_only_if_user_is_owner(
 
         # Step 4: Execute the query to get all descendants
         final_query = select(folder_hierarchy_cte)
-        result = await conn.execute(final_query)
-        rows = (  # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
-            result.fetchall() or []
-        )
-
-        folder_ids = [item[0] for item in rows]
+        result = await conn.stream(final_query)
+        # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
+        folder_ids = [item[0] async for item in result]
 
         query = (
             select(projects_to_folders.c.project_uuid)
@@ -423,10 +418,8 @@ async def get_projects_recursively_only_if_user_is_owner(
         if private_workspace_user_id_or_none is not None:
             query = query.where(projects.c.prj_owner == user_id)
 
-        result = await conn.execute(query)
-
-        rows = result.fetchall() or []
-        return [ProjectID(row[0]) for row in rows]
+        result = await conn.stream(query)
+        return [ProjectID(row[0]) async for row in result]
 
 
 async def get_folders_recursively(
@@ -463,9 +456,5 @@ async def get_folders_recursively(
 
         # Step 4: Execute the query to get all descendants
         final_query = select(folder_hierarchy_cte)
-        result = await conn.execute(final_query)
-        rows = (  # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
-            result.fetchall() or []
-        )
-
-        return [FolderID(row[0]) for row in rows]
+        result = await conn.stream(final_query)
+        return [FolderID(row[0]) async for row in result]
