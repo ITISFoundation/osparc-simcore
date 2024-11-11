@@ -745,7 +745,7 @@ async def test_ping_cluster(
     )
     response = await async_client.post(
         "/v2/clusters:ping",
-        json=model_dump_with_secrets(valid_cluster, show_secrets=True, alias=True),
+        json=model_dump_with_secrets(valid_cluster, show_secrets=True, by_alias=True),
     )
     response.raise_for_status()
     assert response.status_code == status.HTTP_204_NO_CONTENT

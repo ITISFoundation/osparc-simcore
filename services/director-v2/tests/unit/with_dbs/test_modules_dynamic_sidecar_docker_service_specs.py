@@ -445,9 +445,9 @@ async def test_get_dynamic_proxy_spec(
     expected_dynamic_sidecar_spec_model = AioDockerServiceSpec.model_validate(
         expected_dynamic_sidecar_spec
     )
-    assert expected_dynamic_sidecar_spec_model.TaskTemplate
-    assert expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec
-    assert expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env
+    assert expected_dynamic_sidecar_spec_model.task_template
+    assert expected_dynamic_sidecar_spec_model.task_template.container_spec
+    assert expected_dynamic_sidecar_spec_model.task_template.container_spec.env
 
     for count in range(1, 11):  # loop to check it does not repeat copies
         print(f"{count:*^50}")
@@ -478,33 +478,33 @@ async def test_get_dynamic_proxy_spec(
         # NOTE: some flakiness here
         # state_exclude is a set and does not preserve order
         # when dumping to json it gets converted to a list
-        assert dynamic_sidecar_spec.TaskTemplate
-        assert dynamic_sidecar_spec.TaskTemplate.ContainerSpec
-        assert dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env
-        assert dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
+        assert dynamic_sidecar_spec.task_template
+        assert dynamic_sidecar_spec.task_template.container_spec
+        assert dynamic_sidecar_spec.task_template.container_spec.env
+        assert dynamic_sidecar_spec.task_template.container_spec.env[
             "DY_SIDECAR_STATE_EXCLUDE"
         ]
 
-        dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
+        dynamic_sidecar_spec.task_template.container_spec.env[
             "DY_SIDECAR_STATE_EXCLUDE"
         ] = json.dumps(
             sorted(
                 json.loads(
-                    dynamic_sidecar_spec.TaskTemplate.ContainerSpec.Env[
+                    dynamic_sidecar_spec.task_template.container_spec.env[
                         "DY_SIDECAR_STATE_EXCLUDE"
                     ]
                 )
             )
         )
-        assert expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
+        assert expected_dynamic_sidecar_spec_model.task_template.container_spec.env[
             "DY_SIDECAR_STATE_EXCLUDE"
         ]
-        expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
+        expected_dynamic_sidecar_spec_model.task_template.container_spec.env[
             "DY_SIDECAR_STATE_EXCLUDE"
         ] = json.dumps(
             sorted(
                 json.loads(
-                    expected_dynamic_sidecar_spec_model.TaskTemplate.ContainerSpec.Env[
+                    expected_dynamic_sidecar_spec_model.task_template.container_spec.env[
                         "DY_SIDECAR_STATE_EXCLUDE"
                     ]
                 )
