@@ -150,8 +150,7 @@ async def list_(
     list_query = list_query.offset(offset).limit(limit)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        count_result = await conn.execute(count_query)
-        total_count = count_result.scalar()
+        total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
         folders: list[FolderDB] = [FolderDB.from_orm(row) async for row in result]
@@ -259,7 +258,7 @@ async def update(
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(query)
-        row = await result.first()
+        row = result.first()
         if row is None:
             raise FolderNotFoundError(reason=f"Folder {folders_id_or_ids} not found.")
         return FolderDB.from_orm(row)
@@ -300,7 +299,7 @@ async def delete_recursively(
         final_query = select(folder_hierarchy_cte)
         result = await conn.stream(final_query)
         # list of tuples [(folder_id, parent_folder_id), ...] ex. [(1, None), (2, 1)]
-        rows = [row async for row in result.fetchall()]
+        rows = [row async for row in result]
 
         # Sort folders so that child folders come first
         sorted_folders = sorted(
