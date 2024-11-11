@@ -1,8 +1,7 @@
 from datetime import timedelta
 from typing import Any
 
-from common_library.pydantic_fields_extension import get_type
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, SecretStr, TypeAdapter
 from pydantic_core import Url
 
 
@@ -29,10 +28,10 @@ def model_dump_with_secrets(
             data[field_name] = str(field_data)
 
         elif isinstance(field_data, dict):
-            field_type = get_type(settings_obj.model_fields[field_name])
-            if field_type and issubclass(field_type, BaseModel):
+            field_type = settings_obj.model_fields[field_name].annotation
+            if field_type:
                 data[field_name] = model_dump_with_secrets(
-                    field_type.model_validate(field_data),
+                    TypeAdapter(field_type).validate_python(field_data),
                     show_secrets=show_secrets,
                     **pydantic_export_options,
                 )
