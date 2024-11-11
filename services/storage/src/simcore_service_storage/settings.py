@@ -8,6 +8,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic_settings import SettingsConfigDict
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
@@ -111,3 +112,5 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
             )
             raise ValueError(msg)
         return self
+
+    model_config = SettingsConfigDict(extra="allow")
