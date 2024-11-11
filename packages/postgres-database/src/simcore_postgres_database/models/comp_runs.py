@@ -99,6 +99,12 @@ comp_runs = sa.Table(
         nullable=True,
         doc="When the run was finished",
     ),
+    sa.Column(
+        "cancelled",
+        sa.DateTime(timezone=True),
+        nullable=True,
+        doc="If filled, when cancellation was requested",
+    ),
     sa.Column("metadata", JSONB, nullable=True, doc="the run optional metadata"),
     sa.Column(
         "use_on_demand_clusters",
