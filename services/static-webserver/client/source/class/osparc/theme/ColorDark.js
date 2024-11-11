@@ -2,6 +2,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
   include: osparc.theme.mixin.Color,
 
   colors: {
+    // 105-0
     "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
     "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-5),
     "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-10),
