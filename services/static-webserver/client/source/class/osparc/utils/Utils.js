@@ -277,9 +277,9 @@ qx.Class.define("osparc.utils.Utils", {
       return reloadButton;
     },
 
-    getUniqueStudyName: function(preferredName, list) {
+    getUniqueName: function(preferredName, list, key = "name") {
       let title = preferredName;
-      const existingTitles = list.map(study => study.name);
+      const existingTitles = list.map(study => study[key]);
       if (existingTitles.includes(title)) {
         let cont = 1;
         while (existingTitles.includes(`${title} (${cont})`)) {

@@ -1169,7 +1169,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __newStudyBtnClicked: function(button) {
       button.setValue(false);
       const minStudyData = osparc.data.model.Study.createMinStudyObject();
-      const title = osparc.utils.Utils.getUniqueStudyName(minStudyData.name, this._resourcesList);
+      const title = osparc.utils.Utils.getUniqueName(minStudyData.name, this._resourcesList);
       minStudyData["name"] = title;
       minStudyData["workspaceId"] = this.getCurrentWorkspaceId();
       minStudyData["folderId"] = this.getCurrentFolderId();
@@ -1189,7 +1189,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __newPlanBtnClicked: function(templateData, newStudyName) {
       // do not override cached template data
       const templateCopyData = osparc.utils.Utils.deepCloneObject(templateData);
-      const title = osparc.utils.Utils.getUniqueStudyName(newStudyName, this._resourcesList);
+      const title = osparc.utils.Utils.getUniqueName(newStudyName, this._resourcesList);
       templateCopyData.name = title;
       this._showLoadingPage(this.tr("Creating ") + (newStudyName || osparc.product.Utils.getStudyAlias()));
       const contextProps = {

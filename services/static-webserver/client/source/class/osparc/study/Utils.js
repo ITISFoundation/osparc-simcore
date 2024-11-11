@@ -116,7 +116,7 @@ qx.Class.define("osparc.study.Utils", {
               newStudyLabel = metadata["name"];
             }
             if (existingStudies) {
-              const title = osparc.utils.Utils.getUniqueStudyName(newStudyLabel, existingStudies);
+              const title = osparc.utils.Utils.getUniqueName(newStudyLabel, existingStudies);
               minStudyData["name"] = title;
             } else {
               minStudyData["name"] = newStudyLabel;
