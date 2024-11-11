@@ -23,9 +23,8 @@ qx.Class.define("osparc.study.StudyOptions", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.__studyId = studyId;
-
     if (studyId) {
+      this.__studyId = studyId;
       this.setStudyId(studyId);
     }
   },
@@ -305,7 +304,7 @@ qx.Class.define("osparc.study.StudyOptions", {
       if (walletSelection.length && walletSelection[0]["walletId"]) {
         const params = {
           url: {
-            "studyId": this.__studyData["uuid"],
+            "studyId": this.__studyId,
             "walletId": walletSelection[0]["walletId"]
           }
         };
