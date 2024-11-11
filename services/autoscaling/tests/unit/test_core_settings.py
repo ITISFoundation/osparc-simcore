@@ -208,10 +208,16 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed(  # noqa: N802
 
     # now as part of AUTOSCALING_EC2_INSTANCES: EC2InstancesSettings | None
     assert os.environ["AUTOSCALING_EC2_INSTANCES"] == "{}"
+
+    with pytest.raises(ValidationError) as err_info:
+        ApplicationSettings.create_from_envs(AUTOSCALING_EC2_INSTANCES={})
+
+    before = err_info.value.errors()
+
     with pytest.raises(ValidationError) as err_info:
         ApplicationSettings.create_from_envs()
 
-    assert err_info.value.errors()
+    assert err_info.value.errors() == before
 
     # removing any value for AUTOSCALING_EC2_INSTANCES
     monkeypatch.delenv("AUTOSCALING_EC2_INSTANCES")
