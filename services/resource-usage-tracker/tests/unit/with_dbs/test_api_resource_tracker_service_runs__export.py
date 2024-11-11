@@ -9,7 +9,7 @@ from unittest.mock import Mock
 import pytest
 import sqlalchemy as sa
 from moto.server import ThreadedMotoServer
-from pydantic import AnyUrl
+from pydantic import AnyUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -30,7 +30,7 @@ _USER_ID = 1
 
 @pytest.fixture
 async def mocked_export(mocker: MockerFixture):
-    mock_export = mocker.patch(
+    mocker.patch(
         "simcore_service_resource_usage_tracker.services.service_runs.ResourceTrackerRepository.export_service_runs_table_to_s3",
         autospec=True,
     )
@@ -38,12 +38,9 @@ async def mocked_export(mocker: MockerFixture):
 
 @pytest.fixture
 async def mocked_presigned_link(mocker: MockerFixture):
-    mock_presigned_link = mocker.patch(
+    mocker.patch(
         "simcore_service_resource_usage_tracker.services.service_runs.SimcoreS3API.create_single_presigned_download_link",
-        return_value=parse_obj_as(
-            AnyUrl,
-            "https://www.testing.com/",
-        ),
+        return_value=TypeAdapter(AnyUrl).validate_python("https://www.testing.com/"),
     )
 
 
