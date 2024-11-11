@@ -6,7 +6,6 @@
 
 
 import datetime
-import json
 from collections.abc import Awaitable, Callable, Iterator
 from typing import Any, cast
 from uuid import uuid4
@@ -92,7 +91,9 @@ def tasks(
                 "inputs": (
                     {
                         key: (
-                            value.model_dump(by_alias=True, exclude_unset=True)
+                            value.model_dump(
+                                mode="json", by_alias=True, exclude_unset=True
+                            )
                             if isinstance(value, BaseModel)
                             else value
                         )
@@ -104,8 +105,8 @@ def tasks(
                 "outputs": (
                     {
                         key: (
-                            json.loads(
-                                value.model_dump_json(by_alias=True, exclude_unset=True)
+                            value.model_dump(
+                                mode="json", by_alias=True, exclude_unset=True
                             )
                             if isinstance(value, BaseModel)
                             else value
