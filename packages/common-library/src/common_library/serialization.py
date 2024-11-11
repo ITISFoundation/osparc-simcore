@@ -1,7 +1,8 @@
+import contextlib
 from datetime import timedelta
 from typing import Any
 
-from pydantic import BaseModel, SecretStr, TypeAdapter
+from pydantic import BaseModel, SecretStr, TypeAdapter, ValidationError
 from pydantic_core import Url
 
 
@@ -30,11 +31,11 @@ def model_dump_with_secrets(
 
         elif isinstance(field_data, dict):
             field_type = settings_obj.model_fields[field_name].annotation
-
-            data[field_name] = model_dump_with_secrets(
-                TypeAdapter(field_type).validate_python(field_data),
-                show_secrets=show_secrets,
-                **pydantic_export_options,
-            )
+            with contextlib.suppress(AttributeError, ValidationError):
+                data[field_name] = model_dump_with_secrets(
+                    TypeAdapter(field_type).validate_python(field_data),
+                    show_secrets=show_secrets,
+                    **pydantic_export_options,
+                )
 
     return data
