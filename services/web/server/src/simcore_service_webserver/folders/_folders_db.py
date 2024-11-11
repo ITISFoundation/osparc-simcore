@@ -221,7 +221,7 @@ async def get_for_user_or_workspace(
         return FolderDB.from_orm(row)
 
 
-async def _update_impl(
+async def update(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -263,53 +263,6 @@ async def _update_impl(
         if row is None:
             raise FolderNotFoundError(reason=f"Folder {folders_id_or_ids} not found.")
         return FolderDB.from_orm(row)
-
-
-async def update_batch(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *folder_id: FolderID,
-    product_name: ProductName,
-    # updatable columns
-    name: str | UnSet = _unset,
-    parent_folder_id: FolderID | None | UnSet = _unset,
-    trashed_at: datetime | None | UnSet = _unset,
-    trashed_explicitly: bool | UnSet = _unset,
-) -> FolderDB:
-    return await _update_impl(
-        app=app,
-        connection=connection,
-        folders_id_or_ids=set(folder_id),
-        product_name=product_name,
-        name=name,
-        parent_folder_id=parent_folder_id,
-        trashed_at=trashed_at,
-        trashed_explicitly=trashed_explicitly,
-    )
-
-
-async def update(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    folder_id: FolderID,
-    product_name: ProductName,
-    # updatable columns
-    name: str | UnSet = _unset,
-    parent_folder_id: FolderID | None | UnSet = _unset,
-    trashed_at: datetime | None | UnSet = _unset,
-    trashed_explicitly: bool | UnSet = _unset,
-) -> FolderDB:
-    return await _update_impl(
-        app=app,
-        connection=connection,
-        folders_id_or_ids=folder_id,
-        product_name=product_name,
-        name=name,
-        parent_folder_id=parent_folder_id,
-        trashed_at=trashed_at,
-        trashed_explicitly=trashed_explicitly,
-    )
 
 
 async def delete_recursively(
