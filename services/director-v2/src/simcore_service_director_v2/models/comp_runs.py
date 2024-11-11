@@ -46,6 +46,7 @@ class CompRunsAtDB(BaseModel):
     modified: datetime.datetime
     started: datetime.datetime | None
     ended: datetime.datetime | None
+    cancelled: datetime.datetime | None
     metadata: RunMetadataDict = RunMetadataDict()
     use_on_demand_clusters: bool
 
@@ -72,7 +73,7 @@ class CompRunsAtDB(BaseModel):
     @classmethod
     def ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
         if v is not None and v.tzinfo is None:
-            v = v.replace(tzinfo=datetime.timezone.utc)
+            v = v.replace(tzinfo=datetime.UTC)
         return v
 
     @validator("metadata", pre=True)
@@ -93,9 +94,22 @@ class CompRunsAtDB(BaseModel):
                     "user_id": 132,
                     "cluster_id": 0,
                     "iteration": 42,
+                    "result": "UNKNOWN",
+                    "created": "2021-03-01 13:07:34.19161",
+                    "modified": "2021-03-01 13:07:34.19161",
+                    "cancelled": None,
+                    "use_on_demand_clusters": False,
+                },
+                {
+                    "run_id": 432,
+                    "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
+                    "user_id": 132,
+                    "cluster_id": None,  # this default to DEFAULT_CLUSTER_ID
+                    "iteration": 42,
                     "result": "NOT_STARTED",
                     "created": "2021-03-01 13:07:34.19161",
                     "modified": "2021-03-01 13:07:34.19161",
+                    "cancelled": None,
                     "use_on_demand_clusters": False,
                 },
                 {
@@ -109,6 +123,7 @@ class CompRunsAtDB(BaseModel):
                     "modified": "2021-03-01 13:07:34.19161",
                     "started": "2021-03-01 8:07:34.19161",
                     "ended": "2021-03-01 13:07:34.10",
+                    "cancelled": None,
                     "metadata": {
                         "node_id_names_map": {},
                         "product_name": "osparc",
@@ -116,6 +131,21 @@ class CompRunsAtDB(BaseModel):
                         "simcore_user_agent": "undefined",
                         "some-other-metadata-which-is-an-array": [1, 3, 4],
                     },
+                    "use_on_demand_clusters": False,
+                },
+                {
+                    "run_id": 43243,
+                    "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
+                    "user_id": 132,
+                    "cluster_id": 123,
+                    "iteration": 12,
+                    "result": "SUCCESS",
+                    "created": "2021-03-01 13:07:34.19161",
+                    "modified": "2021-03-01 13:07:34.19161",
+                    "started": "2021-03-01 8:07:34.19161",
+                    "ended": "2021-03-01 13:07:34.10",
+                    "cancelled": None,
+                    "metadata": None,
                     "use_on_demand_clusters": False,
                 },
             ]
