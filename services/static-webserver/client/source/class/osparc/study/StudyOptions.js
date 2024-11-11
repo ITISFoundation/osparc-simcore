@@ -23,9 +23,7 @@ qx.Class.define("osparc.study.StudyOptions", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    if (studyId) {
-      this.setStudyId(studyId);
-    }
+    this.setStudyId(studyId);
   },
 
   properties: {
