@@ -121,8 +121,8 @@ async def test_workflow(
     )
 
     assert CheckpointApiModel.model_validate(page.data[0]) == checkpoint1
-
     # UPDATE checkpoint annotations
+    # here is the issue
     resp = await client.patch(
         f"/{VX}/repos/projects/{project_uuid}/checkpoints/{checkpoint1.id}",
         json={"message": "updated message", "tag": "Version 1"},

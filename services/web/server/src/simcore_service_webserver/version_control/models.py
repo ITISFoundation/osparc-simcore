@@ -1,11 +1,19 @@
 from datetime import datetime
-from typing import Any, TypeAlias, Union
+from typing import Annotated, Any, TypeAlias, Union
 
 from aiopg.sa.result import RowProxy
 from models_library.basic_types import SHA1Str
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
-from pydantic import ConfigDict, BaseModel, Field, PositiveInt, StrictBool, StrictFloat, StrictInt
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+)
 from pydantic.networks import HttpUrl
 
 BuiltinTypes: TypeAlias = Union[StrictBool, StrictInt, StrictFloat, str]
@@ -24,7 +32,7 @@ HEAD = f"{__file__}/ref/HEAD"
 
 CommitID: TypeAlias = int
 BranchID: TypeAlias = int
-RefID: TypeAlias = CommitID | str
+RefID: TypeAlias = Annotated[CommitID | str, Field(union_mode="left_to_right")]
 
 CheckpointID: TypeAlias = PositiveInt
 
@@ -51,6 +59,7 @@ class Checkpoint(BaseModel):
 
 class WorkbenchView(BaseModel):
     """A view (i.e. read-only and visual) of the project's workbench"""
+
     model_config = ConfigDict(from_attributes=True)
 
     # NOTE: Tmp replacing UUIDS by str due to a problem serializing to json UUID keys

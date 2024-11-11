@@ -238,6 +238,8 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
     path_params = parse_request_path_parameters_as(_CheckpointsPathParam, request)
     update = await parse_request_body_as(CheckpointAnnotations, request)
 
+    assert isinstance(path_params.ref_id, int)
+
     checkpoint: Checkpoint = await update_checkpoint(
         vc_repo,
         project_uuid=path_params.project_uuid,
