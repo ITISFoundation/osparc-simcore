@@ -610,7 +610,7 @@ class ProjectDBAPI(BaseProjectDB):
                 )
 
             if combined_query is None:
-                msg = "No valid queries were provided to combine."
+                msg = f"No valid queries were provided to combine. Workspace scope: {workspace_query.workspace_scope}"
                 raise ValueError(msg)
             count_query = sa.select(func.count()).select_from(combined_query.subquery())
             total_count = await conn.scalar(count_query)
