@@ -221,14 +221,14 @@ class Cluster(BaseCluster):
         },
     )
 
-    @model_validator(mode="before")
+    @model_validator(mode="after")
     @classmethod
-    def check_owner_has_access_rights(cls, values):
-        is_default_cluster = bool(values["id"] == DEFAULT_CLUSTER_ID)
-        owner_gid = values["owner"]
+    def _check_owner_has_access_rights(cls, values):
+        is_default_cluster = bool(values.id == DEFAULT_CLUSTER_ID)
+        owner_gid = values.owner
 
         # check owner is in the access rights, if not add it
-        access_rights = values.get("access_rights", values.get("accessRights", {}))
+        access_rights = values.access_rights or {}
         if owner_gid not in access_rights:
             access_rights[owner_gid] = (
                 CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
@@ -239,5 +239,5 @@ class Cluster(BaseCluster):
         ):
             msg = f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
             raise ValueError(msg)
-        values["access_rights"] = access_rights
+        values.access_rights = access_rights
         return values
