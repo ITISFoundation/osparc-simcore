@@ -34,14 +34,13 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
     this.getChildControl("description");
     this.getChildControl("thumbnail");
     this.getChildControl("cancel");
-    const saveButton = this.getChildControl("save");
+    this.getChildControl("save");
     if (workspace) {
       // editing
       this.setWorkspace(workspace);
     } else {
       // creating
       this.__creatingWorkspace = true;
-      saveButton.setLabel(this.tr("Create"));
       this.__createWorkspace()
         .then(newWorkspace => {
           this.setWorkspace(newWorkspace);
