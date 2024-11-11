@@ -18,6 +18,7 @@ def setup(app: FastAPI) -> None:
                 )
             },
             settings=settings.REDIS,
+            client_name=app.title,
         )
         await redis_clients_manager.setup()
 

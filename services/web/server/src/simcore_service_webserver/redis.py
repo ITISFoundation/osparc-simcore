@@ -7,6 +7,7 @@ from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDB
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ._constants import APP_SETTINGS_KEY
+from ._meta import APP_NAME
 
 _logger = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ async def setup_redis_client(app: web.Application):
             )
         },
         settings=redis_settings,
+        client_name=APP_NAME,
     )
 
     await manager.setup()

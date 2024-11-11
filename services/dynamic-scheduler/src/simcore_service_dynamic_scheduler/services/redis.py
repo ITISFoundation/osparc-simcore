@@ -24,6 +24,7 @@ def setup_redis(app: FastAPI) -> None:
             {RedisManagerDBConfig(x, decode_responses=False) for x in _BINARY_DBS}
             | {RedisManagerDBConfig(x, decode_responses=True) for x in _DECODE_DBS},
             settings,
+            client_name=app.title,
         )
         await manager.setup()
 
