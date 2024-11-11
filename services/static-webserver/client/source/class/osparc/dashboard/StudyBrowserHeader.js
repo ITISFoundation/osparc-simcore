@@ -339,10 +339,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
 
     __editWorkspace: function() {
       const workspace = osparc.store.Workspaces.getInstance().getWorkspace(this.getCurrentWorkspaceId());
-      const permissionsView = new osparc.editor.WorkspaceEditor(workspace);
+      const workspaceEditor = new osparc.editor.WorkspaceEditor(workspace);
       const title = this.tr("Edit Workspace");
-      const win = osparc.ui.window.Window.popUpInWindow(permissionsView, title, 300, 200);
-      permissionsView.addListener("workspaceUpdated", () => {
+      const win = osparc.ui.window.Window.popUpInWindow(workspaceEditor, title, 300, 150);
+      workspaceEditor.addListener("workspaceUpdated", () => {
         win.close();
         this.__buildLayout();
       }, this);
