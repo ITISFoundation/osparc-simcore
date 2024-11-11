@@ -4,7 +4,7 @@
 # pylint:disable=too-many-arguments
 
 import os
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import sqlalchemy as sa
@@ -29,16 +29,16 @@ _USER_ID = 1
 
 
 @pytest.fixture
-async def mocked_export(mocker: MockerFixture):
-    mocker.patch(
+async def mocked_export(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
         "simcore_service_resource_usage_tracker.services.service_runs.ResourceTrackerRepository.export_service_runs_table_to_s3",
         autospec=True,
     )
 
 
 @pytest.fixture
-async def mocked_presigned_link(mocker: MockerFixture):
-    mocker.patch(
+async def mocked_presigned_link(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
         "simcore_service_resource_usage_tracker.services.service_runs.SimcoreS3API.create_single_presigned_download_link",
         return_value=TypeAdapter(AnyUrl).validate_python("https://www.testing.com/"),
     )
