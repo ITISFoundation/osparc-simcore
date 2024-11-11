@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from servicelib.redis import RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase
 
+from .._meta import APP_NAME
 from ..core.settings import AppSettings
 
 
@@ -18,7 +19,7 @@ def setup(app: FastAPI) -> None:
                 )
             },
             settings=settings.REDIS,
-            client_name=app.title,
+            client_name=APP_NAME,
         )
         await redis_clients_manager.setup()
 

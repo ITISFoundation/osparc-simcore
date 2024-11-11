@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 
+from .._meta import APP_NAME
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,7 +16,7 @@ def setup(app: FastAPI) -> None:
         settings: RedisSettings = app.state.settings.AUTOSCALING_REDIS
         redis_locks_dsn = settings.build_redis_dsn(RedisDatabase.LOCKS)
         app.state.redis_client_sdk = client = RedisClientSDK(
-            redis_locks_dsn, client_name=app.title
+            redis_locks_dsn, client_name=APP_NAME
         )
         await client.setup()
 
