@@ -70,7 +70,7 @@ def simcore_directory_id(simcore_file_id: SimcoreS3FileID) -> SimcoreS3FileID:
     ],
 )
 @pytest.mark.parametrize("checksum", [None, _faker.sha256()])
-async def test_regression_collaborator_creates_file_upload_links(
+async def test_regression_collaborator_creates_file_upload_links(  # pylint:disable=too-many-positional-arguments
     disabled_dsm_cleaner_task,
     aiopg_engine: Engine,
     simcore_s3_dsm: SimcoreS3DataManager,

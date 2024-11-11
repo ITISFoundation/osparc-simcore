@@ -15,7 +15,7 @@ class DatcoreAdapterSettings(BaseCustomSettings):
 
     @cached_property
     def endpoint(self) -> str:
-        endpoint = AnyHttpUrl.build(
+        endpoint = AnyHttpUrl.build(  # pylint:disable=no-member
             scheme="http",
             host=self.DATCORE_ADAPTER_HOST,
             port=self.DATCORE_ADAPTER_PORT,
