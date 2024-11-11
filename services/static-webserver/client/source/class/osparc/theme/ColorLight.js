@@ -164,6 +164,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "workbench-edge-comp-active": "#888888",
     "workbench-edge-api-active": "#444444",
     "workbench-start-hint": "#AFAFAF",
+    "workbench-view-splitter": "#DDDDDD",
 
     "node-background": "rgba(113, 157, 181, 0.35)",
     "node-selected-background": "strong-main",

@@ -40,16 +40,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     TAB_BUTTON_HEIGHT: 46,
 
     decorateSplitter: function(splitter) {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const binaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
       splitter.set({
         width: 2,
-        backgroundColor: binaryColor
+        backgroundColor: "workbench-view-splitter"
       });
-      colorManager.addListener("changeTheme", () => {
-        const newBinaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
-        splitter.setBackgroundColor(newBinaryColor);
-      }, this);
     },
 
     decorateSlider: function(slider) {
@@ -202,7 +196,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           control = new qx.ui.tabview.TabView().set({
             contentPadding: osparc.widget.CollapsibleViewLight.CARET_WIDTH + 2, // collapse bar + padding
             contentPaddingRight: 2,
-            backgroundColor: this.self().PRIMARY_COL_BG_COLOR,
             barPosition: "top"
           });
           const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
