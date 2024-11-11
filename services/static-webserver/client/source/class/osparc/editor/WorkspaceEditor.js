@@ -124,7 +124,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
             font: "text-14",
             backgroundColor: "background-main",
             placeholder: this.tr("Title"),
-            minHeight: 27
+            height: 30,
           });
           this.bind("label", control, "value");
           control.bind("value", this, "label");
@@ -135,6 +135,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           control = new qx.ui.form.TextField().set({
             font: "text-14",
             placeholder: this.tr("Description"),
+            height: 30,
           });
           this.bind("description", control, "value");
           control.bind("value", this, "description");
@@ -145,6 +146,7 @@ qx.Class.define("osparc.editor.WorkspaceEditor", {
           control = new qx.ui.form.TextField().set({
             font: "text-14",
             placeholder: this.tr("Thumbnail"),
+            height: 30,
           });
           this.bind("thumbnail", control, "value");
           control.bind("value", this, "thumbnail");
