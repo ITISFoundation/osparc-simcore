@@ -24,7 +24,7 @@ def test_settings(app_environment: EnvVarsDict):
 
 
 @pytest.mark.xfail(
-    "disabling till pydantic2 migration is complete see https://github.com/ITISFoundation/osparc-simcore/pull/6705"
+    reason="disabling till pydantic2 migration is complete see https://github.com/ITISFoundation/osparc-simcore/pull/6705"
 )
 def test_empty_primary_ec2_instances_raises(
     app_environment: EnvVarsDict,
@@ -38,7 +38,7 @@ def test_empty_primary_ec2_instances_raises(
 
 
 @pytest.mark.xfail(
-    "disabling till pydantic2 migration is complete see https://github.com/ITISFoundation/osparc-simcore/pull/6705"
+    reason="disabling till pydantic2 migration is complete see https://github.com/ITISFoundation/osparc-simcore/pull/6705"
 )
 def test_multiple_primary_ec2_instances_raises(
     app_environment: EnvVarsDict,
@@ -65,7 +65,7 @@ def test_multiple_primary_ec2_instances_raises(
 
 
 @pytest.mark.xfail(
-    "disabling till pydantic2 migration is complete see https://github.com/ITISFoundation/osparc-simcore/pull/6705"
+    reason="disabling till pydantic2 migration is complete see https://github.com/ITISFoundation/osparc-simcore/pull/6705"
 )
 @pytest.mark.parametrize(
     "invalid_tag",
