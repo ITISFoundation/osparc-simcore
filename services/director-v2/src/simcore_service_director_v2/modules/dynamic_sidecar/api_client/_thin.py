@@ -69,7 +69,7 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     async def _get_health_common(
         self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "/health", no_api_version=True)
+        url = self._get_url(dynamic_sidecar_endpoint, "health", no_api_version=True)
         return await self.client.get(url, timeout=self._health_request_timeout)
 
     @retry_on_errors()
