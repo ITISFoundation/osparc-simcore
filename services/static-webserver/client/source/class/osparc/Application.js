@@ -222,9 +222,6 @@ qx.Class.define("osparc.Application", {
     __setDeviceSpecificIcons: function() {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       const isAndroid = /android/i.test(navigator.userAgent);
-      const isWindows = /windows/i.test(navigator.userAgent);
-      // const productColor = qx.theme.manager.Color.getInstance().resolve("product-color");
-      // const backgroundColor = qx.theme.manager.Color.getInstance().resolve("primary-background-color");
       // default icons
       this.__updateMetaTags();
       this.__setDefaultIcons()
@@ -232,8 +229,6 @@ qx.Class.define("osparc.Application", {
         this.__setIOSpIcons();
       } else if (isAndroid) {
         this.__setGoogleIcons();
-      } else if (isWindows) {
-      //   this.__updateBrowserConfig(this.__getProductMetaData().productColor);
       }
     },
 
@@ -246,16 +241,14 @@ qx.Class.define("osparc.Application", {
       }
 
       const productColor = qx.theme.manager.Color.getInstance().resolve("product-color");
-      const backgroundColor = qx.theme.manager.Color.getInstance().resolve("primary-background-color");
       return {
         productName: productName,
         productColor: productColor,
-        backgroundColor: backgroundColor
       }
     },
 
     __updateMetaTags: function() {
-      // check device type and only set the icons for the divice type
+      // check device type and only set the icons for the device type
       // i.e iOS, Android or windows etc
       const themeColorMeta = document.querySelector("meta[name='theme-color']");
       const tileColorMeta = document.querySelector("meta[name='msapplication-TileColor']");
