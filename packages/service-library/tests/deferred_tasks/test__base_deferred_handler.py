@@ -55,6 +55,7 @@ async def redis_client_sdk(
     sdk = RedisClientSDK(
         redis_service.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
         decode_responses=False,
+        client_name="pytest",
     )
     await sdk.setup()
     yield sdk

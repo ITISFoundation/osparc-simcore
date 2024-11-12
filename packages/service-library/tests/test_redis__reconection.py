@@ -21,9 +21,9 @@ async def test_redis_client_sdk_lost_connection(
     docker_client: docker.client.DockerClient,
 ):
     redis_client_sdk = RedisClientSDK(
-        redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
+        redis_service.build_redis_dsn(RedisDatabase.RESOURCES), client_name="pytest"
     )
-
+    assert redis_client_sdk.client_name == "pytest"
     await redis_client_sdk.setup()
 
     assert await redis_client_sdk.ping() is True
@@ -41,3 +41,5 @@ async def test_redis_client_sdk_lost_connection(
     ):
         with attempt:
             assert await redis_client_sdk.ping() is False
+
+    await redis_client_sdk.shutdown()

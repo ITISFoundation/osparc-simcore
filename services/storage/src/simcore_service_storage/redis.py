@@ -5,6 +5,7 @@ from aiohttp import web
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 
+from ._meta import APP_NAME
 from .constants import APP_CONFIG_KEY
 from .settings import Settings
 
@@ -20,7 +21,9 @@ def setup_redis(app: web.Application):
         assert settings.STORAGE_REDIS  # nosec
         redis_settings: RedisSettings = settings.STORAGE_REDIS
         redis_locks_dsn = redis_settings.build_redis_dsn(RedisDatabase.LOCKS)
-        app[_APP_REDIS_KEY] = client = RedisClientSDK(redis_locks_dsn)
+        app[_APP_REDIS_KEY] = client = RedisClientSDK(
+            redis_locks_dsn, client_name=APP_NAME
+        )
         await client.setup()
 
         yield
