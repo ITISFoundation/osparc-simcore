@@ -721,7 +721,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "tis":
         case "tiplite":
-          this.__addTIPPlusButtons();
+          this.__addTIPPlusButton();
           break;
         case "s4l":
         case "s4lacad":
@@ -745,24 +745,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addNonResourceCard(newStudyBtn);
     },
 
-    __addTIPPlusButtons: function() {
-      osparc.data.Resources.get("templates")
-        .then(templates => {
-          if (templates) {
-            osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
-              .then(newStudiesData => {
-                const product = osparc.product.Utils.getProductName()
-                if (product in newStudiesData) {
-                  const mode = this._resourcesContainer.getMode();
-                  const title = this.tr("New Plan");
-                  const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title) : new osparc.dashboard.ListButtonNew(title);
-                  newStudyBtn.setCardKey("new-study");
-                  newStudyBtn.subscribeToFilterGroup("searchBarFilter");
-                  osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
-                  this._resourcesContainer.addNonResourceCard(newStudyBtn);
-                  newStudyBtn.addListener("execute", () => {
-                    newStudyBtn.setValue(false);
-
+    __addTIPPlusButton: function() {
                     const newStudies = new osparc.dashboard.NewStudies(newStudiesData[product]);
                     newStudies.addListener("templatesLoaded", () => {
                       newStudies.setGroupBy("category");
