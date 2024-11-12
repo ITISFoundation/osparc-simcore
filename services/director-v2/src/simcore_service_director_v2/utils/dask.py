@@ -2,7 +2,7 @@ import asyncio
 import collections
 import logging
 from collections.abc import Awaitable, Callable, Coroutine, Generator
-from typing import Any, Final, NoReturn, Optional, ParamSpec, TypeVar, cast, get_args
+from typing import Any, Final, NoReturn, ParamSpec, TypeVar, cast, get_args
 from uuid import uuid4
 
 import dask_gateway  # type: ignore[import-untyped]
@@ -61,7 +61,7 @@ _logger = logging.getLogger(__name__)
 ServiceKeyStr = str
 ServiceVersionStr = str
 
-_PVType = Optional[_NPItemValue]
+_PVType = _NPItemValue | None
 
 assert len(get_args(_PVType)) == len(  # nosec
     get_args(PortValue)
@@ -73,7 +73,7 @@ def _get_port_validation_errors(port_key: str, err: ValidationError) -> list[Err
     for error in errors:
         assert error["loc"][-1] != (port_key,)
         error["loc"] = error["loc"] + (port_key,)
-    return errors
+    return list(errors)
 
 
 def generate_dask_job_id(
@@ -134,7 +134,7 @@ async def create_node_ports(
             db_manager=db_manager,
         )
     except ValidationError as err:
-        raise PortsValidationError(project_id, node_id, err.errors()) from err
+        raise PortsValidationError(project_id, node_id, list(err.errors())) from err
 
 
 async def parse_output_data(
