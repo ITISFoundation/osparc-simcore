@@ -150,6 +150,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       win.addListener("cancel", () => cancelStudyOptions());
       studyOptions.addListener("cancel", () => cancelStudyOptions());
       studyOptions.addListener("startStudy", () => {
+        const titleSelection = studyOptions.getChildControl("title-field").getValue();
+        const walletSelection = studyOptions.getChildControl("wallet-selector").getSelection();
+        const nodesPricingUnits = studyOptions.getNodePricingUnits();
+        win.close();
         osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
           .then(studyData => {
             const studyId = studyData["uuid"];
@@ -167,15 +171,17 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
             };
 
             const promises = [];
-            const titleSelection = studyOptions.getChildControl("title-field").getValue();
             if (studyData["name"] !== titleSelection) {
               promises.push(osparc.study.StudyOptions.updateName(studyData, titleSelection));
             }
-            const walletSelection = studyOptions.getChildControl("wallet-selector").getSelection();
             if (walletSelection.length && walletSelection[0]["walletId"]) {
               const walletId = walletSelection[0]["walletId"];
               promises.push(osparc.study.StudyOptions.updateWallet(studyData["uuid"], walletId));
             }
+            nodesPricingUnits.forEach(nodePricingUnits => {
+              console.log("nodePricingUnits", nodePricingUnits);
+              // osparc.study.NodePricingUnits.patchPricingUnitSelection(studyId, )
+            })
 
             Promise.all(promises)
               .then(() => {
