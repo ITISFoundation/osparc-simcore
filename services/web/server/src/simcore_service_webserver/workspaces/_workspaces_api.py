@@ -23,6 +23,7 @@ _logger = logging.getLogger(__name__)
 
 async def create_workspace(
     app: web.Application,
+    *,
     user_id: UserID,
     name: str,
     description: str | None,
@@ -59,6 +60,7 @@ async def create_workspace(
 
 async def get_workspace(
     app: web.Application,
+    *,
     user_id: UserID,
     workspace_id: WorkspaceID,
     product_name: ProductName,
@@ -84,8 +86,10 @@ async def get_workspace(
 
 async def list_workspaces(
     app: web.Application,
+    *,
     user_id: UserID,
     product_name: ProductName,
+    trashed: bool,
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
@@ -94,6 +98,7 @@ async def list_workspaces(
         app,
         user_id=user_id,
         product_name=product_name,
+        trashed=trashed,
         offset=offset,
         limit=limit,
         order_by=order_by,
@@ -119,6 +124,7 @@ async def list_workspaces(
 
 async def update_workspace(
     app: web.Application,
+    *,
     user_id: UserID,
     workspace_id: WorkspaceID,
     name: str,
@@ -161,6 +167,7 @@ async def update_workspace(
 
 async def delete_workspace(
     app: web.Application,
+    *,
     user_id: UserID,
     workspace_id: WorkspaceID,
     product_name: ProductName,
