@@ -179,7 +179,7 @@ def mocked_catalog_service_fcts(
 ) -> Iterator[respx.MockRouter]:
     def _mocked_service_resources(request) -> httpx.Response:
         return httpx.Response(
-            200, json=jsonable_encoder(fake_service_resources, by_alias=True)
+            httpx.codes.OK, json=jsonable_encoder(fake_service_resources, by_alias=True)
         )
 
     def _mocked_services_details(

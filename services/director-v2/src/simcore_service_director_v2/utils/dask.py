@@ -314,7 +314,7 @@ def compute_task_labels(
         ValidationError
     """
     product_name = run_metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
-    standard_simcore_labels = StandardSimcoreDockerLabels.construct(
+    standard_simcore_labels = StandardSimcoreDockerLabels.model_construct(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,

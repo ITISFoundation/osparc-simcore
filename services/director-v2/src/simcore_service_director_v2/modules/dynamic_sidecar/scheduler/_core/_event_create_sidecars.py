@@ -254,7 +254,7 @@ class CreateSidecars(DynamicSchedulerEvent):
                 include=_DYNAMIC_SIDECAR_SERVICE_EXTENDABLE_SPECS,
             )
         )
-        rabbit_message = ProgressRabbitMessageNode.construct(
+        rabbit_message = ProgressRabbitMessageNode.model_construct(
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,
@@ -272,7 +272,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             )
         )
 
-        rabbit_message = ProgressRabbitMessageNode.construct(
+        rabbit_message = ProgressRabbitMessageNode.model_construct(
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,

@@ -89,7 +89,7 @@ async def _get_service_details(
         node.version,
         product_name,
     )
-    obj: ServiceMetaDataPublished = ServiceMetaDataPublished.construct(
+    obj: ServiceMetaDataPublished = ServiceMetaDataPublished.model_construct(
         **service_details
     )
     return obj
