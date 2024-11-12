@@ -190,6 +190,7 @@ async def schedule_all_pipelines(scheduler: BaseCompScheduler) -> None:
     total_results_count = len(results)
 
     # Check if 2/3 of the results are CouldNotAcquireLockError
+    # checks that scheduling is done exclusively
     assert could_not_acquire_lock_count == (2 / 3) * total_results_count
 
 

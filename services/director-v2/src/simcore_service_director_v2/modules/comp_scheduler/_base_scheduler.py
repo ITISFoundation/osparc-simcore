@@ -12,6 +12,7 @@ The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 """
 
 import asyncio
+import contextlib
 import datetime
 import functools
 import logging
@@ -34,7 +35,7 @@ from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
-from servicelib.redis import RedisClientSDK
+from servicelib.redis import CouldNotAcquireLockError, RedisClientSDK
 from servicelib.redis_utils import exclusive
 
 from ...constants import UNDEFINED_STR_METADATA
@@ -281,16 +282,29 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         iteration: Iteration,
     ) -> None:
-        # create a new schedule task
-        p = functools.partial(
-            self._schedule_pipeline,
-            user_id=user_id,
-            project_id=project_id,
-            iteration=iteration,
-            pipeline_params=pipeline_params,
-        )
+        async def _exclusive_safe_schedule_pipeline(
+            *,
+            user_id: UserID,
+            project_id: ProjectID,
+            iteration: Iteration,
+            pipeline_params: ScheduledPipelineParams,
+        ) -> None:
+            with contextlib.suppress(CouldNotAcquireLockError):
+                await self._schedule_pipeline(
+                    user_id=user_id,
+                    project_id=project_id,
+                    iteration=iteration,
+                    pipeline_params=pipeline_params,
+                )
+
         pipeline_params.scheduler_task = start_periodic_task(
-            p,
+            functools.partial(
+                _exclusive_safe_schedule_pipeline,
+                user_id=user_id,
+                project_id=project_id,
+                iteration=iteration,
+                pipeline_params=pipeline_params,
+            ),
             interval=_SCHEDULER_INTERVAL,
             task_name=_TASK_NAME_TEMPLATE.format(
                 user_id=user_id, project_id=project_id, iteration=iteration
