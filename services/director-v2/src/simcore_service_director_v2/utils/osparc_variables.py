@@ -89,7 +89,7 @@ class OsparcVariablesTable:
         return {k: self._variables_getters[k] for k in selection}
 
 
-_HANDLERS_TIMEOUT: Final[NonNegativeInt] = TypeAdapter(NonNegativeInt).validate_python(4)
+_HANDLERS_TIMEOUT: Final[NonNegativeInt] = 4
 
 
 async def resolve_variables_from_context(
