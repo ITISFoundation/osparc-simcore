@@ -86,7 +86,7 @@ def setup_tracing(
     global_tracer_provider.add_span_processor(span_processor)
     # Instrument FastAPI and all httpx clients
     FastAPIInstrumentor().instrument_app(app)
-    HTTPXClientInstrumentor()
+    HTTPXClientInstrumentor().instrument()
 
     if HAS_AIOPG:
         with log_context(
