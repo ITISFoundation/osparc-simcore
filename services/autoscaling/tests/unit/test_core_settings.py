@@ -204,23 +204,32 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed(  # noqa: N802
     # test child settings
     with pytest.raises(ValidationError) as err_info:
         EC2InstancesSettings.create_from_envs()
+
     assert err_info.value.errors()[0]["loc"] == ("EC2_INSTANCES_ALLOWED_TYPES",)
 
-    # now as part of AUTOSCALING_EC2_INSTANCES: EC2InstancesSettings | None
-    assert os.environ["AUTOSCALING_EC2_INSTANCES"] == "{}"
 
-    with pytest.raises(ValidationError) as err_info:
+def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_with_main_field_env_var(  # noqa: N802
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    assert os.environ["AUTOSCALING_EC2_INSTANCES"] == "{}"
+    monkeypatch.setenv("EC2_INSTANCES_ALLOWED_TYPES", "{}")
+
+    # now as part of AUTOSCALING_EC2_INSTANCES: EC2InstancesSettings | None
+    with pytest.raises(ValidationError) as exc_before:
         ApplicationSettings.create_from_envs(AUTOSCALING_EC2_INSTANCES={})
 
-    before = err_info.value.errors()
-
-    with pytest.raises(ValidationError) as err_info:
+    with pytest.raises(ValidationError) as exc_after:
         ApplicationSettings.create_from_envs()
 
-    assert err_info.value.errors() == before
+    assert exc_before.value.errors() == exc_after.value.errors()
+
+
+def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_without_main_field_env_var(  # noqa: N802
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.delenv("AUTOSCALING_EC2_INSTANCES")
 
     # removing any value for AUTOSCALING_EC2_INSTANCES
-    monkeypatch.delenv("AUTOSCALING_EC2_INSTANCES")
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES is None
 
