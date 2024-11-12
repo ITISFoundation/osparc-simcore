@@ -763,8 +763,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
             newStudyBtn.addListener("execute", () => {
               newStudyBtn.setValue(false);
-              // do not use cached templates
-              osparc.data.Resources.get("templates", {}, false)
+              osparc.data.Resources.get("templates")
                 .then(templates => {
                   if (templates) {
                     const newStudies = new osparc.dashboard.NewStudies(newStudiesData[product]);
