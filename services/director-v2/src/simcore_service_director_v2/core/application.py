@@ -128,7 +128,7 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
         logging.getLogger(name).setLevel(quiet_level)
 
     app = FastAPI(
-        debug=settings.SC_BOOT_MODE == BootMode.DEVELOPMENT,
+        debug=settings.SC_BOOT_MODE is BootMode.DEVELOPMENT,
         title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
