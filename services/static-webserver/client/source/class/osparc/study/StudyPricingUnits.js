@@ -25,9 +25,9 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
       layout: new qx.ui.layout.VBox(5)
     });
 
-    this.__studyData = studyData;
-
-    this.__showPricingUnits();
+    if (studyData) {
+      this.setStudyData(studyData);
+    }
   },
 
   events: {
@@ -37,6 +37,11 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
 
   members: {
     __studyData: null,
+
+    setStudyData: function(studyData) {
+      this.__studyData = studyData;
+      this.__showPricingUnits();
+    },
 
     __showPricingUnits: function() {
       const unitsLoading = () => this.fireEvent("loadingUnits");
