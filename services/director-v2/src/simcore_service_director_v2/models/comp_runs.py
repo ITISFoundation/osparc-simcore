@@ -39,7 +39,7 @@ class CompRunsAtDB(BaseModel):
     run_id: PositiveInt
     project_uuid: ProjectID
     user_id: UserID
-    cluster_id: ClusterID | None = None
+    cluster_id: ClusterID | None
     iteration: PositiveInt
     result: RunningState
     created: datetime.datetime
