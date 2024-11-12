@@ -23,7 +23,9 @@ qx.Class.define("osparc.study.StudyOptions", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    this.setStudyId(studyId);
+    if (studyId) {
+      this.setStudyId(studyId);
+    }
   },
 
   properties: {
@@ -192,13 +194,17 @@ qx.Class.define("osparc.study.StudyOptions", {
       ])
         .then(values => {
           const studyData = values[0];
-          this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+          this.setStudyData(studyData);
 
           if (values[1] && "walletId" in values[1]) {
             this.__studyWalletId = values[1]["walletId"];
           }
           this.__buildLayout();
         });
+    },
+
+    setStudyData: function(studyData) {
+      this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
     },
 
     __applyWallet: function(wallet) {
