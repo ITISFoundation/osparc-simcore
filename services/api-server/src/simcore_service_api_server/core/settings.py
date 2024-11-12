@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import Annotated
 
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import (
@@ -87,9 +88,10 @@ class ApplicationSettings(BasicSettings):
     # DOCKER BOOT
     SC_BOOT_MODE: BootModeEnum | None = None
 
-    API_SERVER_POSTGRES: PostgresSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    API_SERVER_POSTGRES: Annotated[
+        PostgresSettings | None,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
 
     API_SERVER_RABBITMQ: RabbitSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True},
