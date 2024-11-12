@@ -114,9 +114,7 @@ class ClusterDetailsGet(ClusterDetails):
 
 class ClusterCreate(BaseCluster):
     owner: GroupID | None = None  # type: ignore[assignment]
-    authentication: ExternalClusterAuthentication = Field(
-        discriminator="discriminator_type"
-    )
+    authentication: ExternalClusterAuthentication = Field(discriminator="type")
     access_rights: dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
     )
@@ -129,7 +127,7 @@ class ClusterCreate(BaseCluster):
                     "type": ClusterTypeInModel.ON_PREMISE,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
-                        "discriminator_type": "simple",
+                        "type": "simple",
                         "username": "someuser",
                         "password": "somepassword",
                     },
@@ -141,7 +139,7 @@ class ClusterCreate(BaseCluster):
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
-                        "discriminator_type": "simple",
+                        "type": "simple",
                         "username": "someuser",
                         "password": "somepassword",
                     },
@@ -176,7 +174,7 @@ class ClusterPatch(BaseCluster):
     owner: GroupID | None = None  # type: ignore[assignment]
     thumbnail: HttpUrl | None = None
     endpoint: AnyUrl | None = None  # type: ignore[assignment]
-    authentication: ExternalClusterAuthentication | None = Field(None, discriminator="discriminator_type")  # type: ignore[assignment]
+    authentication: ExternalClusterAuthentication | None = Field(None, discriminator="type")  # type: ignore[assignment]
     access_rights: dict[GroupID, ClusterAccessRights] | None = Field(  # type: ignore[assignment]
         default=None, alias="accessRights"
     )
@@ -207,5 +205,5 @@ class ClusterPing(BaseModel):
     authentication: ClusterAuthentication = Field(
         ...,
         description="Dask gateway authentication",
-        discriminator="discriminator_type",
+        discriminator="type",
     )

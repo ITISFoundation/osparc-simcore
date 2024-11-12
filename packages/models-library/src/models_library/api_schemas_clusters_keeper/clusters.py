@@ -17,7 +17,7 @@ class ClusterState(StrAutoEnum):
 
 class OnDemandCluster(BaseModel):
     endpoint: AnyUrl
-    authentication: ClusterAuthentication = Field(discriminator="discriminator_type")
+    authentication: ClusterAuthentication = Field(discriminator="type")
     state: ClusterState
     user_id: UserID
     wallet_id: WalletID | None
