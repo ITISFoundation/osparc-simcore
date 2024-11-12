@@ -201,7 +201,7 @@ class RabbitResourceTrackingProjectSyncMessage(RabbitMessageBase):
 
     project_id: ProjectID
     project_name: str | None = None
-    project_tags_names: list[str] | None = None
+    project_tags: list[tuple[int, str]] | None = None
     created_at: datetime.datetime = Field(
         default_factory=lambda: arrow.utcnow().datetime,
         description="message creation datetime",

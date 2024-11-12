@@ -9,6 +9,7 @@ from models_library.api_schemas_resource_usage_tracker.credit_transactions impor
 )
 from models_library.api_schemas_storage import S3BucketName
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.resource_tracker import (
     CreditClassification,
     CreditTransactionId,
@@ -43,10 +44,12 @@ from simcore_postgres_database.models.resource_tracker_pricing_unit_costs import
 from simcore_postgres_database.models.resource_tracker_pricing_units import (
     resource_tracker_pricing_units,
 )
+from simcore_postgres_database.models.resource_tracker_project_metadata import (
+    resource_tracker_project_metadata,
+)
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
-from simcore_service_resource_usage_tracker.services.utils import ProjectID
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
 from .....exceptions.errors import (
@@ -204,18 +207,14 @@ class ResourceTrackerRepository(
         self,
         project_id: ProjectID,
         project_name: str,
-        project_tags_names: list[str],
+        project_tags_db: dict[str, dict[str, str]],
     ) -> None:
         async with self.db_engine.begin() as conn:
-            insert_stmt = (
-                resource_tracker_service_runs.insert()
-                .values(
-                    project_id=f"{project_id}",
-                    project_name=project_name,
-                    project_tags_names=project_tags_names,
-                    modified=sa.func.now(),
-                )
-                .returning(resource_tracker_credit_transactions.c.transaction_id)
+            insert_stmt = resource_tracker_project_metadata.insert().values(
+                project_id=f"{project_id}",
+                project_name=project_name,
+                project_tags=project_tags_db,
+                modified=sa.func.now(),
             )
             await conn.execute(insert_stmt)
 
@@ -223,12 +222,12 @@ class ResourceTrackerRepository(
         self,
         project_id: ProjectID,
         project_name: str | None = None,
-        project_tags_names: list[str] | None = None,
+        project_tags: list[str] | None = None,
     ) -> None:
 
         _update_data = {
             "project_name": project_name,
-            "project_tags_names": project_tags_names,
+            "project_tags": project_tags,
         }
         _update_data_clean = {k: v for k, v in _update_data.items() if v is not None}
 

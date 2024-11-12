@@ -14,6 +14,7 @@ import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
+from models_library.projects import ProjectID
 from models_library.rabbitmq_messages import (
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingMessageType,
@@ -25,6 +26,9 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.resource_tracker_credit_transactions import (
     resource_tracker_credit_transactions,
+)
+from simcore_postgres_database.models.resource_tracker_project_metadata import (
+    resource_tracker_project_metadata,
 )
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
@@ -51,6 +55,7 @@ def mock_env(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
         "SC_BOOT_MODE": "production",
         "POSTGRES_CLIENT_NAME": "postgres_test_client",
         "RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_CHECK_ENABLED": "0",
+        "RESOURCE_USAGE_TRACKER_TRACING": "null",
     }
     setenvs_from_dict(monkeypatch, env_vars)
     return env_vars
@@ -181,6 +186,25 @@ async def assert_service_runs_db_row(
     raise ValueError
 
 
+async def assert_project_metadata_db_row(postgres_db, project_id: ProjectID) -> None:
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.2),
+        stop=stop_after_delay(10),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt, postgres_db.connect() as con:
+            result = con.execute(
+                sa.select(resource_tracker_project_metadata).where(
+                    resource_tracker_project_metadata.c.project_id == f"{project_id}"
+                )
+            )
+            row = result.first()
+            assert row
+            return
+    raise ValueError
+
+
 async def assert_credit_transactions_db_row(
     postgres_db, service_run_id: str, modified_at: datetime | None = None
 ) -> CreditTransactionDB:
@@ -239,6 +263,7 @@ def random_rabbit_message_start(
             "user_email": faker.email(),
             "project_id": faker.uuid4(),
             "project_name": faker.pystr(),
+            "project_tags": [(faker.pyint(), faker.pystr())],
             "node_id": faker.uuid4(),
             "node_name": faker.pystr(),
             "parent_project_id": faker.uuid4(),

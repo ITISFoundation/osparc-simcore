@@ -17,7 +17,7 @@ from simcore_service_resource_usage_tracker.services.process_message_running_ser
     _process_stop_event,
 )
 
-from .conftest import assert_service_runs_db_row
+from .conftest import assert_project_metadata_db_row, assert_service_runs_db_row
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = [
@@ -48,6 +48,7 @@ async def test_process_event_functions(
     )
     await _process_start_event(resource_tracker_repo, msg, publisher)
     output = await assert_service_runs_db_row(postgres_db, msg.service_run_id)
+    await assert_project_metadata_db_row(postgres_db, msg.project_id)
     assert output.stopped_at is None
     assert output.service_run_status == "RUNNING"
     first_occurence_of_last_heartbeat_at = output.last_heartbeat_at
