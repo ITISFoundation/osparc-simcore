@@ -143,10 +143,9 @@ class ScheduledPipelineParams:
     use_on_demand_clusters: bool
 
     scheduler_task: asyncio.Task | None = None
-    scheduler_waker: asyncio.Event | None = None
+    scheduler_waker: asyncio.Event = field(default_factory=asyncio.Event)
 
     def wake_up(self) -> None:
-        assert self.scheduler_waker is not None  # nosec
         self.scheduler_waker.set()
 
 
@@ -252,7 +251,7 @@ class BaseCompScheduler(ABC):
         ), params in self.scheduled_pipelines.items():
             self._start_scheduling(params, user_id, project_id, iteration)
 
-    async def stop_scheduling(self) -> None:
+    async def shutdown(self) -> None:
         # cancel all current scheduling processes
         await asyncio.gather(
             *(
@@ -263,6 +262,18 @@ class BaseCompScheduler(ABC):
             return_exceptions=True,
         )
 
+    def _get_last_iteration(self, user_id: UserID, project_id: ProjectID) -> Iteration:
+        # if no iteration given find the latest one in the list
+        possible_iterations = {
+            it
+            for u_id, p_id, it in self.scheduled_pipelines
+            if u_id == user_id and p_id == project_id
+        }
+        if not possible_iterations:
+            msg = f"There are no pipeline scheduled for {user_id}:{project_id}"
+            raise SchedulerError(msg)
+        return max(possible_iterations)
+
     def _start_scheduling(
         self,
         pipeline_params: ScheduledPipelineParams,
@@ -271,7 +282,6 @@ class BaseCompScheduler(ABC):
         iteration: Iteration,
     ) -> None:
         # create a new schedule task
-        pipeline_params.scheduler_waker = asyncio.Event()
         p = functools.partial(
             self._schedule_pipeline,
             user_id=user_id,
