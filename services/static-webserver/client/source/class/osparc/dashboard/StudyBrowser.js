@@ -1199,7 +1199,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         folderId: this.getCurrentFolderId(),
       };
       osparc.study.Utils.createStudyFromTemplate(templateCopyData, this._loadingPage, contextProps)
-        .then(studyId => this.__startStudyAfterCreating(studyId))
+        .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
           osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
