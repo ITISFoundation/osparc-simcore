@@ -66,8 +66,9 @@ from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB, RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.models.dask_subsystem import DaskClientTaskState
-from simcore_service_director_v2.modules.comp_scheduler._base_scheduler import (
+from simcore_service_director_v2.modules.comp_scheduler import (
     BaseCompScheduler,
+    get_scheduler,
 )
 from simcore_service_director_v2.modules.comp_scheduler._dask_scheduler import (
     DaskScheduler,
@@ -262,7 +263,7 @@ async def test_scheduler_gracefully_starts_and_stops(
     minimal_app: FastAPI,
 ):
     # check it started correctly
-    assert minimal_app.state.computational_scheduler_task is not None
+    assert get_scheduler(minimal_app) is not None
 
 
 @pytest.mark.parametrize(
