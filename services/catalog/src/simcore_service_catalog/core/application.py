@@ -46,8 +46,13 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     # STATE
     app.state.settings = settings
 
+    add_tracing = False
+    if app.state.settings.CATALOG_TRACING:
+        add_tracing = True
+        setup_tracing(app, app.state.settings.CATALOG_TRACING, APP_NAME)
+
     # STARTUP-EVENT
-    app.add_event_handler("startup", create_on_startup(app))
+    app.add_event_handler("startup", create_on_startup(app, add_tracing=add_tracing))
 
     # PLUGIN SETUP
     setup_function_services(app)
@@ -65,8 +70,6 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         app.add_middleware(
             BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header
         )
-    if app.state.settings.CATALOG_TRACING:
-        setup_tracing(app, app.state.settings.CATALOG_TRACING, APP_NAME)
 
     app.add_middleware(GZipMiddleware)
 

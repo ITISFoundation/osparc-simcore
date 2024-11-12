@@ -26,7 +26,7 @@ def _flush_finished_banner() -> None:
     print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
 
 
-def create_on_startup(app: FastAPI) -> EventCallable:
+def create_on_startup(app: FastAPI, add_tracing: bool = False) -> EventCallable:
     async def _() -> None:
         _flush_started_banner()
 
@@ -37,7 +37,7 @@ def create_on_startup(app: FastAPI) -> EventCallable:
 
         if app.state.settings.CATALOG_DIRECTOR:
             # setup connection to director
-            await setup_director(app)
+            await setup_director(app, add_tracing=add_tracing)
 
             # FIXME: check director service is in place and ready. Hand-shake??
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
