@@ -58,6 +58,31 @@ def column_modified_by_user(
     )
 
 
+def column_trashed_datetime(resource_name: str) -> sa.Column:
+    return sa.Column(
+        "trashed",
+        sa.DateTime(timezone=True),
+        nullable=True,
+        comment=f"The date and time when the {resource_name} was marked as trashed."
+        f"Null if the {resource_name} has not been trashed [default].",
+    )
+
+
+def column_trashed_by_user(resource_name: str, users_table: sa.Table) -> sa.Column:
+    return sa.Column(
+        "trashed_by",
+        sa.BigInteger,
+        sa.ForeignKey(
+            users_table.c.id,
+            onupdate="CASCADE",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
+        comment=f"The user who marked the {resource_name} as trashed "
+        "or NULL if unknown or unmarked.",
+    )
+
+
 _TRIGGER_NAME: Final[str] = "auto_update_modified_timestamp"
 
 

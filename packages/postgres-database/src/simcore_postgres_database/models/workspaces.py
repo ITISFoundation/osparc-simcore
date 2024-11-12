@@ -1,7 +1,13 @@
 import sqlalchemy as sa
 
-from ._common import column_created_datetime, column_modified_datetime
+from ._common import (
+    column_created_datetime,
+    column_modified_datetime,
+    column_trashed_by_user,
+    column_trashed_datetime,
+)
 from .base import metadata
+from .users import users
 
 workspaces = sa.Table(
     "workspaces",
@@ -48,7 +54,10 @@ workspaces = sa.Table(
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
+    column_trashed_datetime("workspace"),
+    column_trashed_by_user("workspace", users_table=users),
 )
+
 
 # ------------------------ TRIGGERS
 new_workspace_trigger = sa.DDL(
