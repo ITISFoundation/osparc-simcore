@@ -12,7 +12,8 @@ export ENV_FILE
 NETWORK_NAME=dashboards_timenet
 
 # UTILS
-get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
+# NOTE: keep short arguments for `cut` so it works in both BusyBox (alpine) AND Ubuntu
+get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut -d " " -f 1)
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
