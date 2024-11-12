@@ -4,11 +4,11 @@ from typing import Annotated, Any
 from models_library.basic_types import LogLevel
 from pydantic import AliasChoices, Field, field_validator
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
-from settings_library.application import BaseApplicationSettings
+from settings_library.base import BaseCustomSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
-class Settings(BaseApplicationSettings, MixinLoggingSettings):
+class Settings(BaseCustomSettings, MixinLoggingSettings):
     """Dask-sidecar app settings"""
 
     SC_BUILD_TARGET: str | None = None
@@ -20,7 +20,7 @@ class Settings(BaseApplicationSettings, MixinLoggingSettings):
             alias="LOG_LEVEL",
             serialization_alias="LOG_LEVEL",
             validation_alias=AliasChoices(
-                "SIDECAR_LOGLEVEL", "LOG_LEVEL", "DASK_SIDECAR_LOGLEVEL", "LOGLEVEL"
+                "DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
             ),
         ),
     ]
@@ -46,13 +46,14 @@ class Settings(BaseApplicationSettings, MixinLoggingSettings):
     DASK_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         validation_alias=AliasChoices(
-            "LOG_FORMAT_LOCAL_DEV_ENABLED", "DASK_LOG_FORMAT_LOCAL_DEV_ENABLED"
+            "DASK_LOG_FORMAT_LOCAL_DEV_ENABLED",
+            "LOG_FORMAT_LOCAL_DEV_ENABLED",
         ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     DASK_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
-        validation_alias=AliasChoices("LOG_FILTER_MAPPING", "DASK_LOG_FILTER_MAPPING"),
+        validation_alias=AliasChoices("DASK_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
