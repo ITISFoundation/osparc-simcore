@@ -25,6 +25,8 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
       layout: new qx.ui.layout.VBox(5)
     });
 
+    this.__nodePricingUnits = [];
+
     if (studyData) {
       this.setStudyData(studyData);
     }
@@ -37,6 +39,7 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
 
   members: {
     __studyData: null,
+    __nodePricingUnits: null,
 
     setStudyData: function(studyData) {
       this.__studyData = studyData;
@@ -57,12 +60,17 @@ qx.Class.define("osparc.study.StudyPricingUnits", {
             return;
           }
           const nodePricingUnits = new osparc.study.NodePricingUnits(this.__studyData["uuid"], nodeId, node);
+          this.__nodePricingUnits.push(nodePricingUnits);
           this._add(nodePricingUnits);
           promises.push(nodePricingUnits.showPricingUnits());
         });
       }
       Promise.all(promises)
         .then(() => unitsAdded());
-    }
+    },
+
+    getNodePricingUnits: function() {
+      return this.__nodePricingUnits;
+    },
   }
 });
