@@ -4,15 +4,12 @@ from aiohttp import web
 from pydantic import AliasChoices, PositiveInt, field_validator
 from pydantic.fields import Field
 from pydantic.types import SecretStr
-from pydantic_settings import SettingsConfigDict
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_session import MixinSessionSettings
 
 from .._constants import APP_SETTINGS_KEY
 
 _MINUTE: Final[int] = 60  # secs
-_HOUR: Final[int] = 60 * _MINUTE
-_DAY: Final[int] = 24 * _HOUR
 
 
 class SessionSettings(BaseCustomSettings, MixinSessionSettings):
@@ -60,8 +57,6 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
         default=True,
         description="This prevents JavaScript from accessing the session cookie",
     )
-
-    model_config = SettingsConfigDict(extra="allow")
 
     @field_validator("SESSION_SECRET_KEY")
     @classmethod
