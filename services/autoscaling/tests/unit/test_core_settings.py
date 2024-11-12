@@ -228,6 +228,7 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_without_main_field_env_va
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.delenv("AUTOSCALING_EC2_INSTANCES")
+    monkeypatch.setenv("EC2_INSTANCES_ALLOWED_TYPES", "{}")
 
     # removing any value for AUTOSCALING_EC2_INSTANCES
     settings = ApplicationSettings.create_from_envs()
