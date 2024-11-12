@@ -746,6 +746,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addTIPPlusButton: function() {
+      const mode = this._resourcesContainer.getMode();
+      const title = this.tr("New Plan");
+      const newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew(title) : new osparc.dashboard.ListButtonNew(title);
+      newStudyBtn.setCardKey("new-study");
+      newStudyBtn.subscribeToFilterGroup("searchBarFilter");
+      osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
+      this._resourcesContainer.addNonResourceCard(newStudyBtn);
+      newStudyBtn.setEnabled(false);
+
+      osparc.utils.Utils.fetchJSON("/resource/osparc/new_studies.json")
+        .then(newStudiesData => {
+          const product = osparc.product.Utils.getProductName()
+          if (product in newStudiesData) {
+            newStudyBtn.setEnabled(true);
+
+            newStudyBtn.addListener("execute", () => {
+              newStudyBtn.setValue(false);
+              // do not use cached templates
+              osparc.data.Resources.get("templates", {}, false)
+                .then(templates => {
+                  console.log("templates", templates);
+                  if (templates) {
                     const newStudies = new osparc.dashboard.NewStudies(newStudiesData[product]);
                     newStudies.addListener("templatesLoaded", () => {
                       newStudies.setGroupBy("category");
@@ -764,9 +786,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
                       });
                       osparc.utils.Utils.setIdToWidget(win, "newStudiesWindow");
                     });
-                  });
-                }
-              });
+                  }
+                });
+            });
           }
         });
     },
