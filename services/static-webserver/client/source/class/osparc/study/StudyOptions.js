@@ -246,8 +246,6 @@ qx.Class.define("osparc.study.StudyOptions", {
         osparc.data.Resources.fetch("studies", "getWallet", params)
       ])
         .then(values => {
-          this.setPatchStudy(true);
-
           const studyData = values[0];
           this.setStudyData(studyData);
 

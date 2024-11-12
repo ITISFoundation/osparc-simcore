@@ -140,6 +140,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
 
       const studyOptions = new osparc.study.StudyOptions();
+      studyOptions.setPatchStudy(false);
       studyOptions.setStudyData(templateData);
       const win = osparc.study.StudyOptions.popUpInWindow(studyOptions);
       win.moveItUp();
