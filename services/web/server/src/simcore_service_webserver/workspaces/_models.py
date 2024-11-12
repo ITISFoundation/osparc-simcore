@@ -2,6 +2,7 @@ import logging
 
 from models_library.basic_types import IDStr
 from models_library.rest_base import RequestParameters, StrictRequestParameters
+from models_library.rest_filters import Filters, FiltersQueryParameters
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
@@ -39,8 +40,16 @@ WorkspacesListOrderQueryParams: type[
 )
 
 
+class WorkspacesFilters(Filters):
+    trashed: bool | None = Field(
+        default=False,
+        description="Set to true to list trashed, false to list non-trashed (default), None to list all",
+    )
+
+
 class WorkspacesListQueryParams(
     PageQueryParameters,
+    FiltersQueryParameters[WorkspacesFilters],
     WorkspacesListOrderQueryParams,  # type: ignore[misc, valid-type]
 ):
     ...

@@ -6,22 +6,24 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
 from enum import Enum
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from models_library.api_schemas_webserver.workspaces import (
     CreateWorkspaceBodyParams,
     PutWorkspaceBodyParams,
     WorkspaceGet,
 )
 from models_library.generics import Envelope
+from pydantic import Json
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.workspaces._groups_api import WorkspaceGroupGet
 from simcore_service_webserver.workspaces._models import (
+    WorkspacesFilters,
     WorkspacesGroupsBodyParams,
     WorkspacesGroupsPathParams,
+    WorkspacesListWithJsonStrQueryParams,
     WorkspacesPathParams,
 )
 
@@ -31,8 +33,6 @@ router = APIRouter(
         "workspaces",
     ],
 )
-
-### Workspaces
 
 
 @router.post(
@@ -50,7 +50,23 @@ async def create_workspace(
     "/workspaces",
     response_model=Envelope[list[WorkspaceGet]],
 )
-async def list_workspaces():
+async def list_workspaces(
+    order_by: Annotated[
+        Json,
+        Query(
+            description=WorkspacesListWithJsonStrQueryParams.__fields__[
+                "order_by"
+            ].field_info.description,
+            example=WorkspacesListWithJsonStrQueryParams.__fields__[
+                "order_by"
+            ].field_info.extra.get("example"),
+        ),
+    ] = WorkspacesListWithJsonStrQueryParams.__fields__["order_by"].field_info.default,
+    filters: Annotated[
+        Json | None,
+        Query(description=WorkspacesFilters.schema_json(indent=1)),
+    ] = None,
+):
     ...
 
 
