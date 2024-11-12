@@ -26,13 +26,11 @@ class WorkspaceQuery(BaseModel):
     def validate_workspace_id(cls, value, values):
         scope = values.get("workspace_scope")
         if scope == WorkspaceScope.SHARED and value is None:
-            raise ValueError(
-                "workspace_id must be provided when workspace_scope is SHARED."
-            )
+            msg = f"workspace_id must be provided when workspace_scope is SHARED. Got {scope=}, {value=}"
+            raise ValueError(msg)
         if scope != WorkspaceScope.SHARED and value is not None:
-            raise ValueError(
-                "workspace_id should be None when workspace_scope is not SHARED."
-            )
+            msg = f"workspace_id should be None when workspace_scope is not SHARED. Got {scope=}, {value=}"
+            raise ValueError(msg)
         return value
 
 
@@ -58,6 +56,7 @@ class WorkspaceDB(BaseModel):
         ...,
         description="Timestamp of last modification",
     )
+    trashed_at: datetime | None
 
     class Config:
         orm_mode = True
