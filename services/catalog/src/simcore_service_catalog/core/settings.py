@@ -47,20 +47,20 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     LOG_LEVEL: LogLevel = Field(
         LogLevel.INFO.value,
         validation_alias=AliasChoices(
-            "CATALOG_LOG_LEVEL", "LOG_LEVEL", "CATALOG_LOGLEVEL", "LOGLEVEL"
+            "CATALOG_LOG_LEVEL", "CATALOG_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
         ),
     )
     CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         validation_alias=AliasChoices(
-            "LOG_FORMAT_LOCAL_DEV_ENABLED", "CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED"
+            "CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
         ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
     CATALOG_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
         validation_alias=AliasChoices(
-            "LOG_FILTER_MAPPING", "CATALOG_LOG_FILTER_MAPPING"
+            "CATALOG_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
         ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
