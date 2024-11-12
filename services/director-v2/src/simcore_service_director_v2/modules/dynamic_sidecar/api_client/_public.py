@@ -81,7 +81,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         return settings
 
     async def is_healthy(
-        self, dynamic_sidecar_endpoint: str, *, with_retry: bool = True
+        self, dynamic_sidecar_endpoint: AnyHttpUrl, *, with_retry: bool = True
     ) -> bool:
         """returns True if service is UP and running else False"""
         try:
@@ -97,7 +97,9 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         except BaseHttpClientError:
             return False
 
-    async def containers_inspect(self, dynamic_sidecar_endpoint: str) -> dict[str, Any]:
+    async def containers_inspect(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> dict[str, Any]:
         """
         returns dict containing docker inspect result form
         all dynamic-sidecar started containers
@@ -110,7 +112,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     @log_decorator(logger=_logger)
     async def containers_docker_status(
-        self, dynamic_sidecar_endpoint: str
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> dict[str, dict[str, str]]:
         try:
             response = await self._thin_client.get_containers(
@@ -124,7 +126,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
     @log_decorator(logger=_logger)
     async def toggle_service_ports_io(
         self,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         *,
         enable_outputs: bool,
         enable_inputs: bool,
@@ -137,7 +139,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     @log_decorator(logger=_logger)
     async def service_outputs_create_dirs(
-        self, dynamic_sidecar_endpoint: str, outputs_labels: dict[str, Any]
+        self, dynamic_sidecar_endpoint: AnyHttpUrl, outputs_labels: dict[str, Any]
     ) -> None:
         await self._thin_client.post_containers_ports_outputs_dirs(
             dynamic_sidecar_endpoint, outputs_labels=outputs_labels
@@ -145,7 +147,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     @log_decorator(logger=_logger)
     async def get_entrypoint_container_name(
-        self, dynamic_sidecar_endpoint: str, dynamic_sidecar_network_name: str
+        self, dynamic_sidecar_endpoint: AnyHttpUrl, dynamic_sidecar_network_name: str
     ) -> str:
         """
         While this API raises EntrypointContainerNotFoundError
@@ -169,7 +171,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     async def _attach_container_to_network(
         self,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         container_id: str,
         network_id: str,
         network_aliases: list[str],
@@ -183,7 +185,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         )
 
     async def _detach_container_from_network(
-        self, dynamic_sidecar_endpoint: str, container_id: str, network_id: str
+        self, dynamic_sidecar_endpoint: AnyHttpUrl, container_id: str, network_id: str
     ) -> None:
         """detaches a container from a network if not already detached"""
         await self._thin_client.post_containers_networks_detach(
@@ -192,7 +194,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     async def attach_service_containers_to_project_network(
         self,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         dynamic_sidecar_network_name: str,
         project_network: str,
         project_id: ProjectID,
@@ -248,7 +250,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     async def detach_service_containers_from_project_network(
         self,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         project_network: str,
         project_id: ProjectID,
     ) -> None:
@@ -280,14 +282,14 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     async def submit_docker_compose_spec(
         self,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         compose_spec: str,
     ) -> None:
         await self._thin_client.post_containers_compose_spec(
             dynamic_sidecar_endpoint, compose_spec=compose_spec
         )
 
-    def _get_client(self, dynamic_sidecar_endpoint: str) -> Client:
+    def _get_client(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> Client:
         return Client(
             app=self._app,
             async_client=self._async_client,
@@ -297,7 +299,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
     async def _await_for_result(
         self,
         task_id: TaskId,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         task_timeout: PositiveFloat,
         progress_callback: ProgressCallback | None = None,
     ) -> Any | None:
@@ -313,7 +315,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     async def create_containers(
         self,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         metrics_params: CreateServiceMetricsAdditionalParams,
         progress_callback: ProgressCallback | None = None,
     ) -> None:
@@ -332,7 +334,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     async def stop_service(
         self,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         progress_callback: ProgressCallback | None = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks_down(
@@ -347,7 +349,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             progress_callback,
         )
 
-    async def restore_service_state(self, dynamic_sidecar_endpoint: str) -> int:
+    async def restore_service_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> int:
         response = await self._thin_client.post_containers_tasks_state_restore(
             dynamic_sidecar_endpoint
         )
@@ -362,7 +364,9 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         assert isinstance(result, int)  # nosec
         return result
 
-    async def pull_user_services_images(self, dynamic_sidecar_endpoint: str) -> None:
+    async def pull_user_services_images(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> None:
         response = await self._thin_client.post_containers_images_pull(
             dynamic_sidecar_endpoint
         )
@@ -377,7 +381,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     async def save_service_state(
         self,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         progress_callback: ProgressCallback | None = None,
     ) -> int:
         response = await self._thin_client.post_containers_tasks_state_save(
@@ -396,7 +400,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     async def pull_service_input_ports(
         self,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: list[ServicePortKey] | None = None,
     ) -> int:
         response = await self._thin_client.post_containers_tasks_ports_inputs_pull(
@@ -414,7 +418,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     async def pull_service_output_ports(
         self,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: list[str] | None = None,
     ) -> int:
         response = await self._thin_client.post_containers_tasks_ports_outputs_pull(
@@ -433,7 +437,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     async def push_service_output_ports(
         self,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         progress_callback: ProgressCallback | None = None,
     ) -> None:
         response = await self._thin_client.post_containers_tasks_ports_outputs_push(
@@ -448,7 +452,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             progress_callback,
         )
 
-    async def restart_containers(self, dynamic_sidecar_endpoint: str) -> None:
+    async def restart_containers(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
         response = await self._thin_client.post_containers_tasks_restart(
             dynamic_sidecar_endpoint
         )
@@ -463,7 +467,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     async def update_volume_state(
         self,
-        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_endpoint: AnyHttpUrl,
         volume_category: VolumeCategory,
         volume_status: VolumeStatus,
     ) -> None:
@@ -485,7 +489,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         await self._thin_client.proxy_config_load(proxy_endpoint, proxy_configuration)
 
     async def get_service_activity(
-        self, dynamic_sidecar_endpoint: str
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
     ) -> ActivityInfoOrNone:
         response = await self._thin_client.get_containers_activity(
             dynamic_sidecar_endpoint
@@ -495,7 +499,9 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             ActivityInfo.model_validate(decoded_response) if decoded_response else None
         )
 
-    async def free_reserved_disk_space(self, dynamic_sidecar_endpoint: str) -> None:
+    async def free_reserved_disk_space(
+        self, dynamic_sidecar_endpoint: AnyHttpUrl
+    ) -> None:
         await self._thin_client.post_disk_reserved_free(dynamic_sidecar_endpoint)
 
 
