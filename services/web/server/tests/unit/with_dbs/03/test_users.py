@@ -85,7 +85,9 @@ async def test_get_profile(
     e = Envelope[ProfileGet].model_validate(await resp.json())
     assert e.error == error
     assert (
-        e.data.model_dump(**RESPONSE_MODEL_POLICY, mode="json") == data if e.data else e.data == data
+        e.data.model_dump(**RESPONSE_MODEL_POLICY, mode="json") == data
+        if e.data
+        else e.data == data
     )
 
     if not error:
@@ -107,7 +109,9 @@ async def test_get_profile(
         assert profile.role == user_role.name
         assert profile.groups
 
-        got_profile_groups = profile.groups.model_dump(**RESPONSE_MODEL_POLICY, mode="json")
+        got_profile_groups = profile.groups.model_dump(
+            **RESPONSE_MODEL_POLICY, mode="json"
+        )
         assert got_profile_groups["me"] == primary_group
         assert got_profile_groups["all"] == all_group
 
@@ -280,7 +284,15 @@ async def test_search_and_pre_registration(
 
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserProfile(**found[0])
+    got = UserProfile(
+        **found[0],
+        institution=None,
+        address=None,
+        city=None,
+        state=None,
+        postal_code=None,
+        country=None,
+    )
     expected = {
         "first_name": logged_user.get("first_name"),
         "last_name": logged_user.get("last_name"),
@@ -309,7 +321,7 @@ async def test_search_and_pre_registration(
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserProfile(**found[0])
+    got = UserProfile(**found[0], state=None, status=None)
 
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": False,
@@ -332,7 +344,7 @@ async def test_search_and_pre_registration(
     )
     found, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(found) == 1
-    got = UserProfile(**found[0])
+    got = UserProfile(**found[0], state=None)
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": True,
         "status": new_user["status"].name,
@@ -381,7 +393,9 @@ def test_preuserprofile_parse_model_without_extras(
     account_request_form: dict[str, Any]
 ):
     required = {
-        f.alias or f_name for f_name, f in PreUserProfile.model_fields.items() if f.is_required()
+        f.alias or f_name
+        for f_name, f in PreUserProfile.model_fields.items()
+        if f.is_required()
     }
     data = {k: account_request_form[k] for k in required}
     assert not PreUserProfile(**data).extras
