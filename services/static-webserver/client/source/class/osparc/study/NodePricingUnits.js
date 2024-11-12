@@ -30,8 +30,10 @@ qx.Class.define("osparc.study.NodePricingUnits", {
       layout: new qx.ui.layout.VBox()
     });
 
-    this.__studyId = studyId;
-    this.__nodeId = nodeId;
+    this.set({
+      studyId,
+      nodeId,
+    });
     if (node instanceof osparc.data.model.Node) {
       this.__nodeKey = node.getKey();
       this.__nodeVersion = node.getVersion();
@@ -41,6 +43,20 @@ qx.Class.define("osparc.study.NodePricingUnits", {
       this.__nodeVersion = node["version"];
       this.__nodeLabel = node["label"];
     }
+  },
+
+  properties: {
+    studyId: {
+      check: "String",
+      init: null,
+      nullable: false,
+    },
+
+    nodeId: {
+      check: "String",
+      init: null,
+      nullable: false,
+    },
   },
 
   statics: {
@@ -58,8 +74,6 @@ qx.Class.define("osparc.study.NodePricingUnits", {
   },
 
   members: {
-    __studyId: null,
-    __nodeId: null,
     __nodeKey: null,
     __nodeVersion: null,
     __nodeLabel: null,
@@ -69,8 +83,8 @@ qx.Class.define("osparc.study.NodePricingUnits", {
         const nodeKey = this.__nodeKey;
         const nodeVersion = this.__nodeVersion;
         const nodeLabel = this.__nodeLabel;
-        const studyId = this.__studyId;
-        const nodeId = this.__nodeId;
+        const studyId = this.getStudyId();
+        const nodeId = this.getNodeId();
 
         const plansParams = {
           url: osparc.data.Resources.getServiceUrl(
@@ -101,7 +115,7 @@ qx.Class.define("osparc.study.NodePricingUnits", {
                     unitButtons.addListener("changeSelectedUnitId", e => {
                       unitButtons.setEnabled(false);
                       const selectedPricingUnitId = e.getData();
-                      this.self().patchPricingUnitSelection(this.__studyId, this.__nodeId, pricingPlans["pricingPlanId"], selectedPricingUnitId)
+                      this.self().patchPricingUnitSelection(studyId, nodeId, pricingPlans["pricingPlanId"], selectedPricingUnitId)
                         .finally(() => unitButtons.setEnabled(true));
                     });
                   }
