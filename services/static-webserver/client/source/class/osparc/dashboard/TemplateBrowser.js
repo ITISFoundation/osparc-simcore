@@ -138,26 +138,61 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       }
 
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
-      osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
-        .then(studyId => {
-          const openCB = () => this._hideLoadingPage();
-          const cancelCB = () => {
-            this._hideLoadingPage();
-            const params = {
-              url: {
-                studyId
-              }
+
+      const studyOptions = new osparc.study.StudyOptions();
+      studyOptions.setStudyData(templateData);
+      const win = osparc.study.StudyOptions.popUpInWindow(studyOptions);
+      win.moveItUp();
+      const cancelStudyOptions = () => {
+        this._hideLoadingPage();
+        win.close();
+      }
+      win.addListener("cancel", () => cancelStudyOptions());
+      studyOptions.addListener("cancel", () => cancelStudyOptions());
+      studyOptions.addListener("startStudy", () => {
+        osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
+          .then(studyData => {
+            const studyId = studyData["uuid"];
+            const openCB = () => {
+              this._hideLoadingPage();
             };
-            osparc.data.Resources.fetch("studies", "delete", params);
-          };
-          const isStudyCreation = true;
-          this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
-        })
-        .catch(err => {
-          this._hideLoadingPage();
-          osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          console.error(err);
-        });
+            const cancelCB = () => {
+              this._hideLoadingPage();
+              const params = {
+                url: {
+                  studyId
+                }
+              };
+              osparc.data.Resources.fetch("studies", "delete", params);
+            };
+
+            const titleSelection = studyOptions.getChildControl("title-field").getValue();
+            if (studyData["name"] !== titleSelection) {
+              osparc.study.StudyOptions.updateName(studyData, titleSelection)
+                .catch(err => {
+                  console.error(err);
+                  const msg = this.tr("Something went wrong Renaming");
+                  osparc.FlashMessenger.logAs(msg, "ERROR");
+                });
+            }
+
+            const walletSelection = studyOptions.getChildControl("wallet-selector").getSelection();
+            if (walletSelection.length && walletSelection[0]["walletId"]) {
+              const walletId = walletSelection[0]["walletId"]
+              osparc.study.StudyOptions.updateWallet(studyData["uuid"], walletId)
+            }
+
+            win.close();
+
+            const isStudyCreation = true;
+            this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
+          })
+          .catch(err => {
+            this._hideLoadingPage();
+            osparc.FlashMessenger.getInstance().logAs(err.message, "ERROR");
+            console.error(err);
+          });
+      });
     },
 
     // LAYOUT //
