@@ -59,9 +59,16 @@ qx.Class.define("osparc.study.NodePricingUnits", {
     },
 
     pricingPlanId: {
-      check: "String",
+      check: "Number",
       init: null,
       nullable: false,
+    },
+
+    patchNode: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changePatchNode",
     },
   },
 
@@ -123,11 +130,13 @@ qx.Class.define("osparc.study.NodePricingUnits", {
                       this._add(pricingUnitButtons);
                     }
                     pricingUnitButtons.addListener("changeSelectedUnitId", e => {
-                      pricingUnitButtons.setEnabled(false);
-                      const pricingPlanId = this.getPricingPlanId();
-                      const selectedPricingUnitId = e.getData();
-                      this.self().patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId)
-                        .finally(() => pricingUnitButtons.setEnabled(true));
+                      if (this.isPatchNode()) {
+                        pricingUnitButtons.setEnabled(false);
+                        const pricingPlanId = this.getPricingPlanId();
+                        const selectedPricingUnitId = e.getData();
+                        this.self().patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId)
+                          .finally(() => pricingUnitButtons.setEnabled(true));
+                      }
                     });
                   }
                 })
