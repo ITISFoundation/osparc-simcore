@@ -67,10 +67,6 @@ _SELECTION_ARGS = (
     folders_v2.c.workspace_id,
 )
 
-# _SELECTION_ARGS_WITH_MY_ACCESS_RIGHTS = (
-#     _SELECTION_ARGS,
-# )
-
 
 async def create(
     app: web.Application,
@@ -164,8 +160,6 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
             WorkspaceScope.SHARED,
             WorkspaceScope.ALL,
         )
-        # _user_groups = await list_all_user_groups(app, user_id=user_id)
-        # _user_groups_ids = [group.gid for group in _user_groups]
 
         shared_workspace_query = (
             select(
