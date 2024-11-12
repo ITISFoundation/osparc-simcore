@@ -4,6 +4,7 @@ from typing import TypeAlias
 
 from pydantic import BaseModel, Field, PositiveInt, validator
 
+from .access_rights import AccessRights
 from .users import GroupID, UserID
 from .utils.enums import StrAutoEnum
 from .workspaces import WorkspaceID
@@ -63,6 +64,13 @@ class FolderDB(BaseModel):
 
     user_id: UserID | None
     workspace_id: WorkspaceID | None
+
+    class Config:
+        orm_mode = True
+
+
+class UserFolderAccessRightsDB(FolderDB):
+    my_access_rights: AccessRights
 
     class Config:
         orm_mode = True
