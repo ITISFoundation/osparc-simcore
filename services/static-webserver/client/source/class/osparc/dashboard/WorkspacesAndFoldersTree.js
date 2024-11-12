@@ -300,7 +300,7 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       if (oldParentFolderId === undefined) {
         // it was removed, not moved
         // remove it from the cached models
-        const modelFound = this.__getModel(folder.getWorkspaceId(), folder.getParentFolderId());
+        const modelFound = this.__getModel(folder.getWorkspaceId(), folder.getFolderId());
         if (modelFound) {
           const index = this.__models.indexOf(modelFound);
           if (index > -1) { // only splice array when item is found

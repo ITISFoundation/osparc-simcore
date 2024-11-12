@@ -51,6 +51,7 @@ from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,
 )
 from simcore_postgres_database.storage_models import file_meta_data, user_to_groups
+from simcore_postgres_database.utils_sql import assemble_array_groups
 
 logger = logging.getLogger(__name__)
 
@@ -115,14 +116,6 @@ def _aggregate_access_rights(
             access_rights,
         )
         return AccessRights.none()
-
-
-def assemble_array_groups(user_group_ids: list[GroupID]) -> str:
-    return (
-        "array[]::text[]"
-        if len(user_group_ids) == 0
-        else f"""array[{', '.join(f"'{group_id}'" for group_id in user_group_ids)}]"""
-    )
 
 
 access_rights_subquery = (
