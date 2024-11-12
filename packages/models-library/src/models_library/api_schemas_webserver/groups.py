@@ -100,6 +100,11 @@ class GroupCreate(InputSchema):
     description: str
     thumbnail: AnyUrl | None = None
 
+    @field_validator("thumbnail")
+    @classmethod
+    def _transform_to_string_for_db(cls, v: AnyUrl | None) -> str | None:
+        return f"{v}" if v is not None else v
+
 
 class GroupUpdate(InputSchema):
     label: str | None = None
