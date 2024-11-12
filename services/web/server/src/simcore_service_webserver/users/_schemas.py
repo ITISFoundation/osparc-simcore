@@ -19,13 +19,13 @@ class UserProfile(OutputSchema):
     first_name: str | None
     last_name: str | None
     email: LowerCaseEmailStr
-    institution: str | None = None
+    institution: str | None
     phone: str | None
-    address: str | None = None
-    city: str | None = None
-    state: str | None = Field(None, description="State, province, canton, ...")
-    postal_code: str | None = None
-    country: str | None = None
+    address: str | None
+    city: str | None
+    state: str | None = Field(description="State, province, canton, ...")
+    postal_code: str | None
+    country: str | None
     extras: dict[str, Any] = Field(
         default_factory=dict,
         description="Keeps extra information provided in the request form",
@@ -36,7 +36,7 @@ class UserProfile(OutputSchema):
 
     # user status
     registered: bool
-    status: UserStatus | None = None
+    status: UserStatus | None
     products: list[ProductName] | None = Field(
         default=None,
         description="List of products this users is included or None if fields is unset",
