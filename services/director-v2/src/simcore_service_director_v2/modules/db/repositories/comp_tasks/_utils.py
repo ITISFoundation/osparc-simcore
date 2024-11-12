@@ -450,6 +450,7 @@ async def generate_tasks_list_from_project(
             if pricing_info
             else None,
             hardware_info=hardware_info,
+            project_tags=project_tags,
         )
 
         list_comp_tasks.append(task_db)

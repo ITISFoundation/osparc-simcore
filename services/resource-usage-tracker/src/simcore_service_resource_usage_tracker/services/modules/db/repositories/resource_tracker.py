@@ -46,6 +46,7 @@ from simcore_postgres_database.models.resource_tracker_pricing_units import (
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
 )
+from simcore_service_resource_usage_tracker.services.utils import ProjectID
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
 from .....exceptions.errors import (
@@ -198,6 +199,46 @@ class ResourceTrackerRepository(
         if row is None:
             return None
         return ServiceRunDB.from_orm(row)
+
+    async def insert_rut_project_metadata(
+        self,
+        project_id: ProjectID,
+        project_name: str,
+        project_tags_names: list[str],
+    ) -> None:
+        async with self.db_engine.begin() as conn:
+            insert_stmt = (
+                resource_tracker_service_runs.insert()
+                .values(
+                    project_id=f"{project_id}",
+                    project_name=project_name,
+                    project_tags_names=project_tags_names,
+                    modified=sa.func.now(),
+                )
+                .returning(resource_tracker_credit_transactions.c.transaction_id)
+            )
+            await conn.execute(insert_stmt)
+
+    async def update_rut_project_metadata(
+        self,
+        project_id: ProjectID,
+        project_name: str | None = None,
+        project_tags_names: list[str] | None = None,
+    ) -> None:
+
+        _update_data = {
+            "project_name": project_name,
+            "project_tags_names": project_tags_names,
+        }
+        _update_data_clean = {k: v for k, v in _update_data.items() if v is not None}
+
+        async with self.db_engine.begin() as conn:
+            update_stmt = (
+                resource_tracker_service_runs.update()
+                .values(modified=sa.func.now(), **_update_data_clean)
+                .where(resource_tracker_service_runs.c.project_id == f"{project_id}")
+            )
+            await conn.execute(update_stmt)
 
     async def get_service_run_by_id(
         self, service_run_id: ServiceRunId

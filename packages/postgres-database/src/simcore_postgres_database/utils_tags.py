@@ -2,6 +2,7 @@
 """
 
 from typing import TypedDict
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
@@ -11,6 +12,7 @@ from .utils_tags_sql import (
     create_tag_stmt,
     delete_tag_stmt,
     get_tag_stmt,
+    list_tag_ids_and_names_by_project_uuid_stmt,
     list_tags_stmt,
     set_tag_access_rights_stmt,
     update_tag_stmt,
@@ -174,6 +176,16 @@ class TagsRepo:
                 write=row.write,
                 delete=row.delete,
             )
+
+    async def list_tag_ids_and_names_by_project_uuid(
+        self, connection: AsyncConnection | None = None, *, project_uuid: UUID
+    ) -> list[tuple[int, str]]:
+        stmt_list = list_tag_ids_and_names_by_project_uuid_stmt(
+            project_uuid=project_uuid
+        )
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            result = await conn.stream(stmt_list)
+            return [(row.id, row.name) async for row in result]
 
     async def update(
         self,

@@ -124,6 +124,7 @@ async def send_service_started(
         user_email=metrics_params.user_email,
         project_id=settings.DY_SIDECAR_PROJECT_ID,
         project_name=metrics_params.project_name,
+        project_tags=metrics_params.project_tags,
         node_id=settings.DY_SIDECAR_NODE_ID,
         node_name=metrics_params.node_name,
         parent_project_id=settings.DY_SIDECAR_PROJECT_ID,

@@ -1,7 +1,9 @@
 import functools
+from uuid import UUID
 
 import sqlalchemy as sa
 from simcore_postgres_database.models.groups import user_to_groups
+from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_tags import projects_tags
 from simcore_postgres_database.models.services_tags import services_tags
 from simcore_postgres_database.models.tags import tags
@@ -60,7 +62,7 @@ def get_tag_stmt(
             # aggregation ensures MOST PERMISSIVE policy of access-rights
             sa.func.bool_or(tags_access_rights.c.read).label("read"),
             sa.func.bool_or(tags_access_rights.c.write).label("write"),
-            sa.func.bool_or(tags_access_rights.c.delete).label("delete")
+            sa.func.bool_or(tags_access_rights.c.delete).label("delete"),
         )
         .select_from(
             _join_user_to_given_tag(
@@ -73,6 +75,21 @@ def get_tag_stmt(
     )
 
 
+def list_tag_ids_and_names_by_project_uuid_stmt(
+    project_uuid: UUID,
+):
+    return (
+        sa.select(tags.c.id, tags.c.name)
+        .select_from(
+            projects_tags.join(tags, tags.c.id == projects_tags.c.tag_id).join(
+                projects, projects_tags.c.project_id == projects.c.id
+            )
+        )
+        .where(projects.c.uuid == f"{project_uuid}")
+        .group_by(tags.c.id, tags.c.name)
+    )
+
+
 def list_tags_stmt(*, user_id: int):
     return (
         sa.select(
@@ -80,7 +97,7 @@ def list_tags_stmt(*, user_id: int):
             # aggregation ensures MOST PERMISSIVE policy of access-rights
             sa.func.bool_or(tags_access_rights.c.read).label("read"),
             sa.func.bool_or(tags_access_rights.c.write).label("write"),
-            sa.func.bool_or(tags_access_rights.c.delete).label("delete")
+            sa.func.bool_or(tags_access_rights.c.delete).label("delete"),
         )
         .select_from(
             _join_user_to_tags(
@@ -104,7 +121,7 @@ def count_groups_with_given_access_rights_stmt(
     tag_id: int,
     read: bool | None,
     write: bool | None,
-    delete: bool | None
+    delete: bool | None,
 ):
     """
     How many groups (from this user_id) are given EXACTLY these access permissions

@@ -236,3 +236,30 @@ sa.Index(
         == ResourceTrackerServiceRunStatus.RUNNING
     ),
 )
+
+
+resource_tracker_project_metadata = sa.Table(
+    "resource_tracker_project_metadata",
+    metadata,
+    sa.Column(
+        "project_id",  # UUID
+        sa.String,
+        nullable=False,
+        doc="We want to store the project id for tracking/billing purposes and be sure it stays there even when the project is deleted (that's also reason why we do not introduce foreign key)",
+        primary_key=True,
+    ),
+    # sa.Column(
+    #     "project_name",
+    #     sa.String,
+    #     nullable=False,
+    #     doc="we want to store the project name for tracking/billing purposes and be sure it stays there even when the project is deleted (that's also reason why we do not introduce foreign key)",
+    # ),
+    sa.Column(
+        "project_tags_names",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="we want to store the project name for tracking/billing purposes and be sure it stays there even when the project is deleted (that's also reason why we do not introduce foreign key)",
+    ),
+    column_modified_datetime(timezone=True),
+)

@@ -27,6 +27,7 @@ class ProjectMetadataDict(TypedDict, total=False):
 class RunMetadataDict(TypedDict, total=False):
     node_id_names_map: dict[NodeID, str]
     project_name: str
+    project_tags: list[tuple[int, str]]
     product_name: str
     simcore_user_agent: str
     user_email: str

@@ -40,6 +40,8 @@ from servicelib.async_utils import run_sequentially_in_context
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_postgres_database.utils_projects_metadata import DBProjectNotFoundError
+from simcore_postgres_database.utils_tags import TagsRepo
+from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette import status
 from starlette.requests import Request
 from tenacity import retry
@@ -64,6 +66,7 @@ from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDi
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
 from ...modules.comp_scheduler import BaseCompScheduler
+from ...modules.db._asyncpg import get_asyncpg_engine
 from ...modules.db.repositories.clusters import ClustersRepository
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_runs import CompRunsRepository
@@ -219,6 +222,7 @@ async def _try_start_pipeline(
     project: ProjectAtDB,
     users_repo: UsersRepository,
     projects_metadata_repo: ProjectsMetadataRepository,
+    asyncpg_engine: AsyncEngine,
 ) -> None:
     if not minimal_dag.nodes():
         # 2 options here: either we have cycles in the graph or it's really done
@@ -240,6 +244,12 @@ async def _try_start_pipeline(
         wallet_id = computation.wallet_info.wallet_id
         wallet_name = computation.wallet_info.wallet_name
 
+    # Get project tags
+    repo = TagsRepo(asyncpg_engine)
+    project_tags = await repo.list_tag_ids_and_names_by_project_uuid(
+        project_uuid=project.uuid
+    )
+
     await scheduler.run_new_pipeline(
         computation.user_id,
         computation.project_id,
@@ -251,6 +261,7 @@ async def _try_start_pipeline(
             },
             product_name=computation.product_name,
             project_name=project.name,
+            project_tags=project_tags,
             simcore_user_agent=computation.simcore_user_agent,
             user_email=await users_repo.get_user_email(computation.user_id),
             wallet_id=wallet_id,
@@ -376,6 +387,7 @@ async def create_computation(  # noqa: PLR0913 # pylint: disable=too-many-positi
                 project=project,
                 users_repo=users_repo,
                 projects_metadata_repo=projects_metadata_repo,
+                asyncpg_engine=get_asyncpg_engine(request.app),
             )
 
         # filter the tasks by the effective pipeline

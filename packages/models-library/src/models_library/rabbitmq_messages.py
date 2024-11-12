@@ -194,6 +194,23 @@ class RabbitResourceTrackingBaseMessage(RabbitMessageBase):
         return None
 
 
+class RabbitResourceTrackingProjectSyncMessage(RabbitMessageBase):
+    channel_name: Literal["io.simcore.service.tracking-project-sync"] = Field(
+        default="io.simcore.service.tracking-project-sync", const=True
+    )
+
+    project_id: ProjectID
+    project_name: str | None = None
+    project_tags_names: list[str] | None = None
+    created_at: datetime.datetime = Field(
+        default_factory=lambda: arrow.utcnow().datetime,
+        description="message creation datetime",
+    )
+
+    def routing_key(self) -> str | None:
+        return None
+
+
 class DynamicServiceRunningMessage(RabbitMessageBase):
     channel_name: Literal["io.simcore.service.dynamic-service-running"] = Field(
         default="io.simcore.service.dynamic-service-running", const=True
@@ -232,6 +249,7 @@ class RabbitResourceTrackingStartedMessage(RabbitResourceTrackingBaseMessage):
 
     project_id: ProjectID
     project_name: str
+    project_tags: list[tuple[int, str]]
 
     node_id: NodeID
     node_name: str

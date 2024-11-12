@@ -17,6 +17,7 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
     simcore_user_agent: str
     user_email: str
     project_name: str
+    project_tags: list[tuple[int, str]]
     node_name: str
     service_key: ServiceKey
     service_version: ServiceVersion
@@ -35,6 +36,7 @@ class CreateServiceMetricsAdditionalParams(BaseModel):
                 "simcore_user_agent": "undefined",
                 "user_email": "test@test.com",
                 "project_name": "_!New Study",
+                "project_tags": [],
                 "node_name": "the service of a lifetime _ *!",
                 "service_key": ServiceKey("simcore/services/dynamic/test"),
                 "service_version": ServiceVersion("0.0.1"),

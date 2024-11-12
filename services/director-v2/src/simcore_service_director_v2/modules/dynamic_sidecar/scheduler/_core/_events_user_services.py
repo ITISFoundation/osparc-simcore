@@ -9,6 +9,8 @@ from models_library.services import ServiceKeyVersion, ServiceVersion
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import parse_obj_as
 from servicelib.fastapi.long_running_tasks.client import TaskId
+from simcore_postgres_database.utils_tags import TagsRepo
+from simcore_service_director_v2.modules.db._asyncpg import get_asyncpg_engine
 from tenacity import RetryError
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -156,6 +158,12 @@ async def create_user_services(  # pylint: disable=too-many-statements
         pricing_unit_id = scheduler_data.pricing_info.pricing_unit_id
         pricing_unit_cost_id = scheduler_data.pricing_info.pricing_unit_cost_id
 
+    # Get project tags
+    repo = TagsRepo(get_asyncpg_engine(app))
+    project_tags = await repo.list_tag_ids_and_names_by_project_uuid(
+        project_uuid=project.uuid
+    )
+
     metrics_params = CreateServiceMetricsAdditionalParams(
         wallet_id=wallet_id,
         wallet_name=wallet_name,
@@ -166,6 +174,7 @@ async def create_user_services(  # pylint: disable=too-many-statements
         simcore_user_agent=scheduler_data.request_simcore_user_agent,
         user_email=user_email,
         project_name=project_name,
+        project_tags=project_tags,
         node_name=node_name,
         service_key=scheduler_data.key,
         service_version=parse_obj_as(ServiceVersion, scheduler_data.version),

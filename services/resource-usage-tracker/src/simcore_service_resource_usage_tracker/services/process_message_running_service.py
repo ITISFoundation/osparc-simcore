@@ -126,6 +126,9 @@ async def _process_start_event(
         last_heartbeat_at=msg.created_at,
     )
     service_run_id = await resource_tracker_repo.create_service_run(create_service_run)
+    await resource_tracker_repo.insert_rut_project_metadata(
+        project_id=msg.project_id, project_name=msg.project_name, project_tags_names=[]
+    )
 
     if msg.wallet_id and msg.wallet_name:
         transaction_create = CreditTransactionCreate(

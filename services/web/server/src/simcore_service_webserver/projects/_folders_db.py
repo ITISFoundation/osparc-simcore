@@ -21,8 +21,6 @@ from ..db.plugin import get_database_engine
 _logger = logging.getLogger(__name__)
 
 
-_logger = logging.getLogger(__name__)
-
 ### Models
 
 

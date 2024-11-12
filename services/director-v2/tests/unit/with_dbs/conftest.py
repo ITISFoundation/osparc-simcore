@@ -173,6 +173,7 @@ def run_metadata(
     return RunMetadataDict(
         node_id_names_map={},
         project_name=faker.name(),
+        project_tags=[],
         product_name=osparc_product_name,
         simcore_user_agent=simcore_user_agent,
         user_email=faker.email(),

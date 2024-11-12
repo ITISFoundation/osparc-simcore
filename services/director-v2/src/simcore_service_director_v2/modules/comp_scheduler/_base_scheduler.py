@@ -452,6 +452,7 @@ class BaseCompScheduler(ABC):
                     project_name=run_metadata.get("project_metadata", {}).get(  # type: ignore[arg-type]
                         "project_name", UNDEFINED_STR_METADATA
                     ),
+                    project_tags=run_metadata.get("project_tags", []),
                     node_id=t.node_id,
                     node_name=run_metadata.get("node_id_names_map", {}).get(
                         t.node_id, UNDEFINED_STR_METADATA
