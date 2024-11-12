@@ -44,7 +44,7 @@ qx.Class.define("osparc.study.NodePricingUnits", {
   },
 
   statics: {
-    pricingUnitSelected: function(studyId, nodeId, planId, selectedUnitId) {
+    patchPricingUnitSelection: function(studyId, nodeId, planId, selectedUnitId) {
       const params = {
         url: {
           studyId,
@@ -101,7 +101,7 @@ qx.Class.define("osparc.study.NodePricingUnits", {
                     unitButtons.addListener("changeSelectedUnitId", e => {
                       unitButtons.setEnabled(false);
                       const selectedPricingUnitId = e.getData();
-                      this.self().pricingUnitSelected(this.__studyId, this.__nodeId, pricingPlans["pricingPlanId"], selectedPricingUnitId)
+                      this.self().patchPricingUnitSelection(this.__studyId, this.__nodeId, pricingPlans["pricingPlanId"], selectedPricingUnitId)
                         .finally(() => unitButtons.setEnabled(true));
                     });
                   }
