@@ -21,7 +21,7 @@ class PricingInfo(BaseModel):
                     "pricing_plan_id": 1,
                     "pricing_unit_id": 1,
                     "pricing_unit_cost_id": 1,
-                    "pricing_unit_cost": Decimal(10),   # type: ignore
+                    "pricing_unit_cost": Decimal(10),  # type: ignore[dict-item]
                 }
             ]
         }
