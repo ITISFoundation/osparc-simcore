@@ -5,7 +5,7 @@ from typing import TypeAlias
 from pydantic import BaseModel, Field, PositiveInt, validator
 
 from .access_rights import AccessRights
-from .users import GroupID
+from .users import GroupID, UserID
 from .utils.enums import StrAutoEnum
 
 WorkspaceID: TypeAlias = PositiveInt
@@ -56,7 +56,8 @@ class WorkspaceDB(BaseModel):
         ...,
         description="Timestamp of last modification",
     )
-    trashed_at: datetime | None
+    trashed: datetime | None
+    trashed_by: UserID | None
 
     class Config:
         orm_mode = True
