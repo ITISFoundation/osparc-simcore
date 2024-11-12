@@ -152,7 +152,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       studyOptions.addListener("startStudy", () => {
         const titleSelection = studyOptions.getChildControl("title-field").getValue();
         const walletSelection = studyOptions.getChildControl("wallet-selector").getSelection();
-        const nodesPricingUnits = studyOptions.getNodePricingUnits();
+        const nodesPricingUnits = studyOptions.getChildControl("study-pricing-units").getNodePricingUnits();
         win.close();
         osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
           .then(studyData => {
@@ -186,8 +186,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
             Promise.all(promises)
               .then(() => {
                 win.close();
-                const isStudyCreation = true;
-                this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
+                const showStudyOptions = false;
+                this._startStudyById(studyId, openCB, cancelCB, showStudyOptions);
               });
           })
           .catch(err => {
