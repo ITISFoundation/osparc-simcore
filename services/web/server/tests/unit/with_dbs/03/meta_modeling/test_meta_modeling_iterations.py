@@ -248,7 +248,7 @@ async def test_iterators_workflow(
     # and index but nothing prevents a dict from using any other type of key types
     #
     project = Project.model_validate(body["data"])
-    new_project = project.copy(
+    new_project = project.model_copy(
         update={
             # TODO: HACK to overcome export from None -> string
             # SOLUTION 1: thumbnail should not be required (check with team!)

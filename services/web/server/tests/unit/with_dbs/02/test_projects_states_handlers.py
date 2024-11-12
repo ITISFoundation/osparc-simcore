@@ -1277,7 +1277,7 @@ async def test_open_shared_project_2_users_locked(
         mock_project_state_updated_handler,
         shared_project,
         [
-            expected_project_state_client_1.copy(
+            expected_project_state_client_1.model_copy(
                 update={
                     "locked": ProjectLocked(
                         value=True, status=ProjectStatus.CLOSING, owner=owner1
