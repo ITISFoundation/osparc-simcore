@@ -10,7 +10,13 @@ from typing import Any, Final, cast
 
 import sqlalchemy as sa
 from aiohttp import web
-from models_library.folders import FolderDB, FolderID, FolderQuery, FolderScope
+from models_library.folders import (
+    FolderDB,
+    FolderID,
+    FolderQuery,
+    FolderScope,
+    UserFolderAccessRightsDB,
+)
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
@@ -20,21 +26,17 @@ from pydantic import NonNegativeInt
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
-from simcore_postgres_database.models.workspaces_access_rights import (
-    workspaces_access_rights,
-)
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from simcore_postgres_database.utils_sql import assemble_array_groups
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import ColumnElement, CompoundSelect, Select, asc, desc, select
 
 from ..db.plugin import get_asyncpg_engine
-from ..groups.api import list_all_user_groups
+from ..workspaces._workspaces_db import _create_my_access_rights_subquery
 from .errors import FolderAccessForbiddenError, FolderNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -62,6 +64,10 @@ _SELECTION_ARGS = (
     folders_v2.c.user_id,
     folders_v2.c.workspace_id,
 )
+
+# _SELECTION_ARGS_WITH_MY_ACCESS_RIGHTS = (
+#     _SELECTION_ARGS,
+# )
 
 
 async def create(
@@ -114,32 +120,15 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     limit: int,
     # order
     order_by: OrderBy,
-) -> tuple[int, list[FolderDB]]:
+) -> tuple[int, list[UserFolderAccessRightsDB]]:
     """
-    Assumptions -
-
     folder_query - Used to filter in which folder we want to list folders.
     trashed - If set to true, it returns folders **explicitly** trashed, if false then non-trashed folders.
     """
 
-    workspace_access_rights_subquery = (
-        sa.select(
-            workspaces_access_rights.c.workspace_id,
-            sa.func.jsonb_object_agg(
-                workspaces_access_rights.c.gid,
-                sa.func.jsonb_build_object(
-                    "read",
-                    workspaces_access_rights.c.read,
-                    "write",
-                    workspaces_access_rights.c.write,
-                    "delete",
-                    workspaces_access_rights.c.delete,
-                ),
-            )
-            .filter(workspaces_access_rights.c.read)
-            .label("access_rights"),
-        ).group_by(workspaces_access_rights.c.workspace_id)
-    ).subquery("workspace_access_rights_subquery")
+    workspace_access_rights_subquery = _create_my_access_rights_subquery(
+        user_id=user_id
+    )
 
     if workspace_query.workspace_scope is not WorkspaceScope.SHARED:
         assert workspace_query.workspace_scope in (  # nosec
@@ -148,7 +137,17 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
         )
 
         private_workspace_query = (
-            select(*_SELECTION_ARGS)
+            select(
+                *_SELECTION_ARGS,
+                func.json_build_object(
+                    "read",
+                    sa.text("true"),
+                    "write",
+                    sa.text("true"),
+                    "delete",
+                    sa.text("true"),
+                ).label("my_access_rights"),
+            )
             .select_from(folders_v2)
             .where(
                 (folders_v2.c.product_name == product_name)
@@ -163,11 +162,13 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
             WorkspaceScope.SHARED,
             WorkspaceScope.ALL,
         )
-        _user_groups = await list_all_user_groups(app, user_id=user_id)
-        _user_groups_ids = [group.gid for group in _user_groups]
+        # _user_groups = await list_all_user_groups(app, user_id=user_id)
+        # _user_groups_ids = [group.gid for group in _user_groups]
 
         shared_workspace_query = (
-            select(*_SELECTION_ARGS)
+            select(
+                *_SELECTION_ARGS, workspace_access_rights_subquery.c.my_access_rights
+            )
             .select_from(
                 folders_v2.join(
                     workspace_access_rights_subquery,
@@ -177,14 +178,7 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
             )
             .where(
                 (folders_v2.c.product_name == product_name)
-                & (
-                    folders_v2.c.user_id.is_(None)
-                    & (
-                        sa.text(
-                            f"jsonb_exists_any(workspace_access_rights_subquery.access_rights, {assemble_array_groups(_user_groups_ids)})"
-                        )
-                    )
-                )
+                & (folders_v2.c.user_id.is_(None))
             )
         )
     else:
@@ -245,7 +239,9 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        folders: list[FolderDB] = [FolderDB.from_orm(row) async for row in result]
+        folders: list[UserFolderAccessRightsDB] = [
+            UserFolderAccessRightsDB.from_orm(row) async for row in result
+        ]
         return cast(int, total_count), folders
 
 
