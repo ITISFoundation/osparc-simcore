@@ -29,6 +29,7 @@ __check_defined = \
       $(error Undefined $1$(if $2, ($2))))
 
 
+
 .PHONY: build
 build: ## builds distributed osparc locust docker image
 	docker \
@@ -43,6 +44,8 @@ build: ## builds distributed osparc locust docker image
 push:
 	docker push itisfoundation/locust:$(LOCUST_VERSION)
 
+
+
 .PHONY: down
 down: ## stops and removes osparc locust containers
 	docker compose --file docker-compose.yml down
@@ -55,6 +58,8 @@ test: ## runs osparc locust. Locust and test configuration are specified in ENV_
 		echo "Created docker network $(NETWORK_NAME)"; \
 	fi
 	docker compose --file docker-compose.yml up --scale worker=4 --exit-code-from=master
+
+
 
 .PHONY: dashboards-up dashboards-down
 
@@ -69,6 +74,8 @@ dashboards-up: ## Create Grafana dashboard for inspecting locust results. See da
 dashboards-down:
 	@locust-compose down
 
+
+
 .PHONY: install-ci install-dev
 
 install-dev:
@@ -81,4 +88,4 @@ install-ci:
 .PHONY: config
 config:
 	@$(call check_defined, input, please define inputs when calling $@ - e.g. ```make $@ input="--help"```)
-	@uv run locust_settings.py $(input) | tee .env
+	@uv run locust_settings.py $(input) | tee "${ENV_FILE}"

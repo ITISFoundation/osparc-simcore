@@ -1,10 +1,21 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "parse",
+#     "pydantic",
+#     "pydantic-settings",
+# ]
+# ///
 # pylint: disable=unused-argument
 # pylint: disable=no-self-use
 # pylint: disable=no-name-in-module
 
+import importlib.util
+import inspect
 import json
 from datetime import timedelta
 from pathlib import Path
+from types import ModuleType
 from typing import Final
 
 from parse import Result, parse
@@ -24,6 +35,37 @@ _TEST_DIR: Final[Path] = Path(__file__).parent.resolve()
 _LOCUST_FILES_DIR: Final[Path] = _TEST_DIR / "locust_files"
 assert _TEST_DIR.is_dir()
 assert _LOCUST_FILES_DIR.is_dir()
+
+
+def _check_load_and_instantiate_settings_classes(file_path: str):
+    module_name = Path(file_path).stem
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    if spec is None or spec.loader is None:
+        msg = f"Invalid {file_path=}"
+        raise ValueError(msg)
+
+    module: ModuleType = importlib.util.module_from_spec(spec)
+
+    # Execute the module in its own namespace
+    try:
+        spec.loader.exec_module(module)
+    except Exception as e:
+        msg = f"Failed to load module {module_name} from {file_path}"
+        raise ValueError(msg) from e
+
+    # Filter subclasses of BaseSettings
+    settings_classes = [
+        obj
+        for _, obj in inspect.getmembers(module, inspect.isclass)
+        if issubclass(obj, BaseSettings) and obj is not BaseSettings
+    ]
+
+    for settings_class in settings_classes:
+        try:
+            settings_class()
+        except Exception as e:
+            msg = f"Missing env vars for {settings_class.__name__} in {file_path=}: {e}"
+            raise ValueError(msg) from e
 
 
 class LocustSettings(BaseSettings):
@@ -87,6 +129,10 @@ class LocustSettings(BaseSettings):
         if not v.is_relative_to(_LOCUST_FILES_DIR):
             msg = f"{v} must be a test file relative to {_LOCUST_FILES_DIR}"
             raise ValueError(msg)
+
+        # NOTE: CHECK that all the env-vars are defined for this test
+        # _check_load_and_instantiate_settings_classes(f"{v}")
+
         return v.relative_to(_TEST_DIR)
 
     @field_serializer("LOCUST_RUN_TIME")
