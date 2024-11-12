@@ -140,6 +140,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._showLoadingPage(this.tr("Creating ") + (templateData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
 
       const studyOptions = new osparc.study.StudyOptions();
+      // they will be patched once the study is created
       studyOptions.setPatchStudy(false);
       studyOptions.setStudyData(templateData);
       const win = osparc.study.StudyOptions.popUpInWindow(studyOptions);
@@ -156,8 +157,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         const nodesPricingUnits = studyOptions.getChildControl("study-pricing-units").getNodePricingUnits();
         win.close();
         osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
-          .then(studyData => {
-            const studyId = studyData["uuid"];
+          .then(newStudyData => {
+            const studyId = newStudyData["uuid"];
             const openCB = () => {
               this._hideLoadingPage();
             };
@@ -172,18 +173,30 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
             };
 
             const promises = [];
-            if (studyData["name"] !== titleSelection) {
-              promises.push(osparc.study.StudyOptions.updateName(studyData, titleSelection));
+            // patch the name
+            if (newStudyData["name"] !== titleSelection) {
+              promises.push(osparc.study.StudyOptions.updateName(newStudyData, titleSelection));
             }
+            // patch the wallet
             if (walletSelection.length && walletSelection[0]["walletId"]) {
               const walletId = walletSelection[0]["walletId"];
-              promises.push(osparc.study.StudyOptions.updateWallet(studyData["uuid"], walletId));
+              promises.push(osparc.study.StudyOptions.updateWallet(newStudyData["uuid"], walletId));
             }
-            nodesPricingUnits.forEach(nodePricingUnits => {
-              const nodeId = nodePricingUnits.getNodeId();
-              const pricingPlanId = nodePricingUnits.getPricingPlanId();
+            // patch the pricing units
+            // the nodeIds are coming from the original template, they need to be mapped to the newStudy
+            const workbench = newStudyData["workbench"];
+            const nodesIdsListed = [];
+            Object.keys(workbench).forEach(nodeId => {
+              const node = workbench[nodeId];
+              if (osparc.study.StudyPricingUnits.includeInList(node)) {
+                nodesIdsListed.push(nodeId);
+              }
+            });
+            nodesPricingUnits.forEach((nodePricingUnits, idx) => {
               const selectedPricingUnitId = nodePricingUnits.getPricingUnits().getSelectedUnitId();
               if (selectedPricingUnitId) {
+                const nodeId = nodesIdsListed[idx];
+                const pricingPlanId = nodePricingUnits.getPricingPlanId();
                 promises.push(osparc.study.NodePricingUnits.patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId));
               }
             });
