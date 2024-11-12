@@ -167,9 +167,7 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
     DIRECTOR_V2_REMOTE_DEBUGGING_PORT: PortInt | None = Field(default=None)
 
     # extras
-    SWARM_STACK_NAME: str = Field(
-        "undefined-please-check", validation_alias="SWARM_STACK_NAME"
-    )
+    SWARM_STACK_NAME: str = Field(default="undefined-please-check")
     SERVICE_TRACKING_HEARTBEAT: datetime.timedelta = Field(
         default=DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
         description="Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)"
