@@ -44,8 +44,8 @@ class LocustSettings(BaseSettings):
     LOCUST_RUN_TIME: timedelta
     LOCUST_SPAWN_RATE: PositiveInt = Field(default=20)
 
-    # Options for Timescale + Grafana Dashboards
-    # SEE https://github.com/SvenskaSpel/locust-plugins/blob/master/locust_plugins/timescale/
+    # Timescale: Log and graph results using TimescaleDB and Grafana dashboards
+    # SEE https://github.com/SvenskaSpel/locust-plugins/tree/master/locust_plugins/dashboards
     #
     LOCUST_TIMESCALE: NonNegativeInt = Field(
         default=1,
