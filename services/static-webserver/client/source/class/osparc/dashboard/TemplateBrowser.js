@@ -186,7 +186,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
               if (selectedPricingUnitId) {
                 promises.push(osparc.study.NodePricingUnits.patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId));
               }
-            })
+            });
 
             Promise.all(promises)
               .then(() => {
