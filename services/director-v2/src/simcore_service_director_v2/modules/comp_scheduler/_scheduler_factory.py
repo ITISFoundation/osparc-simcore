@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from models_library.clusters import DEFAULT_CLUSTER_ID
+from servicelib.logging_utils import log_context
 from settings_library.redis import RedisDatabase
 
 from ...core.errors import ConfigurationError
@@ -15,7 +16,7 @@ from ..redis import get_redis_client_manager
 from ._base_scheduler import BaseCompScheduler, ScheduledPipelineParams
 from ._dask_scheduler import DaskScheduler
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def create_from_db(app: FastAPI) -> BaseCompScheduler:
@@ -30,30 +31,32 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
         filter_by_state=SCHEDULED_STATES
     )
 
-    logger.debug(
+    _logger.debug(
         "Following scheduled comp_runs found still to be scheduled: %s",
         runs if runs else "NONE",
     )
 
-    logger.info("Creating Dask-based scheduler...")
-    app_settings: AppSettings = app.state.settings
-    return DaskScheduler(
-        settings=app_settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
-        dask_clients_pool=DaskClientsPool.instance(app),
-        rabbitmq_client=get_rabbitmq_client(app),
-        rabbitmq_rpc_client=get_rabbitmq_rpc_client(app),
-        redis_client=get_redis_client_manager(app).client(RedisDatabase.LOCKS),
-        db_engine=db_engine,
-        scheduled_pipelines={
-            (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
-                cluster_id=(
-                    r.cluster_id if r.cluster_id is not None else DEFAULT_CLUSTER_ID
-                ),
-                run_metadata=r.metadata,
-                mark_for_cancellation=r.cancelled,
-                use_on_demand_clusters=r.use_on_demand_clusters,
-            )
-            for r in runs
-        },
-        service_runtime_heartbeat_interval=app_settings.SERVICE_TRACKING_HEARTBEAT,
-    )
+    with log_context(
+        _logger, logging.INFO, msg="Creating Dask-based computational scheduler"
+    ):
+        app_settings: AppSettings = app.state.settings
+        return DaskScheduler(
+            settings=app_settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
+            dask_clients_pool=DaskClientsPool.instance(app),
+            rabbitmq_client=get_rabbitmq_client(app),
+            rabbitmq_rpc_client=get_rabbitmq_rpc_client(app),
+            redis_client=get_redis_client_manager(app).client(RedisDatabase.LOCKS),
+            db_engine=db_engine,
+            scheduled_pipelines={
+                (r.user_id, r.project_uuid, r.iteration): ScheduledPipelineParams(
+                    cluster_id=(
+                        r.cluster_id if r.cluster_id is not None else DEFAULT_CLUSTER_ID
+                    ),
+                    run_metadata=r.metadata,
+                    mark_for_cancellation=r.cancelled,
+                    use_on_demand_clusters=r.use_on_demand_clusters,
+                )
+                for r in runs
+            },
+            service_runtime_heartbeat_interval=app_settings.SERVICE_TRACKING_HEARTBEAT,
+        )
