@@ -10,6 +10,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -83,8 +84,9 @@ def setup_tracing(
     otlp_exporter = OTLPSpanExporterHTTP(endpoint=tracing_destination)
     span_processor = BatchSpanProcessor(otlp_exporter)
     global_tracer_provider.add_span_processor(span_processor)
-    # Instrument FastAPI
+    # Instrument FastAPI and all httpx clients
     FastAPIInstrumentor().instrument_app(app)
+    HTTPXClientInstrumentor()
 
     if HAS_AIOPG:
         with log_context(
