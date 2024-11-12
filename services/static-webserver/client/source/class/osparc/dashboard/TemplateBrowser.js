@@ -137,7 +137,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         return;
       }
 
-      this._showLoadingPage(this.tr("Creating ") + (templateData.name || osparc.product.Utils.getStudyAlias({firstUpperCase: true})));
+      const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
+      this._showLoadingPage(this.tr("Creating ") + (templateData.name || studyAlias));
 
       const studyOptions = new osparc.study.StudyOptions();
       // they will be patched once the study is created
@@ -152,10 +153,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       win.addListener("cancel", () => cancelStudyOptions());
       studyOptions.addListener("cancel", () => cancelStudyOptions());
       studyOptions.addListener("startStudy", () => {
-        const titleSelection = studyOptions.getChildControl("title-field").getValue();
+        const newName = studyOptions.getChildControl("title-field").getValue();
         const walletSelection = studyOptions.getChildControl("wallet-selector").getSelection();
         const nodesPricingUnits = studyOptions.getChildControl("study-pricing-units").getNodePricingUnits();
         win.close();
+        this._showLoadingPage(this.tr("Creating ") + (newName || studyAlias));
         osparc.study.Utils.createStudyFromTemplate(templateData, this._loadingPage)
           .then(newStudyData => {
             const studyId = newStudyData["uuid"];
@@ -174,8 +176,8 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
             const promises = [];
             // patch the name
-            if (newStudyData["name"] !== titleSelection) {
-              promises.push(osparc.study.StudyOptions.updateName(newStudyData, titleSelection));
+            if (newStudyData["name"] !== newName) {
+              promises.push(osparc.study.StudyOptions.updateName(newStudyData, newName));
             }
             // patch the wallet
             if (walletSelection.length && walletSelection[0]["walletId"]) {
