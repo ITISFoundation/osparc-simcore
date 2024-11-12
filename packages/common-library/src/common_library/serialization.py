@@ -30,10 +30,11 @@ def model_dump_with_secrets(
             data[field_name] = str(field_data)
 
         elif isinstance(field_data, dict):
-            field_type = settings_obj.model_fields[field_name].annotation
+            possible_pydantic_model = settings_obj.model_fields[field_name].annotation
+            # NOTE: data could be a dict which does not represent a pydantic model or a union of models
             with contextlib.suppress(AttributeError, ValidationError):
                 data[field_name] = model_dump_with_secrets(
-                    TypeAdapter(field_type).validate_python(field_data),
+                    TypeAdapter(possible_pydantic_model).validate_python(field_data),
                     show_secrets=show_secrets,
                     **pydantic_export_options,
                 )
