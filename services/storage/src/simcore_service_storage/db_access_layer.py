@@ -51,7 +51,7 @@ from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,
 )
 from simcore_postgres_database.storage_models import file_meta_data, user_to_groups
-from simcore_postgres_database.utils import assemble_array_groups
+from simcore_postgres_database.utils_sql import assemble_array_groups
 
 logger = logging.getLogger(__name__)
 
