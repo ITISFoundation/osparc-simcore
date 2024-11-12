@@ -45,6 +45,7 @@ from pydantic import parse_obj_as, parse_raw_as
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.redis import CouldNotAcquireLockError
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.comp_runs import comp_runs
@@ -162,8 +163,10 @@ async def _assert_comp_tasks_db(
 async def schedule_all_pipelines(scheduler: BaseCompScheduler) -> None:
     # NOTE: we take a copy of the pipelines, as this could change quickly if there are
     # misconfigured pipelines that would be removed from the scheduler
+    # NOTE: we simulate multiple dv-2 replicas by running several times
+    # the same pipeline scheduling
     local_pipelines = deepcopy(scheduler.scheduled_pipelines)
-    await asyncio.gather(
+    results = await asyncio.gather(
         *(
             scheduler._schedule_pipeline(  # noqa: SLF001
                 user_id=user_id,
@@ -171,20 +174,23 @@ async def schedule_all_pipelines(scheduler: BaseCompScheduler) -> None:
                 iteration=iteration,
                 pipeline_params=params,
             )
+            for _ in range(3)
             for (
                 user_id,
                 project_id,
                 iteration,
             ), params in local_pipelines.items()
-        )
+        ),
+        return_exceptions=True,
     )
+    # we should have exceptions 2/3 of the time
+    could_not_acquire_lock_count = sum(
+        isinstance(r, CouldNotAcquireLockError) for r in results
+    )
+    total_results_count = len(results)
 
-    # # NOTE: this simulates having 3 schedulers running in parallel
-    # await asyncio.gather(
-    #     scheduler.schedule_all_pipelines(),
-    #     scheduler.schedule_all_pipelines(),
-    #     scheduler.schedule_all_pipelines(),
-    # )
+    # Check if 2/3 of the results are CouldNotAcquireLockError
+    assert could_not_acquire_lock_count == (2 / 3) * total_results_count
 
 
 @pytest.fixture
