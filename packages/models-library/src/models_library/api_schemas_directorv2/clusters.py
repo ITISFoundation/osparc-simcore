@@ -144,9 +144,9 @@ class ClusterCreate(BaseCluster):
                         "password": "somepassword",
                     },
                     "accessRights": {
-                        "154": CLUSTER_ADMIN_RIGHTS.model_dump(),
-                        "12": CLUSTER_MANAGER_RIGHTS.model_dump(),
-                        "7899": CLUSTER_USER_RIGHTS.model_dump(),
+                        154: CLUSTER_ADMIN_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        12: CLUSTER_MANAGER_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        7899: CLUSTER_USER_RIGHTS.model_dump(),  # type:ignore[dict-item]
                     },
                 },
             ]
@@ -190,9 +190,9 @@ class ClusterPatch(BaseCluster):
                 },
                 {
                     "accessRights": {
-                        "154": CLUSTER_ADMIN_RIGHTS.model_dump(),
-                        "12": CLUSTER_MANAGER_RIGHTS.model_dump(),
-                        "7899": CLUSTER_USER_RIGHTS.model_dump(),
+                        154: CLUSTER_ADMIN_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        12: CLUSTER_MANAGER_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        7899: CLUSTER_USER_RIGHTS.model_dump(),  # type:ignore[dict-item]
                     },
                 },
             ]

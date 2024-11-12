@@ -86,10 +86,7 @@ class JupyterHubTokenAuthentication(BaseAuthentication):
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
-                {
-                    "type": "jupyterhub",
-                    "api_token": "some_jupyterhub_token",
-                },
+                {"type": "jupyterhub", "api_token": "some_jupyterhub_token"},
             ]
         }
     )
@@ -143,9 +140,7 @@ class BaseCluster(BaseModel):
     )
     endpoint: AnyUrl
     authentication: ClusterAuthentication = Field(
-        ...,
-        description="Dask gateway authentication",
-        discriminator="type",
+        ..., description="Dask gateway authentication", discriminator="type"
     )
     access_rights: dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
 
