@@ -17,7 +17,6 @@ from models_library.workspaces import (
     WorkspaceID,
 )
 from pydantic import NonNegativeInt
-from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.workspaces import workspaces
 from simcore_postgres_database.models.workspaces_access_rights import (
     workspaces_access_rights,
@@ -26,10 +25,12 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+from simcore_postgres_database.utils_workspaces_sql import (
+    create_my_workspace_access_rights_subquery,
+)
 from sqlalchemy import asc, desc, func
-from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.ext.asyncio import AsyncConnection
-from sqlalchemy.sql import Subquery, select
+from sqlalchemy.sql import select
 
 from ..db.plugin import get_asyncpg_engine
 from .errors import WorkspaceAccessForbiddenError, WorkspaceNotFoundError
@@ -98,29 +99,6 @@ _access_rights_subquery = (
 ).subquery("access_rights_subquery")
 
 
-def _create_my_access_rights_subquery(user_id: UserID) -> Subquery:
-    return (
-        select(
-            workspaces_access_rights.c.workspace_id,
-            func.json_build_object(
-                "read",
-                func.max(workspaces_access_rights.c.read.cast(INTEGER)).cast(BOOLEAN),
-                "write",
-                func.max(workspaces_access_rights.c.write.cast(INTEGER)).cast(BOOLEAN),
-                "delete",
-                func.max(workspaces_access_rights.c.delete.cast(INTEGER)).cast(BOOLEAN),
-            ).label("my_access_rights"),
-        )
-        .select_from(
-            workspaces_access_rights.join(
-                user_to_groups, user_to_groups.c.gid == workspaces_access_rights.c.gid
-            )
-        )
-        .where(user_to_groups.c.uid == user_id)
-        .group_by(workspaces_access_rights.c.workspace_id)
-    ).subquery("my_access_rights_subquery")
-
-
 async def list_workspaces_for_user(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -131,7 +109,9 @@ async def list_workspaces_for_user(
     limit: NonNegativeInt,
     order_by: OrderBy,
 ) -> tuple[int, list[UserWorkspaceAccessRightsDB]]:
-    my_access_rights_subquery = _create_my_access_rights_subquery(user_id=user_id)
+    my_access_rights_subquery = create_my_workspace_access_rights_subquery(
+        user_id=user_id
+    )
 
     base_query = (
         select(
@@ -175,7 +155,9 @@ async def get_workspace_for_user(
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> UserWorkspaceAccessRightsDB:
-    my_access_rights_subquery = _create_my_access_rights_subquery(user_id=user_id)
+    my_access_rights_subquery = create_my_workspace_access_rights_subquery(
+        user_id=user_id
+    )
 
     base_query = (
         select(
