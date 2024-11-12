@@ -995,7 +995,11 @@ async def test_project_node_lifetime(  # noqa: PLR0915
 
     # create a new dynamic node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
-    body = {"service_key": "simcore/services/dynamic/key", "service_version": "1.3.4"}
+    body = {
+        "service_key": "simcore/services/dynamic/key",
+        "service_version": "1.3.4",
+        "service_id": None,
+    }
     resp = await client.post(url.path, json=body)
     data, errors = await assert_status(resp, expected_response_on_create)
     dynamic_node_id = None
@@ -1016,6 +1020,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     body = {
         "service_key": "simcore/services/comp/key",
         "service_version": "1.3.4",
+        "service_id": None,
     }
     resp = await client.post(f"{url}", json=body)
     data, errors = await assert_status(resp, expected_response_on_create)
