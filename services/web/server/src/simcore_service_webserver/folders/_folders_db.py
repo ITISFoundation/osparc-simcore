@@ -30,13 +30,15 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+from simcore_postgres_database.utils_workspaces_sql import (
+    create_my_workspace_access_rights_subquery,
+)
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import ColumnElement, CompoundSelect, Select, asc, desc, select
 
 from ..db.plugin import get_asyncpg_engine
-from ..workspaces._workspaces_db import _create_my_access_rights_subquery
 from .errors import FolderAccessForbiddenError, FolderNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -126,7 +128,7 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     trashed - If set to true, it returns folders **explicitly** trashed, if false then non-trashed folders.
     """
 
-    workspace_access_rights_subquery = _create_my_access_rights_subquery(
+    workspace_access_rights_subquery = create_my_workspace_access_rights_subquery(
         user_id=user_id
     )
 
