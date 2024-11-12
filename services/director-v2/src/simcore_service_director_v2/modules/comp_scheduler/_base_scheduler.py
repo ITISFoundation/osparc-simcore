@@ -140,7 +140,6 @@ async def _triage_changed_tasks(
 class ScheduledPipelineParams:
     cluster_id: ClusterID
     run_metadata: RunMetadataDict
-    mark_for_cancellation: datetime.datetime | None
     use_on_demand_clusters: bool
 
     scheduler_task: asyncio.Task | None = None
@@ -198,7 +197,6 @@ class BaseCompScheduler(ABC):
             cluster_id=cluster_id,
             run_metadata=new_run.metadata,
             use_on_demand_clusters=use_on_demand_clusters,
-            mark_for_cancellation=None,
         )
         await publish_project_log(
             self.rabbitmq_client,
@@ -236,9 +234,6 @@ class BaseCompScheduler(ABC):
         )
         if updated_comp_run:
             assert updated_comp_run.cancelled is not None  # nosec
-            self.scheduled_pipelines[
-                (user_id, project_id, selected_iteration)
-            ].mark_for_cancellation = updated_comp_run.cancelled
             # ensure the scheduler starts right away
             self.scheduled_pipelines[
                 (user_id, project_id, selected_iteration)
@@ -714,7 +709,10 @@ class BaseCompScheduler(ABC):
                     project_id, dag
                 )
                 # 3. do we want to stop the pipeline now?
-                if pipeline_params.mark_for_cancellation:
+                comp_run = await CompRunsRepository.instance(self.db_engine).get(
+                    user_id, project_id, iteration
+                )
+                if comp_run.cancelled:
                     await self._schedule_tasks_to_stop(
                         user_id, project_id, comp_tasks, pipeline_params
                     )

@@ -402,7 +402,6 @@ async def test_misconfigured_pipeline_is_not_scheduled(
         assert u_id == user["id"]
         assert p_id == sleepers_project.uuid
         assert it > 0
-        assert params.mark_for_cancellation is None
     # check the database was properly updated
     async with aiopg_engine.acquire() as conn:
         result = await conn.execute(
@@ -450,7 +449,6 @@ async def _assert_start_pipeline(
         assert u_id == published_project.project.prj_owner
         assert p_id == published_project.project.uuid
         assert it > 0
-        assert params.mark_for_cancellation is None
         assert params.run_metadata == run_metadata
 
     # check the database is correctly updated, the run is published
