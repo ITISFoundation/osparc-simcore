@@ -262,7 +262,7 @@ async def update_folder(
 
     folder_db = await folders_db.update(
         app,
-        folder_id=folder_id,
+        folders_id_or_ids=folder_id,
         name=name,
         parent_folder_id=parent_folder_id,
         product_name=product_name,
