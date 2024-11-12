@@ -6,7 +6,7 @@
 # pylint: disable=unused-variable
 # pylint:disable=too-many-positional-arguments
 
-import datetime
+import datetime as dt
 import json
 import re
 import urllib.parse
@@ -23,6 +23,7 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import FastAPI, status
+from models_library.api_schemas_catalog.services import ServiceGet
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.comp_tasks import (
     ComputationCreate,
@@ -33,7 +34,6 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     PricingPlanGet,
     PricingUnitGet,
 )
-from models_library.basic_types import VersionStr
 from models_library.clusters import DEFAULT_CLUSTER_ID, Cluster, ClusterID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
@@ -111,8 +111,8 @@ def fake_service_details(mocks_dir: Path) -> ServiceMetaDataPublished:
 
 @pytest.fixture
 def fake_service_extras() -> ServiceExtras:
-    extra_example = ServiceExtras.model_config["json_schema_extra"]["examples"][2]
-    random_extras = ServiceExtras(**extra_example)
+    extra_example = ServiceExtras.model_config["json_schema_extra"]["examples"][2]  # type: ignore
+    random_extras = ServiceExtras(**extra_example)  # type: ignore
     assert random_extras is not None
     return random_extras
 
@@ -120,15 +120,15 @@ def fake_service_extras() -> ServiceExtras:
 @pytest.fixture
 def fake_service_resources() -> ServiceResourcesDict:
     return TypeAdapter(ServiceResourcesDict).validate_python(
-        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],
+        ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore
     )
 
 
 @pytest.fixture
 def fake_service_labels() -> dict[str, Any]:
-    return choice(
-        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"]
-    )  # noqa: S311
+    return choice(  # noqa: S311
+        SimcoreServiceLabels.model_config["json_schema_extra"]["examples"]  # type: ignore
+    )
 
 
 @pytest.fixture
@@ -149,7 +149,9 @@ def mocked_director_service_fcts(
                 r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+$"
             ),
             name="get_service",
-        ).respond(json={"data": [fake_service_details.model_dump(mode="json", by_alias=True)]})
+        ).respond(
+            json={"data": [fake_service_details.model_dump(mode="json", by_alias=True)]}
+        )
         respx_mock.get(
             re.compile(
                 r"/services/simcore%2Fservices%2F(comp|dynamic|frontend)%2F[^/]+/\d+.\d+.\d+/labels"
@@ -162,7 +164,9 @@ def mocked_director_service_fcts(
                 r"/service_extras/(simcore)%2F(services)%2F(comp|dynamic|frontend)%2F.+/(.+)"
             ),
             name="get_service_extras",
-        ).respond(json={"data": fake_service_extras.model_dump(mode="json", by_alias=True)})
+        ).respond(
+            json={"data": fake_service_extras.model_dump(mode="json", by_alias=True)}
+        )
 
         yield respx_mock
 
@@ -184,7 +188,7 @@ def mocked_catalog_service_fcts(
         return httpx.Response(
             200,
             json=jsonable_encoder(
-                fake_service_details.copy(
+                fake_service_details.model_copy(
                     update={
                         "key": urllib.parse.unquote(service_key),
                         "version": service_version,
@@ -225,19 +229,30 @@ def mocked_catalog_service_fcts_deprecated(
     def _mocked_services_details(
         request, service_key: str, service_version: str
     ) -> httpx.Response:
+        data_published = fake_service_details.model_copy(
+            update={
+                "key": urllib.parse.unquote(service_key),
+                "version": service_version,
+                "deprecated": (
+                    dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)
+                ).isoformat(),
+            }
+        ).model_dump(by_alias=True)
+
+        deprecated = {
+            "deprecated": (
+                dt.datetime.now(tz=dt.UTC) - dt.timedelta(days=1)
+            ).isoformat()
+        }
+
+        data = {**ServiceGet.model_config["json_schema_extra"]["examples"][0], **data_published, **deprecated}  # type: ignore
+
+        payload = ServiceGet.model_validate(data)
+
         return httpx.Response(
-            200,
+            httpx.codes.OK,
             json=jsonable_encoder(
-                fake_service_details.copy(
-                    update={
-                        "key": urllib.parse.unquote(service_key),
-                        "version": service_version,
-                        "deprecated": (
-                            datetime.datetime.now(tz=datetime.UTC)
-                            - datetime.timedelta(days=1)
-                        ).isoformat(),
-                    }
-                ),
+                payload,
                 by_alias=True,
             ),
         )
@@ -470,7 +485,6 @@ def project_nodes_overrides(request: pytest.FixtureRequest) -> dict[str, Any]:
     return request.param
 
 
-@pytest.mark.testit
 async def test_create_computation_with_wallet(
     minimal_configuration: None,
     mocked_director_service_fcts: respx.MockRouter,
@@ -618,8 +632,8 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
 @pytest.mark.parametrize(
     "default_pricing_plan",
     [
-        PricingPlanGet.construct(
-            **PricingPlanGet.model_config["json_schema_extra"]["examples"][0]
+        PricingPlanGet.model_construct(
+            **PricingPlanGet.model_config["json_schema_extra"]["examples"][0]  # type: ignore
         )
     ],
 )

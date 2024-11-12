@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import logging
 from typing import Any
 
@@ -127,11 +127,13 @@ async def find_deprecated_tasks(
         ): details
         for details in services_details
     }
-    today = datetime.datetime.now(tz=datetime.timezone.utc)
+    today = dt.datetime.now(tz=dt.UTC)
 
     def _is_service_deprecated(service: dict[str, Any]) -> bool:
         if deprecation_date := service.get("deprecated"):
-            deprecation_date = datetime.datetime.fromisoformat(deprecation_date).replace(tzinfo=datetime.UTC)
+            deprecation_date = dt.datetime.fromisoformat(deprecation_date).replace(
+                tzinfo=dt.UTC
+            )
             is_deprecated: bool = today > deprecation_date
             return is_deprecated
         return False
