@@ -183,7 +183,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
               const nodeId = nodePricingUnits.getNodeId();
               const pricingPlanId = nodePricingUnits.getPricingPlanId();
               const selectedPricingUnitId = nodePricingUnits.getPricingUnits().getSelectedUnitId();
-              promises.push(osparc.study.NodePricingUnits.patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId));
+              if (selectedPricingUnitId) {
+                promises.push(osparc.study.NodePricingUnits.patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId));
+              }
             })
 
             Promise.all(promises)
