@@ -209,10 +209,14 @@ class CatalogApi(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: CatalogSettings) -> None:
+def setup(app: FastAPI, settings: CatalogSettings, add_tracing: bool = False) -> None:
     if not settings:
         settings = CatalogSettings()
 
     setup_client_instance(
-        app, CatalogApi, api_baseurl=settings.api_base_url, service_name="catalog"
+        app,
+        CatalogApi,
+        api_baseurl=settings.api_base_url,
+        service_name="catalog",
+        add_tracing=add_tracing,
     )

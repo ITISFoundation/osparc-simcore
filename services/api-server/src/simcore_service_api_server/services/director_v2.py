@@ -191,11 +191,14 @@ class DirectorV2Api(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: DirectorV2Settings) -> None:
+def setup(
+    app: FastAPI, settings: DirectorV2Settings, add_tracing: bool = False
+) -> None:
     setup_client_instance(
         app,
         DirectorV2Api,
         # WARNING: it has /v0 and /v2 prefixes
         api_baseurl=settings.base_url,
         service_name="director_v2",
+        add_tracing=add_tracing,
     )

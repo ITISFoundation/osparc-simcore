@@ -588,19 +588,21 @@ class AuthSession:
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: WebServerSettings) -> None:
+def setup(app: FastAPI, settings: WebServerSettings, add_tracing: bool = False) -> None:
 
     setup_client_instance(
         app,
         WebserverApi,
         api_baseurl=settings.api_base_url,
         service_name="webserver",
+        add_tracing=add_tracing,
     )
     setup_client_instance(
         app,
         LongRunningTasksClient,
         api_baseurl="",
         service_name="long_running_tasks_client",
+        add_tracing=add_tracing,
     )
 
     def _on_startup() -> None:

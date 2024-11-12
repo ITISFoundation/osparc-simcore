@@ -82,19 +82,22 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     setup_rabbitmq(app)
 
-    if settings.API_SERVER_WEBSERVER:
-        webserver.setup(app, settings.API_SERVER_WEBSERVER)
+    add_tracing = False
     if app.state.settings.API_SERVER_TRACING:
+        add_tracing = True
         setup_tracing(app, app.state.settings.API_SERVER_TRACING, APP_NAME)
 
+    if settings.API_SERVER_WEBSERVER:
+        webserver.setup(app, settings.API_SERVER_WEBSERVER, add_tracing=add_tracing)
+
     if settings.API_SERVER_CATALOG:
-        catalog.setup(app, settings.API_SERVER_CATALOG)
+        catalog.setup(app, settings.API_SERVER_CATALOG, add_tracing=add_tracing)
 
     if settings.API_SERVER_STORAGE:
-        storage.setup(app, settings.API_SERVER_STORAGE)
+        storage.setup(app, settings.API_SERVER_STORAGE, add_tracing=add_tracing)
 
     if settings.API_SERVER_DIRECTOR_V2:
-        director_v2.setup(app, settings.API_SERVER_DIRECTOR_V2)
+        director_v2.setup(app, settings.API_SERVER_DIRECTOR_V2, add_tracing=add_tracing)
 
     # setup app
     app.add_event_handler("startup", create_start_app_handler(app))

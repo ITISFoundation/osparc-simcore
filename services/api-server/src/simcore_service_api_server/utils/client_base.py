@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import httpx
 from fastapi import FastAPI
 from httpx import AsyncClient
+from servicelib.fastapi.tracing import setup_httpx_client_tracing
 
 from .app_data import AppDataMixin
 
@@ -43,6 +44,7 @@ def setup_client_instance(
     api_cls: type[BaseServiceClientApi],
     api_baseurl,
     service_name: str,
+    add_tracing: bool = False,
     **extra_fields,
 ) -> None:
     """Helper to add init/cleanup of ServiceClientApi instances in the app lifespam"""
@@ -51,6 +53,8 @@ def setup_client_instance(
 
     # NOTE: this term is mocked in tests. If you need to modify pay attention to the mock
     client = AsyncClient(base_url=api_baseurl)
+    if add_tracing:
+        setup_httpx_client_tracing(client)
 
     # events
     def _create_instance() -> None:

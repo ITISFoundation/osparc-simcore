@@ -209,12 +209,16 @@ class StorageApi(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: StorageSettings) -> None:
+def setup(app: FastAPI, settings: StorageSettings, add_tracing: bool = False) -> None:
     if not settings:
         settings = StorageSettings()
 
     setup_client_instance(
-        app, StorageApi, api_baseurl=settings.api_base_url, service_name="storage"
+        app,
+        StorageApi,
+        api_baseurl=settings.api_base_url,
+        service_name="storage",
+        add_tracing=add_tracing,
     )
 
 
