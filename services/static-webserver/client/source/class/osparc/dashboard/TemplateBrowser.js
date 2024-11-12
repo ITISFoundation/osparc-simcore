@@ -166,26 +166,23 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
               osparc.data.Resources.fetch("studies", "delete", params);
             };
 
+            const promises = [];
             const titleSelection = studyOptions.getChildControl("title-field").getValue();
             if (studyData["name"] !== titleSelection) {
-              osparc.study.StudyOptions.updateName(studyData, titleSelection)
-                .catch(err => {
-                  console.error(err);
-                  const msg = this.tr("Something went wrong Renaming");
-                  osparc.FlashMessenger.logAs(msg, "ERROR");
-                });
+              promises.push(osparc.study.StudyOptions.updateName(studyData, titleSelection));
             }
-
             const walletSelection = studyOptions.getChildControl("wallet-selector").getSelection();
             if (walletSelection.length && walletSelection[0]["walletId"]) {
-              const walletId = walletSelection[0]["walletId"]
-              osparc.study.StudyOptions.updateWallet(studyData["uuid"], walletId)
+              const walletId = walletSelection[0]["walletId"];
+              promises.push(osparc.study.StudyOptions.updateWallet(studyData["uuid"], walletId));
             }
 
-            win.close();
-
-            const isStudyCreation = true;
-            this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
+            Promise.all(promises)
+              .then(() => {
+                win.close();
+                const isStudyCreation = true;
+                this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
+              });
           })
           .catch(err => {
             this._hideLoadingPage();
