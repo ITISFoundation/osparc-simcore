@@ -4,7 +4,6 @@ from common_library.pydantic_networks_extension import HttpUrlLegacy
 from models_library.basic_types import NonNegativeDecimal
 from pydantic import (
     AliasChoices,
-    ConfigDict,
     EmailStr,
     Field,
     PositiveFloat,
@@ -62,8 +61,6 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
-
-    model_config = ConfigDict(extra="allow")  # type:ignore[assignment]
 
 
 class ApplicationSettings(_BaseApplicationSettings):
