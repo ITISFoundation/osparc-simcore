@@ -52,14 +52,16 @@ async def _initialized_app(only_db: bool = False) -> AsyncIterator[FastAPI]:
 ### PROJECT SAVE STATE
 
 
-def _get_dynamic_sidecar_endpoint(settings: AppSettings, node_id: NodeIDStr) -> str:
+def _get_dynamic_sidecar_endpoint(
+    settings: AppSettings, node_id: NodeIDStr
+) -> AnyHttpUrl:
     dynamic_sidecar_names = DynamicSidecarNamesHelper.make(NodeID(node_id))
     hostname = dynamic_sidecar_names.service_name_dynamic_sidecar
     port = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT
     url = AnyHttpUrl.build(  # pylint: disable=no-member
         scheme="http", host=hostname, port=port
     )
-    return f"{url}"
+    return url
 
 
 async def _save_node_state(

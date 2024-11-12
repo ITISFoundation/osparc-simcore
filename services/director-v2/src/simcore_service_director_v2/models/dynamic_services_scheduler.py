@@ -389,12 +389,12 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     port: PortInt = Field(default=8000, description="dynamic-sidecar port")
 
     @property
-    def endpoint(self) -> str:
+    def endpoint(self) -> AnyHttpUrl:
         """endpoint where all the services are exposed"""
         url = AnyHttpUrl.build(  # pylint: disable=no-member
             scheme="http", host=self.hostname, port=self.port
         )
-        return f"{url}"
+        return url
 
     dynamic_sidecar: DynamicSidecar = Field(
         ...,
