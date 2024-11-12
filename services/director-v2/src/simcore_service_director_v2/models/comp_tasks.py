@@ -233,8 +233,8 @@ class CompTaskAtDB(BaseModel):
                     "state": "NOT_STARTED",
                     "progress": 0.44,
                     "last_heartbeat": None,
-                    "created": "2022-05-20T13:28:31.139",
-                    "modified": "2023-06-23T15:58:32.83308",
+                    "created": "2022-05-20 13:28:31.139+00",
+                    "modified": "2023-06-23 15:58:32.833081+00",
                     "pricing_info": {
                         "pricing_plan_id": 1,
                         "pricing_unit_id": 1,
