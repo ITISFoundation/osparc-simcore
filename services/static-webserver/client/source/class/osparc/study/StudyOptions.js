@@ -47,7 +47,7 @@ qx.Class.define("osparc.study.StudyOptions", {
 
     patchStudy: {
       check: "Boolean",
-      init: false,
+      init: true,
       nullable: false,
       event: "changePatchStudy",
     },
@@ -182,6 +182,7 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.getChildControl("options-layout").add(control);
           break;
         case "study-pricing-units": {
+          control = new osparc.study.StudyPricingUnits();
           const loadingImage = this.getChildControl("loading-units-spinner");
           const unitsBoxesLayout = this.getChildControl("services-resources-layout");
           const unitsLoading = () => {
@@ -191,9 +192,11 @@ qx.Class.define("osparc.study.StudyOptions", {
           const unitsReady = () => {
             loadingImage.exclude();
             unitsBoxesLayout.show();
+            control.getNodePricingUnits().forEach(nodePricingUnits => {
+              this.bind("patchStudy", nodePricingUnits, "patchNode");
+            });
           };
           unitsLoading();
-          control = new osparc.study.StudyPricingUnits();
           control.addListener("loadingUnits", () => unitsLoading());
           control.addListener("unitsReady", () => unitsReady());
           unitsBoxesLayout.add(control);
