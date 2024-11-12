@@ -10,6 +10,7 @@ from models_library.rest_ordering import (
     create_ordering_query_model_classes,
 )
 from models_library.rest_pagination import PageQueryParameters
+from models_library.trash import RemoveQueryParams
 from models_library.users import UserID
 from models_library.utils.common_validators import (
     empty_str_to_none_pre_validator,
@@ -93,7 +94,7 @@ class FolderSearchQueryParams(
         extra = Extra.forbid
 
 
-class RemoveQueryParams(BaseModel):
-    force: bool = Field(
-        default=False, description="Force removal (even if resource is active)"
-    )
+
+assert RemoveQueryParams  # nosec
+
+__all__: tuple[str, ...] = ("RemoveQueryParams",)

@@ -30,6 +30,7 @@ from ._models import (
     WorkspacesListQueryParams,
     WorkspacesPathParams,
     WorkspacesRequestContext,
+    WorkspacesFilters
 )
 
 _logger = logging.getLogger(__name__)
@@ -68,10 +69,14 @@ async def list_workspaces(request: web.Request):
         WorkspacesListQueryParams, request
     )
 
+    if not query_params.filters:
+        query_params.filters = WorkspacesFilters()
+
     workspaces: WorkspaceGetPage = await _workspaces_api.list_workspaces(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
+        trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,
         order_by=parse_obj_as(OrderBy, query_params.order_by),

@@ -9,6 +9,7 @@ from models_library.rest_ordering import (
     create_ordering_query_model_classes,
 )
 from models_library.rest_pagination import PageQueryParameters
+from models_library.trash import RemoveQueryParams
 from models_library.users import GroupID, UserID
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, Extra, Field
@@ -70,3 +71,8 @@ class WorkspacesGroupsBodyParams(BaseModel):
 
     class Config:
         extra = Extra.forbid
+
+
+assert RemoveQueryParams  # nosec
+
+__all__: tuple[str, ...] = ("RemoveQueryParams",)

@@ -8,15 +8,10 @@ from enum import Enum
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
+from models_library.trash import RemoveQueryParams
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.folders._models import (
-    FoldersPathParams,
-    RemoveQueryParams,
-)
+from simcore_service_webserver.folders._models import FoldersPathParams
 from simcore_service_webserver.projects._trash_handlers import ProjectPathParams
-from simcore_service_webserver.projects._trash_handlers import (
-    RemoveQueryParams as RemoveQueryParams_duplicated,
-)
 from simcore_service_webserver.workspaces._models import WorkspacesPathParams
 
 router = APIRouter(
@@ -83,7 +78,7 @@ _extra_tags = ["folders"]
 )
 def trash_folder(
     _path: Annotated[FoldersPathParams, Depends()],
-    _query: Annotated[RemoveQueryParams_duplicated, Depends()],
+    _query: Annotated[RemoveQueryParams, Depends()],
 ):
     ...
 
@@ -116,7 +111,7 @@ _extra_tags = ["workspaces"]
 )
 def trash_workspace(
     _p: Annotated[WorkspacesPathParams, Depends()],
-    _q: Annotated[RemoveQueryParams_duplicated, Depends()],
+    _q: Annotated[RemoveQueryParams, Depends()],
 ):
     ...
 
