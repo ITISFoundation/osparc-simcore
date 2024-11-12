@@ -179,8 +179,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
               promises.push(osparc.study.StudyOptions.updateWallet(studyData["uuid"], walletId));
             }
             nodesPricingUnits.forEach(nodePricingUnits => {
-              console.log("nodePricingUnits", nodePricingUnits);
-              // osparc.study.NodePricingUnits.patchPricingUnitSelection(studyId, )
+              const nodeId = nodePricingUnits.getNodeId();
+              const pricingPlanId = nodePricingUnits.getPricingPlanId();
+              const selectedPricingUnitId = nodePricingUnits.getPricingUnits().getSelectedUnitId();
+              promises.push(osparc.study.NodePricingUnits.patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId));
             })
 
             Promise.all(promises)

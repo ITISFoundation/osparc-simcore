@@ -57,6 +57,12 @@ qx.Class.define("osparc.study.NodePricingUnits", {
       init: null,
       nullable: false,
     },
+
+    pricingPlanId: {
+      check: "String",
+      init: null,
+      nullable: false,
+    },
   },
 
   statics: {
@@ -77,6 +83,7 @@ qx.Class.define("osparc.study.NodePricingUnits", {
     __nodeKey: null,
     __nodeVersion: null,
     __nodeLabel: null,
+    __pricingUnits: null,
 
     showPricingUnits: function(inGroupBox = true) {
       return new Promise(resolve => {
@@ -93,30 +100,34 @@ qx.Class.define("osparc.study.NodePricingUnits", {
           )
         };
         osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
-          .then(pricingPlans => {
-            if (pricingPlans) {
+          .then(pricingPlan => {
+            if (pricingPlan) {
               const unitParams = {
                 url: {
                   studyId,
                   nodeId
                 }
               };
+              this.set({
+                pricingPlanId: pricingPlan["pricingPlanId"]
+              });
               osparc.data.Resources.fetch("studies", "getPricingUnit", unitParams)
                 .then(preselectedPricingUnit => {
-                  if (pricingPlans && "pricingUnits" in pricingPlans && pricingPlans["pricingUnits"].length) {
-                    const unitButtons = new osparc.study.PricingUnits(pricingPlans["pricingUnits"], preselectedPricingUnit);
+                  if (pricingPlan && "pricingUnits" in pricingPlan && pricingPlan["pricingUnits"].length) {
+                    const pricingUnitButtons = this.__pricingUnits = new osparc.study.PricingUnits(pricingPlan["pricingUnits"], preselectedPricingUnit);
                     if (inGroupBox) {
                       const pricingUnitsLayout = osparc.study.StudyOptions.createGroupBox(nodeLabel);
-                      pricingUnitsLayout.add(unitButtons);
+                      pricingUnitsLayout.add(pricingUnitButtons);
                       this._add(pricingUnitsLayout);
                     } else {
-                      this._add(unitButtons);
+                      this._add(pricingUnitButtons);
                     }
-                    unitButtons.addListener("changeSelectedUnitId", e => {
-                      unitButtons.setEnabled(false);
+                    pricingUnitButtons.addListener("changeSelectedUnitId", e => {
+                      pricingUnitButtons.setEnabled(false);
+                      const pricingPlanId = this.getPricingPlanId();
                       const selectedPricingUnitId = e.getData();
-                      this.self().patchPricingUnitSelection(studyId, nodeId, pricingPlans["pricingPlanId"], selectedPricingUnitId)
-                        .finally(() => unitButtons.setEnabled(true));
+                      this.self().patchPricingUnitSelection(studyId, nodeId, pricingPlanId, selectedPricingUnitId)
+                        .finally(() => pricingUnitButtons.setEnabled(true));
                     });
                   }
                 })
@@ -124,6 +135,10 @@ qx.Class.define("osparc.study.NodePricingUnits", {
             }
           });
       });
-    }
+    },
+
+    getPricingUnits: function() {
+      return this.__pricingUnits;
+    },
   }
 });
