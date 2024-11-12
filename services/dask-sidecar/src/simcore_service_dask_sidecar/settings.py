@@ -3,13 +3,12 @@ from typing import Annotated, Any
 
 from models_library.basic_types import LogLevel
 from pydantic import AliasChoices, Field, field_validator
-from pydantic_settings import SettingsConfigDict
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
-from settings_library.base import BaseCustomSettings
+from settings_library.application import BaseApplicationSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
-class Settings(BaseCustomSettings, MixinLoggingSettings):
+class Settings(BaseApplicationSettings, MixinLoggingSettings):
     """Dask-sidecar app settings"""
 
     SC_BUILD_TARGET: str | None = None
@@ -18,6 +17,8 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel,
         Field(
             LogLevel.INFO.value,
+            alias="LOG_LEVEL",
+            serialization_alias="LOG_LEVEL",
             validation_alias=AliasChoices(
                 "SIDECAR_LOGLEVEL", "LOG_LEVEL", "DASK_SIDECAR_LOGLEVEL", "LOGLEVEL"
             ),
@@ -68,5 +69,3 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def _validate_loglevel(cls, value: Any) -> str:
         return cls.validate_log_level(f"{value}")
-
-    model_config = SettingsConfigDict(extra="allow")
