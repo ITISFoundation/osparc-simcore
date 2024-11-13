@@ -97,15 +97,14 @@ qx.Class.define("osparc.notification.RibbonNotifications", {
 
       if (notification.getType() === "announcement") {
         const dontShowButton = new qx.ui.form.Button(this.tr("Don't show again")).set({
-          backgroundColor: "transparent",
-          textColor: "strong-text",
+          appearance: "strong-button",
           alignY: "middle",
           padding: 4,
           allowGrowX: false,
           allowGrowY: false,
           marginLeft: 15
         });
-        osparc.utils.Utils.addBorder(dontShowButton, 1, qx.theme.manager.Color.getInstance().resolve("strong-text"));
+        osparc.utils.Utils.addBorder(dontShowButton, 1, qx.theme.manager.Color.getInstance().resolve("text"));
         dontShowButton.addListener("tap", () => {
           this.removeNotification(notification);
           osparc.utils.Utils.localCache.setDontShowAnnouncement(notification.announcementId);

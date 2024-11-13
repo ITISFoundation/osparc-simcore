@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from servicelib.background_task import start_periodic_task, stop_periodic_task
 from servicelib.redis_utils import exclusive
 
+from .._meta import APP_NAME
 from ..core.settings import ApplicationSettings
 from ..modules.redis import get_redis_client
 from .clusters_management_core import check_clusters
@@ -19,7 +20,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _startup() -> None:
         app_settings: ApplicationSettings = app.state.settings
 
-        lock_key = f"{app.title}:clusters-management_lock"
+        lock_key = f"{APP_NAME}:clusters-management_lock"
         lock_value = json.dumps({})
         app.state.clusters_cleaning_task = start_periodic_task(
             exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(

@@ -277,7 +277,9 @@ async def test_redis_client_sdks_manager(
         RedisManagerDBConfig(db) for db in RedisDatabase
     }
     manager = RedisClientsManager(
-        databases_configs=all_redis_configs, settings=redis_service
+        databases_configs=all_redis_configs,
+        settings=redis_service,
+        client_name="pytest",
     )
 
     async with manager:
@@ -290,7 +292,7 @@ async def test_redis_client_sdk_setup_shutdown(
 ):
     # setup
     redis_resources_dns = redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
-    client = RedisClientSDK(redis_resources_dns)
+    client = RedisClientSDK(redis_resources_dns, client_name="pytest")
     assert client
     assert client.redis_dsn == redis_resources_dns
 
