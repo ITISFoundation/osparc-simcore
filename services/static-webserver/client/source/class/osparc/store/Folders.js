@@ -31,6 +31,17 @@ qx.Class.define("osparc.store.Folders", {
     "folderMoved": "qx.event.type.Data",
   },
 
+  statics: {
+    curateOrderBy: function(orderBy) {
+      const curatedOrderBy = osparc.utils.Utils.deepCloneObject(orderBy);
+      if (curatedOrderBy.field !== "name") {
+        // only "modified_at" and "name" supported
+        curatedOrderBy.field = "modified_at";
+      }
+      return curatedOrderBy;
+    },
+  },
+
   members: {
     foldersCached: null,
 
@@ -40,7 +51,7 @@ qx.Class.define("osparc.store.Folders", {
       orderBy = {
         field: "modified_at",
         direction: "desc"
-      }
+      },
     ) {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
@@ -48,12 +59,7 @@ qx.Class.define("osparc.store.Folders", {
         });
       }
 
-      const curatedOrderBy = osparc.utils.Utils.deepCloneObject(orderBy);
-      if (curatedOrderBy.field !== "name") {
-        // only "modified_at" and "name" supported
-        curatedOrderBy.field = "modified_at";
-      }
-
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
       const params = {
         url: {
           workspaceId,
@@ -62,6 +68,37 @@ qx.Class.define("osparc.store.Folders", {
         }
       };
       return osparc.data.Resources.getInstance().getAllPages("folders", params)
+        .then(foldersData => {
+          const folders = [];
+          foldersData.forEach(folderData => {
+            const folder = this.__addToCache(folderData);
+            folders.push(folder);
+          });
+          return folders;
+        });
+    },
+
+    searchFolders: function(
+      text,
+      orderBy = {
+        field: "modified_at",
+        direction: "desc"
+      },
+    ) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          resolve([]);
+        });
+      }
+
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
+      const params = {
+        url: {
+          text,
+          orderBy: JSON.stringify(curatedOrderBy),
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("folders", params, "getPageSearch")
         .then(foldersData => {
           const folders = [];
           foldersData.forEach(folderData => {
@@ -141,6 +178,8 @@ qx.Class.define("osparc.store.Folders", {
             folder.set("createdAt", new Date(folderData["createdAt"]));
           } else if (key === "modifiedAt") {
             folder.set("lastModified", new Date(folderData["modifiedAt"]));
+          } else if (key === "trashedAt") {
+            folder.set("trashedAt", new Date(folderData["trashedAt"]));
           } else {
             folder.set(key, folderData[key]);
           }
