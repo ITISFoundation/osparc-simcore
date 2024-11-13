@@ -42,7 +42,7 @@ async def _initialized_app(only_db: bool = False) -> AsyncIterator[FastAPI]:
 
     if not only_db:
         dynamic_sidecar.setup(app)
-        director_v0.setup(app, settings.DIRECTOR_V0)
+        director_v0.setup(app, settings)
 
     await app.router.startup()
     yield app
