@@ -11,6 +11,7 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceMetaDataPublished, ServiceType
 from pydantic import Extra, ValidationError, parse_obj_as, parse_raw_as
 from settings_library.catalog import CatalogSettings
+from settings_library.tracing import TracingSettings
 from simcore_service_api_server.exceptions.backend_errors import (
     ListSolversOrStudiesError,
     SolverOrStudyNotFoundError,
@@ -209,7 +210,9 @@ class CatalogApi(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(app: FastAPI, settings: CatalogSettings, add_tracing: bool = False) -> None:
+def setup(
+    app: FastAPI, settings: CatalogSettings, tracing_settings: TracingSettings | None
+) -> None:
     if not settings:
         settings = CatalogSettings()
 
@@ -218,5 +221,5 @@ def setup(app: FastAPI, settings: CatalogSettings, add_tracing: bool = False) ->
         CatalogApi,
         api_baseurl=settings.api_base_url,
         service_name="catalog",
-        add_tracing=add_tracing,
+        tracing_settings=tracing_settings,
     )

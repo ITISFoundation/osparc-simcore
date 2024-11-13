@@ -9,6 +9,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, Field, PositiveInt, parse_raw_as
+from settings_library.tracing import TracingSettings
 from simcore_service_api_server.exceptions.backend_errors import (
     JobNotFoundError,
     LogFileNotFoundError,
@@ -192,7 +193,7 @@ class DirectorV2Api(BaseServiceClientApi):
 
 
 def setup(
-    app: FastAPI, settings: DirectorV2Settings, add_tracing: bool = False
+    app: FastAPI, settings: DirectorV2Settings, tracing_settings: TracingSettings | None
 ) -> None:
     setup_client_instance(
         app,
@@ -200,5 +201,5 @@ def setup(
         # WARNING: it has /v0 and /v2 prefixes
         api_baseurl=settings.base_url,
         service_name="director_v2",
-        add_tracing=add_tracing,
+        tracing_settings=tracing_settings,
     )
