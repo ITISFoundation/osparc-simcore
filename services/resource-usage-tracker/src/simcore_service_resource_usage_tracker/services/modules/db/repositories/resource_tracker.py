@@ -476,7 +476,9 @@ class ResourceTrackerRepository(
                     resource_tracker_service_runs.c.service_run_id,
                     resource_tracker_service_runs.c.wallet_name,
                     resource_tracker_service_runs.c.user_email,
-                    resource_tracker_service_runs.c.project_name,
+                    resource_tracker_service_runs.c.root_parent_project_name.label(
+                        "project_name"
+                    ),
                     resource_tracker_service_runs.c.node_name,
                     resource_tracker_service_runs.c.service_key,
                     resource_tracker_service_runs.c.service_version,
@@ -485,12 +487,18 @@ class ResourceTrackerRepository(
                     resource_tracker_service_runs.c.stopped_at,
                     resource_tracker_credit_transactions.c.osparc_credits,
                     resource_tracker_credit_transactions.c.transaction_status,
+                    resource_tracker_project_metadata.c.project_tags,
                 )
                 .select_from(
                     resource_tracker_service_runs.join(
                         resource_tracker_credit_transactions,
                         resource_tracker_service_runs.c.service_run_id
                         == resource_tracker_credit_transactions.c.service_run_id,
+                        isouter=True,
+                    ).join(
+                        resource_tracker_project_metadata,
+                        resource_tracker_service_runs.c.project_id
+                        == resource_tracker_project_metadata.c.project_id,
                         isouter=True,
                     )
                 )

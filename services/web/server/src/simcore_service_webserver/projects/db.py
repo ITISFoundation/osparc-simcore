@@ -645,6 +645,7 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             ]
 
+    # NOTE: MD: Do not use this function anymore.
     async def get_project(
         self,
         project_uuid: str,
@@ -780,6 +781,7 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             return UserProjectAccessRightsDB.from_orm(row)
 
+    # NOTE: MD: Do not use this function anymore (currently used only in some unit tests)
     async def replace_project(
         self,
         new_project_data: ProjectDict,

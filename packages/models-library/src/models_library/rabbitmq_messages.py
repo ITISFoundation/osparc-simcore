@@ -199,7 +199,7 @@ class RabbitResourceTrackingProjectSyncMessage(RabbitMessageBase):
         default="io.simcore.service.tracking-project-sync", const=True
     )
 
-    project_id: ProjectID
+    project_id: ProjectID | None = None
     project_name: str | None = None
     project_tags: list[tuple[int, str]] | None = None
     created_at: datetime.datetime = Field(
@@ -209,6 +209,8 @@ class RabbitResourceTrackingProjectSyncMessage(RabbitMessageBase):
 
     def routing_key(self) -> str | None:
         return None
+
+    # MD: Add validation ...
 
 
 class DynamicServiceRunningMessage(RabbitMessageBase):
