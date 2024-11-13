@@ -180,9 +180,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__loadingFolders = true;
       let request = null;
       switch (this.getCurrentContext()) {
-        case "search":
-          request = osparc.store.Folders.getInstance().searchFolders(this.getOrderBy());
+        case "search": {
+          const filterData = this._searchBarFilter.getFilterData();
+          const text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
+          request = osparc.store.Folders.getInstance().searchFolders(this.getOrderBy(), text);
           break;
+        }
         case "studiesAndFolders": {
           const workspaceId = this.getCurrentWorkspaceId();
           const folderId = this.getCurrentFolderId();

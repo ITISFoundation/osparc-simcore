@@ -304,7 +304,7 @@ qx.Class.define("osparc.data.Resources", {
           getPageSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/folders:search?offset={offset}&limit={limit}&text={text}&order_by={orderBy}"
+            url: statics.API + "/folders:search?offset={offset}&limit={limit}&filters={filters}&order_by={orderBy}"
           },
           getOne: {
             method: "GET",

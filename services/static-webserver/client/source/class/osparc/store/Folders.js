@@ -79,6 +79,7 @@ qx.Class.define("osparc.store.Folders", {
     },
 
     searchFolders: function(
+      text,
       orderBy = {
         field: "modified_at",
         direction: "desc"
@@ -93,6 +94,7 @@ qx.Class.define("osparc.store.Folders", {
       const curatedOrderBy = this.self().curateOrderBy(orderBy);
       const params = {
         url: {
+          text,
           orderBy: JSON.stringify(curatedOrderBy),
         }
       };
