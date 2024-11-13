@@ -171,17 +171,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
         !osparc.utils.DisabledPlugins.isFoldersEnabled() ||
-        this.getCurrentContext() !== "studiesAndFolders" ||
+        this.getCurrentContext() === "workspaces" ||
         this.__loadingFolders
       ) {
         return;
       }
 
-      const workspaceId = this.getCurrentWorkspaceId();
-      const folderId = this.getCurrentFolderId();
       this.__loadingFolders = true;
+      let request = null;
+      switch (this.getCurrentContext()) {
+        case "search":
+          request = osparc.store.Folders.getInstance().searchFolders(this.getOrderBy());
+          break;
+        case "studiesAndFolders": {
+          const workspaceId = this.getCurrentWorkspaceId();
+          const folderId = this.getCurrentFolderId();
+          request = osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId, this.getOrderBy());
+          break;
+        }
+      }
       this.__setFoldersToList([]);
-      osparc.store.Folders.getInstance().fetchFolders(folderId, workspaceId, this.getOrderBy())
+      request
         .then(folders => {
           this.__setFoldersToList(folders);
         })
@@ -975,7 +985,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._resourcesContainer.setResourcesToList([]);
 
         if (context === "search") {
-          this.__setFoldersToList([]);
+          this.__reloadFolders();
           this.__reloadStudies();
         } else if (context === "workspaces") {
           this._searchBarFilter.resetFilters();

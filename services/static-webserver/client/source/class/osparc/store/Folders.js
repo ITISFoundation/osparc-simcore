@@ -78,6 +78,35 @@ qx.Class.define("osparc.store.Folders", {
         });
     },
 
+    searchFolders: function(
+      orderBy = {
+        field: "modified_at",
+        direction: "desc"
+      }
+    ) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          resolve([]);
+        });
+      }
+
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
+      const params = {
+        url: {
+          orderBy: JSON.stringify(curatedOrderBy),
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("folders", params, "getPageSearch")
+        .then(foldersData => {
+          const folders = [];
+          foldersData.forEach(folderData => {
+            const folder = this.__addToCache(folderData);
+            folders.push(folder);
+          });
+          return folders;
+        });
+    },
+
     postFolder: function(name, parentFolderId = null, workspaceId = null) {
       const newFolderData = {
         name,
