@@ -1,7 +1,4 @@
-""" Module that takes care of communications with director v0 service
-
-
-"""
+"""Module that takes care of communications with director v0 service"""
 
 import logging
 import urllib.parse
@@ -20,9 +17,10 @@ from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKey, ServiceKeyVersion, ServiceVersion
 from models_library.users import UserID
+from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_decorator
 
-from ..core.settings import DirectorV0Settings
+from ..core.settings import AppSettings, DirectorV0Settings
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 
@@ -31,25 +29,32 @@ logger = logging.getLogger(__name__)
 # Module's setup logic ---------------------------------------------
 
 
-def setup(app: FastAPI, settings: DirectorV0Settings | None):
-    if not settings:
-        settings = DirectorV0Settings()
+def setup(app: FastAPI, settings: AppSettings):
+    director_v0_settings = settings.DIRECTOR_V0
+    tracing_settings = settings.DIRECTOR_V2_TRACING
+    if not director_v0_settings:
+        director_v0_settings = DirectorV0Settings()
 
     def on_startup() -> None:
+        client = httpx.AsyncClient(
+            base_url=f"{director_v0_settings.endpoint}",
+            timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
+        )
+        if tracing_settings:
+            setup_httpx_client_tracing(client=client)
         DirectorV0Client.create(
             app,
-            client=httpx.AsyncClient(
-                base_url=f"{settings.endpoint}",
-                timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
-            ),
+            client=client,
         )
-        logger.debug("created client for director-v0: %s", settings.endpoint)
+        logger.debug(
+            "created client for director-v0: %s", director_v0_settings.endpoint
+        )
 
     async def on_shutdown() -> None:
         client = DirectorV0Client.instance(app).client
         await client.aclose()
         del client
-        logger.debug("delete client for director-v0: %s", settings.endpoint)
+        logger.debug("delete client for director-v0: %s", director_v0_settings.endpoint)
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)

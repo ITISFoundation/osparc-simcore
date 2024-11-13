@@ -149,19 +149,22 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     substitutions.setup(app)
 
+    if settings.DIRECTOR_V2_TRACING:
+        setup_tracing(app, app.state.settings.DIRECTOR_V2_TRACING, APP_NAME)
+
     if settings.DIRECTOR_V0.DIRECTOR_V0_ENABLED:
-        director_v0.setup(app, settings.DIRECTOR_V0)
+        director_v0.setup(app, settings)
 
     if settings.DIRECTOR_V2_STORAGE:
-        storage.setup(app, settings.DIRECTOR_V2_STORAGE)
+        storage.setup(app, settings)
 
     if settings.DIRECTOR_V2_CATALOG:
-        catalog.setup(app, settings.DIRECTOR_V2_CATALOG)
+        catalog.setup(app, settings)
 
     db.setup(app, settings.POSTGRES)
 
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
-        dynamic_services.setup(app)
+        dynamic_services.setup(app, settings)
 
     dynamic_scheduler_enabled = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR and (
         settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
@@ -192,8 +195,6 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
 
     if settings.DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED:
         instrumentation.setup(app)
-    if settings.DIRECTOR_V2_TRACING:
-        setup_tracing(app, app.state.settings.DIRECTOR_V2_TRACING, APP_NAME)
 
     if settings.DIRECTOR_V2_PROFILING:
         app.add_middleware(ProfilerMiddleware)

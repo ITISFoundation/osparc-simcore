@@ -8,19 +8,26 @@ from dataclasses import dataclass
 
 import httpx
 from fastapi import FastAPI
+from servicelib.fastapi.tracing import setup_httpx_client_tracing
 
+from ..core.settings import AppSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI) -> None:
+def setup(app: FastAPI, settings: AppSettings) -> None:
+    tracing_settings = settings.DIRECTOR_V2_TRACING
+
     def on_startup() -> None:
+        client = httpx.AsyncClient(
+            timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT
+        )
+        if tracing_settings:
+            setup_httpx_client_tracing(client=client)
         ServicesClient.create(
             app,
-            client=httpx.AsyncClient(
-                timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT
-            ),
+            client=client,
         )
 
     async def on_shutdown() -> None:

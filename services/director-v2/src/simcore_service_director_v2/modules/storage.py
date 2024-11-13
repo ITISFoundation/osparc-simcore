@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import httpx
 from fastapi import FastAPI, HTTPException
 from models_library.users import UserID
+from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from servicelib.logging_utils import log_decorator
 from settings_library.s3 import S3Settings
 from settings_library.storage import StorageSettings
@@ -15,6 +16,7 @@ from settings_library.storage import StorageSettings
 # Module's business logic ---------------------------------------------
 from starlette import status
 
+from ..core.settings import AppSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 
@@ -23,19 +25,25 @@ logger = logging.getLogger(__name__)
 # Module's setup logic ---------------------------------------------
 
 
-def setup(app: FastAPI, settings: StorageSettings):
-    if not settings:
-        settings = StorageSettings()
+def setup(app: FastAPI, settings: AppSettings):
+    storage_settings = settings.DIRECTOR_V2_STORAGE
+    tracing_settings = settings.DIRECTOR_V2_TRACING
+
+    if not storage_settings:
+        storage_settings = StorageSettings()
 
     def on_startup() -> None:
+        client = httpx.AsyncClient(
+            base_url=f"{storage_settings.api_base_url}",
+            timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
+        )
+        if tracing_settings:
+            setup_httpx_client_tracing(client=client)
         StorageClient.create(
             app,
-            client=httpx.AsyncClient(
-                base_url=f"{settings.api_base_url}",
-                timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
-            ),
+            client=client,
         )
-        logger.debug("created client for storage: %s", settings.api_base_url)
+        logger.debug("created client for storage: %s", storage_settings.api_base_url)
 
     async def on_shutdown() -> None:
         client = StorageClient.instance(app).client
