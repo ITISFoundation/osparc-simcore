@@ -1,7 +1,8 @@
-import datetime
+import datetime as dt
 from contextlib import suppress
 from typing import Annotated, Any
 
+from common_library.pydantic_validators import validate_legacy_datetime_str
 from dask_task_models_library.container_tasks.protocol import ContainerEnvsDict
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.basic_regex import SIMPLE_VERSION_RE
@@ -16,6 +17,7 @@ from models_library.services_regex import SERVICE_KEY_RE
 from models_library.services_resources import BootMode
 from pydantic import (
     BaseModel,
+    BeforeValidator,
     ByteSize,
     ConfigDict,
     Field,
@@ -128,25 +130,25 @@ class CompTaskAtDB(BaseModel):
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
     )
     image: Image
-    submit: datetime.datetime
-    start: datetime.datetime | None = Field(default=None)
-    end: datetime.datetime | None = Field(default=None)
+    submit: dt.datetime
+    start: dt.datetime | None = None
+    end: dt.datetime | None = None
     state: RunningState
-    task_id: PositiveInt | None = Field(default=None)
+    task_id: PositiveInt | None = None
     internal_id: PositiveInt
     node_class: NodeClass
-    errors: list[ErrorDict] | None = Field(default=None)
+    errors: list[ErrorDict] | None = None
     progress: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,
         description="current progress of the task if available",
     )
-    last_heartbeat: datetime.datetime | None = Field(
+    last_heartbeat: dt.datetime | None = Field(
         ..., description="Last time the running task was checked by the backend"
     )
-    created: datetime.datetime
-    modified: datetime.datetime
+    created: Annotated[dt.datetime, BeforeValidator(validate_legacy_datetime_str)]
+    modified: Annotated[dt.datetime, BeforeValidator(validate_legacy_datetime_str)]
     # Additional information about price and hardware (ex. AWS EC2 instance type)
     pricing_info: dict | None
     hardware_info: HardwareInfo
@@ -165,9 +167,9 @@ class CompTaskAtDB(BaseModel):
 
     @field_validator("start", "end", "submit")
     @classmethod
-    def _ensure_utc(cls, v: datetime.datetime | None) -> datetime.datetime | None:
+    def _ensure_utc(cls, v: dt.datetime | None) -> dt.datetime | None:
         if v is not None and v.tzinfo is None:
-            v = v.replace(tzinfo=datetime.UTC)
+            v = v.replace(tzinfo=dt.UTC)
         return v
 
     @field_validator("hardware_info", mode="before")

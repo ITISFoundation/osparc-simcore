@@ -1,12 +1,25 @@
-import datetime
+import datetime as dt
 import re
 import warnings
-from datetime import timedelta
 
 from pydantic import TypeAdapter, field_validator
 
 
-def _validate_legacy_timedelta_str(time_str: str | timedelta) -> str | timedelta:
+def validate_legacy_datetime_str(v: str | dt.datetime) -> dt.datetime:
+    if isinstance(v, dt.datetime):
+        return v
+    try:
+        return dt.datetime.fromisoformat(v)
+    except ValueError:
+        pass
+
+    try:
+        return dt.datetime.strptime(v, "%Y-%m-%d %H:%M:%S.%f%z")
+    except ValueError:
+        raise ValueError("Timestamp must be in a recognized datetime format")
+
+
+def _validate_legacy_timedelta_str(time_str: str | dt.timedelta) -> str | dt.timedelta:
     if not isinstance(time_str, str):
         return time_str
 
@@ -34,14 +47,14 @@ def validate_numeric_string_as_timedelta(field: str):
     """Transforms a float/int number into a valid datetime as it used to work in the past"""
 
     def _numeric_string_as_timedelta(
-        v: datetime.timedelta | str | float,
-    ) -> datetime.timedelta | str | float:
+        v: dt.timedelta | str | float,
+    ) -> dt.timedelta | str | float:
         if isinstance(v, str):
             try:
                 converted_value = float(v)
 
-                iso8601_format = TypeAdapter(timedelta).dump_python(
-                    timedelta(seconds=converted_value), mode="json"
+                iso8601_format = TypeAdapter(dt.timedelta).dump_python(
+                    dt.timedelta(seconds=converted_value), mode="json"
                 )
                 warnings.warn(
                     f"{field}='{v}' -should be set to-> {field}='{iso8601_format}' (ISO8601 datetime format). "

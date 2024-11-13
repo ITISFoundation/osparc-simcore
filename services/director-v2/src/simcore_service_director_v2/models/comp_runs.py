@@ -106,8 +106,8 @@ class CompRunsAtDB(BaseModel):
                     "iteration": 12,
                     "result": "SUCCESS",
                     "created": "2021-03-01 13:07:34.19161",
-                    "modified": "2021-03-0 13:07:34.19161",
-                    "started": "2021-03-01 8:07:34.19161",
+                    "modified": "2021-03-01 13:07:34.19161",
+                    "started": "2021-03-01 08:07:34.19161",
                     "ended": "2021-03-01 13:07:34.10",
                     "metadata": {
                         "node_id_names_map": {},
