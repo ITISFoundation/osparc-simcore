@@ -7,7 +7,7 @@
     ],
     "state_exclude": null
   },
-  "compose_spec": null,
+  "compose_spec": "null",
   "container_http_entry": null,
   "restart_policy": "no-restart",
   "key": "simcore/services/dynamic/jupyter-math",
