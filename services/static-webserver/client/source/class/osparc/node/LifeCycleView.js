@@ -18,10 +18,6 @@
 qx.Class.define("osparc.node.LifeCycleView", {
   extend: osparc.node.ServiceOptionsView,
 
-  events: {
-    "versionChanged": "qx.event.type.Event"
-  },
-
   members: {
     _applyNode: function(node) {
       if (node.isUpdatable() || node.isDeprecated() || node.isRetired()) {
@@ -125,7 +121,6 @@ qx.Class.define("osparc.node.LifeCycleView", {
         setTimeout(() => {
           updateButton.setFetching(false);
           node.requestStartNode();
-          this.fireEvent("versionChanged");
         }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
       });
 

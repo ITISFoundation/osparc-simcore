@@ -28,6 +28,7 @@ from . import _folders_api
 from ._exceptions_handlers import handle_plugin_requests_exceptions
 from ._models import (
     FolderFilters,
+    FolderListFullSearchWithJsonStrQueryParams,
     FolderListWithJsonStrQueryParams,
     FoldersPathParams,
     FoldersRequestContext,
@@ -78,6 +79,47 @@ async def list_folders(request: web.Request):
         product_name=req_ctx.product_name,
         folder_id=query_params.folder_id,
         workspace_id=query_params.workspace_id,
+        trashed=query_params.filters.trashed,
+        offset=query_params.offset,
+        limit=query_params.limit,
+        order_by=parse_obj_as(OrderBy, query_params.order_by),
+    )
+
+    page = Page[FolderGet].parse_obj(
+        paginate_data(
+            chunk=folders.items,
+            request_url=request.url,
+            total=folders.total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+        )
+    )
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
+
+
+@routes.get(f"/{VTAG}/folders:search", name="list_folders_full_search")
+@login_required
+@permission_required("folder.read")
+@handle_plugin_requests_exceptions
+async def list_folders_full_search(request: web.Request):
+    req_ctx = FoldersRequestContext.parse_obj(request)
+    query_params: FolderListFullSearchWithJsonStrQueryParams = (
+        parse_request_query_parameters_as(
+            FolderListFullSearchWithJsonStrQueryParams, request
+        )
+    )
+
+    if not query_params.filters:
+        query_params.filters = FolderFilters()
+
+    folders: FolderGetPage = await _folders_api.list_folders_full_search(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        text=query_params.text,
         trashed=query_params.filters.trashed,
         offset=query_params.offset,
         limit=query_params.limit,

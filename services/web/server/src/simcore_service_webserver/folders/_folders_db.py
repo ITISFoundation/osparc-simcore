@@ -8,13 +8,20 @@ import logging
 from datetime import datetime
 from typing import Any, Final, cast
 
+import sqlalchemy as sa
 from aiohttp import web
-from models_library.folders import FolderDB, FolderID
+from models_library.folders import (
+    FolderDB,
+    FolderID,
+    FolderQuery,
+    FolderScope,
+    UserFolderAccessRightsDB,
+)
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import GroupID, UserID
-from models_library.workspaces import WorkspaceID
+from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 from simcore_postgres_database.models.folders_v2 import folders_v2
 from simcore_postgres_database.models.projects import projects
@@ -23,10 +30,13 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
+from simcore_postgres_database.utils_workspaces_sql import (
+    create_my_workspace_access_rights_subquery,
+)
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.orm import aliased
-from sqlalchemy.sql import asc, desc, select
+from sqlalchemy.sql import ColumnElement, CompoundSelect, Select, asc, desc, select
 
 from ..db.plugin import get_asyncpg_engine
 from .errors import FolderAccessForbiddenError, FolderNotFoundError
@@ -92,68 +102,145 @@ async def create(
         return FolderDB.from_orm(row)
 
 
-async def list_(
+async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    content_of_folder_id: FolderID | None,
-    user_id: UserID | None,
-    workspace_id: WorkspaceID | None,
     product_name: ProductName,
-    trashed: bool | None,
+    user_id: UserID,
+    # hierarchy filters
+    folder_query: FolderQuery,
+    workspace_query: WorkspaceQuery,
+    # attribute filters
+    filter_trashed: bool | None,
+    filter_by_text: str | None,
+    # pagination
     offset: NonNegativeInt,
     limit: int,
+    # order
     order_by: OrderBy,
-) -> tuple[int, list[FolderDB]]:
+) -> tuple[int, list[UserFolderAccessRightsDB]]:
     """
-    content_of_folder_id - Used to filter in which folder we want to list folders. None means root folder.
+    folder_query - Used to filter in which folder we want to list folders.
     trashed - If set to true, it returns folders **explicitly** trashed, if false then non-trashed folders.
     """
-    assert not (  # nosec
-        user_id is not None and workspace_id is not None
-    ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
 
-    base_query = (
-        select(*_SELECTION_ARGS)
-        .select_from(folders_v2)
-        .where(
-            (folders_v2.c.product_name == product_name)
-            & (folders_v2.c.parent_folder_id == content_of_folder_id)
-        )
+    workspace_access_rights_subquery = create_my_workspace_access_rights_subquery(
+        user_id=user_id
     )
 
-    if user_id:
-        base_query = base_query.where(folders_v2.c.user_id == user_id)
-    else:
-        assert workspace_id  # nosec
-        base_query = base_query.where(folders_v2.c.workspace_id == workspace_id)
+    if workspace_query.workspace_scope is not WorkspaceScope.SHARED:
+        assert workspace_query.workspace_scope in (  # nosec
+            WorkspaceScope.PRIVATE,
+            WorkspaceScope.ALL,
+        )
 
-    if trashed is not None:
-        base_query = base_query.where(
+        private_workspace_query = (
+            select(
+                *_SELECTION_ARGS,
+                func.json_build_object(
+                    "read",
+                    sa.text("true"),
+                    "write",
+                    sa.text("true"),
+                    "delete",
+                    sa.text("true"),
+                ).label("my_access_rights"),
+            )
+            .select_from(folders_v2)
+            .where(
+                (folders_v2.c.product_name == product_name)
+                & (folders_v2.c.user_id == user_id)
+            )
+        )
+    else:
+        private_workspace_query = None
+
+    if workspace_query.workspace_scope is not WorkspaceScope.PRIVATE:
+        assert workspace_query.workspace_scope in (  # nosec
+            WorkspaceScope.SHARED,
+            WorkspaceScope.ALL,
+        )
+
+        shared_workspace_query = (
+            select(
+                *_SELECTION_ARGS, workspace_access_rights_subquery.c.my_access_rights
+            )
+            .select_from(
+                folders_v2.join(
+                    workspace_access_rights_subquery,
+                    folders_v2.c.workspace_id
+                    == workspace_access_rights_subquery.c.workspace_id,
+                )
+            )
+            .where(
+                (folders_v2.c.product_name == product_name)
+                & (folders_v2.c.user_id.is_(None))
+            )
+        )
+    else:
+        shared_workspace_query = None
+
+    attributes_filters: list[ColumnElement] = []
+
+    if filter_trashed is not None:
+        attributes_filters.append(
             (
                 (folders_v2.c.trashed_at.is_not(None))
                 & (folders_v2.c.trashed_explicitly.is_(True))
             )
-            if trashed
+            if filter_trashed
             else folders_v2.c.trashed_at.is_(None)
         )
+    if folder_query.folder_scope is not FolderScope.ALL:
+        if folder_query.folder_scope == FolderScope.SPECIFIC:
+            attributes_filters.append(
+                folders_v2.c.parent_folder_id == folder_query.folder_id
+            )
+        else:
+            assert folder_query.folder_scope == FolderScope.ROOT  # nosec
+            attributes_filters.append(folders_v2.c.parent_folder_id.is_(None))
+    if filter_by_text:
+        attributes_filters.append(folders_v2.c.name.ilike(f"%{filter_by_text}%"))
+
+    ###
+    # Combined
+    ###
+
+    combined_query: CompoundSelect | Select | None = None
+    if private_workspace_query is not None and shared_workspace_query is not None:
+        combined_query = sa.union_all(
+            private_workspace_query.where(sa.and_(*attributes_filters)),
+            shared_workspace_query.where(sa.and_(*attributes_filters)),
+        )
+    elif private_workspace_query is not None:
+        combined_query = private_workspace_query.where(sa.and_(*attributes_filters))
+    elif shared_workspace_query is not None:
+        combined_query = shared_workspace_query.where(sa.and_(*attributes_filters))
+
+    if combined_query is None:
+        msg = f"No valid queries were provided to combine. Workspace scope: {workspace_query.workspace_scope}"
+        raise ValueError(msg)
 
     # Select total count from base_query
-    subquery = base_query.subquery()
-    count_query = select(func.count()).select_from(subquery)
+    count_query = select(func.count()).select_from(combined_query.subquery())
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
-        list_query = base_query.order_by(asc(getattr(folders_v2.c, order_by.field)))
+        list_query = combined_query.order_by(asc(getattr(folders_v2.c, order_by.field)))
     else:
-        list_query = base_query.order_by(desc(getattr(folders_v2.c, order_by.field)))
+        list_query = combined_query.order_by(
+            desc(getattr(folders_v2.c, order_by.field))
+        )
     list_query = list_query.offset(offset).limit(limit)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        folders: list[FolderDB] = [FolderDB.from_orm(row) async for row in result]
+        folders: list[UserFolderAccessRightsDB] = [
+            UserFolderAccessRightsDB.from_orm(row) async for row in result
+        ]
         return cast(int, total_count), folders
 
 
