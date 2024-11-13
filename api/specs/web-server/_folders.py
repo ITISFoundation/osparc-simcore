@@ -69,6 +69,7 @@ async def list_folders(
 )
 async def list_folders_full_search(
     params: Annotated[PageQueryParameters, Depends()],
+    text: str | None = None,
     order_by: Annotated[
         Json,
         Query(

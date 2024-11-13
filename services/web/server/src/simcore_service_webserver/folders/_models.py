@@ -6,7 +6,10 @@ from models_library.rest_filters import Filters, FiltersQueryParameters
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageQueryParameters
 from models_library.users import UserID
-from models_library.utils.common_validators import null_or_none_str_to_none_validator
+from models_library.utils.common_validators import (
+    empty_str_to_none_pre_validator,
+    null_or_none_str_to_none_validator,
+)
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, Extra, Field, Json, validator
 from servicelib.aiohttp.requests_validation import RequestParams, StrictRequestParams
@@ -88,6 +91,17 @@ class FolderListWithJsonStrQueryParams(
 class FolderListFullSearchWithJsonStrQueryParams(
     PageQueryParameters, FolderListSortParams, FiltersQueryParameters[FolderFilters]
 ):
+    text: str | None = Field(
+        default=None,
+        description="Multi column full text search, across all folders and workspaces",
+        max_length=100,
+        example="My Project",
+    )
+
+    _empty_is_none = validator("text", allow_reuse=True, pre=True)(
+        empty_str_to_none_pre_validator
+    )
+
     class Config:
         extra = Extra.forbid
 
