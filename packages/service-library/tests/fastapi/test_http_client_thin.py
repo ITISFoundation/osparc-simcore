@@ -119,7 +119,7 @@ async def test_retry_on_errors_by_error_type(
                 request=Request(method="GET", url=test_url),
             )
 
-    client = ATestClient(total_retry_interval=request_timeout)
+    client = ATestClient(total_retry_interval=request_timeout, tracing_settings=None)
 
     with pytest.raises(ClientHttpError):
         await client.raises_request_error()
@@ -145,7 +145,7 @@ async def test_retry_on_errors_raises_client_http_error(
             msg = "mock_http_error"
             raise HTTPError(msg)
 
-    client = ATestClient(total_retry_interval=request_timeout)
+    client = ATestClient(total_retry_interval=request_timeout, tracing_settings=None)
 
     with pytest.raises(ClientHttpError):
         await client.raises_http_error()
@@ -159,21 +159,25 @@ async def test_methods_do_not_return_response(
             """this method will be ok even if no code is used"""
 
     # OK
-    OKTestClient(total_retry_interval=request_timeout)
+    OKTestClient(total_retry_interval=request_timeout, tracing_settings=None)
 
     class FailWrongAnnotationTestClient(BaseThinClient):
         async def public_method_wrong_annotation(self) -> None:
             """this method will raise an error"""
 
     with pytest.raises(AssertionError, match="should return an instance"):
-        FailWrongAnnotationTestClient(total_retry_interval=request_timeout)
+        FailWrongAnnotationTestClient(
+            total_retry_interval=request_timeout, tracing_settings=None
+        )
 
     class FailNoAnnotationTestClient(BaseThinClient):
         async def public_method_no_annotation(self):
             """this method will raise an error"""
 
     with pytest.raises(AssertionError, match="should return an instance"):
-        FailNoAnnotationTestClient(total_retry_interval=request_timeout)
+        FailNoAnnotationTestClient(
+            total_retry_interval=request_timeout, tracing_settings=None
+        )
 
 
 async def test_expect_state_decorator(
@@ -197,7 +201,9 @@ async def test_expect_state_decorator(
     respx_mock.get(url_get_200_ok).mock(return_value=Response(codes.OK))
     respx_mock.get(get_wrong_state).mock(return_value=Response(codes.OK))
 
-    test_client = ATestClient(total_retry_interval=request_timeout)
+    test_client = ATestClient(
+        total_retry_interval=request_timeout, tracing_settings=None
+    )
 
     # OK
     response = await test_client.get_200_ok()
