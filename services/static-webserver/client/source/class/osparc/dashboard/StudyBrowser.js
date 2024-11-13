@@ -694,10 +694,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         resolveWResponse: true
       };
 
-      if ("text" in requestParams) {
-        return osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
+      let request = null;
+      switch (this.getCurrentContext()) {
+        case "search":
+          request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
+          break;
+        case "studiesAndFolders":
+          request = osparc.data.Resources.fetch("studies", "getPage", params, options);
+          break;
       }
-      return osparc.data.Resources.fetch("studies", "getPage", params, options);
+      return request;
     },
 
     invalidateStudies: function() {
@@ -892,10 +898,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
 
       this._resourcesContainer.addListener("changeSelection", e => {
+        const currentContext = this.getCurrentContext();
         const selection = e.getData();
 
         studiesMoveButton.set({
-          visibility: selection.length ? "visible" : "excluded",
+          visibility: selection.length && currentContext === "studiesAndFolders" ? "visible" : "excluded",
           label: selection.length > 1 ? this.tr("Move selected")+" ("+selection.length+")" : this.tr("Move")
         });
 
