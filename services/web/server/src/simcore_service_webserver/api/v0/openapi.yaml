@@ -2697,6 +2697,12 @@ paths:
       summary: List Folders Full Search
       operationId: list_folders_full_search
       parameters:
+      - required: false
+        schema:
+          title: Text
+          type: string
+        name: text
+        in: query
       - description: Order by field (modified_at|name|description) and direction (asc|desc).
           The default sorting order is ascending.
         required: false

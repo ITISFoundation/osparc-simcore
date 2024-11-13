@@ -113,6 +113,7 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
     workspace_query: WorkspaceQuery,
     # attribute filters
     filter_trashed: bool | None,
+    filter_by_text: str | None,
     # pagination
     offset: NonNegativeInt,
     limit: int,
@@ -199,6 +200,8 @@ async def list_(  # pylint: disable=too-many-arguments,too-many-branches
         else:
             assert folder_query.folder_scope == FolderScope.ROOT  # nosec
             attributes_filters.append(folders_v2.c.parent_folder_id.is_(None))
+    if filter_by_text:
+        attributes_filters.append(folders_v2.c.name.ilike(f"%{filter_by_text}%"))
 
     ###
     # Combined
