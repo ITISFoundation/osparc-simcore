@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Any, Final
+from typing import Annotated, Any, Final
 
 from aiohttp import web
 from common_library.pydantic_fields_extension import is_nullable
@@ -22,7 +22,6 @@ from pydantic import (
 )
 from pydantic.fields import Field
 from pydantic.types import PositiveInt
-from pydantic_settings import SettingsConfigDict
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
@@ -115,11 +114,16 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_CREDIT_COMPUTATION_ENABLED: bool = Field(
         default=False, description="Enables credit computation features."
     )
-    WEBSERVER_LOGLEVEL: LogLevel = Field(
-        default=LogLevel.WARNING.value,
-        validation_alias=AliasChoices("WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
-        # NOTE: suffix '_LOGLEVEL' is used overall
-    )
+    WEBSERVER_LOGLEVEL: Annotated[
+        LogLevel,
+        Field(
+            default=LogLevel.WARNING.value,
+            validation_alias=AliasChoices(
+                "WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+            ),
+            # NOTE: suffix '_LOGLEVEL' is used overall
+        ),
+    ]
     WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
         validation_alias=AliasChoices(
@@ -188,9 +192,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="invitations plugin",
     )
 
-    WEBSERVER_LOGIN: LoginSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}, description="login plugin"
-    )
+    WEBSERVER_LOGIN: Annotated[
+        LoginSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="login plugin",
+        ),
+    ]
 
     WEBSERVER_PAYMENTS: PaymentsSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True},
@@ -222,9 +230,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         description="scicrunch plugin",
         json_schema_extra={"auto_default_from_env": True},
     )
-    WEBSERVER_SESSION: SessionSettings = Field(
-        description="session plugin", json_schema_extra={"auto_default_from_env": True}
-    )
+    WEBSERVER_SESSION: Annotated[
+        SessionSettings,
+        Field(
+            description="session plugin",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
 
     WEBSERVER_STATICWEB: StaticWebserverModuleSettings | None = Field(
         description="static-webserver service plugin",
@@ -279,21 +291,23 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         "Currently this is a system plugin and cannot be disabled",
     )
 
-    @model_validator(mode="after")
+    @model_validator(mode="before")
     @classmethod
-    def build_vcs_release_url_if_unset(cls, v):
-        release_url = v.SIMCORE_VCS_RELEASE_URL
+    def build_vcs_release_url_if_unset(cls, values):
+        release_url = values.get("SIMCORE_VCS_RELEASE_URL")
 
-        if release_url is None and (vsc_release_tag := v.SIMCORE_VCS_RELEASE_TAG):
+        if release_url is None and (
+            vsc_release_tag := values.get("SIMCORE_VCS_RELEASE_TAG")
+        ):
             if vsc_release_tag == "latest":
                 release_url = (
                     "https://github.com/ITISFoundation/osparc-simcore/commits/master/"
                 )
             else:
                 release_url = f"https://github.com/ITISFoundation/osparc-simcore/releases/tag/{vsc_release_tag}"
-            v.SIMCORE_VCS_RELEASE_URL = release_url
+            values["SIMCORE_VCS_RELEASE_URL"] = release_url
 
-        return v
+        return values
 
     @field_validator(
         # List of plugins under-development (keep up-to-date)

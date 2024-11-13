@@ -76,12 +76,12 @@ class _LoggingEventHandlerProcess:
             logging.DEBUG,
             f"{_LoggingEventHandlerProcess.__name__} stop_process",
         ):
-            self._stop_queue.put(None)
+            self._stop_queue.put(None)  # pylint:disable=no-member
 
             if self._process:
                 # force stop the process
-                self._process.kill()
-                self._process.join()
+                self._process.kill()  # pylint:disable=no-member
+                self._process.join()  # pylint:disable=no-member
                 self._process = None
 
             # cleanup whatever remains
@@ -109,7 +109,7 @@ class _LoggingEventHandlerProcess:
             )
             observer.start()
 
-            while self._stop_queue.qsize() == 0:
+            while self._stop_queue.qsize() == 0:  # pylint:disable=no-member
                 # NOTE: watchdog handles events internally every 1 second.
                 # While doing so it will block this thread briefly.
                 # Health check delivery may be delayed.
@@ -171,7 +171,7 @@ class LoggingEventHandlerObserver:
             heart_beat_count = 0
             while True:
                 try:
-                    self._health_check_queue.get_nowait()
+                    self._health_check_queue.get_nowait()  # pylint:disable=no-member
                     heart_beat_count += 1
                 except Empty:
                     break

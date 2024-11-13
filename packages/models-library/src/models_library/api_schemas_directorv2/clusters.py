@@ -113,7 +113,7 @@ class ClusterDetailsGet(ClusterDetails):
 
 class ClusterCreate(BaseCluster):
     owner: GroupID | None = None  # type: ignore[assignment]
-    authentication: ExternalClusterAuthentication
+    authentication: ExternalClusterAuthentication = Field(discriminator="type")
     access_rights: dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
     )
@@ -143,9 +143,9 @@ class ClusterCreate(BaseCluster):
                         "password": "somepassword",
                     },
                     "accessRights": {
-                        154: CLUSTER_ADMIN_RIGHTS,  # type: ignore[dict-item]
-                        12: CLUSTER_MANAGER_RIGHTS,  # type: ignore[dict-item]
-                        7899: CLUSTER_USER_RIGHTS,  # type: ignore[dict-item]
+                        154: CLUSTER_ADMIN_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        12: CLUSTER_MANAGER_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        7899: CLUSTER_USER_RIGHTS.model_dump(),  # type:ignore[dict-item]
                     },
                 },
             ]
@@ -173,7 +173,7 @@ class ClusterPatch(BaseCluster):
     owner: GroupID | None = None  # type: ignore[assignment]
     thumbnail: HttpUrl | None = None
     endpoint: AnyUrl | None = None  # type: ignore[assignment]
-    authentication: ExternalClusterAuthentication | None = None  # type: ignore[assignment]
+    authentication: ExternalClusterAuthentication | None = Field(None, discriminator="type")  # type: ignore[assignment]
     access_rights: dict[GroupID, ClusterAccessRights] | None = Field(  # type: ignore[assignment]
         default=None, alias="accessRights"
     )
@@ -189,9 +189,9 @@ class ClusterPatch(BaseCluster):
                 },
                 {
                     "accessRights": {
-                        154: CLUSTER_ADMIN_RIGHTS,  # type: ignore[dict-item]
-                        12: CLUSTER_MANAGER_RIGHTS,  # type: ignore[dict-item]
-                        7899: CLUSTER_USER_RIGHTS,  # type: ignore[dict-item]
+                        154: CLUSTER_ADMIN_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        12: CLUSTER_MANAGER_RIGHTS.model_dump(),  # type:ignore[dict-item]
+                        7899: CLUSTER_USER_RIGHTS.model_dump(),  # type:ignore[dict-item]
                     },
                 },
             ]
@@ -202,5 +202,7 @@ class ClusterPatch(BaseCluster):
 class ClusterPing(BaseModel):
     endpoint: AnyHttpUrl
     authentication: ClusterAuthentication = Field(
-        ..., description="Dask gateway authentication"
+        ...,
+        description="Dask gateway authentication",
+        discriminator="type",
     )

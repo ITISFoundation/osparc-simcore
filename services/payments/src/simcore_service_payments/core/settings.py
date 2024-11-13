@@ -4,7 +4,6 @@ from common_library.pydantic_networks_extension import HttpUrlLegacy
 from models_library.basic_types import NonNegativeDecimal
 from pydantic import (
     AliasChoices,
-    ConfigDict,
     EmailStr,
     Field,
     PositiveFloat,
@@ -49,7 +48,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     PAYMENTS_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
         validation_alias=AliasChoices(
-            "PAYMENTS_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            "LOG_FILTER_MAPPING", "PAYMENTS_LOG_FILTER_MAPPING"
         ),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
@@ -62,8 +61,6 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     @classmethod
     def valid_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
-
-    model_config = ConfigDict(extra="allow")  # type:ignore[assignment]
 
 
 class ApplicationSettings(_BaseApplicationSettings):

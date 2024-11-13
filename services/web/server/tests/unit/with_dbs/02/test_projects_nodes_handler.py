@@ -201,12 +201,13 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
             node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert (
-                {k: v.model_dump() for k, v in node_resources.items()}
-                == ServiceResourcesDictHelpers.model_config["json_schema_extra"][
-                    "examples"
-                ][0]
-            )
+            assert {
+                k: v.model_dump() for k, v in node_resources.items()
+            } == ServiceResourcesDictHelpers.model_config["json_schema_extra"][
+                "examples"
+            ][
+                0
+            ]
 
 
 @pytest.mark.parametrize(
@@ -333,6 +334,7 @@ async def test_create_node(
     body = {
         "service_key": f"simcore/services/{node_class}/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
+        "service_id": None,
     }
     response = await client.post(url.path, json=body)
     data, error = await assert_status(response, expected.created)
@@ -424,6 +426,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     body = {
         "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
+        "service_id": None,
     }
     NUM_DY_SERVICES = 150
     responses = await asyncio.gather(
@@ -485,6 +488,7 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
     body = {
         "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
+        "service_id": None,
     }
     response = await client.post(f"{ url}", json=body)
     await assert_status(response, expected.created)
@@ -546,6 +550,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     body = {
         "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
+        "service_id": None,
     }
     NUM_DY_SERVICES: Final[NonNegativeInt] = 150
     responses = await asyncio.gather(
@@ -597,6 +602,7 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
     body = {
         "service_key": f"simcore/services/dynamic/{faker.pystr().lower()}",
         "service_version": faker.numerify("%.#.#"),
+        "service_id": None,
     }
     response = await client.post(f"{ url}", json=body)
     await assert_status(response, expected.created)
@@ -629,6 +635,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     body = {
         "service_key": f"simcore/services/{node_class}/{faker.pystr().lower()}",
         "service_version": f"{faker.random_int()}.{faker.random_int()}.{faker.random_int()}",
+        "service_id": None,
     }
     response = await client.post(url.path, json=body)
     data, error = await assert_status(response, expected.not_acceptable)

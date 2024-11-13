@@ -1,6 +1,6 @@
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import field_validator, model_validator, ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .httpx_calls_capture_errors import OpenApiSpecError
 
@@ -94,7 +94,7 @@ class CapturedParameter(BaseModel):
     in_: Literal["path", "header", "query"] = Field(..., alias="in")
     name: str
     required: bool
-    schema_: CapturedParameterSchema = Field(..., alias="schema")
+    schema_: Annotated[CapturedParameterSchema, Field(..., alias="schema")]
     response_value: str | None = (
         None  # attribute for storing the params value in a concrete response
     )

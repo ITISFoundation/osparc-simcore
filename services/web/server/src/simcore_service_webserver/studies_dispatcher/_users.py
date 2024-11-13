@@ -12,7 +12,7 @@ import logging
 import secrets
 import string
 from contextlib import suppress
-from datetime import UTC, datetime
+from datetime import datetime
 
 import redis.asyncio as aioredis
 from aiohttp import web

@@ -140,7 +140,7 @@ class BaseCluster(BaseModel):
     )
     endpoint: AnyUrl
     authentication: ClusterAuthentication = Field(
-        ..., description="Dask gateway authentication"
+        ..., description="Dask gateway authentication", discriminator="type"
     )
     access_rights: dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
 

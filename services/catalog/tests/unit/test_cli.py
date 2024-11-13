@@ -24,7 +24,8 @@ def test_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
     result = cli_runner.invoke(main, ["settings", "--show-secrets", "--as-json"])
     assert result.exit_code == os.EX_OK
 
-    settings = ApplicationSettings.model_validate_json(result.output)
+    print(result.output)
+    settings = ApplicationSettings(result.output)
     assert settings.model_dump() == ApplicationSettings.create_from_envs().model_dump()
 
 

@@ -50,7 +50,7 @@ class Product(BaseModel):
 
     name: ProductName = Field(pattern=PUBLIC_VARIABLE_NAME_RE, validate_default=True)
 
-    display_name: str = Field(..., description="Long display name")
+    display_name: Annotated[str, Field(..., description="Long display name")]
     short_name: str | None = Field(
         None,
         pattern=re.compile(TWILIO_ALPHANUMERIC_SENDER_ID_RE),
@@ -135,7 +135,8 @@ class Product(BaseModel):
         return v
 
     @field_serializer("issues", "vendor")
-    def _preserve_snake_case(self, v: Any) -> Any:
+    @staticmethod
+    def _preserve_snake_case(v: Any) -> Any:
         return v
 
     @property

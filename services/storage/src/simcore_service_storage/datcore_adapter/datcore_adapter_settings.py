@@ -15,10 +15,7 @@ class DatcoreAdapterSettings(BaseCustomSettings):
 
     @cached_property
     def endpoint(self) -> str:
-        endpoint = AnyHttpUrl.build(
-            scheme="http",
-            host=self.DATCORE_ADAPTER_HOST,
-            port=self.DATCORE_ADAPTER_PORT,
-            path=f"/{self.DATCORE_ADAPTER_VTAG}",
+        url = TypeAdapter(AnyHttpUrl).validate_python(
+            f"http://{self.DATCORE_ADAPTER_HOST}:{self.DATCORE_ADAPTER_PORT}/{self.DATCORE_ADAPTER_VTAG}"
         )
-        return f"{endpoint}"
+        return f"{url}"

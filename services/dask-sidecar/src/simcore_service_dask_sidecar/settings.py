@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from models_library.basic_types import LogLevel
 from pydantic import AliasChoices, Field, field_validator
@@ -13,12 +13,15 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     SC_BUILD_TARGET: str | None = None
     SC_BOOT_MODE: str | None = None
-    LOG_LEVEL: LogLevel = Field(
-        LogLevel.INFO.value,
-        validation_alias=AliasChoices(
-            "DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+    LOG_LEVEL: Annotated[
+        LogLevel,
+        Field(
+            LogLevel.INFO.value,
+            validation_alias=AliasChoices(
+                "DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
+            ),
         ),
-    )
+    ]
 
     # sidecar config ---
 

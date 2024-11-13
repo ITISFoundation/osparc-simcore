@@ -152,15 +152,13 @@ async def test_create_cluster(
     url = client.app.router["create_cluster"].url_for()
     rsp = await client.post(
         f"{url}",
-        json=json.loads(
-            cluster_create.model_dump_json(by_alias=True, exclude_unset=True)
-        ),
+        json=json.loads(cluster_create.model_dump_json(by_alias=True)),
     )
     data, error = await assert_status(
         rsp,
-        expected.forbidden
-        if user_role == UserRole.USER
-        else expected.created,  # only accessible for TESTER
+        (
+            expected.forbidden if user_role == UserRole.USER else expected.created
+        ),  # only accessible for TESTER
     )
     if error:
         # we are done here
@@ -343,9 +341,7 @@ async def test_create_cluster_with_error(
     url = client.app.router["create_cluster"].url_for()
     rsp = await client.post(
         f"{url}",
-        json=json.loads(
-            cluster_create.model_dump_json(by_alias=True, exclude_unset=True)
-        ),
+        json=json.loads(cluster_create.model_dump_json(by_alias=True)),
     )
     data, error = await assert_status(rsp, expected_http_error)
     assert not data

@@ -38,7 +38,7 @@ SolverKeyId = Annotated[
 class Solver(BaseModel):
     """A released solver with a specific version"""
 
-    id: SolverKeyId = Field(..., description="Solver identifier")  # noqa: A003
+    id: SolverKeyId = Field(..., description="Solver identifier")
     version: VersionStr = Field(
         ...,
         description="semantic version number of the node",
@@ -52,7 +52,7 @@ class Solver(BaseModel):
     # TODO: consider version_aliases: list[str] = []  # remaining tags
 
     # Get links to other resources
-    url: HttpUrl | None = Field(..., description="Link to get this resource")
+    url: Annotated[HttpUrl | None, Field(..., description="Link to get this resource")]
     model_config = ConfigDict(
         extra="ignore",
         json_schema_extra={
