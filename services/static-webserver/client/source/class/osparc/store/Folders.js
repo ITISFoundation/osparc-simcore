@@ -51,7 +51,7 @@ qx.Class.define("osparc.store.Folders", {
       orderBy = {
         field: "modified_at",
         direction: "desc"
-      }
+      },
     ) {
       if (osparc.auth.Data.getInstance().isGuest()) {
         return new Promise(resolve => {
@@ -98,6 +98,36 @@ qx.Class.define("osparc.store.Folders", {
         .then(trashedFoldersData => {
           const folders = [];
           trashedFoldersData.forEach(folderData => {
+            const folder = this.__addToCache(folderData);
+            folders.push(folder);
+          });
+          return folders;
+        });
+    },
+
+    searchFolders: function(
+      text,
+      orderBy = {
+        field: "modified_at",
+        direction: "desc"
+      },
+    ) {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        return new Promise(resolve => {
+          resolve([]);
+        });
+      }
+
+      const curatedOrderBy = this.self().curateOrderBy(orderBy);
+      const params = {
+        url: {
+          text,
+          orderBy: JSON.stringify(curatedOrderBy),
+        }
+      };
+      return osparc.data.Resources.getInstance().getAllPages("folders", params, "getPageSearch")
+        .then(foldersData => {
+          const folders = [];
             const folder = this.__addToCache(folderData);
             folders.push(folder);
           });

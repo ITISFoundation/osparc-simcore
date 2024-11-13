@@ -99,10 +99,9 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         allowGrowX: false
       });
       createOrgBtn.addListener("execute", function() {
-        const newOrg = true;
-        const orgEditor = new osparc.editor.OrganizationEditor(newOrg);
         const title = this.tr("New Organization");
-        const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
+        const orgEditor = new osparc.editor.OrganizationEditor();
+        const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 200);
         orgEditor.addListener("createOrg", () => {
           this.__createOrganization(win, orgEditor.getChildControl("create"), orgEditor);
         });
@@ -176,7 +175,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       }
     },
 
-    reloadOrganizations: function() {
+    reloadOrganizations: function(orgId) {
       this.__orgsUIList.resetSelection();
       const orgsModel = this.__orgsModel;
       orgsModel.removeAll();
@@ -199,6 +198,9 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
           orgsList.sort(this.self().sortOrganizations);
           orgsList.forEach(org => orgsModel.append(qx.data.marshal.Json.createModel(org)));
           this.setOrganizationsLoaded(true);
+          if (orgId) {
+            this.fireDataEvent("organizationSelected", orgId);
+          }
         });
     },
 
@@ -208,16 +210,9 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         return;
       }
 
-      const newOrg = false;
-      const orgEditor = new osparc.editor.OrganizationEditor(newOrg);
-      org.bind("gid", orgEditor, "gid");
-      org.bind("label", orgEditor, "label");
-      org.bind("description", orgEditor, "description");
-      org.bind("thumbnail", orgEditor, "thumbnail", {
-        converter: val => val ? val : ""
-      });
       const title = this.tr("Organization Details Editor");
-      const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 250);
+      const orgEditor = new osparc.editor.OrganizationEditor(org);
+      const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 200);
       orgEditor.addListener("updateOrg", () => {
         this.__updateOrganization(win, orgEditor.getChildControl("save"), orgEditor);
       });
@@ -287,14 +282,15 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         }
       };
       osparc.data.Resources.fetch("organizations", "post", params)
-        .then(() => {
+        .then(org => {
           osparc.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
           button.setFetching(false);
           osparc.store.Store.getInstance().reset("organizations");
           // reload "profile", "organizations" are part of the information in this endpoint
           osparc.data.Resources.getOne("profile", {}, null, false)
             .then(() => {
-              this.reloadOrganizations();
+              // open it
+              this.reloadOrganizations(org["gid"]);
             });
         })
         .catch(err => {

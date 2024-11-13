@@ -172,7 +172,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
         toolTipText += this.tr("Data storage: ") + osparc.utils.Utils.bytesToSize(diskVolsUsage.free) + "<br>";
         toolTipText += this.tr("I/O storage: ") + osparc.utils.Utils.bytesToSize(diskHostUsage.free) + "<br>";
       }
-      const bgColor = qx.theme.manager.Color.getInstance().resolve("tab_navigation_bar_background_color");
+      const bgColor = qx.theme.manager.Color.getInstance().resolve("workbench-view-navbar");
       const color2 = qx.theme.manager.Color.getInstance().resolve("progressive-progressbar-background");
       indicator.getContentElement().setStyles({
         "background-color": bgColor,

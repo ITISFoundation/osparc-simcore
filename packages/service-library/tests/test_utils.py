@@ -5,7 +5,6 @@
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Coroutine, Iterator
 from copy import copy, deepcopy
-from random import randint
 from typing import NoReturn
 from unittest import mock
 
@@ -66,7 +65,6 @@ def mock_logger(mocker: MockerFixture) -> Iterator[mock.Mock]:
 
 
 async def test_logged_gather(
-    event_loop: asyncio.AbstractEventLoop,
     coros: list[Coroutine],
     mock_logger: mock.Mock,
 ):
@@ -79,7 +77,7 @@ async def test_logged_gather(
     # NOTE: only first error in the list is raised, since it is not RuntimeError, that task
     assert isinstance(excinfo.value, ValueError)
 
-    for task in asyncio.all_tasks(event_loop):
+    for task in asyncio.all_tasks(asyncio.get_running_loop()):
         if task is not asyncio.current_task():
             # info
             task.print_stack()
@@ -148,7 +146,7 @@ async def test_fire_and_forget_1000s_tasks(faker: Faker):
     tasks_collection = set()
 
     async def _some_task(n: int) -> str:
-        await asyncio.sleep(randint(1, 3))
+        await asyncio.sleep(faker.random_int(1, 3))
         return f"I'm great since I slept a bit, and by the way I'm task {n}"
 
     for n in range(1000):
@@ -251,7 +249,6 @@ async def test_limited_gather_limits(
 
 
 async def test_limited_gather(
-    event_loop: asyncio.AbstractEventLoop,
     coros: list[Coroutine],
     mock_logger: mock.Mock,
 ):
@@ -266,7 +263,7 @@ async def test_limited_gather(
 
     unfinished_tasks = [
         task
-        for task in asyncio.all_tasks(event_loop)
+        for task in asyncio.all_tasks(asyncio.get_running_loop())
         if task is not asyncio.current_task()
     ]
     final_results = await asyncio.gather(*unfinished_tasks, return_exceptions=True)
@@ -288,9 +285,7 @@ async def test_limited_gather_wo_raising(
     assert results[5] == 5
 
 
-async def test_limited_gather_cancellation(
-    event_loop: asyncio.AbstractEventLoop, slow_successful_coros_list: list[Coroutine]
-):
+async def test_limited_gather_cancellation(slow_successful_coros_list: list[Coroutine]):
     task = asyncio.create_task(limited_gather(*slow_successful_coros_list, limit=0))
     await asyncio.sleep(3)
     task.cancel()
@@ -300,7 +295,7 @@ async def test_limited_gather_cancellation(
     # check all coros are cancelled
     unfinished_tasks = [
         task
-        for task in asyncio.all_tasks(event_loop)
+        for task in asyncio.all_tasks(asyncio.get_running_loop())
         if task is not asyncio.current_task()
     ]
     assert not unfinished_tasks

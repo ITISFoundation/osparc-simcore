@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
+from .._meta import APP_NAME
+
 _DECODE_DBS: Final[set[RedisDatabase]] = {
     RedisDatabase.LOCKS,
 }
@@ -24,6 +26,7 @@ def setup_redis(app: FastAPI) -> None:
             {RedisManagerDBConfig(x, decode_responses=False) for x in _BINARY_DBS}
             | {RedisManagerDBConfig(x, decode_responses=True) for x in _DECODE_DBS},
             settings,
+            client_name=APP_NAME,
         )
         await manager.setup()
 
